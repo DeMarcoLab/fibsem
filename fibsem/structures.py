@@ -309,8 +309,10 @@ class StageSettings:
 
 @dataclass
 class CalibrationSettings:
-    max_hfw_eb: float =2700e-6
-    max_hfw_ib: float =900e-6
+    imaging_current: float = 20.e-12
+    milling_current: float = 2.e-9
+    max_hfw_eb: float = 2700e-6
+    max_hfw_ib: float = 900e-6
     eucentric_height_eb: float =  4.0e-3
     eucentric_height_ib: float =16.5e-3
     eucentric_height_tolerance: float = 0.5e-3
@@ -320,6 +322,8 @@ class CalibrationSettings:
     def __to_dict__(self) -> dict:
 
         settings = {
+                "imaging_current": self.imaging_current,
+                "milling_current": self.milling_current,
                 "max_hfw_eb": self.max_hfw_eb,
                 "max_hfw_ib": self.max_hfw_ib,
                 "eucentric_height_eb": self.eucentric_height_eb,
@@ -335,6 +339,8 @@ class CalibrationSettings:
     def __from_dict__(self, settings: dict) -> 'CalibrationSettings':
 
         calibration_settings = CalibrationSettings(
+            imaging_current=settings["imaging_current"],
+            milling_current=settings["milling_current"],
             max_hfw_eb=settings["max_hfw_eb"],
             max_hfw_ib=settings["max_hfw_ib"],
             eucentric_height_eb=settings["eucentric_height_eb"],

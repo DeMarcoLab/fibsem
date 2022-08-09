@@ -4,7 +4,6 @@ import logging
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.enumerations import (
-    CoordinateSystem,
     ManipulatorCoordinateSystem,
     ManipulatorSavedPosition,
 )
@@ -12,7 +11,6 @@ from autoscript_sdb_microscope_client.structures import (
     ManipulatorPosition,
     MoveSettings,
     StagePosition,
-    AdornedImage,
 )
 from fibsem.structures import BeamType
 

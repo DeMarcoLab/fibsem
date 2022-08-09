@@ -391,6 +391,8 @@ def test_calibration_settings_to_dict():
 
     settings = calibration_settings.__to_dict__()
 
+    assert calibration_settings.imaging_current == settings["imaging_current"]
+    assert calibration_settings.milling_current == settings["milling_current"]
     assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
     assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
     assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]
@@ -403,6 +405,8 @@ def test_calibration_settings_to_dict():
 def test_calibration_settings_from_dict():
 
     settings = {
+        "imaging_current": 20e-12,
+        "milling_current": 2.e-9,
         "max_hfw_eb": 2700e-6,
         "max_hfw_ib": 900e-6,
         "eucentric_height_eb": 4.0e-3,
@@ -414,6 +418,8 @@ def test_calibration_settings_from_dict():
 
     calibration_settings = CalibrationSettings.__from_dict__(settings)
 
+    assert calibration_settings.imaging_current == settings["imaging_current"]
+    assert calibration_settings.milling_current == settings["milling_current"]
     assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
     assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
     assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]

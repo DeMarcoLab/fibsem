@@ -2,8 +2,8 @@ import logging
 
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
-from fibsem import movement, acquire
-from fibsem.structures import BeamType, ImageSettings
+from fibsem import calibration, acquire
+from fibsem.structures import BeamType, ImageSettings, MicroscopeState, CalibrationSettings
 import numpy as np
 
 # TODO: change to SystemSettings, CalibrationSettings, ImagingSettings
@@ -63,6 +63,55 @@ def validate_initial_microscope_state(
 
 
 
+
+# TODO: finish this...
+def validate_initial_microscope_state_v2(
+    microscope: SdbMicroscopeClient, calibration_settings: CalibrationSettings, image_settings: ImageSettings
+) -> None:
+    """Set the initial microscope state to default, and validate other settings."""
+
+    # TODO: add validation checks for dwell time and resolution
+    logging.info(
+        f"Electron voltage: {microscope.beams.electron_beam.high_voltage.value:.2f}"
+    )
+    logging.info(
+        f"Electron current: {microscope.beams.electron_beam.beam_current.value:.2f}"
+    )
+
+    # set default microscope state
+    set_initial_microscope_state(microscope, calibration_settings, image_settings)
+    # validate chamber state
+    validate_chamber(microscope=microscope)
+
+    # validate stage calibration (homed, linked)
+    validate_stage_calibration(microscope=microscope)
+
+    # validate needle calibration (needle calibration, retracted)
+    validate_needle_calibration(microscope=microscope)
+
+    # validate beam settings and calibration
+    validate_beams_calibration(microscope=microscope, settings=settings)
+
+    # validate scan rotation
+    _validate_scanning_rotation(microscope=microscope) 
+
+
+# TODO: should this be MicroscopeState instead?
+def set_initial_microscope_state(microscope: SdbMicroscopeClient, calibration_settings: CalibrationSettings, image_settings: ImageSettings) ->  None:
+
+    # set default microscope state
+    microscope.specimen.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
+    
+    microscope.beams.ion_beam.beam_current.value = calibration_settings.imaging_current
+    microscope.beams.ion_beam.horizontal_field_width.value = image_settings.hfw
+    microscope.beams.ion_beam.scanning.resolution.value = image_settings.resolution
+    microscope.beams.ion_beam.scanning.dwell_time.value = image_settings.dwell_time
+
+    microscope.beams.electron_beam.horizontal_field_width.value = image_settings.hfw
+    microscope.beams.electron_beam.scanning.resolution.value = image_settings.resolution
+    microscope.beams.electron_beam.scanning.dwell_time.value = image_settings.dwell_time
+
+    return
 
 
 def validate_milling_settings(stage_settings: dict, settings: dict) -> dict:
@@ -243,7 +292,7 @@ def validate_beams_calibration(microscope: SdbMicroscopeClient, settings: dict) 
     acquire.reset_beam_shifts(microscope=microscope)
 
 
-def validate_chamber(microscope):
+def validate_chamber(microscope: SdbMicroscopeClient) -> None:
     """Validate the state of the chamber"""
 
     logging.info(
@@ -264,7 +313,7 @@ def validate_chamber(microscope):
 
 # TODO: change to CalibrationSettings
 def validate_stage_height_for_needle_insertion(
-    microscope: SdbMicroscopeClient, settings: dict) -> None:
+    microscope: SdbMicroscopeClient, settings: dict) -> bool:
 
     stage = microscope.specimen.stage
     stage_height_limit = settings["calibration"]["limits"]["stage_height_limit"]
@@ -287,19 +336,19 @@ def validate_focus(
     settings: dict,
     image_settings: ImageSettings,
     link: bool = True,
-) -> None:
+) -> bool:
 
     # check focus distance is within tolerance
     if link:
-        movement.auto_link_stage(microscope)  # TODO: remove?
+        calibration.auto_link_stage(microscope)  # TODO: remove?
 
     return check_working_distance_is_within_tolerance(
         microscope, settings=settings, beam_type=BeamType.ELECTRON
     )
 
 def check_working_distance_is_within_tolerance(
-    microscope, settings, beam_type: BeamType = BeamType.ELECTRON
-):
+    microscope: SdbMicroscopeClient, settings: dict, beam_type: BeamType = BeamType.ELECTRON
+) -> bool:
 
     if beam_type is BeamType.ELECTRON:
         working_distance = microscope.beams.electron_beam.working_distance
@@ -323,7 +372,7 @@ def check_working_distance_is_within_tolerance(
 # validate microscope settings
 import numpy as np
 
-def _validate_application_files(microscope, application_files):
+def _validate_application_files(microscope: SdbMicroscopeClient, application_files: list[str]) -> None:
     """Check that the user supplied application files exist on this system.
 
     Parameters
@@ -348,7 +397,7 @@ def _validate_application_files(microscope, application_files):
             )
 
 
-def _validate_dwell_time(microscope, dwell_times):
+def _validate_dwell_time(microscope: SdbMicroscopeClient, dwell_times: list[float]) -> None:
     """Check that the user specified dwell times are within the limits.
 
     Parameters
@@ -392,7 +441,7 @@ def _validate_dwell_time(microscope, dwell_times):
                     "{}".format(dwell_limits)
                 )
 
-def _validate_electron_beam_currents(microscope, electron_beam_currents):
+def _validate_electron_beam_currents(microscope: SdbMicroscopeClient, electron_beam_currents: list[float]) -> None:
     """Check that the user supplied electron beam current values are valid.
 
     Parameters
@@ -419,7 +468,7 @@ def _validate_electron_beam_currents(microscope, electron_beam_currents):
                 "{}".format(available_electron_beam_currents)
             )
 
-def _validate_ion_beam_currents(microscope, ion_beam_currents):
+def _validate_ion_beam_currents(microscope: SdbMicroscopeClient, ion_beam_currents: list[float]) -> None:
     """Check that the user supplied ion beam current values are valid.
 
     Parameters
@@ -447,7 +496,7 @@ def _validate_ion_beam_currents(microscope, ion_beam_currents):
             )
 
 
-def _validate_horizontal_field_width(microscope, horizontal_field_widths):
+def _validate_horizontal_field_width(microscope: SdbMicroscopeClient, horizontal_field_widths: list[float]) -> None:
     """Check that the ion beam horizontal field width is within the limits.
 
     Parameters
@@ -492,7 +541,7 @@ def _validate_horizontal_field_width(microscope, horizontal_field_widths):
                 )
 
 
-def _validate_scanning_resolutions(microscope, scanning_resolutions):
+def _validate_scanning_resolutions(microscope: SdbMicroscopeClient, scanning_resolutions: list[str]) -> None:
     """Check that the user supplied scanning resolution values are valid.
 
     Parameters
@@ -520,7 +569,7 @@ def _validate_scanning_resolutions(microscope, scanning_resolutions):
             )
 
 
-def _validate_scanning_rotation(microscope):
+def _validate_scanning_rotation(microscope: SdbMicroscopeClient) -> None:
     """Check the microscope scan rotation is zero.
 
     Parameters
@@ -544,7 +593,7 @@ def _validate_scanning_rotation(microscope):
         )
 
 
-def _validate_stage_coordinate_system(microscope):
+def _validate_stage_coordinate_system(microscope: SdbMicroscopeClient) -> None:
     """Ensure the stage coordinate system is RAW.
 
     Parameters
