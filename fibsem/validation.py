@@ -6,6 +6,8 @@ from fibsem import movement, acquire
 from fibsem.structures import BeamType, ImageSettings
 import numpy as np
 
+# TODO: change to SystemSettings, CalibrationSettings, ImagingSettings
+# TODO: change return type to list of warnings rather than reading the log...
 def validate_initial_microscope_state(
     microscope: SdbMicroscopeClient, settings: dict
 ) -> None:
@@ -83,7 +85,7 @@ def validate_milling_settings(stage_settings: dict, settings: dict) -> dict:
     return stage_settings
 
 
-def validate_stage_calibration(microscope):
+def validate_stage_calibration(microscope: SdbMicroscopeClient) -> None:
 
     if not microscope.specimen.stage.is_homed:
         logging.warning("Stage is not homed.")
@@ -96,7 +98,7 @@ def validate_stage_calibration(microscope):
     return
 
 
-def validate_needle_calibration(microscope):
+def validate_needle_calibration(microscope: SdbMicroscopeClient) -> None:
 
     if str(microscope.specimen.manipulator.state) == "Retracted":
         logging.info("Needle is retracted")
@@ -108,8 +110,8 @@ def validate_needle_calibration(microscope):
 
     return
 
-
-def validate_beams_calibration(microscope, settings: dict):
+# TODO: change to SystemSettings, CalibrationSettings
+def validate_beams_calibration(microscope: SdbMicroscopeClient, settings: dict) -> None:
     """Validate Beam Settings"""
 
     high_voltage = float(settings["system"]["high_voltage"])  # ion
@@ -260,6 +262,7 @@ def validate_chamber(microscope):
             f"Chamber pressure is too high, please pump the system (Currently {microscope.state.chamber_pressure.value:.6f} mbar)"
         )
 
+# TODO: change to CalibrationSettings
 def validate_stage_height_for_needle_insertion(
     microscope: SdbMicroscopeClient, settings: dict) -> None:
 
@@ -278,7 +281,7 @@ def validate_stage_height_for_needle_insertion(
 
     return valid_stage_height
 
-
+# TODO: change to calibrationSettings
 def validate_focus(
     microscope: SdbMicroscopeClient,
     settings: dict,

@@ -56,6 +56,11 @@ class ImageSettings:
     @classmethod
     def __from_dict__(self, settings: dict) -> 'ImageSettings':
 
+        if "save_path" not in settings:
+            settings["save_path"] = ""
+        if "label" not in settings:
+            settings["label"] = ""
+
         image_settings = ImageSettings(
             resolution=settings["resolution"],
             dwell_time=settings["dwell_time"],
@@ -213,6 +218,20 @@ class MillingSettings:
         return milling_settings
 
 
+def stage_position_to_dict(stage_position: StagePosition) -> dict:
+
+    stage_position_dict = {
+                "x": stage_position.x,
+                "y": stage_position.y,
+                "z": stage_position.z,
+                "r": stage_position.r,
+                "t": stage_position.t,
+                "coordinate_system": stage_position.coordinate_system,
+            }
+
+    return stage_position_dict
+
+
 def stage_position_from_dict(state_dict: dict) -> StagePosition:
 
     stage_position = StagePosition(
@@ -233,10 +252,7 @@ class SystemSettings:
     application_file: str = "autolamella"
     plasma_gas: str = "Argon" # proper case, e.g. Argon, Oxygen
     high_voltage: float = 30000 # volts
-    stage_rotation_flat_to_electron: float = 50 # degrees
-    stage_rotation_flat_to_ion: float = 230 # degrees
-    stage_tilt_flat_to_electron: float = 27 # degrees (pre_tilt)
-    stage_tilt_flat_to_ion: float = 52 # degrees
+
 
     def __to_dict__(self) -> dict:
 
@@ -245,10 +261,6 @@ class SystemSettings:
             "application_file": self.application_file,
             "plasma_gas": self.plasma_gas,
             "high_voltage": self.high_voltage,
-            "stage_rotation_flat_to_electron": self.stage_rotation_flat_to_electron,
-            "stage_rotation_flat_to_ion": self.stage_rotation_flat_to_ion,
-            "stage_tilt_flat_to_electron": self.stage_tilt_flat_to_electron,
-            "stage_tilt_flat_to_ion": self.stage_tilt_flat_to_ion
         }
 
         return settings_dict
@@ -260,14 +272,39 @@ class SystemSettings:
             ip_address=settings["ip_address"],
             application_file=settings["application_file"],
             plasma_gas=settings["plasma_gas"],
-            high_voltage=settings["high_voltage"],
-            stage_rotation_flat_to_electron=settings["stage_rotation_flat_to_electron"],
-            stage_rotation_flat_to_ion=settings["stage_rotation_flat_to_ion"],
-            stage_tilt_flat_to_electron=settings["stage_tilt_flat_to_electron"],
-            stage_tilt_flat_to_ion=settings["stage_tilt_flat_to_ion"]   
+            high_voltage=settings["high_voltage"]
         )
 
         return system_settings
+
+@dataclass
+class StageSettings:
+    rotation_flat_to_electron: float = 50 # degrees
+    rotation_flat_to_ion: float = 230 # degrees
+    tilt_flat_to_electron: float = 27 # degrees (pre_tilt)
+    tilt_flat_to_ion: float = 52 # degrees
+
+    def __to_dict__(self) -> dict:
+
+        settings = {
+            "rotation_flat_to_electron": self.rotation_flat_to_electron,
+            "rotation_flat_to_ion": self.rotation_flat_to_ion,
+            "tilt_flat_to_electron": self.tilt_flat_to_electron,
+            "tilt_flat_to_ion": self.tilt_flat_to_ion
+        }
+        return settings
+
+    @classmethod
+    def __from_dict__(self, settings: dict) -> 'StageSettings':
+            
+        stage_settings = StageSettings(
+            rotation_flat_to_electron=settings["rotation_flat_to_electron"],
+            rotation_flat_to_ion=settings["rotation_flat_to_ion"],
+            tilt_flat_to_electron=settings["tilt_flat_to_electron"],
+            tilt_flat_to_ion=settings["tilt_flat_to_ion"]  
+        )
+
+        return stage_settings
 
 
 @dataclass
@@ -308,20 +345,3 @@ class CalibrationSettings:
         )
 
         return calibration_settings
-
-# TODO: finish this
-@dataclass
-class DefaultSettings:
-
-    image_settings: ImageSettings
-    milling_settings: MillingSettings
-
-    @classmethod
-    def __from_dict__(self, settings: dict) -> 'DefaultSettings':
-
-        default_settings = DefaultSettings(
-            image_settings=None,
-            milling_settings=None
-        )
-
-        return default_settings

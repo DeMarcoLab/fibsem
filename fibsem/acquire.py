@@ -1,15 +1,15 @@
 import logging
+
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import (
-    AdornedImage,
-    GrabFrameSettings,
-    Rectangle,
-    RunAutoCbSettings,
-)
+from autoscript_sdb_microscope_client.structures import (AdornedImage,
+                                                         GrabFrameSettings,
+                                                         Rectangle,
+                                                         RunAutoCbSettings)
 from skimage import exposure
-from fibsem.structures import BeamType, GammaSettings, ImageSettings
+
 from fibsem import utils
+from fibsem.structures import BeamType, GammaSettings, ImageSettings
 
 
 def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -> None:

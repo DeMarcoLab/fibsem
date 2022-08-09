@@ -2,8 +2,12 @@ from datetime import datetime
 
 import numpy as np
 import pytest
-from fibsem.structures import (BeamSettings, BeamType, CalibrationSettings, GammaSettings,
-                               ImageSettings, MicroscopeState, MillingSettings, SystemSettings)
+from autoscript_sdb_microscope_client.structures import StagePosition
+from fibsem.structures import (BeamSettings, BeamType, CalibrationSettings,
+                               GammaSettings, ImageSettings, MicroscopeState,
+                               MillingSettings, StageSettings, SystemSettings,
+                               stage_position_from_dict,
+                               stage_position_to_dict)
 
 
 @pytest.fixture
@@ -32,7 +36,7 @@ def beam_settings() -> BeamSettings:
         working_distance=4.0e-3,
         beam_current=60.0e-12,
         hfw=150e-6,
-        resolution="1560x1240",
+        resolution="1536x1024",
         dwell_time=1.0e-6,
         stigmation=1.0e-6,
     )
@@ -332,10 +336,7 @@ def test_system_settings_to_dict(system_settings: SystemSettings):
     assert system_settings.application_file == settings_dict["application_file"]
     assert system_settings.plasma_gas == settings_dict["plasma_gas"]
     assert system_settings.high_voltage == settings_dict["high_voltage"]
-    assert system_settings.stage_rotation_flat_to_electron == settings_dict["stage_rotation_flat_to_electron"]
-    assert system_settings.stage_rotation_flat_to_ion == settings_dict["stage_rotation_flat_to_ion"]
-    assert system_settings.stage_tilt_flat_to_electron == settings_dict["stage_tilt_flat_to_electron"]
-    assert system_settings.stage_tilt_flat_to_ion == settings_dict["stage_tilt_flat_to_ion"]
+
 
 def test_system_settings_from_dict():
 
@@ -344,10 +345,7 @@ def test_system_settings_from_dict():
         "application_file": "autolamella", 
         "plasma_gas": "Argon", 
         "high_voltage": 30000,
-        "stage_rotation_flat_to_electron": 50,
-        "stage_rotation_flat_to_ion": 230,
-        "stage_tilt_flat_to_electron": 27,
-        "stage_tilt_flat_to_ion": 52
+
     }
 
     system_settings = SystemSettings.__from_dict__(settings_dict)
@@ -356,11 +354,35 @@ def test_system_settings_from_dict():
     assert system_settings.application_file == settings_dict["application_file"]
     assert system_settings.plasma_gas == settings_dict["plasma_gas"]
     assert system_settings.high_voltage == settings_dict["high_voltage"]
-    assert system_settings.stage_rotation_flat_to_electron == settings_dict["stage_rotation_flat_to_electron"]
-    assert system_settings.stage_rotation_flat_to_ion == settings_dict["stage_rotation_flat_to_ion"]
-    assert system_settings.stage_tilt_flat_to_electron == settings_dict["stage_tilt_flat_to_electron"]
-    assert system_settings.stage_tilt_flat_to_ion == settings_dict["stage_tilt_flat_to_ion"]
 
+
+
+def test_stage_settings_to_dict():
+    
+    stage_settings = StageSettings()
+
+    settings_dict = stage_settings.__to_dict__()
+
+    assert stage_settings.rotation_flat_to_electron == settings_dict["rotation_flat_to_electron"]
+    assert stage_settings.rotation_flat_to_ion == settings_dict["rotation_flat_to_ion"]
+    assert stage_settings.tilt_flat_to_electron == settings_dict["tilt_flat_to_electron"]
+    assert stage_settings.tilt_flat_to_ion == settings_dict["tilt_flat_to_ion"]
+
+def test_stage_settings_from_dict():
+
+    settings_dict = {
+        "rotation_flat_to_electron": 50,
+        "rotation_flat_to_ion": 230,
+        "tilt_flat_to_electron": 27,
+        "tilt_flat_to_ion": 52
+    }
+
+    stage_settings = StageSettings.__from_dict__(settings_dict)
+
+    assert stage_settings.rotation_flat_to_electron == settings_dict["rotation_flat_to_electron"]
+    assert stage_settings.rotation_flat_to_ion == settings_dict["rotation_flat_to_ion"]
+    assert stage_settings.tilt_flat_to_electron == settings_dict["tilt_flat_to_electron"]
+    assert stage_settings.tilt_flat_to_ion == settings_dict["tilt_flat_to_ion"]
 
 
 def test_calibration_settings_to_dict():
@@ -399,3 +421,40 @@ def test_calibration_settings_from_dict():
     assert calibration_settings.eucentric_height_tolerance == settings["eucentric_height_tolerance"]
     assert calibration_settings.needle_stage_height_limit == settings["needle_stage_height_limit"]
     assert calibration_settings.max_working_distance_eb == settings["max_working_distance_eb"]
+
+
+
+def test_stage_position_to_dict():
+    
+    stage_position = StagePosition(
+        x=1, y=2, z=3, r=4, t=5, coordinate_system="Raw"
+    )
+
+    stage_position_dict = stage_position_to_dict(stage_position)
+
+    assert stage_position.x == stage_position_dict["x"]
+    assert stage_position.y == stage_position_dict["y"] 
+    assert stage_position.z == stage_position_dict["z"] 
+    assert stage_position.r == stage_position_dict["r"] 
+    assert stage_position.t == stage_position_dict["t"] 
+    assert stage_position.coordinate_system == stage_position_dict["coordinate_system"]  
+
+def test_stage_position_from_dict():
+    
+    stage_position_dict = {
+        "x": 1,
+        "y": 2,
+        "z": 3,
+        "r": 4,
+        "t": 5,
+        "coordinate_system": "Raw"
+    }
+
+    stage_position = stage_position_from_dict(stage_position_dict)
+
+    assert stage_position.x == stage_position_dict["x"]
+    assert stage_position.y == stage_position_dict["y"] 
+    assert stage_position.z == stage_position_dict["z"] 
+    assert stage_position.r == stage_position_dict["r"] 
+    assert stage_position.t == stage_position_dict["t"] 
+    assert stage_position.coordinate_system == stage_position_dict["coordinate_system"] 

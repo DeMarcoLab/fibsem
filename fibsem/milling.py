@@ -160,9 +160,6 @@ def calculate_milling_time(patterns: list, milling_current: float) -> float:
 
     return milling_time_seconds
 
-# TODO: MillingSettings dataclass
-
-
 ### PATTERNING
 
 def _draw_rectangle_pattern(microscope:SdbMicroscopeClient, settings:dict , x: float = 0.0, y: float = 0.0):
