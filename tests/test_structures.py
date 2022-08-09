@@ -2,7 +2,7 @@ from datetime import datetime
 
 import numpy as np
 import pytest
-from fibsem.structures import (BeamSettings, BeamType, GammaSettings,
+from fibsem.structures import (BeamSettings, BeamType, CalibrationSettings, GammaSettings,
                                ImageSettings, MicroscopeState, MillingSettings, SystemSettings)
 
 
@@ -360,3 +360,42 @@ def test_system_settings_from_dict():
     assert system_settings.stage_rotation_flat_to_ion == settings_dict["stage_rotation_flat_to_ion"]
     assert system_settings.stage_tilt_flat_to_electron == settings_dict["stage_tilt_flat_to_electron"]
     assert system_settings.stage_tilt_flat_to_ion == settings_dict["stage_tilt_flat_to_ion"]
+
+
+
+def test_calibration_settings_to_dict():
+
+    calibration_settings = CalibrationSettings()
+
+    settings = calibration_settings.__to_dict__()
+
+    assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
+    assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
+    assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]
+    assert calibration_settings.eucentric_height_ib == settings["eucentric_height_ib"]
+    assert calibration_settings.eucentric_height_tolerance == settings["eucentric_height_tolerance"]
+    assert calibration_settings.needle_stage_height_limit == settings["needle_stage_height_limit"]
+    assert calibration_settings.max_working_distance_eb == settings["max_working_distance_eb"]
+
+
+def test_calibration_settings_from_dict():
+
+    settings = {
+        "max_hfw_eb": 2700e-6,
+        "max_hfw_ib": 900e-6,
+        "eucentric_height_eb": 4.0e-3,
+        "eucentric_height_ib": 16.5e-3,
+        "eucentric_height_tolerance": 0.5e-3,
+        "needle_stage_height_limit": 3.7e-3,
+        "max_working_distance_eb": 6.0e-3,
+    }
+
+    calibration_settings = CalibrationSettings.__from_dict__(settings)
+
+    assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
+    assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
+    assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]
+    assert calibration_settings.eucentric_height_ib == settings["eucentric_height_ib"]
+    assert calibration_settings.eucentric_height_tolerance == settings["eucentric_height_tolerance"]
+    assert calibration_settings.needle_stage_height_limit == settings["needle_stage_height_limit"]
+    assert calibration_settings.max_working_distance_eb == settings["max_working_distance_eb"]

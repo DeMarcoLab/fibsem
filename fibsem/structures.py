@@ -31,7 +31,7 @@ class GammaSettings:
     threshold: int  # px
 
     @classmethod
-    def __from_dict__(self, settings):
+    def __from_dict__(self, settings: dict) -> 'GammaSettings':
         gamma_settings = GammaSettings(
             enabled=settings["enabled"],
             min_gamma=settings["min_gamma"],
@@ -54,7 +54,7 @@ class ImageSettings:
     save_path: Path = None
 
     @classmethod
-    def __from_dict__(self, settings):
+    def __from_dict__(self, settings: dict) -> 'ImageSettings':
 
         image_settings = ImageSettings(
             resolution=settings["resolution"],
@@ -77,7 +77,7 @@ class ReferenceImages:
     low_res_ib: AdornedImage
     high_res_ib: AdornedImage
 
-    def __iter__(self):
+    def __iter__(self) -> list[AdornedImage]:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
@@ -92,7 +92,7 @@ class BeamSettings:
     dwell_time: float = None
     stigmation: float = None
 
-    def __to_dict__(self):
+    def __to_dict__(self) -> dict:
 
         state_dict = {
             "beam_type": self.beam_type.name,
@@ -107,7 +107,7 @@ class BeamSettings:
         return state_dict
 
     @classmethod
-    def __from_dict__(self, state_dict: dict):
+    def __from_dict__(self, state_dict: dict) -> 'BeamSettings':
         beam_settings = BeamSettings(
             beam_type=BeamType[state_dict["beam_type"]],
             working_distance=state_dict["working_distance"],
@@ -147,7 +147,7 @@ class MicroscopeState:
         return state_dict
 
     @classmethod
-    def __from_dict__(self, state_dict: dict):
+    def __from_dict__(self, state_dict: dict) -> 'MicroscopeState':
         # TOOD: class method
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
@@ -196,7 +196,7 @@ class MillingSettings:
         return settings_dict
 
     @classmethod
-    def __from_dict__(self, settings):
+    def __from_dict__(self, settings: dict) -> 'MillingSettings':
 
         milling_settings = MillingSettings(
             width=settings["width"],
@@ -254,7 +254,7 @@ class SystemSettings:
         return settings_dict
     
     @classmethod
-    def __from_dict__(self, settings) -> 'SystemSettings':
+    def __from_dict__(self, settings: dict) -> 'SystemSettings':
 
         system_settings = SystemSettings(
             ip_address=settings["ip_address"],
@@ -268,3 +268,60 @@ class SystemSettings:
         )
 
         return system_settings
+
+
+@dataclass
+class CalibrationSettings:
+    max_hfw_eb: float =2700e-6
+    max_hfw_ib: float =900e-6
+    eucentric_height_eb: float =  4.0e-3
+    eucentric_height_ib: float =16.5e-3
+    eucentric_height_tolerance: float = 0.5e-3
+    needle_stage_height_limit: float = 3.7e-3
+    max_working_distance_eb: float = 6.0e-3
+
+    def __to_dict__(self) -> dict:
+
+        settings = {
+                "max_hfw_eb": self.max_hfw_eb,
+                "max_hfw_ib": self.max_hfw_ib,
+                "eucentric_height_eb": self.eucentric_height_eb,
+                "eucentric_height_ib": self.eucentric_height_ib,
+                "eucentric_height_tolerance": self.eucentric_height_tolerance,
+                "needle_stage_height_limit": self.needle_stage_height_limit,
+                "max_working_distance_eb": self.max_working_distance_eb,
+            }
+
+        return settings
+
+    @classmethod
+    def __from_dict__(self, settings: dict) -> 'CalibrationSettings':
+
+        calibration_settings = CalibrationSettings(
+            max_hfw_eb=settings["max_hfw_eb"],
+            max_hfw_ib=settings["max_hfw_ib"],
+            eucentric_height_eb=settings["eucentric_height_eb"],
+            eucentric_height_ib=settings["eucentric_height_ib"], 
+            eucentric_height_tolerance=settings["eucentric_height_tolerance"],
+            needle_stage_height_limit=settings["needle_stage_height_limit"], 
+            max_working_distance_eb=settings["max_working_distance_eb"]
+        )
+
+        return calibration_settings
+
+# TODO: finish this
+@dataclass
+class DefaultSettings:
+
+    image_settings: ImageSettings
+    milling_settings: MillingSettings
+
+    @classmethod
+    def __from_dict__(self, settings: dict) -> 'DefaultSettings':
+
+        default_settings = DefaultSettings(
+            image_settings=None,
+            milling_settings=None
+        )
+
+        return default_settings
