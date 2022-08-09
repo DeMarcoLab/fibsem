@@ -1,0 +1,28 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fibsem"
+authors = [
+    {name = "Patrick Cleeve", email = "Patrick.Cleeve@monash.edu"},
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+    ]
+dynamic = ["version", "description"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+filterwarnings = "ignore::pytest.PytestCacheWarning"
