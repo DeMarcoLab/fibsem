@@ -1,10 +1,12 @@
 import logging
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import (AdornedImage,
-                                                         GrabFrameSettings,
-                                                         Rectangle,
-                                                         RunAutoCbSettings)
+from autoscript_sdb_microscope_client.structures import (
+    AdornedImage,
+    GrabFrameSettings,
+    Rectangle,
+    RunAutoCbSettings,
+)
 from skimage import exposure
 from fibsem.structures import BeamType, GammaSettings, ImageSettings
 from fibsem import utils
@@ -54,6 +56,7 @@ def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedIma
     image = reference
     return image
 
+
 # TODO: change set_active_view to set_active_device... for better stability
 def new_image(
     microscope: SdbMicroscopeClient,
@@ -91,7 +94,9 @@ def new_image(
         autocontrast(microscope, beam_type=settings.beam_type)
 
     image = acquire_image(
-        microscope=microscope, settings=frame_settings, beam_type=settings.beam_type,
+        microscope=microscope,
+        settings=frame_settings,
+        beam_type=settings.beam_type,
     )
 
     # apply gamma correction
@@ -151,7 +156,6 @@ def acquire_image(
     return image
 
 
-
 def update_image_settings_v3(
     settings: dict,
     resolution=None,
@@ -163,7 +167,7 @@ def update_image_settings_v3(
     save=None,
     label=None,
     path=None,
-):
+) -> ImageSettings:
     """Update image settings. Uses default values if not supplied
 
     Args:
@@ -203,7 +207,7 @@ def update_image_settings_v3(
         beam_type=BeamType.ELECTRON if beam_type is None else beam_type,
         gamma=gamma_settings if gamma is None else gamma,
         save=bool(settings["calibration"]["imaging"]["save"]) if save is None else save,
-        save_path="" if path is None else path, # TODO: change to os.getcwd?
+        save_path="" if path is None else path,  # TODO: change to os.getcwd?
         label=utils.current_timestamp() if label is None else label,
     )
 
@@ -216,16 +220,15 @@ def reset_beam_shifts(microscope: SdbMicroscopeClient):
     Args:
         microscope (SdbMicroscopeClient): Autoscript microscope object
     """
-    from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
-                                                             Point)
+    from autoscript_sdb_microscope_client.structures import Point
 
     # reset zero beamshift
     logging.info(
-        f"reseting ebeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value} "
+        f"reseting ebeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
     )
     microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
     logging.info(
-        f"reseting ibeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value} "
+        f"reseting ibeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
     )
     microscope.beams.ion_beam.beam_shift.value = Point(0, 0)
     logging.info(f"reset beam shifts to zero complete")

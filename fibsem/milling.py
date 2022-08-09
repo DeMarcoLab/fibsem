@@ -3,6 +3,10 @@ from fibsem import constants
 import logging
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from fibsem.structures import BeamType, MillingSettings
+
+from autoscript_sdb_microscope_client._dynamic_object_proxies import CleaningCrossSectionPattern, RectanglePattern
+from typing import Union
 
 ########################### SETUP 
 
@@ -33,45 +37,39 @@ def setup_milling(
     patterning_mode: str = "Serial",
     hfw:float = 100e-6,
 ):
-    """Setup for rectangle ion beam milling patterns.
+    """Setup Microscope for Ion Beam Milling.
 
-    Parameters
-    ----------
-    microscope : AutoScript microscope instance.
-        The AutoScript microscope object.
-    application_file : str, optional
-        Application file for ion beam milling, by default "autolamella"
-    patterning_mode : str, optional
-        Ion beam milling pattern mode, by default "Serial".
-        The available options are "Parallel" or "Serial".
-    hfw : float, optional
-        Width of ion beam field of view in meters, by default 100e-6
+    Args:
+        microscope (SdbMicroscopeClient): AutoScript microscope instance
+        application_file (str, optional): Application file for ion beam milling. Defaults to "autolamella".
+        patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
+        hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
-    microscope.imaging.set_active_view(2)  # the ion beam view
-    microscope.patterning.set_default_beam_type(2)  # ion beam default
+
+    microscope.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
+    microscope.patterning.set_default_beam_type(BeamType.ION.value)  # ion beam default
     microscope.patterning.set_default_application_file(application_file)
     microscope.patterning.mode = patterning_mode
     microscope.patterning.clear_patterns()  # clear any existing patterns
     microscope.beams.ion_beam.horizontal_field_width.value = hfw
-    logging.info(f"milling: setup ion beam milling")
-    logging.info(f"milling: application file:  {application_file}")
-    logging.info(f"milling: patterning mode: {patterning_mode}")
-    logging.info(f"milling: ion horizontal field width: {hfw}")
+    logging.info(f"setup ion beam milling")
+    logging.info(f"application file:  {application_file}, pattern mode: {patterning_mode}, hfw: {hfw}")
+
 
 def run_milling(
     microscope: SdbMicroscopeClient,
     settings: dict,
     milling_current: float = None,
     asynch: bool = False,
-):
-    """Run ion beam milling at specified current.
-    
-    - Change to milling current
-    - Run milling (synchronous) or Start Milling (asynchronous)
+) -> None:
+    """Run Ion Beam Milling.
 
-    """
-    logging.info("milling: running ion beam milling now...")
-
+    Args:
+        microscope (SdbMicroscopeClient): AutoScript microscope instance
+        settings (dict): settings dictionary
+        milling_current (float, optional): ion beam milling current. Defaults to None.
+        asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
+    """   
     # change to milling current
     microscope.imaging.set_active_view(2)  # the ion beam view
     if milling_current is None:
@@ -79,10 +77,11 @@ def run_milling(
     if microscope.beams.ion_beam.beam_current.value != milling_current:
         # if milling_current not in microscope.beams.ion_beam.beam_current.available_values:
         #   switch to closest
-
+        logging.info(f"changing to milling current: {milling_current:.2e}")
         microscope.beams.ion_beam.beam_current.value = milling_current
 
     # run milling (asynchronously)
+    logging.info(f"running ion beam milling now... asynchronous={asynch}")
     if asynch:
         microscope.patterning.start()
     else:
@@ -91,24 +90,33 @@ def run_milling(
 
 
 def finish_milling(microscope: SdbMicroscopeClient, imaging_current: float = 20e-12) -> None:
-    """Finish milling by clearing the patterns and restoring the default imaging current.
-
+    """Clear milling patterns, and restore to the imaging current.   
+    
     Args:
-        microscope (SdbMicroscopeClient): autoscript microscope client connection
-        settings (dict): configuration settings
+        microscope (SdbMicroscopeClient): AutoScript microscope instance
+        imaging_current (float, optional): Imaging Current. Defaults to 20e-12.
+    
     """
     # restore imaging current
-    logging.info("returning to the ion beam imaging current now.")
+    logging.info(f"changing to imaging current: {imaging_current:.2e}")
     microscope.patterning.clear_patterns()
     microscope.beams.ion_beam.beam_current.value = imaging_current
     microscope.patterning.mode = "Serial"
-    logging.info("ion beam milling complete.")
+    logging.info("finished ion beam milling.")
 
 
 ############################# UTILS #############################
 
-def read_protocol_dictionary(settings, stage_name) -> list:
+def read_protocol_dictionary(settings: dict, stage_name: str) -> list[dict]:
+    """Read the milling protocol settings dictionary into a structured format
 
+    Args:
+        settings (dict): settings dictionary
+        stage_name (str): milling stage name
+
+    Returns:
+        list[dict]: milling protocol stages
+    """
     # multi-stage
     if "protocol_stages" in settings[stage_name]:
         protocol_stages = []
@@ -182,3 +190,54 @@ def _draw_rectangle_pattern(microscope:SdbMicroscopeClient, settings:dict , x: f
     pattern.scan_direction = settings["scan_direction"]
 
     return pattern
+
+
+def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: MillingSettings) -> Union[CleaningCrossSectionPattern, RectanglePattern]:
+    """Draw a rectangular milling pattern from settings
+
+    Args:
+        microscope (SdbMicroscopeClient): AutoScript microscope instance
+        mill_settings (MillingSettings): milling pattern settings
+
+    Returns:
+        Union[CleaningCrossSectionPattern, RectanglePattern]: milling pattern
+    """
+    if mill_settings.cleaning_cross_section:
+        pattern = microscope.patterning.create_cleaning_cross_section(
+        center_x=mill_settings.centre_x,
+        center_y=mill_settings.centre_x,
+        width=mill_settings.width,
+        height=mill_settings.height,
+        depth=mill_settings.depth,
+    )
+    else:
+        pattern = microscope.patterning.create_rectangle(
+            center_x=mill_settings.centre_x,
+            center_y=mill_settings.centre_y,
+            width=mill_settings.width,
+            height=mill_settings.height,
+            depth=mill_settings.depth,
+        )
+    
+        
+    pattern.rotation=mill_settings.rotation
+    pattern.scan_direction = mill_settings.scan_direction
+
+    return pattern
+
+
+def _calculate_milling_time_v2(patterns: list[Union[CleaningCrossSectionPattern, RectanglePattern]]) -> float:
+    """Calculate the estimated milling time for all milling patterns.
+
+    Args:
+        patterns (list[Union[CleaningCrossSectionPattern, RectanglePattern]]): milling patterns
+
+    Returns:
+        float: estimated milling time (seconds)
+    """
+
+    estimated_time_seconds = 0
+    for pattern in patterns:
+        estimated_time_seconds += pattern.time()
+    
+    return estimated_time_seconds
