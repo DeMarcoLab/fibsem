@@ -1,8 +1,4 @@
 import logging
-from dataclasses import dataclass
-from enum import Enum
-from pathlib import Path
-
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (AdornedImage,
@@ -10,30 +6,8 @@ from autoscript_sdb_microscope_client.structures import (AdornedImage,
                                                          Rectangle,
                                                          RunAutoCbSettings)
 from skimage import exposure
-from fibsem.structures import BeamType
+from fibsem.structures import BeamType, GammaSettings, ImageSettings
 from fibsem import utils
-
-
-@dataclass
-class GammaSettings:
-    enabled: bool
-    min_gamma: float
-    max_gamma: float
-    scale_factor: float
-    threshold: int  # px
-
-
-@dataclass
-class ImageSettings:
-    resolution: str
-    dwell_time: float
-    hfw: float
-    autocontrast: bool
-    beam_type: BeamType
-    save: bool
-    label: str
-    gamma: GammaSettings
-    save_path: Path = None
 
 
 def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -> None:
@@ -80,7 +54,7 @@ def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedIma
     image = reference
     return image
 
-
+# TODO: change set_active_view to set_active_device... for better stability
 def new_image(
     microscope: SdbMicroscopeClient,
     settings: ImageSettings,
@@ -205,7 +179,7 @@ def update_image_settings_v3(
         save_path (Path, optional): directory to save image. Defaults to None.
     """
     gamma_settings = GammaSettings(
-        enabled=settings["calibration"]["gamma"]["correction"],
+        enabled=settings["calibration"]["gamma"]["enabled"],
         min_gamma=settings["calibration"]["gamma"]["min_gamma"],
         max_gamma=settings["calibration"]["gamma"]["max_gamma"],
         scale_factor=settings["calibration"]["gamma"]["scale_factor"],

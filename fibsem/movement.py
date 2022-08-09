@@ -14,7 +14,7 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
     AdornedImage,
 )
-from fibsem.acquire import BeamType
+from fibsem.structures import BeamType
 
 
 def pixel_to_realspace_coordinate(coord: list, image: AdornedImage) -> list:

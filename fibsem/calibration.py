@@ -12,9 +12,8 @@ from PIL import Image, ImageDraw
 from scipy import fftpack
 
 from fibsem import acquire, movement, utils
-from fibsem.acquire import ImageSettings
 from fibsem.structures import (BeamSettings, MicroscopeState, Point,
-                               ReferenceImages, BeamType)
+                               ReferenceImages, BeamType, ImageSettings)
 
 
 def correct_stage_drift(

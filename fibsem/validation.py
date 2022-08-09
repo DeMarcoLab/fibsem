@@ -3,7 +3,7 @@ import logging
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 from fibsem import movement, acquire
-from fibsem.acquire import BeamType, ImageSettings
+from fibsem.structures import BeamType, ImageSettings
 import numpy as np
 
 def validate_initial_microscope_state(

@@ -7,7 +7,7 @@ from autoscript_sdb_microscope_client import SdbMicroscopeClient
 ########################### SETUP 
 
 # TODO: remove, unused?
-def reset_state(microscope, settings, application_file=None):
+def reset_state(microscope: SdbMicroscopeClient, settings: dict, application_file=None):
     """Reset the microscope state.
     Parameters
     ----------
