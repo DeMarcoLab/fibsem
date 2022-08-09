@@ -46,6 +46,7 @@ def setup_milling(
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
 
+    # microscope.imaging.set_active_device(BeamType.ION.value) # TODO: change over
     microscope.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
     microscope.patterning.set_default_beam_type(BeamType.ION.value)  # ion beam default
     microscope.patterning.set_default_application_file(application_file)
@@ -59,7 +60,7 @@ def setup_milling(
 def run_milling(
     microscope: SdbMicroscopeClient,
     settings: dict,
-    milling_current: float = None,
+    milling_current: float,
     asynch: bool = False,
 ) -> None:
     """Run Ion Beam Milling.
@@ -72,8 +73,6 @@ def run_milling(
     """   
     # change to milling current
     microscope.imaging.set_active_view(2)  # the ion beam view
-    if milling_current is None:
-        milling_current = settings["imaging"]["milling_current"]
     if microscope.beams.ion_beam.beam_current.value != milling_current:
         # if milling_current not in microscope.beams.ion_beam.beam_current.available_values:
         #   switch to closest
@@ -218,8 +217,8 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
             height=mill_settings.height,
             depth=mill_settings.depth,
         )
-    
-        
+
+
     pattern.rotation=mill_settings.rotation
     pattern.scan_direction = mill_settings.scan_direction
 
