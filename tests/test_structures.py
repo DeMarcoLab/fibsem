@@ -3,7 +3,7 @@ from datetime import datetime
 import numpy as np
 import pytest
 from fibsem.structures import (BeamSettings, BeamType, GammaSettings,
-                               ImageSettings, MicroscopeState, MillingSettings)
+                               ImageSettings, MicroscopeState, MillingSettings, SystemSettings)
 
 
 @pytest.fixture
@@ -80,6 +80,12 @@ def image_settings(gamma_settings: GammaSettings) -> ImageSettings:
 
     return image_settings
 
+@pytest.fixture
+def system_settings() -> SystemSettings:
+
+    system_settings = SystemSettings()
+
+    return system_settings
 
 def test_milling_settings_to_dict(milling_settings: MillingSettings):
 
@@ -316,3 +322,41 @@ def test_image_settings_from_dict():
     assert image_settings.gamma.max_gamma == image_settings_dict["gamma"]["max_gamma"]
     assert image_settings.gamma.scale_factor == image_settings_dict["gamma"]["scale_factor"]
     assert image_settings.gamma.threshold == image_settings_dict["gamma"]["threshold"]
+
+
+def test_system_settings_to_dict(system_settings: SystemSettings):
+
+    settings_dict = system_settings.__to_dict__()
+
+    assert system_settings.ip_address == settings_dict["ip_address"]
+    assert system_settings.application_file == settings_dict["application_file"]
+    assert system_settings.plasma_gas == settings_dict["plasma_gas"]
+    assert system_settings.high_voltage == settings_dict["high_voltage"]
+    assert system_settings.stage_rotation_flat_to_electron == settings_dict["stage_rotation_flat_to_electron"]
+    assert system_settings.stage_rotation_flat_to_ion == settings_dict["stage_rotation_flat_to_ion"]
+    assert system_settings.stage_tilt_flat_to_electron == settings_dict["stage_tilt_flat_to_electron"]
+    assert system_settings.stage_tilt_flat_to_ion == settings_dict["stage_tilt_flat_to_ion"]
+
+def test_system_settings_from_dict():
+
+    settings_dict = {
+        "ip_address": "10.0.0.1",
+        "application_file": "autolamella", 
+        "plasma_gas": "Argon", 
+        "high_voltage": 30000,
+        "stage_rotation_flat_to_electron": 50,
+        "stage_rotation_flat_to_ion": 230,
+        "stage_tilt_flat_to_electron": 27,
+        "stage_tilt_flat_to_ion": 52
+    }
+
+    system_settings = SystemSettings.__from_dict__(settings_dict)
+
+    assert system_settings.ip_address == settings_dict["ip_address"]
+    assert system_settings.application_file == settings_dict["application_file"]
+    assert system_settings.plasma_gas == settings_dict["plasma_gas"]
+    assert system_settings.high_voltage == settings_dict["high_voltage"]
+    assert system_settings.stage_rotation_flat_to_electron == settings_dict["stage_rotation_flat_to_electron"]
+    assert system_settings.stage_rotation_flat_to_ion == settings_dict["stage_rotation_flat_to_ion"]
+    assert system_settings.stage_tilt_flat_to_electron == settings_dict["stage_tilt_flat_to_electron"]
+    assert system_settings.stage_tilt_flat_to_ion == settings_dict["stage_tilt_flat_to_ion"]

@@ -225,3 +225,46 @@ def stage_position_from_dict(state_dict: dict) -> StagePosition:
     )
 
     return stage_position
+
+
+@dataclass
+class SystemSettings:
+    ip_address: str = "10.0.0.1"
+    application_file: str = "autolamella"
+    plasma_gas: str = "Argon" # proper case, e.g. Argon, Oxygen
+    high_voltage: float = 30000 # volts
+    stage_rotation_flat_to_electron: float = 50 # degrees
+    stage_rotation_flat_to_ion: float = 230 # degrees
+    stage_tilt_flat_to_electron: float = 27 # degrees (pre_tilt)
+    stage_tilt_flat_to_ion: float = 52 # degrees
+
+    def __to_dict__(self) -> dict:
+
+        settings_dict = {
+            "ip_address": self.ip_address,
+            "application_file": self.application_file,
+            "plasma_gas": self.plasma_gas,
+            "high_voltage": self.high_voltage,
+            "stage_rotation_flat_to_electron": self.stage_rotation_flat_to_electron,
+            "stage_rotation_flat_to_ion": self.stage_rotation_flat_to_ion,
+            "stage_tilt_flat_to_electron": self.stage_tilt_flat_to_electron,
+            "stage_tilt_flat_to_ion": self.stage_tilt_flat_to_ion
+        }
+
+        return settings_dict
+    
+    @classmethod
+    def __from_dict__(self, settings) -> 'SystemSettings':
+
+        system_settings = SystemSettings(
+            ip_address=settings["ip_address"],
+            application_file=settings["application_file"],
+            plasma_gas=settings["plasma_gas"],
+            high_voltage=settings["high_voltage"],
+            stage_rotation_flat_to_electron=settings["stage_rotation_flat_to_electron"],
+            stage_rotation_flat_to_ion=settings["stage_rotation_flat_to_ion"],
+            stage_tilt_flat_to_electron=settings["stage_tilt_flat_to_electron"],
+            stage_tilt_flat_to_ion=settings["stage_tilt_flat_to_ion"]   
+        )
+
+        return system_settings
