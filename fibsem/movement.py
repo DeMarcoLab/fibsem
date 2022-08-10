@@ -140,15 +140,16 @@ def retract_needle(microscope: SdbMicroscopeClient) -> None:
     logging.info(
         f"retracting needle to {park_position}"
     )  # TODO: replace with move_needle_relative...
-    needle.relative_move(
-        ManipulatorPosition(z=park_position.z - current_position.z)
-    )  # noqa: E501
-    needle.relative_move(
-        ManipulatorPosition(y=park_position.y - current_position.y)
-    )  # noqa: E501
-    needle.relative_move(
-        ManipulatorPosition(x=park_position.x - current_position.x)
-    )  # noqa: E501
+    # needle.relative_move(
+    #     ManipulatorPosition(z=park_position.z - current_position.z)
+    # )  # noqa: E501
+    # needle.relative_move(
+    #     ManipulatorPosition(y=park_position.y - current_position.y)
+    # )  # noqa: E501
+    # needle.relative_move(
+    #     ManipulatorPosition(x=park_position.x - current_position.x)
+    # )  # noqa: E501
+    needle.absolute_move(park_position)
     time.sleep(1)  # AutoScript sometimes throws errors if you retract too quick?
     logging.info(f"retracting needle...")
     needle.retract()
@@ -172,22 +173,21 @@ def flat_to_beam(
         rotation = settings["system"]["stage_rotation_flat_to_ion"]
         tilt = np.deg2rad(settings["system"]["stage_tilt_flat_to_ion"] - pretilt_angle)
     rotation = np.deg2rad(rotation)
-    stage_settings = MoveSettings(rotate_compucentric=True, tilt_compucentric=True)
+    stage_settings = MoveSettings(rotate_compucentric=True)
     logging.info(f"movement: moving flat to {beam_type.name}")
 
     # TODO: check why we can't just use safe_absolute_stage_movement
     # I think it is because we want to maintain position, and only tilt/rotate
-    # why isnt it the same as going to the same xyz with new rt?
-    # TODO: if we use tilt_compucentric, and rotate_compucentric it should be!
+    # # why isnt it the same as going to the same xyz with new rt?
+    # print("diff: ", abs(np.rad2deg(stage.current_position.r - rotation)))
+    # print((np.rad2deg(rotation)) % 360 - np.rad2deg(stage.current_position.r) % 360)
 
     # If we rotating by a lot, tilt to zero so stage doesn't hit anything
     if abs(np.rad2deg(rotation - stage.current_position.r)) % 360 > 90:
         stage.absolute_move(StagePosition(t=0), stage_settings)  # just in case
-        logging.info(f"movement: tilting to flat for large rotation.")
-    logging.info(f"movement: rotating stage to {rotation:.4f}")
-    stage.absolute_move(StagePosition(r=rotation), stage_settings)
-    logging.info(f"movement: tilting stage to {tilt:.4f}")
-    stage.absolute_move(StagePosition(t=tilt), stage_settings)
+        logging.info(f"tilting to flat for large rotation.")
+    logging.info(f"rotation: {rotation:.4f},  tilt: {tilt:.4f}")
+    stage.absolute_move(StagePosition(r=rotation, t=tilt), stage_settings)
 
     return stage.current_position
 
@@ -279,6 +279,7 @@ def y_corrected_stage_movement(
 
     corrected_pretilt_angle = PRETILT_SIGN * pretilt_angle
 
+    # total tilt adjustment (difference between perspective view and sample coordinate system)
     if beam_type == BeamType.ELECTRON:
         tilt_adjustment = -corrected_pretilt_angle
         SCALE_FACTOR = 0.78342  # patented technology
@@ -286,19 +287,12 @@ def y_corrected_stage_movement(
         tilt_adjustment = -corrected_pretilt_angle - stage_tilt_flat_to_ion
         SCALE_FACTOR = 1.0
 
-    # old
-    if microscope is None:
-        # tilt_radians = stage_tilt + tilt_adjustment
-        tilt_radians = tilt_adjustment
-        y_move = +np.cos(tilt_radians) * expected_y
-        z_move = -np.sin(tilt_radians) * expected_y
-    else:
-        # new
-        y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
-            stage_tilt + tilt_adjustment
-        )
-        y_move = y_sample_move * np.cos(corrected_pretilt_angle)
-        z_move = y_sample_move * np.sin(corrected_pretilt_angle)
+    # new
+    y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
+        stage_tilt + tilt_adjustment
+    )
+    y_move = y_sample_move * np.cos(corrected_pretilt_angle)
+    z_move = y_sample_move * np.sin(corrected_pretilt_angle)
 
     logging.info(f"rotation:  {microscope.specimen.stage.current_position.r} rad")
     logging.info(f"stage_tilt: {np.rad2deg(stage_tilt)}deg")
@@ -317,7 +311,7 @@ def y_corrected_stage_movement(
 # resetting working distance after vertical movements
 
 
-# TODO: test out these functions...
+
 def move_stage_relative_with_corrected_movement(
     microscope: SdbMicroscopeClient,
     settings: dict,
@@ -365,12 +359,14 @@ def move_stage_eucentric_correction(
     )
 
     # only move the z-component
+    move_settings = MoveSettings(link_z_y=True)
     z_move = StagePosition(z=yz_move.z)
-    stage.relative_move(z_move)
+    stage.relative_move(z_move, move_settings)
 
     return
 
 
+# TODO: redo with new knowledge about needle coordinate systems etc
 def move_needle_relative_with_corrected_movement(
     microscope: SdbMicroscopeClient,
     settings: dict,

@@ -78,8 +78,8 @@ def align_using_reference_images(
 ) -> bool:
 
     # get beam type
-    ref_beam_type = BeamType(ref_image.metadata.acquisition.beam_type.upper())
-    new_beam_type = BeamType(new_image.metadata.acquisition.beam_type.upper())
+    ref_beam_type = BeamType[ref_image.metadata.acquisition.beam_type.upper()]
+    new_beam_type = BeamType[new_image.metadata.acquisition.beam_type.upper()]
 
     logging.info(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."
@@ -94,7 +94,7 @@ def align_using_reference_images(
     )
 
     shift_within_tolerance = check_shift_within_tolerance(
-        dx=dx, dy=dy, ref_image=ref_image, limit=0.25
+        dx=dx, dy=dy, ref_image=ref_image, limit=0.5
     )
 
     if shift_within_tolerance:
@@ -236,8 +236,9 @@ def match_image_settings(
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> ImageSettings:
     """Generate matching image settings from an image."""
-    image_settings.hfw = f"{ref_image.height}x{ref_image.width}"
+    image_settings.resolution = f"{ref_image.width}x{ref_image.height}"
     image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
+    image_settings.hfw = ref_image.width * ref_image.metadata.binary_result.pixel_size.x
     image_settings.beam_type = beam_type
     image_settings.save = True
     image_settings.label = utils.current_timestamp()
