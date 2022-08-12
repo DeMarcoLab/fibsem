@@ -9,7 +9,7 @@ from autoscript_sdb_microscope_client.structures import (AdornedImage,
 from skimage import exposure
 
 from fibsem import utils
-from fibsem.structures import BeamType, GammaSettings, ImageSettings
+from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages
 
 
 def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -> None:
@@ -37,6 +37,26 @@ def take_reference_images(
     return eb_image, ib_image
 
 
+def take_set_of_reference_images(microscope: SdbMicroscopeClient, image_settings:ImageSettings, hfws:tuple[float], label:str ="ref_image") -> ReferenceImages
+    """Take a set of reference images at low and high magnification"""
+    
+    # force save
+    image_settings.save = True
+
+    image_settings.hfw = hfws[0]
+    image_settings.label = f"{label}_low_res"
+    low_eb, low_ib = take_reference_images(microscope, image_settings)
+
+    image_settings.hfw = hfws[1]
+    image_settings.label = f"{label}_high_res"
+    high_eb, high_ib = take_reference_images(microscope, image_settings)
+
+    reference_images = ReferenceImages(
+        low_eb, high_eb, low_ib, high_ib
+        )
+
+    return reference_images
+
 def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
     """Automatic gamma correction"""
     std = np.std(image.data)
@@ -51,11 +71,8 @@ def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedIma
         f"GAMMA_CORRECTION | {image.metadata.acquisition.beam_type} | {diff:.3f} | {gam:.3f}"
     )
     image_data = exposure.adjust_gamma(image.data, gam)
-    reference = AdornedImage(data=image_data)
-    reference.metadata = image.metadata
-    image = reference
-    return image
-
+    reference = AdornedImage(data=image_data, metadata=image.metadata)
+    return reference
 
 # TODO: change set_active_view to set_active_device... for better stability
 def new_image(

@@ -31,6 +31,23 @@ def insert_needle(microscope: SdbMicroscopeClient) -> None:
     logging.info(f"movement: inserted needle to {park_position}.")
 
 
+def insert_needle_v2(microscope: SdbMicroscopeClient, insert_position: ManipulatorSavedPosition = ManipulatorSavedPosition.PARK) -> None:
+    """Insert the needle to the selected saved insert position.
+
+    Args:
+        microscope (SdbMicroscopeClient): autoscript microscope instance
+        insert_position (ManipulatorSavedPosition, optional): saved needle position. Defaults to ManipulatorSavedPosition.PARK.
+    """
+    needle = microscope.specimen.manipulator
+    logging.info(f"inserting needle to {insert_position.explain} position.")
+    insert_position = needle.get_saved_position(insert_position, ManipulatorCoordinateSystem.RAW
+    )
+    needle.insert(insert_position)
+    logging.info(f"inserted needle to {insert_position}.")
+
+
+
+
 def move_needle_closer(
     microscope: SdbMicroscopeClient,
     x_shift: float = -20e-6,
@@ -393,7 +410,7 @@ def move_needle_relative_with_corrected_movement(
     if beam_type is BeamType.ION:
         # z- is divided by cos... then multipled by cos.. no change?
         # calculate shift in xyz coordinates
-        z_distance = dy / np.cos(stage_tilt)  # TODO: needle to check this
+        # z_distance = dy / np.cos(stage_tilt)  # TODO: needle to check this
 
         # TODO: this is used for land lamella
         # z_distance = -det.distance_metres.y / np.sin(
@@ -402,7 +419,7 @@ def move_needle_relative_with_corrected_movement(
 
         # Calculate movement
         x_move = x_corrected_needle_movement(expected_x=dx, stage_tilt=stage_tilt)
-        yz_move = z_corrected_needle_movement(z_distance, stage_tilt)
+        yz_move = z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
 
     # move needle (relative)
     needle_position = ManipulatorPosition(x=x_move.x, y=yz_move.y, z=yz_move.z)

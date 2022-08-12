@@ -89,7 +89,7 @@ def align_using_reference_images(
     sigma = 6
 
     dx, dy, _ = shift_from_crosscorrelation(
-        new_image, ref_image, lowpass=lp_px, highpass=hp_px, sigma=sigma, 
+        ref_image, new_image, lowpass=lp_px, highpass=hp_px, sigma=sigma, 
         use_rect_mask=True, ref_mask=ref_mask
     )
 
@@ -102,15 +102,15 @@ def align_using_reference_images(
         # move the stage
         movement.move_stage_relative_with_corrected_movement(microscope, 
             settings, 
-            dx=-dx, 
-            dy=dy, 
+            dx=dx, 
+            dy=-dy, 
             beam_type=new_beam_type)
 
     return shift_within_tolerance
 
 def shift_from_crosscorrelation(
-    img1: AdornedImage,
-    img2: AdornedImage,
+    ref_image: AdornedImage,
+    new_image: AdornedImage,
     lowpass: int = 128,
     highpass: int = 6,
     sigma: int = 6,
@@ -119,25 +119,25 @@ def shift_from_crosscorrelation(
 ) -> tuple[float, float, np.ndarray]:
 
     # get pixel_size
-    pixelsize_x = img2.metadata.binary_result.pixel_size.x
-    pixelsize_y = img2.metadata.binary_result.pixel_size.y
+    pixelsize_x = new_image.metadata.binary_result.pixel_size.x
+    pixelsize_y = new_image.metadata.binary_result.pixel_size.y
 
     # normalise both images
-    img1_data_norm = normalise_image(img1)
-    img2_data_norm = normalise_image(img2)
+    ref_data_norm = normalise_image(ref_image)
+    new_data_norm = normalise_image(new_image)
 
     # cross-correlate normalised images
     if use_rect_mask:
-        rect_mask = _mask_rectangular(img2_data_norm.shape)
-        img1_data_norm = rect_mask * img1_data_norm
-        img2_data_norm = rect_mask * img2_data_norm
+        rect_mask = _mask_rectangular(new_data_norm.shape)
+        ref_data_norm = rect_mask * ref_data_norm
+        new_data_norm = rect_mask * new_data_norm
 
     if ref_mask is not None:
-        img1_data_norm = ref_mask * img1_data_norm # mask the reference
+        ref_data_norm = ref_mask * ref_data_norm # mask the reference
 
     # run crosscorrelation
     xcorr = crosscorrelation(
-        img1_data_norm, img2_data_norm, bp=True, lp=lowpass, hp=highpass, sigma=sigma
+        ref_data_norm, new_data_norm, bp=True, lp=lowpass, hp=highpass, sigma=sigma
     )
 
     # calculate maximum crosscorrelation
@@ -147,8 +147,10 @@ def shift_from_crosscorrelation(
 
     # calculate shift in metres
     x_shift = err[1] * pixelsize_x
-    y_shift = err[0] * pixelsize_y
+    y_shift = err[0] * pixelsize_y # this could be the issue?
     
+    logging.info(f"pixelsize: x: {pixelsize_x}, y: {pixelsize_y}")
+
     logging.info(f"cross-correlation:")
     logging.info(f"maxX: {maxX}, {maxY}, centre: {cen}")
     logging.info(f"x: {err[1]}px, y: {err[0]}px")
@@ -159,7 +161,22 @@ def shift_from_crosscorrelation(
 
 def crosscorrelation(img1: np.ndarray, img2: np.ndarray,  
     lp: int = 128, hp: int = 6, sigma: int = 6, bp: bool = False) -> np.ndarray:
-    
+    """_summary_
+
+    Args:
+        img1 (np.ndarray): reference_image
+        img2 (np.ndarray): new image
+        lp (int, optional): _description_. Defaults to 128.
+        hp (int, optional): _description_. Defaults to 6.
+        sigma (int, optional): _description_. Defaults to 6.
+        bp (bool, optional): _description_. Defaults to False.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        np.ndarray: _description_
+    """
     if img1.shape != img2.shape:
         err = f"Image 1 {img1.shape} and Image 2 {img2.shape} need to have the same shape"
         logging.error(err)
