@@ -15,20 +15,20 @@ from autoscript_sdb_microscope_client.structures import (
 from fibsem.structures import BeamType
 
 
-def insert_needle(microscope: SdbMicroscopeClient) -> None:
-    """Insert the needle and return the needle parking position.
-    Returns
-    -------
-    park_position : autoscript_sdb_microscope_client.structures.ManipulatorPosition
-        The parking position for the needle manipulator when inserted.
-    """
-    needle = microscope.specimen.manipulator
-    logging.info(f"movement: inserting needle to park position.")
-    park_position = needle.get_saved_position(
-        ManipulatorSavedPosition.PARK, ManipulatorCoordinateSystem.RAW
-    )
-    needle.insert(park_position)
-    logging.info(f"movement: inserted needle to {park_position}.")
+# def insert_needle(microscope: SdbMicroscopeClient) -> None:
+#     """Insert the needle and return the needle parking position.
+#     Returns
+#     -------
+#     park_position : autoscript_sdb_microscope_client.structures.ManipulatorPosition
+#         The parking position for the needle manipulator when inserted.
+#     """
+#     needle = microscope.specimen.manipulator
+#     logging.info(f"movement: inserting needle to park position.")
+#     park_position = needle.get_saved_position(
+#         ManipulatorSavedPosition.PARK, ManipulatorCoordinateSystem.RAW
+#     )
+#     needle.insert(park_position)
+#     logging.info(f"movement: inserted needle to {park_position}.")
 
 
 def insert_needle_v2(microscope: SdbMicroscopeClient, insert_position: ManipulatorSavedPosition = ManipulatorSavedPosition.PARK) -> None:
@@ -48,50 +48,50 @@ def insert_needle_v2(microscope: SdbMicroscopeClient, insert_position: Manipulat
 
 
 
-def move_needle_closer(
-    microscope: SdbMicroscopeClient,
-    x_shift: float = -20e-6,
-    z_shift: float = -160e-6,
-    y_shift: float = 0.0e-6,
-) -> None:
-    """Move the needle closer to the sample surface, after inserting.
-    Parameters
-    ----------
-    microscope : autoscript_sdb_microscope_client.sdb_microscope.SdbMicroscopeClient
-        The Autoscript microscope object.
-    x_shift : float
-        Distance to move the needle from the parking position in x, in meters.
-    z_shift : float
-        Distance to move the needle towards the sample in z, in meters.
-        Negative values move the needle TOWARDS the sample surface.
-    """
-    needle = microscope.specimen.manipulator
-    stage = microscope.specimen.stage
-    needle.set_default_coordinate_system(ManipulatorCoordinateSystem.STAGE)
-    # Needle starts from the parking position (after inserting it)
-    # Move the needle back a bit in x, so the needle is not overlapping target
-    x_move = x_corrected_needle_movement(
-        x_shift
-    )  # TODO: replace with move_needle_relative...
-    logging.info(f"movement: moving needle by {x_move}")
-    needle.relative_move(x_move)
+# def move_needle_closer(
+#     microscope: SdbMicroscopeClient,
+#     x_shift: float = -20e-6,
+#     z_shift: float = -160e-6,
+#     y_shift: float = 0.0e-6,
+# ) -> None:
+#     """Move the needle closer to the sample surface, after inserting.
+#     Parameters
+#     ----------
+#     microscope : autoscript_sdb_microscope_client.sdb_microscope.SdbMicroscopeClient
+#         The Autoscript microscope object.
+#     x_shift : float
+#         Distance to move the needle from the parking position in x, in meters.
+#     z_shift : float
+#         Distance to move the needle towards the sample in z, in meters.
+#         Negative values move the needle TOWARDS the sample surface.
+#     """
+#     needle = microscope.specimen.manipulator
+#     stage = microscope.specimen.stage
+#     needle.set_default_coordinate_system(ManipulatorCoordinateSystem.STAGE)
+#     # Needle starts from the parking position (after inserting it)
+#     # Move the needle back a bit in x, so the needle is not overlapping target
+#     x_move = x_corrected_needle_movement(
+#         x_shift
+#     )  # TODO: replace with move_needle_relative...
+#     logging.info(f"movement: moving needle by {x_move}")
+#     needle.relative_move(x_move)
 
-    y_move = y_corrected_needle_movement(y_shift, stage.current_position.t)
-    logging.info(f"movement: moving needle by {y_move}")
-    needle.relative_move(y_move)
+#     y_move = y_corrected_needle_movement(y_shift, stage.current_position.t)
+#     logging.info(f"movement: moving needle by {y_move}")
+#     needle.relative_move(y_move)
 
-    # Then move the needle towards the sample surface.
-    z_move = z_corrected_needle_movement(z_shift, stage.current_position.t)
-    logging.info(f"movement: moving needle by {z_move}")
-    needle.relative_move(z_move)
-    # The park position is always the same,
-    # so the needletip will end up about 20 microns from the surface.
-    logging.info(f"movement: move needle closer complete.")
+#     # Then move the needle towards the sample surface.
+#     z_move = z_corrected_needle_movement(z_shift, stage.current_position.t)
+#     logging.info(f"movement: moving needle by {z_move}")
+#     needle.relative_move(z_move)
+#     # The park position is always the same,
+#     # so the needletip will end up about 20 microns from the surface.
+#     logging.info(f"movement: move needle closer complete.")
 
 
 
 def move_needle_to_eucentric_position_offset(microscope:SdbMicroscopeClient, dx: float = 0.0, dy: float = 0.0 , dz:float = 0.0) -> None:
-# move to just above the eucentric point
+    # move to relative to the eucentric point
     eucentric_position = microscope.specimen.manipulator.get_saved_position(
         ManipulatorSavedPosition.EUCENTRIC, ManipulatorCoordinateSystem.STAGE
     )
@@ -435,22 +435,22 @@ def move_needle_relative_with_corrected_movement(
     return
 
 
-def corrected_stage_movement_v2(
-    microscope: SdbMicroscopeClient,
-    settings: dict,
-    dx: float = 0.0,
-    dy: float = 0.0,
-    zy_link: bool = False,
-) -> None:
+# def corrected_stage_movement_v2(
+#     microscope: SdbMicroscopeClient,
+#     settings: dict,
+#     dx: float = 0.0,
+#     dy: float = 0.0,
+#     zy_link: bool = False,
+# ) -> None:
 
-    stage = microscope.specimen.stage
+#     stage = microscope.specimen.stage
 
-    # move settings
-    move_settings = MoveSettings(
-        link_z_y=zy_link, rotate_compucentric=True, tilt_compucentric=True
-    )
+#     # move settings
+#     move_settings = MoveSettings(
+#         link_z_y=zy_link, rotate_compucentric=True, tilt_compucentric=True
+#     )
 
-    # move stage
-    stage_position = StagePosition(x=dx, y=dy)
-    logging.info(f"moving stage: {stage_position}")
-    stage.relative_move(stage_position, settings=move_settings)
+#     # move stage
+#     stage_position = StagePosition(x=dx, y=dy)
+#     logging.info(f"moving stage: {stage_position}")
+#     stage.relative_move(stage_position, settings=move_settings)
