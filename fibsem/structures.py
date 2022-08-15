@@ -95,7 +95,7 @@ class BeamSettings:
     hfw: float = None
     resolution: str = None
     dwell_time: float = None
-    stigmation: float = None
+    # stigmation: tuple[float] = None
 
     def __to_dict__(self) -> dict:
 
@@ -106,7 +106,7 @@ class BeamSettings:
             "hfw": self.hfw,
             "resolution": self.resolution,
             "dwell_time": self.dwell_time,
-            "stigmation": self.stigmation,
+            # "stigmation": self.stigmation,
         }
 
         return state_dict
@@ -120,7 +120,7 @@ class BeamSettings:
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
             dwell_time=state_dict["dwell_time"],
-            stigmation=state_dict["stigmation"],
+            # stigmation=state_dict["stigmation"],
         )
 
         return beam_settings

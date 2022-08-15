@@ -351,14 +351,14 @@ def check_working_distance_is_within_tolerance(
 ) -> bool:
 
     if beam_type is BeamType.ELECTRON:
-        working_distance = microscope.beams.electron_beam.working_distance
+        working_distance = microscope.beams.electron_beam.working_distance.value
         eucentric_height = settings["calibration"]["limits"]["eucentric_height_eb"]
         eucentric_tolerance = settings["calibration"]["limits"][
             "eucentric_height_tolerance"
         ]
 
     if beam_type is BeamType.ION:
-        working_distance = microscope.beams.electron_beam.working_distance
+        working_distance = microscope.beams.electron_beam.working_distance.value
         eucentric_height = settings["calibration"]["limits"]["eucentric_height_ib"]
         eucentric_tolerance = settings["calibration"]["limits"][
             "eucentric_height_tolerance"

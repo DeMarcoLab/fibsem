@@ -222,18 +222,18 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
     return pattern
 
 
-def _calculate_milling_time_v2(patterns: list[Union[CleaningCrossSectionPattern, RectanglePattern]]) -> float:
-    """Calculate the estimated milling time for all milling patterns.
+def estimate_milling_time_in_seconds(milling_stage_patterns: list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]) -> float:
+    """Calculate the estimated milling time for all milling patterns in a milling stage.
 
     Args:
-        patterns (list[Union[CleaningCrossSectionPattern, RectanglePattern]]): milling patterns
+        milling_stage_patterns (list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]): milling patterns for each stage
 
     Returns:
         float: estimated milling time (seconds)
     """
-
-    estimated_time_seconds = 0
-    for pattern in patterns:
-        estimated_time_seconds += pattern.time()
+    total_time_seconds = 0
+    for patterns in milling_stage_patterns:
+        for pattern in patterns:
+            total_time_seconds += pattern.time
     
-    return estimated_time_seconds
+    return total_time_seconds

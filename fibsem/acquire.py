@@ -37,7 +37,7 @@ def take_reference_images(
     return eb_image, ib_image
 
 
-def take_set_of_reference_images(microscope: SdbMicroscopeClient, image_settings:ImageSettings, hfws:tuple[float], label:str ="ref_image") -> ReferenceImages
+def take_set_of_reference_images(microscope: SdbMicroscopeClient, image_settings:ImageSettings, hfws:tuple[float], label:str ="ref_image") -> ReferenceImages:
     """Take a set of reference images at low and high magnification"""
     
     # force save

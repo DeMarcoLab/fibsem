@@ -275,7 +275,11 @@ def check_shift_within_tolerance(
     return abs(dx) < X_THRESHOLD and abs(dy) < Y_THRESHOLD
 
 
-def measure_brightness(img: AdornedImage, crop_size: int = None) -> float:
+def measure_brightness(img: AdornedImage) -> float:
+    
+    return np.mean(img.data)
+
+def measure_brightness_old(img: AdornedImage, crop_size: int = None) -> float:
     cx, cy = img.data.shape[1] //2, img.data.shape[0] // 2
 
     if crop_size is not None:
@@ -661,7 +665,6 @@ def get_current_microscope_state(
             hfw=microscope.beams.electron_beam.horizontal_field_width.value,
             resolution=microscope.beams.electron_beam.scanning.resolution.value,
             dwell_time=microscope.beams.electron_beam.scanning.dwell_time.value,
-            stigmation=microscope.beams.electron_beam.stigmator.value,
         ),
         # ion beam settings
         ib_settings=BeamSettings(
@@ -671,7 +674,6 @@ def get_current_microscope_state(
             hfw=microscope.beams.ion_beam.horizontal_field_width.value,
             resolution=microscope.beams.ion_beam.scanning.resolution.value,
             dwell_time=microscope.beams.ion_beam.scanning.dwell_time.value,
-            stigmation=microscope.beams.ion_beam.stigmator.value,
         ),
     )
 
@@ -707,9 +709,9 @@ def set_microscope_state(microscope: SdbMicroscopeClient, microscope_state: Micr
     microscope.beams.electron_beam.scanning.dwell_time.value = (
         microscope_state.eb_settings.dwell_time
     )
-    microscope.beams.electron_beam.stigmator.value = (
-        microscope_state.eb_settings.stigmation
-    )
+    # microscope.beams.electron_beam.stigmator.value = (
+    #     microscope_state.eb_settings.stigmation
+    # )
 
     # restore ion beam
     logging.info(f"restoring ion beam settings...")
@@ -728,7 +730,7 @@ def set_microscope_state(microscope: SdbMicroscopeClient, microscope_state: Micr
     microscope.beams.ion_beam.scanning.dwell_time.value = (
         microscope_state.ib_settings.dwell_time
     )
-    microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
+    # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
 
     logging.info(f"microscope state restored")
     return

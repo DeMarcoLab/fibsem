@@ -39,7 +39,7 @@ def insert_needle_v2(microscope: SdbMicroscopeClient, insert_position: Manipulat
         insert_position (ManipulatorSavedPosition, optional): saved needle position. Defaults to ManipulatorSavedPosition.PARK.
     """
     needle = microscope.specimen.manipulator
-    logging.info(f"inserting needle to {insert_position.explain} position.")
+    # logging.info(f"inserting needle to {insert_position.explain} position.")
     insert_position = needle.get_saved_position(insert_position, ManipulatorCoordinateSystem.RAW
     )
     needle.insert(insert_position)
@@ -87,6 +87,21 @@ def move_needle_closer(
     # The park position is always the same,
     # so the needletip will end up about 20 microns from the surface.
     logging.info(f"movement: move needle closer complete.")
+
+
+
+def move_needle_to_eucentric_position_offset(microscope:SdbMicroscopeClient, dx: float = 0.0, dy: float = 0.0 , dz:float = 0.0) -> None:
+# move to just above the eucentric point
+    eucentric_position = microscope.specimen.manipulator.get_saved_position(
+        ManipulatorSavedPosition.EUCENTRIC, ManipulatorCoordinateSystem.STAGE
+    )
+    yz_move = z_corrected_needle_movement(dz, microscope.specimen.stage.current_position.t)
+    eucentric_position.x += dx
+    eucentric_position.y += yz_move.y
+    eucentric_position.z += yz_move.z  # RAW, up = negative, STAGE: down = negative
+    microscope.specimen.manipulator.absolute_move(eucentric_position)
+
+
 
 
 def x_corrected_needle_movement(
@@ -408,16 +423,7 @@ def move_needle_relative_with_corrected_movement(
 
     # xz,
     if beam_type is BeamType.ION:
-        # z- is divided by cos... then multipled by cos.. no change?
-        # calculate shift in xyz coordinates
-        # z_distance = dy / np.cos(stage_tilt)  # TODO: needle to check this
 
-        # TODO: this is used for land lamella
-        # z_distance = -det.distance_metres.y / np.sin(
-        #     np.deg2rad(settings["system"]["stage_tilt_flat_to_ion"])
-        # )
-
-        # Calculate movement
         x_move = x_corrected_needle_movement(expected_x=dx, stage_tilt=stage_tilt)
         yz_move = z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
 

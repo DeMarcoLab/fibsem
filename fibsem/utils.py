@@ -6,8 +6,8 @@ import yaml
 import json
 
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from fibsem import movement
 from pathlib import Path
+from liftout import actions
 
 def connect_to_microscope(ip_address="10.0.0.1"):
     """Connect to the FIBSEM microscope."""
@@ -24,7 +24,7 @@ def connect_to_microscope(ip_address="10.0.0.1"):
     return microscope
 
 
-def sputter_platinum(microscope, settings, whole_grid=False):
+def sputter_platinum(microscope:SdbMicroscopeClient, settings:dict, whole_grid: bool = False):
     """Sputter platinum over the sample.
     Parameters
     ----------
@@ -35,15 +35,15 @@ def sputter_platinum(microscope, settings, whole_grid=False):
     """
 
     if whole_grid:
-        movement.move_to_sample_grid(microscope, settings)
-        sputter_time = settings["platinum"]["whole_grid"]["time"]  # 20
-        hfw = settings["platinum"]["whole_grid"]["hfw"]  # 30e-6
-        line_pattern_length = settings["platinum"]["whole_grid"]["length"]  # 7e-6
+        actions.move_to_sample_grid(microscope, settings)
+        sputter_time = settings["protocol"]["platinum"]["whole_grid"]["time"]  # 20
+        hfw = settings["protocol"]["platinum"]["whole_grid"]["hfw"]  # 30e-6
+        line_pattern_length = settings["protocol"]["platinum"]["whole_grid"]["length"]  # 7e-6
         logging.info("sputtering platinum over the whole grid.")
     else:
-        sputter_time = settings["platinum"]["weld"]["time"]  # 20
-        hfw = settings["platinum"]["weld"]["hfw"]  # 100e-6
-        line_pattern_length = settings["platinum"]["weld"]["length"]  # 15e-6
+        sputter_time = settings["protocol"]["platinum"]["weld"]["time"]  # 20
+        hfw = settings["protocol"]["platinum"]["weld"]["hfw"]  # 100e-6
+        line_pattern_length = settings["protocol"]["platinum"]["weld"]["length"]  # 15e-6
         logging.info("sputtering platinum to weld.")
 
     # Setup
@@ -51,12 +51,12 @@ def sputter_platinum(microscope, settings, whole_grid=False):
     microscope.imaging.set_active_view(1)  # the electron beam view
     microscope.patterning.clear_patterns()
     microscope.patterning.set_default_application_file(
-        settings["platinum"]["application_file"]
+        settings["protocol"]["platinum"]["application_file"]
     )  # sputter_application_file)
     microscope.patterning.set_default_beam_type(1)  # set electron beam for patterning
     multichem = microscope.gas.get_multichem()
-    multichem.insert(settings["platinum"]["position"])
-    multichem.turn_heater_on(settings["platinum"]["gas"])  # "Pt cryo")
+    multichem.insert(settings["protocol"]["platinum"]["position"])
+    multichem.turn_heater_on(settings["protocol"]["platinum"]["gas"])  # "Pt cryo")
     time.sleep(3)
 
     # Create sputtering pattern
