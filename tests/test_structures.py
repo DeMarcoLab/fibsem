@@ -38,7 +38,7 @@ def beam_settings() -> BeamSettings:
         hfw=150e-6,
         resolution="1536x1024",
         dwell_time=1.0e-6,
-        stigmation=1.0e-6,
+        # stigmation=1.0e-6,
     )
 
     return beam_settings
@@ -148,7 +148,7 @@ def test_beam_settings_to_dict(beam_settings: BeamSettings):
     assert beam_settings.hfw == beam_settings_dict["hfw"]
     assert beam_settings.resolution == beam_settings_dict["resolution"]
     assert beam_settings.dwell_time == beam_settings_dict["dwell_time"]
-    assert beam_settings.stigmation == beam_settings_dict["stigmation"]
+    # assert beam_settings.stigmation == beam_settings_dict["stigmation"]
 
 
 def test_beam_settings_from_dict():
@@ -171,7 +171,7 @@ def test_beam_settings_from_dict():
     assert beam_settings.hfw == beam_settings_dict["hfw"]
     assert beam_settings.resolution == beam_settings_dict["resolution"]
     assert beam_settings.dwell_time == beam_settings_dict["dwell_time"]
-    assert beam_settings.stigmation == beam_settings_dict["stigmation"]
+    # assert beam_settings.stigmation == beam_settings_dict["stigmation"]
 
 
 def test_microscope_state_to_dict(microscope_state: MicroscopeState):
@@ -192,7 +192,7 @@ def test_microscope_state_to_dict(microscope_state: MicroscopeState):
     assert microscope_state.eb_settings.hfw == state_dict["eb_settings"]["hfw"]
     assert microscope_state.eb_settings.resolution == state_dict["eb_settings"]["resolution"]
     assert microscope_state.eb_settings.dwell_time == state_dict["eb_settings"]["dwell_time"]
-    assert microscope_state.eb_settings.stigmation == state_dict["eb_settings"]["stigmation"]
+    # assert microscope_state.eb_settings.stigmation == state_dict["eb_settings"]["stigmation"]
     
     assert microscope_state.ib_settings.beam_type == BeamType[state_dict["ib_settings"]["beam_type"]]
     assert microscope_state.ib_settings.working_distance == state_dict["ib_settings"]["working_distance"]
@@ -200,7 +200,7 @@ def test_microscope_state_to_dict(microscope_state: MicroscopeState):
     assert microscope_state.ib_settings.hfw == state_dict["ib_settings"]["hfw"]
     assert microscope_state.ib_settings.resolution == state_dict["ib_settings"]["resolution"]
     assert microscope_state.ib_settings.dwell_time == state_dict["ib_settings"]["dwell_time"]
-    assert microscope_state.ib_settings.stigmation == state_dict["ib_settings"]["stigmation"]
+    # assert microscope_state.ib_settings.stigmation == state_dict["ib_settings"]["stigmation"]
 
     return NotImplemented
 
@@ -260,7 +260,7 @@ def test_microscope_state_from_dict():
     assert microscope_state.eb_settings.hfw == state_dict["eb_settings"]["hfw"]
     assert microscope_state.eb_settings.resolution == state_dict["eb_settings"]["resolution"]
     assert microscope_state.eb_settings.dwell_time == state_dict["eb_settings"]["dwell_time"]
-    assert microscope_state.eb_settings.stigmation == state_dict["eb_settings"]["stigmation"]
+    # assert microscope_state.eb_settings.stigmation == state_dict["eb_settings"]["stigmation"]
     
     assert microscope_state.ib_settings.beam_type == BeamType[state_dict["ib_settings"]["beam_type"]]
     assert microscope_state.ib_settings.working_distance == state_dict["ib_settings"]["working_distance"]
@@ -268,7 +268,7 @@ def test_microscope_state_from_dict():
     assert microscope_state.ib_settings.hfw == state_dict["ib_settings"]["hfw"]
     assert microscope_state.ib_settings.resolution == state_dict["ib_settings"]["resolution"]
     assert microscope_state.ib_settings.dwell_time == state_dict["ib_settings"]["dwell_time"]
-    assert microscope_state.ib_settings.stigmation == state_dict["ib_settings"]["stigmation"]
+    # assert microscope_state.ib_settings.stigmation == state_dict["ib_settings"]["stigmation"]
 
 
 def test_gamma_settings_from_dict():

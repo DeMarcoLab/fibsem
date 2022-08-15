@@ -215,6 +215,15 @@ class MillingSettings:
     @classmethod
     def __from_dict__(self, settings: dict) -> 'MillingSettings':
 
+        if "centre_x" not in settings:
+            settings["centre_x"] = 0
+        if "centre_y" not in settings:
+            settings["centre_y"] = 0
+        if "scan_direction" not in settings:
+            settings["scan_direction"] = "TopToBottom"
+        if "cleaning_cross_section" not in settings:
+            settings["cleaning_cross_section"] = False
+        
         milling_settings = MillingSettings(
             width=settings["width"],
             height=settings["height"],
