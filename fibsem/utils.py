@@ -7,7 +7,7 @@ import json
 
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from pathlib import Path
-from liftout import actions
+
 
 def connect_to_microscope(ip_address="10.0.0.1"):
     """Connect to the FIBSEM microscope."""
@@ -35,6 +35,7 @@ def sputter_platinum(microscope:SdbMicroscopeClient, settings:dict, whole_grid: 
     """
 
     if whole_grid:
+        from liftout import actions # TODO: remove from fibsem??
         actions.move_to_sample_grid(microscope, settings)
         sputter_time = settings["protocol"]["platinum"]["whole_grid"]["time"]  # 20
         hfw = settings["protocol"]["platinum"]["whole_grid"]["hfw"]  # 30e-6

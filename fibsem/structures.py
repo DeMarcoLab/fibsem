@@ -24,11 +24,11 @@ class BeamType(Enum):
 
 @dataclass
 class GammaSettings:
-    enabled: bool
-    min_gamma: float
-    max_gamma: float
-    scale_factor: float
-    threshold: int  # px
+    enabled: bool = False
+    min_gamma: float = 0.0
+    max_gamma: float = 2.0
+    scale_factor: float = 0.1
+    threshold: int  = 45 #px
 
     @classmethod
     def __from_dict__(self, settings: dict) -> 'GammaSettings':
@@ -56,10 +56,22 @@ class ImageSettings:
     @classmethod
     def __from_dict__(self, settings: dict) -> 'ImageSettings':
 
+        if "autoconstrast" not in settings:
+            settings["autocontrast"] = False
+        if "save" not in settings: 
+            settings["save"] = False
         if "save_path" not in settings:
             settings["save_path"] = ""
         if "label" not in settings:
             settings["label"] = ""
+        if "gamma" not in settings:
+            settings["gamma"] = {
+                "enabled": False,
+                "min_gamma": 0.0,
+                "max_gamma": 2.0,
+                "scale_factor": 0.1,
+                "threshold": 45,
+            }
 
         image_settings = ImageSettings(
             resolution=settings["resolution"],
