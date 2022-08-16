@@ -233,6 +233,34 @@ def flat_to_beam(
 
     return
 
+
+def rotation_angle_is_large(angle1:float , angle2: float) -> bool:
+    """Check the rotation angles are large
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+
+    Returns:
+        bool: _description_
+    """
+
+    return angle_difference(angle1, angle2) > (np.pi / 2) # 90deg
+
+def angle_difference(angle1: float, angle2: float) -> float:
+    """Return the difference between two angles
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+
+    Returns:
+        float: _description_
+    """
+    return min(np.abs(2*np.pi + angle1 - angle2), np.abs(angle1 - angle2)) % (2*np.pi)
+
+
+
 def check_tilt_flat_for_large_rotation(microscope: SdbMicroscopeClient, stage_position: StagePosition):
     """Tilt the stage flat when performing a large rotation to prevent collision.
 
@@ -244,7 +272,8 @@ def check_tilt_flat_for_large_rotation(microscope: SdbMicroscopeClient, stage_po
     stage_settings = MoveSettings(rotate_compucentric=True)
 
     # tilt flat for large rotations to prevent collisions
-    if abs(np.rad2deg(stage_position.r - stage.current_position.r)) % 360 > 90:
+    if rotation_angle_is_large(stage_position.r, stage.current_position.r):
+
         stage.absolute_move(
             StagePosition(t=np.deg2rad(0), 
             coordinate_system=stage_position.coordinate_system
