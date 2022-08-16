@@ -1,12 +1,15 @@
 import datetime
+import glob
+import json
 import logging
 import os
 import time
-import yaml
-import json
-
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from pathlib import Path
+
+import yaml
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from autoscript_sdb_microscope_client.structures import AdornedImage
+from PIL import Image
 
 
 def connect_to_microscope(ip_address="10.0.0.1"):
@@ -35,7 +38,7 @@ def sputter_platinum(microscope:SdbMicroscopeClient, settings:dict, whole_grid: 
     """
 
     if whole_grid:
-        from liftout import actions # TODO: remove from fibsem??
+        from liftout import actions  # TODO: remove from fibsem??
         actions.move_to_sample_grid(microscope, settings)
         sputter_time = settings["protocol"]["platinum"]["whole_grid"]["time"]  # 20
         hfw = settings["protocol"]["platinum"]["whole_grid"]["hfw"]  # 30e-6
@@ -131,3 +134,12 @@ def save_metadata(settings, path):
     fname = os.path.join(path, "metadata.json")
     with open(fname, "w") as fp:
         json.dump(settings, fp, sort_keys=True, indent=4)
+
+
+def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
+    filenames = glob.glob(os.path.join(path, search))
+
+    imgs = [Image.fromarray(AdornedImage.load(fname).data) for fname in filenames]
+
+    print(f"{len(filenames)} images added to gif.")
+    imgs[0].save(os.path.join(path, f"{gif_fname}.gif"), save_all=True, append_images=imgs[1:], loop=loop)

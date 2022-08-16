@@ -1,7 +1,7 @@
 
 
 
-# sputtering rates
+# sputtering rates, from microscope application files
 MILLING_SPUTTER_RATE = {
     20e-12: 6.85e-3,  # 30kv
     0.2e-9: 6.578e-2,  # 30kv
@@ -11,10 +11,5 @@ MILLING_SPUTTER_RATE = {
     2.4e-9: 1.309,  # 20kv
     6.2e-9: 2.907,  # 20kv
     7.6e-9: 3.041,  # 30kv
+    28e-9: 1.18e1   # 30 kv
 }
-# 0.89nA : 3.920e-1 um3/s
-# 2.4nA : 1.309e0 um3/s
-# 6.2nA : 2.907e0 um3/s # from microscope application files
-
-# 30kV
-# 7.6nA: 3.041e0 um3/s

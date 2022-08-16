@@ -84,14 +84,20 @@ def align_using_reference_images(
     logging.info(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."
     )
-    lp_px = int(max(new_image.data.shape) * 0.66)
-    hp_px = int(max(new_image.data.shape) / 64)
+    # lp_px = int(max(new_image.data.shape) * 0.66)
+    # hp_px = int(max(new_image.data.shape) / 64)
     sigma = 6
+    lp_px = int(max(new_image.data.shape) / 6)
+    hp_px = int(max(new_image.data.shape) / 256)
 
-    dx, dy, _ = shift_from_crosscorrelation(
+    dx, dy, xcorr = shift_from_crosscorrelation(
         ref_image, new_image, lowpass=lp_px, highpass=hp_px, sigma=sigma, 
         use_rect_mask=True, ref_mask=ref_mask
     )
+
+    from liftout import utils
+    utils.plot_crosscorrelation(ref_image, new_image, dx, dy, xcorr)
+
 
     shift_within_tolerance = check_shift_within_tolerance(
         dx=dx, dy=dy, ref_image=ref_image, limit=0.5
@@ -199,6 +205,12 @@ def crosscorrelation(img1: np.ndarray, img2: np.ndarray,
         
         img2ft = n_pixels * img2ft / np.sqrt(tmp.sum())
 
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 2, figsize=(15, 15))
+        ax[0].imshow(fftpack.ifft2(img1ft).real)
+        ax[1].imshow(fftpack.ifft2(img2ft).real)
+        plt.show()
+
         xcorr = np.real(fftpack.fftshift(fftpack.ifft2(img1ft * np.conj(img2ft))))
     else: # TODO: why are these different...
         img1ft = fftpack.fft2(img1)
@@ -279,16 +291,6 @@ def measure_brightness(img: AdornedImage) -> float:
     
     return np.mean(img.data)
 
-def measure_brightness_old(img: AdornedImage, crop_size: int = None) -> float:
-    cx, cy = img.data.shape[1] //2, img.data.shape[0] // 2
-
-    if crop_size is not None:
-        img = img.data[cy-crop_size:cy+crop_size, cx-crop_size:cx+crop_size]
-    else:
-        img = img.data
-
-    return np.mean(img), img
-
 def rotate_AdornedImage(image: AdornedImage):
     """Rotate the AdornedImage 180 degrees."""
     data = np.rot90(np.rot90(np.copy(image.data)))
@@ -326,6 +328,7 @@ def cosine_stretch(img: AdornedImage, tilt_degrees: float):
     from PIL import Image
 
     resized_img = np.asarray(Image.fromarray(img.data).resize(size=(shape[1], shape[0])))
+    
     # crop centre out?
     c = Point(resized_img.shape[1]//2, resized_img.shape[0]//2)
     dy, dx = img.data.shape[0]//2, img.data.shape[1]//2
@@ -561,7 +564,7 @@ def automatic_eucentric_correction(
 
     # turn on z-y linked movement # NB: cant do this through API
     microscope.specimen.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
-
+    
     eucentric_position = StagePosition(z=eucentric_height)
     movement.safe_absolute_stage_movement(microscope, eucentric_position)
 
@@ -635,6 +638,9 @@ def automatic_eucentric_correction_v2(
     # TODO: do we want to align in x too?
 
     return
+
+
+
 
 
 

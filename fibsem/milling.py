@@ -35,7 +35,7 @@ def setup_milling(
     microscope: SdbMicroscopeClient,
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
-    hfw:float = 100e-6,
+    hfw:float = 150e-6,
 ):
     """Setup Microscope for Ion Beam Milling.
 
@@ -72,10 +72,10 @@ def run_milling(
         asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
     """   
     # change to milling current
-    microscope.imaging.set_active_view(2)  # the ion beam view
+    microscope.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
     if microscope.beams.ion_beam.beam_current.value != milling_current:
         # if milling_current not in microscope.beams.ion_beam.beam_current.available_values:
-        #   switch to closest
+        #   switch to closest # TODO: add check here
         logging.info(f"changing to milling current: {milling_current:.2e}")
         microscope.beams.ion_beam.beam_current.value = milling_current
 
@@ -132,6 +132,8 @@ def read_protocol_dictionary(settings: dict, stage_name: str) -> list[dict]:
 
 def calculate_milling_time(patterns: list, milling_current: float) -> float:
 
+    # TODO: replace with estimate_milling_time_in_seconds
+    # TODO: interpolate between levels?
     from fibsem import config 
 
     # volume (width * height * depth) / total_volume_sputter_rate
@@ -159,6 +161,22 @@ def calculate_milling_time(patterns: list, milling_current: float) -> float:
     logging.info(f"Milling Estimated Time: {milling_time_seconds / 60:.2f}m")
 
     return milling_time_seconds
+
+def estimate_milling_time_in_seconds(milling_stage_patterns: list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]) -> float:
+    """Calculate the estimated milling time for all milling patterns in a milling stage.
+
+    Args:
+        milling_stage_patterns (list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]): milling patterns for each stage
+
+    Returns:
+        float: estimated milling time (seconds)
+    """
+    total_time_seconds = 0
+    for patterns in milling_stage_patterns:
+        for pattern in patterns:
+            total_time_seconds += pattern.time
+    
+    return total_time_seconds
 
 ### PATTERNING
 
@@ -222,18 +240,3 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
     return pattern
 
 
-def estimate_milling_time_in_seconds(milling_stage_patterns: list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]) -> float:
-    """Calculate the estimated milling time for all milling patterns in a milling stage.
-
-    Args:
-        milling_stage_patterns (list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]): milling patterns for each stage
-
-    Returns:
-        float: estimated milling time (seconds)
-    """
-    total_time_seconds = 0
-    for patterns in milling_stage_patterns:
-        for pattern in patterns:
-            total_time_seconds += pattern.time
-    
-    return total_time_seconds
