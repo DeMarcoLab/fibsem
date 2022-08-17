@@ -149,14 +149,7 @@ class MicroscopeState:
 
         state_dict = {
             "timestamp": self.timestamp,
-            "absolute_position": {
-                "x": self.absolute_position.x,
-                "y": self.absolute_position.y,
-                "z": self.absolute_position.z,
-                "r": self.absolute_position.r,
-                "t": self.absolute_position.t,
-                "coordinate_system": self.absolute_position.coordinate_system,
-            },
+            "absolute_position": stage_position_to_dict(self.absolute_position), 
             "eb_settings": self.eb_settings.__to_dict__(),
             "ib_settings": self.ib_settings.__to_dict__(),
         }
@@ -168,14 +161,7 @@ class MicroscopeState:
         # TOOD: class method
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
-            absolute_position=StagePosition(
-                x=state_dict["absolute_position"]["x"],
-                y=state_dict["absolute_position"]["y"],
-                z=state_dict["absolute_position"]["z"],
-                r=state_dict["absolute_position"]["r"],
-                t=state_dict["absolute_position"]["t"],
-                coordinate_system=state_dict["absolute_position"]["coordinate_system"],
-            ),
+            absolute_position=stage_position_from_dict(state_dict["absolute_position"]),
             eb_settings=BeamSettings.__from_dict__(state_dict["eb_settings"]),
             ib_settings=BeamSettings.__from_dict__(state_dict["ib_settings"]),
         )

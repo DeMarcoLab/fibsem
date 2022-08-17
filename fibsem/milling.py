@@ -10,27 +10,6 @@ from typing import Union
 
 ########################### SETUP 
 
-# TODO: remove, unused?
-def reset_state(microscope: SdbMicroscopeClient, settings: dict, application_file=None):
-    """Reset the microscope state.
-    Parameters
-    ----------
-    microscope : Autoscript microscope object.
-    settings :  Dictionary of user input argument settings.
-    application_file : str, optional
-        Name of the application file for milling, by default None
-    """
-    microscope.patterning.clear_patterns()
-    if application_file:  # optionally specified
-        microscope.patterning.set_default_application_file(application_file)
-    microscope.beams.ion_beam.scanning.resolution.value = settings["imaging"]["resolution"]
-    microscope.beams.ion_beam.scanning.dwell_time.value = settings["imaging"]["dwell_time"]
-    microscope.beams.ion_beam.horizontal_field_width.value =  settings["imaging"]["horizontal_field_width"]
-    microscope.imaging.set_active_view(2)  # the ion beam view
-    microscope.patterning.set_default_beam_type(2)  # ion beam default
-    return microscope
-
-
 def setup_milling(
     microscope: SdbMicroscopeClient,
     application_file: str = "autolamella",

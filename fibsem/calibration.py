@@ -167,21 +167,18 @@ def shift_from_crosscorrelation(
 
 def crosscorrelation(img1: np.ndarray, img2: np.ndarray,  
     lp: int = 128, hp: int = 6, sigma: int = 6, bp: bool = False) -> np.ndarray:
-    """_summary_
+    """Cross-correlate images (fourier convolution matching)
 
     Args:
         img1 (np.ndarray): reference_image
         img2 (np.ndarray): new image
-        lp (int, optional): _description_. Defaults to 128.
-        hp (int, optional): _description_. Defaults to 6.
-        sigma (int, optional): _description_. Defaults to 6.
-        bp (bool, optional): _description_. Defaults to False.
-
-    Raises:
-        ValueError: _description_
+        lp (int, optional): lowpass. Defaults to 128.
+        hp (int, optional): highpass . Defaults to 6.
+        sigma (int, optional): sigma (gaussian blur). Defaults to 6.
+        bp (bool, optional): use a bandpass. Defaults to False.
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: crosscorrelation map
     """
     if img1.shape != img2.shape:
         err = f"Image 1 {img1.shape} and Image 2 {img2.shape} need to have the same shape"
@@ -340,9 +337,6 @@ def cosine_stretch(img: AdornedImage, tilt_degrees: float):
 
     return AdornedImage(data=scaled_img, metadata=img.metadata)
 
-
-
-
 ### MASKING
 def bandpass_mask(size=(128, 128), lp=32, hp=2, sigma=3):
     x = size[0]
@@ -374,6 +368,62 @@ def circ_mask(size=(128, 128), radius=32, sigma=3):
     else:
         mask = tmp
     return mask
+
+# new masks below
+def create_distance_map_px(w: int, h: int) -> np.ndarray:
+    x = np.arange(0, w)
+    y = np.arange(0, h)
+
+    X, Y = np.meshgrid(x, y)
+    distance = np.sqrt(((w / 2) - X) ** 2 + ((h / 2) - Y) ** 2)
+
+    return distance
+
+def create_circle_mask(shape: tuple = (128, 128), radius: int = 32, sigma: int = 3) -> np.ndarray:
+    """_summary_
+
+    Args:
+        shape (tuple, optional): _description_. Defaults to (128, 128).
+        radius (int, optional): _description_. Defaults to 32.
+        sigma (int, optional): _description_. Defaults to 3.
+
+    Returns:
+        np.ndarray: _description_
+    """
+    distance = create_distance_map_px(w = shape[1], h=shape[0])
+    mask = distance <= radius
+
+    if sigma:
+        mask = ndi.filters.gaussian_filter(mask, sigma=sigma)
+
+    return mask
+
+
+def create_bandpass_mask(shape: tuple = (256, 256), lp: int = 32, hp: int = 2, sigma: int = 3) -> np.ndarray:
+    """_summary_
+
+    Args:
+        shape (tuple, optional): _description_. Defaults to (256, 256).
+        lp (int, optional): _description_. Defaults to 32.
+        hp (int, optional): _description_. Defaults to 2.
+        sigma (int, optional): _description_. Defaults to 3.
+
+    Returns:
+        np.ndarray: _description_
+    """
+    distance = create_distance_map_px(w = shape[1], h=shape[0])
+    
+    lowpass = distance <= lp
+    highpass = distance >= hp
+
+    mask = lowpass * highpass
+    
+    if sigma:
+        mask = ndi.filters.gaussian_filter(mask, sigma=sigma)
+
+    return mask
+
+
 
 
 # FROM AUTOLAMELLA
@@ -417,19 +467,23 @@ def apply_image_mask(img: AdornedImage, mask: np.ndarray) -> np.ndarray:
     return normalise_image(img) * mask
 
 
-def create_rect_mask(img: np.ndarray, pt: Point, w: int, h: int, sigma: int = 0) -> np.ndarray:
+def create_rect_mask(img: np.ndarray, w: int, h: int, sigma: int = 0, pt: Point= None) -> np.ndarray:
     """Create a rectangular mask at centred at the desired point.
 
     Args:
         img (np.ndarray): Image to be masked
-        pt (Point): Mask centre point
         w (int): mask width
         h (int): mask height
         sigma (int, optional): gaussian blur to apply to mask (softness). Defaults to 0.
+        pt (Point): Mask centre point. Defaults to None
 
     Returns:
         np.ndarray: mask
     """
+    # centre mask point
+    if pt is None:
+        pt = Point(img.data.shape[1]//2, img.data.shape[0]//2)
+
     mask = np.zeros_like(img)
 
     y_min, y_max = int(np.clip(pt.y-h/2, 0, img.shape[1])), int(np.clip(pt.y+h/2, 0, img.shape[1]))
@@ -442,7 +496,7 @@ def create_rect_mask(img: np.ndarray, pt: Point, w: int, h: int, sigma: int = 0)
 
     return mask 
 
-def create_lamella_mask(img: AdornedImage, settings: dict, factor: int = 2, circ: bool = True, pt: Point = None, use_lamella_height: bool = False) -> np.ndarray:
+def create_lamella_mask(img: AdornedImage, settings: dict, factor: int = 2, circ: bool = False, pt: Point = None, use_trench_height: bool = False) -> np.ndarray:
     """Create a mask based on the size of the lamella
 
     Args:
@@ -457,24 +511,8 @@ def create_lamella_mask(img: AdornedImage, settings: dict, factor: int = 2, circ
         np.ndarray: _description_
     """
 
-    # centre mask point
-    if pt is None:
-        pt = Point(img.data.shape[1]//2, img.data.shape[0]//2)
-
-    # get real size from protocol
-    lamella_width = settings["protocol"]["lamella"]["lamella_width"]
-    if use_lamella_height:
-        lamella_height = settings["protocol"]["lamella"]["lamella_height"]
-    else:
-        lamella_height = settings["protocol"]["lamella"]["protocol_stages"][0]["trench_height"]
-        
-    # convert to px
-    pixelsize = img.metadata.binary_result.pixel_size.x
-    vfw = img.height * pixelsize
-    hfw = img.width * pixelsize
-    
-    lamella_height_px = int((lamella_height / vfw) * img.height) 
-    lamella_width_px = int((lamella_width / hfw) * img.width) 
+    # get the size of the lamella in pixels
+    lamella_height_px, lamella_width_px = get_lamella_size_in_pixels(img, settings, use_trench_height)
 
     if circ:
         mask = circ_mask(
@@ -489,34 +527,44 @@ def create_lamella_mask(img: AdornedImage, settings: dict, factor: int = 2, circ
 
     return mask
 
-## AUTO ALIGNMENTS
-def beam_shift_alignment(
-    microscope: SdbMicroscopeClient,
-    image_settings: ImageSettings,
-    ref_image: AdornedImage,
-    reduced_area,
-):
-    """Align the images by adjusting the beam shift, instead of moving the stage
-            (increased precision, lower range)
+
+
+
+def get_lamella_size_in_pixels(img: AdornedImage, settings: dict, use_trench_height: bool = False) -> tuple[int]:
+    """Get the relative size of the lamella in pixels based on the hfw of the image.
 
     Args:
-        microscope (SdbMicroscopeClient): autoscript microscope client
-        image_settings (acquire.ImageSettings): settings for taking image
-        ref_image (AdornedImage): reference image to align to
-        reduced_area (Rectangle): The reduced area to image with.
+        img (AdornedImage): reference image
+        settings (dict): settings dictionary
+        use_lamella_height (bool, optional): get the height of the lamella (True), or Trench. Defaults to False.
+
+    Returns:
+        tuple[int]: _description_
     """
+    # get real size from protocol
+    lamella_width = settings["protocol"]["lamella"]["lamella_width"]
+    lamella_height = settings["protocol"]["lamella"]["lamella_height"]
+        
+    total_height = lamella_height
+    if use_trench_height:
+        trench_height = settings["protocol"]["lamella"]["protocol_stages"][0]["trench_height"]
+        total_height += 2 * trench_height
 
-    # # align using cross correlation
-    img1 = ref_image
-    img2 = acquire.new_image(
-        microscope, settings=image_settings, reduced_area=reduced_area
-    )
-    dx, dy, _ = shift_from_crosscorrelation(
-        img1, img2, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
-    )
+    # convert to px
+    pixelsize = img.metadata.binary_result.pixel_size.x
+    vfw = img.height * pixelsize
+    hfw = img.width * pixelsize
+    
+    lamella_height_px = int((total_height / vfw) * img.height) 
+    lamella_width_px = int((lamella_width / hfw) * img.width) 
 
-    # adjust beamshift
-    microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
+    return (lamella_height_px, lamella_width_px)
+
+
+
+
+## AUTO ALIGNMENTS
+
 
 def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> None:
     """Automatically focus and link sample stage z-height.
@@ -538,109 +586,6 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
     # NOTE: replace with auto_focus_and_link if performance of focus is poor
     # # Restore original settings
     microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
-
-
-
-def automatic_eucentric_correction(
-    microscope: SdbMicroscopeClient,
-    settings: dict,
-    image_settings: ImageSettings,
-    eucentric_height: float = 3.9e-3,
-):
-    """Automatic procedure to reset to the eucentric position
-
-    Args:
-        microscope (SdbMicroscopeClient): autoscript microscope client connection
-        settings (dict): configuration dictionary
-        image_settings (ImageSettings): imaging settings
-        eucentric_height (float, optional): manually calibrated eucentric height. Defaults to 3.9e-3.
-    """
-
-    # autofocus in eb
-    auto_link_stage(microscope)
-
-    # move stage to z=3.9
-    microscope.specimen.stage.set_default_coordinate_system()
-
-    # turn on z-y linked movement # NB: cant do this through API
-    microscope.specimen.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
-    
-    eucentric_position = StagePosition(z=eucentric_height)
-    movement.safe_absolute_stage_movement(microscope, eucentric_position)
-
-    # retake images to check
-    acquire.take_reference_images(microscope, image_settings)
-
-
-def automatic_eucentric_correction_v2(
-    microscope: SdbMicroscopeClient, settings: dict, image_settings: ImageSettings
-) -> None:
-
-    # assume the feature of interest is on the image centre.
-    
-    # TODO: get user to manually centre?
-        
-    # iterative eucentric alignment
-
-    hfw = 900e-6
-    tolerance = 5.0e-6
-    iteration = 0
-    
-    while True:
-
-        # take low res reference image
-        image_settings.hfw = hfw
-        ref_eb, ref_ib = acquire.take_reference_images(microscope, image_settings)
-
-        # calculate cross correlation...
-        # x = horizontal, y = vertical
-
-        # THESE ARE AT DIFFERENCE ANGLES??
-
-
-        # align using cross correlation
-        dx, dy, _ = shift_from_crosscorrelation(
-            ref_eb, ref_ib, use_rect_mask=True
-        )
-
-        # stop if both are within tolernace
-        if dy <= tolerance:
-            break
-
-        # move z??
-        movement.move_stage_eucentric_correction(
-            microscope, settings, dy=dy, beam_type=BeamType.ION
-        )
-
-        # align eb (cross correlate) back to original ref (move eb back to centre)
-        image_settings.beam_type = BeamType.ELECTRON
-        new_eb = acquire.new_image(microscope, image_settings, reduced_area=None)
-        dx, dy, _ = shift_from_crosscorrelation(
-            ref_eb, new_eb, lowpass=128, highpass=6, sigma=6, use_rect_mask=True
-        )
-
-        # move feature back to centre of eb
-        movement.move_stage_relative_with_corrected_movement(
-            microscope =microscope,
-            settings=settings,
-            dx=dx, dy=dy, beam_type=BeamType.ELECTRON)
-
-        # repeat
-        hfw = hfw / 2
-
-        # increase count
-        iteration += 1
-
-        if iteration == 5:
-            # unable to align within given iterations
-            break
-
-    # TODO: do we want to align in x too?
-
-    return
-
-
-
 
 
 
