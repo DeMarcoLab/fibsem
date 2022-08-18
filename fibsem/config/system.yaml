@@ -2,7 +2,10 @@
 ip_address: 10.0.0.1
 application_file: "autolamella"
 plasma_gas: "Argon" # proper case, e.g. Argon, Oxygen
-high_voltage: 30000 # ib, volts
+ion_voltage: 30000 # ib, volts
+electron_voltage: 2000 # eb, volts
+ion_current: 20.e-12
+electron_current: 1.0e-12
 # stage
 rotation_flat_to_electron: 50 # degrees
 rotation_flat_to_ion: 230 # degrees

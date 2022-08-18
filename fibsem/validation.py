@@ -2,8 +2,8 @@ import logging
 
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
-from fibsem import calibration, acquire
-from fibsem.structures import BeamType, ImageSettings, MicroscopeState, CalibrationSettings
+from fibsem import calibration, acquire, movement
+from fibsem.structures import BeamType, ImageSettings, MicroscopeState, CalibrationSettings, MicroscopeSettings
 import numpy as np
 
 # TODO: change to SystemSettings, CalibrationSettings, ImagingSettings
@@ -66,20 +66,13 @@ def validate_initial_microscope_state(
 
 # TODO: finish this...
 def validate_initial_microscope_state_v2(
-    microscope: SdbMicroscopeClient, calibration_settings: CalibrationSettings, image_settings: ImageSettings
+    microscope: SdbMicroscopeClient, settings: MicroscopeSettings
 ) -> None:
     """Set the initial microscope state to default, and validate other settings."""
 
-    # TODO: add validation checks for dwell time and resolution
-    logging.info(
-        f"Electron voltage: {microscope.beams.electron_beam.high_voltage.value:.2f}"
-    )
-    logging.info(
-        f"Electron current: {microscope.beams.electron_beam.beam_current.value:.2f}"
-    )
-
     # set default microscope state
-    set_initial_microscope_state(microscope, calibration_settings, image_settings)
+    set_initial_microscope_state(microscope, settings)
+
     # validate chamber state
     validate_chamber(microscope=microscope)
 
@@ -97,19 +90,22 @@ def validate_initial_microscope_state_v2(
 
 
 # TODO: should this be MicroscopeState instead?
-def set_initial_microscope_state(microscope: SdbMicroscopeClient, calibration_settings: CalibrationSettings, image_settings: ImageSettings) ->  None:
+def set_initial_microscope_state(microscope: SdbMicroscopeClient, settings: MicroscopeSettings) ->  None:
 
     # set default microscope state
     microscope.specimen.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
     
-    microscope.beams.ion_beam.beam_current.value = calibration_settings.imaging_current
-    microscope.beams.ion_beam.horizontal_field_width.value = image_settings.hfw
-    microscope.beams.ion_beam.scanning.resolution.value = image_settings.resolution
-    microscope.beams.ion_beam.scanning.dwell_time.value = image_settings.dwell_time
+    microscope.beams.ion_beam.high_voltage.value = settings.system.ion_voltage
+    microscope.beams.ion_beam.beam_current.value = settings.system.ion_current
+    microscope.beams.ion_beam.horizontal_field_width.value = settings.image_settings.hfw
+    microscope.beams.ion_beam.scanning.resolution.value = settings.image_settings.resolution
+    microscope.beams.ion_beam.scanning.dwell_time.value = settings.image_settings.dwell_time
 
-    microscope.beams.electron_beam.horizontal_field_width.value = image_settings.hfw
-    microscope.beams.electron_beam.scanning.resolution.value = image_settings.resolution
-    microscope.beams.electron_beam.scanning.dwell_time.value = image_settings.dwell_time
+    microscope.beams.electron_beam.high_voltage.value = settings.system.electron_voltage
+    microscope.beams.electron_beam.beam_current.value = settings.system.electron_current
+    microscope.beams.electron_beam.horizontal_field_width.value = settings.image_settings.hfw
+    microscope.beams.electron_beam.scanning.resolution.value = settings.image_settings.resolution
+    microscope.beams.electron_beam.scanning.dwell_time.value = settings.image_settings.dwell_time
 
     return
 
@@ -153,7 +149,7 @@ def validate_needle_calibration(microscope: SdbMicroscopeClient) -> None:
         logging.info("Needle is retracted")
     else:
         logging.warning("Needle is inserted. Please retract before starting.")
-        # TODO: retract automatically?
+        # movement.retract_needle() # TODO: decide whether or not to do this
 
     # TODO: calibrate needle?
 
@@ -292,6 +288,146 @@ def validate_beams_calibration(microscope: SdbMicroscopeClient, settings: dict) 
     acquire.reset_beam_shifts(microscope=microscope)
 
 
+
+# TODO: change to SystemSettings, CalibrationSettings
+def validate_beams_calibration_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSettings) -> None:
+    """Validate Beam Settings"""
+
+    # TODO: check beam blanks?
+    # TODO: check electron voltage?
+
+    logging.info("Validating Electron Beam")
+    if not microscope.beams.electron_beam.is_on:
+        logging.warning("Electron Beam is not on, switching on now...")
+        microscope.beams.electron_beam.turn_on()
+        assert microscope.beams.electron_beam.is_on, "Unable to turn on Electron Beam."
+        logging.warning("Electron Beam turned on.")
+
+    microscope.imaging.set_active_view(1)
+    if str(microscope.detector.type.value) != "ETD":
+        logging.warning(
+            f"Electron detector type is  should be ETD (Currently is {str(microscope.detector.type.value)})"
+        )
+        if "ETD" in microscope.detector.type.available_values:
+            microscope.detector.type.value = "ETD"
+            logging.warning(
+                f"Changed Electron detector type to {str(microscope.detector.type.value)}"
+            )
+
+    if str(microscope.detector.mode.value) != "SecondaryElectrons":
+        logging.warning(
+            f"Electron detector mode is should be SecondaryElectrons (Currently is {str(microscope.detector.mode.value)}"
+        )
+        if "SecondaryElectrons" in microscope.detector.mode.available_values:
+            microscope.detector.mode.value = "SecondaryElectrons"
+            logging.warning(
+                f"Changed Electron detector mode to {str(microscope.detector.mode.value)}"
+            )
+
+    # working distances
+    logging.info(
+        f"EB Working Distance: {microscope.beams.electron_beam.working_distance.value:.4f}m"
+    )
+    if not np.isclose(
+        microscope.beams.electron_beam.working_distance.value,
+        settings.calibration.eucentric_height_eb,
+        atol=settings.calibration.eucentric_height_tolerance,
+    ):
+        logging.warning(
+            f"""Electron Beam is not close to eucentric height. It should be {settings.calibration.eucentric_height_eb}m
+            (Currently is {microscope.beams.electron_beam.working_distance.value:.4f}m)"""
+        )
+
+    logging.info(
+        f"Electron Optical Mode: {str(microscope.beams.electron_beam.optical_mode.value)}"
+    )
+    logging.info(
+        f"Electron Optical Modes Available:  {str(microscope.beams.electron_beam.optical_mode.available_values)}"
+    )
+
+    # Validate Ion Beam
+    logging.info("Validating Ion Beam")
+
+
+    # TODO: Add modes to config?
+
+    # if not microscope.beams.ion_beam.is_on:
+    #     logging.warning("Ion Beam is not on, switching on now...")
+    #     microscope.beams.ion_beam.turn_on()
+    #     assert microscope.beams.ion_beam.is_on, "Unable to turn on Ion Beam."
+    #     logging.warning("Ion Beam turned on.")
+
+    # microscope.imaging.set_active_view(2)
+    # if str(microscope.detector.type.value) != "ETD":
+    #     logging.warning(
+    #         f"Ion detector type is  should be ETD (Currently is {str(microscope.detector.type.value)})"
+    #     )
+    #     if "ETD" in microscope.detector.type.available_values:
+    #         microscope.detector.type.value = "ETD"
+    #         logging.warning(
+    #             f"Changed Ion detector type to {str(microscope.detector.type.value)}"
+    #         )
+
+    # if str(microscope.detector.mode.value) != "SecondaryElectrons":
+    #     logging.warning(
+    #         f"Ion detector mode is should be SecondaryElectrons (Currently is {str(microscope.detector.mode.value)}"
+    #     )
+    #     if "SecondaryElectrons" in microscope.detector.mode.available_values:
+    #         microscope.detector.mode.value = "SecondaryElectrons"
+    #         logging.warning(
+    #             f"Changed Ion detector mode to {str(microscope.detector.mode.value)}"
+    #         )
+
+    # # working distance
+    # logging.info(
+    #     f"IB Working Distance: {microscope.beams.ion_beam.working_distance.value:.4f}m"
+    # )
+    # if not np.isclose(
+    #     microscope.beams.ion_beam.working_distance.value,
+    #     settings["calibration"]["limits"]["eucentric_height_ib"],
+    #     atol=settings["calibration"]["limits"]["eucentric_height_tolerance"],
+    # ):
+    #     logging.warning(
+    #         f"Ion Beam is not close to eucentric height. It should be {settings['calibration']['limits']['eucentric_height_ib']}m \
+    #     (Currently is {microscope.beams.ion_beam.working_distance.value:.4f}m)"
+    #     )
+
+    # # validate high voltage
+    # high_voltage_limits = str(microscope.beams.ion_beam.high_voltage.limits)
+    # logging.info(f"Ion Beam High Voltage Limits are: {high_voltage_limits}")
+
+    # if microscope.beams.ion_beam.high_voltage.value != high_voltage:
+    #     logging.warning(
+    #         f"Ion Beam High Voltage should be {high_voltage}V (Currently {microscope.beams.ion_beam.high_voltage.value}V)"
+    #     )
+
+    #     if bool(microscope.beams.ion_beam.high_voltage.is_controllable):
+    #         logging.warning(f"Changing Ion Beam High Voltage to {high_voltage}V.")
+    #         microscope.beams.ion_beam.high_voltage.value = high_voltage
+    #         assert (
+    #             microscope.beams.ion_beam.high_voltage.value == high_voltage
+    #         ), "Unable to change Ion Beam High Voltage"
+    #         logging.warning(f"Ion Beam High Voltage Changed")
+
+    # validate plasma gas
+    plasma_gas = settings.system.plasma_gas.capitalize()
+    if plasma_gas not in microscope.beams.ion_beam.source.plasma_gas.available_values:
+        logging.warning("{plasma_gas} is not available as a plasma gas.")
+
+    if microscope.beams.ion_beam.source.plasma_gas.value != plasma_gas:
+        logging.warning(
+            f"Plasma Gas is should be {plasma_gas} (Currently {microscope.beams.ion_beam.source.plasma_gas.value})"
+        )
+
+    # reset beam shifts
+    acquire.reset_beam_shifts(microscope=microscope)
+
+
+
+
+
+
+
 def validate_chamber(microscope: SdbMicroscopeClient) -> None:
     """Validate the state of the chamber"""
 
@@ -306,12 +442,11 @@ def validate_chamber(microscope: SdbMicroscopeClient) -> None:
     logging.info(
         f"Validating Vacuum Chamber Pressure: {microscope.state.chamber_pressure.value:.6f} mbar"
     )
-    if microscope.state.chamber_pressure.value >= 1e-3:
+    if microscope.state.chamber_pressure.value >= 1e-4:
         logging.warning(
             f"Chamber pressure is too high, please pump the system (Currently {microscope.state.chamber_pressure.value:.6f} mbar)"
         )
 
-# TODO: change to CalibrationSettings
 def validate_stage_height_for_needle_insertion(
     microscope: SdbMicroscopeClient, settings: dict) -> bool:
 
@@ -329,6 +464,17 @@ def validate_stage_height_for_needle_insertion(
         valid_stage_height = False
 
     return valid_stage_height
+
+def validate_stage_height_for_needle_insertion_v2(
+    microscope: SdbMicroscopeClient, settings: MicroscopeSettings) -> bool:
+
+    stage = microscope.specimen.stage
+    needle_stage_height_limit = settings.calibration.needle_stage_height_limit
+
+    # Unable to insert the needle if the stage height is below this limit (3.7e-3)
+    return bool(stage.current_position.z < needle_stage_height_limit)
+
+
 
 # TODO: change to calibrationSettings
 def validate_focus(

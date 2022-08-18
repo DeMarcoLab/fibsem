@@ -260,7 +260,10 @@ class SystemSettings:
     ip_address: str = "10.0.0.1"
     application_file: str = "autolamella"
     plasma_gas: str = "Argon" # proper case, e.g. Argon, Oxygen
-    high_voltage: float = 30000 # volts
+    ion_voltage: float = 30000       # 30kv
+    electron_voltage: float = 2000   # 2kv
+    electron_current: float = 1.e-9  # amps
+    ion_current: float = 20e-12      # amps
 
 
     def __to_dict__(self) -> dict:
@@ -269,7 +272,10 @@ class SystemSettings:
             "ip_address": self.ip_address,
             "application_file": self.application_file,
             "plasma_gas": self.plasma_gas,
-            "high_voltage": self.high_voltage,
+            "ion_voltage": self.ion_voltage,
+            "electron_voltage": self.electron_voltage,
+            "electron_current": self.electron_current,
+            "ion_current": self.ion_current,
         }
 
         return settings_dict
@@ -281,7 +287,10 @@ class SystemSettings:
             ip_address=settings["ip_address"],
             application_file=settings["application_file"],
             plasma_gas=settings["plasma_gas"],
-            high_voltage=settings["high_voltage"]
+            ion_voltage=settings["ion_voltage"],
+            electron_voltage=settings["electron_voltage"],
+            ion_current=settings["ion_current"],
+            electron_current=settings["electron_current"]
         )
 
         return system_settings
@@ -357,6 +366,7 @@ class CalibrationSettings:
 class DefaultSettings:
     imaging_current: float = 20.e-12
     milling_current: float = 2.e-9
+
 
     @staticmethod
     def __from_dict__(settings: dict) -> 'DefaultSettings':

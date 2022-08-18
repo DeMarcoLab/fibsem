@@ -335,7 +335,10 @@ def test_system_settings_to_dict(system_settings: SystemSettings):
     assert system_settings.ip_address == settings_dict["ip_address"]
     assert system_settings.application_file == settings_dict["application_file"]
     assert system_settings.plasma_gas == settings_dict["plasma_gas"]
-    assert system_settings.high_voltage == settings_dict["high_voltage"]
+    assert system_settings.ion_voltage == settings_dict["ion_voltage"]
+    assert system_settings.electron_voltage == settings_dict["electron_voltage"]
+    assert system_settings.ion_current == settings_dict["ion_current"]
+    assert system_settings.electron_current == settings_dict["electron_current"]
 
 
 def test_system_settings_from_dict():
@@ -344,7 +347,10 @@ def test_system_settings_from_dict():
         "ip_address": "10.0.0.1",
         "application_file": "autolamella", 
         "plasma_gas": "Argon", 
-        "high_voltage": 30000,
+        "ion_voltage": 30000,
+        "electron_voltage": 2000,
+        "electron_current": 1e-9,
+        "ion_current": 20e-12,
 
     }
 
@@ -353,8 +359,10 @@ def test_system_settings_from_dict():
     assert system_settings.ip_address == settings_dict["ip_address"]
     assert system_settings.application_file == settings_dict["application_file"]
     assert system_settings.plasma_gas == settings_dict["plasma_gas"]
-    assert system_settings.high_voltage == settings_dict["high_voltage"]
-
+    assert system_settings.ion_voltage == settings_dict["ion_voltage"]
+    assert system_settings.electron_voltage == settings_dict["electron_voltage"]
+    assert system_settings.ion_current == settings_dict["ion_current"]
+    assert system_settings.electron_current == settings_dict["electron_current"]
 
 
 def test_stage_settings_to_dict():
