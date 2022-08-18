@@ -3,7 +3,7 @@ from fibsem import constants
 import logging
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from fibsem.structures import BeamType, MillingSettings
+from fibsem.structures import BeamType, MillingSettings, Point
 
 from autoscript_sdb_microscope_client._dynamic_object_proxies import CleaningCrossSectionPattern, RectanglePattern
 from typing import Union
@@ -219,3 +219,44 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
     return pattern
 
 
+def mill_trench_patterns(
+    microscope: SdbMicroscopeClient, settings: dict, point:Point = Point()
+):
+    """Calculate the trench milling patterns"""
+    
+    lamella_width = settings["lamella_width"]
+    lamella_height = settings["lamella_height"]
+    trench_height = settings["trench_height"]
+    upper_trench_height = trench_height / max(settings["size_ratio"], 1.0)
+    offset = settings["offset"]
+    milling_depth = settings["milling_depth"]
+
+    centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
+    centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
+
+    # mill settings
+    lower_settings = MillingSettings(
+        width=lamella_width, 
+        height=trench_height, 
+        depth=milling_depth,
+        centre_x=point.x, 
+        centre_y=centre_lower_y,
+        scan_direction="BottomToTop",
+        cleaning_cross_section=True
+    )
+
+    upper_settings = MillingSettings(
+        width=lamella_width, 
+        height=upper_trench_height, 
+        depth=milling_depth,
+        centre_x=point.x, 
+        centre_y=centre_upper_y,
+        scan_direction="TopToBottom",
+        cleaning_cross_section=True
+    )
+
+    # draw patterns
+    lower_pattern = _draw_rectangle_pattern_v2(microscope, lower_settings)
+    upper_pattern = _draw_rectangle_pattern_v2(microscope, upper_settings)
+
+    return [lower_pattern, upper_pattern]

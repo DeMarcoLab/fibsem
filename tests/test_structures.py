@@ -391,42 +391,34 @@ def test_calibration_settings_to_dict():
 
     settings = calibration_settings.__to_dict__()
 
-    assert calibration_settings.imaging_current == settings["imaging_current"]
-    assert calibration_settings.milling_current == settings["milling_current"]
     assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
     assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
     assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]
     assert calibration_settings.eucentric_height_ib == settings["eucentric_height_ib"]
     assert calibration_settings.eucentric_height_tolerance == settings["eucentric_height_tolerance"]
     assert calibration_settings.needle_stage_height_limit == settings["needle_stage_height_limit"]
-    assert calibration_settings.max_working_distance_eb == settings["max_working_distance_eb"]
 
 
 def test_calibration_settings_from_dict():
 
     settings = {
-        "imaging_current": 20e-12,
-        "milling_current": 2.e-9,
         "max_hfw_eb": 2700e-6,
         "max_hfw_ib": 900e-6,
         "eucentric_height_eb": 4.0e-3,
         "eucentric_height_ib": 16.5e-3,
         "eucentric_height_tolerance": 0.5e-3,
         "needle_stage_height_limit": 3.7e-3,
-        "max_working_distance_eb": 6.0e-3,
     }
 
     calibration_settings = CalibrationSettings.__from_dict__(settings)
 
-    assert calibration_settings.imaging_current == settings["imaging_current"]
-    assert calibration_settings.milling_current == settings["milling_current"]
+
     assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
     assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
     assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]
     assert calibration_settings.eucentric_height_ib == settings["eucentric_height_ib"]
     assert calibration_settings.eucentric_height_tolerance == settings["eucentric_height_tolerance"]
     assert calibration_settings.needle_stage_height_limit == settings["needle_stage_height_limit"]
-    assert calibration_settings.max_working_distance_eb == settings["max_working_distance_eb"]
 
 
 
@@ -464,3 +456,11 @@ def test_stage_position_from_dict():
     assert stage_position.r == stage_position_dict["r"] 
     assert stage_position.t == stage_position_dict["t"] 
     assert stage_position.coordinate_system == stage_position_dict["coordinate_system"] 
+
+def test_default_settings_from_dict():
+
+    return NotImplemented
+
+def test_microscope_settings():
+
+    return NotImplemented

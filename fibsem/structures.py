@@ -205,6 +205,8 @@ class MillingSettings:
             settings["centre_x"] = 0
         if "centre_y" not in settings:
             settings["centre_y"] = 0
+        if "rotation" not in settings:
+            settings["rotation"] = 0
         if "scan_direction" not in settings:
             settings["scan_direction"] = "TopToBottom"
         if "cleaning_cross_section" not in settings:
@@ -316,28 +318,22 @@ class StageSettings:
 
 @dataclass
 class CalibrationSettings:
-    imaging_current: float = 20.e-12
-    milling_current: float = 2.e-9
     max_hfw_eb: float = 2700e-6
     max_hfw_ib: float = 900e-6
     eucentric_height_eb: float =  4.0e-3
-    eucentric_height_ib: float =16.5e-3
+    eucentric_height_ib: float = 16.5e-3
     eucentric_height_tolerance: float = 0.5e-3
     needle_stage_height_limit: float = 3.7e-3
-    max_working_distance_eb: float = 6.0e-3
 
     def __to_dict__(self) -> dict:
 
         settings = {
-                "imaging_current": self.imaging_current,
-                "milling_current": self.milling_current,
                 "max_hfw_eb": self.max_hfw_eb,
                 "max_hfw_ib": self.max_hfw_ib,
                 "eucentric_height_eb": self.eucentric_height_eb,
                 "eucentric_height_ib": self.eucentric_height_ib,
                 "eucentric_height_tolerance": self.eucentric_height_tolerance,
                 "needle_stage_height_limit": self.needle_stage_height_limit,
-                "max_working_distance_eb": self.max_working_distance_eb,
             }
 
         return settings
@@ -346,15 +342,36 @@ class CalibrationSettings:
     def __from_dict__(self, settings: dict) -> 'CalibrationSettings':
 
         calibration_settings = CalibrationSettings(
-            imaging_current=settings["imaging_current"],
-            milling_current=settings["milling_current"],
+
             max_hfw_eb=settings["max_hfw_eb"],
             max_hfw_ib=settings["max_hfw_ib"],
             eucentric_height_eb=settings["eucentric_height_eb"],
             eucentric_height_ib=settings["eucentric_height_ib"], 
             eucentric_height_tolerance=settings["eucentric_height_tolerance"],
             needle_stage_height_limit=settings["needle_stage_height_limit"], 
-            max_working_distance_eb=settings["max_working_distance_eb"]
         )
 
         return calibration_settings
+
+@dataclass
+class DefaultSettings:
+    imaging_current: float = 20.e-12
+    milling_current: float = 2.e-9
+
+    @staticmethod
+    def __from_dict__(settings: dict) -> 'DefaultSettings':
+        
+        default_settings = DefaultSettings(
+            imaging_current=settings["imaging_current"],
+            milling_current=settings["milling_current"],
+        )
+        return default_settings
+
+@dataclass
+class MicroscopeSettings:
+    system: SystemSettings
+    stage: StageSettings
+    calibration: CalibrationSettings
+    default: DefaultSettings
+    image_settings: ImageSettings
+    protocol: dict = None
