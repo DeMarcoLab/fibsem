@@ -3,3 +3,4 @@
 .vscode/*
 .coverage
 *.code-workspace
+*.log
