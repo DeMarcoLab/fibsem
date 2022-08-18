@@ -125,6 +125,13 @@ def current_timestamp():
     return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d.%I-%M-%S%p")
 
 
+def _format_time_seconds(seconds: float) -> str:
+    """Format a time delta in seconds to proper string format."""
+    return str(datetime.timedelta(seconds=seconds)).split(
+        "."
+    )[0]
+
+
 # TODO: better logs: https://www.toptal.com/python/in-depth-python-logging
 def configure_logging(path: Path = "", log_filename="logfile", log_level=logging.INFO):
     """Log to the terminal and to file simultaneously."""

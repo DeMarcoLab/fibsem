@@ -219,7 +219,7 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
     return pattern
 
 
-def mill_trench_patterns(
+def _draw_trench_patterns(
     microscope: SdbMicroscopeClient, settings: dict, point:Point = Point()
 ):
     """Calculate the trench milling patterns"""
@@ -260,3 +260,28 @@ def mill_trench_patterns(
     upper_pattern = _draw_rectangle_pattern_v2(microscope, upper_settings)
 
     return [lower_pattern, upper_pattern]
+
+
+def _draw_fiducial_patterns(
+    microscope: SdbMicroscopeClient,
+    settings: MillingSettings,
+    point: Point = Point()
+):
+    """draw the fiducial milling patterns
+
+    Args:
+        microscope (SdbMicroscopeClient): AutoScript microscope connection
+        settings (dict): fiducial milling settings
+        centre_x (float, optional): centre x coordinate. Defaults to 0.0.
+        centre_y (float, optional): centre y coordinate. Defaults to 0.0.
+    Returns
+    -------
+        patterns : list
+            List of rectangular patterns used to create the fiducial marker.
+    """
+
+    pattern_1 = _draw_rectangle_pattern_v2(microscope, settings, point.x, point.y)
+    pattern_2 = _draw_rectangle_pattern_v2(microscope, settings, point.x, point.y)
+    pattern_2.rotation = np.deg2rad(settings["rotation"] + 90)
+
+    return [pattern_1, pattern_2]

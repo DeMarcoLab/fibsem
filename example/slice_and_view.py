@@ -8,37 +8,61 @@ import fibsem
 from fibsem import acquire, milling, utils
 from fibsem.structures import ImageSettings, MillingSettings
 
+import napari
+import zarr 
+
 
 def main():
 
     PROTOCOL_PATH = os.path.join(os.path.dirname(__file__), "protocol_slice_and_view.yaml")
     microscope, settings = utils.setup_session(protocol_path = PROTOCOL_PATH)
 
+    # setup for milling
+    milling.setup_milling(microscope, settings.system.application_file)
 
-    # slice
-    logging.info("------------------------ SLICE ------------------------")
-    milling_settings = MillingSettings.__from_dict__(settings.protocol["milling"])
-    pprint(milling_settings)
+    # # setup napari viewer
+    # viewer = napari.Viewer()
+    # viewer.add_image(eb_image.data, name="eb_image", colormap="gray")
+    # viewer.add_image(ib_image.data, name="eb_image", colormap="gray")
 
-    # milling.setup_milling(
-    #     microscope, settings["system"]["application_file"], hfw=150e-6
-    # )
-    # patterns = milling._draw_rectangle_pattern_v2(microscope, milling_settings)
-    # milling.run_milling(microscope, milling_current=protocol["milling_current"])
+    settings.image_settings.label = "reference"
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image_settings)
 
-    # view
-    logging.info("------------------------ VIEW ------------------------")
-    slice_idx = 0
-    settings.image_settings.label = f"slice_{slice_idx}"
-    # eb_image, ib_image = acquire.take_reference_images(microscope, settings.image_settings)
-    print(settings.image_settings)
+    # TODO: persistent zarr?
+    ebz: zarr.Array = zarr.array(eb_image.data)
+    ibz: zarr.Array = zarr.array(ib_image.data) 
+
+    for i in range(settings.protocol["steps"]):
+
+        # slice
+        logging.info("------------------------ SLICE ------------------------")
+        milling_settings = MillingSettings.__from_dict__(settings.protocol["milling"])
+        pprint(milling_settings)
+        
+        patterns = milling._draw_rectangle_pattern_v2(microscope, milling_settings)
+        estimated_milling_time = milling.estimate_milling_time_in_seconds([patterns])
+        logging.info(f"Estimated milling time: {estimated_milling_time}")
+        
+        milling.run_milling(microscope, milling_current=settings.protocol["milling_current"]["milling_current"])
+        
+        milling.finish_milling(microscope, settings.default.imaging_current)
+
+        # view
+        logging.info("------------------------ VIEW ------------------------")
+        slice_idx = 0
+        settings.image_settings.label = f"slice_{slice_idx}"
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image_settings)
+
+        # visualise
+        ebz.append(eb_image.data)
+        ibz.append(ib_image.data)
+
+        # move?
+
+        # align?
+
+
     
-    # move?
-
-    # align?
-
-    
-
 
 if __name__ == "__main__":
     main()

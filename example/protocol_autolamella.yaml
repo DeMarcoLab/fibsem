@@ -1,8 +1,14 @@
 
 name: autolamella_demo
+stage_rotation: 230
+stage_tilt: 52
 
-lamella:
+fiducial:
+  length: 10.e-6
+  width: 10.e-6
+  depth: 2.e-6
   
+lamella:
   protocol_stages:
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
@@ -10,11 +16,11 @@ lamella:
     milling_depth: 2.e-6
     offset: 5.e-6
     size_ratio: 1.0
-    milling_current: 7.6e-9
+    milling_current: 2.e-9
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
     trench_height: 2.e-6
     milling_depth: 2.e-6
     offset: 0.e-6
     size_ratio: 1.0
-    milling_current: 7.6e-9
+    milling_current: 2.e-9
