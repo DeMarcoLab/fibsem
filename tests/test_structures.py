@@ -1,11 +1,13 @@
 from datetime import datetime
+import sys
 
 import numpy as np
 import pytest
 from autoscript_sdb_microscope_client.structures import StagePosition
-from fibsem.structures import (BeamSettings, BeamType, CalibrationSettings,
+from fibsem.structures import (BeamSettings, BeamType,
                                GammaSettings, ImageSettings, MicroscopeState,
                                MillingSettings, StageSettings, SystemSettings,
+                               BeamSystemSettings,
                                stage_position_from_dict,
                                stage_position_to_dict)
 
@@ -85,9 +87,35 @@ def image_settings(gamma_settings: GammaSettings) -> ImageSettings:
     return image_settings
 
 @pytest.fixture
-def system_settings() -> SystemSettings:
+def beam_system_settings() -> BeamSystemSettings:
 
-    system_settings = SystemSettings()
+    beam_system_settings = BeamSystemSettings(
+        beam_type=BeamType.ION,
+        voltage = 30000,
+        current = 20e-12, 
+        detector_type="ETD",
+        detector_mode="SecondaryElectrons",
+        eucentric_height=16.5e-3,
+        plasma_gas="Argon"
+    )
+
+    return beam_system_settings
+
+
+
+@pytest.fixture
+def system_settings(beam_system_settings: BeamSystemSettings) -> SystemSettings:
+
+    stage_settings = StageSettings()
+    ion_settings = beam_system_settings
+    electron_settings = beam_system_settings
+    electron_settings.beam_type = BeamType.ELECTRON
+
+    system_settings = SystemSettings(
+        stage=stage_settings,
+        ion=ion_settings,
+        electron=electron_settings
+    )
 
     return system_settings
 
@@ -142,7 +170,7 @@ def test_beam_settings_to_dict(beam_settings: BeamSettings):
 
     beam_settings_dict = beam_settings.__to_dict__()
 
-    assert beam_settings.beam_type == BeamType[beam_settings_dict["beam_type"]]
+    assert beam_settings.beam_type == BeamType.ELECTRON
     assert beam_settings.working_distance == beam_settings_dict["working_distance"]
     assert beam_settings.beam_current == beam_settings_dict["beam_current"]
     assert beam_settings.hfw == beam_settings_dict["hfw"]
@@ -154,7 +182,7 @@ def test_beam_settings_to_dict(beam_settings: BeamSettings):
 def test_beam_settings_from_dict():
 
     beam_settings_dict = {
-        "beam_type": "ELECTRON",
+        "beam_type": "Electron",
         "working_distance": 4.0e-3,
         "beam_current": 60.0e-12,
         "hfw": 150.0e-6,
@@ -163,9 +191,9 @@ def test_beam_settings_from_dict():
         "stigmation": 1.0e-6,
     }
 
-    beam_settings = BeamSettings.__from_dict__(beam_settings_dict)
+    beam_settings: BeamSettings = BeamSettings.__from_dict__(beam_settings_dict)
 
-    assert beam_settings.beam_type == BeamType[beam_settings_dict["beam_type"]]
+    assert beam_settings.beam_type.name == beam_settings_dict["beam_type"].upper()
     assert beam_settings.working_distance == beam_settings_dict["working_distance"]
     assert beam_settings.beam_current == beam_settings_dict["beam_current"]
     assert beam_settings.hfw == beam_settings_dict["hfw"]
@@ -206,7 +234,6 @@ def test_microscope_state_to_dict(microscope_state: MicroscopeState):
 
 
 def test_microscope_state_from_dict():
-
 
     eb_beam_settings_dict = {
         "beam_type": "ELECTRON",
@@ -334,35 +361,51 @@ def test_system_settings_to_dict(system_settings: SystemSettings):
 
     assert system_settings.ip_address == settings_dict["ip_address"]
     assert system_settings.application_file == settings_dict["application_file"]
-    assert system_settings.plasma_gas == settings_dict["plasma_gas"]
-    assert system_settings.ion_voltage == settings_dict["ion_voltage"]
-    assert system_settings.electron_voltage == settings_dict["electron_voltage"]
-    assert system_settings.ion_current == settings_dict["ion_current"]
-    assert system_settings.electron_current == settings_dict["electron_current"]
-
+    assert system_settings.stage.__to_dict__() == settings_dict["stage"]
+    assert system_settings.ion.__to_dict__() == settings_dict["ion"]
+    assert system_settings.electron.__to_dict__() == settings_dict["electron"]
 
 def test_system_settings_from_dict():
 
+    stage_dict = {
+        "rotation_flat_to_electron": 50,
+        "rotation_flat_to_ion": 230,
+        "tilt_flat_to_electron": 27,
+        "tilt_flat_to_ion": 52,
+        "needle_stage_height_limit": 3.7e-3, 
+    }
+
+    ion_settings_dict = {
+        "voltage" : 30000,
+        "current" : 20e-12, 
+        "detector_type":"ETD",
+        "detector_mode":"SecondaryElectrons",
+        "eucentric_height": 16.5e-3,
+        "plasma_gas":"Argon"
+    }
+
+    electron_settings_dict = {
+        "voltage" : 2000,
+        "current" : 1.0e-12, 
+        "detector_type":"ETD",
+        "detector_mode":"SecondaryElectrons",
+        "eucentric_height": 16.5e-3,
+        "plasma_gas":"null"
+    }
+
     settings_dict = {
         "ip_address": "10.0.0.1",
-        "application_file": "autolamella", 
-        "plasma_gas": "Argon", 
-        "ion_voltage": 30000,
-        "electron_voltage": 2000,
-        "electron_current": 1e-9,
-        "ion_current": 20e-12,
-
+        "application_file": "autolamella",
+        "stage": stage_dict,
+        "ion": ion_settings_dict,
+        "electron": electron_settings_dict, 
     }
 
     system_settings = SystemSettings.__from_dict__(settings_dict)
 
     assert system_settings.ip_address == settings_dict["ip_address"]
     assert system_settings.application_file == settings_dict["application_file"]
-    assert system_settings.plasma_gas == settings_dict["plasma_gas"]
-    assert system_settings.ion_voltage == settings_dict["ion_voltage"]
-    assert system_settings.electron_voltage == settings_dict["electron_voltage"]
-    assert system_settings.ion_current == settings_dict["ion_current"]
-    assert system_settings.electron_current == settings_dict["electron_current"]
+    # TODO: stage_settings, ion_settings, electron_settings
 
 
 def test_stage_settings_to_dict():
@@ -375,6 +418,7 @@ def test_stage_settings_to_dict():
     assert stage_settings.rotation_flat_to_ion == settings_dict["rotation_flat_to_ion"]
     assert stage_settings.tilt_flat_to_electron == settings_dict["tilt_flat_to_electron"]
     assert stage_settings.tilt_flat_to_ion == settings_dict["tilt_flat_to_ion"]
+    assert stage_settings.needle_stage_height_limit == settings_dict["needle_stage_height_limit"]
 
 def test_stage_settings_from_dict():
 
@@ -382,7 +426,8 @@ def test_stage_settings_from_dict():
         "rotation_flat_to_electron": 50,
         "rotation_flat_to_ion": 230,
         "tilt_flat_to_electron": 27,
-        "tilt_flat_to_ion": 52
+        "tilt_flat_to_ion": 52,
+        "needle_stage_height_limit": 3.7e-3, 
     }
 
     stage_settings = StageSettings.__from_dict__(settings_dict)
@@ -391,44 +436,7 @@ def test_stage_settings_from_dict():
     assert stage_settings.rotation_flat_to_ion == settings_dict["rotation_flat_to_ion"]
     assert stage_settings.tilt_flat_to_electron == settings_dict["tilt_flat_to_electron"]
     assert stage_settings.tilt_flat_to_ion == settings_dict["tilt_flat_to_ion"]
-
-
-def test_calibration_settings_to_dict():
-
-    calibration_settings = CalibrationSettings()
-
-    settings = calibration_settings.__to_dict__()
-
-    assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
-    assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
-    assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]
-    assert calibration_settings.eucentric_height_ib == settings["eucentric_height_ib"]
-    assert calibration_settings.eucentric_height_tolerance == settings["eucentric_height_tolerance"]
-    assert calibration_settings.needle_stage_height_limit == settings["needle_stage_height_limit"]
-
-
-def test_calibration_settings_from_dict():
-
-    settings = {
-        "max_hfw_eb": 2700e-6,
-        "max_hfw_ib": 900e-6,
-        "eucentric_height_eb": 4.0e-3,
-        "eucentric_height_ib": 16.5e-3,
-        "eucentric_height_tolerance": 0.5e-3,
-        "needle_stage_height_limit": 3.7e-3,
-    }
-
-    calibration_settings = CalibrationSettings.__from_dict__(settings)
-
-
-    assert calibration_settings.max_hfw_eb == settings["max_hfw_eb"]
-    assert calibration_settings.max_hfw_ib == settings["max_hfw_ib"]
-    assert calibration_settings.eucentric_height_eb == settings["eucentric_height_eb"]
-    assert calibration_settings.eucentric_height_ib == settings["eucentric_height_ib"]
-    assert calibration_settings.eucentric_height_tolerance == settings["eucentric_height_tolerance"]
-    assert calibration_settings.needle_stage_height_limit == settings["needle_stage_height_limit"]
-
-
+    assert stage_settings.needle_stage_height_limit == settings_dict["needle_stage_height_limit"]
 
 def test_stage_position_to_dict():
     
@@ -465,10 +473,55 @@ def test_stage_position_from_dict():
     assert stage_position.t == stage_position_dict["t"] 
     assert stage_position.coordinate_system == stage_position_dict["coordinate_system"] 
 
+
+
+def test_beam_system_settings_to_dict():
+
+    beam_system_settings = BeamSystemSettings(
+        beam_type=BeamType.ION,
+        voltage = 30000,
+        current = 20e-12, 
+        detector_type="ETD",
+        detector_mode="SecondaryElectrons",
+        eucentric_height=16.5e-3,
+        plasma_gas="Argon"
+    )
+
+    beam_system_settings_dict = beam_system_settings.__to_dict__()
+
+    assert beam_system_settings.voltage == beam_system_settings_dict["voltage"]
+    assert beam_system_settings.current == beam_system_settings_dict["current"]
+    assert beam_system_settings.detector_type == beam_system_settings_dict["detector_type"]
+    assert beam_system_settings.detector_mode == beam_system_settings_dict["detector_mode"]
+    assert beam_system_settings.plasma_gas == beam_system_settings_dict["plasma_gas"]
+
+def test_beam_system_settings_from_dict():
+
+    beam_system_settings_dict = {
+        "voltage" : 30000,
+        "current" : 20e-12, 
+        "detector_type":"ETD",
+        "detector_mode":"SecondaryElectrons",
+        "eucentric_height": 16.5e-3,
+        "plasma_gas":"Argon"
+    }
+
+    beam_system_settings = BeamSystemSettings.__from_dict__(beam_system_settings_dict, BeamType.ION)
+
+    assert beam_system_settings.beam_type == BeamType.ION
+    assert beam_system_settings.voltage == beam_system_settings_dict["voltage"]
+    assert beam_system_settings.current == beam_system_settings_dict["current"]
+    assert beam_system_settings.detector_type == beam_system_settings_dict["detector_type"]
+    assert beam_system_settings.detector_mode == beam_system_settings_dict["detector_mode"]
+    assert beam_system_settings.plasma_gas == beam_system_settings_dict["plasma_gas"]
+
 def test_default_settings_from_dict():
 
-    return NotImplemented
+    raise NotImplementedError
 
 def test_microscope_settings():
 
-    return NotImplemented
+    raise NotImplementedError
+
+
+# TODO: test the missing values, defaults??

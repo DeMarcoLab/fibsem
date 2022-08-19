@@ -56,7 +56,7 @@ class ImageSettings:
     @classmethod
     def __from_dict__(self, settings: dict) -> 'ImageSettings':
 
-        if "autoconstrast" not in settings:
+        if "autocontrast" not in settings:
             settings["autocontrast"] = False
         if "save" not in settings: 
             settings["save"] = False
@@ -126,7 +126,7 @@ class BeamSettings:
     @classmethod
     def __from_dict__(self, state_dict: dict) -> 'BeamSettings':
         beam_settings = BeamSettings(
-            beam_type=BeamType[state_dict["beam_type"]],
+            beam_type=BeamType[state_dict["beam_type"].upper()], # TODO: remove this key, just assign directly
             working_distance=state_dict["working_distance"],
             beam_current=state_dict["beam_current"],
             hfw=state_dict["hfw"],
@@ -255,45 +255,50 @@ def stage_position_from_dict(state_dict: dict) -> StagePosition:
     return stage_position
 
 
-@dataclass
-class SystemSettings:
-    ip_address: str = "10.0.0.1"
-    application_file: str = "autolamella"
-    plasma_gas: str = "Argon" # proper case, e.g. Argon, Oxygen
-    ion_voltage: float = 30000       # 30kv
-    electron_voltage: float = 2000   # 2kv
-    electron_current: float = 1.e-9  # amps
-    ion_current: float = 20e-12      # amps
 
+@dataclass
+class BeamSystemSettings:
+    beam_type: BeamType
+    voltage: float
+    current: float
+    detector_type: str
+    detector_mode: str
+    eucentric_height: float 
+    plasma_gas: str = None
 
     def __to_dict__(self) -> dict:
 
         settings_dict = {
-            "ip_address": self.ip_address,
-            "application_file": self.application_file,
+            "voltage": self.voltage,
+            "current": self.current,
+            "detector_type": self.detector_type,
+            "detector_mode": self.detector_mode,
+            "eucentric_height": self.eucentric_height,
             "plasma_gas": self.plasma_gas,
-            "ion_voltage": self.ion_voltage,
-            "electron_voltage": self.electron_voltage,
-            "electron_current": self.electron_current,
-            "ion_current": self.ion_current,
+
         }
 
         return settings_dict
     
-    @classmethod
-    def __from_dict__(self, settings: dict) -> 'SystemSettings':
+    @staticmethod
+    def __from_dict__(settings: dict, beam_type: BeamType) -> 'BeamSystemSettings':
 
-        system_settings = SystemSettings(
-            ip_address=settings["ip_address"],
-            application_file=settings["application_file"],
-            plasma_gas=settings["plasma_gas"],
-            ion_voltage=settings["ion_voltage"],
-            electron_voltage=settings["electron_voltage"],
-            ion_current=settings["ion_current"],
-            electron_current=settings["electron_current"]
+        if "plasma_gas" not in settings:
+            settings["plasma_gas"] = "NULL"
+
+
+        system_settings = BeamSystemSettings(
+            beam_type=beam_type,
+            voltage = settings["voltage"],
+            current = settings["current"],
+            detector_type=settings["detector_type"],
+            detector_mode=settings["detector_mode"],
+            eucentric_height=settings["eucentric_height"],
+            plasma_gas=settings["plasma_gas"].capitalize(),
         )
 
         return system_settings
+
 
 @dataclass
 class StageSettings:
@@ -301,6 +306,7 @@ class StageSettings:
     rotation_flat_to_ion: float = 230 # degrees
     tilt_flat_to_electron: float = 27 # degrees (pre_tilt)
     tilt_flat_to_ion: float = 52 # degrees
+    needle_stage_height_limit: float = 3.7e-3
 
     def __to_dict__(self) -> dict:
 
@@ -308,7 +314,8 @@ class StageSettings:
             "rotation_flat_to_electron": self.rotation_flat_to_electron,
             "rotation_flat_to_ion": self.rotation_flat_to_ion,
             "tilt_flat_to_electron": self.tilt_flat_to_electron,
-            "tilt_flat_to_ion": self.tilt_flat_to_ion
+            "tilt_flat_to_ion": self.tilt_flat_to_ion,
+            "needle_stage_height_limit": self.needle_stage_height_limit
         }
         return settings
 
@@ -319,48 +326,47 @@ class StageSettings:
             rotation_flat_to_electron=settings["rotation_flat_to_electron"],
             rotation_flat_to_ion=settings["rotation_flat_to_ion"],
             tilt_flat_to_electron=settings["tilt_flat_to_electron"],
-            tilt_flat_to_ion=settings["tilt_flat_to_ion"]  
+            tilt_flat_to_ion=settings["tilt_flat_to_ion"],
+            needle_stage_height_limit=settings["needle_stage_height_limit"]  
         )
 
         return stage_settings
 
 
+
 @dataclass
-class CalibrationSettings:
-    max_hfw_eb: float = 2700e-6
-    max_hfw_ib: float = 900e-6
-    eucentric_height_eb: float =  4.0e-3
-    eucentric_height_ib: float = 16.5e-3
-    eucentric_height_tolerance: float = 0.5e-3
-    needle_stage_height_limit: float = 3.7e-3
+class SystemSettings:
+    ip_address: str = "10.0.0.1"
+    application_file: str = "autolamella"
+    stage: StageSettings = None
+    ion: BeamSystemSettings = None
+    electron: BeamSystemSettings = None
+
 
     def __to_dict__(self) -> dict:
 
-        settings = {
-                "max_hfw_eb": self.max_hfw_eb,
-                "max_hfw_ib": self.max_hfw_ib,
-                "eucentric_height_eb": self.eucentric_height_eb,
-                "eucentric_height_ib": self.eucentric_height_ib,
-                "eucentric_height_tolerance": self.eucentric_height_tolerance,
-                "needle_stage_height_limit": self.needle_stage_height_limit,
-            }
+        settings_dict = {
+            "ip_address": self.ip_address,
+            "application_file": self.application_file,
+            "stage": self.stage.__to_dict__(),
+            "ion": self.ion.__to_dict__(),
+            "electron": self.electron.__to_dict__() 
+        }
 
-        return settings
+        return settings_dict
+    
+    @staticmethod
+    def __from_dict__(settings: dict) -> 'SystemSettings':
 
-    @classmethod
-    def __from_dict__(self, settings: dict) -> 'CalibrationSettings':
-
-        calibration_settings = CalibrationSettings(
-
-            max_hfw_eb=settings["max_hfw_eb"],
-            max_hfw_ib=settings["max_hfw_ib"],
-            eucentric_height_eb=settings["eucentric_height_eb"],
-            eucentric_height_ib=settings["eucentric_height_ib"], 
-            eucentric_height_tolerance=settings["eucentric_height_tolerance"],
-            needle_stage_height_limit=settings["needle_stage_height_limit"], 
+        system_settings = SystemSettings(
+            ip_address=settings["ip_address"],
+            application_file=settings["application_file"],
+            stage=StageSettings.__from_dict__(settings["stage"]),
+            ion=BeamSystemSettings.__from_dict__(settings["ion"], BeamType.ION),
+            electron=BeamSystemSettings.__from_dict__(settings["electron"], BeamType.ELECTRON)
         )
 
-        return calibration_settings
+        return system_settings
 
 @dataclass
 class DefaultSettings:
@@ -380,8 +386,6 @@ class DefaultSettings:
 @dataclass
 class MicroscopeSettings:
     system: SystemSettings
-    stage: StageSettings
-    calibration: CalibrationSettings
     default: DefaultSettings
     image_settings: ImageSettings
     protocol: dict = None

@@ -1,16 +1,27 @@
 # system
 ip_address: 10.0.0.1
 application_file: "autolamella"
-plasma_gas: "Argon" # proper case, e.g. Argon, Oxygen
-ion_voltage: 30000 # ib, volts
-electron_voltage: 2000 # eb, volts
-ion_current: 20.e-12
-electron_current: 1.0e-12
+# beams
+ion:
+  voltage: 30000
+  current: 20.e-12
+  plasma_gas: "Argon" # proper case, e.g. Argon, Oxygen
+  eucentric_height: 16.5e-3
+  detector_type: ETD
+  detector_mode: SecondaryElectrons
+electron:
+  voltage: 2000
+  current: 1.0e-12
+  eucentric_height: 4.0e-3
+  detector_type: ETD
+  detector_mode: SecondaryElectrons
 # stage
-rotation_flat_to_electron: 50 # degrees
-rotation_flat_to_ion: 230 # degrees
-tilt_flat_to_electron: 27 # degrees (pre-tilt)
-tilt_flat_to_ion: 52 # degrees
+stage:
+  rotation_flat_to_electron: 50 # degrees
+  rotation_flat_to_ion: 230 # degrees
+  tilt_flat_to_electron: 27 # degrees (pre-tilt)
+  tilt_flat_to_ion: 52 # degrees
+  needle_stage_height_limit: 3.7e-3
 # limits/defaults
 max_hfw_eb: 2700.0e-6
 max_hfw_ib: 900.0e-6

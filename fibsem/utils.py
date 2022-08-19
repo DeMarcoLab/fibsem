@@ -12,7 +12,6 @@ from autoscript_sdb_microscope_client.structures import AdornedImage
 from PIL import Image
 import fibsem
 from fibsem.structures import (
-    CalibrationSettings,
     MicroscopeSettings,
     ImageSettings,
     StageSettings,
@@ -233,8 +232,6 @@ def load_settings_from_config(
     # system settings
     settings = load_yaml(os.path.join(config_path, "system.yaml"))
     system_settings = SystemSettings.__from_dict__(settings)
-    stage_settings = StageSettings.__from_dict__(settings)
-    calibration_settings = CalibrationSettings.__from_dict__(settings)
 
     # user settings
     config = load_yaml(os.path.join(config_path, "config.yaml"))
@@ -246,8 +243,6 @@ def load_settings_from_config(
 
     settings = MicroscopeSettings(
         system=system_settings,
-        stage=stage_settings,
-        calibration=calibration_settings,
         default=default_settings,
         image_settings=image_settings,
         protocol=protocol,
