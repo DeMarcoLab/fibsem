@@ -1,6 +1,6 @@
 
 name: slice_and_view_demo
-
+steps: 10
 milling:
   width: 100.e-6
   height: 1.e-6

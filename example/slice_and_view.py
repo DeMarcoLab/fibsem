@@ -29,33 +29,31 @@ def main():
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image_settings)
 
     # TODO: persistent zarr?
-    ebz: zarr.Array = zarr.array(eb_image.data)
-    ibz: zarr.Array = zarr.array(ib_image.data) 
+    # ebz: zarr.Array = zarr.array(eb_image.data)
+    # ibz: zarr.Array = zarr.array(ib_image.data) 
 
-    for i in range(settings.protocol["steps"]):
+
+    for slice_idx in range(settings.protocol["steps"]):
 
         # slice
         logging.info("------------------------ SLICE ------------------------")
-        milling_settings = MillingSettings.__from_dict__(settings.protocol["milling"])
-        pprint(milling_settings)
-        
+        milling_settings = MillingSettings.__from_dict__(settings.protocol["milling"])       
         patterns = milling._draw_rectangle_pattern_v2(microscope, milling_settings)
         estimated_milling_time = milling.estimate_milling_time_in_seconds([patterns])
         logging.info(f"Estimated milling time: {estimated_milling_time}")
-        
-        milling.run_milling(microscope, milling_current=settings.protocol["milling_current"]["milling_current"])
-        
-        milling.finish_milling(microscope, settings.default.imaging_current)
+        milling.run_milling(microscope, milling_current=milling_settings.milling_current)
+
+
+        milling.finish_milling(microscope, settings.default.imaging_current) # dont think this is required.
 
         # view
         logging.info("------------------------ VIEW ------------------------")
-        slice_idx = 0
         settings.image_settings.label = f"slice_{slice_idx}"
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image_settings)
 
         # visualise
-        ebz.append(eb_image.data)
-        ibz.append(ib_image.data)
+        # ebz.append(eb_image.data)
+        # ibz.append(ib_image.data)
 
         # move?
 

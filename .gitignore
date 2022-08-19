@@ -4,3 +4,5 @@
 .coverage
 *.code-workspace
 *.log
+scratch/test_image.tif
+*.zarr/*

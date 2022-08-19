@@ -38,7 +38,6 @@ def setup_milling(
 
 def run_milling(
     microscope: SdbMicroscopeClient,
-    settings: dict,
     milling_current: float,
     asynch: bool = False,
 ) -> None:
