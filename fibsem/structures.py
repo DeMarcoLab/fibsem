@@ -1,12 +1,15 @@
 # fibsem structures
 
+import os
 from dataclasses import dataclass
-from autoscript_sdb_microscope_client.structures import AdornedImage, StagePosition
-from enum import Enum
 from datetime import datetime
-
+from enum import Enum
 from pathlib import Path
+
 import numpy as np
+from autoscript_sdb_microscope_client.structures import (AdornedImage,
+                                                         StagePosition)
+
 
 @dataclass
 class Point:
@@ -61,9 +64,9 @@ class ImageSettings:
         if "save" not in settings: 
             settings["save"] = False
         if "save_path" not in settings:
-            settings["save_path"] = ""
+            settings["save_path"] = os.getcwd()
         if "label" not in settings:
-            settings["label"] = ""
+            settings["label"] = "default_image"
         if "gamma" not in settings:
             settings["gamma"] = {
                 "enabled": False,

@@ -90,7 +90,6 @@ def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedIma
     return reference
 
 
-# TODO: change set_active_view to set_active_device... for better stability
 def new_image(
     microscope: SdbMicroscopeClient,
     settings: ImageSettings,
@@ -106,26 +105,31 @@ def new_image(
     Returns:
             AdornedImage: new autoscript adorned image
     """
+
+    # set frame settings
     frame_settings = GrabFrameSettings(
         resolution=settings.resolution,
         dwell_time=settings.dwell_time,
         reduced_area=reduced_area,
     )
 
+    # set horizontal field width
     if settings.beam_type is BeamType.ELECTRON:
         hfw_limits = microscope.beams.electron_beam.horizontal_field_width.limits
         settings.hfw = np.clip(settings.hfw, hfw_limits.min, hfw_limits.max)
         microscope.beams.electron_beam.horizontal_field_width.value = settings.hfw
-        label = settings.label + "_eb"
+        label = f"{settings.label}_eb"
     if settings.beam_type is BeamType.ION:
         hfw_limits = microscope.beams.ion_beam.horizontal_field_width.limits
         settings.hfw = np.clip(settings.hfw, hfw_limits.min, hfw_limits.max)
         microscope.beams.ion_beam.horizontal_field_width.value = settings.hfw
-        label = settings.label + "_ib"
+        label = f"{settings.label}_ib"
 
+    # run autocontrast
     if settings.autocontrast:
         autocontrast(microscope, beam_type=settings.beam_type)
 
+    # acquire the image
     image = acquire_image(
         microscope=microscope,
         settings=frame_settings,
@@ -134,33 +138,28 @@ def new_image(
 
     # apply gamma correction
     if settings.gamma.enabled:
-
-        # gamma parameters
         image = gamma_correction(image, settings.gamma)
 
+    # save image
     if settings.save:
         utils.save_image(image=image, save_path=settings.save_path, label=label)
+    
     return image
 
 
 def last_image(
-    microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON
+    microscope: SdbMicroscopeClient, beam_type: BeamType =BeamType.ELECTRON
 ) -> AdornedImage:
-    """Get the last previously acquired ion or electron beam image.
+    """Get the last previously acquired image.
 
-    Parameters
-    ----------
-    microscope : Autoscript microscope object.
-    beam_type :
+    Args:
+        microscope (SdbMicroscopeClient):  autoscript microscope instance
+        beam_type (BeamType, optional): imaging beam type. Defaults to BeamType.ELECTRON.
 
-    Returns
-    -------
-    AdornedImage
-        If the returned AdornedImage is named 'image', then:
-        image.data = a numpy array of the image pixels
-        image.metadata.binary_result.pixel_size.x = image pixel size in x
-        image.metadata.binary_result.pixel_size.y = image pixel size in y
+    Returns:
+        AdornedImage: last image
     """
+
     microscope.imaging.set_active_view(beam_type.value)
     image = microscope.imaging.get_image()
     return image
@@ -171,81 +170,22 @@ def acquire_image(
     settings: GrabFrameSettings = None,
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> AdornedImage:
-    """Take new electron or ion beam image.
-    Returns
-    -------
-    AdornedImage
-        If the returned AdornedImage is named 'image', then:
-        image.data = a numpy array of the image pixels
-        image.metadata.binary_result.pixel_size.x = image pixel size in x
-        image.metadata.binary_result.pixel_size.y = image pixel size in y
-    """
-    logging.info(f"acquiring new {beam_type.name} image.")
-    microscope.imaging.set_active_view(beam_type.value)
-    if settings is not None:
-        image = microscope.imaging.grab_frame(settings)
-    else:
-        image = microscope.imaging.grab_frame()
-    return image
-
-
-def update_image_settings_v3(
-    settings: dict,
-    resolution=None,
-    dwell_time=None,
-    hfw=None,
-    autocontrast=None,
-    beam_type=None,
-    gamma=None,
-    save=None,
-    label=None,
-    path=None,
-) -> ImageSettings:
-    """Update image settings. Uses default values if not supplied
+    """Acquire a new image.
 
     Args:
-        settings (dict): the default settings dictionary
-        resolution (str, optional): image resolution. Defaults to None.
-        dwell_time (float, optional): image dwell time. Defaults to None.
-        hfw (float, optional): image horizontal field width. Defaults to None.
-        autocontrast (bool, optional): use autocontrast. Defaults to None.
-        beam_type (BeamType, optional): beam type to image with (Electron, Ion). Defaults to None.
-        gamma (GammaSettings, optional): gamma correction settings. Defaults to None.
-        save (bool, optional): save the image. Defaults to None.
-        label (str, optional): image filename . Defaults to None.
-        save_path (Path, optional): directory to save image. Defaults to None.
+        microscope (SdbMicroscopeClient): autoscript microscope instance
+        settings (GrabFrameSettings, optional): frame grab settings. Defaults to None.
+        beam_type (BeamType, optional): imaging beam type. Defaults to BeamType.ELECTRON.
+
+    Returns:
+        AdornedImage: new image
     """
-    gamma_settings = GammaSettings(
-        enabled=settings["calibration"]["gamma"]["enabled"],
-        min_gamma=settings["calibration"]["gamma"]["min_gamma"],
-        max_gamma=settings["calibration"]["gamma"]["max_gamma"],
-        scale_factor=settings["calibration"]["gamma"]["scale_factor"],
-        threshold=settings["calibration"]["gamma"]["threshold"],
-    )
+    logging.info(f"acquiring new {beam_type.name} image.")
+    # microscope.imaging.set_active_device(beam_type.value)
+    microscope.imaging.set_active_view(beam_type.value)
+    image = microscope.imaging.grab_frame(settings)
 
-    # new image_settings
-    image_settings = ImageSettings(
-        resolution=settings["calibration"]["imaging"]["resolution"]
-        if resolution is None
-        else resolution,
-        dwell_time=settings["calibration"]["imaging"]["dwell_time"]
-        if dwell_time is None
-        else dwell_time,
-        hfw=settings["calibration"]["imaging"]["horizontal_field_width"]
-        if hfw is None
-        else hfw,
-        autocontrast=settings["calibration"]["imaging"]["autocontrast"]
-        if autocontrast is None
-        else autocontrast,
-        beam_type=BeamType.ELECTRON if beam_type is None else beam_type,
-        gamma=gamma_settings if gamma is None else gamma,
-        save=bool(settings["calibration"]["imaging"]["save"]) if save is None else save,
-        save_path="" if path is None else path,  # TODO: change to os.getcwd?
-        label=utils.current_timestamp() if label is None else label,
-    )
-
-    return image_settings
-
+    return image
 
 def reset_beam_shifts(microscope: SdbMicroscopeClient):
     """Set the beam shift to zero for the electron and ion beams
