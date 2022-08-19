@@ -12,6 +12,7 @@ from autoscript_sdb_microscope_client.structures import AdornedImage
 from PIL import Image
 import fibsem
 from fibsem.structures import (
+    BeamType,
     MicroscopeSettings,
     ImageSettings,
     StageSettings,
@@ -34,48 +35,46 @@ def connect_to_microscope(ip_address="10.0.0.1"):
 
     return microscope
 
-
-def sputter_platinum(
-    microscope: SdbMicroscopeClient, settings: dict, whole_grid: bool = False
+def sputter_platinum_v2(
+    microscope: SdbMicroscopeClient,
+    protocol: dict,
+    whole_grid: bool = False,
+    default_application_file: str = "autolamella",
 ):
     """Sputter platinum over the sample.
-    Parameters
-    ----------
-    microscope : autoscript_sdb_microscope_client.SdbMicroscopeClient
-        The AutoScript microscope object instance.
-    settings: dict
-        The protocol settings
+
+    Args:
+        microscope (SdbMicroscopeClient): autoscript microscope instance
+        settings (dict): platinum protcol dictionary
+        whole_grid (bool, optional): sputtering protocol. Defaults to False.
+
+    Raises:
+        RuntimeError: Error Sputtering
     """
 
+    # protcol = settings["protocol"]["platinum"] in old system
+    # protocol = settings.protocol["platinum"] in new
     if whole_grid:
-        from liftout import actions  # TODO: remove from fibsem??
 
-        actions.move_to_sample_grid(microscope, settings)
-        sputter_time = settings["protocol"]["platinum"]["whole_grid"]["time"]  # 20
-        hfw = settings["protocol"]["platinum"]["whole_grid"]["hfw"]  # 30e-6
-        line_pattern_length = settings["protocol"]["platinum"]["whole_grid"][
-            "length"
-        ]  # 7e-6
+        sputter_time = protocol["whole_grid"]["time"]  # 20
+        hfw = protocol["whole_grid"]["hfw"]  # 30e-6
+        line_pattern_length = protocol["platinum"]["whole_grid"]["length"]  # 7e-6
         logging.info("sputtering platinum over the whole grid.")
     else:
-        sputter_time = settings["protocol"]["platinum"]["weld"]["time"]  # 20
-        hfw = settings["protocol"]["platinum"]["weld"]["hfw"]  # 100e-6
-        line_pattern_length = settings["protocol"]["platinum"]["weld"][
-            "length"
-        ]  # 15e-6
+        sputter_time = protocol["weld"]["time"]  # 20
+        hfw = protocol["weld"]["hfw"]  # 100e-6
+        line_pattern_length = protocol["weld"]["length"]  # 15e-6
         logging.info("sputtering platinum to weld.")
 
     # Setup
     original_active_view = microscope.imaging.get_active_view()
-    microscope.imaging.set_active_view(1)  # the electron beam view
+    microscope.imaging.set_active_view(BeamType.ELECTRON.value)
     microscope.patterning.clear_patterns()
-    microscope.patterning.set_default_application_file(
-        settings["protocol"]["platinum"]["application_file"]
-    )  # sputter_application_file)
-    microscope.patterning.set_default_beam_type(1)  # set electron beam for patterning
+    microscope.patterning.set_default_application_file(protocol["application_file"])
+    microscope.patterning.set_default_beam_type(BeamType.ELECTRON.value)
     multichem = microscope.gas.get_multichem()
-    multichem.insert(settings["protocol"]["platinum"]["position"])
-    multichem.turn_heater_on(settings["protocol"]["platinum"]["gas"])  # "Pt cryo")
+    multichem.insert(protocol["position"])
+    multichem.turn_heater_on(protocol["gas"])  # "Pt cryo")
     time.sleep(3)
 
     # Create sputtering pattern
@@ -88,8 +87,10 @@ def sputter_platinum(
         2e-6,
     )  # milling depth
     pattern.time = sputter_time + 0.1
+
     # Run sputtering
     microscope.beams.electron_beam.blank()
+    # TODO: synchronous sputtering version, fix the safety on this...
     if microscope.patterning.state == "Idle":
         logging.info("Sputtering with platinum for {} seconds...".format(sputter_time))
         microscope.patterning.start()  # asynchronous patterning
@@ -105,11 +106,9 @@ def sputter_platinum(
     # Cleanup
     microscope.patterning.clear_patterns()
     microscope.beams.electron_beam.unblank()
-    microscope.patterning.set_default_application_file(
-        settings["system"]["application_file"]
-    )  # default_application_file)
+    microscope.patterning.set_default_application_file(default_application_file)
     microscope.imaging.set_active_view(original_active_view)
-    microscope.patterning.set_default_beam_type(2)  # set ion beam
+    microscope.patterning.set_default_beam_type(BeamType.ION.value)  # set ion beam
     multichem.retract()
     logging.info("sputtering platinum finished.")
 
@@ -126,9 +125,7 @@ def current_timestamp():
 
 def _format_time_seconds(seconds: float) -> str:
     """Format a time delta in seconds to proper string format."""
-    return str(datetime.timedelta(seconds=seconds)).split(
-        "."
-    )[0]
+    return str(datetime.timedelta(seconds=seconds)).split(".")[0]
 
 
 # TODO: better logs: https://www.toptal.com/python/in-depth-python-logging
@@ -158,7 +155,7 @@ def load_yaml(fname: Path) -> dict:
     return config
 
 
-def save_metadata(settings, path):
+def save_metadata(settings: dict, path: Path):
     fname = os.path.join(path, "metadata.json")
     with open(fname, "w") as fp:
         json.dump(settings, fp, sort_keys=True, indent=4)
