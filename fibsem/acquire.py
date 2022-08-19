@@ -2,10 +2,12 @@ import logging
 
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import (AdornedImage,
-                                                         GrabFrameSettings,
-                                                         Rectangle,
-                                                         RunAutoCbSettings)
+from autoscript_sdb_microscope_client.structures import (
+    AdornedImage,
+    GrabFrameSettings,
+    Rectangle,
+    RunAutoCbSettings,
+)
 from skimage import exposure
 
 from fibsem import utils
@@ -28,6 +30,15 @@ def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -
 def take_reference_images(
     microscope: SdbMicroscopeClient, image_settings: ImageSettings
 ) -> list[AdornedImage]:
+    """Take a reference image using both beams
+
+    Args:
+        microscope (SdbMicroscopeClient): autoscript microscope instance
+        image_settings (ImageSettings): imaging settings
+
+    Returns:
+        list[AdornedImage]: electron and ion reference image pair
+    """
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
     eb_image = new_image(microscope, image_settings)
@@ -37,9 +48,14 @@ def take_reference_images(
     return eb_image, ib_image
 
 
-def take_set_of_reference_images(microscope: SdbMicroscopeClient, image_settings:ImageSettings, hfws:tuple[float], label:str ="ref_image") -> ReferenceImages:
+def take_set_of_reference_images(
+    microscope: SdbMicroscopeClient,
+    image_settings: ImageSettings,
+    hfws: tuple[float],
+    label: str = "ref_image",
+) -> ReferenceImages:
     """Take a set of reference images at low and high magnification"""
-    
+
     # force save
     image_settings.save = True
 
@@ -51,11 +67,10 @@ def take_set_of_reference_images(microscope: SdbMicroscopeClient, image_settings
     image_settings.label = f"{label}_high_res"
     high_eb, high_ib = take_reference_images(microscope, image_settings)
 
-    reference_images = ReferenceImages(
-        low_eb, high_eb, low_ib, high_ib
-        )
+    reference_images = ReferenceImages(low_eb, high_eb, low_ib, high_ib)
 
     return reference_images
+
 
 def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
     """Automatic gamma correction"""
@@ -73,6 +88,7 @@ def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedIma
     image_data = exposure.adjust_gamma(image.data, gam)
     reference = AdornedImage(data=image_data, metadata=image.metadata)
     return reference
+
 
 # TODO: change set_active_view to set_active_device... for better stability
 def new_image(
