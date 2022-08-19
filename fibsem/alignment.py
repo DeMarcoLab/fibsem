@@ -6,7 +6,7 @@ from fibsem.structures import ImageSettings, BeamType
 from fibsem import calibration, acquire, movement
 
 
-def correct_stage_eucentric_alignment(microscope: SdbMicroscopeClient, settings: dict, image_settings: ImageSettings, tilt_degrees: float = 25) -> None:
+def correct_stage_eucentric_alignment(microscope: SdbMicroscopeClient, image_settings: ImageSettings, tilt_degrees: float = 25) -> None:
 
     # iteratively?
 
@@ -36,7 +36,7 @@ def correct_stage_eucentric_alignment(microscope: SdbMicroscopeClient, settings:
     movement.move_stage_eucentric_correction(microscope, dy)
 
 
-def coarse_eucentric_alignment(microscope: SdbMicroscopeClient, settings: dict, hfw: float = 30e-6, eucentric_height: float = 3.91e-3) -> None:
+def coarse_eucentric_alignment(microscope: SdbMicroscopeClient, hfw: float = 30e-6, eucentric_height: float = 3.91e-3) -> None:
 
 
     # focus and link stage
