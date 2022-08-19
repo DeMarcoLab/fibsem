@@ -76,3 +76,6 @@ def beam_shift_alignment(
 
     # adjust beamshift
     microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
+
+
+

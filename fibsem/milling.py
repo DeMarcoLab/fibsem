@@ -219,16 +219,16 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
 
 
 def _draw_trench_patterns(
-    microscope: SdbMicroscopeClient, settings: dict, point:Point = Point()
+    microscope: SdbMicroscopeClient, protocol: dict, point:Point = Point()
 ):
     """Calculate the trench milling patterns"""
     
-    lamella_width = settings["lamella_width"]
-    lamella_height = settings["lamella_height"]
-    trench_height = settings["trench_height"]
-    upper_trench_height = trench_height / max(settings["size_ratio"], 1.0)
-    offset = settings["offset"]
-    milling_depth = settings["milling_depth"]
+    lamella_width = protocol["lamella_width"]
+    lamella_height = protocol["lamella_height"]
+    trench_height = protocol["trench_height"]
+    upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
+    offset = protocol["offset"]
+    milling_depth = protocol["milling_depth"]
 
     centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
     centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)

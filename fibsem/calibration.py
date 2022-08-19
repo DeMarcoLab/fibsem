@@ -202,11 +202,11 @@ def crosscorrelation(img1: np.ndarray, img2: np.ndarray,
         
         img2ft = n_pixels * img2ft / np.sqrt(tmp.sum())
 
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 2, figsize=(15, 15))
-        ax[0].imshow(fftpack.ifft2(img1ft).real)
-        ax[1].imshow(fftpack.ifft2(img2ft).real)
-        plt.show()
+        # import matplotlib.pyplot as plt
+        # fig, ax = plt.subplots(1, 2, figsize=(15, 15))
+        # ax[0].imshow(fftpack.ifft2(img1ft).real)
+        # ax[1].imshow(fftpack.ifft2(img2ft).real)
+        # plt.show()
 
         xcorr = np.real(fftpack.fftshift(fftpack.ifft2(img1ft * np.conj(img2ft))))
     else: # TODO: why are these different...
@@ -218,7 +218,7 @@ def crosscorrelation(img1: np.ndarray, img2: np.ndarray,
     return xcorr
 
 # numpy version
-def crosscorrelation_v2(img1: np.ndarray, img2: np.ndarray,  
+def crosscorrelation_v2_np(img1: np.ndarray, img2: np.ndarray,  
     lp: int = 128, hp: int = 6, sigma: int = 6, bp: bool = False) -> np.ndarray:
     """Cross-correlate images (fourier convolution matching)
 
@@ -541,58 +541,58 @@ def create_rect_mask(img: np.ndarray, w: int, h: int, sigma: int = 0, pt: Point=
 
     return mask 
 
-def create_lamella_mask(img: AdornedImage, settings: dict, factor: int = 2, circ: bool = False, pt: Point = None, use_trench_height: bool = False) -> np.ndarray:
+def create_lamella_mask(img: AdornedImage, protocol: dict, scale: int = 2, circ: bool = False, pt: Point = None, use_trench_height: bool = False) -> np.ndarray:
     """Create a mask based on the size of the lamella
 
     Args:
-        img (AdornedImage): _description_
-        settings (dict): _description_
-        factor (int, optional): _description_. Defaults to 2.
-        circ (bool, optional): _description_. Defaults to True.
-        pt (Point, optional): _description_. Defaults to None.
-        use_lamella_height (bool, optional): _description_. Defaults to False.
+        img (AdornedImage): reference image
+        settings (dict): protocol dictionary
+        scale (int, optional): mask size will be multipled by this scale . Defaults to 2.
+        circ (bool, optional): use a circular mask. Defaults to False.
+        pt (Point, optional): original point for the mask. Defaults to None.
+        use_trench_height (bool, optional): use the trench height to calculate the mask size instead of lamella height). Defaults to False.
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: mask
     """
 
     # get the size of the lamella in pixels
-    lamella_height_px, lamella_width_px = get_lamella_size_in_pixels(img, settings, use_trench_height)
+    lamella_height_px, lamella_width_px = get_lamella_size_in_pixels(img, protocol, use_trench_height)
 
     if circ:
         mask = circ_mask(
             size=(img.data.shape[1], img.data.shape[0]), 
-            radius=max(lamella_height_px, lamella_width_px) * factor , sigma=12
+            radius=max(lamella_height_px, lamella_width_px) * scale , sigma=12
         )
     else:
         mask = create_rect_mask(img=img.data,  
             pt=pt,
-            w=int(lamella_width_px * factor), 
-            h=int(lamella_height_px * factor), sigma=3)
+            w=int(lamella_width_px * scale), 
+            h=int(lamella_height_px * scale), sigma=3)
 
     return mask
 
 
 
 
-def get_lamella_size_in_pixels(img: AdornedImage, settings: dict, use_trench_height: bool = False) -> tuple[int]:
+def get_lamella_size_in_pixels(img: AdornedImage, protocol: dict, use_trench_height: bool = False) -> tuple[int]:
     """Get the relative size of the lamella in pixels based on the hfw of the image.
 
     Args:
         img (AdornedImage): reference image
-        settings (dict): settings dictionary
+        settings (dict): protocol dictionary
         use_lamella_height (bool, optional): get the height of the lamella (True), or Trench. Defaults to False.
 
     Returns:
         tuple[int]: _description_
     """
     # get real size from protocol
-    lamella_width = settings["protocol"]["lamella"]["lamella_width"]
-    lamella_height = settings["protocol"]["lamella"]["lamella_height"]
+    lamella_width = protocol["lamella_width"]
+    lamella_height = protocol["lamella_height"]
         
     total_height = lamella_height
     if use_trench_height:
-        trench_height = settings["protocol"]["lamella"]["protocol_stages"][0]["trench_height"]
+        trench_height = protocol["protocol_stages"][0]["trench_height"]
         total_height += 2 * trench_height
 
     # convert to px

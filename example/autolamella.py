@@ -78,7 +78,6 @@ def main():
         
         logging.info(f"Starting milling stage {stage_no}")
 
-        mill_settings = MillingSettings.__from_dict__(milling_dict)
         lamella: Lamella
         for lamella_no, lamella in sample:
 
@@ -94,8 +93,8 @@ def main():
                 print("TODO: microexpansion joints")
 
             # mill trenches
-            milling._draw_trench_patterns(microscope, mill_settings)
-            milling.run_milling(microscope, mill_settings.milling_current)
+            milling._draw_trench_patterns(microscope, milling_dict)
+            milling.run_milling(microscope, milling_dict["milling_current"])
             milling.finish_milling(microscope, settings.default.imaging_current)
 
             # retake reference image
