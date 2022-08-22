@@ -33,8 +33,8 @@ class GammaSettings:
     scale_factor: float = 0.1
     threshold: int  = 45 #px
 
-    @classmethod
-    def __from_dict__(self, settings: dict) -> 'GammaSettings':
+    @staticmethod
+    def __from_dict__(settings: dict) -> 'GammaSettings':
         gamma_settings = GammaSettings(
             enabled=settings["enabled"],
             min_gamma=settings["min_gamma"],
@@ -56,8 +56,8 @@ class ImageSettings:
     gamma: GammaSettings
     save_path: Path = None
 
-    @classmethod
-    def __from_dict__(self, settings: dict) -> 'ImageSettings':
+    @staticmethod
+    def __from_dict__(settings: dict) -> 'ImageSettings':
 
         if "autocontrast" not in settings:
             settings["autocontrast"] = False
@@ -126,8 +126,8 @@ class BeamSettings:
 
         return state_dict
 
-    @classmethod
-    def __from_dict__(self, state_dict: dict) -> 'BeamSettings':
+    @staticmethod
+    def __from_dict__(state_dict: dict) -> 'BeamSettings':
         beam_settings = BeamSettings(
             beam_type=BeamType[state_dict["beam_type"].upper()], # TODO: remove this key, just assign directly
             working_distance=state_dict["working_distance"],
@@ -159,9 +159,8 @@ class MicroscopeState:
 
         return state_dict
 
-    @classmethod
-    def __from_dict__(self, state_dict: dict) -> 'MicroscopeState':
-        # TOOD: class method
+    @staticmethod
+    def __from_dict__(state_dict: dict) -> 'MicroscopeState':
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
             absolute_position=stage_position_from_dict(state_dict["absolute_position"]),
@@ -177,9 +176,9 @@ class MillingSettings:
     width: float
     height: float
     depth: float
-    rotation: float
-    centre_x: float = 0.0
-    centre_y: float = 0.0
+    rotation: float # deg?
+    centre_x: float = 0.0 # TODO: change to Point?
+    centre_y: float = 0.0 
     milling_current: float = 20.0e-12
     scan_direction: str = "TopToBottom"
     cleaning_cross_section: bool = False
@@ -201,8 +200,8 @@ class MillingSettings:
 
         return settings_dict
 
-    @classmethod
-    def __from_dict__(self, settings: dict) -> 'MillingSettings':
+    @staticmethod
+    def __from_dict__(settings: dict) -> 'MillingSettings':
 
         if "centre_x" not in settings:
             settings["centre_x"] = 0
@@ -322,8 +321,8 @@ class StageSettings:
         }
         return settings
 
-    @classmethod
-    def __from_dict__(self, settings: dict) -> 'StageSettings':
+    @staticmethod
+    def __from_dict__(settings: dict) -> 'StageSettings':
             
         stage_settings = StageSettings(
             rotation_flat_to_electron=settings["rotation_flat_to_electron"],
@@ -390,5 +389,5 @@ class DefaultSettings:
 class MicroscopeSettings:
     system: SystemSettings
     default: DefaultSettings
-    image_settings: ImageSettings
+    image: ImageSettings
     protocol: dict = None

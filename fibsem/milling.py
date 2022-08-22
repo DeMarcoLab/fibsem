@@ -84,26 +84,27 @@ def finish_milling(microscope: SdbMicroscopeClient, imaging_current: float = 20e
 
 ############################# UTILS #############################
 
-def read_protocol_dictionary(settings: dict, stage_name: str) -> list[dict]:
+# TODO: refactor this to be less liftout specific
+def read_protocol_dictionary(protocol: dict, stage_name: str) -> list[dict]:
     """Read the milling protocol settings dictionary into a structured format
 
     Args:
-        settings (dict): settings dictionary
+        protocol (dict): protocol dictionary
         stage_name (str): milling stage name
 
     Returns:
         list[dict]: milling protocol stages
     """
     # multi-stage
-    if "protocol_stages" in settings[stage_name]:
+    if "protocol_stages" in protocol[stage_name]:
         protocol_stages = []
-        for stage_settings in settings[stage_name]["protocol_stages"]:
-            tmp_settings = settings[stage_name].copy()
+        for stage_settings in protocol[stage_name]["protocol_stages"]:
+            tmp_settings = protocol[stage_name].copy()
             tmp_settings.update(stage_settings)
             protocol_stages.append(tmp_settings)
     # single-stage
     else:
-        protocol_stages = [settings[stage_name]]
+        protocol_stages = [protocol[stage_name]]
 
     return protocol_stages
 
@@ -158,28 +159,28 @@ def estimate_milling_time_in_seconds(milling_stage_patterns: list[list[Union[Cle
 
 ### PATTERNING
 
-def _draw_rectangle_pattern(microscope:SdbMicroscopeClient, settings:dict , x: float = 0.0, y: float = 0.0):
+def _draw_rectangle_pattern(microscope:SdbMicroscopeClient, protocol:dict , x: float = 0.0, y: float = 0.0):
 
-    if settings["cleaning_cross_section"]:
+    if protocol["cleaning_cross_section"]:
         pattern = microscope.patterning.create_cleaning_cross_section(
         center_x=x,
         center_y=y,
-        width=settings["width"],
-        height=settings["height"],
-        depth=settings["depth"],
+        width=protocol["width"],
+        height=protocol["height"],
+        depth=protocol["depth"],
     )
     else:
         pattern = microscope.patterning.create_rectangle(
             center_x=x,
             center_y=y,
-            width=settings["width"],
-            height=settings["height"],
-            depth=settings["depth"],
+            width=protocol["width"],
+            height=protocol["height"],
+            depth=protocol["depth"],
         )
     
     # need to make each protocol setting have these....which means validation
-    pattern.rotation=np.deg2rad(settings["rotation"])
-    pattern.scan_direction = settings["scan_direction"]
+    pattern.rotation=np.deg2rad(protocol["rotation"])
+    pattern.scan_direction = protocol["scan_direction"]
 
     return pattern
 
@@ -263,14 +264,14 @@ def _draw_trench_patterns(
 
 def _draw_fiducial_patterns(
     microscope: SdbMicroscopeClient,
-    settings: MillingSettings,
+    mill_settings: MillingSettings,
     point: Point = Point()
 ):
     """draw the fiducial milling patterns
 
     Args:
         microscope (SdbMicroscopeClient): AutoScript microscope connection
-        settings (dict): fiducial milling settings
+        mill_settings (dict): fiducial milling settings
         centre_x (float, optional): centre x coordinate. Defaults to 0.0.
         centre_y (float, optional): centre y coordinate. Defaults to 0.0.
     Returns
@@ -279,8 +280,8 @@ def _draw_fiducial_patterns(
             List of rectangular patterns used to create the fiducial marker.
     """
 
-    pattern_1 = _draw_rectangle_pattern_v2(microscope, settings, point.x, point.y)
-    pattern_2 = _draw_rectangle_pattern_v2(microscope, settings, point.x, point.y)
-    pattern_2.rotation = np.deg2rad(settings["rotation"] + 90)
+    pattern_1 = _draw_rectangle_pattern_v2(microscope, mill_settings, point.x, point.y)
+    pattern_2 = _draw_rectangle_pattern_v2(microscope, mill_settings, point.x, point.y)
+    pattern_2.rotation = np.deg2rad(mill_settings.rotation + 90)
 
     return [pattern_1, pattern_2]

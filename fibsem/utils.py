@@ -35,7 +35,7 @@ def connect_to_microscope(ip_address="10.0.0.1"):
 
     return microscope
 
-def sputter_platinum_v2(
+def sputter_platinum(
     microscope: SdbMicroscopeClient,
     protocol: dict,
     whole_grid: bool = False,
@@ -45,20 +45,20 @@ def sputter_platinum_v2(
 
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope instance
-        settings (dict): platinum protcol dictionary
+        protocol (dict): platinum protcol dictionary
         whole_grid (bool, optional): sputtering protocol. Defaults to False.
 
     Raises:
         RuntimeError: Error Sputtering
     """
 
-    # protcol = settings["protocol"]["platinum"] in old system
+    # protcol = settings.protocol["platinum"] in old system
     # protocol = settings.protocol["platinum"] in new
     if whole_grid:
 
         sputter_time = protocol["whole_grid"]["time"]  # 20
         hfw = protocol["whole_grid"]["hfw"]  # 30e-6
-        line_pattern_length = protocol["platinum"]["whole_grid"]["length"]  # 7e-6
+        line_pattern_length = protocol["whole_grid"]["length"]  # 7e-6
         logging.info("sputtering platinum over the whole grid.")
     else:
         sputter_time = protocol["weld"]["time"]  # 20
@@ -155,10 +155,14 @@ def load_yaml(fname: Path) -> dict:
     return config
 
 
-def save_metadata(settings: dict, path: Path):
-    fname = os.path.join(path, "metadata.json")
-    with open(fname, "w") as fp:
-        json.dump(settings, fp, sort_keys=True, indent=4)
+def save_metadata(settings: MicroscopeSettings, path: Path):
+    #TODO: finish this
+    pass
+    # settings_dict = settings.__to_dict__()
+
+    # fname = os.path.join(path, "metadata.json")
+    # with open(fname, "w") as fp:
+    #     json.dump(settings_dict, fp, sort_keys=True, indent=4)
 
 
 def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
@@ -203,7 +207,7 @@ def setup_session(
     microscope = connect_to_microscope(ip_address=settings.system.ip_address)
 
     # image_setttings
-    settings.image_settings.save_path = session_path
+    settings.image.save_path = session_path
 
     logging.info(f"Finished setup for session: {session}")
 
@@ -241,7 +245,7 @@ def load_settings_from_config(
     settings = MicroscopeSettings(
         system=system_settings,
         default=default_settings,
-        image_settings=image_settings,
+        image=image_settings,
         protocol=protocol,
     )
 

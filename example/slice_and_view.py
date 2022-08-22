@@ -25,8 +25,8 @@ def main():
     # viewer.add_image(eb_image.data, name="eb_image", colormap="gray")
     # viewer.add_image(ib_image.data, name="eb_image", colormap="gray")
 
-    settings.image_settings.label = "reference"
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image_settings)
+    settings.image.label = "reference"
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
 
     # TODO: persistent zarr?
     # ebz: zarr.Array = zarr.array(eb_image.data)
@@ -48,8 +48,8 @@ def main():
 
         # view
         logging.info("------------------------ VIEW ------------------------")
-        settings.image_settings.label = f"slice_{slice_idx}"
-        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image_settings)
+        settings.image.label = f"slice_{slice_idx}"
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
 
         # visualise
         # ebz.append(eb_image.data)

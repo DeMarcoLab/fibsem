@@ -12,14 +12,13 @@ from PIL import Image, ImageDraw
 from scipy import fftpack
 
 from fibsem import acquire, movement, utils
-from fibsem.structures import (BeamSettings, MicroscopeState, Point,
+from fibsem.structures import (BeamSettings, MicroscopeSettings, MicroscopeState, Point,
                                ReferenceImages, BeamType, ImageSettings)
 
 
 def correct_stage_drift(
     microscope: SdbMicroscopeClient,
-    settings: dict,
-    image_settings: ImageSettings,
+    settings: MicroscopeSettings,
     reference_images: ReferenceImages,
     alignment: tuple(BeamType) = (BeamType.ELECTRON, BeamType.ELECTRON),
     rotate: bool = False,
@@ -48,16 +47,16 @@ def correct_stage_drift(
     for ref_image in [ref_lowres, ref_highres]:
 
         if use_ref_mask:
-            ref_mask = create_lamella_mask(ref_image, settings, factor = 4)
+            ref_mask = create_lamella_mask(ref_image, settings.protocol["lamella"], factor = 4) # TODO: refactor, liftout specific
         else: 
             ref_mask = None
 
         # take new images
         # set new image settings (same as reference)
-        image_settings = match_image_settings(
-            ref_image, image_settings, beam_type=alignment[1]
+        settings.image = match_image_settings(
+            ref_image, settings.image, beam_type=alignment[1]
         )
-        new_image = acquire.new_image(microscope, image_settings)
+        new_image = acquire.new_image(microscope, settings.image)
 
         # crosscorrelation alignment
         ret = align_using_reference_images(
@@ -71,7 +70,7 @@ def correct_stage_drift(
 
 def align_using_reference_images(
     microscope: SdbMicroscopeClient,
-    settings: dict,
+    settings: MicroscopeSettings,
     ref_image: AdornedImage,
     new_image: AdornedImage,
     ref_mask: np.ndarray = None

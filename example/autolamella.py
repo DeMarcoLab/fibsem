@@ -32,15 +32,15 @@ def main():
     movement.safe_absolute_stage_movement(microscope, stage_position)
 
     # take a reference image    
-    settings.image_settings.label = "grid_reference"
-    settings.image_settings.beam_type = BeamType.ION
-    settings.image_settings.hfw = 900e-6
-    acquire.take_reference_images(microscope, settings.image_settings)
+    settings.image.label = "grid_reference"
+    settings.image.beam_type = BeamType.ION
+    settings.image.hfw = 900e-6
+    acquire.take_reference_images(microscope, settings.image)
 
     # select positions
     sample: list[Lamella] = []
     lamella_no = 1
-    settings.image_settings.hfw = 80e-6
+    settings.image.hfw = 80e-6
 
     while True:
         response = input(f"""Move to the desired position. 
@@ -53,12 +53,12 @@ def main():
             # milling._draw_fiducial_patterns(microscope, MillingSettings.__from_dict__(settings.protocol["fiducial"]))
 
             # set filepaths
-            path = os.path.join(settings.image_settings.save_path, lamella_no)
-            settings.image_settings.save_path = path
+            path = os.path.join(settings.image.save_path, lamella_no)
+            settings.image.save_path = path
             
             lamella = Lamella(
                 state=calibration.get_current_microscope_state(microscope),
-                reference_image=acquire.new_image(microscope, settings.image_settings),
+                reference_image=acquire.new_image(microscope, settings.image),
                 path = path
             )
             sample.append(lamella)
@@ -87,7 +87,7 @@ def main():
             calibration.set_microscope_state(microscope, lamella.state)
 
             # realign
-            alignment.beam_shift_alignment(microscope, settings.image_settings, lamella.reference_image)
+            alignment.beam_shift_alignment(microscope, settings.image, lamella.reference_image)
                        
             if stage_no == 0:
                 print("TODO: microexpansion joints")
@@ -98,9 +98,9 @@ def main():
             milling.finish_milling(microscope, settings.default.imaging_current)
 
             # retake reference image
-            settings.image_settings.save_path = lamella.path
-            settings.image_settings.label = f"ref_mill_stage_{stage_no}"
-            lamella.reference_image = acquire.new_image(microscope, settings.image_settings)
+            settings.image.save_path = lamella.path
+            settings.image.label = f"ref_mill_stage_{stage_no}"
+            lamella.reference_image = acquire.new_image(microscope, settings.image)
    
     logging.info(f"Finished autolamella: {settings.protocol['name']}")
 
