@@ -11,12 +11,6 @@ from fibsem import acquire, movement
 from fibsem.structures import (BeamSettings, MicroscopeState, BeamType)
 
 
-
-
-
-
-
-
 def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> None:
     """Automatically focus and link sample stage z-height.
 
