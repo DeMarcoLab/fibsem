@@ -4,8 +4,8 @@ import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.enumerations import (CoordinateSystem,
                                                            ManipulatorState)
-
-from fibsem import acquire, calibration
+from autoscript_sdb_microscope_client.structures import AdornedImage
+from fibsem import calibration
 from fibsem.structures import (BeamSystemSettings, BeamType, ImageSettings,
                                MicroscopeSettings, MicroscopeState)
 
@@ -260,6 +260,24 @@ def check_working_distance_is_within_tolerance(
         f"{settings.beam_type.name} Beam working distance is {working_distance:.4f}m"
     )
     return np.isclose(working_distance, eucentric_height, atol=atol)
+
+
+def check_shift_within_tolerance(
+    dx: float, dy: float, ref_image: AdornedImage, limit: float = 0.25
+) -> bool:
+    """Check if required shift is wihtin safety limit"""
+    # check if the cross correlation movement is within the safety limit
+
+    pixelsize_x = ref_image.metadata.binary_result.pixel_size.x
+    X_THRESHOLD = limit * pixelsize_x * ref_image.width
+    Y_THRESHOLD = limit * pixelsize_x * ref_image.height
+
+    return abs(dx) < X_THRESHOLD and abs(dy) < Y_THRESHOLD
+
+
+
+
+
 
 
 def _validate_milling_protocol(stage_protocol: dict, settings: MicroscopeSettings) -> dict:
