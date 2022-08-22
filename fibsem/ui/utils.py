@@ -1,28 +1,18 @@
 import logging
-import os
-import winsound
 from dataclasses import dataclass
-from pathlib import Path
+from typing import Union
 
-import liftout
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.ndimage as ndi
-import yaml
+from autoscript_sdb_microscope_client._dynamic_object_proxies import (
+    CleaningCrossSectionPattern, RectanglePattern)
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem.constants import METRE_TO_MILLIMETRE
 from fibsem.structures import Point
-
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import (QGridLayout, QLabel, QMessageBox, QSizePolicy,
-                             QVBoxLayout, QWidget)
-
+from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 
 
 class _WidgetPlot(QWidget):
@@ -180,3 +170,45 @@ def message_box_ui(title: str, text: str, buttons = QMessageBox.Yes | QMessageBo
     response = True if (msg.clickedButton() == msg.button(QMessageBox.Yes)) or (msg.clickedButton() == msg.button(QMessageBox.Ok) ) else False
 
     return response
+
+
+
+def draw_rectangle_pattern(adorned_image: AdornedImage, pattern: Union[RectanglePattern, CleaningCrossSectionPattern], colour: str ="yellow") -> Rectangle:
+    """Draw a AutoSCript Rectangle Pattern as Matplotib Rectangle"""
+    rectangle = Rectangle(
+        (0, 0),
+        0.2,
+        0.2,
+        color=colour,
+        fill=None,
+        alpha=1,
+        angle=np.rad2deg(-pattern.rotation),
+    )
+    rectangle.set_visible(False)
+    rectangle.set_hatch("//////")
+
+    image_width = adorned_image.width
+    image_height = adorned_image.height
+    pixel_size = adorned_image.metadata.binary_result.pixel_size.x
+
+    width = pattern.width / pixel_size
+    height = pattern.height / pixel_size
+    rotation = -pattern.rotation
+    rectangle_left = (
+        (image_width / 2)
+        + (pattern.center_x / pixel_size)
+        - (width / 2) * np.cos(rotation)
+        + (height / 2) * np.sin(rotation)
+    )
+    rectangle_bottom = (
+        (image_height / 2)
+        - (pattern.center_y / pixel_size)
+        - (height / 2) * np.cos(rotation)
+        - (width / 2) * np.sin(rotation)
+    )
+    rectangle.set_width(width)
+    rectangle.set_height(height)
+    rectangle.set_xy((rectangle_left, rectangle_bottom))
+    rectangle.set_visible(True)
+
+    return rectangle
