@@ -7,7 +7,6 @@ from fibsem import calibration, acquire, movement, validation, utils, fourier
 from fibsem.imaging import utils as image_utils
 from fibsem.imaging import masks
 
-
 import numpy as np
 import logging
 

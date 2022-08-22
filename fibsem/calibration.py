@@ -5,12 +5,10 @@ from datetime import datetime
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
-from autoscript_sdb_microscope_client.structures import (AdornedImage,
-                                                         StagePosition)
+from autoscript_sdb_microscope_client.structures import StagePosition
 
-from fibsem import acquire, movement, utils
-from fibsem.structures import (BeamSettings, MicroscopeState, Point,
-                               BeamType, ImageSettings)
+from fibsem import acquire, movement
+from fibsem.structures import (BeamSettings, MicroscopeState, BeamType)
 
 
 
