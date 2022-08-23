@@ -349,7 +349,7 @@ def x_corrected_stage_movement(
 
 def y_corrected_stage_movement(
     microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings,
+    settings: MicroscopeSettings, # TODO: change to StageSettings
     expected_y: float,
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> StagePosition:
