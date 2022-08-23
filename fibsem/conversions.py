@@ -1,7 +1,5 @@
-# TODO
 import numpy as np
 from autoscript_sdb_microscope_client.structures import AdornedImage
-
 
 ### UTILS
 def pixel_to_realspace_coordinate(coord: list, image: AdornedImage) -> list:
@@ -70,3 +68,16 @@ def get_lamella_size_in_pixels(img: AdornedImage, protocol: dict, use_trench_hei
     lamella_width_px = int((lamella_width / hfw) * img.width) 
 
     return (lamella_height_px, lamella_width_px)
+
+def convert_metres_to_pixels(distance: float, pixelsize: float) -> int:
+    """Convert distance in metres to pixels"""
+    return int(distance * pixelsize)
+
+def convert_pixels_to_metres(pixels: int, pixelsize: float) -> float:
+    """Convert pixels to distance in metres"""
+    return float(pixels / pixelsize)
+
+
+
+
+    

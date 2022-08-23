@@ -1,14 +1,19 @@
-# TODO
-
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import StagePosition, MoveSettings, AdornedImage, Rectangle
-from fibsem.structures import ImageSettings, BeamType, MicroscopeSettings, ReferenceImages
-from fibsem import calibration, acquire, movement, validation, utils
-from fibsem.imaging import utils as image_utils
-from fibsem.imaging import masks
+import logging
 
 import numpy as np
-import logging
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from autoscript_sdb_microscope_client.structures import (AdornedImage,
+                                                         MoveSettings,
+                                                         Rectangle,
+                                                         StagePosition)
+from scipy import fftpack
+
+from fibsem import acquire, calibration, movement, utils, validation
+from fibsem.imaging import masks
+from fibsem.imaging import utils as image_utils
+from fibsem.structures import (BeamType, ImageSettings, MicroscopeSettings,
+                               ReferenceImages)
+
 
 def correct_stage_eucentric_alignment(microscope: SdbMicroscopeClient, image_settings: ImageSettings, tilt_degrees: float = 25) -> None:
 
@@ -227,11 +232,7 @@ def shift_from_crosscorrelation(
 
 
 # TODO
-import numpy as np
-import logging
-from scipy import fftpack
 
-from fibsem.imaging import masks
 
 
 def crosscorrelation(img1: np.ndarray, img2: np.ndarray,  
