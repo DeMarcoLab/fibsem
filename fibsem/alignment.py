@@ -60,6 +60,7 @@ def beam_shift_alignment(
 ):
     """Align the images by adjusting the beam shift, instead of moving the stage
             (increased precision, lower range)
+        NOTE: only shift the ion beam, never electron
 
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope client
