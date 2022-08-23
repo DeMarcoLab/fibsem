@@ -113,7 +113,7 @@ def sputter_platinum(
     logging.info("sputtering platinum finished.")
 
 
-def save_image(image, save_path, label=""):
+def save_image(image: AdornedImage, save_path: Path, label:str="image"):
     os.makedirs(save_path, exist_ok=True)
     path = os.path.join(save_path, f"{label}.tif")
     image.save(path)
