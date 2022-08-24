@@ -2,7 +2,7 @@ import numpy as np
 from autoscript_sdb_microscope_client.structures import AdornedImage
 
 ### UTILS
-def pixel_to_realspace_coordinate(coord: list, image: AdornedImage) -> list:
+def pixel_to_realspace_coordinate(coord: list, image: AdornedImage, pixelsize: int = None) -> list:
     """Convert pixel image coordinate to real space coordinate.
 
     This conversion deliberately ignores the nominal pixel size in y,
@@ -29,12 +29,13 @@ def pixel_to_realspace_coordinate(coord: list, image: AdornedImage) -> list:
     else:
         y_shape, x_shape = image.data.shape
 
-    pixelsize_x = image.metadata.binary_result.pixel_size.x
-    # deliberately don't use the y pixel size, any tilt will throw this off
+    if pixelsize is None:
+        pixelsize = image.metadata.binary_result.pixel_size.x
+        # deliberately don't use the y pixel size, any tilt will throw this off
     coord[1] = y_shape - coord[1]  # flip y-axis for relative coordinate system
     # reset origin to center
     coord -= np.array([x_shape / 2, y_shape / 2]).astype(np.int32)
-    realspace_coord = list(np.array(coord) * pixelsize_x)  # to real space
+    realspace_coord = list(np.array(coord) * pixelsize)  # to real space
     return realspace_coord # TODO: convert to use Point struct
 
 
