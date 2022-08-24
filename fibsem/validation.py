@@ -230,7 +230,7 @@ def validate_stage_height_for_needle_insertion(
     stage = microscope.specimen.stage
 
     # Unable to insert the needle if the stage height is below this limit (3.7e-3)
-    return bool(stage.current_position.z < needle_stage_height_limit)
+    return bool(stage.current_position.z > needle_stage_height_limit)
 
 def validate_focus(
     microscope: SdbMicroscopeClient,
@@ -250,11 +250,11 @@ def check_working_distance_is_within_tolerance(
 
     if settings.beam_type is BeamType.ELECTRON:
         microscope_beam = microscope.beams.electron_beam
-    if settings.beam_type is BeamType.ELECTRON:
+    if settings.beam_type is BeamType.ION:
         microscope_beam = microscope.beams.ion_beam
 
     working_distance = microscope_beam.working_distance.value
-    eucentric_height = eucentric_height
+    eucentric_height = settings.eucentric_height
 
     logging.info(
         f"{settings.beam_type.name} Beam working distance is {working_distance:.4f}m"

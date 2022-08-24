@@ -309,7 +309,7 @@ def match_image_settings(
 ) -> ImageSettings:
     """Generate matching image settings from an image."""
     image_settings.resolution = f"{ref_image.width}x{ref_image.height}"
-    image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
+    # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
     image_settings.hfw = ref_image.width * ref_image.metadata.binary_result.pixel_size.x
     image_settings.beam_type = beam_type
     image_settings.save = True

@@ -315,7 +315,6 @@ def safe_absolute_stage_movement(
     """
 
     # tilt flat for large rotations to prevent collisions
-    input("TESTING STOP POINT: SAFE ROTATION")
     safe_rotation_movement(microscope, stage_position)
 
     stage = microscope.specimen.stage

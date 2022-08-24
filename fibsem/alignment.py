@@ -117,7 +117,7 @@ def correct_stage_drift(
     for ref_image in [ref_lowres, ref_highres]:
 
         if use_ref_mask:
-            ref_mask = masks.create_lamella_mask(ref_image, settings.protocol["lamella"], factor = 4) # TODO: refactor, liftout specific
+            ref_mask = masks.create_lamella_mask(ref_image, settings.protocol["lamella"], scale = 4, use_trench_height=True) # TODO: refactor, liftout specific
         else: 
             ref_mask = None
 
@@ -130,7 +130,7 @@ def correct_stage_drift(
 
         # crosscorrelation alignment
         ret = align_using_reference_images(
-            microscope, settings, ref_lowres, new_image, ref_mask=ref_mask
+            microscope, settings, ref_image, new_image, ref_mask=ref_mask
         )
 
         if ret is False:
@@ -145,6 +145,13 @@ def align_using_reference_images(
     new_image: AdornedImage,
     ref_mask: np.ndarray = None
 ) -> bool:
+
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots(1, 2)
+    # ax[0].imshow(ref_image.data, cmap="gray")
+    # ax[1].imshow(new_image.data, cmap="gray")
+
+    # plt.show()
 
     # get beam type
     ref_beam_type = BeamType[ref_image.metadata.acquisition.beam_type.upper()]
@@ -174,6 +181,7 @@ def align_using_reference_images(
         movement.move_stage_relative_with_corrected_movement(microscope, 
             settings, 
             dx=dx, 
+            # dy=dy,
             dy=-dy, 
             beam_type=new_beam_type)
 
@@ -205,6 +213,10 @@ def shift_from_crosscorrelation(
 
     if ref_mask is not None:
         ref_data_norm = ref_mask * ref_data_norm # mask the reference
+
+    # import matplotlib.pyplot as plt
+    # plt.imshow(ref_data_norm, cmap="gray")
+    # plt.show()
 
     # run crosscorrelation
     xcorr = crosscorrelation(
@@ -272,11 +284,11 @@ def crosscorrelation(img1: np.ndarray, img2: np.ndarray,
         
         img2ft = n_pixels * img2ft / np.sqrt(tmp.sum())
 
-        # import matplotlib.pyplot as plt
-        # fig, ax = plt.subplots(1, 2, figsize=(15, 15))
-        # ax[0].imshow(fftpack.ifft2(img1ft).real)
-        # ax[1].imshow(fftpack.ifft2(img2ft).real)
-        # plt.show()
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 2, figsize=(15, 15))
+        ax[0].imshow(fftpack.ifft2(img1ft).real)
+        ax[1].imshow(fftpack.ifft2(img2ft).real)
+        plt.show()
 
         xcorr = np.real(fftpack.fftshift(fftpack.ifft2(img1ft * np.conj(img2ft))))
     else: # TODO: why are these different...
