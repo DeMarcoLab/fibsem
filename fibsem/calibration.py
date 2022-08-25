@@ -8,7 +8,7 @@ from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 from autoscript_sdb_microscope_client.structures import StagePosition
 
 from fibsem import acquire, movement
-from fibsem.structures import (BeamSettings, MicroscopeState, BeamType)
+from fibsem.structures import (BeamSettings, MicroscopeState, BeamType, ImageSettings)
 
 
 def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> None:
@@ -31,6 +31,31 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
     # NOTE: replace with auto_focus_and_link if performance of focus is poor
     # # Restore original settings
     microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
+
+def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, n_iterations: int = 10):
+
+    # take sequence of 5 images quickly,
+    resolution = image_settings.resolution
+    dwell_time = image_settings.dwell_time
+    autocontrast = image_settings.autocontrast
+    
+    image_settings.resolution = "768x512"
+    image_settings.dwell_time = 200e-9
+    image_settings.autocontrast = False
+    
+    logging.info(f"Bring me Thanos!") # important information
+     
+    for i in range(n_iterations):
+        acquire.new_image(microscope, image_settings)
+
+    # autocontrast
+    acquire.autocontrast(microscope, BeamType.ELECTRON)
+
+    # take image
+    image_settings.resolution = resolution
+    image_settings.dwell_time = dwell_time
+    image_settings.autocontrast = autocontrast
+    acquire.new_image(microscope, image_settings)
 
 
 

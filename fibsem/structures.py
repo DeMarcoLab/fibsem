@@ -7,9 +7,8 @@ from enum import Enum
 from pathlib import Path
 
 import numpy as np
-from autoscript_sdb_microscope_client.structures import (AdornedImage,
-                                                         StagePosition)
-
+from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
+import yaml
 
 @dataclass
 class Point:
@@ -255,6 +254,34 @@ def stage_position_from_dict(state_dict: dict) -> StagePosition:
     )
 
     return stage_position
+
+
+def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
+
+    position_dict = {
+        "x": position.x,
+        "y": position.y,
+        "z": position.z,
+        "r": None,
+        "coordinate_system": position.coordinate_system
+    }
+
+    return position_dict
+
+
+def manipulator_position_from_dict(position_dict: dict) -> ManipulatorPosition:
+
+    position = ManipulatorPosition(
+        x=position_dict["x"],
+        y=position_dict["y"],
+        z=position_dict["z"],
+        r=position_dict["r"],
+        coordinate_system=position_dict["coordinate_system"] 
+
+    )
+
+    return position
+
 
 
 

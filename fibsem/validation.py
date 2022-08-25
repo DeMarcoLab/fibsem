@@ -80,7 +80,7 @@ def _validate_needle_calibration(microscope: SdbMicroscopeClient) -> None:
     needle_state = microscope.specimen.manipulator.state
     logging.info(f"Needle is {needle_state}")
 
-    if needle_state is not ManipulatorState.RETRACTED:
+    if needle_state != "Retracted":
         logging.warning(f"Needle is {needle_state}. Please retract before starting.")
 
     # movement.retract_needle() # TODO: decide whether or not to do this

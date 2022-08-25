@@ -104,6 +104,36 @@ def move_needle_to_eucentric_position_offset(
     microscope.specimen.manipulator.absolute_move(eucentric_position)
 
 
+def move_needle_to_position_offset(
+    microscope: SdbMicroscopeClient, position: ManipulatorPosition = None, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0
+) -> None:
+    """Move the needle to a position offset, based on the eucentric position
+
+    Args:
+        microscope (SdbMicroscopeClient): AutoScript Microscope Instance
+        dx (float, optional): x-axis offset, image coordinates. Defaults to 0.0.
+        dy (float, optional): y-axis offset, image coordinates. Defaults to 0.0.
+        dz (float, optional): z-axis offset, image coordinates. Defaults to 0.0.
+    """
+
+    if position is None:
+        # move to relative to the eucentric point
+        position = microscope.specimen.manipulator.get_saved_position(
+            ManipulatorSavedPosition.EUCENTRIC, ManipulatorCoordinateSystem.STAGE
+        )
+
+    yz_move = z_corrected_needle_movement(
+        dz, microscope.specimen.stage.current_position.t
+    )
+    position.x += dx
+    position.y += yz_move.y + dy
+    position.z += yz_move.z  # RAW, up = negative, STAGE: down = negative
+    position.r = None # rotation is not supported
+    microscope.specimen.manipulator.absolute_move(position)
+
+
+
+
 def x_corrected_needle_movement(
     expected_x: float
 ) -> ManipulatorPosition:

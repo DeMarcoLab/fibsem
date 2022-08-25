@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import AdornedImage
+from autoscript_sdb_microscope_client.structures import AdornedImage, ManipulatorPosition
 from PIL import Image
 import fibsem
 from fibsem.structures import (
@@ -154,6 +154,32 @@ def load_yaml(fname: Path) -> dict:
 
     return config
 
+def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
+    """Save the manipulator position from disk"""
+    from fibsem.structures import manipulator_position_to_dict
+
+    with open(os.path.join(path, "needle.yaml"), "w") as f:
+        yaml.dump(manipulator_position_to_dict(position), f, indent=4)
+
+def load_needle_yaml(path: Path) -> ManipulatorPosition:
+    """Load the manipulator position from disk"""
+    from fibsem.structures import manipulator_position_from_dict
+
+    position_dict = load_yaml(os.path.join(path, "needle.yaml"))
+    position = manipulator_position_from_dict(position_dict)
+
+    return position
+
+
+def get_updated_needle_insertion_position(path: Path) -> ManipulatorPosition:
+
+    position = None
+
+    if os.path.exists(os.path.join(path, "needle.yaml")):
+
+        position = load_needle_yaml(path)
+
+    return position
 
 def save_metadata(settings: MicroscopeSettings, path: Path):
     #TODO: finish this

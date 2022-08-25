@@ -14,6 +14,7 @@ from fibsem import utils
 from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages
 
 
+
 def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -> None:
     """Automatically adjust the microscope image contrast."""
     microscope.imaging.set_active_view(beam_type.value)
@@ -119,6 +120,9 @@ def new_image(
         settings.hfw = np.clip(settings.hfw, hfw_limits.min, hfw_limits.max)
         microscope.beams.electron_beam.horizontal_field_width.value = settings.hfw
         label = f"{settings.label}_eb"
+
+
+
     if settings.beam_type is BeamType.ION:
         hfw_limits = microscope.beams.ion_beam.horizontal_field_width.limits
         settings.hfw = np.clip(settings.hfw, hfw_limits.min, hfw_limits.max)
