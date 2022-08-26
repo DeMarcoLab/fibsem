@@ -38,7 +38,9 @@ def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSe
     resolution = image_settings.resolution
     dwell_time = image_settings.dwell_time
     autocontrast = image_settings.autocontrast
+    beam_type = image_settings.beam_type
     
+    image_settings.beam_type = BeamType.ELECTRON
     image_settings.resolution = "768x512"
     image_settings.dwell_time = 200e-9
     image_settings.autocontrast = False
@@ -52,10 +54,12 @@ def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSe
     acquire.autocontrast(microscope, BeamType.ELECTRON)
 
     # take image
+    image_settings.beam_type = beam_type
     image_settings.resolution = resolution
     image_settings.dwell_time = dwell_time
     image_settings.autocontrast = autocontrast
     acquire.new_image(microscope, image_settings)
+
 
 
 
