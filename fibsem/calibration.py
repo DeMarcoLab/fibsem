@@ -8,8 +8,9 @@ from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 from autoscript_sdb_microscope_client.structures import StagePosition
 
 from fibsem import acquire, movement
-from fibsem.structures import (BeamSettings, MicroscopeState, BeamType, ImageSettings)
+from fibsem.structures import (BeamSettings, MicroscopeState, BeamType, ImageSettings, MicroscopeSettings)
 
+from pathlib import Path
 
 def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> None:
     """Automatically focus and link sample stage z-height.
@@ -59,6 +60,78 @@ def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSe
     image_settings.dwell_time = dwell_time
     image_settings.autocontrast = autocontrast
     acquire.new_image(microscope, image_settings)
+
+
+
+def align_needle_to_eucentric_position(
+    microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
+    path: Path = None,
+    validate: bool = False,
+) -> None:
+    """Move the needle to the eucentric position, and save the updated position to disk
+
+    Args:
+        microscope (SdbMicroscopeClient): autoscript microscope instance
+        settings (MicroscopeSettings): microscope settings
+        lamella (Lamella): current lamella
+    """
+
+    from fibsem.ui import windows as fibsem_ui_windows
+    from fibsem.detection.utils import DetectionType, DetectionFeature
+    from fibsem import utils
+
+    # take reference images
+    settings.image.save = False
+    settings.image.beam_type = BeamType.ELECTRON
+    ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
+
+    det = fibsem_ui_windows.detect_features(
+        microscope=microscope,
+        settings=settings,
+        ref_image=ref_eb,
+        features=[
+            DetectionFeature(DetectionType.NeedleTip, None),
+            DetectionFeature(DetectionType.ImageCentre, None),
+        ],
+        validate=validate,
+    )
+
+    movement.move_needle_relative_with_corrected_movement(
+        microscope=microscope,
+        dx=det.distance_metres.x,
+        dy=det.distance_metres.y,
+        beam_type=BeamType.ELECTRON,
+    )
+
+    # take reference images
+    settings.image.save = False
+    settings.image.beam_type = BeamType.ION
+    ref_ib = acquire.new_image(microscope=microscope, settings=settings.image)
+
+    det = fibsem_ui_windows.detect_features(
+        microscope=microscope,
+        settings=settings,
+        ref_image=ref_ib,
+        features=[
+            DetectionFeature(DetectionType.NeedleTip, None),
+            DetectionFeature(DetectionType.ImageCentre, None),
+        ],
+        validate=validate,
+    )
+
+    movement.move_needle_relative_with_corrected_movement(
+        microscope=microscope, dx=0, dy=-det.distance_metres.y, beam_type=BeamType.ION,
+    )
+
+    # take image
+    acquire.take_reference_images(microscope, settings.image)
+
+    if path is not None:
+        # save the updated position to disk
+        utils.save_needle_yaml(
+            path, microscope.specimen.manipulator.current_position
+        )
 
 
 
