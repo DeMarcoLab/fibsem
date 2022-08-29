@@ -198,7 +198,22 @@ def align_needle_to_eucentric_position(
             path, microscope.specimen.manipulator.current_position
         )
 
+def auto_home_and_link(microscope: SdbMicroscopeClient, state: MicroscopeState) -> None:
 
+    # home the stage
+    logging.info(f"Homing stage...")
+    microscope.specimen.stage.home()
+
+    # move to saved eucentric state
+    set_microscope_state(microscope, state)
+
+    # set the working distances to 3.91mm, 16.5mm
+    microscope.beams.electron_beam.working_distance.value = 3.91e-3 # MAGIC_NUMBER
+    microscope.beams.ion_beam.working_distance.value = 16.5e-3      # MAGIC_NUMBER
+
+    # link
+    logging.info("Linking stage...")
+    microscope.specimen.stage.link()
 
 
 # STATE MANAGEMENT
