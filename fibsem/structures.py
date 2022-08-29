@@ -328,7 +328,7 @@ class BeamSystemSettings:
 
         return system_settings
 
-
+# TODO: change this to use pretilt_angle, flat_to_electron, and flat_to_ion tilts, for better separation
 @dataclass
 class StageSettings:
     rotation_flat_to_electron: float = 50 # degrees
