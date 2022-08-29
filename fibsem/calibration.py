@@ -4,7 +4,7 @@ from datetime import datetime
 
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
+from autoscript_sdb_microscope_client.enumerations import CoordinateSystem, ManipulatorCoordinateSystem
 from autoscript_sdb_microscope_client.structures import StagePosition
 
 from fibsem import acquire, movement
@@ -61,6 +61,71 @@ def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSe
     image_settings.autocontrast = autocontrast
     acquire.new_image(microscope, image_settings)
 
+
+# TODO: move to fibsem
+def auto_needle_calibration(microscope: SdbMicroscopeClient, settings: MicroscopeSettings):
+
+    settings.image.hfw = 900e-6
+    acquire.take_reference_images(microscope, settings.image)
+
+    # TODO: do a proper detection here... using EB, wide hfw
+    # TODO: move the stage out of the view?
+
+    # move needle into view for both beams
+    movement.move_needle_relative_with_corrected_movement(
+        microscope, dx=450e-6, dy=100e-6, beam_type=BeamType.ELECTRON
+    )
+    
+    # from fibsem.ui import windows as fibsem_ui_windows
+    # from fibsem.detection.utils import DetectionType, DetectionFeature
+    # from fibsem import utils
+
+    # # take reference images
+    # settings.image.save = False
+    # settings.image.beam_type = BeamType.ELECTRON
+    # ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
+
+    # det = fibsem_ui_windows.detect_features(
+    #     microscope=microscope,
+    #     settings=settings,
+    #     ref_image=ref_eb,
+    #     features=[
+    #         DetectionFeature(DetectionType.NeedleTip, None),
+    #         DetectionFeature(DetectionType.ImageCentre, None),
+    #     ],
+    #     validate=False,
+    # )
+
+    # movement.move_needle_relative_with_corrected_movement(
+    #     microscope=microscope,
+    #     dx=det.distance_metres.x,
+    #     dy=det.distance_metres.y,
+    #     beam_type=BeamType.ELECTRON,
+    # )
+
+    # focus on the needle
+    acquire.autocontrast(microscope, BeamType.ELECTRON)
+    microscope.auto_functions.run_auto_focus()
+    acquire.take_reference_images(microscope, settings.image)
+
+    # set coordinate system
+    microscope.specimen.manipulator.set_default_coordinate_system(ManipulatorCoordinateSystem.STAGE)
+    
+    # low res alignment
+    align_needle_to_eucentric_position(microscope, settings, path=None, validate=False)
+
+    # focus on needle
+    acquire.autocontrast(microscope, BeamType.ELECTRON)
+    microscope.auto_functions.run_auto_focus()
+    acquire.take_reference_images(microscope, settings.image)
+
+    # medium res alignment
+    settings.image.hfw=400e-6
+    align_needle_to_eucentric_position(microscope, settings, path=None, validate=False)
+
+    # high res alignment
+    settings.image.hfw=150e-6
+    align_needle_to_eucentric_position(microscope, settings, path=None, validate=False)
 
 
 def align_needle_to_eucentric_position(

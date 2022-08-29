@@ -4,23 +4,50 @@ from pathlib import Path
 
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem import acquire, movement, validation
-from fibsem import utils as fibsem_utils
-from fibsem.ui import utils as fibsem_ui
-from fibsem.acquire import BeamType
-from fibsem.structures import MicroscopeSettings, Point
+from fibsem import acquire, validation
 from fibsem.detection import detection
-
-
 from fibsem.detection.detection import DetectionFeature, DetectionResult
+from fibsem.structures import MicroscopeSettings, Point
+from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.detection_window import GUIDetectionWindow
-
-# TODO: move these
-from liftout.gui.milling_window import GUIMillingWindow
-from liftout.gui.movement_window import GUIMMovementWindow
-from liftout.gui.user_window import GUIUserWindow
-
+from fibsem.ui.movement_window import GUIMMovementWindow
+from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
+
+
+def ask_user_interaction(
+    microscope: SdbMicroscopeClient, msg="Default Ask User Message", beam_type=None
+):
+    """Create user interaction window and get return response"""
+    ask_user_window = GUIUserWindow(microscope=microscope, msg=msg, beam_type=beam_type)
+    ask_user_window.show()
+
+    response = bool(ask_user_window.exec_())
+    return response
+
+
+def ask_user_movement(
+    microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
+    msg_type="eucentric",
+    msg: str = None,
+    parent=None,
+):
+
+    logging.info(f"Asking user for confirmation for {msg_type} movement")
+
+    movement_window = GUIMMovementWindow(
+        microscope=microscope,
+        settings=settings,
+        msg_type=msg_type,
+        msg=msg,
+        parent=parent,
+    )
+    movement_window.show()
+    movement_window.exec_()
+
+
+
 
 def detect_features(
     microscope: SdbMicroscopeClient,
