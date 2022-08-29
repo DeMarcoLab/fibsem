@@ -55,11 +55,12 @@ def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSe
     acquire.autocontrast(microscope, BeamType.ELECTRON)
 
     # take image
-    image_settings.beam_type = beam_type
     image_settings.resolution = resolution
     image_settings.dwell_time = dwell_time
     image_settings.autocontrast = autocontrast
     acquire.new_image(microscope, image_settings)
+    
+    image_settings.beam_type = beam_type
 
 
 # TODO: move to fibsem
@@ -68,40 +69,8 @@ def auto_needle_calibration(microscope: SdbMicroscopeClient, settings: Microscop
     settings.image.hfw = 900e-6
     acquire.take_reference_images(microscope, settings.image)
 
-    # TODO: do a proper detection here... using EB, wide hfw
-    # TODO: move the stage out of the view?
-
-    # move needle into view for both beams
-    movement.move_needle_relative_with_corrected_movement(
-        microscope, dx=450e-6, dy=100e-6, beam_type=BeamType.ELECTRON
-    )
-    
-    # from fibsem.ui import windows as fibsem_ui_windows
-    # from fibsem.detection.utils import DetectionType, DetectionFeature
-    # from fibsem import utils
-
-    # # take reference images
-    # settings.image.save = False
-    # settings.image.beam_type = BeamType.ELECTRON
-    # ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
-
-    # det = fibsem_ui_windows.detect_features(
-    #     microscope=microscope,
-    #     settings=settings,
-    #     ref_image=ref_eb,
-    #     features=[
-    #         DetectionFeature(DetectionType.NeedleTip, None),
-    #         DetectionFeature(DetectionType.ImageCentre, None),
-    #     ],
-    #     validate=False,
-    # )
-
-    # movement.move_needle_relative_with_corrected_movement(
-    #     microscope=microscope,
-    #     dx=det.distance_metres.x,
-    #     dy=det.distance_metres.y,
-    #     beam_type=BeamType.ELECTRON,
-    # )
+    # TODO: move stage out of the way
+    movement.move_needle_to_position_offset(microscope)    
 
     # focus on the needle
     acquire.autocontrast(microscope, BeamType.ELECTRON)
