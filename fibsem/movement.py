@@ -298,9 +298,14 @@ def angle_difference(angle1: float, angle2: float) -> float:
     Returns:
         float: _description_
     """
-    return min(np.abs(2 * np.pi + angle1 - angle2), np.abs(angle1 - angle2)) % (
-        2 * np.pi
-    )
+    angle1 %= 2*np.pi
+    angle2 %= 2*np.pi
+
+    large_angle = np.max([angle1, angle2]) 
+    small_angle = np.min([angle1, angle2])
+
+    return min((large_angle-small_angle), ((2*np.pi+small_angle-large_angle)))
+
 
 
 def safe_rotation_movement(
