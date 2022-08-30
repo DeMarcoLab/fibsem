@@ -26,8 +26,8 @@ from skimage import feature
 
 DETECTION_COLOURS_UINT8 = {
     DetectionType.ImageCentre: (255, 255, 255),
-    DetectionType.LamellaCentre: (255, 0, 0),
-    DetectionType.LamellaEdge: (255, 165, 0),
+    DetectionType.LamellaCentre: (255, 165, 0),
+    DetectionType.LamellaEdge: (255, 0, 0),
     DetectionType.NeedleTip: (0, 255, 0),
     DetectionType.LandingPost: (255, 255, 255),
 }
@@ -37,7 +37,7 @@ def detect_features(img: AdornedImage, ref_image:AdornedImage, features: tuple[D
 
     args:
         img: the input img (AdornedImage)
-        ref_image: the reference image (AdornedImage)
+        ref_image: the reference image (AdornedImage) # TODO: remove
         shift_type: the type of feature detection to run (tuple)
 
     return:
@@ -65,7 +65,7 @@ def detect_features(img: AdornedImage, ref_image:AdornedImage, features: tuple[D
             feature_px = detect_needle_tip_v3(img, initial_point)
 
         if det_type == DetectionType.LamellaCentre:
-            feature_px = initial_point # TODO
+            feature_px = detect_landing_post_v2(img, initial_point) # TODO: fix 
 
         if det_type == DetectionType.LamellaEdge:
             feature_px = detect_lamella_edge(img)

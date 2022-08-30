@@ -105,22 +105,35 @@ from qtpy.QtCore import QTimer
 
 viewer = napari.Viewer()
 
+from fibsem import utils, acquire
+import os
+PROTOCOL_PATH = os.path.join(os.path.dirname(__file__), "protocol_autolamella.yaml")
+
+microscope, settings = utils.setup_session(protocol_path = PROTOCOL_PATH)
+
+
 def save_stuff():
     # this will depend very much on the contents of viewer.layers
     # so you may want to refine this function.
     if viewer.layers:
         print("layer update")
+        
+        eb_image = acquire.new_image(microscope, settings.image)
+        viewer.layers["EB Image"].data = eb_image.data
         # viewer.layers.refresh()
         # viewer.layers.save('~/Desktop/layers')
 
-viewer.add_image(np.random.random((500, 500)))
+# TODO: thread
+viewer.add_image(np.random.random((500, 500)), name="EB Image")
 
 timer = QTimer()
 timer.timeout.connect(save_stuff)
-timer.start(1000)  # fire every 1 second
+timer.start(3000)  # fire every 1 second
 
 napari.run()
 
+
+# TODO: qt app
 
 # napari has to be the main
 # https://forum.image.sc/t/use-napari-in-a-separate-thread/65372/2

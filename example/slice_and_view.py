@@ -1,11 +1,13 @@
 # slice and view
 
+
+from ctypes import alignment
 import os
 import logging
 from pprint import pprint
 
 import fibsem
-from fibsem import acquire, milling, utils
+from fibsem import acquire, milling, utils, alignment
 from fibsem.structures import ImageSettings, MillingSettings
 
 import napari
@@ -58,6 +60,7 @@ def main():
         # move?
 
         # align?
+        # alignment.align_using_reference_images(microscope, settings, ref_image, eb_image)
 
 
     

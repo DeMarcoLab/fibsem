@@ -18,6 +18,7 @@ from fibsem.structures import (BeamType, ImageSettings, MicroscopeSettings,
 def correct_stage_eucentric_alignment(microscope: SdbMicroscopeClient, image_settings: ImageSettings, tilt_degrees: float = 25) -> None:
 
     # iteratively?
+    # TODO: does the direction of tilt change this?
 
     # take images
     eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
@@ -284,11 +285,11 @@ def crosscorrelation(img1: np.ndarray, img2: np.ndarray,
         
         img2ft = n_pixels * img2ft / np.sqrt(tmp.sum())
 
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 2, figsize=(15, 15))
-        ax[0].imshow(fftpack.ifft2(img1ft).real)
-        ax[1].imshow(fftpack.ifft2(img2ft).real)
-        plt.show()
+        # import matplotlib.pyplot as plt
+        # fig, ax = plt.subplots(1, 2, figsize=(15, 15))
+        # ax[0].imshow(fftpack.ifft2(img1ft).real)
+        # ax[1].imshow(fftpack.ifft2(img2ft).real)
+        # plt.show()
 
         xcorr = np.real(fftpack.fftshift(fftpack.ifft2(img1ft * np.conj(img2ft))))
     else: # TODO: why are these different...

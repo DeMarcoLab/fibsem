@@ -132,6 +132,7 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
         self.comboBox_movement_mode.currentTextChanged.connect(
             self.movement_mode_changed
         )
+        self.pushButton_auto_eucentric.clicked.connect(self.auto_eucentric_button_pressed)
 
         # tilt functionality
         self.doubleSpinBox_tilt_degrees.setMinimum(0)
@@ -262,6 +263,13 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
         stage.absolute_move(stage_position, move_settings)
 
         # update displays
+        self.update_displays()
+
+    def auto_eucentric_button_pressed(self):
+
+        from fibsem import alignment
+        alignment.correct_stage_eucentric_alignment(self.microscope, self.settings.image)
+
         self.update_displays()
 
 

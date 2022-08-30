@@ -394,10 +394,8 @@ def y_corrected_stage_movement(
     PRETILT_SIGN = 1.0
     # pretilt angle depends on rotation
     if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
-    # if np.isclose(stage_rotation, stage_rotation_flat_to_eb, atol=np.deg2rad(5)):
         PRETILT_SIGN = 1.0
     if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_ion, atol=5):
-    # if np.isclose(stage_rotation, stage_rotation_flat_to_ion, atol=np.deg2rad(5)):
         PRETILT_SIGN = -1.0
 
 

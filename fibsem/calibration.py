@@ -94,6 +94,8 @@ def auto_needle_calibration(microscope: SdbMicroscopeClient, settings: Microscop
     settings.image.hfw=150e-6
     align_needle_to_eucentric_position(microscope, settings, path=None, validate=False)
 
+    logging.info(f"Finished automatic needle calibration.")
+
 
 def align_needle_to_eucentric_position(
     microscope: SdbMicroscopeClient,
@@ -112,6 +114,8 @@ def align_needle_to_eucentric_position(
     from fibsem.ui import windows as fibsem_ui_windows
     from fibsem.detection.utils import DetectionType, DetectionFeature
     from fibsem import utils
+
+    # TODO: remove ui elements from this function... just use base detect_features
 
     # take reference images
     settings.image.save = False

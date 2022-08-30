@@ -47,8 +47,6 @@ def ask_user_movement(
     movement_window.exec_()
 
 
-
-
 def detect_features(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
