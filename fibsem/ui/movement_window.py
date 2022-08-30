@@ -7,7 +7,7 @@ import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (MoveSettings,
                                                          StagePosition)
-from fibsem import acquire, conversions, movement, constants
+from fibsem import acquire, conversions, movement, constants, alignment
 from fibsem.structures import BeamType, MicroscopeSettings
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.qtdesigner_files import movement_dialog as movement_gui
@@ -267,7 +267,6 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
 
     def auto_eucentric_button_pressed(self):
 
-        from fibsem import alignment
         alignment.correct_stage_eucentric_alignment(self.microscope, self.settings.image)
 
         self.update_displays()
