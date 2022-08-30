@@ -62,8 +62,6 @@ def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSe
     
     image_settings.beam_type = beam_type
 
-
-# TODO: move to fibsem
 def auto_needle_calibration(microscope: SdbMicroscopeClient, settings: MicroscopeSettings):
 
     settings.image.hfw = 900e-6

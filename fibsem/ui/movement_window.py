@@ -18,6 +18,16 @@ class MovementMode(Enum):
     Stable = 1
     Eucentric = 2
 
+
+class MovementType(Enum):
+    StableEnabled = 0 
+    EucentricEnabled = 1
+    TiltEnabled = 2
+
+# TODO: save state...?
+# TODO: focus and link?
+
+
 class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
@@ -43,26 +53,13 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
         self.msg = msg
         self.movement_mode = MovementMode.Stable
 
-
-        # enable / disable view movement
-        self.eb_movement_enabled = False
-        self.ib_movement_enabled = False
+        # enable / disable movement
         self.tilt_movement_enabled = False
-
-        if msg_type in ["eucentric", "centre_eb", "alignment"]:
-            self.eb_movement_enabled = True
-
-        if msg_type in ["eucentric", "centre_ib", "alignment"]:
-            self.ib_movement_enabled = True
+        self.eb_movement_enabled = True
+        self.ib_movement_enabled = True
 
         if msg_type in ["alignment"]:
             self.tilt_movement_enabled = True
-
-        # movement permissions:
-        # eucentric: eb, ib, vertical
-        # centre_eb: eb
-        # centre_ib: ib
-        # alignment: eb, ib, tilt
 
         self.setup_connections()
         self.set_message(self.msg_type, self.msg)
@@ -167,11 +164,8 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
 
     def set_message(self, msg_type: str, msg: str = None):
             
-        # refactor the movement permissions
         # set message
         msg_dict = {
-            "centre_ib": "Please centre the lamella in the Ion Beam (Double click to move).",
-            "centre_eb": "Please centre the lamella in the Electron Beam (Double click to move). ",
             "eucentric": "Please centre a feature in both Beam views (Double click to move). ",
             "alignment": "Please centre the lamella in the Ion Beam, and tilt so the lamella face is perpendicular to the Ion Beam.",
         }
@@ -193,7 +187,6 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
     def update_image_settings(self):
         """Update the image settings when ui elements change"""
 
-        # TODO: validate these values....
         self.settings.image.hfw = self.doubleSpinBox_hfw.value() * constants.MICRON_TO_METRE
 
     def continue_button_pressed(self):
@@ -277,9 +270,9 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
 
 def main():
     from liftout import utils
+    from fibsem.ui import windows as fibsem_ui_windows
     microscope, settings= utils.quick_setup()
 
-    from fibsem.ui import windows as fibsem_ui_windows
 
     app = QtWidgets.QApplication([])
     fibsem_ui_windows.ask_user_movement(
