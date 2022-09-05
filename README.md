@@ -3,13 +3,14 @@ Python API for advanced FIBSEM control
 
 
 ## Design
-
 - Designed to act as lego blocks, users can mix and match
 - Focus on the microscopy, not learning the API
 - Can script together a workflow in a few hours. 
 - Can abstract common functionality, and automate manual tasks.
 
-Simple Example:
+End goal is to make developing workflows for FIBSEM faster, easier, cheaper, and more accessible. 
+
+## Example:
 - Take an Electron Beam image with autocontrast...
 
 AutoScript
@@ -197,7 +198,6 @@ ui
 - user interface windows for interacting with fibsem, e.g. movement window, detection window...
 
 
-
 ## Examples
 
 
@@ -205,7 +205,7 @@ Autolamella
 - Recreation of https://github.com/DeMarcoLab/autolamella, in ~150 lines of code.
 
 Slice and View
-- Recreation of a slice and view program in ~100 lines of code.
+- Recreation of a slice and view program in ~50 lines of code.
 
 Lens Milling (TODO)
 - An example of how to perform the milling of a micro-lens in Lithium Niabate substrate using a bitmap pattern.
