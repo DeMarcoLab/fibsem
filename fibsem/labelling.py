@@ -12,8 +12,9 @@ import os
 from PIL import Image
 from tqdm import tqdm
 
-img_dir = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\raw_img"
-save_dir = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\fibsem segmentation"
+img_path = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\data\train\**\img"
+label_path = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\data\train\**\label"
+save_path = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\fibsem segmentation"
 
 # transformations
 transformation = transforms.Compose(
@@ -78,7 +79,7 @@ def label_images(save_dir: str, img_dir: str, zarr_set: zarr.Array) -> None:
         viewer.layers["img"].save(os.path.join(save_dir, os.path.basename(fname), "image"))
         # i = i +1  b
 
-def save_zarr_dataset(img_path: str, label_path: str, save_path: str) -> None:
+def save_zarr_dataset(img_path: str, label_path: str, save_path: str, img_size = (1024,1024)) -> None:
     images = []
     masks = []
     sorted_img_filenames = sorted(glob.glob(img_path + ".png"))  #[-435:]
@@ -87,8 +88,8 @@ def save_zarr_dataset(img_path: str, label_path: str, save_path: str) -> None:
     for img_fname, mask_fname in tqdm(
         list(zip(sorted_img_filenames, sorted_mask_filenames))
     ):
-        image = np.asarray(Image.open(img_fname))
-        mask = np.asarray(Image.open(mask_fname))
+        image = np.asarray(Image.open(img_fname).resize(img_size))
+        mask = np.asarray(Image.open(mask_fname).resize(img_size))
 
         images.append(image)
         masks.append(mask)
