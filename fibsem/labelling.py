@@ -6,6 +6,7 @@ import tifffile as tff
 import os
 from PIL import Image
 from tqdm import tqdm
+import argparse
 
 img_dir = r""
 save_dir = r""
@@ -62,3 +63,36 @@ def save_zarr_dataset(img_path: str, label_path: str, save_path: str, img_size =
 # imgs = import_images(img_dir)
 # label_images(save_dir, imgs)
 save_zarr_dataset(img_path, label_path, save_path)
+
+if __name__ == "__main__":
+
+    # command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--img_dir",
+        help="the directory containing the raw images",
+        dest="img_dir",
+        action="store",
+        default="images",
+    )
+    parser.add_argument(
+        "--data_dir",
+        help="the directory to save the images and labels to",
+        dest="data_dir",
+        action="store",
+        default="data",
+    )
+    parser.add_argument(
+        "--save_dir",
+        help="the directory to save the zarr dataset to",
+        dest="save_dir",
+        action="store",
+        default="data",
+    )
+
+    args = parser.parse_args()
+    data_path = args.data
+    model_checkpoint = args.checkpoint
+    epochs = args.epochs
+    DEBUG = args.debug
+    WANDB = args.wandb
