@@ -91,7 +91,7 @@ class Crosshair:
 
 
 def create_crosshair(
-    image: np.ndarray or AdornedImage, x=None, y=None, colour="xkcd:yellow"
+    image: Union[np.ndarray, AdornedImage], x=None, y=None, colour="xkcd:yellow"
 ):
     if type(image) == AdornedImage:
         image = image.data

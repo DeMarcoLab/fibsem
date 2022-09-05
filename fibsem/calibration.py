@@ -108,7 +108,6 @@ def align_needle_to_eucentric_position(
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope instance
         settings (MicroscopeSettings): microscope settings
-        lamella (Lamella): current lamella
     """
 
     from fibsem.ui import windows as fibsem_ui_windows

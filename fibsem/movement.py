@@ -127,7 +127,7 @@ def y_corrected_needle_movement(
     """Calculate the corrected needle movement to move in the y-axis.
 
     Args:
-        expected_x (float): distance along the y-axis (image coordinates)
+        expected_y (float): distance along the y-axis (image coordinates)
         stage_tilt (float, optional): stage tilt.
 
     Returns:
@@ -144,7 +144,7 @@ def z_corrected_needle_movement(
     """Calculate the corrected needle movement to move in the z-axis.
 
     Args:
-        expected_x (float): distance along the z-axis (image coordinates)
+        expected_z (float): distance along the z-axis (image coordinates)
         stage_tilt (float, optional): stage tilt.
 
     Returns:

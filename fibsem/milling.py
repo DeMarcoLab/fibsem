@@ -45,7 +45,6 @@ def run_milling(
 
     Args:
         microscope (SdbMicroscopeClient): AutoScript microscope instance
-        settings (dict): settings dictionary
         milling_current (float, optional): ion beam milling current. Defaults to None.
         asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
     """   

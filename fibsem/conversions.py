@@ -45,8 +45,8 @@ def get_lamella_size_in_pixels(img: AdornedImage, protocol: dict, use_trench_hei
 
     Args:
         img (AdornedImage): reference image
-        settings (dict): protocol dictionary
-        use_lamella_height (bool, optional): get the height of the lamella (True), or Trench. Defaults to False.
+        protocol (dict): protocol dictionary
+        use_trench_height (bool, optional): get the height of the trench (True), or Lamella. Defaults to False.
 
     Returns:
         tuple[int]: _description_
