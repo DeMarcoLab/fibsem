@@ -1,4 +1,7 @@
 
+# FIBSEM
+
+
 # Acquire
 ::: fibsem.acquire
 
@@ -22,10 +25,11 @@
 ::: fibsem.structures
 
 # Utils
-
 ::: fibsem.utils
+
 # Validation
 ::: fibsem.validation
+
 # Detection
 ::: fibsem.detection
 
