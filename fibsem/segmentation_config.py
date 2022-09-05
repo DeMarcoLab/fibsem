@@ -1,17 +1,39 @@
 import json
+import argparse
 
-# Add you directories here
-RAW_DIR = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\raw_img"
-DATA_DIR = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\data_img"
-ZARR_DIR = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\zarr_img"
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--raw_dir",
+        help="the directory containing the raw images",
+        dest="raw_dir",
+        action="store",
+    )
+    parser.add_argument(
+        "--data_dir",
+        help="the directory to save the images and labels to",
+        dest="data_dir",
+        action="store",
+    )
+    parser.add_argument(
+        "--zarr_dir",
+        help="the directory to save the zarr dataset to",
+        dest="zarr_dir",
+        action="store",
+    )
 
-segmentation_config = {
-    "raw_dir": RAW_DIR,
-    "data_dir": DATA_DIR,
-    "zarr_dir": ZARR_DIR
-}
+    args = parser.parse_args()
+    raw_dir = args.raw_dir
+    data_dir = args.data_dir
+    zarr_dir = args.zarr_dir
 
-# Saves a JSON file that git will ignore to allow each user to use local directories
-with open("segmentation_config.json", 'w') as f:
-    json.dump(segmentation_config, f)
+    segmentation_config = {
+        "raw_dir": raw_dir,
+        "data_dir": data_dir,
+        "zarr_dir": zarr_dir
+    }
+
+    # Saves a JSON file that git will ignore to allow each user to use local directories
+    with open("segmentation_config.json", 'w') as f:
+        json.dump(segmentation_config, f)
 

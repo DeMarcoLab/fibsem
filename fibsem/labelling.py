@@ -58,32 +58,61 @@ def save_zarr_dataset(data_dir: str, zarr_dir: str, img_size = (1024,1536)) -> N
     zarr.save(os.path.join(zarr_dir, "masks.zarr"), np.array(masks))
 
 if __name__ == "__main__":
-    with open("segmentation_config.json", 'r') as f:
-        config = json.load(f)
+    # NOTE: Running segmentation_config.py first allows labelling.py to remember your directories for future runs.
+    if "segmentation_config.json" in os.listdir():
+        with open("segmentation_config.json", 'r') as f:
+            config = json.load(f)
 
-    # command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--raw_dir",
-        help="the directory containing the raw images",
-        dest="raw_dir",
-        action="store",
-        default=config["raw_dir"],
-    )
-    parser.add_argument(
-        "--data_dir",
-        help="the directory to save the images and labels to",
-        dest="data_dir",
-        action="store",
-        default=config["data_dir"],
-    )
-    parser.add_argument(
-        "--zarr_dir",
-        help="the directory to save the zarr dataset to",
-        dest="zarr_dir",
-        action="store",
-        default=config["zarr_dir"],
-    )
+        # command line arguments
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--raw_dir",
+            help="the directory containing the raw images",
+            dest="raw_dir",
+            action="store",
+            default=config["raw_dir"],
+        )
+        parser.add_argument(
+            "--data_dir",
+            help="the directory to save the images and labels to",
+            dest="data_dir",
+            action="store",
+            default=config["data_dir"],
+        )
+        parser.add_argument(
+            "--zarr_dir",
+            help="the directory to save the zarr dataset to",
+            dest="zarr_dir",
+            action="store",
+            default=config["zarr_dir"],
+        )
+
+    # If segmentation_config.py has not been run, do not use default values.
+    else:
+        # command line arguments
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--raw_dir",
+            help="the directory containing the raw images",
+            dest="raw_dir",
+            action="store",
+            required=True
+        )
+        parser.add_argument(
+            "--data_dir",
+            help="the directory to save the images and labels to",
+            dest="data_dir",
+            action="store",
+            required=True
+        )
+        parser.add_argument(
+            "--zarr_dir",
+            help="the directory to save the zarr dataset to",
+            dest="zarr_dir",
+            action="store",
+            required=True
+        )
+
     parser.add_argument(
         "--img_size",
         help="resize image before saving to zarr",
@@ -98,7 +127,7 @@ if __name__ == "__main__":
         dest="no_label",
         action="store_true"
     )
-
+        
     args = parser.parse_args()
     raw_dir = args.raw_dir
     data_dir = args.data_dir
