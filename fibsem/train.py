@@ -24,7 +24,7 @@ def save_model(model, epoch):
 
     print(f"Model saved to {model_save_file}")
 
-def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG=False):
+def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG=False, WANDB=False):
     """ Helper function for training the model """
     # initialise loss function and optimizer
     criterion = torch.nn.CrossEntropyLoss()
@@ -70,12 +70,13 @@ def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG
 
             # evaluation
             train_loss += loss.item()
-            wandb.log({"train_loss": loss.item()})
+            if WANDB:
+                wandb.log({"train_loss": loss.item()})
             data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
             if i % 100 == 0:
           
-                if DEBUG:
+                if DEBUG and WANDB:
                     model.eval()
                     with torch.no_grad():
 
@@ -110,7 +111,8 @@ def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG
             loss = criterion(outputs, masks)
 
             val_loss += loss.item()
-            wandb.log({"val_loss": loss.item()})
+            if WANDB:
+                wandb.log({"val_loss": loss.item()})
             val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
         train_losses.append(train_loss / len(train_data_loader))
@@ -141,6 +143,12 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
+        "--wandb",
+        help="report results to wandb during training and validation",
+        dest="wandb",
+        action="store_true",
+    )
+    parser.add_argument(
         "--checkpoint",
         help="start model training from checkpoint",
         dest="checkpoint",
@@ -160,15 +168,17 @@ if __name__ == "__main__":
     model_checkpoint = args.checkpoint
     epochs = args.epochs
     DEBUG = args.debug
-
-    # weights and biases setup
-    wandb.init(project="autoliftout", entity="patrickmonash")
+    WANDB = args.wandb
 
     # hyperparams
     num_classes = 3
     batch_size = 1
 
-    wandb.config = {
+    if WANDB:
+        # weights and biases setup
+        wandb.init(project="autoliftout", entity="patrickmonash")
+
+        wandb.config = {
         "epochs": epochs,
         "batch_size": batch_size,
         "num_classes": num_classes
@@ -217,24 +227,24 @@ if __name__ == "__main__":
         print("imgs, masks, output")
         print(imgs.shape, masks.shape, output.shape)
 
+        if DEBUG and WANDB:
+            img_base = imgs.detach().cpu().squeeze().numpy()[0]
+            img_rgb = np.dstack((img_base, img_base, img_base))
+            gt_base = decode_segmap(masks[0].permute(1, 2, 0).squeeze())
 
-        img_base = imgs.detach().cpu().squeeze().numpy()
-        img_rgb = np.dstack((img_base, img_base, img_base))
-        gt_base = decode_segmap(masks[0].permute(1, 2, 0).squeeze())
-
-        wb_img = wandb.Image(img_rgb, caption="Input Image")
-        wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-        wb_mask = wandb.Image(pred, caption="Output Mask")
-        wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+            wb_img = wandb.Image(img_rgb, caption="Input Image")
+            wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+            wb_mask = wandb.Image(pred, caption="Output Mask")
+            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
     ################################## TRAINING ##################################
     print("\n----------------------- Begin Training -----------------------\n")
 
     # train model
-    model = train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG=DEBUG)
+    model = train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG=DEBUG, WANDB=WANDB)
 
     ################################## SAVE MODEL ##################################
-
+    
 
 # ref:
 # https://towardsdatascience.com/train-a-lines-segmentation-model-using-pytorch-34d4adab8296
