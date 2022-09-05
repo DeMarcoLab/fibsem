@@ -42,7 +42,7 @@ class SegmentationDataset(Dataset):
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
         mask = Image.fromarray(mask).resize(
-            (1536 // 4, 1024 // 4), resample=PIL.Image.NEAREST
+            (1536 // 4, 1024 // 4), resample=Image.NEAREST
         )
         mask = torch.tensor(np.asarray(mask)).unsqueeze(0)
 
