@@ -14,6 +14,14 @@ def import_images(path: str) -> zarr.Array:
 
 def label_images(save_dir, zarr_set: zarr.Array) -> None:
 
+    
+    # create the list of polygons
+    triangle = np.array([[11, 13], [111, 113], [22, 246]])
+
+    rectangle = np.array([[0, 2],  [0, 102], [100, 102], [100, 2]])
+
+    i =0 
+
     path = r"C:\Users\lucil\OneDrive\Bureau\DeMarco_Lab\tif images training"
     filenames = sorted(glob.glob(os.path.join(path, "*.tif*")))
     # while i <= zarr_set.size:

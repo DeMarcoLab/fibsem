@@ -1,0 +1,24 @@
+{
+    "os": "Windows-10-10.0.22000-SP0",
+    "python": "3.9.13",
+    "heartbeatAt": "2022-08-30T02:36:56.748154",
+    "startedAt": "2022-08-30T02:36:55.305216",
+    "docker": null,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpu_count": 1,
+    "cpu_count": 16,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "c:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\fibsem\\train.py",
+    "codePath": "fibsem\\train.py",
+    "git": {
+        "remote": "https://github.com/DeMarcoLab/fibsem.git",
+        "commit": "b2f7af7a602455184f2c52ac0494491567f322c0"
+    },
+    "email": "lucile.naegele@monash.edu",
+    "root": "C:/Users/lucil/OneDrive/Bureau/DeMarco_Lab/fibsem",
+    "host": "LAPTOP-5NHDHQ22",
+    "username": "lucil",
+    "executable": "C:\\Users\\lucil\\anaconda3\\envs\\fibsem\\python.exe"
+}
