@@ -113,7 +113,7 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
     # train/validation splits
     dataset_size = len(seg_dataset)
     dataset_idx = list(range(dataset_size))
-    split_idx = int(np.floor(val_size * dataset_size))
+    split_idx = int(np.floor(val_split * dataset_size))
     train_idx = dataset_idx[split_idx:]
     val_idx = dataset_idx[:split_idx]
 
