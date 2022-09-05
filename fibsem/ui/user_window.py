@@ -23,7 +23,7 @@ class GUIUserWindow(user_gui.Ui_Dialog, QtWidgets.QDialog):
         super(GUIUserWindow, self).__init__(parent=parent)
         self.setupUi(self)
 
-        self.setWindowTitle("AutoLiftout Ask User")
+        self.setWindowTitle("FIBSEM Ask User")
         self.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
 
         self.microscope = microscope

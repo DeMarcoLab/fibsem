@@ -138,7 +138,7 @@ def run_validation_ui(
     """
 
     response = fibsem_ui.message_box_ui(
-        title="AutoLiftout Initialisation Checklist",
+        title="Initialisation Checklist",
         text=reminder_str,
         buttons=QMessageBox.Ok,
     )
@@ -164,7 +164,7 @@ def run_validation_ui(
             warning_str += f"\n{warning.split('—')[-1]}"
 
         fibsem_ui.message_box_ui(
-            title="AutoLiftout Initialisation Warning",
+            title="Initialisation Warning",
             text=warning_str,
             buttons=QMessageBox.Ok,
         )
