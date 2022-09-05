@@ -7,14 +7,7 @@ import os
 from PIL import Image
 from tqdm import tqdm
 import argparse
-
-img_dir = r""
-save_dir = r""
-
-data_path = r"C:\Users\lucil\OneDrive\Bureau\DeMarco_Lab\dm-embryo-3_20220719.104850\73d5fae8-9df6-4cc8-91e3-e2da1b94f708"
-#label_path = r"C:\Users\lachl\OneDrive\Desktop\DeMarco\data\train\**\label"
-save_path = r"C:\Users\lucil\OneDrive\Bureau\DeMarco_Lab\dm-embryo-3_20220719.104850\73d5fae8-9df6-4cc8-91e3-e2da1b94f708\segmentation"
-zarr_path = r"C:\Users\lucil\OneDrive\Bureau\DeMarco_Lab\dm-embryo-3_20220719.104850\73d5fae8-9df6-4cc8-91e3-e2da1b94f708\segmentation\zarr"
+import json
 
 def label_images(raw_dir: str, data_dir: str) -> None:
     vol = tff.imread(os.path.join(raw_dir, "*.tif*"), aszarr=True) # loading folder of .tif into zarr array)
@@ -24,7 +17,7 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
     for img, fname in zip(zarr_set, filenames):
         #Check to see if already labelled; if so, skip
-        if fname.split(".")[0] in os.listdir(data_dir):
+        if os.path.basename(fname).split(".")[0] in os.listdir(data_dir):
             continue
 
         print(fname)
@@ -34,10 +27,16 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
         napari.run()
 
+        # To stop labelling, exit napari without creating a Labels layer.
+        # NOTE: Separate from an image with no class in it, in this case create an empty Labels layer
+        if len(viewer.layers) < 2:
+            print("Finished labelling.")
+            break
+
         # Saves an img with the keypoints superimposed.
-        os.makedirs(os.path.join(save_dir, os.path.basename(fname).split(".")[0]))
-        viewer.layers["img"].save(os.path.join(data_dir, os.path.basename(fname), "image"))
-        viewer.layers["label"].save(os.path.join(data_dir, os.path.basename(fname), "label"))
+        os.makedirs(os.path.join(data_dir, os.path.basename(fname).split(".")[0]))
+        viewer.layers["img"].save(os.path.join(data_dir, os.path.basename(fname).split(".")[0], "image"))
+        viewer.layers["Labels"].save(os.path.join(data_dir, os.path.basename(fname).split(".")[0], "label"))
 
 
 def save_zarr_dataset(data_dir: str, zarr_dir: str, img_size = (1024,1536)) -> None:
@@ -59,29 +58,31 @@ def save_zarr_dataset(data_dir: str, zarr_dir: str, img_size = (1024,1536)) -> N
     zarr.save(os.path.join(zarr_dir, "masks.zarr"), np.array(masks))
 
 if __name__ == "__main__":
+    with open("segmentation_config.json", 'r') as f:
+        config = json.load(f)
 
     # command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--raw_dir",
         help="the directory containing the raw images",
-        dest="img_dir",
+        dest="raw_dir",
         action="store",
-        default="images",
+        default=config["raw_dir"],
     )
     parser.add_argument(
         "--data_dir",
         help="the directory to save the images and labels to",
         dest="data_dir",
         action="store",
-        default="data",
+        default=config["data_dir"],
     )
     parser.add_argument(
         "--zarr_dir",
         help="the directory to save the zarr dataset to",
         dest="zarr_dir",
         action="store",
-        default="zarr",
+        default=config["zarr_dir"],
     )
     parser.add_argument(
         "--img_size",
@@ -91,13 +92,23 @@ if __name__ == "__main__":
         type=tuple,
         default=(1024,1536)
     )
+    parser.add_argument(
+        "--no_label",
+        help="use if you want to resave a zarr dataset without labelling",
+        dest="no_label",
+        action="store_true"
+    )
 
     args = parser.parse_args()
-    raw_dir = args.raw_dig
+    raw_dir = args.raw_dir
     data_dir = args.data_dir
     zarr_dir = args.zarr_dir
     img_size = args.img_size
+    no_label = args.no_label
 
-    label_images(raw_dir, data_dir)
-    save_zarr_dataset(data_dir, zarr_path, img_size=img_size)
+    if no_label:
+        save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
+    else:
+        label_images(raw_dir, data_dir)
+        save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
 
