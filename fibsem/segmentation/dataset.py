@@ -10,6 +10,9 @@ from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from torchvision import transforms
 import dask.array as da
 import os
+import tifffile as tff
+from tqdm import tqdm
+from skimage.transform import resize
 
 # transformations
 transformation = transforms.Compose(
@@ -35,9 +38,6 @@ class SegmentationDataset(Dataset):
 
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
-        mask = Image.fromarray(mask).resize(
-            (1536 // 4, 1024 // 4), resample=Image.NEAREST
-        )
         mask = torch.tensor(np.asarray(mask)).unsqueeze(0)
 
         return image, mask
@@ -46,9 +46,19 @@ class SegmentationDataset(Dataset):
         return len(self.images)
 
 
-def load_dask_dataset(data_path: str):
-    images = da.from_zarr(os.path.join(data_path, "images.zarr"))
-    masks = da.from_zarr(os.path.join(data_path, "masks.zarr"))
+def load_dask_dataset(data_dir: str):
+    masks = []
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "/**/image.png")))  #[-435:]
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "/**/label.png")))  #[-435:]
+
+    img_arr = tff.imread(sorted_img_filenames, aszarr=True)
+
+    for mask_fname in tqdm(sorted_mask_filenames):
+        mask = np.asarray(Image.open(mask_fname))
+        masks.append(mask)
+
+    images = da.from_zarr(img_arr)
+    # masks = da.from_zarr(os.path.join(data_path, "masks.zarr"))
     return images, masks
 
 def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
@@ -84,3 +94,21 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
 
 
 # ref: https://towardsdatascience.com/pytorch-basics-sampling-samplers-2a0f29f0bf2a
+
+def save_zarr_dataset(data_dir: str, zarr_dir: str, img_size = (1024,1536)) -> None:
+    images = []
+    masks = []
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "image.png")))  #[-435:]
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "label.png")))  #[-435:]
+
+    for img_fname, mask_fname in tqdm(
+        list(zip(sorted_img_filenames, sorted_mask_filenames))
+    ):
+        image = np.asarray(Image.open(img_fname).resize(img_size))
+        mask = np.asarray(Image.open(mask_fname).resize(img_size))
+
+        images.append(image)
+        masks.append(mask)
+
+    #zarr.save(os.path.join(zarr_dir, "images.zarr"), np.array(images))
+    #zarr.save(os.path.join(zarr_dir, "masks.zarr"), np.array(masks))

@@ -36,26 +36,7 @@ def label_images(raw_dir: str, data_dir: str) -> None:
         # Saves an img with the keypoints superimposed.
         os.makedirs(os.path.join(data_dir, os.path.basename(fname).split(".")[0]))
         viewer.layers["img"].save(os.path.join(data_dir, os.path.basename(fname).split(".")[0], "image"))
-        viewer.layers["Labels"].save(os.path.join(data_dir, os.path.basename(fname).split(".")[0], "label"))
-
-
-def save_zarr_dataset(data_dir: str, zarr_dir: str, img_size = (1024,1536)) -> None:
-    images = []
-    masks = []
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "image.png")))  #[-435:]
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "label.png")))  #[-435:]
-
-    for img_fname, mask_fname in tqdm(
-        list(zip(sorted_img_filenames, sorted_mask_filenames))
-    ):
-        image = np.asarray(Image.open(img_fname).resize(img_size))
-        mask = np.asarray(Image.open(mask_fname).resize(img_size))
-
-        images.append(image)
-        masks.append(mask)
-
-    zarr.save(os.path.join(zarr_dir, "images.zarr"), np.array(images))
-    zarr.save(os.path.join(zarr_dir, "masks.zarr"), np.array(masks))
+        viewer.layers["Labels"].save(os.path.join(data_dir, os.path.basename(fname).split(".")[0], "label.png"))
 
 if __name__ == "__main__":
     # NOTE: Running segmentation_config.py first allows labelling.py to remember your directories for future runs.
@@ -86,47 +67,19 @@ if __name__ == "__main__":
             action="store",
             default=config["zarr_dir"],
         )
-
-    # If segmentation_config.py has not been run, do not use default values.
-    else:
-        # command line arguments
-        parser = argparse.ArgumentParser()
         parser.add_argument(
-            "--raw_dir",
-            help="the directory containing the raw images",
-            dest="raw_dir",
-            action="store",
-            required=True
-        )
-        parser.add_argument(
-            "--data_dir",
+            "--img_size",
             help="the directory to save the images and labels to",
-            dest="data_dir",
+            dest="img_size",
             action="store",
-            required=True
+            default=(1024,1536),
         )
         parser.add_argument(
-            "--zarr_dir",
+            "--no_label",
             help="the directory to save the zarr dataset to",
-            dest="zarr_dir",
-            action="store",
-            required=True
+            dest="no_label",
+            action="store_true",
         )
-
-    parser.add_argument(
-        "--img_size",
-        help="resize image before saving to zarr",
-        dest="img_size",
-        action="store",
-        type=tuple,
-        default=(1024,1536)
-    )
-    parser.add_argument(
-        "--no_label",
-        help="use if you want to resave a zarr dataset without labelling",
-        dest="no_label",
-        action="store_true"
-    )
         
     args = parser.parse_args()
     raw_dir = args.raw_dir
@@ -134,10 +87,11 @@ if __name__ == "__main__":
     zarr_dir = args.zarr_dir
     img_size = args.img_size
     no_label = args.no_label
-
+    
     if no_label:
-        save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
+        #save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
+        pass
     else:
         label_images(raw_dir, data_dir)
-        save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
+        #save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
 
