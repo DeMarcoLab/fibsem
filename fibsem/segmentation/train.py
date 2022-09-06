@@ -24,6 +24,84 @@ def save_model(model, epoch):
 
     print(f"Model saved to {model_save_file}")
 
+def train(model, device, data_loader, criterion, optimizer, DEBUG, WANDB):
+    data_loader = tqdm(data_loader)
+    train_loss = 0
+
+    for i, (images, masks) in enumerate(data_loader):
+        # set model to training mode
+        model.train()
+
+        # move img and mask to device, reshape mask
+        images = images.to(device)
+        masks = masks.type(torch.LongTensor)
+        masks = masks.reshape(
+            masks.shape[0], masks.shape[2], masks.shape[3]
+        )  # remove channel dim
+        masks = masks.to(device)
+
+        # forward pass
+        outputs = model(images).type(torch.FloatTensor).to(device)
+        loss = criterion(outputs, masks)
+
+        # backwards pass
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # evaluation
+        train_loss += loss.item()
+        if WANDB:
+            wandb.log({"train_loss": loss.item()})
+        data_loader.set_description(f"Train Loss: {loss.item():.04f}")
+
+        if i % 100 == 0:
+        
+            if DEBUG and WANDB:
+                model.eval()
+                with torch.no_grad():
+
+                    outputs = model(images)
+                    output_mask = decode_output(outputs)
+                    
+                    img_base = images.detach().cpu().squeeze().numpy()
+                    img_rgb = np.dstack((img_base, img_base, img_base))
+                    gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0))
+
+                    wb_img = wandb.Image(img_rgb, caption="Input Image")
+                    wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+                    wb_mask = wandb.Image(output_mask, caption="Output Mask")
+                    wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+    
+    return train_loss
+
+def validate(model, device, data_loader, criterion, WANDB):
+    val_loader = tqdm(data_loader)
+    val_loss = 0
+
+    for i, (images, masks) in enumerate(val_loader):
+        
+        model.eval()
+        
+        # move img and mask to device, reshape mask
+        images = images.to(device)
+        masks = masks.type(torch.LongTensor)
+        masks = masks.reshape(
+            masks.shape[0], masks.shape[2], masks.shape[3]
+        )  # remove channel dim
+        masks = masks.to(device)
+
+        # forward pass
+        outputs = model(images).type(torch.FloatTensor).to(device)
+        loss = criterion(outputs, masks)
+
+        val_loss += loss.item()
+        if WANDB:
+            wandb.log({"val_loss": loss.item()})
+            val_loader.set_description(f"Val Loss: {loss.item():.04f}")
+
+    return val_loss
+
 def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG=False, WANDB=False):
     """ Helper function for training the model """
     # initialise loss function and optimizer
@@ -41,86 +119,14 @@ def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG
     for epoch in tqdm(range(epochs)):
         print(f"------- Epoch {epoch+1} of {epochs}  --------")
         
-        train_loss = 0
-        val_loss = 0
-        
-        data_loader = tqdm(train_data_loader)
-
-        for i, (images, masks) in enumerate(data_loader):
-
-            # set model to training mode
-            model.train()
-
-            # move img and mask to device, reshape mask
-            images = images.to(device)
-            masks = masks.type(torch.LongTensor)
-            masks = masks.reshape(
-                masks.shape[0], masks.shape[2], masks.shape[3]
-            )  # remove channel dim
-            masks = masks.to(device)
-
-            # forward pass
-            outputs = model(images).type(torch.FloatTensor).to(device)
-            loss = criterion(outputs, masks)
-
-            # backwards pass
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            # evaluation
-            train_loss += loss.item()
-            if WANDB:
-                wandb.log({"train_loss": loss.item()})
-            data_loader.set_description(f"Train Loss: {loss.item():.04f}")
-
-            if i % 100 == 0:
-          
-                if DEBUG and WANDB:
-                    model.eval()
-                    with torch.no_grad():
-
-                        outputs = model(images)
-                        output_mask = decode_output(outputs)
-                        
-                        img_base = images.detach().cpu().squeeze().numpy()
-                        img_rgb = np.dstack((img_base, img_base, img_base))
-                        gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0))
-
-                        wb_img = wandb.Image(img_rgb, caption="Input Image")
-                        wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-                        wb_mask = wandb.Image(output_mask, caption="Output Mask")
-                        wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
-                           
-        
-        val_loader = tqdm(val_data_loader)
-        for i, (images, masks) in enumerate(val_loader):
-            
-            model.eval()
-            
-            # move img and mask to device, reshape mask
-            images = images.to(device)
-            masks = masks.type(torch.LongTensor)
-            masks = masks.reshape(
-                masks.shape[0], masks.shape[2], masks.shape[3]
-            )  # remove channel dim
-            masks = masks.to(device)
-
-            # forward pass
-            outputs = model(images).type(torch.FloatTensor).to(device)
-            loss = criterion(outputs, masks)
-
-            val_loss += loss.item()
-            if WANDB:
-                wandb.log({"val_loss": loss.item()})
-            val_loader.set_description(f"Val Loss: {loss.item():.04f}")
-
-        train_losses.append(train_loss / len(train_data_loader))
-        val_losses.append(val_loss / len(val_data_loader))
+        train_loss = train(model, device, train_data_loader, criterion, optimizer, DEBUG, WANDB)
+        val_loss = validate(model, device, val_data_loader, criterion, WANDB)
+   
+        # train_losses.append(train_loss / len(train_data_loader))
+        # val_losses.append(val_loss / len(val_data_loader))
 
         # save model checkpoint
         save_model(model, epoch)
-
 
     return model
 
