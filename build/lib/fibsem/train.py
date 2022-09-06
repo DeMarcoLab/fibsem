@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import segmentation_models_pytorch as smp
 import torch
-from fibsem.dataset import *
+from fibsem.segmentation.dataset import *
 from fibsem.utils import *
 from tqdm import tqdm
 import wandb
