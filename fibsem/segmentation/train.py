@@ -134,7 +134,7 @@ if __name__ == "__main__":
         help="the directory containing the training data",
         dest="data",
         action="store",
-        default=r"C:\Users\lachl\OneDrive\Desktop\DeMarco\data\train",
+        default=r"C:\Users\lachl\OneDrive\Desktop\DeMarco\data_img",
     )
     parser.add_argument(
         "--debug",

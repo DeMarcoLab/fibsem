@@ -47,18 +47,15 @@ class SegmentationDataset(Dataset):
 
 
 def load_dask_dataset(data_dir: str):
-    masks = []
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "/**/image.png")))  #[-435:]
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "/**/label.png")))  #[-435:]
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "**\image.tif")))  #[-435:]
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "**\label.tif")))  #[-435:]
 
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
-
-    for mask_fname in tqdm(sorted_mask_filenames):
-        mask = np.asarray(Image.open(mask_fname))
-        masks.append(mask)
+    mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
 
     images = da.from_zarr(img_arr)
-    # masks = da.from_zarr(os.path.join(data_path, "masks.zarr"))
+    masks = da.from_zarr(mask_arr)
+
     return images, masks
 
 def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
