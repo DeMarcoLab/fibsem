@@ -91,21 +91,3 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
 
 
 # ref: https://towardsdatascience.com/pytorch-basics-sampling-samplers-2a0f29f0bf2a
-
-def save_zarr_dataset(data_dir: str, zarr_dir: str, img_size = (1024,1536)) -> None:
-    images = []
-    masks = []
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "image.png")))  #[-435:]
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "label.png")))  #[-435:]
-
-    for img_fname, mask_fname in tqdm(
-        list(zip(sorted_img_filenames, sorted_mask_filenames))
-    ):
-        image = np.asarray(Image.open(img_fname).resize(img_size))
-        mask = np.asarray(Image.open(mask_fname).resize(img_size))
-
-        images.append(image)
-        masks.append(mask)
-
-    #zarr.save(os.path.join(zarr_dir, "images.zarr"), np.array(images))
-    #zarr.save(os.path.join(zarr_dir, "masks.zarr"), np.array(masks))
