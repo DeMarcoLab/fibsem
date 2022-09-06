@@ -160,6 +160,14 @@ def estimate_milling_time_in_seconds(milling_stage_patterns: list[list[Union[Cle
 
 # TODO: circle, bitmap, line, stream
 
+def _draw_bitmap_pattern(microscope:SdbMicroscopeClient, protocol:dict , x: float = 0.0, y: float = 0.0):
+
+    pass
+
+
+
+
+
 def _draw_rectangle_pattern(microscope:SdbMicroscopeClient, protocol:dict , x: float = 0.0, y: float = 0.0):
 
     if protocol["cleaning_cross_section"]:
