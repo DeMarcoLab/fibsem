@@ -223,6 +223,9 @@ def setup_session(
 
     # create session directories
     session = f'{settings.protocol["name"]}_{current_timestamp()}'
+    if protocol_path is None:
+        protocol_path = os.getcwd()
+
     session_path = os.path.join(os.path.dirname(protocol_path), session)
     os.makedirs(session_path, exist_ok=True)
 
