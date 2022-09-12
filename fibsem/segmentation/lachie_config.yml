@@ -4,12 +4,14 @@ labelling:
 train:
   data_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\DeMarco\\data_img"
   save_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\fibsem\\fibsem\\segmentation\\models"
-  debug: false
-  wandb: false
-  checkpoint: null
-  epochs: 5
-  cuda: false
-  batch_size: 1
-  num_classes: 3
+  debug: false # Plots images every so often during training
+  wandb: false # Logs information and plots to wandb
+  checkpoint: null # Path to model if you would like to resume training
+  epochs: 5 # Number of epochs to train for
+  cuda: false # Enable/Disable CUDA training
+  batch_size: 1 # Number of batches per epoch
+  num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
   optimizer: "Adam" # Adam or SGD, not case sensitive
   learning_rate: 0.0001
+
+
