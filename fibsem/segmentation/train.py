@@ -26,7 +26,7 @@ def save_model(model, epoch, save_dir):
 
     print(f"Model saved to {model_save_file}")
 
-def train(model, device, data_loader, criterion, optimizer, DEBUG, WANDB):
+def train(model, device, data_loader, criterion, optimizer, WANDB):
     data_loader = tqdm(data_loader)
     train_loss = 0
 
@@ -101,7 +101,7 @@ def validate(model, device, data_loader, criterion, WANDB):
             val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
 
-def train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, DEBUG=False, WANDB=False):
+def train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, WANDB=True):
     """ Helper function for training the model """
     # initialise loss function and optimizer
     criterion = torch.nn.CrossEntropyLoss()
@@ -113,7 +113,7 @@ def train_model(model, device, optimizer, train_data_loader, val_data_loader, ep
     for epoch in tqdm(range(epochs)):
         print(f"------- Epoch {epoch+1} of {epochs}  --------")
         
-        train(model, device, train_data_loader, criterion, optimizer, DEBUG, WANDB)
+        train(model, device, train_data_loader, criterion, optimizer, WANDB)
         validate(model, device, val_data_loader, criterion, WANDB)
 
         # save model checkpoint
@@ -155,7 +155,6 @@ if __name__ == "__main__":
 
     # other parameters
     cuda = config["train"]["cuda"]
-    DEBUG = config["train"]["debug"]
     WANDB = config["train"]["wandb"]
 
     if WANDB:
@@ -215,7 +214,7 @@ if __name__ == "__main__":
         print("imgs, masks, output")
         print(imgs.shape, masks.shape, output.shape)
 
-        if DEBUG and WANDB:
+        if WANDB:
             img_base = imgs.detach().cpu().squeeze().numpy()[0]
             img_rgb = np.dstack((img_base, img_base, img_base))
             gt_base = decode_segmap(masks[0].permute(1, 2, 0).squeeze())
@@ -229,7 +228,7 @@ if __name__ == "__main__":
     print("\n----------------------- Begin Training -----------------------\n")
 
     # train model
-    model = train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, DEBUG=DEBUG, WANDB=WANDB)
+    model = train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, WANDB=WANDB)
 
     ################################## SAVE MODEL ##################################
     
