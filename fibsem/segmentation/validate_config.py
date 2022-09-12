@@ -59,6 +59,14 @@ def validate_config(config, func):
                     raise ValueError(f"{path} directory does not exist. (checkpoint)")
             elif path != None:
                 raise ValueError(f"{path} directory does not exist. (checkpoint)")
+        if "encoder" not in config[func]:
+            raise ValueError("encoder is missing. Used to specify which model architecture to use. Default is resnet18.")
+        else:
+            val = config[func]["encoder"]
+            if type(val) != str:
+                raise TypeError(f"{val} must be a string. (encoder)")
+            elif val not in unet_encoders:
+                raise ValueError(f"{val} not a valid in encoder. Check readme for full list. (encoder)")
         if "epochs" not in config[func]:
             raise ValueError("epochs is missing. Integer value used to determine number of epochs model trains for.")
         else:
@@ -99,4 +107,48 @@ def validate_config(config, func):
         print("\nConfig file validated.\n")
         return
         
+# All UNet encoders that work with Imagenet weights
+unet_encoders = [
+    "resnet18",
+    "resnet34",
+    "resnet50",
+    "resnet101",
+    "resnet152",
+    "resnext50_32x4d",
+    "resnext101_32x16d",
+    "resnext101_32x32d",
+    "resnext101_32x48d",
+    "dpn68",
+    "dpn98",
+    "dpn131",
+    "vgg11",
+    "vgg11_bn",
+    "vgg13",
+    "vgg13_bn",
+    "vgg16",
+    "vgg16_bn",
+    "vgg19",
+    "vgg19_bn",
+    "senet154",
+    "se_resnet50",
+    "se_resnet101",
+    "se_resnet152",
+    "se_resnext50_32x4d",
+    "se_resnext101_32x4d",
+    "densenet121",
+    "densenet169",
+    "densenet201",
+    "densenet161",
+    "efficientnet-b0",
+    "efficientnet-b1",
+    "efficientnet-b2",
+    "efficientnet-b3",
+    "efficientnet-b4",
+    "efficientnet-b5",
+    "efficientnet-b6",
+    "efficientnet-b7",
+    "mobilenet_v2",
+    "efficientnet-b0",
+    "xception"
+]
         

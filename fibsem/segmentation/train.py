@@ -75,7 +75,6 @@ def train(model, device, data_loader, criterion, optimizer, DEBUG, WANDB):
                     wb_mask = wandb.Image(output_mask, caption="Output Mask")
                     wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
-    return train_loss
 
 def validate(model, device, data_loader, criterion, WANDB):
     val_loader = tqdm(data_loader)
@@ -102,7 +101,6 @@ def validate(model, device, data_loader, criterion, WANDB):
             wandb.log({"val_loss": loss.item()})
             val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
-    return val_loss
 
 def train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, DEBUG=False, WANDB=False):
     """ Helper function for training the model """
@@ -112,19 +110,12 @@ def train_model(model, device, optimizer, train_data_loader, val_data_loader, ep
     total_steps = len(train_data_loader)
     print(f"{epochs} epochs, {total_steps} total_steps per epoch")
 
-    # accounting
-    train_losses = []
-    val_losses = []
-
     # training loop
     for epoch in tqdm(range(epochs)):
         print(f"------- Epoch {epoch+1} of {epochs}  --------")
         
-        train_loss = train(model, device, train_data_loader, criterion, optimizer, DEBUG, WANDB)
-        val_loss = validate(model, device, val_data_loader, criterion, WANDB)
-   
-        # train_losses.append(train_loss / len(train_data_loader))
-        # val_losses.append(val_loss / len(val_data_loader))
+        train(model, device, train_data_loader, criterion, optimizer, DEBUG, WANDB)
+        validate(model, device, val_data_loader, criterion, WANDB)
 
         # save model checkpoint
         save_model(model, epoch, save_dir)
@@ -191,7 +182,7 @@ if __name__ == "__main__":
     print("\n----------------------- Loading Model -----------------------")
     # from smp
     model = smp.Unet(
-        encoder_name="resnet18",
+        encoder_name=config["train"]["encoder"],
         encoder_weights="imagenet",
         in_channels=1,  # grayscale images
         classes=num_classes,  # background, needle, lamella

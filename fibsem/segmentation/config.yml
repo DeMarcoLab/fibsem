@@ -7,6 +7,7 @@ train:
   debug: true # Plots images every so often during training
   wandb: true # Logs information and plots to wandb
   checkpoint: null # Path to model if you would like to resume training
+  encoder: "resnet18" # Specify model architecture. List of available encoders in readme.
   epochs: 5 # Number of epochs to train for
   cuda: false # Enable/Disable CUDA training
   batch_size: 1 # Number of batches per epoch

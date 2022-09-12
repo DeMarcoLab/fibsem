@@ -37,12 +37,13 @@ def label_images(raw_dir: str, data_dir: str) -> None:
         # Saves an img with the keypoints superimposed.
         os.makedirs(os.path.join(data_dir, os.path.basename(fname).split(".")[0]))
         path = os.path.join(data_dir, os.path.basename(fname).split(".")[0])
-        viewer.layers["img"].save(os.path.join(data_dir, os.path.basename(fname).split(".")[0], "image"))
-        viewer.layers["Labels"].save(os.path.join(data_dir, os.path.basename(fname).split(".")[0], "label.png"))
-
-        im = Image.open(os.path.join(path, "label.png")) 
+        viewer.layers["img"].save(os.path.join(path, "image"))
+        label = viewer.layers["Labels"].data
+        label = np.floor((label * 255) / np.max(label))
+        label = np.uint8(label)
+        
+        im = Image.fromarray(label) 
         im.save(os.path.join(path, "label.tif"))  # or 'test.tif'
-        os.remove(os.path.join(path, "label.png"))
 
 
 if __name__ == "__main__":
