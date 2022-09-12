@@ -7,7 +7,8 @@ import os
 from PIL import Image
 from tqdm import tqdm
 import argparse
-import json
+import yaml
+from validate_config import validate_config
 
 def label_images(raw_dir: str, data_dir: str) -> None:
     vol = tff.imread(os.path.join(raw_dir, "*.tif*"), aszarr=True) # loading folder of .tif into zarr array)
@@ -45,59 +46,28 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
 
 if __name__ == "__main__":
-    # NOTE: Running segmentation_config.py first allows labelling.py to remember your directories for future runs.
-    if "segmentation_config.json" in os.listdir():
-        with open("segmentation_config.json", 'r') as f:
-            config = json.load(f)
+    # command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        help="specify which user config file to use",
+        dest="config",
+        action="store",
+        default="fibsem\\segmentation\\lachie_config.yml",
+    )
 
-        # command line arguments
-        parser = argparse.ArgumentParser()
-        parser.add_argument(
-            "--raw_dir",
-            help="the directory containing the raw images",
-            dest="raw_dir",
-            action="store",
-            default=config["raw_dir"],
-        )
-        parser.add_argument(
-            "--data_dir",
-            help="the directory to save the images and labels to",
-            dest="data_dir",
-            action="store",
-            default=config["data_dir"],
-        )
-        parser.add_argument(
-            "--zarr_dir",
-            help="the directory to save the zarr dataset to",
-            dest="zarr_dir",
-            action="store",
-            default=config["zarr_dir"],
-        )
-        parser.add_argument(
-            "--img_size",
-            help="the directory to save the images and labels to",
-            dest="img_size",
-            action="store",
-            default=(1024,1536),
-        )
-        parser.add_argument(
-            "--no_label",
-            help="the directory to save the zarr dataset to",
-            dest="no_label",
-            action="store_true",
-        )
-        
     args = parser.parse_args()
-    raw_dir = args.raw_dir
-    data_dir = args.data_dir
-    zarr_dir = args.zarr_dir
-    img_size = args.img_size
-    no_label = args.no_label
+    config_dir = args.config
+
+    # NOTE: Setup your config.yml file
+    with open(config_dir, 'r') as f:
+        config = yaml.safe_load(f)
+
+    print("Validating config file.")
+    validate_config(config, "labelling")
+
+    raw_dir = config['labelling']['raw_dir']
+    data_dir = config['labelling']['data_dir']
     
-    if no_label:
-        #save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
-        pass
-    else:
-        label_images(raw_dir, data_dir)
-        #save_zarr_dataset(data_dir, zarr_dir, img_size=img_size)
+    label_images(raw_dir, data_dir)
 

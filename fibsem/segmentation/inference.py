@@ -59,18 +59,9 @@ if __name__ == "__main__":
         action="store",
         default=None,
     )
-    parser.add_argument(
-        "--epochs",
-        help="number of epochs to train",
-        dest="epochs",
-        action="store",
-        type=int,
-        default=2,
-    )
     args = parser.parse_args()
     data_path = args.data
     model_checkpoint = args.checkpoint
-    epochs = args.epochs
     DEBUG = args.debug
     WANDB = args.wandb
 

@@ -6,20 +6,22 @@ from datetime import datetime
 # import matplotlib.pyplot as plt
 import numpy as np
 import segmentation_models_pytorch as smp
+from validate_config import validate_config
 import torch
 from dataset import *
 from model_utils import *
 from tqdm import tqdm
 import wandb
+import yaml
 
-def save_model(model, epoch):
+def save_model(model, epoch, save_dir):
     """Helper function for saving the model based on current time and epoch"""
     
     # datetime object containing current date and time
     now = datetime.now()
     # format
     dt_string = now.strftime("%d_%m_%Y_%H_%M_%S") + f"_n{epoch+1:02d}"
-    model_save_file = f"models/{dt_string}_model.pt"
+    model_save_file = os.path.join(save_dir, f"{dt_string}_model.pt")
     torch.save(model.state_dict(), model_save_file)
 
     print(f"Model saved to {model_save_file}")
@@ -72,7 +74,7 @@ def train(model, device, data_loader, criterion, optimizer, DEBUG, WANDB):
                     wb_gt = wandb.Image(gt_base, caption="Ground Truth")
                     wb_mask = wandb.Image(output_mask, caption="Output Mask")
                     wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
-    
+
     return train_loss
 
 def validate(model, device, data_loader, criterion, WANDB):
@@ -102,11 +104,10 @@ def validate(model, device, data_loader, criterion, WANDB):
 
     return val_loss
 
-def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG=False, WANDB=False):
+def train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, DEBUG=False, WANDB=False):
     """ Helper function for training the model """
     # initialise loss function and optimizer
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
     total_steps = len(train_data_loader)
     print(f"{epochs} epochs, {total_steps} total_steps per epoch")
@@ -126,7 +127,7 @@ def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG
         # val_losses.append(val_loss / len(val_data_loader))
 
         # save model checkpoint
-        save_model(model, epoch)
+        save_model(model, epoch, save_dir)
 
     return model
 
@@ -136,49 +137,36 @@ if __name__ == "__main__":
     # command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--data",
-        help="the directory containing the training data",
-        dest="data",
+        "--config",
+        help="the directory containing the config file to use",
+        dest="config",
         action="store",
-        default=r"C:\Users\lachl\OneDrive\Desktop\DeMarco\data_img",
-    )
-    parser.add_argument(
-        "--debug",
-        help="show debugging visualisation during training",
-        dest="debug",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--wandb",
-        help="report results to wandb during training and validation",
-        dest="wandb",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        help="start model training from checkpoint",
-        dest="checkpoint",
-        action="store",
-        default=None,
-    )
-    parser.add_argument(
-        "--epochs",
-        help="number of epochs to train",
-        dest="epochs",
-        action="store",
-        type=int,
-        default=2,
+        default="fibsem\\segmentation\\lachie_config.yml",
     )
     args = parser.parse_args()
-    data_path = args.data
-    model_checkpoint = args.checkpoint
-    epochs = args.epochs
-    DEBUG = args.debug
-    WANDB = args.wandb
+    config_dir = args.config
 
-    # hyperparams
-    num_classes = 3
-    batch_size = 1
+    # NOTE: Setup your config.yml file
+    with open(config_dir, 'r') as f:
+        config = yaml.safe_load(f)
+
+    print("Validating config file.")
+    validate_config(config, "train")
+
+    # directories
+    data_path = config["train"]["data_dir"]
+    model_checkpoint = config["train"]["checkpoint"]
+    save_dir = config["train"]["save_dir"]
+
+    # hyper-params
+    epochs = config["train"]["epochs"]
+    num_classes = config["train"]["num_classes"] # Includes background class
+    batch_size = config["train"]["batch_size"]
+
+    # other parameters
+    cuda = config["train"]["cuda"]
+    DEBUG = config["train"]["debug"]
+    WANDB = config["train"]["wandb"]
 
     if WANDB:
         # weights and biases setup
@@ -206,11 +194,15 @@ if __name__ == "__main__":
         encoder_name="resnet18",
         encoder_weights="imagenet",
         in_channels=1,  # grayscale images
-        classes=3,  # background, needle, lamella
+        classes=num_classes,  # background, needle, lamella
     )
-    
+    if config["train"]["optimizer"] == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
+    else:
+        optimizer = torch.optim.SGD(model.parameters(), lr=config["train"]["learning_rate"])
+
     # Use gpu for training if available else use cpu
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() and cuda else "cpu")
     model.to(device)
 
     # load model checkpoint
@@ -247,7 +239,7 @@ if __name__ == "__main__":
     print("\n----------------------- Begin Training -----------------------\n")
 
     # train model
-    model = train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG=DEBUG, WANDB=WANDB)
+    model = train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, DEBUG=DEBUG, WANDB=WANDB)
 
     ################################## SAVE MODEL ##################################
     

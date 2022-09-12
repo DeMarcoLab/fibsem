@@ -40,6 +40,8 @@ class SegmentationDataset(Dataset):
         # need to to transformation manually
         mask = torch.tensor(np.asarray(mask)).unsqueeze(0)
 
+        mask = torch.round((mask/255) * (self.num_classes - 1)) # -1 because background is index 0
+
         return image, mask
 
     def __len__(self):

@@ -1,0 +1,15 @@
+labelling:
+  raw_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\DeMarco\\raw_img"
+  data_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\DeMarco\\data_img"
+train:
+  data_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\DeMarco\\data_img"
+  save_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\fibsem\\fibsem\\segmentation\\models"
+  debug: false
+  wandb: false
+  checkpoint: null
+  epochs: 5
+  cuda: false
+  batch_size: 1
+  num_classes: 3
+  optimizer: "Adam" # Adam or SGD, not case sensitive
+  learning_rate: 0.0001

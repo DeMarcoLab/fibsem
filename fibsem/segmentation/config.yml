@@ -1,0 +1,15 @@
+labelling:
+  raw_dir: "change\\this\\path"
+  data_dir: "change\\this\\path"
+train:
+  data_dir: "change\\this\\path"
+  save_dir: "change\\this\\path"
+  debug: true
+  wandb: true
+  checkpoint: null
+  epochs: 5
+  cuda: false
+  batch_size: 1
+  num_classes: 3
+  optimizer: "Adam" # Adam or SGD, not case sensitive
+  learning_rate: 0.0001
