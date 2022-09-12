@@ -4,7 +4,6 @@ labelling:
 train:
   data_dir: "change\\this\\path"
   save_dir: "change\\this\\path"
-  debug: true # Plots images every so often during training
   wandb: true # Logs information and plots to wandb
   checkpoint: null # Path to model if you would like to resume training
   encoder: "resnet18" # Specify model architecture. List of available encoders in readme.

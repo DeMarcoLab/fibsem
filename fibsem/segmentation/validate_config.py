@@ -32,12 +32,6 @@ def validate_config(config, func):
             path = config[func]["save_dir"]
             if not os.path.exists(path):
                 raise ValueError(f"{path} directory does not exist. (save_dir)")
-        if "debug" not in config[func]:
-            raise ValueError("debug is missing. Used to enable/disable debugging in training loop. Should be a boolean value.")
-        else:
-            val = config[func]["debug"]
-            if type(val) != bool:
-                raise TypeError(f"{val} is not a boolean (True/False). (debug)")
         if "wandb" not in config[func]:
             raise ValueError("wandb is missing. Used to enable/disable wandb logging in training loop. Should be a boolean value.")
         else:

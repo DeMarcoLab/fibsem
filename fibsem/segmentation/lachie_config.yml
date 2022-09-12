@@ -4,7 +4,6 @@ labelling:
 train:
   data_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\DeMarco\\data_img"
   save_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\fibsem\\fibsem\\segmentation\\models"
-  debug: false # Plots images every so often during training
   wandb: false # Logs information and plots to wandb
   checkpoint: null # Path to model if you would like to resume training
   encoder: "resnet18" # Specify model architecture. List of available encoders in readme.

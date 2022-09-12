@@ -58,8 +58,7 @@ def train(model, device, data_loader, criterion, optimizer, DEBUG, WANDB):
         data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
         if i % 100 == 0:
-        
-            if DEBUG and WANDB:
+            if WANDB:
                 model.eval()
                 with torch.no_grad():
 
