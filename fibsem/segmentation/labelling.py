@@ -18,7 +18,7 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
     for img, fname in zip(zarr_set, filenames):
         #Check to see if already labelled; if so, skip
-        if os.path.basename(fname).split(".")[0] in os.listdir(data_dir):
+        if os.path.basename(fname).split(".")[0] in os.listdir(data_dir): 
             continue
 
         print(fname)
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         help="specify which user config file to use",
         dest="config",
         action="store",
-        default="fibsem\\segmentation\\lachie_config.yml",
+        default="fibsem\\segmentation\\lucile_config.yml",
     )
 
     args = parser.parse_args()
