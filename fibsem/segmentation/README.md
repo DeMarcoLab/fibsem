@@ -2,13 +2,17 @@
 
 This section of the repository contains all of the code needed to label a segmentation dataset, create and train an automated segmentation model, as well as utilise said model for inference purposes.
 
+![Segmented Image](docs/imgs/combined/combined.tif)
+
 ## Getting started
 1. All of the required installation steps should have already been completed in the base README.
 
 2. (Optional) Download the sample dataset [Google Drive](Add link here)
 
 ## Running the segmentation code
-The code relating to the creation and training of a segmentation model expects the dataset images and labels to be in a TIFF File format. If you are utilising the labelling code within this repository to label your dataset, this is automatically done for you. If you are using a pre-existing dataset that is not in TIFF File format, there is a helper function in dataset.py that can be used to convert images of any extension to TIFF.
+NOTE: The code relating to the creation and training of a segmentation model expects the dataset images and labels to be in a TIFF File format. If you are utilising the labelling code within this repository to label your dataset, this is automatically done for you. If you are using a pre-existing dataset that is not in TIFF File format, there is a helper function in dataset.py that can be used to convert images of any extension to TIFF. 
+
+NOTE: It is assumed during labelling and training that all of your input images are of the same size. This is a prerequisite.
 
 Labelling is performed by labelling.py, training and validation is performed by train.py, and inference is performed by inference.py. All of these files expect a yaml config file that is used to specify the directories and parameters to be used.
 
@@ -50,6 +54,8 @@ Once labelling.py is running and the unlabelled images have been imported, a nap
 4. When you have finished labelling an image, exit the viewer to save the image and the segmentation label to the destination you specified in the config. A new viewer will then pop up with the next image.
 5. When you would like to take a break from labelling the dataset, close the napari viewer without creating a Labels layer, this will stop the script. NOTE: If you have an image that does not have any objects of interest in it, create an empty Labels layer before closing the viewer to save the image, otherwise the script will just close.
 6. Once you stop the script either intentionally or accidentally, the script will begin where you left off.
+
+![Napari Viewer](docs/example_napari.png)
 
 ### Training and Validation
 The code for training and validation can be found in train.py. It expects the labelled dataset directory as well as the directory to save your trained model in the config.yml file. The rest of the options have defaults that can be changed as needed.
@@ -121,3 +127,12 @@ train.py - train and validate a segmentation model.
 
 validate_config.py - Used by labelling.py, train.py, and inference.py to ensure that the config.yml file contains all of the correct parameters.
 
+config.yml - Config file that contains all of the necessary directories and parameters for labelling.py, train.py, and inference.py.
+
+
+### Segmentation Examples
+Data - raw data images can be found in docs/imgs/raw
+
+Labels - Segmentation Labels can be found in docs/imgs/labels
+
+Combined - Labels superimposed on the raw data can be found in docs/imgs/combined
