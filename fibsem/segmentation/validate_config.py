@@ -60,7 +60,7 @@ def validate_config(config, func):
             if type(val) != str:
                 raise TypeError(f"{val} must be a string. (encoder)")
             elif val not in unet_encoders:
-                raise ValueError(f"{val} not a valid in encoder. Check readme for full list. (encoder)")
+                raise ValueError(f"{val} not a valid encoder. Check readme for full list. (encoder)")
         if "epochs" not in config[func]:
             raise ValueError("epochs is missing. Integer value used to determine number of epochs model trains for.")
         else:
