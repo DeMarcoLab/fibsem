@@ -114,6 +114,9 @@ The following is a list of encoders that are available for use. By default resne
 ### Inference
 
 
+## Visualisation
+Training and inference can be visualised with the use of WandB. This is done by setting the wandb parameter to true in the config settings.
+
 ## File Description
 dataset.py - contains the dataset class, as well as the TIFF file conversion helper function.
 
