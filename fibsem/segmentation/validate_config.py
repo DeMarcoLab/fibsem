@@ -1,5 +1,3 @@
-from multiprocessing.sharedctypes import Value
-import yaml
 import os
 
 def validate_config(config, func):

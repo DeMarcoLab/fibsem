@@ -4,7 +4,6 @@ import glob
 import pathlib
 
 import numpy as np
-import PIL
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
@@ -12,8 +11,6 @@ from torchvision import transforms
 import dask.array as da
 import os
 import tifffile as tff
-from tqdm import tqdm
-from skimage.transform import resize
 
 # transformations
 transformation = transforms.Compose(
