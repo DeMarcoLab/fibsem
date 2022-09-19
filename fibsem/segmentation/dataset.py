@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import glob
+import pathlib
 
 import numpy as np
 import PIL
@@ -49,8 +50,8 @@ class SegmentationDataset(Dataset):
 
 
 def load_dask_dataset(data_dir: str):
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "**\image.tif")))  #[-435:]
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "**\label.tif")))  #[-435:]
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "**\image.tif*")))  #[-435:]
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "**\label.tif*")))  #[-435:]
 
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
     mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
@@ -93,3 +94,12 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
 
 
 # ref: https://towardsdatascience.com/pytorch-basics-sampling-samplers-2a0f29f0bf2a
+
+# Helper functions
+# WIP
+def convert_dataset_to_tif(dataset_path, f_extension):
+    old_images = glob.glob(os.path.join(dataset_path, f"*.{f_extension}"))
+    for img in old_images:
+        new_image = Image.open(img)
+        f_name = pathlib.Path(img).stem()
+        new_image.save(os.path.join(dataset_path), f"{f_name}.tif") 
