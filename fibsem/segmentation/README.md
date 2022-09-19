@@ -107,3 +107,17 @@ The following is a list of encoders that are available for use. By default resne
 
 ### Inference
 
+
+## File Description
+dataset.py - contains the dataset class, as well as the TIFF file conversion helper function.
+
+inference.py - segment any image using a trained segmentation model.
+
+labelling.py - label a dataset using napari.
+
+model_utils.py - contains helper functions used behind the scenes in train.py.
+
+train.py - train and validate a segmentation model.
+
+validate_config.py - Used by labelling.py, train.py, and inference.py to ensure that the config.yml file contains all of the correct parameters.
+
