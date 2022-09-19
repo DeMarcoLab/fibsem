@@ -62,5 +62,48 @@ To run this file from the command line:
 $ python train.py --config config.yml
 ```
 
+The following is a list of encoders that are available for use. By default resnet18 is chosen.
+* "resnet18",
+* "resnet34",
+* "resnet50",
+* "resnet101", 
+* "resnet152",
+* "resnext50_32x4d",
+* "resnext101_32x16d",
+* "resnext101_32x32d",
+* "resnext101_32x48d",
+* "dpn68",
+* "dpn98",
+* "dpn131",
+* "vgg11",
+* "vgg11_bn",
+* "vgg13",
+* "vgg13_bn",
+* "vgg16",
+* "vgg16_bn",
+* "vgg19",
+* "vgg19_bn",
+* "senet154",
+* "se_resnet50",
+* "se_resnet101",
+* "se_resnet152",
+* "se_resnext50_32x4d",
+* "se_resnext101_32x4d",
+* "densenet121",
+* "densenet169",
+* "densenet201",
+* "densenet161",
+* "efficientnet-b0",
+* "efficientnet-b1",
+* "efficientnet-b2",
+* "efficientnet-b3",
+* "efficientnet-b4",
+* "efficientnet-b5",
+* "efficientnet-b6",
+* "efficientnet-b7",
+* "mobilenet_v2",
+* "efficientnet-b0",
+* "xception"
+
 ### Inference
 
