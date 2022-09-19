@@ -5,7 +5,6 @@ import zarr
 import tifffile as tff
 import os
 from PIL import Image
-from tqdm import tqdm
 import argparse
 import yaml
 from validate_config import validate_config
