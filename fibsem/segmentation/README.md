@@ -2,7 +2,7 @@
 
 This section of the repository contains all of the code needed to label a segmentation dataset, create and train an automated segmentation model, as well as utilise said model for inference purposes.
 
-![Segmented Image](docs/imgs/combined/combined.tif)
+![Segmented Image](docs/imgs/combined/combined.jpg)
 
 ## Getting started
 1. All of the required installation steps should have already been completed in the base README.
