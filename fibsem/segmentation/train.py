@@ -131,7 +131,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default="fibsem\\segmentation\\lucile_config.yml",
+        default=os.path.join("fibsem", "segmentation", "config.yml")
     )
     args = parser.parse_args()
     config_dir = args.config
@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     if WANDB:
         # weights and biases setup
-        wandb.init(project="fibsem_pipeline", entity="lnae0002")
+        wandb.init(project=config["train"]["wandb_project"], entity=config["train"]["wandb_entity"])
 
         wandb.config = {
         "epochs": epochs,

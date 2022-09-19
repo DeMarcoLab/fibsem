@@ -53,7 +53,7 @@ if __name__ == "__main__":
         help="specify which user config file to use",
         dest="config",
         action="store",
-        default="fibsem\\segmentation\\lucile_config.yml",
+        default=os.path.join("fibsem", "segmentation", "config.yml")
     )
 
     args = parser.parse_args()

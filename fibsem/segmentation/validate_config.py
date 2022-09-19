@@ -17,7 +17,7 @@ def validate_config(config, func):
         print("\nConfig file validated. \n")
         return
 
-    if func == "train":
+    elif func == "train":
         if "data_dir" not in config[func]:
             raise ValueError("data_dir is missing. Should point to path containing labelled images.")
         else:
@@ -96,6 +96,77 @@ def validate_config(config, func):
                     raise ValueError(f"{val} must be a positive float value (learning_rate).")
             else:
                 raise TypeError(f"{val} is not a float. (learning_rate)")  
+        if "wandb_project" not in config[func]:
+            raise ValueError("wandb_project is missing. String indicating the wandb project title for login.")
+        else:
+            val = config[func]["wandb_project"]
+            if type(val) != str:
+                raise TypeError(f"{val} is not a string. (wandb_project)")
+        if "wandb_entity" not in config[func]:
+            raise ValueError("wandb_entity is missing. String indicating the wandb login credentials.")
+        else:
+            val = config[func]["wandb_entity"]
+            if type(val) != str:
+                raise TypeError(f"{val} is not a string. (wandb_project)")
+        print("\nConfig file validated.\n")
+        return
+    elif func == "inference":
+        if "data_dir" not in config[func]:
+            raise ValueError("data_dir is missing. Should point to path containing images.")
+        else:
+            path = config[func]["data_dir"]
+            if not os.path.exists(path):
+                raise ValueError(f"{path} directory does not exist. (data_dir)")
+        if "model_dir" not in config[func]:
+            raise ValueError("model_dir is missing. Should point to where the model is saved.")
+        else:
+            path = config[func]["model_dir"]
+            if not os.path.exists(path):
+                raise ValueError(f"{path} directory does not exist. (model_dir)")
+        if "output_dir" not in config[func]:
+            raise ValueError("output_dir is missing. Should point to where the outputs are saved.")
+        else:
+            path = config[func]["output_dir"]
+            if not os.path.exists(path):
+                raise ValueError(f"{path} directory does not exist. (output_dir)")
+        if "wandb" not in config[func]:
+            raise ValueError("wandb is missing. Used to enable/disable wandb logging in training loop. Should be a boolean value.")
+        else:
+            val = config[func]["wandb"]
+            if type(val) != bool:
+                raise TypeError(f"{val} is not a boolean (True/False). (wandb)")
+        if "cuda" not in config[func]:
+            raise ValueError("cuda is missing. used to enable/disable cuda training. Should be a boolean value.")
+        else:
+            val = config[func]["cuda"]
+            if type(val) != bool:
+                raise TypeError(f"{val} is not a boolean (True/False). (cuda)")
+        if "encoder" not in config[func]:
+            raise ValueError("encoder is missing. Used to specify which model architecture to use. Default is resnet18.")
+        else:
+            val = config[func]["encoder"]
+            if type(val) != str:
+                raise TypeError(f"{val} must be a string. (encoder)")
+            elif val not in unet_encoders:
+                raise ValueError(f"{val} not a valid encoder. Check readme for full list. (encoder)") 
+        if "num_classes" not in config[func]:
+            raise ValueError("num_classes is missing. Integer value used to determine number of classes model classifies.")
+        else:
+            val = config[func]["num_classes"]
+            if type(val) != int or val <= 0:
+                raise TypeError(f"{val} is not a positive integer. (num_classes)")   
+        if "wandb_project" not in config[func]:
+            raise ValueError("wandb_project is missing. String indicating the wandb project title for login.")
+        else:
+            val = config[func]["wandb_project"]
+            if type(val) != str:
+                raise TypeError(f"{val} is not a string. (wandb_project)")
+        if "wandb_entity" not in config[func]:
+            raise ValueError("wandb_entity is missing. String indicating the wandb login credentials.")
+        else:
+            val = config[func]["wandb_entity"]
+            if type(val) != str:
+                raise TypeError(f"{val} is not a string. (wandb_project)")
         print("\nConfig file validated.\n")
         return
         

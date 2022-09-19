@@ -3,7 +3,7 @@ labelling:
   data_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\DeMarco\\data_img"
 train:
   data_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\DeMarco\\data_img"
-  save_dir: "C:\\Users\\lachl\\OneDrive\\Desktop\\fibsem\\fibsem\\segmentation\\models"
+  save_dir: "fibsem\\segmentation\\models"
   wandb: false # Logs information and plots to wandb
   checkpoint: null # Path to model if you would like to resume training
   encoder: "resnet18" # Specify model architecture. List of available encoders in readme.
@@ -13,5 +13,16 @@ train:
   num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
   optimizer: "Adam" # Adam or SGD, not case sensitive
   learning_rate: 0.0001
-
+  wandb_project: "no"
+  wandb_entity: "no"
+inference:
+  data_dir: "change\\this\\path"
+  model_dir: "fibsem\\segmentation\\models"
+  output_dir: "fibsem\\segmentation\\outputs"
+  wandb: false
+  cuda: false
+  encoder: "resnet18"
+  num_classes: 3
+  wandb_project: "no"
+  wandb_entity: "no"
 
