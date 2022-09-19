@@ -8,3 +8,5 @@ scratch/test_image.tif
 *.zarr/*
 example/profile.npy
 example/**/*.tif
+example/*.npy
+example/*.bmp
