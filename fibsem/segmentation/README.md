@@ -33,8 +33,19 @@ train:
   num_classes: number of classes in segmentation labels. Includes background as class 0.
   optimizer: adam or SGD, not case sensitive
   learning_rate: learning rate used during training
+  wandb_project: name of the wandb project
+  wandb_entity: user name for wandb
+inference:
+  data_dir: directory containing images for inference
+  model_dir: directory containing saved model weights
+  output_dir: directory to save the outputs to
+  wandb: boolean value to determine whether or not to save to wandb.
+  cuda: determines whether to use GPU
+  encoder: specify model architecture. List of available encoders in readme.
+  num_classes: number of classes in the segmentation labels. Includes background as class 0.
+  wandb_project: name of the wandb project
+  wandb_entity: user name for wandb
 ```
-TODO: Add inference to config.yml
 
 ### Labelling
 The code for labelling the dataset can be found in labelling.py. It expects the directory of unlabelled images and the directory to save the labelled images to be found in the config.yml file. 
@@ -112,7 +123,14 @@ The following is a list of encoders that are available for use. By default resne
 * "xception"
 
 ### Inference
+The code for performing inference is found in inference.py. When customising the config file, the parameters should be the same as what was used to train the model originally in train.py, particularly the encoder, and the number of classes. The results of the inference can be found on WandB.
 
+To run this file:
+1. cd into the segmentation folder.
+2. 
+```
+$ python inference.py --config config.yml
+```
 
 ## Visualisation
 Training and inference can be visualised with the use of WandB. This is done by setting the wandb parameter to true in the config settings.

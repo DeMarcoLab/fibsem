@@ -64,7 +64,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default="fibsem\\segmentation\\lucile_config.yml",
+        default=os.path.join("fibsem", "segmentation", "config.yml"),
     )
     args = parser.parse_args()
     config_dir = args.config
@@ -87,15 +87,15 @@ if __name__ == "__main__":
 
 
     model = smp.Unet(
-            encoder_name="resnet18",
+            encoder_name=config["inference"]["encoder"],
             encoder_weights="imagenet",
             in_channels=1,  # grayscale images
-            classes=3,  # background, needle, lamella
+            classes=config["inference"]["num_classes"],  # background, needle, lamella
         )
 
     if WANDB:
         # weights and biases setup
-        wandb.init(project="fibsem_pipeline", entity="lnae0002")
+        wandb.init(project=config["inference"]["wandb_project"], entity=config["inference"]["wandb_entity"])
 
     device = torch.device("cuda:0" if torch.cuda.is_available() and cuda else "cpu")
 

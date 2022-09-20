@@ -10,7 +10,7 @@ import torch.nn.functional as F
 def decode_output(output):
     """decodes the output of segmentation model to RGB mask"""
     output = F.softmax(output, dim=1)
-    mask = torch.argmax(output.squeeze(), dim=0).detach().cpu().numpy()
+    mask = torch.argmax(output, dim=1).detach().cpu().numpy()
     mask = decode_segmap(mask)
     return mask
 
@@ -38,7 +38,7 @@ def decode_segmap(image, nc=3):
         b[idx] = label_colors[l, 2]
 
     # stack rgb channels to form an image
-    rgb_mask = np.stack([r, g, b], axis=2)
+    rgb_mask = np.stack([r, g, b], axis=-1)
     return rgb_mask
 
 

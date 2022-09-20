@@ -13,8 +13,7 @@ fibsem/models/05_09_2022_13_09_31_n01_model.pt
 fibsem/segmentation/wandb/*
 fibsem/segmentation/models/*
 
-fibsem/segmentation/lachie_config.yml
 fibsem/segmentation/lucile_config.yml
-fibsem/segmentation/config.yml
+
 wandb/*
 fibsem/segmentation/lachie_config.yml
