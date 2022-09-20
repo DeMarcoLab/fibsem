@@ -37,12 +37,6 @@ class SegmentationDataset(Dataset):
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
         mask = torch.tensor(mask).unsqueeze(0)
-<<<<<<< HEAD
-        #print(np.unique(mask))
-
-        #mask = torch.round((mask/255) * (self.num_classes - 1)) # -1 because background is index 0
-=======
->>>>>>> ca8a3b1ef9078cdddcc68fdc723b7813f137de5b
 
         return image, mask
 
