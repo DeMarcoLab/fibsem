@@ -131,7 +131,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "config.yml")
+        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
     )
     args = parser.parse_args()
     config_dir = args.config
@@ -210,19 +210,20 @@ if __name__ == "__main__":
         imgs = imgs.to(device)
         output = model(imgs)
         pred = decode_output(output)
-
+        print(pred.shape)
         print("imgs, masks, output")
         print(imgs.shape, masks.shape, output.shape)
 
         if WANDB:
-            img_base = imgs.detach().cpu().squeeze().numpy()[0]
-            img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = decode_segmap(masks[0].permute(1, 2, 0).squeeze())
+            for i in range(batch_size):
+                img_base = imgs[i].detach().cpu().squeeze().numpy()[0]
+                img_rgb = np.dstack((img_base, img_base, img_base))
+                gt_base = decode_segmap(masks[i].permute(1, 2, 0).squeeze())
 
-            wb_img = wandb.Image(img_rgb, caption="Input Image")
-            wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-            wb_mask = wandb.Image(pred, caption="Output Mask")
-            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+                wb_img = wandb.Image(img_rgb, caption="Input Image")
+                wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+                wb_mask = wandb.Image(pred[i], caption="Output Mask")
+                wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
     ################################## TRAINING ##################################
     print("\n----------------------- Begin Training -----------------------\n")
