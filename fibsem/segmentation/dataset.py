@@ -36,9 +36,10 @@ class SegmentationDataset(Dataset):
 
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
-        mask = torch.tensor(np.asarray(mask)).unsqueeze(0)
+        mask = torch.tensor(mask).unsqueeze(0)
+        #print(np.unique(mask))
 
-        mask = torch.round((mask/255) * (self.num_classes - 1)) # -1 because background is index 0
+        #mask = torch.round((mask/255) * (self.num_classes - 1)) # -1 because background is index 0
 
         return image, mask
 
@@ -61,6 +62,7 @@ def load_dask_dataset(data_dir: str):
 def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
     images, masks = load_dask_dataset(data_path)
     print(f"Loading dataset from {data_path} of length {images.shape[0]}")
+    #print(np.unique(masks[0].compute())) 
 
     # load dataset
     seg_dataset = SegmentationDataset(
@@ -100,3 +102,6 @@ def convert_dataset_to_tif(dataset_path, f_extension):
         new_image = Image.open(img)
         f_name = pathlib.Path(img).stem()
         new_image.save(os.path.join(dataset_path), f"{f_name}.tif") 
+
+
+#convert_dataset_to_tif("C:\\Users\lucil\OneDrive\Bureau\DeMarco_Lab\data\train\000000001", 'png') 
