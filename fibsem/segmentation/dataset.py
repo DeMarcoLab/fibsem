@@ -83,7 +83,7 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
     val_data_loader = DataLoader(
         seg_dataset, batch_size=1, sampler=val_sampler
     )  # shuffle=True,
-    print(f"Validation dataset has {len(val_data_loader)} batches of size {batch_size}")
+    print(f"Validation dataset has {len(val_data_loader)} batches of size 1")
 
     return train_data_loader, val_data_loader
 

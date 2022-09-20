@@ -61,18 +61,18 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
             if WANDB:
                 model.eval()
                 with torch.no_grad():
-
                     outputs = model(images)
                     output_mask = decode_output(outputs)
                     
-                    img_base = images.detach().cpu().squeeze().numpy()
-                    img_rgb = np.dstack((img_base, img_base, img_base))
-                    gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0))
+                    for j in range(batch_size):
+                        img_base = images[j].detach().cpu().squeeze().numpy()
+                        img_rgb = np.dstack((img_base, img_base, img_base))
+                        gt_base = decode_segmap(masks[j].detach().cpu().permute(1, 2, 0))
 
-                    wb_img = wandb.Image(img_rgb, caption="Input Image")
-                    wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-                    wb_mask = wandb.Image(output_mask, caption="Output Mask")
-                    wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+                        wb_img = wandb.Image(img_rgb, caption="Input Image")
+                        wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+                        wb_mask = wandb.Image(output_mask[j], caption="Output Mask")
+                        wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
 
 def validate(model, device, data_loader, criterion, WANDB):
