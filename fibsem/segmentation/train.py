@@ -66,15 +66,14 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
                     outputs = model(images)
                     output_mask = decode_output(outputs)
                     
-                    for j in range(batch_size):
-                        img_base = images[j].detach().cpu().squeeze().numpy()
-                        img_rgb = np.dstack((img_base, img_base, img_base))
-                        gt_base = decode_segmap(masks[j].detach().cpu().permute(1, 2, 0))
+                    img_base = images[0].detach().cpu().squeeze().numpy()
+                    img_rgb = np.dstack((img_base, img_base, img_base))
+                    gt_base = decode_segmap(masks[0].detach().cpu().permute(1, 2, 0))
 
-                        wb_img = wandb.Image(img_rgb, caption="Input Image")
-                        wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-                        wb_mask = wandb.Image(output_mask[j], caption="Output Mask")
-                        wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+                    wb_img = wandb.Image(img_rgb, caption="Input Image")
+                    wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+                    wb_mask = wandb.Image(output_mask[0], caption="Output Mask")
+                    wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
 
 def validate(model, device, data_loader, criterion, WANDB):
@@ -218,15 +217,14 @@ if __name__ == "__main__":
         print(imgs.shape, masks.shape, output.shape)
 
         if WANDB:
-            for i in range(batch_size):
-                img_base = imgs[i].detach().cpu().squeeze().numpy()[0]
-                img_rgb = np.dstack((img_base, img_base, img_base))
-                gt_base = decode_segmap(masks[i].permute(1, 2, 0).squeeze())
+            img_base = imgs[0].detach().cpu().squeeze().numpy()[0]
+            img_rgb = np.dstack((img_base, img_base, img_base))
+            gt_base = decode_segmap(masks[0].permute(1, 2, 0).squeeze())
 
-                wb_img = wandb.Image(img_rgb, caption="Input Image")
-                wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-                wb_mask = wandb.Image(pred[i], caption="Output Mask")
-                wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+            wb_img = wandb.Image(img_rgb, caption="Input Image")
+            wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+            wb_mask = wandb.Image(pred[0], caption="Output Mask")
+            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
     ################################## TRAINING ##################################
     print("\n----------------------- Begin Training -----------------------\n")
