@@ -7,6 +7,7 @@ import numpy as np
 import segmentation_models_pytorch as smp
 from validate_config import validate_config
 from model_utils import *
+from dataset import *
 import torch
 import os
 import wandb
@@ -31,8 +32,11 @@ def inference(images, output_dir, model, model_path, device, WANDB=False):
         filenames = sorted(glob.glob(os.path.join(images, "*.tif*")))
 
         for img, fname in zip(zarr_set, filenames):
-            #images = Image.fromarray(img)
-            #images = images.to(device)
+            # img = Image.fromarray(img)
+            # img = img.to(device)
+            img = transformation(img)
+            img.to(device)
+            img = torch.tensor(np.asarray(img)).unsqueeze(0)
             outputs = model(img)
             output_mask = decode_output(outputs)
             
@@ -43,7 +47,7 @@ def inference(images, output_dir, model, model_path, device, WANDB=False):
             output.save(os.path.join(path, "output.tif"))  # or 'test.tif'
 
             if WANDB:
-                img_base = images.detach().cpu().squeeze().numpy()
+                img_base = img.detach().cpu().squeeze().numpy()
                 img_rgb = np.dstack((img_base, img_base, img_base))
 
                 wb_img = wandb.Image(img_rgb, caption="Input Image")

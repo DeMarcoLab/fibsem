@@ -17,3 +17,4 @@ fibsem/segmentation/lachie_config.yml
 fibsem/segmentation/lucile_config.yml
 fibsem/segmentation/config.yml
 wandb/*
+fibsem/segmentation/lachie_config.yml
