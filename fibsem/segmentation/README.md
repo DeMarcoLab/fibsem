@@ -46,7 +46,6 @@ inference:
   wandb_project: name of the wandb project
   wandb_entity: user name for wandb
 ```
-TODO: Add inference to config.yml
 
 ### Labelling
 The code for labelling the dataset can be found in labelling.py. It expects the directory of unlabelled images and the directory to save the labelled images to be found in the config.yml file. 
