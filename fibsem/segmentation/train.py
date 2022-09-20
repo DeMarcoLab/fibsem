@@ -214,10 +214,6 @@ if __name__ == "__main__":
         imgs = imgs.to(device)
         output = model(imgs)
         pred = decode_output(output)
-<<<<<<< HEAD
-=======
-        print(pred.shape)
->>>>>>> ca8a3b1ef9078cdddcc68fdc723b7813f137de5b
         print("imgs, masks, output")
         print(imgs.shape, masks.shape, output.shape)
 
