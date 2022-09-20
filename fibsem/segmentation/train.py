@@ -40,7 +40,9 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
         masks = masks.reshape(
             masks.shape[0], masks.shape[2], masks.shape[3]
         )  # remove channel dim
+        print(masks.shape)
         masks = masks.to(device)
+        # print(np.unique(masks[0]))
 
         # forward pass
         outputs = model(images).type(torch.FloatTensor).to(device)
@@ -89,6 +91,7 @@ def validate(model, device, data_loader, criterion, WANDB):
         masks = masks.reshape(
             masks.shape[0], masks.shape[2], masks.shape[3]
         )  # remove channel dim
+        print(np.unique(masks[0].compute())) 
         masks = masks.to(device)
 
         # forward pass
@@ -205,12 +208,16 @@ if __name__ == "__main__":
     for i in range(2):
         # testing dataloader
         imgs, masks = next(iter(train_data_loader))
-
+        #print(np.unique(masks)) 
+        
         # sanity check - model, imgs, masks
         imgs = imgs.to(device)
         output = model(imgs)
         pred = decode_output(output)
+<<<<<<< HEAD
+=======
         print(pred.shape)
+>>>>>>> ca8a3b1ef9078cdddcc68fdc723b7813f137de5b
         print("imgs, masks, output")
         print(imgs.shape, masks.shape, output.shape)
 
