@@ -175,7 +175,7 @@ class MillingSettings:
     width: float
     height: float
     depth: float
-    rotation: float # deg?
+    rotation: float = 0.0 # deg
     centre_x: float = 0.0 # TODO: change to Point?
     centre_y: float = 0.0 
     milling_current: float = 20.0e-12
