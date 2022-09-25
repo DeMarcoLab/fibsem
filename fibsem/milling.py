@@ -4,8 +4,8 @@ import logging
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from fibsem.structures import BeamType, MillingSettings, Point
-
-from autoscript_sdb_microscope_client._dynamic_object_proxies import CleaningCrossSectionPattern, RectanglePattern
+from autoscript_sdb_microscope_client.structures import BitmapPatternDefinition, StreamPatternDefinition
+from autoscript_sdb_microscope_client._dynamic_object_proxies import CleaningCrossSectionPattern, RectanglePattern, BitmapPattern, StreamPattern, CirclePattern, LinePattern
 from typing import Union
 
 ########################### SETUP 
@@ -160,15 +160,78 @@ def estimate_milling_time_in_seconds(milling_stage_patterns: list[list[Union[Cle
 
 # TODO: circle, bitmap, line, stream
 
-def _draw_bitmap_pattern(microscope:SdbMicroscopeClient, protocol:dict , x: float = 0.0, y: float = 0.0):
+def _draw_bitmap_pattern(microscope:SdbMicroscopeClient, mill_settings:MillingSettings, bitmap_pattern: BitmapPatternDefinition) -> BitmapPattern:
 
-    pass
+    pattern = microscope.patterning.create_bitmap(
+        center_x=mill_settings.centre_x,
+        center_y=mill_settings.centre_y, 
+        width=mill_settings.width,
+        height=mill_settings.height,
+        depth=mill_settings.depth,
+        bitmap_pattern_definition=bitmap_pattern
+    )
+
+    return pattern
+
+
+def _draw_circle_pattern(microscope: SdbMicroscopeClient, mill_settings: MillingSettings):
+
+    return NotImplemented
+
+    pattern = microscope.patterning.create_circle(
+        center_x=mill_settings.centre_x,
+        center_y=mill_settings.centre_y,
+        outer_diameter=mill_settings.outer_diameter,
+        inner_diameter=mill_settings.inner_diameter,
+        depth=mill_settings.depth
+    )
+
+    return pattern
 
 
 
+def _draw_line_pattern(microscope:SdbMicroscopeClient, mill_settings:MillingSettings):
+
+    return NotImplemented
+
+    pattern = microscope.patterning.create_line(
+        start_x=mill_settings.start_x,
+        start_y =mill_settings.start_y,
+        end_x=mill_settings.end_x,
+        end_y=mill_settings.end_y,
+        depth=mill_settings.depth
+    
+    )
+
+    return pattern
+
+
+
+def _draw_stream_pattern(microscope: SdbMicroscopeClient, mill_settings: MillingSettings, stream_pattern: StreamPatternDefinition) -> StreamPattern:
+
+    # 2d array
+    # shape[0] is list of coordinates
+    # shape[1] is 4d: x, y, dwell_time_in_sec, blank
+
+    # TODO: investigate the following
+    # assume x, y in image coordinates
+    # what does blank mean / do?
+    # how to convert to / from this for lower level control
+
+    return NotImplemented
+
+    pattern = microscope.patterning.create_stream(
+        center_x=mill_settings.centre_x,
+        center_y=mill_settings.centre_y,
+        stream_pattern_definition=stream_pattern
+    )
+
+    return pattern
 
 
 def _draw_rectangle_pattern(microscope:SdbMicroscopeClient, protocol:dict , x: float = 0.0, y: float = 0.0):
+
+    logging.warning(f"Depreceated: please use _draw_rectangle_pattern_v2")
 
     if protocol["cleaning_cross_section"]:
         pattern = microscope.patterning.create_cleaning_cross_section(
@@ -281,8 +344,7 @@ def _draw_fiducial_patterns(
     Args:
         microscope (SdbMicroscopeClient): AutoScript microscope connection
         mill_settings (dict): fiducial milling settings
-        centre_x (float, optional): centre x coordinate. Defaults to 0.0.
-        centre_y (float, optional): centre y coordinate. Defaults to 0.0.
+        point (Point): centre x, y coordinate
     Returns
     -------
         patterns : list
