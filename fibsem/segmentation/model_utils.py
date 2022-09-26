@@ -23,7 +23,12 @@ def decode_segmap(image, nc=3):
     """
 
     # 0=background, 1=lamella, 2= needle
-    label_colors = np.array([(0, 0, 0), (255, 0, 0), (0, 255, 0)])
+    label_colors = np.zeros((6, 3))
+    label_colors[1, :] = (255, 0, 0)
+    label_colors[2, :] = (0, 255, 0)
+    label_colors[3, :] = (0, 0, 255)
+    label_colors[4, :] = (0, 255, 255)
+    label_colors[5, :] = (255, 255, 0)
 
     # pre-allocate r, g, b channels as zero
     r = np.zeros_like(image, dtype=np.uint8)
@@ -31,11 +36,12 @@ def decode_segmap(image, nc=3):
     b = np.zeros_like(image, dtype=np.uint8)
 
     # apply the class label colours to each pixel
-    for l in range(0, nc):
-        idx = image == l
-        r[idx] = label_colors[l, 0]
-        g[idx] = label_colors[l, 1]
-        b[idx] = label_colors[l, 2]
+    for class_idx in range(1, nc):
+        idx = (image == class_idx)
+        class_idx = class_idx%5
+        r[idx] = label_colors[class_idx, 0]
+        g[idx] = label_colors[class_idx, 1]
+        b[idx] = label_colors[class_idx, 2]
 
     # stack rgb channels to form an image
     rgb_mask = np.stack([r, g, b], axis=-1)

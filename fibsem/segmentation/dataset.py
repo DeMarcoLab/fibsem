@@ -37,12 +37,6 @@ class SegmentationDataset(Dataset):
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
         mask = torch.tensor(mask).unsqueeze(0)
-<<<<<<< HEAD
-        #print(np.unique(mask))
-
-        #mask = torch.round((mask/255) * (self.num_classes - 1)) # -1 because background is index 0
-=======
->>>>>>> ca8a3b1ef9078cdddcc68fdc723b7813f137de5b
 
         return image, mask
 
@@ -90,7 +84,7 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
     val_data_loader = DataLoader(
         seg_dataset, batch_size=1, sampler=val_sampler
     )  # shuffle=True,
-    print(f"Validation dataset has {len(val_data_loader)} batches of size {batch_size}")
+    print(f"Validation dataset has {len(val_data_loader)} batches of size 1")
 
     return train_data_loader, val_data_loader
 
