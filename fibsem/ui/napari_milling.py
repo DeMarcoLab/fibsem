@@ -9,7 +9,6 @@ from autoscript_sdb_microscope_client.structures import (MoveSettings,
                                                          StagePosition)
 from fibsem import acquire, conversions, movement, constants, alignment
 from fibsem.structures import BeamType, MicroscopeSettings
-from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.qtdesigner_files import NapariMilling
 from PyQt5 import QtCore, QtWidgets
 
