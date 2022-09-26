@@ -330,6 +330,36 @@ def detect_right_edge_v2(mask: np.ndarray, threshold=25, left=False) -> Point:
     return Point(x=edge_px[1], y=edge_px[0])
 
 
+def detect_corner(mask: np.ndarray, threshold=25, left: bool = False, bottom: bool = False) -> Point:
+
+    # get mask px coordinates
+    edge_mask = np.where(mask)
+    edge_px = (0, 0)
+
+    # only return an edge point if detection is above a threshold        
+    if len(edge_mask[0]) > threshold:
+        
+        # right_most: max(x_coord), left_most: min(x_coord)
+        px = np.max(edge_mask[1])
+        if left:
+            px = np.min(edge_mask[1])
+
+        # get all px corresponding to value
+        h_idx = np.where(edge_mask[1] == px)
+        coords = edge_mask[0][h_idx], edge_mask[1][h_idx]
+
+        # get vertical index
+        v_idx = np.argmin(coords[0])
+        if bottom:
+            v_idx = np.argmax(coords[0])
+
+        edge_px = coords[0][v_idx], coords[1][v_idx]
+
+    return Point(x=edge_px[1], y=edge_px[0])
+
+
+
+
 def edge_detection(img: np.ndarray, sigma=3) -> np.ndarray:
     return feature.canny(img, sigma=sigma)  # sigma higher usually better
 
