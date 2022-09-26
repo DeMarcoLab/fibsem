@@ -40,7 +40,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
         masks = masks.reshape(
             masks.shape[0], masks.shape[2], masks.shape[3]
         )  # remove channel dim
-        print(masks.shape)
+        #print(masks.shape)
         masks = masks.to(device)
         # print(np.unique(masks[0]))
 
@@ -91,7 +91,7 @@ def validate(model, device, data_loader, criterion, WANDB):
         masks = masks.reshape(
             masks.shape[0], masks.shape[2], masks.shape[3]
         )  # remove channel dim
-        print(np.unique(masks[0].compute())) 
+        #print(np.unique(masks[0].compute())) 
         masks = masks.to(device)
 
         # forward pass
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
+        default=os.path.join("fibsem", "segmentation", "lucile_config.yml")
     )
     args = parser.parse_args()
     config_dir = args.config
@@ -159,7 +159,6 @@ if __name__ == "__main__":
     # other parameters
     cuda = config["train"]["cuda"]
     WANDB = config["train"]["wandb"]
-
     if WANDB:
         # weights and biases setup
         wandb.init(project=config["train"]["wandb_project"], entity=config["train"]["wandb_entity"])
@@ -195,8 +194,12 @@ if __name__ == "__main__":
 
     # Use gpu for training if available else use cpu
     device = torch.device("cuda:0" if torch.cuda.is_available() and cuda else "cpu")
+    show_memory_usage()
     model.to(device)
+    show_memory_usage()
 
+
+    print(device)
     # load model checkpoint
     if model_checkpoint:
         model.load_state_dict(torch.load(model_checkpoint, map_location=device))
@@ -205,32 +208,43 @@ if __name__ == "__main__":
     ################################## SANITY CHECK ##################################
     print("\n----------------------- Begin Sanity Check -----------------------\n")
 
-    for i in range(2):
-        # testing dataloader
-        imgs, masks = next(iter(train_data_loader))
-        #print(np.unique(masks)) 
+    # model.eval()
+    # for i, (imgs, masks) in enumerate(train_data_loader):
+    #     # testing dataloader
+    #     # imgs, masks = next(iter(train_data_loader))
+    #     #print(np.unique(masks)) 
         
-        # sanity check - model, imgs, masks
-        imgs = imgs.to(device)
-        output = model(imgs)
-        pred = decode_output(output)
-<<<<<<< HEAD
-=======
-        print(pred.shape)
->>>>>>> ca8a3b1ef9078cdddcc68fdc723b7813f137de5b
-        print("imgs, masks, output")
-        print(imgs.shape, masks.shape, output.shape)
+    #     # sanity check - model, imgs, masks
+    #     imgs = imgs.to(device)
+    #     print(imgs.shape)
+    #     print('image')
+    #     show_memory_usage() 
+    #     output = model(imgs).type(torch.FloatTensor).to(device)
+    #     print("output")
+    #     show_memory_usage() 
 
-        if WANDB:
-            for i in range(batch_size):
-                img_base = imgs[i].detach().cpu().squeeze().numpy()[0]
-                img_rgb = np.dstack((img_base, img_base, img_base))
-                gt_base = decode_segmap(masks[i].permute(1, 2, 0).squeeze())
+    #     pred = decode_output(output)
+    #     print("decoded")
+    #     show_memory_usage() 
 
-                wb_img = wandb.Image(img_rgb, caption="Input Image")
-                wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-                wb_mask = wandb.Image(pred[i], caption="Output Mask")
-                wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+    #    # print(pred.shape)
+    #     print("imgs, masks, output")
+    #     print(imgs.shape, masks.shape, output.shape)
+
+    #     if WANDB:
+    #         for i in range(batch_size):
+    #             img_base = imgs[i].detach().cpu().squeeze().numpy()[0]
+    #             img_rgb = np.dstack((img_base, img_base, img_base))
+    #             gt_base = decode_segmap(masks[i].permute(1, 2, 0).squeeze())
+
+    #             wb_img = wandb.Image(img_rgb, caption="Input Image")
+    #             wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+    #             wb_mask = wandb.Image(pred[i], caption="Output Mask")
+    #             wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+
+
+    #     if i==2: 
+    #         # break
 
     ################################## TRAINING ##################################
     print("\n----------------------- Begin Training -----------------------\n")

@@ -70,7 +70,8 @@ def show_memory_usage():
     r = torch.cuda.memory_reserved(0)
     a = torch.cuda.memory_allocated(0)
     f = r - a  # free inside reserved
-
+    if r == 0:
+        r = 0.00001
     print("GPU memory", t, r, a, f, f"{f/r:.3}")
 
 

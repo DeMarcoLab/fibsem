@@ -53,7 +53,7 @@ if __name__ == "__main__":
         help="specify which user config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
+        default=os.path.join("fibsem", "segmentation", "lucile_config.yml")
     )
 
     args = parser.parse_args()
