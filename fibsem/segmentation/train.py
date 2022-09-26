@@ -68,10 +68,10 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
                     
                     img_base = images[0].detach().cpu().squeeze().numpy()
                     img_rgb = np.dstack((img_base, img_base, img_base))
-                    gt_base = decode_segmap(masks[0].detach().cpu().permute(1, 2, 0))
+                    gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0))
 
                     wb_img = wandb.Image(img_rgb, caption="Input Image")
-                    wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+                    wb_gt = wandb.Image(gt_base[0], caption="Ground Truth")
                     wb_mask = wandb.Image(output_mask[0], caption="Output Mask")
                     wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 

@@ -27,12 +27,11 @@ class SegmentationDataset(Dataset):
         self.transforms = transforms
 
     def __getitem__(self, idx):
-        image = self.images[idx].compute()
-
+        image = np.asarray(self.images[idx], dtype=np.float32)
         if self.transforms:
             image = self.transforms(image)
 
-        mask = self.masks[idx].compute()
+        mask = np.asarray(self.masks[idx], dtype=np.float32)
 
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
@@ -46,6 +45,7 @@ class SegmentationDataset(Dataset):
 
 def load_dask_dataset(data_dir: str):
     sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "**\image.tif*")))  #[-435:]
+    #print(sorted_img_filenames)
     sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "**\label.tif*")))  #[-435:]
 
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
@@ -53,6 +53,9 @@ def load_dask_dataset(data_dir: str):
 
     images = da.from_zarr(img_arr)
     masks = da.from_zarr(mask_arr)
+
+    images = images.rechunk(chunks = (1, images.shape[1], images.shape[2]))
+    masks = masks.rechunk(chunks = (1, images.shape[1], images.shape[2])) 
 
     return images, masks
 
@@ -77,7 +80,7 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
     val_sampler = SubsetRandomSampler(val_idx)
 
     train_data_loader = DataLoader(
-        seg_dataset, batch_size=batch_size, sampler=train_sampler, drop_last=True
+        seg_dataset, batch_size=batch_size, sampler = train_sampler, drop_last=True
     )  # shuffle=True,
     print(f"Train dataset has {len(train_data_loader)} batches of size {batch_size}")
 
