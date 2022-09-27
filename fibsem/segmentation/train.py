@@ -46,6 +46,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
 
         # forward pass
         outputs = model(images).type(torch.FloatTensor).to(device)
+        
         loss = criterion(outputs, masks)
 
         # backwards pass
@@ -68,7 +69,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
                     
                     img_base = images[0].detach().cpu().squeeze().numpy()
                     img_rgb = np.dstack((img_base, img_base, img_base))
-                    gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0))
+                    gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0)).transpose((2,0,1,3))
 
                     wb_img = wandb.Image(img_rgb, caption="Input Image")
                     wb_gt = wandb.Image(gt_base[0], caption="Ground Truth")
