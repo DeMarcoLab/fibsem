@@ -1,4 +1,5 @@
 import logging
+from multiprocessing import reduction
 import sys
 from enum import Enum
 
@@ -17,6 +18,9 @@ import napari
 
 # TODO: maybe have to change to dialog?
 
+class MovementMode(Enum):
+    Stable = 1
+    Eucentric = 2
 
 from fibsem.structures import ImageSettings
 
@@ -57,19 +61,87 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def _double_click(self, layer, event):
         print(f"Layer: {layer}")
-        print(f"Event: {event.}")
+        print(f"Event: {event.position},  {layer.world_to_data(event.position)}, {event.type}")
+
+
+        # get coords
+        coords = layer.world_to_data(event.position)
+
+        # check inside image dimensions, (y, x)
+        eb_shape = self.image.data.shape[0], self.image.data.shape[1] // 2
+        ib_shape = self.image.data.shape[0], self.image.data.shape[1]
+
+        if (coords[0] > 0 and coords[0] < eb_shape[0]) and (coords[1] > 0 and coords[1] < eb_shape[1]):
+            napari.utils.notifications.show_info("Inside EB Image Dimensions")
+            adorned_image = self.eb_image
+            beam_type = BeamType.ELECTRON
+
+        elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (coords[1] > eb_shape[0] and coords[1] < ib_shape[1]):
+            napari.utils.notifications.show_info("Inside IB Image Dimensions")
+            adorned_image = self.ib_image
+            coords = (coords[0], coords[1] - ib_shape[1])
+            beam_type = BeamType.ION
+        else:
+            napari.utils.notifications.show_info(f"Outside Image Dimensions")
+            return
+
+        from fibsem import conversions
+
+        center_x, center_y = conversions.pixel_to_realspace_coordinate(
+                (coords[1], coords[0]), adorned_image
+            )
+        print(f"Centre: {center_x}, {center_y}")
+
+        # move
+
+        self.movement_mode = MovementMode.Stable
+        # eucentric is only supported for ION beam
+        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
+            logging.info(f"moving eucentricly in {beam_type}")
+
+            movement.move_stage_eucentric_correction(
+                microscope=self.microscope, 
+                dy=-center_y
+            )
+
+        else:
+            # corrected stage movement
+            movement.move_stage_relative_with_corrected_movement(
+                microscope=self.microscope,
+                settings=self.settings,
+                dx=center_x,
+                dy=center_y,
+                beam_type=beam_type,
+            )
+
+
 
     def take_image(self):
         
         # update settings, take image
         self.settings.image.hfw = float(self.doubleSpinBox_imaging_hfw.value() * constants.MICRON_TO_METRE)
-        self.ib_image = acquire.new_image(self.microscope, self.settings.image)
+        self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.settings.image)
+
+        self.image = np.concatenate([self.eb_image.data, self.ib_image.data], axis=1)
 
         # refresh viewer
         self.viewer.layers.clear()
-        self.image_layer = self.viewer.add_image(self.ib_image.data, name="IB Image")
-        self.pattern_layer = self.viewer.add_shapes(None, name="Patterns")
+        # self.ion_image = self.viewer.add_image(self.ib_image.data, name="IB Image")
+        # self.pattern_layer = self.viewer.add_shapes(None, name="Patterns")
 
+
+        # crosshair
+        cy, cx_eb = self.image.shape[0] // 2, self.image.shape[1] // 4 
+        cx_ib = cx_eb + self.image.shape[1] // 2 
+
+        self.points_layer = self.viewer.add_points(
+            data=[[cy, cx_eb], [cy, cx_ib]], 
+            symbol="cross", size=50,
+            edge_color="yellow", face_color="yellow",
+        )
+        self.points_layer.editable = False
+
+        self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9)
         self.image_layer.mouse_double_click_callbacks.append(self._double_click)
 
     def update_patterns(self):

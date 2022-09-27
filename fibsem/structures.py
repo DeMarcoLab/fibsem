@@ -10,6 +10,8 @@ import numpy as np
 from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
 import yaml
 
+#@patrickcleeve: dataclasses.asdict -> :(
+
 @dataclass
 class Point:
     x: float = 0.0

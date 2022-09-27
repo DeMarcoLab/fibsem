@@ -202,8 +202,6 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         event.accept()
 
 def main():
-    # TODO: remove eventuall.y
-
     from fibsem.detection.detection import DetectionFeature
     import fibsem.ui.windows as fibsem_ui_windows
 
