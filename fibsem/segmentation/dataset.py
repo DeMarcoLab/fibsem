@@ -60,6 +60,7 @@ def load_dask_dataset(data_dir: str):
     return images, masks
 
 def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
+    validate_dataset(data_path)
     images, masks = load_dask_dataset(data_path)
     print(f"Loading dataset from {data_path} of length {images.shape[0]}")
     #print(np.unique(masks[0].compute())) 
@@ -95,13 +96,41 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
 # ref: https://towardsdatascience.com/pytorch-basics-sampling-samplers-2a0f29f0bf2a
 
 # Helper functions
-# WIP
-def convert_dataset_to_tif(dataset_path, f_extension):
-    old_images = glob.glob(os.path.join(dataset_path, f"*.{f_extension}"))
-    for img in old_images:
-        new_image = Image.open(img)
-        f_name = pathlib.Path(img).stem()
-        new_image.save(os.path.join(dataset_path), f"{f_name}.tif") 
+def validate_dataset(data_path):
+    print("validating dataset...")
+    # get data
+    filenames = sorted(glob.glob(os.path.join(data_path, "**/image.tif*")))
+    labels = sorted(glob.glob(os.path.join(data_path, "**/label.tif*")))
+
+    # check length
+    assert len(filenames) == len(labels), "Images and labels are not the same length"
+    print(f"{len(filenames)} images, {len(labels)} labels")
+
+    base_shape = tff.imread(filenames[0]).shape
+    for i, (fname, lfname) in enumerate(list(zip(filenames, labels))):
+        img, label = tff.imread(fname), tff.imread(lfname)
+
+        if os.path.basename(fname) != os.path.basename(lfname):
+            print(
+                "filenames dont match: ",
+                i,
+                os.path.basename(fname),
+                os.path.basename(lfname),
+                img.shape,
+                label.shape,
+            )
+
+        if (img.shape != label.shape) or (img.shape != base_shape):
+
+            print(
+                "invalid data",
+                i,
+                os.path.basename(fname),
+                os.path.basename(lfname),
+                img.shape,
+                label.shape,
+            )
+    print("finished validating dataset.")
 
 
 #convert_dataset_to_tif("C:\\Users\lucil\OneDrive\Bureau\DeMarco_Lab\data\train\000000001", 'png') 
