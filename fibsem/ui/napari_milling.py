@@ -32,11 +32,14 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.setup_connections()
 
-        self.viewer = viewer
+        self.viewer: napari.Viewer = viewer
         self.viewer.axes.visible = True
         self.viewer.axes.colored = False
         self.viewer.axes.dashed = True
         self.take_image()
+
+        # key bindings
+        self.viewer.bind_key("f", self._func)
     
     def setup_connections(self):
 
@@ -46,7 +49,16 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # combobox
         self.comboBox_milling_current.addItems([f"{current:.2e}" for current in self.microscope.beams.ion_beam.beam_current.available_values])
-    
+
+    def _func(self, viewer):
+        napari.utils.notifications.show_info("Taking a new image.")
+        self.take_image()
+
+
+    def _double_click(self, layer, event):
+        print(f"Layer: {layer}")
+        print(f"Event: {event.}")
+
     def take_image(self):
         
         # update settings, take image
@@ -55,8 +67,10 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # refresh viewer
         self.viewer.layers.clear()
-        self.viewer.add_image(self.ib_image.data, name="IB Image")
-        self.viewer.add_shapes(None, name="Patterns")
+        self.image_layer = self.viewer.add_image(self.ib_image.data, name="IB Image")
+        self.pattern_layer = self.viewer.add_shapes(None, name="Patterns")
+
+        self.image_layer.mouse_double_click_callbacks.append(self._double_click)
 
     def update_patterns(self):
         logging.info(f"update patterns")
@@ -99,7 +113,10 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
                                 edge_color='royalblue', face_color='royalblue')
 
         # TODO: get currently selected pattern
-        print(self.viewer.layers[pname].selected_data)
+        selected_data_idx = list(self.viewer.layers[pname].selected_data)
+        data = self.viewer.layers[pname].data 
+        selected_data = [data[i] for i in selected_data_idx]
+        print(selected_data)
 
     def run_milling(self):
         milling_current = float(self.comboBox_milling_current.currentText())
@@ -153,15 +170,10 @@ def convert_napari_rect_to_mill_settings(arr: np.array, image: np.array, pixelsi
     return mill_settings
 
 
-
-# TODO: override enter
-
-
 def main():
     # from liftout import utils
     # from fibsem.ui import windows as fibsem_ui_windows
     # microscope, settings= utils.quick_setup()
-
 
     app = QtWidgets.QApplication([])
     viewer = napari.Viewer(ndisplay=2)
