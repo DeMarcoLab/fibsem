@@ -120,6 +120,7 @@ def validate_dataset(data_path):
                 img.shape,
                 label.shape,
             )
+            print("You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size.")
     print("finished validating dataset.")
 
 

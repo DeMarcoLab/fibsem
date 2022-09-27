@@ -2,7 +2,7 @@ labelling:
   raw_dir: "change\\this\\path"
   data_dir: "change\\this\\path"
 train:
-  data_dir: "/run/user/1002/gvfs/smb-share:server=storage.erc.monash.edu.au,share=shares/R-MNHS-AMI/ADM-LAB/Lucile/same_size"
+  data_dir: "/home/ubuntu/same_size"
   save_dir: "fibsem/segmentation/models"
   wandb: true # Logs information and plots to wandb
   checkpoint: null # Path to model if you would like to resume training
