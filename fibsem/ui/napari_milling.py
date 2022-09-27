@@ -171,10 +171,7 @@ def convert_napari_rect_to_mill_settings(arr: np.array, image: np.array, pixelsi
 
 
 def main():
-    # from liftout import utils
-    # from fibsem.ui import windows as fibsem_ui_windows
-    # microscope, settings= utils.quick_setup()
-
+    
     app = QtWidgets.QApplication([])
     viewer = napari.Viewer(ndisplay=2)
     napari_milling_ui = NapariMillingUI(viewer=viewer)

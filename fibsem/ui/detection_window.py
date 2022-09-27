@@ -4,7 +4,7 @@ import sys
 from pprint import pprint
 
 import matplotlib.patches as mpatches
-from fibsem import conversions
+from fibsem import conversions, utils
 from fibsem.structures import MicroscopeSettings
 from fibsem.ui import utils as fibsem_ui_utils
 
@@ -203,11 +203,11 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
 def main():
     # TODO: remove eventuall.y
-    from liftout import utils
+
     from fibsem.detection.detection import DetectionFeature
     import fibsem.ui.windows as fibsem_ui_windows
 
-    microscope, settings = utils.quick_setup()
+    microscope, settings = utils.setup_session()
     
     app = QtWidgets.QApplication([])
 

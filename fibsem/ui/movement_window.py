@@ -276,9 +276,9 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
 
 
 def main():
-    from liftout import utils
+    from fibsem import utils
     from fibsem.ui import windows as fibsem_ui_windows
-    microscope, settings= utils.quick_setup()
+    microscope, settings= utils.setup_session()
 
 
     app = QtWidgets.QApplication([])

@@ -44,11 +44,6 @@ class GUIImageSettings(ImageSettingsDialog.Ui_Dialog, QtWidgets.QDialog):
         print("cancel button pressed")    
 
 def main():
-    from liftout import utils
-    from fibsem.ui import windows as fibsem_ui_windows
-    # microscope, settings= utils.quick_setup()
-
-
     app = QtWidgets.QApplication([])
     image_settings_ui = GUIImageSettings(
         parent=None

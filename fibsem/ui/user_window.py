@@ -3,7 +3,7 @@ import sys
 
 import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from fibsem import acquire
+from fibsem import acquire, utils
 from fibsem.acquire import BeamType
 from fibsem.structures import BeamType
 from fibsem.ui import utils as fibsem_ui
@@ -54,8 +54,8 @@ class GUIUserWindow(user_gui.Ui_Dialog, QtWidgets.QDialog):
 
 def main():
 
-    from liftout import utils
-    microscope, settings = utils.quick_setup()
+
+    microscope, settings = utils.setup_session()
 
     app = QtWidgets.QApplication([])
 
