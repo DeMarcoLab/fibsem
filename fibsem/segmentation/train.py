@@ -12,6 +12,7 @@ from dataset import *
 from model_utils import *
 from tqdm import tqdm
 import wandb
+import GPUtil
 import yaml
 
 def save_model(model, epoch, save_dir):
@@ -43,8 +44,11 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
         #print(masks.shape)
         masks = masks.to(device)
         # print(np.unique(masks[0]))
+        show_memory_usage()
 
         # forward pass
+        #GPUtil.showUtilization()
+
         outputs = model(images).type(torch.FloatTensor).to(device)
         loss = criterion(outputs, masks)
 
@@ -52,6 +56,8 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        torch.cuda.empty_cache()
+
 
         # evaluation
         train_loss += loss.item()
