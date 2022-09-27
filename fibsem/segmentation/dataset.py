@@ -44,9 +44,9 @@ class SegmentationDataset(Dataset):
 
 
 def load_dask_dataset(data_dir: str):
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "**\image.tif*")))  #[-435:]
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "**/image.tif*")))  #[-435:]
     #print(sorted_img_filenames)
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "**\label.tif*")))  #[-435:]
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "**/label.tif*")))  #[-435:]
 
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
     mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
@@ -109,16 +109,6 @@ def validate_dataset(data_path):
     base_shape = tff.imread(filenames[0]).shape
     for i, (fname, lfname) in enumerate(list(zip(filenames, labels))):
         img, label = tff.imread(fname), tff.imread(lfname)
-
-        if os.path.basename(fname) != os.path.basename(lfname):
-            print(
-                "filenames dont match: ",
-                i,
-                os.path.basename(fname),
-                os.path.basename(lfname),
-                img.shape,
-                label.shape,
-            )
 
         if (img.shape != label.shape) or (img.shape != base_shape):
 
