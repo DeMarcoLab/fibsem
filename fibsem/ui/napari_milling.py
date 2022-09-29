@@ -8,7 +8,7 @@ import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (MoveSettings,
                                                          StagePosition)
-from fibsem import acquire, conversions, movement, constants, alignment, utils, milling
+from fibsem import acquire, conversions, movement, constants, alignment, utils, milling, conversions
 from fibsem.structures import BeamType, MicroscopeSettings, MillingSettings
 from fibsem.ui.qtdesigner_files import NapariMilling
 from PyQt5 import QtCore, QtWidgets
@@ -72,25 +72,21 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
         ib_shape = self.image.data.shape[0], self.image.data.shape[1]
 
         if (coords[0] > 0 and coords[0] < eb_shape[0]) and (coords[1] > 0 and coords[1] < eb_shape[1]):
-            napari.utils.notifications.show_info("Inside EB Image Dimensions")
             adorned_image = self.eb_image
             beam_type = BeamType.ELECTRON
-
         elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (coords[1] > eb_shape[0] and coords[1] < ib_shape[1]):
-            napari.utils.notifications.show_info("Inside IB Image Dimensions")
             adorned_image = self.ib_image
             coords = (coords[0], coords[1] - ib_shape[1])
             beam_type = BeamType.ION
         else:
-            napari.utils.notifications.show_info(f"Outside Image Dimensions")
+            napari.utils.notifications.show_info(f"Clicked outside image dimensions")
             return
 
-        from fibsem import conversions
 
         center_x, center_y = conversions.pixel_to_realspace_coordinate(
                 (coords[1], coords[0]), adorned_image
             )
-        print(f"Centre: {center_x}, {center_y}")
+        napari.utils.notifications.show_info(f"Inside {beam_type.name} Image Dimensions - centre: {center_x}, {center_y}")
 
         # move
 

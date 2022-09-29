@@ -87,9 +87,8 @@ def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedIma
         f"GAMMA_CORRECTION | {image.metadata.acquisition.beam_type} | {diff:.3f} | {gam:.3f}"
     )
     image_data = exposure.adjust_gamma(image.data, gam)
-    reference = AdornedImage(data=image_data, metadata=image.metadata)
-    return reference
-
+    
+    return AdornedImage(data=image_data, metadata=image.metadata)
 
 def new_image(
     microscope: SdbMicroscopeClient,

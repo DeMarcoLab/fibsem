@@ -1,6 +1,4 @@
-from inspect import trace
 import logging
-from multiprocessing import reduction
 import sys
 from enum import Enum
 import traceback
@@ -25,11 +23,11 @@ class MovementMode(Enum):
     Stable = 1
     Eucentric = 2
 
-class NapariMillingUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
+class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self, viewer: napari.Viewer, parent = None
     ):
-        super(NapariMillingUI, self).__init__(parent = parent)
+        super(FibsemUI, self).__init__(parent = parent)
         self.setupUi(self)
 
         # connect to microscope
@@ -325,19 +323,12 @@ class NapariMillingUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         except:
             napari.utils.notifications.show_info(f"Unable to mill: {traceback.format_exc()}")
 
-
-
-
 # TODO: detection
 # TODO: tools, settings, changing settings
 # TODO: liftout,
 # TODO: piescope
 
 # TODO: live streaming
-
-
-
-
 # TODO: move somewhere
 
 def convert_pattern_to_napari_rect(pattern, image: np.ndarray, pixelsize: float) -> np.ndarray:
@@ -390,8 +381,8 @@ def main():
     
     app = QtWidgets.QApplication([])
     viewer = napari.Viewer(ndisplay=2)
-    napari_milling_ui = NapariMillingUI(viewer=viewer)
-    viewer.window.add_dock_widget(napari_milling_ui, area='right')  
+    fibsem_ui = FibsemUI(viewer=viewer)
+    viewer.window.add_dock_widget(fibsem_ui, area='right')  
 
     sys.exit(app.exec_())
 
