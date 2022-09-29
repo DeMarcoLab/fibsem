@@ -14,8 +14,6 @@ from fibsem.detection.utils import DetectionResult, DetectionType, Point
 from fibsem.ui.qtdesigner_files import detection_dialog as detection_gui
 from PyQt5 import QtCore, QtWidgets
 
-# TODO: move this to FIBSEM
-
 class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,

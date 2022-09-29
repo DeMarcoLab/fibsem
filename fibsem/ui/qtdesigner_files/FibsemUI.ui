@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>318</width>
+    <width>442</width>
     <height>882</height>
    </rect>
   </property>
@@ -46,7 +46,7 @@
       <item row="1" column="0">
        <widget class="QTabWidget" name="tabWidget">
         <property name="currentIndex">
-         <number>3</number>
+         <number>4</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -368,13 +368,114 @@
           </item>
          </layout>
         </widget>
-        <widget class="QWidget" name="tab_4">
+        <widget class="QWidget" name="tab_5">
          <attribute name="title">
-          <string>Tools</string>
+          <string>Detection</string>
          </attribute>
-         <layout class="QGridLayout" name="gridLayout_6">
-          <item row="13" column="0">
-           <widget class="QLabel" name="label_4">
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="7" column="1">
+           <widget class="QComboBox" name="comboBox_detection_current_feature"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_detection_current_feature">
+            <property name="text">
+             <string>Current Feature</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0" colspan="2">
+           <widget class="QPushButton" name="pushButton_detection_update_features">
+            <property name="text">
+             <string>Update Feature Detection</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_detection_beam_type">
+            <property name="text">
+             <string>Beam Type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_detection_feature_1">
+            <property name="text">
+             <string>Feature 1 (From)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="comboBox_detection_feature_1"/>
+          </item>
+          <item row="10" column="0" colspan="2">
+           <widget class="QPushButton" name="pushButton_detection_move">
+            <property name="text">
+             <string>Move</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="comboBox_detection_beam_type"/>
+          </item>
+          <item row="9" column="1">
+           <widget class="QCheckBox" name="checkBox_detection_move_y_axis">
+            <property name="text">
+             <string>Move in Y-Axis</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QPushButton" name="pushButton_enable_detection">
+            <property name="text">
+             <string>Enable Detection</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0" colspan="2">
+           <widget class="QLabel" name="label_detection_info">
+            <property name="text">
+             <string>Info</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QComboBox" name="comboBox_detection_feature_2"/>
+          </item>
+          <item row="11" column="0" colspan="2">
+           <spacer name="verticalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_detection_feature_2">
+            <property name="text">
+             <string>Feature 2 (To)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0">
+           <widget class="QCheckBox" name="checkBox_detection_move_x_axis">
+            <property name="text">
+             <string>Move in X-Axis</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0" colspan="2">
+           <widget class="QLabel" name="label_detection_movement_header">
             <property name="font">
              <font>
               <weight>75</weight>
@@ -382,33 +483,32 @@
              </font>
             </property>
             <property name="text">
-             <string>Validation</string>
+             <string>Movement Settings</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QPushButton" name="pushButton_4">
+          <item row="1" column="0" colspan="2">
+           <widget class="QLabel" name="label_detection_settings_header">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
             <property name="text">
-             <string>Auto Discharge</string>
+             <string>Detection Settings</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="pushButton">
-            <property name="text">
-             <string>Sputter Platinum</string>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="0">
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>TextLabel</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="0">
-           <widget class="QLabel" name="label_2">
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_4">
+         <attribute name="title">
+          <string>Tools</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_tools_calibration_header">
             <property name="font">
              <font>
               <weight>75</weight>
@@ -420,8 +520,49 @@
             </property>
            </widget>
           </item>
+          <item row="10" column="0">
+           <widget class="QPushButton" name="pushButton_auto_link_stage">
+            <property name="text">
+             <string>Auto Link</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="pushButton_move_stage_out">
+            <property name="text">
+             <string>Move Stage Out</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="0">
+           <widget class="QPushButton" name="pushButton_auto_needle_calibration">
+            <property name="text">
+             <string>Auto Needle Calibration</string>
+            </property>
+           </widget>
+          </item>
+          <item row="14" column="0">
+           <widget class="QPushButton" name="pushButton_validate_microscope_settings">
+            <property name="text">
+             <string>Validate Microscope Settings</string>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="0">
+           <widget class="QLabel" name="label_tools_validation_header">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Validation</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="label_tools_utils_header">
             <property name="font">
              <font>
               <weight>75</weight>
@@ -433,28 +574,7 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>TextLabel</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="0">
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>TextLabel</string>
-            </property>
-           </widget>
-          </item>
-          <item row="12" column="0">
-           <widget class="QPushButton" name="pushButton_2">
-            <property name="text">
-             <string>Needle Calibration</string>
-            </property>
-           </widget>
-          </item>
-          <item row="17" column="0">
+          <item row="15" column="0">
            <spacer name="verticalSpacer_4">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -467,38 +587,31 @@
             </property>
            </spacer>
           </item>
-          <item row="16" column="0">
-           <widget class="QLabel" name="label_6">
+          <item row="7" column="0">
+           <widget class="QPushButton" name="pushButton_auto_focus_beam">
             <property name="text">
-             <string>TextLabel</string>
+             <string>Auto Focus</string>
             </property>
            </widget>
           </item>
-          <item row="14" column="0">
-           <widget class="QPushButton" name="pushButton_3">
+          <item row="1" column="0">
+           <widget class="QPushButton" name="pushButton_sputter_platinum">
             <property name="text">
-             <string>Validate Microscope Settings</string>
+             <string>Sputter Platinum</string>
             </property>
            </widget>
           </item>
-          <item row="15" column="0">
-           <widget class="QLabel" name="label_5">
+          <item row="8" column="0">
+           <widget class="QPushButton" name="pushButton_auto_discharge_beam">
             <property name="text">
-             <string>TextLabel</string>
+             <string>Auto Discharge</string>
             </property>
            </widget>
           </item>
           <item row="9" column="0">
-           <widget class="QPushButton" name="pushButton_6">
+           <widget class="QPushButton" name="pushButton_auto_home_stage">
             <property name="text">
              <string>Auto Home</string>
-            </property>
-           </widget>
-          </item>
-          <item row="10" column="0">
-           <widget class="QPushButton" name="pushButton_5">
-            <property name="text">
-             <string>Auto Link</string>
             </property>
            </widget>
           </item>

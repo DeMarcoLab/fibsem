@@ -70,11 +70,8 @@ def detect_features(
     # detect features
     image = acquire.new_image(microscope, settings.image)
 
-    if ref_image is None:
-        ref_image = image
-
     # detect features
-    det = detection.locate_shift_between_features(image, ref_image, features=features)
+    det = detection.locate_shift_between_features(image, features=features)
 
     # user validate features...
     if validate:

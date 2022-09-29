@@ -13,6 +13,8 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
 )
 from fibsem.structures import BeamType, MicroscopeSettings
+from fibsem.detection.detection import DetectionResult, DetectionType
+
 
 ############################## NEEDLE ##############################
 
@@ -465,3 +467,51 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, dy: float) 
     move_settings = MoveSettings(link_z_y=True)
     z_move = StagePosition(z=z_move, coordinate_system="Specimen")
     microscope.specimen.stage.relative_move(z_move, move_settings)
+
+
+
+
+def move_based_on_detection(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, 
+    det: DetectionResult, beam_type: BeamType, move_x: bool=True, move_y: bool = True):
+
+        # nulify movements in unsupported axes
+        if not move_x:
+            det.distance_metres.x = 0
+        if not move_y:
+            det.distance_metres.y = 0
+
+        f1 = det.features[0]
+        f2 = det.features[1]
+
+        logging.info(f"move_x: {move_x}, move_y: {move_y}")
+        logging.info(f"movement: x={det.distance_metres.x:.2e}, y={det.distance_metres.y:.2e}")
+        logging.info(f"features: {f1}, {f2}")
+        logging.info(f"beam_type: {beam_type}")
+
+
+        # these movements move the needle...
+        if f1.detection_type in [DetectionType.NeedleTip, DetectionType.LamellaEdge]:
+            logging.info(f"MOVING NEEDLE")
+            
+            # move_needle_relative_with_corrected_movement(
+            #     microscope=microscope,
+            #     dx=det.distance_metres.x,
+            #     dy=det.distance_metres.y,
+            #     beam_type=beam_type,
+            # )
+        
+        if f1.detection_type is DetectionType.LamellaCentre:
+            if f2.detection_type is DetectionType.ImageCentre:
+                
+                logging.info(f"MOVING STAGE")
+                # need to reverse the direction to move correctly. TODO: investigate if this is to do with scan rotation?
+                # move_stage_relative_with_corrected_movement(
+                #     microscope = microscope, 
+                #     settings=settings,
+                #     dx=-det.distance_metres.x,
+                #     dy=-det.distance_metres.y,
+                #     beam_type=beam_type
+                # )
+
+                # TODO: support other movements?
+        return

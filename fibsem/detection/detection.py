@@ -32,7 +32,7 @@ DETECTION_COLOURS_UINT8 = {
     DetectionType.LandingPost: (255, 255, 255),
 }
 
-def detect_features(img: AdornedImage, ref_image:AdornedImage, features: tuple[DetectionFeature]) -> list[DetectionFeature]:
+def detect_features(img: AdornedImage, features: tuple[DetectionFeature]) -> list[DetectionFeature]:
     """
 
     args:
@@ -79,7 +79,7 @@ def detect_features(img: AdornedImage, ref_image:AdornedImage, features: tuple[D
 
     return detection_features
 
-def locate_shift_between_features(adorned_img: AdornedImage, ref_image: AdornedImage, features: tuple[DetectionFeature]):
+def locate_shift_between_features(adorned_img: AdornedImage, features: tuple[DetectionFeature]):
     """
     Calculate the distance between two features in the image coordinate system.
 
@@ -93,7 +93,7 @@ def locate_shift_between_features(adorned_img: AdornedImage, ref_image: AdornedI
 
     """
     # detect features for calculation
-    feature_1, feature_2 = detect_features(adorned_img, ref_image, features)
+    feature_1, feature_2 = detect_features(adorned_img, features)
 
     # calculate movement distance
     x_distance_m, y_distance_m = det_utils.convert_pixel_distance_to_metres(

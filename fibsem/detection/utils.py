@@ -49,6 +49,14 @@ DETECTION_TYPE_COLOURS = {
     DetectionType.ImageCentre: (1, 1, 1, 1)
 }
 
+DETECTION_TYPE_COLOURS_v2 = {
+    DetectionType.LamellaCentre: "red",
+    DetectionType.NeedleTip: "green",
+    DetectionType.LamellaEdge: "orange",
+    DetectionType.LandingPost: "cyan",
+    DetectionType.ImageCentre: "white"
+}
+
 def decode_segmap(image, nc=3):
 
     """ Decode segmentation class mask into an RGB image mask"""
