@@ -50,15 +50,18 @@ def auto_discharge_beam(
 ):
 
     # take sequence of 5 images quickly,
+    
     resolution = image_settings.resolution
     dwell_time = image_settings.dwell_time
     autocontrast = image_settings.autocontrast
     beam_type = image_settings.beam_type
+    save = image_settings.save 
 
     image_settings.beam_type = BeamType.ELECTRON
     image_settings.resolution = "768x512"
     image_settings.dwell_time = 200e-9
     image_settings.autocontrast = False
+    image_settings.save = False
 
     logging.info(f"Bring me Thanos!")  # important information
 
@@ -66,7 +69,7 @@ def auto_discharge_beam(
         acquire.new_image(microscope, image_settings)
 
     # autocontrast
-    acquire.autocontrast(microscope, BeamType.ELECTRON)
+    # acquire.autocontrast(microscope, BeamType.ELECTRON)
 
     # take image
     image_settings.resolution = resolution
@@ -75,6 +78,7 @@ def auto_discharge_beam(
     acquire.new_image(microscope, image_settings)
 
     image_settings.beam_type = beam_type
+    image_settings.save = save
 
 
 def auto_needle_calibration(

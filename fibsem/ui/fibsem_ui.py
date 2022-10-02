@@ -550,11 +550,11 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         
         self.take_image()
 
-
-# TODO: detection
-# TODO: tools, settings, changing settings
-# TODO: liftout,
-# TODO: piescope
+# TODO: START HERE
+# TODO: test detection + movement
+# TODO: tools, settings, changing settings, validate settings page
+# TODO: AUTOLIFTOUT UI UPGRADE, + COMPANION
+# TODO: piescope_v2
 
 # TODO: live streaming
 
