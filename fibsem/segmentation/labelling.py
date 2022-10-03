@@ -54,11 +54,7 @@ if __name__ == "__main__":
         help="specify which user config file to use",
         dest="config",
         action="store",
-<<<<<<< HEAD
         default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
-=======
-        default=os.path.join("fibsem", "segmentation", "gpu_config.yml")
->>>>>>> 893133a285636574955b5b0c5cd1fd7ac94d0dd3
     )
 
     args = parser.parse_args()
