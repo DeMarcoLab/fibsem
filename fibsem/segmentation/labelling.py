@@ -38,8 +38,8 @@ def label_images(raw_dir: str, data_dir: str) -> None:
         path = os.path.join(data_dir, os.path.basename(fname).split(".")[0])
         viewer.layers["img"].save(os.path.join(path, "image"))
         label = viewer.layers["Labels"].data
-        label = np.uint8(label)
-        
+        # label = np.uint8(label)
+        print(np.unique(label))
         im = Image.fromarray(label) 
         im.save(os.path.join(path, "label.tif"))  # or 'test.tif'
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         help="specify which user config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lucile_config.yml")
+        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
     )
 
     args = parser.parse_args()
