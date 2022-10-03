@@ -39,9 +39,12 @@ def label_images(raw_dir: str, data_dir: str) -> None:
         viewer.layers["img"].save(os.path.join(path, "image"))
         label = viewer.layers["Labels"].data
         label = np.uint8(label)
+        print(np.unique(label))
         
         im = Image.fromarray(label) 
         im.save(os.path.join(path, "label.tif"))  # or 'test.tif'
+
+
 
 
 if __name__ == "__main__":
@@ -52,11 +55,11 @@ if __name__ == "__main__":
         help="specify which user config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lucile_config.yml")
+        default=os.path.join("fibsem", "segmentation", "gpu_config.yml")
     )
 
     args = parser.parse_args()
-    config_dir = args.config
+    config_dir = "gpu_config.yml" #args.config
 
     # NOTE: Setup your config.yml file
     with open(config_dir, 'r') as f:
