@@ -27,15 +27,18 @@ class SegmentationDataset(Dataset):
         self.transforms = transforms
 
     def __getitem__(self, idx):
-        image = np.asarray(self.images[idx], dtype=np.float32)
+        image = np.asarray(self.images[idx])
         if self.transforms:
             image = self.transforms(image)
 
-        mask = np.asarray(self.masks[idx], dtype=np.float32)
+        mask = np.asarray(self.masks[idx])
 
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
         mask = torch.tensor(mask).unsqueeze(0)
+
+        # print(image.shape)
+        # print(mask.shape)
 
         return image, mask
 

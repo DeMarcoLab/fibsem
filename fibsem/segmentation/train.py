@@ -12,7 +12,6 @@ from dataset import *
 from model_utils import *
 from tqdm import tqdm
 import wandb
-import GPUtil
 import yaml
 
 def save_model(model, epoch, save_dir):
@@ -31,34 +30,35 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
     data_loader = tqdm(data_loader)
     train_loss = 0
 
-    for i, (images, masks) in enumerate(data_loader):
-        # set model to training mode
-        model.train()
+    # set model to training mode
+    model.train()
 
-        # move img and mask to device, reshape mask
+    for i, (images, masks) in enumerate(data_loader):
+
+
         images = images.to(device)
         masks = masks.type(torch.LongTensor)
         masks = masks.reshape(
             masks.shape[0], masks.shape[2], masks.shape[3]
         )  # remove channel dim
-        #print(masks.shape)
         masks = masks.to(device)
-        # print(np.unique(masks[0]))
-        show_memory_usage()
-
-        # forward pass
-        #GPUtil.showUtilization()
 
         outputs = model(images).type(torch.FloatTensor).to(device)
+        # pred = torch.argmax(outputs, dim=1)
         
+        # print(images.shape, masks.shape, outputs.shape) #, pred.shape)
+        # print("output: ", torch.unique(outputs))        # torch.cuda.empty_cache()
+        # print("pred: ", pred.shape, np.unique(pred.detach().cpu()))
+
+        # print(masks.device)
+        # print(pred.device)    
+
         loss = criterion(outputs, masks)
 
         # backwards pass
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        torch.cuda.empty_cache()
-
 
         # evaluation
         train_loss += loss.item()
@@ -73,13 +73,16 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
                     outputs = model(images)
                     output_mask = decode_output(outputs)
                     
-                    img_base = images[0].detach().cpu().squeeze().numpy()
+                    import random
+                    idx = random.choice(range(0, images.shape[0]))
+
+                    img_base = images[idx].detach().cpu().squeeze().numpy()
                     img_rgb = np.dstack((img_base, img_base, img_base))
                     gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0)).transpose((2,0,1,3))
 
                     wb_img = wandb.Image(img_rgb, caption="Input Image")
-                    wb_gt = wandb.Image(gt_base[0], caption="Ground Truth")
-                    wb_mask = wandb.Image(output_mask[0], caption="Output Mask")
+                    wb_gt = wandb.Image(gt_base[idx], caption="Ground Truth")
+                    wb_mask = wandb.Image(output_mask[idx], caption="Output Mask")
                     wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
 
@@ -113,7 +116,15 @@ def validate(model, device, data_loader, criterion, WANDB):
 def train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, WANDB=True):
     """ Helper function for training the model """
     # initialise loss function and optimizer
-    criterion = torch.nn.CrossEntropyLoss()
+    
+    def multi_loss(pred, target) -> float:
+        # c_loss = F.cross_entropy torch.nn.CrossEntropyLoss()
+        d_loss = smp.losses.DiceLoss(mode="multiclass")
+        f_loss = smp.losses.FocalLoss(mode="multiclass")
+        # c_loss(pred, target) +
+        return  d_loss(pred, target) + f_loss(pred, target)
+
+    criterion = torch.nn.CrossEntropyLoss() #smp.losses.SoftCrossEntropyLoss()#torch.nn.CrossEntropyLoss()
 
     total_steps = len(train_data_loader)
     print(f"{epochs} epochs, {total_steps} total_steps per epoch")
@@ -143,7 +154,7 @@ if __name__ == "__main__":
         default=os.path.join("fibsem", "segmentation", "gpu_config.yml")
     )
     args = parser.parse_args()
-    config_dir = args.config
+    config_dir = "gpu_config.yml" #args.config
 
     # NOTE: Setup your config.yml file
     with open(config_dir, 'r') as f:
