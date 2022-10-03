@@ -9,6 +9,8 @@ def convert_img_size(path_ini, img_size, path_save=None):
     images_sorted = sorted(glob.glob(os.path.join(path_ini, "**\image.tif*")))
     masks_sorted = sorted(glob.glob(os.path.join(path_ini, "**\label.tif*")))
 
+    pil_size = [img_size[1], img_size[0]]
+
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
         num_folder = str(x).zfill(9) 
         path = os.path.join(path_save, num_folder)  
@@ -17,11 +19,11 @@ def convert_img_size(path_ini, img_size, path_save=None):
             os.mkdir(path)
 
         im = Image.open(im)
-        im = im.resize(img_size)
+        im = im.resize(pil_size)
 
         im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
         label = Image.open(label)
-        label = label.resize(img_size)
+        label = label.resize(pil_size)
 
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
 
