@@ -44,7 +44,7 @@ def decode_segmap(image, nc=3):
         b[idx] = label_colors[class_idx, 2]
 
     # stack rgb channels to form an image
-    rgb_mask = np.stack([r, g, b], axis=-1)
+    rgb_mask = np.stack([r, g, b], axis=-1).squeeze()
     return rgb_mask
 
 

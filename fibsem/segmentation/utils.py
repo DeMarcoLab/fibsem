@@ -1,6 +1,7 @@
 from PIL import Image
 import glob
 import os
+from tqdm import tqdm
 
 def convert_img_size(path_ini, img_size, path_save=None):
     if path_save == None:
@@ -11,7 +12,7 @@ def convert_img_size(path_ini, img_size, path_save=None):
 
     pil_size = [img_size[1], img_size[0]]
 
-    for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
+    for x, (im, label) in tqdm(enumerate(zip(images_sorted, masks_sorted))):
         num_folder = str(x).zfill(9) 
         path = os.path.join(path_save, num_folder)  
 
@@ -46,3 +47,6 @@ def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None):
 
         label = Image.open(label)
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
+
+
+convert_img_size("G:\\DeMarco\\train", [1536, 1024])

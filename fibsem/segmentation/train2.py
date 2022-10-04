@@ -22,6 +22,7 @@ from dataset import *
 from model_utils import *
 from tqdm import tqdm
 import wandb
+import random
 
 # %%
 # transformations
@@ -278,15 +279,16 @@ def train(model, device, data_loader, criterion, optimizer, DEBUG, WANDB):
             if DEBUG and WANDB:
                 model.eval()
                 with torch.no_grad():
+                    idx = random.choice(np.arange(0, batch_size))
 
-                    outputs = model(images)
-                    output_mask = decode_output(outputs)
+                    output = model(images[idx][None, :, :, :])
+                    output_mask = decode_output(output)
                     
-                    img_base = images.detach().cpu().squeeze().numpy()
+                    img_base = images[idx].detach().cpu().squeeze().numpy()
                     img_rgb = np.dstack((img_base, img_base, img_base))
-                    gt_base = decode_segmap(masks.detach().cpu().permute(1, 2, 0))
+                    gt_base = decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
 
-                    wb_img = wandb.Image(img_rgb[0], caption="Input Image")
+                    wb_img = wandb.Image(img_rgb, caption="Input Image")
                     wb_gt = wandb.Image(gt_base, caption="Ground Truth")
                     wb_mask = wandb.Image(output_mask, caption="Output Mask")
                     wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
@@ -344,7 +346,7 @@ def train_model(model, device, train_data_loader, val_data_loader, epochs, DEBUG
         val_losses.append(val_loss / len(val_data_loader))
 
         # save model checkpoint
-        save_model(model, epoch)
+        # save_model(model, epoch)
 
     return model
 
@@ -355,7 +357,7 @@ wandb.init(project="fibsem_pipeline", entity="demarcolab")
 
 # hyperparams
 num_classes = 3
-batch_size = 1
+batch_size = 8
 
 wandb.config = {
     "epochs": 8,
@@ -368,7 +370,7 @@ print(
     "\n----------------------- Loading and Preparing Data -----------------------"
 )
 
-data_path = "/home/ubuntu/same_size/"
+data_path = "G:\\DeMarco\\train"
 
 # train_data_loader, val_data_loader = preprocess_data(data_path, num_classes=num_classes, batch_size=batch_size)
 from dataset import preprocess_data
