@@ -212,3 +212,17 @@ Lens Milling (TODO)
 
 Napari Visualisation (TODO)
 - An example of connecting the microscope directly into Napari to visualise images.
+
+
+
+## Install
+
+
+```bash
+$ conda env create -f environment.yml
+$ pip install -e .
+
+```
+Copy AutoScript into home/user/miniconda3/envs/fibsem/lib/python3.9/site-packages/
+
+enjoy

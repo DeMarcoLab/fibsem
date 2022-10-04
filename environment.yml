@@ -9,6 +9,7 @@ dependencies:
   - numpy
   - scipy
   - opencv
+  - scikit-image
   - tqdm
   - matplotlib
   - napari

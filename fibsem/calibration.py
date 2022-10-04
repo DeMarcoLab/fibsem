@@ -42,6 +42,75 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
     # # Restore original settings
     microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
 
+def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, mode: str = "default",  wd_delta: float = 0.05e-3, steps: int  = 10) -> None:
+
+
+    import skimage
+    from skimage.morphology import disk
+    from skimage.filters.rank import gradient
+
+
+    if mode == "default":
+        microscope.imaging.set_active_device(BeamType.ELECTRON.value)
+        microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
+        microscope.auto_functions.run_auto_focus()
+
+    if mode == "sharpness":
+
+        # TODO: reduced area?
+        prev_image_settings = image_settings
+        image_settings.resolution = "768x512"  # "1536x1024"
+        image_settings.dwell_time = 0.3e-6
+        image_settings.hfw = 50e-6
+        image_settings.autocontrast = True
+        image_settings.beam_type = BeamType.ELECTRON
+        image_settings.save = False
+        reduced_area = Rectangle(0, 0, 1.0, 1.0)
+        print(image_settings)
+
+        current_wd = microscope.beams.electron_beam.working_distance.value
+
+        print("Initial: ", current_wd)
+
+        min_wd = current_wd - (steps*wd_delta/2)
+        max_wd = current_wd + (steps*wd_delta/2)
+
+        working_distances = np.linspace(min_wd, max_wd, steps+1)
+
+        # loop through working distances and calculate the sharpness (acutance)
+        # highest acutance is best focus
+        sharpeness_metric = []
+        for i, wd in enumerate(working_distances):
+            microscope.beams.electron_beam.working_distance.value = wd
+            img = acquire.new_image(microscope, image_settings, reduced_area=reduced_area)
+
+            print(f"Img {i}: {img.metadata.optics.working_distance:.5f}")
+
+            # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance
+            out = gradient(skimage.filters.median(np.copy(img.data)), disk(5))
+
+            sharpness = np.mean(out)
+            sharpeness_metric.append(sharpness)
+
+        # select working distance with max acutance
+        idx = np.argmax(sharpeness_metric)
+
+        print(*zip(working_distances, sharpeness_metric))
+        print(idx, working_distances[idx], sharpeness_metric[idx])
+
+        # reset working distance
+        microscope.beams.electron_beam.working_distance.value = working_distances[idx]
+        image_settings = prev_image_settings
+
+        # run fine auto focus and link
+        microscope.imaging.set_active_device(BeamType.ELECTRON.value)
+        microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
+        # microscope.auto_functions.run_auto_focus()
+        microscope.specimen.stage.link()
+
+
+    return 
+
 
 def auto_discharge_beam(
     microscope: SdbMicroscopeClient,
@@ -67,9 +136,6 @@ def auto_discharge_beam(
 
     for i in range(n_iterations):
         acquire.new_image(microscope, image_settings)
-
-    # autocontrast
-    # acquire.autocontrast(microscope, BeamType.ELECTRON)
 
     # take image
     image_settings.resolution = resolution

@@ -2,7 +2,6 @@ import logging
 import sys
 from enum import Enum
 import traceback
-from cv2 import trace
 
 import numpy as np
 import scipy.ndimage as ndi
