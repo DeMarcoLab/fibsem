@@ -19,13 +19,13 @@ def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -
     """Automatically adjust the microscope image contrast."""
     microscope.imaging.set_active_view(beam_type.value)
 
-    RunAutoCbSettings(
+    cb_settings = RunAutoCbSettings(
         method="MaxContrast",
         resolution="768x512",  # low resolution, so as not to damage the sample
         number_of_frames=5,
     )
     logging.info("automatically adjusting contrast...")
-    microscope.auto_functions.run_auto_cb()
+    microscope.auto_functions.run_auto_cb(cb_settings)
 
 
 def take_reference_images(
@@ -73,7 +73,7 @@ def take_set_of_reference_images(
     return reference_images
 
 
-def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
+def auto_gamma(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
     """Automatic gamma correction"""
     std = np.std(image.data)
     mean = np.mean(image.data)
@@ -84,7 +84,7 @@ def gamma_correction(image: AdornedImage, settings: GammaSettings) -> AdornedIma
     if abs(diff) < settings.threshold:
         gam = 1.0
     logging.info(
-        f"GAMMA_CORRECTION | {image.metadata.acquisition.beam_type} | {diff:.3f} | {gam:.3f}"
+        f"AUTO_GAMMA | {image.metadata.acquisition.beam_type} | {diff:.3f} | {gam:.3f}"
     )
     image_data = exposure.adjust_gamma(image.data, gam)
     
@@ -141,7 +141,7 @@ def new_image(
 
     # apply gamma correction
     if settings.gamma.enabled:
-        image = gamma_correction(image, settings.gamma)
+        image = auto_gamma(image, settings.gamma)
 
     # save image
     if settings.save:

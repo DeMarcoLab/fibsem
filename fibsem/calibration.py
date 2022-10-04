@@ -7,7 +7,7 @@ from autoscript_sdb_microscope_client.enumerations import (
     CoordinateSystem,
     ManipulatorCoordinateSystem,
 )
-from autoscript_sdb_microscope_client.structures import StagePosition
+from autoscript_sdb_microscope_client.structures import StagePosition, Rectangle
 
 from fibsem import acquire, movement
 from fibsem.structures import (
@@ -44,11 +44,9 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
 
 def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, mode: str = "default",  wd_delta: float = 0.05e-3, steps: int  = 10) -> None:
 
-
     import skimage
     from skimage.morphology import disk
     from skimage.filters.rank import gradient
-
 
     if mode == "default":
         microscope.imaging.set_active_device(BeamType.ELECTRON.value)

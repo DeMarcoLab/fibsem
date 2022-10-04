@@ -207,12 +207,14 @@ Autolamella
 Slice and View
 - Recreation of a slice and view program in ~50 lines of code.
 
-Lens Milling (TODO)
+Lithography Milling
 - An example of how to perform the milling of a micro-lens in Lithium Niabate substrate using a bitmap pattern.
 
-Napari Visualisation (TODO)
-- An example of connecting the microscope directly into Napari to visualise images.
-
+Fibsem UI
+- A user interface for major fibsem components (imaging, movement, milling, tools) in napari 
+```bash
+$ fibsem_ui
+```
 
 
 ## Install

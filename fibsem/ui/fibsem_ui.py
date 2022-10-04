@@ -8,7 +8,6 @@ import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (MoveSettings,
                                                          StagePosition)
-from torch import det
 from fibsem import acquire, conversions, movement, constants, alignment, utils, milling, calibration
 from fibsem.structures import BeamType, MicroscopeSettings, MillingSettings, Point
 from fibsem.ui.qtdesigner_files import FibsemUI
