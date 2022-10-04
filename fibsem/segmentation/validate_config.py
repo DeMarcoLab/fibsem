@@ -77,16 +77,6 @@ def validate_config(config, func):
             val = config[func]["num_classes"]
             if type(val) != int or val <= 0:
                 raise TypeError(f"{val} is not a positive integer. (num_classes)")  
-        if "optimizer" not in config[func]:
-            raise ValueError("optimizer is missing. String value indicating whether Adam or SGD should be used.")
-        else:
-            val = config[func]["optimizer"]
-            if type(val) == str:
-                val = str.lower(val)
-                if val != "adam" and val != "sgd":
-                    raise ValueError(f"Optimizer must be either adam or sgd, not {val}.")
-            else:
-                raise TypeError(f"{val} is not a string. (optimizer)")  
         if "learning_rate" not in config[func]:
             raise ValueError("learning_rate is missing. Float value indicating the learning rate of the model.")
         else:
