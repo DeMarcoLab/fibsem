@@ -25,7 +25,7 @@ def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -
         number_of_frames=5,
     )
     logging.info("automatically adjusting contrast...")
-    microscope.auto_functions.run_auto_cb(cb_settings)
+    microscope.auto_functions.run_auto_cb()  # cb_settings, TODO: pass through settings
 
 
 def take_reference_images(

@@ -7,7 +7,7 @@ from autoscript_sdb_microscope_client.enumerations import (
     CoordinateSystem,
     ManipulatorCoordinateSystem,
 )
-from autoscript_sdb_microscope_client.structures import StagePosition, Rectangle
+from autoscript_sdb_microscope_client.structures import StagePosition, Rectangle, RunAutoFocusSettings
 
 from fibsem import acquire, movement
 from fibsem.structures import (
@@ -19,7 +19,9 @@ from fibsem.structures import (
 )
 
 from pathlib import Path
-
+import skimage
+from skimage.morphology import disk
+from skimage.filters.rank import gradient
 
 def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> None:
     """Automatically focus and link sample stage z-height.
@@ -42,33 +44,33 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
     # # Restore original settings
     microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
 
-def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, mode: str = "default",  wd_delta: float = 0.05e-3, steps: int  = 10) -> None:
-
-    import skimage
-    from skimage.morphology import disk
-    from skimage.filters.rank import gradient
+def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, 
+    mode: str = "default",  
+    wd_delta: float = 0.05e-3, steps: int  = 5, 
+    reduced_area: Rectangle = Rectangle(0.3, 0.3, 0.4, 0.4) ) -> None:
 
     if mode == "default":
         microscope.imaging.set_active_device(BeamType.ELECTRON.value)
         microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
+        
+        focus_settings = RunAutoFocusSettings()
         microscope.auto_functions.run_auto_focus()
 
     if mode == "sharpness":
-
-        # TODO: reduced area?
+        
+       
         prev_image_settings = image_settings
         image_settings.resolution = "768x512"  # "1536x1024"
-        image_settings.dwell_time = 0.3e-6
+        image_settings.dwell_time = 0.2e-6
         image_settings.hfw = 50e-6
         image_settings.autocontrast = True
         image_settings.beam_type = BeamType.ELECTRON
         image_settings.save = False
-        reduced_area = Rectangle(0, 0, 1.0, 1.0)
-        print(image_settings)
 
         current_wd = microscope.beams.electron_beam.working_distance.value
+        logging.info(f"sharpness (accutance) based auto-focus routine")
 
-        print("Initial: ", current_wd)
+        logging.info(f"initial working distance: {current_wd:.2e}")
 
         min_wd = current_wd - (steps*wd_delta/2)
         max_wd = current_wd + (steps*wd_delta/2)
@@ -79,10 +81,11 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
         # highest acutance is best focus
         sharpeness_metric = []
         for i, wd in enumerate(working_distances):
+            
+            logging.info(f"Img {i}: {wd:.2e}")
             microscope.beams.electron_beam.working_distance.value = wd
+            
             img = acquire.new_image(microscope, image_settings, reduced_area=reduced_area)
-
-            print(f"Img {i}: {img.metadata.optics.working_distance:.5f}")
 
             # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance
             out = gradient(skimage.filters.median(np.copy(img.data)), disk(5))
@@ -93,18 +96,22 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
         # select working distance with max acutance
         idx = np.argmax(sharpeness_metric)
 
-        print(*zip(working_distances, sharpeness_metric))
-        print(idx, working_distances[idx], sharpeness_metric[idx])
+        pairs = list(zip(working_distances, sharpeness_metric))
+        logging.info([f"{wd:.2e}: {metric:.4f}" for wd, metric in pairs])
+        logging.info(f"{idx}, {working_distances[idx]:.2e}, {sharpeness_metric[idx]:.4f}")
 
         # reset working distance
         microscope.beams.electron_beam.working_distance.value = working_distances[idx]
         image_settings = prev_image_settings
 
         # run fine auto focus and link
-        microscope.imaging.set_active_device(BeamType.ELECTRON.value)
-        microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
+        # microscope.imaging.set_active_device(BeamType.ELECTRON.value)
+        # microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
         # microscope.auto_functions.run_auto_focus()
-        microscope.specimen.stage.link()
+        # microscope.specimen.stage.link()
+
+    if mode == "fourier":
+        logging.info(f"TODO: Not Yet Implemented")
 
 
     return 
