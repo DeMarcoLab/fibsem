@@ -16,6 +16,7 @@ from fibsem.structures import (
     BeamType,
     ImageSettings,
     MicroscopeSettings,
+    BeamSystemSettings
 )
 
 from pathlib import Path
@@ -394,3 +395,38 @@ def set_microscope_state(
     logging.info(f"microscope state restored")
     return
 
+
+def get_current_beam_system_state(microscope: SdbMicroscopeClient, beam_type: BeamType):
+
+    if beam_type is BeamType.ELECTRON:
+        microscope_beam = microscope.beams.electron_beam
+    if beam_type is BeamType.ION:
+        microscope_beam = microscope.beams.ion_beam
+
+
+    # set beam active view and device
+    microscope.imaging.set_active_view(beam_type.value)
+    microscope.imaging.set_active_device(beam_type.value)
+
+    # get current beam settings 
+    voltage = microscope_beam.high_voltage.value
+    current = microscope_beam.beam_current.value
+    detector_type = microscope.detector.type.value
+    detector_mode = microscope.detector.mode.value
+
+    if beam_type is BeamType.ION:
+        eucentric_height = 16.5e-3
+        plasma_gas = microscope_beam.source.plasma_gas.value
+    else:
+        eucentric_height =  4.0e-3
+        plasma_gas = None
+   
+    return BeamSystemSettings(
+        beam_type=beam_type,
+        voltage = voltage,
+        current = current,
+        detector_type = detector_type,
+        detector_mode = detector_mode,
+        eucentric_height = eucentric_height,
+        plasma_gas = plasma_gas
+    )
