@@ -449,7 +449,7 @@ def move_stage_relative_with_corrected_movement(
 
     # move stage
     stage_position = StagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
-    logging.info(f"moving stage: {stage_position}")
+    logging.info(f"moving stage ({beam_type.name}): {stage_position}")
     stage.relative_move(stage_position)
 
     return
@@ -467,10 +467,11 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, dy: float) 
     move_settings = MoveSettings(link_z_y=True)
     z_move = StagePosition(z=z_move, coordinate_system="Specimen")
     microscope.specimen.stage.relative_move(z_move, move_settings)
+    logging.info(f"eucentric movement: {z_move}")
 
 
 
-
+# TODO: finish this @patrick
 def move_based_on_detection(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, 
     det: DetectionResult, beam_type: BeamType, move_x: bool=True, move_y: bool = True):
 

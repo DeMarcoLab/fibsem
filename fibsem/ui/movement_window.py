@@ -216,11 +216,13 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
                 (self.xclick, self.yclick), adorned_image
             )
 
-            logging.info(
-                f"Clicked on {beam_type} Image at {self.center_x:.2e}, {self.center_y:.2e}"
-            )
             # draw crosshair?
             if event.dblclick:
+                # logging.info(
+                #     f"Clicked on {beam_type} Image at {self.center_x:.2e}, {self.center_y:.2e}"
+                # )
+
+                logging.info(f"MOVEMENT: p=({self.xclick}, {self.yclick})  c=({self.center_x:.2e}, {self.center_y:.2e}) ")
 
                 self.stage_movement(beam_type=beam_type)
 
