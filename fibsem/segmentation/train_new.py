@@ -120,10 +120,10 @@ def validate(model, device, data_loader, criterion, WANDB):
             img_rgb = np.dstack((img_base, img_base, img_base))
             gt_base = decode_segmap(masks[0].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
 
-            wb_img = wandb.Image(img_rgb, caption="Input Image")
-            wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-            wb_mask = wandb.Image(output_mask, caption="Output Mask")
-            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+            wb_img = wandb.Image(img_rgb, caption="Validation Input Image")
+            wb_gt = wandb.Image(gt_base, caption="Validation Ground Truth")
+            wb_mask = wandb.Image(output_mask, caption="Validation Output Mask")
+            wandb.log({"Validation image": wb_img, "Validation mask": wb_mask, "Validation ground_truth": wb_gt})
 
     return val_loss
 
