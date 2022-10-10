@@ -66,28 +66,25 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
 
         # evaluation
         train_loss += loss.item()
+        
         if WANDB:
             wandb.log({"train_loss": loss.item()})
-        data_loader.set_description(f"Train Loss: {loss.item():.04f}")
+            data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
-        if i % (100//images.shape[0]) == 0:
-            if WANDB:
-                model.eval()
-                with torch.no_grad():
-                    idx = random.choice(np.arange(0, batch_size))
+            idx = random.choice(np.arange(0, batch_size))
 
-                    output = model(images[idx][None, :, :, :])
-                    output_mask = decode_output(output)
-                    
-                    img_base = images[idx].detach().cpu().squeeze().numpy()
-                    img_rgb = np.dstack((img_base, img_base, img_base))
-                    gt_base = decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+            output = model(images[idx][None, :, :, :])
+            output_mask = decode_output(output)
+            
+            img_base = images[idx].detach().cpu().squeeze().numpy()
+            img_rgb = np.dstack((img_base, img_base, img_base))
+            gt_base = decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
 
-                    wb_img = wandb.Image(img_rgb, caption="Input Image")
-                    wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-                    wb_mask = wandb.Image(output_mask, caption="Output Mask")
-                    wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
-    
+            wb_img = wandb.Image(img_rgb, caption="Input Image")
+            wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+            wb_mask = wandb.Image(output_mask, caption="Output Mask")
+            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+
     return train_loss
 
 def validate(model, device, data_loader, criterion, WANDB):
@@ -105,6 +102,7 @@ def validate(model, device, data_loader, criterion, WANDB):
             masks.shape[0], masks.shape[2], masks.shape[3]
         )  # remove channel dim
         masks = masks.to(device)
+
 
         # forward pass
         outputs = model(images).type(torch.FloatTensor).to(device)
@@ -160,7 +158,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
+        default=os.path.join("fibsem", "segmentation", "config.yml")
     )
     args = parser.parse_args()
     config_dir = args.config
