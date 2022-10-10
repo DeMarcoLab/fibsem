@@ -15,13 +15,13 @@ train:
   wandb_project: "fibsem_pipeline"
   wandb_entity: "demarcolab"
 inference:
-  data_dir: "change\\this\\path"
-  model_dir: "change\\this\\path"
-  output_dir: "change\\this\\path"
+  data_dir: "/home/rohit_k/Documents/RFP_edited"
+  model_dir: "fibsem/segmentation/models/10_10_2022_12_56_57_n10_model.pt"
+  output_dir: "/home/rohit_k/Documents/RFP_output"
   wandb: true
-  cuda: false
+  cuda: true
   encoder: "resnet18"
-  num_classes: 3
-  wandb_project: "add project"
-  wandb_entity: "add entity"
+  num_classes: 2
+  wandb_project: "fibsem_pipeline"
+  wandb_entity: "demarcolab"
 

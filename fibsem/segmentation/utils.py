@@ -66,13 +66,16 @@ def convert_to_folders(img_dir, label_dir, save_path, img_extension, label_exten
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
 
 import numpy as np
-def convert_to_grayscale(data_dir):
+def convert_to_grayscale(data_dir, save_dir=None):
     images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
     masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
 
+    if save_dir == None:
+        save_dir = data_dir
+
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
         num_folder = str(x).zfill(9) 
-        path = os.path.join(data_dir, num_folder)  
+        path = os.path.join(save_dir, num_folder)  
         
         if not os.path.exists(path):
             os.mkdir(path)
@@ -84,7 +87,45 @@ def convert_to_grayscale(data_dir):
         label = Image.open(label)
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
 
+def convert_to_grayscale_inference(data_dir, save_dir=None):
+    images_sorted = sorted(glob.glob(os.path.join(data_dir, "*.tif*")))
 
+    if save_dir == None:
+        save_dir = data_dir
+
+    for x, im in enumerate(images_sorted):
+        save_name = str(x).zfill(5) 
+        path = save_dir
+        
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        im = Image.open(im)
+        im = Image.fromarray(np.array(im)[:,:,0])
+        im.save(os.path.join(path, f"{save_name}.tiff"))  # or 'test.tif'
+
+def pad_inference(data_dir, save_dir=None):
+    images_sorted = sorted(glob.glob(os.path.join(data_dir, "*.tif*")))
+
+    if save_dir == None:
+        save_dir = data_dir
+
+    for x, im in enumerate(images_sorted):
+        save_name = str(x).zfill(5) 
+        path = save_dir
+        
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        im = Image.open(im)
+        im = np.array(im)
+
+        r1, r2 = round_to_32_pad(im.shape[0])
+        c1,c2 = round_to_32_pad(im.shape[1])
+
+        im = Image.fromarray(np.pad(im,pad_width=((r1,r2),(c1,c2))))
+
+        im.save(os.path.join(path, f"{save_name}.tiff"))  # or 'test.tif'
 
 
 # convert_img_size("G:\\DeMarco\\train", [1536, 1024])
@@ -141,11 +182,12 @@ def pad_data(data_dir):
         im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
 
         label = Image.open(label)
-        label = np.array(label)
 
         r1, r2 = round_to_32_pad(label.shape[0])
         c1,c2 = round_to_32_pad(label.shape[1])
         
+        label = Image.fromarray(np.pad(label,pad_width=((r1,r2),(c1,c2))))
+
         label = Image.fromarray(np.pad(label,pad_width=((r1,r2),(c1,c2))))
 
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
@@ -163,13 +205,6 @@ def convert_labels_to_index(data_dir):
         if not os.path.exists(path):
             os.mkdir(path)
 
-        im = Image.open(im)
-        im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
 
-        label = Image.open(label)
-        label = np.array(label)
-        label[label>0] = 1
-        label = Image.fromarray(label)
-        label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
-
-convert_labels_to_index("/home/rohit_k/Documents/model_training_rfp/train")
+# convert_labels_to_index("/home/rohit_k/Documents/model_training_rfp/train")
+pad_inference('/home/rohit_k/Documents/RFP_Raw_data_FULL/raw_data', '/home/rohit_k/Documents/RFP_edited')
