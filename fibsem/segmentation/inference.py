@@ -16,13 +16,14 @@ import yaml
 import zarr
 import glob
 import tifffile as tff
+import time
 
 def inference(images, output_dir, model, model_path, device, WANDB=False):
     """Helper function for performing inference with the model"""
     # Load the model
     model.load_state_dict(torch.load(model_path))
     model = model.to(device)
-    model.eval()
+    # model.eval()
 
     # Inference
     with torch.no_grad():
@@ -32,18 +33,22 @@ def inference(images, output_dir, model, model_path, device, WANDB=False):
         filenames = sorted(glob.glob(os.path.join(images, "*.tif*")))
 
         for img, fname in zip(zarr_set, filenames):
-            # img = Image.fromarray(img)
-            # img = img.to(device)
-            img = transformation(img)
-            img.to(device)
+            t1 = time.time()
             img = torch.tensor(np.asarray(img)).unsqueeze(0)
-            outputs = model(img)
+            img = img.to(device)
+            outputs = model(img[None, :, :, :].float())
+            t2 = time.time()
+            print(t2-t1)
             output_mask = decode_output(outputs)
             
             output = Image.fromarray(output_mask) 
-
-            os.makedirs(os.path.join(output_dir, os.path.basename(fname).split(".")[0]))
             path = os.path.join(output_dir, os.path.basename(fname).split(".")[0])
+            
+            if not os.path.exists(path):
+                os.makedirs(path)
+            
+            input_img = Image.fromarray(img.detach().cpu().squeeze().numpy())
+            input_img.save(os.path.join(path, "input.tif"))
             output.save(os.path.join(path, "output.tif"))  # or 'test.tif'
 
             if WANDB:
@@ -78,7 +83,7 @@ if __name__ == "__main__":
 
     # directories
     data_path = config["inference"]["data_dir"]
-    model_weights = config["inference"]["model_path"]
+    model_weights = config["inference"]["model_dir"]
     output_dir = config["inference"]["output_dir"]
 
     # other parameters
