@@ -66,7 +66,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
 
         # evaluation
         train_loss += loss.item()
-        
+
         if WANDB:
             wandb.log({"train_loss": loss.item()})
             data_loader.set_description(f"Train Loss: {loss.item():.04f}")
@@ -112,6 +112,18 @@ def validate(model, device, data_loader, criterion, WANDB):
         if WANDB:
             wandb.log({"val_loss": loss.item()})
             val_loader.set_description(f"Val Loss: {loss.item():.04f}")
+
+            output = model(images[0][None, :, :, :])
+            output_mask = decode_output(output)
+            
+            img_base = images[0].detach().cpu().squeeze().numpy()
+            img_rgb = np.dstack((img_base, img_base, img_base))
+            gt_base = decode_segmap(masks[0].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+
+            wb_img = wandb.Image(img_rgb, caption="Input Image")
+            wb_gt = wandb.Image(gt_base, caption="Ground Truth")
+            wb_mask = wandb.Image(output_mask, caption="Output Mask")
+            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
 
     return val_loss
 
