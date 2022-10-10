@@ -31,7 +31,6 @@ train:
   cuda: enable/disable CUDA training
   batch_size: number of batches per epoch
   num_classes: number of classes in segmentation labels. Includes background as class 0.
-  optimizer: adam or SGD, not case sensitive
   learning_rate: learning rate used during training
   wandb_project: name of the wandb project
   wandb_entity: user name for wandb
@@ -62,14 +61,22 @@ Once labelling.py is running and the unlabelled images have been imported, a nap
 1. Create a new 'Labels' layer
 2. Select the paint brush icon, and begin painting the objects of interest. To save time it is recommended to paint the outline of each object, and then use the fill tool. 
 3. If you have multiple classes, do not create a new Labels layer for each class, simply use a different index for each class in the Labels layer. NOTE: MAKE SURE YOU ARE CONSISTENT WITH THE INDEX FOR EACH CLASS.
-4. When you have finished labelling an image, exit the viewer to save the image and the segmentation label to the destination you specified in the config. A new viewer will then pop up with the next image.
+4. When you have finished labelling an image, exit the viewer to save the image into the images folder and the segmentation label in the labels folder of the destination you specified in the config. A new viewer will then pop up with the next image.
 5. When you would like to take a break from labelling the dataset, close the napari viewer without creating a Labels layer, this will stop the script. NOTE: If you have an image that does not have any objects of interest in it, create an empty Labels layer before closing the viewer to save the image, otherwise the script will just close.
 6. Once you stop the script either intentionally or accidentally, the script will begin where you left off.
 
 ![Napari Viewer](docs/example_napari.png)
 
 ### Training and Validation
-The code for training and validation can be found in train.py. It expects the labelled dataset directory as well as the directory to save your trained model in the config.yml file. The rest of the options have defaults that can be changed as needed.
+The code for training and validation can be found in train.py. It expects the labelled dataset directory as well as the directory to save your trained model in the config.yml file. The rest of the options have defaults that can be changed as needed. 
+
+If you have a pre-existing dataset that is already labelled and thus have not used labelling.py, train.py expects the data formatted as follows:
+
+data_dir/
+  -- images/
+  -- labels/
+
+With images and labels in the TIF/TIFF format.
 
 To run this file from the command line:
 1. cd into the segmentation directory
