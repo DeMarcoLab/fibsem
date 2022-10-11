@@ -39,10 +39,7 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
             self.microscope, self.settings = utils.setup_session()
     
         self.setup_connections()
-
         self.update_ui_from_settings()
-
-
 
 
     def setup_connections(self):
@@ -137,7 +134,6 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         logging.info(f"getting settings: {beam_type}")
         logging.info(f"settings: {beam_settings}")
 
-
         # electron
         if beam_type is BeamType.ELECTRON:
             self.doubleSpinBox_electron_voltage.setValue(beam_settings.voltage * constants.SI_TO_KILO)
@@ -145,7 +141,6 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
             self.comboBox_electron_detector_mode.setCurrentText(beam_settings.detector_mode)
             self.comboBox_electron_detector_type.setCurrentText(beam_settings.detector_type)        
             self.doubleSpinBox_electron_eucentric_height.setValue(beam_settings.eucentric_height * constants.METRE_TO_MILLIMETRE)
-
 
         # ion
         if beam_type is BeamType.ION:

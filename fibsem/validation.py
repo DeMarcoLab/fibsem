@@ -88,6 +88,8 @@ def _validate_needle_calibration(microscope: SdbMicroscopeClient) -> None:
 
     return
 
+# TODO: use _set_type_mode for setting the detector type and mode not directly setting the values
+
 def _validate_beam_system_state(
     microscope: SdbMicroscopeClient, settings: BeamSystemSettings
 ) -> None:
@@ -204,11 +206,11 @@ def _validate_chamber_state(microscope: SdbMicroscopeClient) -> None:
         )
 
     logging.info(
-        f"Validating Vacuum Chamber Pressure: {microscope.state.chamber_pressure.value:.6f} mbar"
+        f"Validating Vacuum Chamber Pressure: {microscope.vacuum.chamber_pressure.value:.6f} mbar"
     )
-    if microscope.state.chamber_pressure.value >= 1e-4:
+    if microscope.vacuum.chamber_pressure.value >= 1e-4:
         logging.warning(
-            f"Chamber pressure is too high, please pump the system (Currently {microscope.state.chamber_pressure.value:.6f} mbar)"
+            f"Chamber pressure is too high, please pump the system (Currently {microscope.vacuum.chamber_pressure.value:.6f} mbar)"
         )
 
     logging.info(f"Vacuum Chamber State Validation finished.")
