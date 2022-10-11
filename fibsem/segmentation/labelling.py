@@ -15,9 +15,15 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
     filenames = sorted(glob.glob(os.path.join(raw_dir, "*.tif*")))
 
+    if not os.path.exists(os.path.join(data_dir, "images")):
+        os.mkdir(os.path.join(data_dir, "images"))
+
+    if not os.path.exists(os.path.join(data_dir, "labels")):
+        os.mkdir(os.path.join(data_dir, "labels"))
+
     for img, fname in zip(zarr_set, filenames):
         #Check to see if already labelled; if so, skip
-        if os.path.basename(fname).split(".")[0] in os.listdir(data_dir): 
+        if os.path.basename(fname).split(".")[0] in os.listdir(os.path.join(data_dir, "images")): 
             continue
 
         print(fname)
@@ -32,16 +38,13 @@ def label_images(raw_dir: str, data_dir: str) -> None:
         if len(viewer.layers) < 2:
             print("Finished labelling.")
             break
-
-        # Saves an img with the keypoints superimposed.
-        os.makedirs(os.path.join(data_dir, os.path.basename(fname).split(".")[0]))
-        path = os.path.join(data_dir, os.path.basename(fname).split(".")[0])
-        viewer.layers["img"].save(os.path.join(path, "image"))
+        
+        bname = os.path.basename(fname).split(".")[0]
+        
+        viewer.layers["img"].save(os.path.join(data_dir, "images", f"{bname}.tif"))
         label = viewer.layers["Labels"].data
-        # label = np.uint8(label)
-        print(np.unique(label))
         im = Image.fromarray(label) 
-        im.save(os.path.join(path, "label.tif"))  # or 'test.tif'
+        im.save(os.path.join(data_dir, "labels", f"{bname}.tif"))  # or 'test.tif'
 
 
 

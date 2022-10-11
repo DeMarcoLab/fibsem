@@ -48,9 +48,8 @@ class SegmentationDataset(Dataset):
 
 
 def load_dask_dataset(data_dir: str):
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "**/image.tif*")))  #[-435:]
-    #print(sorted_img_filenames)
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "**/label.tif*")))  #[-435:]
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "images", "*.tif*")))  #[-435:]
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "labels", "*.tif*")))  #[-435:]
 
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
     mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)

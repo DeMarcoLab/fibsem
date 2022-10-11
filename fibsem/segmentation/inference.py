@@ -33,12 +33,9 @@ def inference(images, output_dir, model, model_path, device, WANDB=False):
         filenames = sorted(glob.glob(os.path.join(images, "*.tif*")))
 
         for img, fname in zip(zarr_set, filenames):
-            t1 = time.time()
             img = torch.tensor(np.asarray(img)).unsqueeze(0)
             img = img.to(device)
             outputs = model(img[None, :, :, :].float())
-            t2 = time.time()
-            print(t2-t1)
             output_mask = decode_output(outputs)
             
             output = Image.fromarray(output_mask) 
