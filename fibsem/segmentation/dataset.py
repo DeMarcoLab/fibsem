@@ -11,6 +11,7 @@ from torchvision import transforms
 import dask.array as da
 import os
 import tifffile as tff
+from utils import *
 
 # transformations
 transformation = transforms.Compose(
@@ -124,6 +125,26 @@ def validate_dataset(data_path):
                 label.shape,
             )
             print("You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size.")
+        if (img.shape[3] != 0) or (img.ndim != 3) or (label.ndim !=3):
+            convert_to_grayscale(data_path, save_dir=None)
+            print(
+                "Image has been converted to grayscale",
+                i,
+                os.path.basename(fname),
+                os.path.basename(lfname),
+                img.shape,
+                label.shape,
+            )
+        if (img.shape[1]/32 != 0) or (img.shape[2]/32 != 0):
+            print(
+                "Wrong padding",
+                i,
+                os.path.basename(fname),
+                os.path.basename(lfname),
+                img.shape,
+                label.shape,
+            )
+            print("You can run pad_data in utils.py to convert the dataset to correct format.")
     print("finished validating dataset.")
 
 
