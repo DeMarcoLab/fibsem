@@ -26,7 +26,7 @@
       <item row="1" column="0" colspan="2">
        <widget class="QTabWidget" name="tabWidget">
         <property name="currentIndex">
-         <number>3</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="system">
          <attribute name="title">
@@ -103,7 +103,7 @@
           <item row="0" column="1">
            <widget class="QSpinBox" name="spinBox_stage_rotation_flat_to_electron">
             <property name="maximum">
-             <number>361</number>
+             <number>360</number>
             </property>
            </widget>
           </item>
@@ -113,7 +113,7 @@
           <item row="1" column="1">
            <widget class="QSpinBox" name="spinBox_stage_rotation_flat_to_ion">
             <property name="maximum">
-             <number>361</number>
+             <number>360</number>
             </property>
            </widget>
           </item>
@@ -356,9 +356,9 @@
        </widget>
       </item>
       <item row="10" column="1">
-       <widget class="QPushButton" name="pushButton_cancel">
+       <widget class="QPushButton" name="pushButton_load_settings">
         <property name="text">
-         <string>Cancel</string>
+         <string>Load</string>
         </property>
        </widget>
       </item>
