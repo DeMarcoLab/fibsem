@@ -5,9 +5,10 @@ stage_tilt: 52
 application_file: Si
 plasma_gas: Xenon
 
-profile: lens_lowres_half.npy
+profile: profile.npy
 pixelsize: 1.e-6
 milling:
   milling_current: 60.e-9
   initial_depth: 600.e-9 
+  milling_depth: 5.0e-6
  
