@@ -58,6 +58,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
         # imaging
         self.comboBox_imaging_beam_type.addItems([beam.name for beam in BeamType])
+        self.comboBox_imaging_resolution.addItems([str(res) for res in self.microscope.beams.electron_beam.scanning.resolution.available_values])
         self.pushButton_update_imaging_settings.clicked.connect(self.update_image_settings)
         self.pushButton_take_image.clicked.connect(self.take_image)
 
@@ -140,7 +141,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
         # imaging
         self.comboBox_imaging_beam_type.setCurrentText(self.settings.image.beam_type.name)
-        self.lineEdit_imaging_resolution.setText(self.settings.image.resolution)
+        self.comboBox_imaging_resolution.setCurrentText(self.settings.image.resolution)
         self.doubleSpinBox_imaging_dwell_time.setValue(self.settings.image.dwell_time * constants.METRE_TO_MICRON)
         self.doubleSpinBox_imaging_hfw.setValue(self.settings.image.hfw * constants.METRE_TO_MICRON)
         self.checkBox_imaging_use_autocontrast.setChecked(self.settings.image.autocontrast)
@@ -154,7 +155,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
         try:
             self.settings.image.beam_type = BeamType[self.comboBox_imaging_beam_type.currentText()]
-            self.settings.image.resolution = str(self.lineEdit_imaging_resolution.text())
+            self.settings.image.resolution = str(self.comboBox_imaging_resolution.currentText())
             self.settings.image.dwell_time = float(self.doubleSpinBox_imaging_dwell_time.value()) * constants.MICRON_TO_METRE
             self.settings.image.hfw = float(self.doubleSpinBox_imaging_hfw.value()) * constants.MICRON_TO_METRE
             self.settings.image.autocontrast = bool(self.checkBox_imaging_use_autocontrast.isChecked())
@@ -551,7 +552,6 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 # TODO: START HERE
 # TODO: test detection + movement
 # TODO: tools, settings, changing settings, validate settings page
-# TODO: AUTOLIFTOUT UI UPGRADE, + COMPANION
 # TODO: piescope_v2
 
 # TODO: live streaming
@@ -574,6 +574,7 @@ def convert_pattern_to_napari_rect(pattern, image: np.ndarray, pixelsize: float)
     shape = [[ymin, xmin], [ymin, xmax], [ymax, xmax], [ymax, xmin]]
 
     return shape
+
 def convert_napari_rect_to_mill_settings(arr: np.array, image: np.array, pixelsize: float, depth: float = 10e-6) -> MillingSettings:
     # convert napari rect to milling pattern
 

@@ -46,7 +46,7 @@
       <item row="1" column="0">
        <widget class="QTabWidget" name="tabWidget">
         <property name="currentIndex">
-         <number>4</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -130,13 +130,6 @@
           <item row="1" column="2">
            <widget class="QComboBox" name="comboBox_imaging_beam_type"/>
           </item>
-          <item row="2" column="2">
-           <widget class="QLineEdit" name="lineEdit_imaging_resolution">
-            <property name="text">
-             <string>1536x1024</string>
-            </property>
-           </widget>
-          </item>
           <item row="4" column="2">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_hfw">
             <property name="maximum">
@@ -207,6 +200,9 @@
           </item>
           <item row="9" column="0" colspan="3">
            <widget class="QLineEdit" name="lineEdit_imaging_save_path"/>
+          </item>
+          <item row="2" column="2">
+           <widget class="QComboBox" name="comboBox_imaging_resolution"/>
           </item>
          </layout>
         </widget>
