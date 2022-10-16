@@ -127,10 +127,6 @@ def pad_inference(data_dir, save_dir=None):
 
         im.save(os.path.join(path, f"{save_name}.tiff"))  # or 'test.tif'
 
-
-# convert_img_size("G:\\DeMarco\\train", [1536, 1024])
-# convert_to_folders('/home/rohit_k/Documents/model_training_rfp/raw', '/home/rohit_k/Documents/model_training_rfp/labels', '/home/rohit_k/Documents/model_training_rfp/train', 'tiff', 'tiff')
-
 def round_to_32_pad(num:int)->tuple[int,int]:
     """Rounds up an integer to the nearest multiple of 32. The difference
     between the number and its nearest multiple of 32 is then split in half
@@ -192,8 +188,6 @@ def pad_data(data_dir):
 
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
 
-# pad_data("/home/rohit_k/Documents/model_training_rfp/train")
-
 def convert_labels_to_index(data_dir):
     images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
     masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
@@ -204,7 +198,3 @@ def convert_labels_to_index(data_dir):
         
         if not os.path.exists(path):
             os.mkdir(path)
-
-
-# convert_labels_to_index("/home/rohit_k/Documents/model_training_rfp/train")
-pad_inference('/home/rohit_k/Documents/RFP_Raw_data_FULL/raw_data', '/home/rohit_k/Documents/RFP_edited')
