@@ -4,6 +4,7 @@ import os
 from tqdm import tqdm
 
 def convert_img_size(path_ini, img_size, path_save=None):
+    """converts image to defined image size"""
     if path_save == None:
         path_save = path_ini
 
@@ -29,6 +30,7 @@ def convert_img_size(path_ini, img_size, path_save=None):
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
 
 def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None):
+    """converts images to tiff"""
     if path_save == None:
         path_save = path_ini
 
@@ -67,6 +69,7 @@ def convert_to_folders(img_dir, label_dir, save_path, img_extension, label_exten
 
 import numpy as np
 def convert_to_grayscale(data_dir, save_dir=None):
+    """converts images to grayscale"""
     images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
     masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
 
@@ -157,6 +160,7 @@ def round_to_32_pad(num:int)->tuple[int,int]:
     return int(x1),int(x2)
 
 def pad_data(data_dir):
+    """converts image size to multiple of 32"""
     images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
     masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
 
