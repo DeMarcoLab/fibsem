@@ -115,35 +115,41 @@ def validate_dataset(data_path):
 
         if (img.shape[0:2] != label.shape[0:2]) or (img.shape[0:2] != base_shape[0:2]):
 
-            print(
+            raise ValueError(
                 "invalid data, image shape is different to label shape",
                 i,
                 os.path.basename(fname),
                 os.path.basename(lfname),
                 img.shape,
                 label.shape,
+                "\n",
+                "You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size."
             )
-            print("You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size.")
+
         if (img.ndim > 2) or (label.ndim > 2):
             
-            print(
+            raise ValueError(
                 "Image has too many dimensions, must be in 2D grayscale format.",
                 i,
                 os.path.basename(fname),
                 os.path.basename(lfname),
                 img.shape,
                 label.shape,
+                "\n",
+                "You can run convert_to_grayscale() in utils.py to convert all images and labels in the dataset to the desired format."
             )
-            print("You can run convert_to_grayscale() in utils.py to convert all images and labels in the dataset to the desired format.")
+            
         if (img.shape[0]/32 != 0) or (img.shape[1]/32 != 0):
-            print(
+            raise ValueError(
                 "Wrong padding, dimensions must be divisible by 32.",
                 i,
                 os.path.basename(fname),
                 os.path.basename(lfname),
                 img.shape,
                 label.shape,
+                "\n",
+                "You can run pad_data in utils.py to convert the dataset to correct format."
             )
-            print("You can run pad_data in utils.py to convert the dataset to correct format.")
+
     print("finished validating dataset.")
 
