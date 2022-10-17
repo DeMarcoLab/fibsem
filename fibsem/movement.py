@@ -374,6 +374,8 @@ def y_corrected_stage_movement(
     Returns:
         StagePosition: y corrected stage movement (relative position)
     """
+    
+    # TODO: replace with camera matrix * inverse kinematics
 
     # all angles in radians
     stage_tilt_flat_to_electron = np.deg2rad(
@@ -462,7 +464,7 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, dy: float) 
         microscope (SdbMicroscopeClient): autoscript microscope instance
         dy (float): distance in y-axis (image coordinates)
     """
-    z_move = dy / np.cos(np.deg2rad(38))  # MAGIC NUMBER
+    z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
     move_settings = MoveSettings(link_z_y=True)
     z_move = StagePosition(z=z_move, coordinate_system="Specimen")

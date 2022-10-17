@@ -195,7 +195,6 @@ def auto_needle_calibration(
 def align_needle_to_eucentric_position(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
-    path: Path = None,
     validate: bool = False,
 ) -> None:
     """Move the needle to the eucentric position, and save the updated position to disk
@@ -207,7 +206,6 @@ def align_needle_to_eucentric_position(
 
     from fibsem.ui import windows as fibsem_ui_windows
     from fibsem.detection.utils import DetectionType, DetectionFeature
-    from fibsem import utils
     from fibsem.detection import detection
 
     # TODO: test again
@@ -274,11 +272,6 @@ def align_needle_to_eucentric_position(
 
     # take image
     acquire.take_reference_images(microscope, settings.image)
-
-    if path is not None:
-        # save the updated position to disk
-        utils.save_needle_yaml(path, microscope.specimen.manipulator.current_position)
-
 
 def auto_home_and_link(microscope: SdbMicroscopeClient, state: MicroscopeState) -> None:
 

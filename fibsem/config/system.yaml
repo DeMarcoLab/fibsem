@@ -19,8 +19,9 @@ electron:
 stage:
   rotation_flat_to_electron: 50 # degrees
   rotation_flat_to_ion: 230 # degrees
-  tilt_flat_to_electron: 0 # degrees (pre-tilt)
+  tilt_flat_to_electron: 35 # degrees (pre-tilt)
   tilt_flat_to_ion: 52 # degrees
+  pre_tilt: 35
   needle_stage_height_limit: 3.7e-3
 # limits/defaults
 imaging_current: 20.e-12 

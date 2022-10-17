@@ -178,9 +178,9 @@ def get_updated_needle_insertion_position(path: Path) -> ManipulatorPosition:
 
     position = None
 
-    if os.path.exists(os.path.join(path, "needle.yaml")):
+    # if os.path.exists(os.path.join(path, "needle.yaml")):
 
-        position = load_needle_yaml(path)
+    #     position = load_needle_yaml(path)
 
     return position
 

@@ -337,6 +337,7 @@ class StageSettings:
     rotation_flat_to_ion: float = 230 # degrees
     tilt_flat_to_electron: float = 27 # degrees (pre_tilt)
     tilt_flat_to_ion: float = 52 # degrees
+    pre_tilt: float = 35 # degrees
     needle_stage_height_limit: float = 3.7e-3
 
     def __to_dict__(self) -> dict:
@@ -346,6 +347,7 @@ class StageSettings:
             "rotation_flat_to_ion": self.rotation_flat_to_ion,
             "tilt_flat_to_electron": self.tilt_flat_to_electron,
             "tilt_flat_to_ion": self.tilt_flat_to_ion,
+            "pre_tilt": self.pre_tilt,
             "needle_stage_height_limit": self.needle_stage_height_limit
         }
         return settings
@@ -358,6 +360,7 @@ class StageSettings:
             rotation_flat_to_ion=settings["rotation_flat_to_ion"],
             tilt_flat_to_electron=settings["tilt_flat_to_electron"],
             tilt_flat_to_ion=settings["tilt_flat_to_ion"],
+            pre_tilt=settings["pre_tilt"],
             needle_stage_height_limit=settings["needle_stage_height_limit"]  
         )
 
