@@ -446,7 +446,6 @@ class MicroscopeSettings:
     image: ImageSettings
     protocol: dict = None
 
-
     def __to_dict__(self) -> dict:
 
         settings_dict = {
@@ -456,6 +455,16 @@ class MicroscopeSettings:
         }
 
         return settings_dict
+
+    @staticmethod
+    def __from_dict__(settings: dict, protocol: dict = None) -> 'MicroscopeSettings':
+
+        return MicroscopeSettings(
+            system=SystemSettings.__from_dict__(settings["system"]),
+            image = ImageSettings.__from_dict__(settings["user"]),
+            default=DefaultSettings.__from_dict__(settings["user"]),
+            protocol= protocol
+        )
 
 
 
