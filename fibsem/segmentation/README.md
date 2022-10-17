@@ -67,6 +67,10 @@ Once labelling.py is running and the unlabelled images have been imported, a nap
 
 ![Napari Viewer](docs/example_napari.png)
 
+### Format requirements
+Images and labels must be .tiff, with 2 dimensions (grayscale, i.e. (H,W) and not (H,W,C)). Length and width must be the same for all images and labels, and be divisible by 32. 
+Labels need to be in class index format (1,2,3..., with 0 being background) and not normalised between 0 and 255. 
+
 ### Training and Validation
 The code for training and validation can be found in train.py. It expects the labelled dataset directory as well as the directory to save your trained model in the config.yml file. The rest of the options have defaults that can be changed as needed. 
 
