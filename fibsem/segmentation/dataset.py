@@ -113,10 +113,10 @@ def validate_dataset(data_path):
     for i, (fname, lfname) in enumerate(list(zip(filenames, labels))):
         img, label = tff.imread(fname), tff.imread(lfname)
 
-        if (img.shape != label.shape) or (img.shape != base_shape):
+        if (img.shape[0:2] != label.shape[0:2]) or (img.shape[0:2] != base_shape[0:2]):
 
             print(
-                "invalid data",
+                "invalid data, image shape is different to label shape",
                 i,
                 os.path.basename(fname),
                 os.path.basename(lfname),
@@ -124,10 +124,10 @@ def validate_dataset(data_path):
                 label.shape,
             )
             print("You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size.")
-        if (img.shape[2] != 0) or (label.shape[0] !=0) or (img.ndim != 3) or (label.ndim !=3):
+        if (img.ndim > 2) or (label.ndim > 2):
             
             print(
-                "Image is not in correct grayscale format",
+                "Image has too many dimensions, must be in 2D grayscale format.",
                 i,
                 os.path.basename(fname),
                 os.path.basename(lfname),
@@ -135,9 +135,9 @@ def validate_dataset(data_path):
                 label.shape,
             )
             print("You can run convert_to_grayscale() in utils.py to convert all images and labels in the dataset to the desired format.")
-        if (img.shape[1]/32 != 0) or (img.shape[2]/32 != 0):
+        if (img.shape[0]/32 != 0) or (img.shape[1]/32 != 0):
             print(
-                "Wrong padding",
+                "Wrong padding, dimensions must be divisible by 32.",
                 i,
                 os.path.basename(fname),
                 os.path.basename(lfname),
