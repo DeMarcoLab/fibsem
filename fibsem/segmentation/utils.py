@@ -4,6 +4,7 @@ import os
 from tqdm import tqdm
 
 def convert_img_size(path_ini, img_size, path_save=None, inference=False):
+    """converts image to defined image size"""
     if path_save == None:
         path_save = path_ini
 
@@ -32,6 +33,7 @@ def convert_img_size(path_ini, img_size, path_save=None, inference=False):
             label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
 
 def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None, inference=False):
+    """converts images to tiff"""
     if path_save == None:
         path_save = path_ini
 
@@ -72,6 +74,7 @@ def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None, inference=False)
 
 import numpy as np
 def convert_to_grayscale(path_ini, path_save=None, inference=False):
+    """converts images to grayscale"""
     images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", "*.tif*")))
 
     if not inference:
@@ -135,10 +138,6 @@ def pad_inference(data_dir, save_dir=None):
 
         im.save(os.path.join(path, f"{save_name}.tiff"))  # or 'test.tif'
 
-
-# convert_img_size("G:\\DeMarco\\train", [1536, 1024])
-# convert_to_folders('/home/rohit_k/Documents/model_training_rfp/raw', '/home/rohit_k/Documents/model_training_rfp/labels', '/home/rohit_k/Documents/model_training_rfp/train', 'tiff', 'tiff')
-
 def round_to_32_pad(num:int)->tuple[int,int]:
     """Rounds up an integer to the nearest multiple of 32. The difference
     between the number and its nearest multiple of 32 is then split in half
@@ -169,6 +168,7 @@ def round_to_32_pad(num:int)->tuple[int,int]:
     return int(x1),int(x2)
 
 def pad_data(data_dir):
+    """converts image size to multiple of 32"""
     images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
     masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
 
@@ -200,8 +200,6 @@ def pad_data(data_dir):
 
         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
 
-# pad_data("/home/rohit_k/Documents/model_training_rfp/train")
-
 def convert_labels_to_index(data_dir):
     images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
     masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
@@ -212,7 +210,3 @@ def convert_labels_to_index(data_dir):
         
         if not os.path.exists(path):
             os.mkdir(path)
-
-
-# convert_labels_to_index("/home/rohit_k/Documents/model_training_rfp/train")
-pad_inference('/home/rohit_k/Documents/RFP_Raw_data_FULL/raw_data', '/home/rohit_k/Documents/RFP_edited')
