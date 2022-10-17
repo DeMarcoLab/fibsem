@@ -170,7 +170,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "config.yml")
+        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
     )
     args = parser.parse_args()
     config_dir = args.config
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     print("\n----------------------- Begin Training -----------------------\n")
 
     # train model
-    model = train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs = epochs, save_dir=save_dir, WANDB=True)
+    model = train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs = epochs, save_dir=save_dir, WANDB=WANDB)
 
 # config["train"]["learning_rate"]
 

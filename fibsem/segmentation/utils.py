@@ -3,89 +3,97 @@ import glob
 import os
 from tqdm import tqdm
 
-def convert_img_size(path_ini, img_size, path_save=None):
+def convert_img_size(path_ini, img_size, path_save=None, inference=False):
     if path_save == None:
         path_save = path_ini
 
-    images_sorted = sorted(glob.glob(os.path.join(path_ini, "**", "image.tif*")))
-    masks_sorted = sorted(glob.glob(os.path.join(path_ini, "**", "label.tif*")))
+    if not inference:
+        masks_sorted = sorted(glob.glob(os.path.join(path_ini, "labels", "*.tif*")))
+
+    images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", "*.tif*")))
+    
 
     pil_size = [img_size[1], img_size[0]]
 
     for x, (im, label) in tqdm(enumerate(zip(images_sorted, masks_sorted))):
-        num_folder = str(x).zfill(9) 
-        path = os.path.join(path_save, num_folder)  
+        num_file = str(x).zfill(9) 
+        path = path_save
 
         if not os.path.exists(path):
             os.mkdir(path)
 
         im = Image.open(im)
         im = im.resize(pil_size)
+        im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
 
-        im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
-        label = Image.open(label)
-        label = label.resize(pil_size)
+        if not inference:
+            label = Image.open(label)
+            label = label.resize(pil_size)
+            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
 
-        label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
-
-def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None):
+def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None, inference=False):
     if path_save == None:
         path_save = path_ini
 
-    images_sorted = sorted(glob.glob(os.path.join(path_ini, "**", f"image.{img_ext}")))
-    masks_sorted = sorted(glob.glob(os.path.join(path_ini, "**", f"label.{lab_ext}")))
+    images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", f"*.{img_ext}")))
+    if not inference:
+        masks_sorted = sorted(glob.glob(os.path.join(path_ini, "labels", f"*.{lab_ext}")))
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_folder = str(x).zfill(9) 
-        path = os.path.join(path_save, num_folder)  
+        num_file = str(x).zfill(9) 
+        path = path_save
         
         if not os.path.exists(path):
             os.mkdir(path)
 
         im = Image.open(im)
-        im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
+        im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
 
-        label = Image.open(label)
-        label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
+        if not inference:
+            label = Image.open(label)
+            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
 
-def convert_to_folders(img_dir, label_dir, save_path, img_extension, label_extension):
-    images_sorted = sorted(glob.glob(os.path.join(img_dir, f"*.{img_extension}")))
-    masks_sorted = sorted(glob.glob(os.path.join(label_dir, f"*.{label_extension}")))
+# def convert_to_folders(img_dir, label_dir, save_path, img_extension, label_extension):
+#     images_sorted = sorted(glob.glob(os.path.join(img_dir, f"*.{img_extension}")))
+#     masks_sorted = sorted(glob.glob(os.path.join(label_dir, f"*.{label_extension}")))
 
-    for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_folder = str(x).zfill(9) 
-        path = os.path.join(save_path, num_folder)  
+#     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
+#         num_folder = str(x).zfill(9) 
+#         path = os.path.join(save_path, num_folder)  
         
-        if not os.path.exists(path):
-            os.mkdir(path)
+#         if not os.path.exists(path):
+#             os.mkdir(path)
 
-        im = Image.open(im)
-        im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
+#         im = Image.open(im)
+#         im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
 
-        label = Image.open(label)
-        label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
+#         label = Image.open(label)
+#         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
 
 import numpy as np
-def convert_to_grayscale(data_dir, save_dir=None):
-    images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
-    masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
+def convert_to_grayscale(path_ini, path_save=None, inference=False):
+    images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", "*.tif*")))
 
-    if save_dir == None:
-        save_dir = data_dir
+    if not inference:
+        masks_sorted = sorted(glob.glob(os.path.join(path_ini, "labels", "*.tif*")))
+
+    if path_save == None:
+        path_save = path_ini
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_folder = str(x).zfill(9) 
-        path = os.path.join(save_dir, num_folder)  
+        num_file = str(x).zfill(9) 
+        path = path_save
         
         if not os.path.exists(path):
             os.mkdir(path)
 
         im = Image.open(im)
         im = Image.fromarray(np.array(im)[:,:,0])
-        im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
+        im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
 
-        label = Image.open(label)
-        label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
+        if not inference:
+            label = Image.open(label)
+            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
 
 def convert_to_grayscale_inference(data_dir, save_dir=None):
     images_sorted = sorted(glob.glob(os.path.join(data_dir, "*.tif*")))

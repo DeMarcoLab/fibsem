@@ -150,10 +150,10 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "gpu_config.yml")
+        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
     )
     args = parser.parse_args()
-    config_dir = "gpu_config.yml" #args.config
+    config_dir = args.config
 
     # NOTE: Setup your config.yml file
     with open(config_dir, 'r') as f:
@@ -210,12 +210,11 @@ if __name__ == "__main__":
 
     # Use gpu for training if available else use cpu
     device = torch.device("cuda:0" if torch.cuda.is_available() and cuda else "cpu")
-    show_memory_usage()
     model.to(device)
-    show_memory_usage()
-
-
+    if cuda:
+        show_memory_usage()
     print(device)
+    
     # load model checkpoint
     if model_checkpoint:
         model.load_state_dict(torch.load(model_checkpoint, map_location=device))
