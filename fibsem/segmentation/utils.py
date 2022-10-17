@@ -2,6 +2,7 @@ from PIL import Image
 import glob
 import os
 from tqdm import tqdm
+import numpy as np
 
 def convert_img_size(path_ini, img_size, path_save=None, inference=False):
     """converts image to defined image size"""
@@ -55,24 +56,7 @@ def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None, inference=False)
             label = Image.open(label)
             label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
 
-# def convert_to_folders(img_dir, label_dir, save_path, img_extension, label_extension):
-#     images_sorted = sorted(glob.glob(os.path.join(img_dir, f"*.{img_extension}")))
-#     masks_sorted = sorted(glob.glob(os.path.join(label_dir, f"*.{label_extension}")))
 
-#     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-#         num_folder = str(x).zfill(9) 
-#         path = os.path.join(save_path, num_folder)  
-        
-#         if not os.path.exists(path):
-#             os.mkdir(path)
-
-#         im = Image.open(im)
-#         im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
-
-#         label = Image.open(label)
-#         label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
-
-import numpy as np
 def convert_to_grayscale(path_ini, path_save=None, inference=False):
     """converts images to grayscale"""
     images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", "*.tif*")))
@@ -98,45 +82,6 @@ def convert_to_grayscale(path_ini, path_save=None, inference=False):
             label = Image.open(label)
             label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
 
-def convert_to_grayscale_inference(data_dir, save_dir=None):
-    images_sorted = sorted(glob.glob(os.path.join(data_dir, "*.tif*")))
-
-    if save_dir == None:
-        save_dir = data_dir
-
-    for x, im in enumerate(images_sorted):
-        save_name = str(x).zfill(5) 
-        path = save_dir
-        
-        if not os.path.exists(path):
-            os.mkdir(path)
-
-        im = Image.open(im)
-        im = Image.fromarray(np.array(im)[:,:,0])
-        im.save(os.path.join(path, f"{save_name}.tiff"))  # or 'test.tif'
-
-def pad_inference(data_dir, save_dir=None):
-    images_sorted = sorted(glob.glob(os.path.join(data_dir, "*.tif*")))
-
-    if save_dir == None:
-        save_dir = data_dir
-
-    for x, im in enumerate(images_sorted):
-        save_name = str(x).zfill(5) 
-        path = save_dir
-        
-        if not os.path.exists(path):
-            os.mkdir(path)
-
-        im = Image.open(im)
-        im = np.array(im)
-
-        r1, r2 = round_to_32_pad(im.shape[0])
-        c1,c2 = round_to_32_pad(im.shape[1])
-
-        im = Image.fromarray(np.pad(im,pad_width=((r1,r2),(c1,c2))))
-
-        im.save(os.path.join(path, f"{save_name}.tiff"))  # or 'test.tif'
 
 def round_to_32_pad(num:int)->tuple[int,int]:
     """Rounds up an integer to the nearest multiple of 32. The difference
@@ -167,14 +112,19 @@ def round_to_32_pad(num:int)->tuple[int,int]:
 
     return int(x1),int(x2)
 
-def pad_data(data_dir):
+def pad_data(path_ini, path_save=None, inference=False):
     """converts image size to multiple of 32"""
-    images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
-    masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
+    images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", "*.tif*")))
+
+    if not inference:
+        masks_sorted = sorted(glob.glob(os.path.join(path_ini, "labels", "*.tif*")))
+
+    if path_save == None:
+        path_save = path_ini
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_folder = str(x).zfill(9) 
-        path = os.path.join(data_dir, num_folder)  
+        num_file = str(x).zfill(9) 
+        path = path_save
         
         if not os.path.exists(path):
             os.mkdir(path)
@@ -186,27 +136,14 @@ def pad_data(data_dir):
         c1,c2 = round_to_32_pad(im.shape[1])
 
         im = Image.fromarray(np.pad(im,pad_width=((r1,r2),(c1,c2))))
+        im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
 
-        im.save(os.path.join(path, "image.tiff"))  # or 'test.tif'
+        if not inference:
+            label = Image.open(label)
+            label = np.array(label)
 
-        label = Image.open(label)
-
-        r1, r2 = round_to_32_pad(label.shape[0])
-        c1,c2 = round_to_32_pad(label.shape[1])
-        
-        label = Image.fromarray(np.pad(label,pad_width=((r1,r2),(c1,c2))))
-
-        label = Image.fromarray(np.pad(label,pad_width=((r1,r2),(c1,c2))))
-
-        label.save(os.path.join(path, "label.tiff"))  # or 'test.tif'
-
-def convert_labels_to_index(data_dir):
-    images_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "image.tif*")))
-    masks_sorted = sorted(glob.glob(os.path.join(data_dir, "**", "label.tif*")))
-
-    for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_folder = str(x).zfill(9) 
-        path = os.path.join(data_dir, num_folder)  
-        
-        if not os.path.exists(path):
-            os.mkdir(path)
+            r1, r2 = round_to_32_pad(label.shape[0])
+            c1,c2 = round_to_32_pad(label.shape[1])
+            
+            label = Image.fromarray(np.pad(label,pad_width=((r1,r2),(c1,c2))))
+            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
