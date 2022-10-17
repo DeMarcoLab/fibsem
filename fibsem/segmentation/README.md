@@ -62,7 +62,7 @@ Once labelling.py is running and the unlabelled images have been imported, a nap
 2. Select the paint brush icon, and begin painting the objects of interest. To save time it is recommended to paint the outline of each object, and then use the fill tool. 
 3. If you have multiple classes, do not create a new Labels layer for each class, simply use a different index for each class in the Labels layer. NOTE: MAKE SURE YOU ARE CONSISTENT WITH THE INDEX FOR EACH CLASS.
 4. When you have finished labelling an image, exit the viewer to save the image into the images folder and the segmentation label in the labels folder of the destination you specified in the config. A new viewer will then pop up with the next image.
-5. When you would like to take a break from labelling the dataset, close the napari viewer without creating a Labels layer, this will stop the script. NOTE: If you have an image that does not have any objects of interest in it, create an empty Labels layer before closing the viewer to save the image, otherwise the script will just close.
+5. When you would like to take a break from labelling the dataset, press the key combination 'ctrl+c' to stop the script. It will remember where you left off.
 6. Once you stop the script either intentionally or accidentally, the script will begin where you left off.
 
 ![Napari Viewer](docs/example_napari.png)
