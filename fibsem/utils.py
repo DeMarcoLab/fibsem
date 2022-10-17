@@ -275,9 +275,8 @@ def load_settings_from_config(
     system_settings = SystemSettings.__from_dict__(settings)
 
     # user settings
-    config = load_yaml(os.path.join(config_path, "config.yaml"))
-    default_settings = DefaultSettings.__from_dict__(config)
-    image_settings = ImageSettings.__from_dict__(config)
+    default_settings = DefaultSettings.__from_dict__(settings["user"])
+    image_settings = ImageSettings.__from_dict__(settings["user"])
 
     # protocol settings
     protocol = load_protocol(protocol_path)
