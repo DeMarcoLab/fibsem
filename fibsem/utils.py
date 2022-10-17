@@ -8,7 +8,10 @@ from pathlib import Path
 
 import yaml
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import AdornedImage
+from autoscript_sdb_microscope_client.structures import (
+    AdornedImage,
+    ManipulatorPosition,
+)
 from PIL import Image
 import fibsem
 from fibsem.structures import (
@@ -34,6 +37,7 @@ def connect_to_microscope(ip_address="10.0.0.1"):
         microscope = None
 
     return microscope
+
 
 def sputter_platinum(
     microscope: SdbMicroscopeClient,
@@ -113,7 +117,7 @@ def sputter_platinum(
     logging.info("sputtering platinum finished.")
 
 
-def save_image(image, save_path, label=""):
+def save_image(image: AdornedImage, save_path: Path, label: str = "image"):
     os.makedirs(save_path, exist_ok=True)
     path = os.path.join(save_path, f"{label}.tif")
     image.save(path)
@@ -138,10 +142,7 @@ def configure_logging(path: Path = "", log_filename="logfile", log_level=logging
         level=log_level,
         # Multiple handlers can be added to your logging configuration.
         # By default log messages are appended to the file if it exists already
-        handlers=[
-            logging.FileHandler(logfile),
-            logging.StreamHandler(),
-        ],
+        handlers=[logging.FileHandler(logfile), logging.StreamHandler(),],
     )
 
     return logfile
@@ -155,8 +156,37 @@ def load_yaml(fname: Path) -> dict:
     return config
 
 
+def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
+    """Save the manipulator position from disk"""
+    from fibsem.structures import manipulator_position_to_dict
+
+    with open(os.path.join(path, "needle.yaml"), "w") as f:
+        yaml.dump(manipulator_position_to_dict(position), f, indent=4)
+
+
+def load_needle_yaml(path: Path) -> ManipulatorPosition:
+    """Load the manipulator position from disk"""
+    from fibsem.structures import manipulator_position_from_dict
+
+    position_dict = load_yaml(os.path.join(path, "needle.yaml"))
+    position = manipulator_position_from_dict(position_dict)
+
+    return position
+
+
+def get_updated_needle_insertion_position(path: Path) -> ManipulatorPosition:
+
+    position = None
+
+    if os.path.exists(os.path.join(path, "needle.yaml")):
+
+        position = load_needle_yaml(path)
+
+    return position
+
+
 def save_metadata(settings: MicroscopeSettings, path: Path):
-    #TODO: finish this
+    # TODO: finish this
     pass
     # settings_dict = settings.__to_dict__()
 
@@ -180,16 +210,20 @@ def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
 
 
 def setup_session(
-    config_path: Path = None, protocol_path: Path = None
+    session_path: Path = None,
+    config_path: Path = None,
+    protocol_path: Path = None,
+    setup_logging: bool = True,
 ) -> tuple[SdbMicroscopeClient, MicroscopeSettings]:
     """Setup microscope session
 
     Args:
+        log_path (Path): path to logging directory
         config_path (Path): path to config directory
         protocol_path (Path): path to protocol file
 
     Returns:
-        tuple: microscope, settings, image_settings
+        tuple: microscope, settings
     """
 
     # load settings
@@ -197,11 +231,17 @@ def setup_session(
 
     # create session directories
     session = f'{settings.protocol["name"]}_{current_timestamp()}'
-    session_path = os.path.join(os.path.dirname(protocol_path), session)
+    if protocol_path is None:
+        protocol_path = os.getcwd()
+
+    # configure paths
+    if session_path is None:
+        session_path = os.path.join(os.path.dirname(protocol_path), session)
     os.makedirs(session_path, exist_ok=True)
 
     # configure logging
-    configure_logging(session_path)
+    if setup_logging:
+        configure_logging(session_path)
 
     # connect to microscope
     microscope = connect_to_microscope(ip_address=settings.system.ip_address)
@@ -309,7 +349,7 @@ def match_image_settings(
 ) -> ImageSettings:
     """Generate matching image settings from an image."""
     image_settings.resolution = f"{ref_image.width}x{ref_image.height}"
-    image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
+    # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
     image_settings.hfw = ref_image.width * ref_image.metadata.binary_result.pixel_size.x
     image_settings.beam_type = beam_type
     image_settings.save = True

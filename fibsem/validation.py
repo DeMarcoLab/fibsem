@@ -80,13 +80,15 @@ def _validate_needle_calibration(microscope: SdbMicroscopeClient) -> None:
     needle_state = microscope.specimen.manipulator.state
     logging.info(f"Needle is {needle_state}")
 
-    if needle_state is not ManipulatorState.RETRACTED:
+    if needle_state != "Retracted":
         logging.warning(f"Needle is {needle_state}. Please retract before starting.")
 
     # movement.retract_needle() # TODO: decide whether or not to do this
     # TODO: calibrate needle? check if needle has been calibrated? how
 
     return
+
+# TODO: use _set_type_mode for setting the detector type and mode not directly setting the values
 
 def _validate_beam_system_state(
     microscope: SdbMicroscopeClient, settings: BeamSystemSettings
@@ -204,11 +206,11 @@ def _validate_chamber_state(microscope: SdbMicroscopeClient) -> None:
         )
 
     logging.info(
-        f"Validating Vacuum Chamber Pressure: {microscope.state.chamber_pressure.value:.6f} mbar"
+        f"Validating Vacuum Chamber Pressure: {microscope.vacuum.chamber_pressure.value:.6f} mbar"
     )
-    if microscope.state.chamber_pressure.value >= 1e-4:
+    if microscope.vacuum.chamber_pressure.value >= 1e-4:
         logging.warning(
-            f"Chamber pressure is too high, please pump the system (Currently {microscope.state.chamber_pressure.value:.6f} mbar)"
+            f"Chamber pressure is too high, please pump the system (Currently {microscope.vacuum.chamber_pressure.value:.6f} mbar)"
         )
 
     logging.info(f"Vacuum Chamber State Validation finished.")
@@ -230,7 +232,7 @@ def validate_stage_height_for_needle_insertion(
     stage = microscope.specimen.stage
 
     # Unable to insert the needle if the stage height is below this limit (3.7e-3)
-    return bool(stage.current_position.z < needle_stage_height_limit)
+    return bool(stage.current_position.z > needle_stage_height_limit)
 
 def validate_focus(
     microscope: SdbMicroscopeClient,
@@ -250,11 +252,11 @@ def check_working_distance_is_within_tolerance(
 
     if settings.beam_type is BeamType.ELECTRON:
         microscope_beam = microscope.beams.electron_beam
-    if settings.beam_type is BeamType.ELECTRON:
+    if settings.beam_type is BeamType.ION:
         microscope_beam = microscope.beams.ion_beam
 
     working_distance = microscope_beam.working_distance.value
-    eucentric_height = eucentric_height
+    eucentric_height = settings.eucentric_height
 
     logging.info(
         f"{settings.beam_type.name} Beam working distance is {working_distance:.4f}m"

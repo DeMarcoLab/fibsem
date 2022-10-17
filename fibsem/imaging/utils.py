@@ -47,12 +47,10 @@ def cosine_stretch(img: AdornedImage, tilt_degrees: float):
     shape = int(img.data.shape[0] / np.cos(tilt)), int(img.data.shape[1] / np.cos(tilt))
 
     # cosine stretch
-    print(f"tilt: {tilt}, cosine: {np.cos(tilt)}")
-    print("initial ", img.data.shape, "new shape: ", shape)
+    # print(f"tilt: {tilt}, cosine: {np.cos(tilt)}")
+    # print("initial ", img.data.shape, "new shape: ", shape)
+
     # larger
-
-
-
     resized_img = np.asarray(Image.fromarray(img.data).resize(size=(shape[1], shape[0])))
     
     # crop centre out?
@@ -62,7 +60,7 @@ def cosine_stretch(img: AdornedImage, tilt_degrees: float):
 
     # TODO: smaller?
 
-    print("rescaled shape:", scaled_img.shape)
+    # print("rescaled shape:", scaled_img.shape)
 
     return AdornedImage(data=scaled_img, metadata=img.metadata)
 

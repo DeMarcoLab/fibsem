@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>307</width>
+    <height>340</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="0">
+    <widget class="QFrame" name="frame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="1" column="0" colspan="2">
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="system">
+         <attribute name="title">
+          <string>System</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="lineEdit_system_ip_address"/>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_system_ip_address">
+            <property name="text">
+             <string>IP Address</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_system_application_file">
+            <property name="text">
+             <string>Default Application File</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="comboBox_system_application_file"/>
+          </item>
+          <item row="2" column="0">
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="stage">
+         <attribute name="title">
+          <string>Stage</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="2" column="1">
+           <widget class="QSpinBox" name="spinBox_stage_pre_tilt"/>
+          </item>
+          <item row="4" column="1">
+           <widget class="QSpinBox" name="spinBox_stage_tilt_flat_to_ion"/>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_stage_rotation_flat_to_electron">
+            <property name="text">
+             <string>Rotation Flat to Electron (deg)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_stage_rotation_flat_to_ion">
+            <property name="text">
+             <string>Rotation Flat to Ion (deg)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_stage_pre_tilt">
+            <property name="text">
+             <string>Shuttle Pre-Tilt (deg)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spinBox_stage_rotation_flat_to_electron">
+            <property name="maximum">
+             <number>360</number>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QSpinBox" name="spinBox_stage_tilt_flat_to_electron"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="spinBox_stage_rotation_flat_to_ion">
+            <property name="maximum">
+             <number>360</number>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_stage_needle_height_limit"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_stage_tilt_flat_to_electron">
+            <property name="text">
+             <string>Tilt Flat to Electron (deg)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_stage_needle_height_limit">
+            <property name="text">
+             <string>Needle Height Limit (mm)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_stage_tilt_flat_to_ion">
+            <property name="text">
+             <string>Tilt Flat to Ion (deg)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="electron">
+         <attribute name="title">
+          <string>Electron</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_electron_detector_type">
+            <property name="text">
+             <string>Detector Type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_electron_votlage">
+            <property name="text">
+             <string>Voltage (kV)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_electron_eucentric_height">
+            <property name="text">
+             <string>Eucentric Height (mm)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_electron_current">
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_electron_voltage">
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_electron_current">
+            <property name="text">
+             <string>Current (pA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="comboBox_electron_detector_type"/>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="comboBox_electron_detector_mode"/>
+          </item>
+          <item row="5" column="0" colspan="2">
+           <widget class="QPushButton" name="pushButton_get_electron_settings">
+            <property name="text">
+             <string>Get Current Electron Settings</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_electron_detector_mode">
+            <property name="text">
+             <string>Detector Mode</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_electron_eucentric_height">
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <spacer name="verticalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="ion">
+         <attribute name="title">
+          <string>Ion</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="6" column="0" colspan="2">
+           <widget class="QPushButton" name="pushButton_get_ion_settings">
+            <property name="text">
+             <string>Get Current Ion Settings</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_ion_plasma_gas">
+            <property name="text">
+             <string>Plasma Gas</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="comboBox_ion_detector_type"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_ion_detector_type">
+            <property name="text">
+             <string>Detector Type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_ion_eucentric_height">
+            <property name="text">
+             <string>Eucentric Height (mm)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_ion_current"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_ion_detector_mode">
+            <property name="text">
+             <string>Detector Mode</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_ion_eucentric_height"/>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_ion_voltage"/>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_ion_voltage">
+            <property name="text">
+             <string>Voltage (kV)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QComboBox" name="comboBox_ion_plasma_gas"/>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="comboBox_ion_detector_mode"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_ion_current">
+            <property name="text">
+             <string>Current (pA)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <spacer name="verticalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item row="10" column="0">
+       <widget class="QPushButton" name="pushButton_save_settings">
+        <property name="text">
+         <string>Save</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="label_title">
+        <property name="font">
+         <font>
+          <pointsize>14</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>FIBSEM Settings</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <widget class="QPushButton" name="pushButton_load_settings">
+        <property name="text">
+         <string>Load</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,18 +1,24 @@
-# TODO
-
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import StagePosition, MoveSettings, AdornedImage, Rectangle
-from fibsem.structures import ImageSettings, BeamType, MicroscopeSettings, ReferenceImages
-from fibsem import calibration, acquire, movement, validation, utils
-from fibsem.imaging import utils as image_utils
-from fibsem.imaging import masks
+import logging
 
 import numpy as np
-import logging
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from autoscript_sdb_microscope_client.structures import (AdornedImage,
+                                                         MoveSettings,
+                                                         Rectangle,
+                                                         StagePosition)
+from scipy import fftpack
+
+from fibsem import acquire, calibration, movement, utils, validation
+from fibsem.imaging import masks
+from fibsem.imaging import utils as image_utils
+from fibsem.structures import (BeamType, ImageSettings, MicroscopeSettings,
+                               ReferenceImages)
+
 
 def correct_stage_eucentric_alignment(microscope: SdbMicroscopeClient, image_settings: ImageSettings, tilt_degrees: float = 25) -> None:
 
     # iteratively?
+    # TODO: does the direction of tilt change this?
 
     # take images
     eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
@@ -60,6 +66,7 @@ def beam_shift_alignment(
 ):
     """Align the images by adjusting the beam shift, instead of moving the stage
             (increased precision, lower range)
+        NOTE: only shift the ion beam, never electron
 
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope client
@@ -111,7 +118,7 @@ def correct_stage_drift(
     for ref_image in [ref_lowres, ref_highres]:
 
         if use_ref_mask:
-            ref_mask = masks.create_lamella_mask(ref_image, settings.protocol["lamella"], factor = 4) # TODO: refactor, liftout specific
+            ref_mask = masks.create_lamella_mask(ref_image, settings.protocol["lamella"], scale = 4, use_trench_height=True) # TODO: refactor, liftout specific
         else: 
             ref_mask = None
 
@@ -124,7 +131,7 @@ def correct_stage_drift(
 
         # crosscorrelation alignment
         ret = align_using_reference_images(
-            microscope, settings, ref_lowres, new_image, ref_mask=ref_mask
+            microscope, settings, ref_image, new_image, ref_mask=ref_mask
         )
 
         if ret is False:
@@ -139,6 +146,13 @@ def align_using_reference_images(
     new_image: AdornedImage,
     ref_mask: np.ndarray = None
 ) -> bool:
+
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots(1, 2)
+    # ax[0].imshow(ref_image.data, cmap="gray")
+    # ax[1].imshow(new_image.data, cmap="gray")
+
+    # plt.show()
 
     # get beam type
     ref_beam_type = BeamType[ref_image.metadata.acquisition.beam_type.upper()]
@@ -168,6 +182,7 @@ def align_using_reference_images(
         movement.move_stage_relative_with_corrected_movement(microscope, 
             settings, 
             dx=dx, 
+            # dy=dy,
             dy=-dy, 
             beam_type=new_beam_type)
 
@@ -200,6 +215,10 @@ def shift_from_crosscorrelation(
     if ref_mask is not None:
         ref_data_norm = ref_mask * ref_data_norm # mask the reference
 
+    # import matplotlib.pyplot as plt
+    # plt.imshow(ref_data_norm, cmap="gray")
+    # plt.show()
+
     # run crosscorrelation
     xcorr = crosscorrelation(
         ref_data_norm, new_data_norm, bp=True, lp=lowpass, hp=highpass, sigma=sigma
@@ -226,11 +245,7 @@ def shift_from_crosscorrelation(
 
 
 # TODO
-import numpy as np
-import logging
-from scipy import fftpack
 
-from fibsem.imaging import masks
 
 
 def crosscorrelation(img1: np.ndarray, img2: np.ndarray,  

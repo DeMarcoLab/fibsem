@@ -7,9 +7,10 @@ from enum import Enum
 from pathlib import Path
 
 import numpy as np
-from autoscript_sdb_microscope_client.structures import (AdornedImage,
-                                                         StagePosition)
+from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
+import yaml
 
+#@patrickcleeve: dataclasses.asdict -> :(
 
 @dataclass
 class Point:
@@ -176,7 +177,7 @@ class MillingSettings:
     width: float
     height: float
     depth: float
-    rotation: float # deg?
+    rotation: float = 0.0 # deg
     centre_x: float = 0.0 # TODO: change to Point?
     centre_y: float = 0.0 
     milling_current: float = 20.0e-12
@@ -257,6 +258,34 @@ def stage_position_from_dict(state_dict: dict) -> StagePosition:
     return stage_position
 
 
+def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
+
+    position_dict = {
+        "x": position.x,
+        "y": position.y,
+        "z": position.z,
+        "r": None,
+        "coordinate_system": position.coordinate_system
+    }
+
+    return position_dict
+
+
+def manipulator_position_from_dict(position_dict: dict) -> ManipulatorPosition:
+
+    position = ManipulatorPosition(
+        x=position_dict["x"],
+        y=position_dict["y"],
+        z=position_dict["z"],
+        r=position_dict["r"],
+        coordinate_system=position_dict["coordinate_system"] 
+
+    )
+
+    return position
+
+
+
 
 @dataclass
 class BeamSystemSettings:
@@ -301,7 +330,7 @@ class BeamSystemSettings:
 
         return system_settings
 
-
+# TODO: change this to use pretilt_angle, flat_to_electron, and flat_to_ion tilts, for better separation
 @dataclass
 class StageSettings:
     rotation_flat_to_electron: float = 50 # degrees
@@ -391,3 +420,45 @@ class MicroscopeSettings:
     default: DefaultSettings
     image: ImageSettings
     protocol: dict = None
+
+
+
+
+
+# state
+from abc import ABC, abstractmethod, abstractstaticmethod
+
+
+
+class FibsemStage(Enum):
+    Base = 1
+
+@dataclass
+class FibsemState:
+    stage: FibsemStage = FibsemStage.Base
+    microscope_state: MicroscopeState = MicroscopeState()
+    start_timestamp: float = None
+    end_timestamp: float = None
+
+    def __to_dict__(self) -> dict:
+
+        state_dict = {
+            "stage": self.stage.name,
+            "microscope_state": self.microscope_state.__to_dict__(),
+            "start_timestamp": self.start_timestamp,
+            "end_timestamp": self.end_timestamp,
+        }
+
+        return state_dict
+
+    @abstractstaticmethod
+    def __from_dict__(self, state_dict: dict) -> 'FibsemState':
+
+        autoliftout_state = FibsemState(
+            stage=FibsemState[state_dict["stage"]],
+            microscope_state=MicroscopeState.__from_dict__(state_dict["microscope_state"]),
+            start_timestamp=state_dict["start_timestamp"],
+            end_timestamp=state_dict["end_timestamp"],
+        )
+
+        return autoliftout_state
