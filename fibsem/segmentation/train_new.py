@@ -170,7 +170,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
+        default=os.path.join("fibsem", "segmentation", "config.yml")
     )
     args = parser.parse_args()
     config_dir = args.config

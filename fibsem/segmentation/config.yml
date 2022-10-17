@@ -1,6 +1,6 @@
 labelling:
-  raw_dir: "change\\this\\path"
-  data_dir: "change\\this\\path"
+  raw_dir: /home/patrick/github/fibsem/example/data/
+  data_dir: /home/patrick/github/fibsem/example/data/data2
 train:
   data_dir: "/home/rohit_k/Documents/model_training_rfp/train"
   save_dir: "fibsem/segmentation/models"

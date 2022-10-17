@@ -26,7 +26,7 @@ def inference(images, output_dir, model, model_path, device, WANDB=False):
     # model.eval()
 
     # Inference
-    with torch.no_grad():
+    with torch.no_grad(): # TODO: move this down to only wrap the model inference
         vol = tff.imread(os.path.join(images, "*.tif*"), aszarr=True) # loading folder of .tif into zarr array)
         zarr_set = zarr.open(vol)
 
@@ -41,8 +41,8 @@ def inference(images, output_dir, model, model_path, device, WANDB=False):
             output = Image.fromarray(output_mask) 
             path = os.path.join(output_dir, os.path.basename(fname).split(".")[0])
             
-            if not os.path.exists(path):
-                os.makedirs(path)
+            # if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
             
             input_img = Image.fromarray(img.detach().cpu().squeeze().numpy())
             input_img.save(os.path.join(path, "input.tif"))
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lucile_config.yml"),
+        default=os.path.join("fibsem", "segmentation", "config.yml"),
     )
     args = parser.parse_args()
     config_dir = args.config

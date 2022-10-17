@@ -15,11 +15,15 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
     filenames = sorted(glob.glob(os.path.join(raw_dir, "*.tif*")))
 
-    if not os.path.exists(os.path.join(data_dir, "images")):
-        os.mkdir(os.path.join(data_dir, "images"))
+    # if not os.path.exists(os.path.join(data_dir, "images")):
+    #     os.mkdir(os.path.join(data_dir, "images"))
 
-    if not os.path.exists(os.path.join(data_dir, "labels")):
-        os.mkdir(os.path.join(data_dir, "labels"))
+    # if not os.path.exists(os.path.join(data_dir, "labels")):
+    #     os.mkdir(os.path.join(data_dir, "labels")) 
+
+    # TODO: can just use os.makedirs(path, exist_ok=True)  
+    os.makedirs(os.path.join(data_dir, "images"), exist_ok=True)
+    os.makedirs(os.path.join(data_dir, "labels"), exist_ok=True) 
 
     for img, fname in zip(zarr_set, filenames):
         #Check to see if already labelled; if so, skip
@@ -27,7 +31,13 @@ def label_images(raw_dir: str, data_dir: str) -> None:
             continue
 
         print(fname)
-        viewer = napari.view_image(img)
+        # viewer = napari.view_image(img)
+
+        viewer = napari.Viewer()
+        viewer.add_image(img, name="img")
+        viewer.add_labels(np.zeros_like(img), name="Labels")
+        # TODO: set active tool (paintbrush)
+
         # manually add label layer then use paint tool for segmentation
         # use different colour for different types of object. MAKE SURE TO BE CONSISTENT
 
@@ -35,18 +45,15 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
         # To stop labelling, exit napari without creating a Labels layer.
         # NOTE: Separate from an image with no class in it, in this case create an empty Labels layer
-        if len(viewer.layers) < 2:
-            print("Finished labelling.")
-            break
+
         
         bname = os.path.basename(fname).split(".")[0]
         
         viewer.layers["img"].save(os.path.join(data_dir, "images", f"{bname}.tif"))
-        label = viewer.layers["Labels"].data
+        label = viewer.layers["Labels"].data.astype(np.uint8)
+
         im = Image.fromarray(label) 
         im.save(os.path.join(data_dir, "labels", f"{bname}.tif"))  # or 'test.tif'
-
-
 
 
 if __name__ == "__main__":
@@ -57,11 +64,11 @@ if __name__ == "__main__":
         help="specify which user config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "lachie_config.yml")
+        default=os.path.join("fibsem", "segmentation", "config.yml")
     )
 
     args = parser.parse_args()
-    config_dir = "gpu_config.yml" #args.config
+    config_dir = args.config
 
     # NOTE: Setup your config.yml file
     with open(config_dir, 'r') as f:
