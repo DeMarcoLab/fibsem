@@ -272,7 +272,7 @@ def load_settings_from_config(
 
     # system settings
     settings = load_yaml(os.path.join(config_path, "system.yaml"))
-    system_settings = SystemSettings.__from_dict__(settings)
+    system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
     default_settings = DefaultSettings.__from_dict__(settings["user"])

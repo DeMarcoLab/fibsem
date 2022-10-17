@@ -91,6 +91,28 @@ class ImageSettings:
 
         return image_settings
 
+
+    def __to_dict__(self) -> dict:
+
+        settings_dict = {
+            "resolution": self.resolution,
+            "dwell_time": self.dwell_time,
+            "hfw": self.hfw,
+            "autocontrast": self.autocontrast,
+            "gamma": {
+                "enabled": self.gamma.enabled,
+                "min_gamma": self.gamma.min_gamma,
+                "max_gamma": self.gamma.max_gamma,
+                "scale_factor": self.gamma.scale_factor,
+                "threshold": self.gamma.threshold,
+            },
+            "save": self.save,
+            "save_path": self.save_path,
+            "label": self.label
+        }
+
+        return settings_dict
+
 @dataclass
 class ReferenceImages:
     low_res_eb: AdornedImage
@@ -425,6 +447,15 @@ class MicroscopeSettings:
     protocol: dict = None
 
 
+    def __to_dict__(self) -> dict:
+
+        settings_dict = {
+            "system": self.system.__to_dict__(),
+            "user": self.image.__to_dict__(),
+
+        }
+
+        return settings_dict
 
 
 

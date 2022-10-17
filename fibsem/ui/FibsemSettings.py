@@ -11,6 +11,9 @@ from fibsem import calibration, constants, utils
 from fibsem.structures import (
     BeamSystemSettings,
     BeamType,
+    DefaultSettings,
+    GammaSettings,
+    ImageSettings,
     MicroscopeSettings,
     StageSettings,
     SystemSettings,
@@ -38,7 +41,7 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
             self.microscope, self.settings = utils.setup_session()
 
         self.setup_connections()
-        self.update_ui_from_settings(self.settings.system)
+        self.update_ui_from_settings(self.settings)
 
     def setup_connections(self):
 
@@ -77,58 +80,72 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         self.comboBox_ion_detector_type.addItems(ib_detector_types)
         self.comboBox_ion_plasma_gas.addItems(ib_plasma_gases)
 
-    def update_ui_from_settings(self, settings: SystemSettings):
+        # imaging
+        self.comboBox_imaging_beam_type.addItems([beam.name for beam in BeamType])
+        self.comboBox_imaging_resolution.addItems([res for res in self.microscope.beams.electron_beam.scanning.resolution.available_values])
+
+
+    def update_ui_from_settings(self, settings: MicroscopeSettings):
 
         # system
-        self.lineEdit_system_ip_address.setText(settings.ip_address)
-        self.comboBox_system_application_file.setCurrentText(settings.application_file)
+        self.lineEdit_system_ip_address.setText(settings.system.ip_address)
+        self.comboBox_system_application_file.setCurrentText(settings.system.application_file)
 
         # stage
         self.spinBox_stage_rotation_flat_to_electron.setValue(
-            settings.stage.rotation_flat_to_electron
+            settings.system.stage.rotation_flat_to_electron
         )
         self.spinBox_stage_rotation_flat_to_ion.setValue(
-            settings.stage.rotation_flat_to_ion
+            settings.system.stage.rotation_flat_to_ion
         )
         self.spinBox_stage_pre_tilt.setValue(0)  # TODO: fix when pre-titl implemented
         self.spinBox_stage_tilt_flat_to_electron.setValue(
-            settings.stage.tilt_flat_to_electron
+            settings.system.stage.tilt_flat_to_electron
         )
-        self.spinBox_stage_tilt_flat_to_ion.setValue(settings.stage.tilt_flat_to_ion)
+        self.spinBox_stage_tilt_flat_to_ion.setValue(settings.system.stage.tilt_flat_to_ion)
         self.doubleSpinBox_stage_needle_height_limit.setValue(
-            settings.stage.needle_stage_height_limit * constants.METRE_TO_MILLIMETRE
+            settings.system.stage.needle_stage_height_limit * constants.METRE_TO_MILLIMETRE
         )
 
         # electron
         self.doubleSpinBox_electron_voltage.setValue(
-            settings.electron.voltage * constants.SI_TO_KILO
+            settings.system.electron.voltage * constants.SI_TO_KILO
         )
         self.doubleSpinBox_electron_current.setValue(
-            settings.electron.current * constants.SI_TO_PICO
+            settings.system.electron.current * constants.SI_TO_PICO
         )
         self.comboBox_electron_detector_mode.setCurrentText(
-            settings.electron.detector_mode
+            settings.system.electron.detector_mode
         )
         self.comboBox_electron_detector_type.setCurrentText(
-            settings.electron.detector_type
+            settings.system.electron.detector_type
         )
         self.doubleSpinBox_electron_eucentric_height.setValue(
-            settings.electron.eucentric_height * constants.METRE_TO_MILLIMETRE
+            settings.system.electron.eucentric_height * constants.METRE_TO_MILLIMETRE
         )
 
         # ion
         self.doubleSpinBox_ion_voltage.setValue(
-            settings.ion.voltage * constants.SI_TO_KILO
+            settings.system.ion.voltage * constants.SI_TO_KILO
         )
         self.doubleSpinBox_ion_current.setValue(
-            settings.ion.current * constants.SI_TO_PICO
+            settings.system.ion.current * constants.SI_TO_PICO
         )
-        self.comboBox_ion_detector_mode.setCurrentText(settings.ion.detector_mode)
-        self.comboBox_ion_detector_type.setCurrentText(settings.ion.detector_type)
+        self.comboBox_ion_detector_mode.setCurrentText(settings.system.ion.detector_mode)
+        self.comboBox_ion_detector_type.setCurrentText(settings.system.ion.detector_type)
         self.doubleSpinBox_ion_eucentric_height.setValue(
-            settings.ion.eucentric_height * constants.METRE_TO_MILLIMETRE
+            settings.system.ion.eucentric_height * constants.METRE_TO_MILLIMETRE
         )
-        self.comboBox_ion_plasma_gas.setCurrentText(settings.ion.plasma_gas)
+        self.comboBox_ion_plasma_gas.setCurrentText(settings.system.ion.plasma_gas)
+
+        # imaging
+        self.comboBox_imaging_resolution.setCurrentText(settings.image.resolution)
+        self.doubleSpinBox_imaging_dwell_time.setValue(settings.image.dwell_time * constants.SI_TO_MICRO)
+        self.doubleSpinBox_imaging_hfw.setValue(settings.image.hfw * constants.SI_TO_MICRO)
+        self.checkBox_imaging_use_autocontrast.setChecked(settings.image.autocontrast)
+        self.checkBox_imaging_use_autogamma.setChecked(settings.image.gamma.enabled)
+        self.checkBox_imaging_save_image.setChecked(settings.image.save)
+
 
     def get_beam_settings(self):
 
@@ -177,58 +194,76 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
 
     def get_settings_from_ui(self) -> dict:
 
-        settings = SystemSettings(
-            ip_address=self.lineEdit_system_ip_address.text(),
-            application_file=self.comboBox_system_application_file.currentText(),
-            stage=StageSettings(
-                rotation_flat_to_electron=int(
-                    self.spinBox_stage_rotation_flat_to_electron.value()
+        settings = MicroscopeSettings( 
+            system = SystemSettings(
+                ip_address=self.lineEdit_system_ip_address.text(),
+                application_file=self.comboBox_system_application_file.currentText(),
+                stage=StageSettings(
+                    rotation_flat_to_electron=int(
+                        self.spinBox_stage_rotation_flat_to_electron.value()
+                    ),
+                    rotation_flat_to_ion=int(
+                        self.spinBox_stage_rotation_flat_to_ion.value()
+                    ),
+                    tilt_flat_to_electron=int(
+                        self.spinBox_stage_tilt_flat_to_electron.value()
+                    ),
+                    tilt_flat_to_ion=int(self.spinBox_stage_tilt_flat_to_ion.value()),
+                    needle_stage_height_limit=float(
+                        self.doubleSpinBox_stage_needle_height_limit.value()
+                    ),
                 ),
-                rotation_flat_to_ion=int(
-                    self.spinBox_stage_rotation_flat_to_ion.value()
+                electron=BeamSystemSettings(
+                    beam_type=BeamType.ELECTRON,
+                    voltage=float(
+                        self.doubleSpinBox_electron_voltage.value() * constants.KILO_TO_SI
+                    ),
+                    current=float(
+                        self.doubleSpinBox_electron_current.value() * constants.PICO_TO_SI
+                    ),
+                    detector_type=str(self.comboBox_electron_detector_type.currentText()),
+                    detector_mode=str(self.comboBox_electron_detector_mode.currentText()),
+                    eucentric_height=float(
+                        self.doubleSpinBox_electron_eucentric_height.value()
+                        * constants.MILLIMETRE_TO_METRE
+                    ),
+                    plasma_gas=None,
                 ),
-                tilt_flat_to_electron=int(
-                    self.spinBox_stage_tilt_flat_to_electron.value()
-                ),
-                tilt_flat_to_ion=int(self.spinBox_stage_tilt_flat_to_ion.value()),
-                needle_stage_height_limit=float(
-                    self.doubleSpinBox_stage_needle_height_limit.value()
+                ion=BeamSystemSettings(
+                    beam_type=BeamType.ION,
+                    voltage=float(
+                        self.doubleSpinBox_ion_voltage.value() * constants.KILO_TO_SI
+                    ),
+                    current=float(
+                        self.doubleSpinBox_ion_current.value() * constants.PICO_TO_SI
+                    ),
+                    detector_type=str(self.comboBox_ion_detector_type.currentText()),
+                    detector_mode=str(self.comboBox_ion_detector_mode.currentText()),
+                    eucentric_height=float(
+                        self.doubleSpinBox_ion_eucentric_height.value()
+                        * constants.MILLIMETRE_TO_METRE
+                    ),
+                    plasma_gas=str(self.comboBox_ion_plasma_gas.currentText()),
                 ),
             ),
-            electron=BeamSystemSettings(
-                beam_type=BeamType.ELECTRON,
-                voltage=float(
-                    self.doubleSpinBox_electron_voltage.value() * constants.KILO_TO_SI
+            image = ImageSettings(
+                beam_type = BeamType.ELECTRON,
+                resolution=self.comboBox_imaging_resolution.currentText(),
+                dwell_time=self.doubleSpinBox_imaging_dwell_time.value() * constants.MICRO_TO_SI,
+                hfw = self.doubleSpinBox_imaging_hfw.value() * constants.MICRO_TO_SI,
+                autocontrast=self.checkBox_imaging_use_autocontrast.isChecked(),
+                save=self.checkBox_imaging_save_image.isChecked(),
+                gamma = GammaSettings(
+                    self.checkBox_imaging_use_autogamma.isChecked()
                 ),
-                current=float(
-                    self.doubleSpinBox_electron_current.value() * constants.PICO_TO_SI
-                ),
-                detector_type=str(self.comboBox_electron_detector_type.currentText()),
-                detector_mode=str(self.comboBox_electron_detector_mode.currentText()),
-                eucentric_height=float(
-                    self.doubleSpinBox_electron_eucentric_height.value()
-                    * constants.MILLIMETRE_TO_METRE
-                ),
-                plasma_gas=None,
+                label = None
             ),
-            ion=BeamSystemSettings(
-                beam_type=BeamType.ION,
-                voltage=float(
-                    self.doubleSpinBox_ion_voltage.value() * constants.KILO_TO_SI
-                ),
-                current=float(
-                    self.doubleSpinBox_ion_current.value() * constants.PICO_TO_SI
-                ),
-                detector_type=str(self.comboBox_ion_detector_type.currentText()),
-                detector_mode=str(self.comboBox_ion_detector_mode.currentText()),
-                eucentric_height=float(
-                    self.doubleSpinBox_ion_eucentric_height.value()
-                    * constants.MILLIMETRE_TO_METRE
-                ),
-                plasma_gas=str(self.comboBox_ion_plasma_gas.currentText()),
-            ),
-        )
+            default=DefaultSettings(
+                imaging_current= None,
+                milling_current=None
 
+            )
+        )
         return settings.__to_dict__()
 
     def save_settings(self):
