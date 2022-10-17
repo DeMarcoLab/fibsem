@@ -63,11 +63,10 @@ def load_dask_dataset(data_dir: str):
     return images, masks
 
 def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
-    # validate_dataset(data_path)
+    validate_dataset(data_path)
     images, masks = load_dask_dataset(data_path)
     
     print(f"Loading dataset from {data_path} of length {images.shape[0]}")
-    #print(np.unique(masks[0].compute())) 
 
     # load dataset
     seg_dataset = SegmentationDataset(
@@ -148,5 +147,3 @@ def validate_dataset(data_path):
             print("You can run pad_data in utils.py to convert the dataset to correct format.")
     print("finished validating dataset.")
 
-
-#convert_dataset_to_tif("C:\\Users\lucil\OneDrive\Bureau\DeMarco_Lab\data\train\000000001", 'png') 
