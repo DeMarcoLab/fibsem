@@ -10,7 +10,7 @@ train:
   epochs: 10 # Number of epochs to train for
   cuda: true # Enable/Disable CUDA training
   batch_size: 1 # Number of batches per epoch
-  num_classes: 2 # Number of classes in segmentation labels. Includes background as class 0.
+  num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
   learning_rate: 0.0001
   wandb_project: "fibsem_pipeline"
   wandb_entity: "demarcolab"

@@ -48,8 +48,8 @@ class SegmentationDataset(Dataset):
 
 
 def load_dask_dataset(data_dir: str):
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "images", "*.tif*")))  #[-435:]
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "labels", "*.tif*")))  #[-435:]
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "images", "*.tif*")))  
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "labels", "*.tif*"))) 
 
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
     mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
@@ -63,8 +63,9 @@ def load_dask_dataset(data_dir: str):
     return images, masks
 
 def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
-    validate_dataset(data_path)
+    # validate_dataset(data_path)
     images, masks = load_dask_dataset(data_path)
+    
     print(f"Loading dataset from {data_path} of length {images.shape[0]}")
     #print(np.unique(masks[0].compute())) 
 
