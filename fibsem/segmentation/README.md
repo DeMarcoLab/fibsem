@@ -164,3 +164,12 @@ Data - raw data images can be found in docs/imgs/raw
 Labels - Segmentation Labels can be found in docs/imgs/labels
 
 Combined - Labels superimposed on the raw data can be found in docs/imgs/combined
+
+
+### Utils available
+Several utils functions are available to convert the data to the correct format. Running the dataset.py file will give out information on which function needs to be run to transform the dataset into the expected format for trainning and inference. 
+Funtions available:
+convert_to_grayscale()
+pad_data()
+convert_img_size()
+convert_to_tiff()

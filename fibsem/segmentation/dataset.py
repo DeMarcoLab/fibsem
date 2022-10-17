@@ -113,7 +113,7 @@ def validate_dataset(data_path):
     for i, (fname, lfname) in enumerate(list(zip(filenames, labels))):
         img, label = tff.imread(fname), tff.imread(lfname)
 
-        if (img.shape[0] != label.shape[0]) or (img.shape[1] != base_shape[1]):
+        if (img.shape != label.shape) or (img.shape != base_shape):
 
             print(
                 "invalid data",
@@ -124,10 +124,10 @@ def validate_dataset(data_path):
                 label.shape,
             )
             print("You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size.")
-        if (img.shape[2] != 0) or (img.ndim != 3) or (label.ndim !=3):
+        if (img.shape[2] != 0) or (label.shape[0] !=0) or (img.ndim != 3) or (label.ndim !=3):
             
             print(
-                "Image is not in grayscale format",
+                "Image is not in correct grayscale format",
                 i,
                 os.path.basename(fname),
                 os.path.basename(lfname),
