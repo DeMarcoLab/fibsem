@@ -174,7 +174,7 @@ def auto_needle_calibration(
     )
 
     # low res alignment
-    align_needle_to_eucentric_position(microscope, settings, path=None, validate=False)
+    align_needle_to_eucentric_position(microscope, settings, validate=False)
 
     # focus on needle
     acquire.autocontrast(microscope, BeamType.ELECTRON)
@@ -183,11 +183,11 @@ def auto_needle_calibration(
 
     # medium res alignment
     settings.image.hfw = 400e-6
-    align_needle_to_eucentric_position(microscope, settings, path=None, validate=False)
+    align_needle_to_eucentric_position(microscope, settings, validate=False)
 
     # high res alignment
     settings.image.hfw = 150e-6
-    align_needle_to_eucentric_position(microscope, settings, path=None, validate=False)
+    align_needle_to_eucentric_position(microscope, settings, validate=False)
 
     logging.info(f"Finished automatic needle calibration.")
 

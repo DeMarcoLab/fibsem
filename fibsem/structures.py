@@ -467,7 +467,6 @@ class MicroscopeSettings:
         )
 
 
-
 # state
 from abc import ABC, abstractmethod, abstractstaticmethod
 
