@@ -13,3 +13,8 @@ MILLING_SPUTTER_RATE = {
     7.6e-9: 3.041,  # 30kv
     28.0e-9: 1.18e1   # 30 kv
 }
+
+import os
+import fibsem
+BASE_PATH = os.path.dirname(fibsem.__file__)
+CONFIG_PATH = os.path.join(BASE_PATH, "config")

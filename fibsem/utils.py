@@ -155,6 +155,11 @@ def load_yaml(fname: Path) -> dict:
 
     return config
 
+def save_yaml(path: Path, data: dict) -> None:
+
+    with open(path, "w") as f:
+        yaml.dump(data, f, indent=4)
+
 
 def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
     """Save the manipulator position from disk"""
@@ -172,6 +177,13 @@ def load_needle_yaml(path: Path) -> ManipulatorPosition:
     position = manipulator_position_from_dict(position_dict)
 
     return position
+
+from fibsem.structures import MicroscopeState
+def save_state_yaml(path: Path, state: MicroscopeState) -> None:
+
+    state_dict = state.__to_dict__()
+
+    save_yaml(path, state_dict)
 
 
 def get_updated_needle_insertion_position(path: Path) -> ManipulatorPosition:

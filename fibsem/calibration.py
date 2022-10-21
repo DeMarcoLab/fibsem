@@ -289,21 +289,24 @@ def align_needle_to_eucentric_position(
     # take image
     acquire.take_reference_images(microscope, settings.image)
 
-def auto_home_and_link(microscope: SdbMicroscopeClient, state: MicroscopeState) -> None:
+def auto_home_and_link(microscope: SdbMicroscopeClient, state: MicroscopeState = None) -> None:
 
     # home the stage
     logging.info(f"Homing stage...")
     microscope.specimen.stage.home()
 
-    # move to saved eucentric state
+    # if no state provided, use the default 
+    if state is None:
+        path = os.path.join(config.CONFIG_PATH, "calibrated_state.yaml")
+        state = MicroscopeState.__from_dict__(load_yaml(path))
+    
+    # move to saved linked state
     set_microscope_state(microscope, state)
-
-    # set the working distances to 3.91mm, 16.5mm
-    microscope.beams.electron_beam.working_distance.value = 3.91e-3  # MAGIC_NUMBER
-    microscope.beams.ion_beam.working_distance.value = 16.5e-3  # MAGIC_NUMBER
 
     # link
     logging.info("Linking stage...")
+    acquire.autocontrast(microscope, beam_type=BeamType.ELECTRON)
+    microscope.auto_functions.run_auto_focus()
     microscope.specimen.stage.link()
 
 
