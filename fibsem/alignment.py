@@ -1,4 +1,5 @@
 import logging
+from turtle import xcor
 
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
@@ -20,11 +21,27 @@ from fibsem.structures import (
     ReferenceImages,
 )
 
+def auto_eucentric_correction(microscope: SdbMicroscopeClient, 
+    image_settings: ImageSettings,
+    tilt_degrees: int = 25,
+    xcorr_limit: int = 250) -> None:
+
+    calibration.auto_discharge_beam(microscope, image_settings)
+
+    for hfw in [400e-6, 150e-6, 80e-6,  80e-6]:
+        image_settings.hfw = hfw
+
+        correct_stage_eucentric_alignment(microscope, 
+            image_settings, 
+            tilt_degrees=tilt_degrees, 
+            xcorr_limit=xcorr_limit)
+
 
 def correct_stage_eucentric_alignment(
     microscope: SdbMicroscopeClient,
     image_settings: ImageSettings,
     tilt_degrees: float = 52,
+    xcorr_limit: int = 250,
 ) -> None:
 
     # iteratively?
@@ -37,9 +54,11 @@ def correct_stage_eucentric_alignment(
     ib_image = image_utils.cosine_stretch(ib_image, tilt_degrees)
 
     # cross correlate
-    lp_px = int(max(ib_image.data.shape) / 12)
-    hp_px = int(max(ib_image.data.shape) / 256)
+    lp_px = 128 #int(max(ib_image.data.shape) / 12)
+    hp_px = 6 #int(max(ib_image.data.shape) / 256)
     sigma = 6
+
+    ref_mask = masks.create_circle_mask(eb_image.data.shape, radius=64)
 
     dx, dy, xcorr = shift_from_crosscorrelation(
         eb_image,
@@ -48,7 +67,8 @@ def correct_stage_eucentric_alignment(
         highpass=hp_px,
         sigma=sigma,
         use_rect_mask=True,
-        ref_mask=None,
+        ref_mask=ref_mask,
+        xcorr_limit=xcorr_limit
     )
 
     # TODO: error check?
@@ -113,7 +133,8 @@ def correct_stage_drift(
     alignment: tuple(BeamType) = (BeamType.ELECTRON, BeamType.ELECTRON),
     rotate: bool = False,
     use_ref_mask: bool = False,
-    xcorr_limit: int = None,
+    mask_scale: int = 4,
+    xcorr_limit: tuple = None,
 ) -> bool:
     """Correct the stage drift by crosscorrelating low-res and high-res reference images"""
 
@@ -129,17 +150,20 @@ def correct_stage_drift(
             reference_images.high_res_ib,
         )
 
+    if xcorr_limit is None:
+        xcorr_limit = (None, None)
+
     # rotate reference
     if rotate:
         ref_lowres = image_utils.rotate_image(ref_lowres)
         ref_highres = image_utils.rotate_image(ref_highres)
 
     # align lowres, then highres
-    for ref_image in [ref_lowres, ref_highres]:
+    for i, ref_image in enumerate([ref_lowres, ref_highres]):
 
         if use_ref_mask:
             ref_mask = masks.create_lamella_mask(
-                ref_image, settings.protocol["lamella"], scale=4, use_trench_height=True
+                ref_image, settings.protocol["lamella"], scale=mask_scale, use_trench_height=True
             )  # TODO: refactor, liftout specific
         else:
             ref_mask = None
@@ -158,7 +182,7 @@ def correct_stage_drift(
             ref_image,
             new_image,
             ref_mask=ref_mask,
-            xcorr_limit=xcorr_limit,
+            xcorr_limit=xcorr_limit[i],
         )
 
         if ret is False:
@@ -190,11 +214,9 @@ def align_using_reference_images(
     logging.info(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."
     )
-    # lp_px = int(max(new_image.data.shape) * 0.66)
-    # hp_px = int(max(new_image.data.shape) / 64)
     sigma = 6
-    lp_px = int(max(new_image.data.shape) / 6)
-    hp_px = int(max(new_image.data.shape) / 256)
+    hp_px = 8 #int(max(new_image.data.shape) / 256)
+    lp_px = 128 #int(max(new_image.data.shape) / 6)
 
     dx, dy, xcorr = shift_from_crosscorrelation(
         ref_image,

@@ -136,6 +136,7 @@ def auto_discharge_beam(
     image_settings.resolution = "768x512"
     image_settings.dwell_time = 200e-9
     image_settings.autocontrast = False
+    image_settings.gamma.enabled = False
     image_settings.save = False
 
     logging.info(f"Bring me Thanos!")  # important information
@@ -154,7 +155,7 @@ def auto_discharge_beam(
 
 
 def auto_needle_calibration(
-    microscope: SdbMicroscopeClient, settings: MicroscopeSettings
+    microscope: SdbMicroscopeClient, settings: MicroscopeSettings, validate: bool = False
 ):
 
     settings.image.hfw = 900e-6
@@ -174,7 +175,7 @@ def auto_needle_calibration(
     )
 
     # low res alignment
-    align_needle_to_eucentric_position(microscope, settings, validate=False)
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
 
     # focus on needle
     acquire.autocontrast(microscope, BeamType.ELECTRON)
@@ -183,11 +184,11 @@ def auto_needle_calibration(
 
     # medium res alignment
     settings.image.hfw = 400e-6
-    align_needle_to_eucentric_position(microscope, settings, validate=False)
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
 
     # high res alignment
     settings.image.hfw = 150e-6
-    align_needle_to_eucentric_position(microscope, settings, validate=False)
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
 
     logging.info(f"Finished automatic needle calibration.")
 
