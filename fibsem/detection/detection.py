@@ -14,6 +14,7 @@ from fibsem.detection.utils import (DetectionFeature, DetectionResult,
                                      DetectionType)
 from scipy.spatial import distance
 from skimage import feature
+from fibsem.imaging.masks import apply_circular_mask
 
 # TODO:
 # rename DetectionResult to Detection
@@ -261,10 +262,8 @@ def detect_needle_tip_v3(image:AdornedImage, initial_point: Point = None) -> Poi
 
     edge = edge_detection(image.data, sigma=3)  # edges
 
-    # needle = detect_closest_edge_v2(edge, initial_point)
-    needle = detect_right_edge_v2(edge)   # right most edge
-    # TODO: top point detection
-
+    edge = apply_circular_mask(edge, radius=256)
+    needle = detect_corner(edge) # top right
     return needle
 
 def detect_landing_post_v2(img: AdornedImage, landing_pt: Point) -> Point:
@@ -334,6 +333,9 @@ def detect_corner(mask: np.ndarray, threshold=25, left: bool = False, bottom: bo
 
     # get mask px coordinates
     edge_mask = np.where(mask)
+    import matplotlib.pyplot as plt
+    plt.imshow(edge_mask)
+    plt.show()
     edge_px = (0, 0)
 
     # only return an edge point if detection is above a threshold        

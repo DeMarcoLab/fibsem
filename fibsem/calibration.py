@@ -158,23 +158,37 @@ def auto_needle_calibration(
     microscope: SdbMicroscopeClient, settings: MicroscopeSettings, validate: bool = False
 ):
 
-    settings.image.hfw = 900e-6
+    settings.image.hfw = 2700e-6
     acquire.take_reference_images(microscope, settings.image)
 
     # TODO: move stage out of the way
-    movement.move_needle_to_position_offset(microscope)
+    initial_state = get_current_microscope_state(microscope)
+    out_position = StagePosition(x=-0.0030200833, y=0.026756667, 
+        z=0.031735179, t=0, r=0.87264982, coordinate_system="Raw")
+    movement.safe_absolute_stage_movement(microscope, out_position)
+    
+    # move needle to position. NB: needle needs to have been calibrated once for this to work,
+    # otherwise we needle to first do the alignment at 2700e-6 in EB
+    # movement.move_needle_to_position_offset(microscope)
 
-    # focus on the needle
-    acquire.autocontrast(microscope, BeamType.ELECTRON)
-    microscope.auto_functions.run_auto_focus()
-    acquire.take_reference_images(microscope, settings.image)
+    # TODO: add flag, if eucentric position is defined use it, otherwise do very low alignment
 
     # set coordinate system
     microscope.specimen.manipulator.set_default_coordinate_system(
         ManipulatorCoordinateSystem.STAGE
     )
 
+    # focus on the needle
+    settings.image.hfw = 2700e-6
+    acquire.autocontrast(microscope, BeamType.ELECTRON)
+    microscope.auto_functions.run_auto_focus() # TODO: set focus at 4mm?
+    acquire.take_reference_images(microscope, settings.image)
+
+    # very low res alignment
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
+
     # low res alignment
+    settings.image.hfw = 900e-6
     align_needle_to_eucentric_position(microscope, settings, validate=validate)
 
     # focus on needle
@@ -189,6 +203,9 @@ def auto_needle_calibration(
     # high res alignment
     settings.image.hfw = 150e-6
     align_needle_to_eucentric_position(microscope, settings, validate=validate)
+
+    # restore initial state
+    set_microscope_state(microscope, initial_state)
 
     logging.info(f"Finished automatic needle calibration.")
 
@@ -208,14 +225,12 @@ def align_needle_to_eucentric_position(
     from fibsem.ui import windows as fibsem_ui_windows
     from fibsem.detection.utils import DetectionType, DetectionFeature
     from fibsem.detection import detection
-
-    # TODO: test again
     
     # take reference images
     settings.image.save = False
     settings.image.beam_type = BeamType.ELECTRON
-    # ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
 
+    # ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
     # det = fibsem_ui_windows.detect_features(
     #     microscope=microscope,
     #     settings=settings,
@@ -245,7 +260,7 @@ def align_needle_to_eucentric_position(
     # take reference images
     settings.image.save = False
     settings.image.beam_type = BeamType.ION
-    # ref_ib = acquire.new_image(microscope=microscope, settings=settings.image)
+    ref_ib = acquire.new_image(microscope=microscope, settings=settings.image)
 
     image = acquire.new_image(microscope, settings.image)
     det = detection.locate_shift_between_features(

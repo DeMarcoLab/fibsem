@@ -26,6 +26,7 @@ def auto_eucentric_correction(microscope: SdbMicroscopeClient,
     tilt_degrees: int = 25,
     xcorr_limit: int = 250) -> None:
 
+    image_settings.save = False
     calibration.auto_discharge_beam(microscope, image_settings)
 
     for hfw in [400e-6, 150e-6, 80e-6,  80e-6]:

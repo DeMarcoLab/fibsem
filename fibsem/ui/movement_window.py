@@ -218,10 +218,6 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
 
             # draw crosshair?
             if event.dblclick:
-                # logging.info(
-                #     f"Clicked on {beam_type} Image at {self.center_x:.2e}, {self.center_y:.2e}"
-                # )
-
                 logging.info(f"Movement, {beam_type}, p=({self.xclick}, {self.yclick})  c=({self.center_x:.2e}, {self.center_y:.2e}) ")
 
                 self.stage_movement(beam_type=beam_type)
@@ -269,7 +265,7 @@ class GUIMMovementWindow(movement_gui.Ui_Dialog, QtWidgets.QDialog):
 
     def auto_eucentric_button_pressed(self):
 
-        alignment.correct_stage_eucentric_alignment(self.microscope, self.settings.image)
+        alignment.auto_eucentric_correction(self.microscope, self.settings.image)
 
         self.update_displays()
 
