@@ -13,6 +13,8 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
 )
 from fibsem.structures import BeamType, MicroscopeSettings
+from fibsem.detection.detection import DetectionResult, DetectionType
+
 
 ############################## NEEDLE ##############################
 
@@ -78,9 +80,8 @@ def retract_needle(microscope: SdbMicroscopeClient) -> None:
     needle.retract()
     logging.info(f"retract needle complete")
 
-
-def move_needle_to_eucentric_position_offset(
-    microscope: SdbMicroscopeClient, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0
+def move_needle_to_position_offset(
+    microscope: SdbMicroscopeClient, position: ManipulatorPosition = None, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0
 ) -> None:
     """Move the needle to a position offset, based on the eucentric position
 
@@ -91,17 +92,22 @@ def move_needle_to_eucentric_position_offset(
         dz (float, optional): z-axis offset, image coordinates. Defaults to 0.0.
     """
 
-    # move to relative to the eucentric point
-    eucentric_position = microscope.specimen.manipulator.get_saved_position(
-        ManipulatorSavedPosition.EUCENTRIC, ManipulatorCoordinateSystem.STAGE
-    )
+    if position is None:
+        # move to relative to the eucentric point
+        position = microscope.specimen.manipulator.get_saved_position(
+            ManipulatorSavedPosition.EUCENTRIC, ManipulatorCoordinateSystem.STAGE
+        )
+
     yz_move = z_corrected_needle_movement(
         dz, microscope.specimen.stage.current_position.t
     )
-    eucentric_position.x += dx
-    eucentric_position.y += yz_move.y + dy
-    eucentric_position.z += yz_move.z  # RAW, up = negative, STAGE: down = negative
-    microscope.specimen.manipulator.absolute_move(eucentric_position)
+    position.x += dx
+    position.y += yz_move.y + dy
+    position.z += yz_move.z  # RAW, up = negative, STAGE: down = negative
+    position.r = None # rotation is not supported
+    microscope.specimen.manipulator.absolute_move(position)
+
+
 
 
 def x_corrected_needle_movement(
@@ -123,7 +129,7 @@ def y_corrected_needle_movement(
     """Calculate the corrected needle movement to move in the y-axis.
 
     Args:
-        expected_x (float): distance along the y-axis (image coordinates)
+        expected_y (float): distance along the y-axis (image coordinates)
         stage_tilt (float, optional): stage tilt.
 
     Returns:
@@ -140,7 +146,7 @@ def z_corrected_needle_movement(
     """Calculate the corrected needle movement to move in the z-axis.
 
     Args:
-        expected_x (float): distance along the z-axis (image coordinates)
+        expected_z (float): distance along the z-axis (image coordinates)
         stage_tilt (float, optional): stage tilt.
 
     Returns:
@@ -268,9 +274,14 @@ def angle_difference(angle1: float, angle2: float) -> float:
     Returns:
         float: _description_
     """
-    return min(np.abs(2 * np.pi + angle1 - angle2), np.abs(angle1 - angle2)) % (
-        2 * np.pi
-    )
+    angle1 %= 2*np.pi
+    angle2 %= 2*np.pi
+
+    large_angle = np.max([angle1, angle2]) 
+    small_angle = np.min([angle1, angle2])
+
+    return min((large_angle-small_angle), ((2*np.pi+small_angle-large_angle)))
+
 
 
 def safe_rotation_movement(
@@ -315,7 +326,6 @@ def safe_absolute_stage_movement(
     """
 
     # tilt flat for large rotations to prevent collisions
-    input("TESTING STOP POINT: SAFE ROTATION")
     safe_rotation_movement(microscope, stage_position)
 
     stage = microscope.specimen.stage
@@ -349,7 +359,7 @@ def x_corrected_stage_movement(
 
 def y_corrected_stage_movement(
     microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings,
+    settings: MicroscopeSettings, # TODO: change to StageSettings
     expected_y: float,
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> StagePosition:
@@ -364,6 +374,8 @@ def y_corrected_stage_movement(
     Returns:
         StagePosition: y corrected stage movement (relative position)
     """
+    
+    # TODO: replace with camera matrix * inverse kinematics
 
     # all angles in radians
     stage_tilt_flat_to_electron = np.deg2rad(
@@ -386,10 +398,8 @@ def y_corrected_stage_movement(
     PRETILT_SIGN = 1.0
     # pretilt angle depends on rotation
     if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
-    # if np.isclose(stage_rotation, stage_rotation_flat_to_eb, atol=np.deg2rad(5)):
         PRETILT_SIGN = 1.0
     if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_ion, atol=5):
-    # if np.isclose(stage_rotation, stage_rotation_flat_to_ion, atol=np.deg2rad(5)):
         PRETILT_SIGN = -1.0
 
 
@@ -441,7 +451,7 @@ def move_stage_relative_with_corrected_movement(
 
     # move stage
     stage_position = StagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
-    logging.info(f"moving stage: {stage_position}")
+    logging.info(f"moving stage ({beam_type.name}): {stage_position}")
     stage.relative_move(stage_position)
 
     return
@@ -454,8 +464,57 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, dy: float) 
         microscope (SdbMicroscopeClient): autoscript microscope instance
         dy (float): distance in y-axis (image coordinates)
     """
-    z_move = dy / np.cos(np.deg2rad(38))  # MAGIC NUMBER
+    z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
     move_settings = MoveSettings(link_z_y=True)
     z_move = StagePosition(z=z_move, coordinate_system="Specimen")
     microscope.specimen.stage.relative_move(z_move, move_settings)
+    logging.info(f"eucentric movement: {z_move}")
+
+
+
+# TODO: finish this @patrick
+def move_based_on_detection(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, 
+    det: DetectionResult, beam_type: BeamType, move_x: bool=True, move_y: bool = True):
+
+        # nulify movements in unsupported axes
+        if not move_x:
+            det.distance_metres.x = 0
+        if not move_y:
+            det.distance_metres.y = 0
+
+        f1 = det.features[0]
+        f2 = det.features[1]
+
+        logging.info(f"move_x: {move_x}, move_y: {move_y}")
+        logging.info(f"movement: x={det.distance_metres.x:.2e}, y={det.distance_metres.y:.2e}")
+        logging.info(f"features: {f1}, {f2}")
+        logging.info(f"beam_type: {beam_type}")
+
+
+        # these movements move the needle...
+        if f1.detection_type in [DetectionType.NeedleTip, DetectionType.LamellaEdge]:
+            logging.info(f"MOVING NEEDLE")
+            
+            # move_needle_relative_with_corrected_movement(
+            #     microscope=microscope,
+            #     dx=det.distance_metres.x,
+            #     dy=det.distance_metres.y,
+            #     beam_type=beam_type,
+            # )
+        
+        if f1.detection_type is DetectionType.LamellaCentre:
+            if f2.detection_type is DetectionType.ImageCentre:
+                
+                logging.info(f"MOVING STAGE")
+                # need to reverse the direction to move correctly. TODO: investigate if this is to do with scan rotation?
+                # move_stage_relative_with_corrected_movement(
+                #     microscope = microscope, 
+                #     settings=settings,
+                #     dx=-det.distance_metres.x,
+                #     dy=-det.distance_metres.y,
+                #     beam_type=beam_type
+                # )
+
+                # TODO: support other movements?
+        return

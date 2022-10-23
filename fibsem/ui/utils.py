@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 
-
+# TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 class _WidgetPlot(QWidget):
     def __init__(self, *args, display_image, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
@@ -91,7 +91,7 @@ class Crosshair:
 
 
 def create_crosshair(
-    image: np.ndarray or AdornedImage, x=None, y=None, colour="xkcd:yellow"
+    image: Union[np.ndarray, AdornedImage], x=None, y=None, colour="xkcd:yellow"
 ):
     if type(image) == AdornedImage:
         image = image.data

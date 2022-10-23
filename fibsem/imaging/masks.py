@@ -16,6 +16,7 @@ def bandpass_mask(size=(128, 128), lp=32, hp=2, sigma=3):
     hpass_tmp = circ_mask(size=(x, y), radius=hp, sigma=0)
     highpass = -1 * (hpass_tmp - 1)
     tmp = lowpass * highpass
+    print(tmp.dtype, type(tmp))
     if sigma > 0:
         bandpass = ndi.filters.gaussian_filter(tmp, sigma=sigma)
     else:
@@ -75,13 +76,13 @@ def create_bandpass_mask(shape: tuple = (256, 256), lp: int = 32, hp: int = 2, s
     Returns:
         np.ndarray: _description_
     """
+    
     distance = image_utils.create_distance_map_px(w = shape[1], h=shape[0])
     
     lowpass = distance <= lp
     highpass = distance >= hp
 
-    mask = lowpass * highpass
-    
+    mask = (lowpass * highpass).astype(np.float32)    
     if sigma:
         mask = ndi.filters.gaussian_filter(mask, sigma=sigma)
 
@@ -188,3 +189,8 @@ def create_lamella_mask(img: AdornedImage, protocol: dict, scale: int = 2, circ:
             h=int(lamella_height_px * scale), sigma=3)
 
     return mask
+
+
+def apply_circular_mask(img: np.ndarray, radius: int, sigma: int = 0) -> np.ndarray:
+        circ_mask = create_circle_mask(img.shape, radius=radius, sigma=sigma)
+        return  img * circ_mask

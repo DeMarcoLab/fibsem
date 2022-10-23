@@ -1,15 +1,28 @@
-
 import logging
 from datetime import datetime
 
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
-from autoscript_sdb_microscope_client.structures import StagePosition
+from autoscript_sdb_microscope_client.enumerations import (
+    CoordinateSystem,
+    ManipulatorCoordinateSystem,
+)
+from autoscript_sdb_microscope_client.structures import StagePosition, Rectangle, RunAutoFocusSettings
 
 from fibsem import acquire, movement
-from fibsem.structures import (BeamSettings, MicroscopeState, BeamType)
+from fibsem.structures import (
+    BeamSettings,
+    MicroscopeState,
+    BeamType,
+    ImageSettings,
+    MicroscopeSettings,
+    BeamSystemSettings
+)
 
+from pathlib import Path
+import skimage
+from skimage.morphology import disk
+from skimage.filters.rank import gradient
 
 def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> None:
     """Automatically focus and link sample stage z-height.
@@ -32,9 +45,280 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
     # # Restore original settings
     microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
 
+def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, 
+    mode: str = "default",  
+    wd_delta: float = 0.05e-3, steps: int  = 5, 
+    reduced_area: Rectangle = Rectangle(0.3, 0.3, 0.4, 0.4) ) -> None:
+
+    if mode == "default":
+        microscope.imaging.set_active_device(BeamType.ELECTRON.value)
+        microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
+        
+        focus_settings = RunAutoFocusSettings()
+        microscope.auto_functions.run_auto_focus()
+
+    if mode == "sharpness":
+        
+       
+        prev_image_settings = image_settings
+        image_settings.resolution = "768x512"  # "1536x1024"
+        image_settings.dwell_time = 0.2e-6
+        image_settings.hfw = 50e-6
+        image_settings.autocontrast = True
+        image_settings.beam_type = BeamType.ELECTRON
+        image_settings.save = False
+
+        current_wd = microscope.beams.electron_beam.working_distance.value
+        logging.info(f"sharpness (accutance) based auto-focus routine")
+
+        logging.info(f"initial working distance: {current_wd:.2e}")
+
+        min_wd = current_wd - (steps*wd_delta/2)
+        max_wd = current_wd + (steps*wd_delta/2)
+
+        working_distances = np.linspace(min_wd, max_wd, steps+1)
+
+        # loop through working distances and calculate the sharpness (acutance)
+        # highest acutance is best focus
+        sharpeness_metric = []
+        for i, wd in enumerate(working_distances):
+            
+            logging.info(f"Img {i}: {wd:.2e}")
+            microscope.beams.electron_beam.working_distance.value = wd
+            
+            img = acquire.new_image(microscope, image_settings, reduced_area=reduced_area)
+
+            # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance
+            out = gradient(skimage.filters.median(np.copy(img.data)), disk(5))
+
+            sharpness = np.mean(out)
+            sharpeness_metric.append(sharpness)
+
+        # select working distance with max acutance
+        idx = np.argmax(sharpeness_metric)
+
+        pairs = list(zip(working_distances, sharpeness_metric))
+        logging.info([f"{wd:.2e}: {metric:.4f}" for wd, metric in pairs])
+        logging.info(f"{idx}, {working_distances[idx]:.2e}, {sharpeness_metric[idx]:.4f}")
+
+        # reset working distance
+        microscope.beams.electron_beam.working_distance.value = working_distances[idx]
+        image_settings = prev_image_settings
+
+        # run fine auto focus and link
+        # microscope.imaging.set_active_device(BeamType.ELECTRON.value)
+        # microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
+        # microscope.auto_functions.run_auto_focus()
+        # microscope.specimen.stage.link()
+
+    if mode == "fourier":
+        logging.info(f"TODO: Not Yet Implemented")
+
+
+    return 
+
+
+def auto_discharge_beam(
+    microscope: SdbMicroscopeClient,
+    image_settings: ImageSettings,
+    n_iterations: int = 10,
+):
+
+    # take sequence of 5 images quickly,
+    
+    resolution = image_settings.resolution
+    dwell_time = image_settings.dwell_time
+    autocontrast = image_settings.autocontrast
+    beam_type = image_settings.beam_type
+    save = image_settings.save 
+
+    image_settings.beam_type = BeamType.ELECTRON
+    image_settings.resolution = "768x512"
+    image_settings.dwell_time = 200e-9
+    image_settings.autocontrast = False
+    image_settings.gamma.enabled = False
+    image_settings.save = False
+
+    logging.info(f"Bring me Thanos!")  # important information
+
+    for i in range(n_iterations):
+        acquire.new_image(microscope, image_settings)
+
+    # take image
+    image_settings.resolution = resolution
+    image_settings.dwell_time = dwell_time
+    image_settings.autocontrast = autocontrast
+    acquire.new_image(microscope, image_settings)
+
+    image_settings.beam_type = beam_type
+    image_settings.save = save
+
+
+def auto_needle_calibration(
+    microscope: SdbMicroscopeClient, settings: MicroscopeSettings, validate: bool = False
+):
+
+    settings.image.hfw = 2700e-6
+    acquire.take_reference_images(microscope, settings.image)
+
+    # retract needle to move stage
+    if microscope.specimen.manipulator.state == "Inserted":
+        movement.retract_needle(microscope)
+
+    # TODO: move stage out of the way
+    initial_state = get_current_microscope_state(microscope)
+    out_position = StagePosition(x=-0.0030200833, y=0.026756667, 
+        z=0.031735179, t=0, r=0.87264982, coordinate_system="Raw")
+    movement.safe_absolute_stage_movement(microscope, out_position)
+    
+    # reinsert needle
+    movement.insert_needle(microscope)
+
+    # move needle to position. NB: needle needs to have been calibrated once for this to work,
+    # otherwise we needle to first do the alignment at 2700e-6 in EB
+    # movement.move_needle_to_position_offset(microscope)
+
+    # TODO: add flag, if eucentric position is defined use it, otherwise do very low alignment
+
+    # set coordinate system
+    microscope.specimen.manipulator.set_default_coordinate_system(
+        ManipulatorCoordinateSystem.STAGE
+    )
+
+    # focus on the needle
+    settings.image.hfw = 2700e-6
+    acquire.autocontrast(microscope, BeamType.ELECTRON)
+    microscope.auto_functions.run_auto_focus() # TODO: set focus at 4mm?
+    acquire.take_reference_images(microscope, settings.image)
+
+    # very low res alignment
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
+
+    # low res alignment
+    settings.image.hfw = 900e-6
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
+
+    # focus on needle
+    acquire.autocontrast(microscope, BeamType.ELECTRON)
+    microscope.auto_functions.run_auto_focus()
+    acquire.take_reference_images(microscope, settings.image)
+
+    # medium res alignment
+    settings.image.hfw = 400e-6
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
+
+    # high res alignment
+    settings.image.hfw = 150e-6
+    align_needle_to_eucentric_position(microscope, settings, validate=validate)
+
+    # restore initial state
+    set_microscope_state(microscope, initial_state)
+
+    logging.info(f"Finished automatic needle calibration.")
+
+
+def align_needle_to_eucentric_position(
+    microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
+    validate: bool = False,
+) -> None:
+    """Move the needle to the eucentric position, and save the updated position to disk
+
+    Args:
+        microscope (SdbMicroscopeClient): autoscript microscope instance
+        settings (MicroscopeSettings): microscope settings
+    """
+
+    from fibsem.ui import windows as fibsem_ui_windows
+    from fibsem.detection.utils import DetectionType, DetectionFeature
+    from fibsem.detection import detection
+    
+    # take reference images
+    settings.image.save = False
+    settings.image.beam_type = BeamType.ELECTRON
+
+    # ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
+    # det = fibsem_ui_windows.detect_features(
+    #     microscope=microscope,
+    #     settings=settings,
+    #     ref_image=ref_eb,
+    #     features=[
+    #         DetectionFeature(DetectionType.NeedleTip, None),
+    #         DetectionFeature(DetectionType.ImageCentre, None),
+    #     ],
+    #     validate=validate,
+    # )
+    image = acquire.new_image(microscope, settings.image)
+    det = detection.locate_shift_between_features(
+        image,
+        features=[
+            DetectionFeature(DetectionType.NeedleTip, None),
+            DetectionFeature(DetectionType.ImageCentre, None),
+        ],
+    )
+
+    movement.move_needle_relative_with_corrected_movement(
+        microscope=microscope,
+        dx=det.distance_metres.x,
+        dy=det.distance_metres.y,
+        beam_type=BeamType.ELECTRON,
+    )
+
+    # take reference images
+    settings.image.save = False
+    settings.image.beam_type = BeamType.ION
+    ref_ib = acquire.new_image(microscope=microscope, settings=settings.image)
+
+    image = acquire.new_image(microscope, settings.image)
+    det = detection.locate_shift_between_features(
+        image,
+        features=[
+            DetectionFeature(DetectionType.NeedleTip, None),
+            DetectionFeature(DetectionType.ImageCentre, None),
+        ],
+    )
+
+    # det = fibsem_ui_windows.detect_features(
+    #     microscope=microscope,
+    #     settings=settings,
+    #     ref_image=ref_ib,
+    #     features=[
+    #         DetectionFeature(DetectionType.NeedleTip, None),
+    #         DetectionFeature(DetectionType.ImageCentre, None),
+    #     ],
+    #     validate=validate,
+    # )
+
+    movement.move_needle_relative_with_corrected_movement(
+        microscope=microscope, dx=0, dy=-det.distance_metres.y, beam_type=BeamType.ION,
+    )
+
+    # take image
+    acquire.take_reference_images(microscope, settings.image)
+
+def auto_home_and_link(microscope: SdbMicroscopeClient, state: MicroscopeState = None) -> None:
+
+    # home the stage
+    logging.info(f"Homing stage...")
+    microscope.specimen.stage.home()
+
+    # if no state provided, use the default 
+    if state is None:
+        path = os.path.join(config.CONFIG_PATH, "calibrated_state.yaml")
+        state = MicroscopeState.__from_dict__(load_yaml(path))
+    
+    # move to saved linked state
+    set_microscope_state(microscope, state)
+
+    # link
+    logging.info("Linking stage...")
+    acquire.autocontrast(microscope, beam_type=BeamType.ELECTRON)
+    microscope.auto_functions.run_auto_focus()
+    microscope.specimen.stage.link()
 
 
 # STATE MANAGEMENT
+
 
 def get_raw_stage_position(microscope: SdbMicroscopeClient) -> StagePosition:
     """Get the current stage position in raw coordinate system, and switch back to specimen"""
@@ -44,9 +328,8 @@ def get_raw_stage_position(microscope: SdbMicroscopeClient) -> StagePosition:
 
     return stage_position
 
-def get_current_microscope_state(
-    microscope: SdbMicroscopeClient
-) -> MicroscopeState:
+
+def get_current_microscope_state(microscope: SdbMicroscopeClient) -> MicroscopeState:
     """Get the current microscope state v2 """
 
     current_microscope_state = MicroscopeState(
@@ -76,12 +359,12 @@ def get_current_microscope_state(
     return current_microscope_state
 
 
-def set_microscope_state(microscope: SdbMicroscopeClient, microscope_state: MicroscopeState):
+def set_microscope_state(
+    microscope: SdbMicroscopeClient, microscope_state: MicroscopeState
+):
     """Reset the microscope state to the provided state"""
 
-    logging.info(
-        f"restoring microscope state..."
-    )
+    logging.info(f"restoring microscope state...")
 
     # move to position
     movement.safe_absolute_stage_movement(
@@ -131,3 +414,38 @@ def set_microscope_state(microscope: SdbMicroscopeClient, microscope_state: Micr
     logging.info(f"microscope state restored")
     return
 
+
+def get_current_beam_system_state(microscope: SdbMicroscopeClient, beam_type: BeamType):
+
+    if beam_type is BeamType.ELECTRON:
+        microscope_beam = microscope.beams.electron_beam
+    if beam_type is BeamType.ION:
+        microscope_beam = microscope.beams.ion_beam
+
+
+    # set beam active view and device
+    microscope.imaging.set_active_view(beam_type.value)
+    microscope.imaging.set_active_device(beam_type.value)
+
+    # get current beam settings 
+    voltage = microscope_beam.high_voltage.value
+    current = microscope_beam.beam_current.value
+    detector_type = microscope.detector.type.value
+    detector_mode = microscope.detector.mode.value
+
+    if beam_type is BeamType.ION:
+        eucentric_height = 16.5e-3
+        plasma_gas = microscope_beam.source.plasma_gas.value
+    else:
+        eucentric_height =  4.0e-3
+        plasma_gas = None
+   
+    return BeamSystemSettings(
+        beam_type=beam_type,
+        voltage = voltage,
+        current = current,
+        detector_type = detector_type,
+        detector_mode = detector_mode,
+        eucentric_height = eucentric_height,
+        plasma_gas = plasma_gas
+    )
