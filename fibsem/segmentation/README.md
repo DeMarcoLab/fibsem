@@ -24,24 +24,24 @@ labelling:
 train:
   data_dir: directory containing the labelled dataset
   save_dir: directory to save the model weights to
-  wandb: logs information and plots to wandb if true
   checkpoint: path to model if you would like to resume training
   encoder: specify model architecture. List of available encoders in readme.
-  epochs: number of epochs to train for
   cuda: enable/disable CUDA training
+  epochs: number of epochs to train for
   batch_size: number of batches per epoch
   num_classes: number of classes in segmentation labels. Includes background as class 0.
   learning_rate: learning rate used during training
+  wandb: logs information and plots to wandb if true
   wandb_project: name of the wandb project
   wandb_entity: user name for wandb
 inference:
   data_dir: directory containing images for inference
   model_dir: directory containing saved model weights
   output_dir: directory to save the outputs to
-  wandb: boolean value to determine whether or not to save to wandb.
   cuda: determines whether to use GPU
   encoder: specify model architecture. List of available encoders in readme.
   num_classes: number of classes in the segmentation labels. Includes background as class 0.
+  wandb: boolean value to determine whether or not to save to wandb.
   wandb_project: name of the wandb project
   wandb_entity: user name for wandb
 ```

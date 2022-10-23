@@ -5,9 +5,7 @@ import argparse
 # import matplotlib.pyplot as plt
 import numpy as np
 import segmentation_models_pytorch as smp
-from validate_config import validate_config
-from model_utils import *
-from dataset import *
+from fibsem.segmentation import dataset, model_utils, validate_config
 import torch
 import os
 import wandb
@@ -36,7 +34,7 @@ def inference(images, output_dir, model, model_path, device, WANDB=False):
             img = torch.tensor(np.asarray(img)).unsqueeze(0)
             img = img.to(device)
             outputs = model(img[None, :, :, :].float())
-            output_mask = decode_output(outputs)
+            output_mask = model_utils.decode_output(outputs)
             
             output = Image.fromarray(output_mask) 
             path = os.path.join(output_dir, os.path.basename(fname).split(".")[0])
@@ -76,7 +74,7 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
 
     print("Validating config file.")
-    validate_config(config, "inference")
+    validate_config.validate_config(config, "inference")
 
     # directories
     data_path = config["inference"]["data_dir"]

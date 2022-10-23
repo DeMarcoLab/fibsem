@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 
 import glob
-import pathlib
 
 import numpy as np
 import torch
-from PIL import Image
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from torchvision import transforms
 import dask.array as da
 import os
 import tifffile as tff
-from utils import *
 
 # transformations
 transformation = transforms.Compose(
@@ -37,9 +34,6 @@ class SegmentationDataset(Dataset):
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
         mask = torch.tensor(mask).unsqueeze(0)
-
-        # print(image.shape)
-        # print(mask.shape)
 
         return image, mask
 

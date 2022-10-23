@@ -7,7 +7,7 @@ import os
 from PIL import Image
 import argparse
 import yaml
-from validate_config import validate_config
+from fibsem.segmentation.validate_config import validate_config
 
 def label_images(raw_dir: str, data_dir: str) -> None:
     vol = tff.imread(os.path.join(raw_dir, "*.tif*"), aszarr=True) # loading folder of .tif into zarr array)
@@ -15,13 +15,6 @@ def label_images(raw_dir: str, data_dir: str) -> None:
 
     filenames = sorted(glob.glob(os.path.join(raw_dir, "*.tif*")))
 
-    # if not os.path.exists(os.path.join(data_dir, "images")):
-    #     os.mkdir(os.path.join(data_dir, "images"))
-
-    # if not os.path.exists(os.path.join(data_dir, "labels")):
-    #     os.mkdir(os.path.join(data_dir, "labels")) 
-
-    # TODO: can just use os.makedirs(path, exist_ok=True)  
     os.makedirs(os.path.join(data_dir, "images"), exist_ok=True)
     os.makedirs(os.path.join(data_dir, "labels"), exist_ok=True) 
 

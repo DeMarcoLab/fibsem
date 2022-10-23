@@ -1,32 +1,17 @@
-# %% [markdown]
-# Imports
-
-# %%
-import glob
-
-import numpy as np
-import PIL
-import torch
-from PIL import Image
-from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
-from torchvision import transforms
-from tqdm import tqdm
 import argparse
+import os
+import random
 from datetime import datetime
-    
-# import matplotlib.pyplot as plt
+
 import numpy as np
 import segmentation_models_pytorch as smp
 import torch
-from dataset import *
-from model_utils import *
-from tqdm import tqdm
 import wandb
-import random
 import yaml
-from validate_config import *
+from fibsem.segmentation import dataset, model_utils, validate_config
+from tqdm import tqdm
 
-# %%
+
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
     
@@ -74,11 +59,11 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
             idx = random.choice(np.arange(0, batch_size))
 
             output = model(images[idx][None, :, :, :])
-            output_mask = decode_output(output)
+            output_mask = model_utils.decode_output(output)
             
             img_base = images[idx].detach().cpu().squeeze().numpy()
             img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+            gt_base = model_utils.decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
 
             wb_img = wandb.Image(img_rgb, caption="Input Image")
             wb_gt = wandb.Image(gt_base, caption="Ground Truth")
@@ -114,11 +99,11 @@ def validate(model, device, data_loader, criterion, WANDB):
             val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
             output = model(images[0][None, :, :, :])
-            output_mask = decode_output(output)
+            output_mask = model_utils.decode_output(output)
             
             img_base = images[0].detach().cpu().squeeze().numpy()
             img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = decode_segmap(masks[0].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+            gt_base = model_utils.decode_segmap(masks[0].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
 
             wb_img = wandb.Image(img_rgb, caption="Validation Input Image")
             wb_gt = wandb.Image(gt_base, caption="Validation Ground Truth")
@@ -180,7 +165,7 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
 
     print("Validating config file.")
-    validate_config(config, "train")
+    validate_config.validate_config(config, "train")
 
     # directories
     data_path = config["train"]["data_dir"]
@@ -210,7 +195,7 @@ if __name__ == "__main__":
         "\n----------------------- Loading and Preparing Data -----------------------"
     )
 
-    train_data_loader, val_data_loader = preprocess_data(data_path, num_classes=num_classes, batch_size=batch_size)
+    train_data_loader, val_data_loader = dataset.preprocess_data(data_path, num_classes=num_classes, batch_size=batch_size)
 
     print("\n----------------------- Data Preprocessing Completed -----------------------")
 
@@ -239,6 +224,4 @@ if __name__ == "__main__":
 
     # train model
     model = train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs = epochs, save_dir=save_dir, WANDB=WANDB)
-
-# config["train"]["learning_rate"]
 
