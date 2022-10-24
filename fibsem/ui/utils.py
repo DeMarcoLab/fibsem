@@ -232,6 +232,5 @@ def set_arr_as_qlabel(
         QImage.Format_Grayscale8,
     )
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
-    # label.setStyleSheet("border-radius: 5px")
 
     return label

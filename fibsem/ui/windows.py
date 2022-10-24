@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import QMessageBox
 import numpy as np
 
 def ask_user_interaction(
-    msg="Default Ask User Message", image: np.ndarray =None
+    msg="Default Ask User Message", image: np.ndarray = None
 ):
     """Create user interaction window and get return response"""
     ask_user_window = GUIUserWindow(msg=msg, image=image)
