@@ -1,0 +1,27 @@
+labelling:
+  raw_dir: /home/patrick/github/fibsem/example/data/
+  data_dir: /home/patrick/github/fibsem/example/data/data2
+train:
+  data_dir: "/home/rohit_k/Documents/model_training_rfp/train"
+  save_dir: "fibsem/segmentation/models"
+  wandb: true # Logs information and plots to wandb
+  checkpoint: null # Path to model if you would like to resume training
+  encoder: "resnet18" # Specify model architecture. List of available encoders in readme.
+  epochs: 10 # Number of epochs to train for
+  cuda: true # Enable/Disable CUDA training
+  batch_size: 1 # Number of batches per epoch
+  num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
+  learning_rate: 0.0001
+  wandb_project: "fibsem_pipeline"
+  wandb_entity: "demarcolab"
+inference:
+  data_dir: "/home/rohit_k/Documents/RFP_edited"
+  model_dir: "fibsem/segmentation/models/10_10_2022_12_56_57_n10_model.pt"
+  output_dir: "/home/rohit_k/Documents/RFP_output"
+  wandb: true
+  cuda: true
+  encoder: "resnet18"
+  num_classes: 2
+  wandb_project: "fibsem_pipeline"
+  wandb_entity: "demarcolab"
+
