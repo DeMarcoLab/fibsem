@@ -25,8 +25,8 @@ def setup_milling(
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
 
-    # microscope.imaging.set_active_device(BeamType.ION.value) # TODO: change over
     microscope.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
+    microscope.imaging.set_active_device(BeamType.ION.value) 
     microscope.patterning.set_default_beam_type(BeamType.ION.value)  # ion beam default
     microscope.patterning.set_default_application_file(application_file)
     microscope.patterning.mode = patterning_mode
