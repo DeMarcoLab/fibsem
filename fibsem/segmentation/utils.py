@@ -151,15 +151,15 @@ def pad_data(path_ini, path_save=None, inference=False):
 
 def convert_folder_format(directory, path_save):
     """converts folder format to correct format"""
-    images_sorted = sorted(glob.glob(os.path.join(directory, "**", "*.tif*")))
-    masks_sorted = sorted(glob.glob(os.path.join(directory, "**", "*.tif*")))
+    images_sorted = sorted(glob.glob(os.path.join(directory, "**", "image.tif*")))
+    masks_sorted = sorted(glob.glob(os.path.join(directory, "**", "label.tif*")))
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
         num_file = str(x).zfill(9) 
         path = path_save
         
-        if not os.path.exists(path):
-            os.mkdir(path)
+        os.mkdir(os.path.join(path, "images"), exist_ok=True)
+        os.mkdir(os.path.join(path, "labels"), exist_ok=True)
 
         im = Image.open(im)
         im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
