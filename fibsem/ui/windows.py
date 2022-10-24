@@ -14,12 +14,13 @@ from fibsem.ui.movement_window import GUIMMovementWindow
 from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
 
+import numpy as np
 
 def ask_user_interaction(
-    microscope: SdbMicroscopeClient, msg="Default Ask User Message", beam_type=None
+    msg="Default Ask User Message", image: np.ndarray =None
 ):
     """Create user interaction window and get return response"""
-    ask_user_window = GUIUserWindow(microscope=microscope, msg=msg, beam_type=beam_type)
+    ask_user_window = GUIUserWindow(msg=msg, image=image)
     ask_user_window.show()
 
     response = bool(ask_user_window.exec_())
