@@ -5,7 +5,6 @@ import torch
 
 import utils
 import segmentation_models_pytorch as smp
-import model_utils
 
 
 class SegmentationModel:
@@ -63,7 +62,7 @@ class SegmentationModel:
             for i in range(img_t.shape[0]):
                 # inference
                 output = self.model(img_t[i][None, :, :, :]).detach()
-                output_mask = model_utils.decode_output(output)
+                output_mask = utils.decode_output(output)
                 masks.append(output_mask)
 
             return masks
