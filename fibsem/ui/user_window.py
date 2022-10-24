@@ -1,19 +1,13 @@
 
 import sys
 
+import numpy as np
 import scipy.ndimage as ndi
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from fibsem import acquire, utils
-from fibsem.acquire import BeamType
-from fibsem.structures import BeamType
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.qtdesigner_files import user_dialog as user_gui
 from PyQt5 import QtCore, QtWidgets
 
-import numpy as np
 
-# TODO: remove microscope from this?
-# TODO: only pass iamge to display
 class GUIUserWindow(user_gui.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
@@ -38,8 +32,6 @@ class GUIUserWindow(user_gui.Ui_Dialog, QtWidgets.QDialog):
             # show image
             self.label_image = fibsem_ui.set_arr_as_qlabel(image, self.label_image)
 
-        self.show()
-
         # Change buttons to Yes / No
 
 
@@ -48,8 +40,8 @@ def main():
 
     app = QtWidgets.QApplication([])
 
-    from fibsem.ui import windows as fibsem_ui_windows
     from autoscript_sdb_microscope_client.structures import AdornedImage
+    from fibsem.ui import windows as fibsem_ui_windows
 
 
     arr = np.random.random(size=(1536, 1024))
@@ -58,7 +50,7 @@ def main():
     img = None
 
     ret = fibsem_ui_windows.ask_user_interaction(msg="hi user", image=img)
-    print(f"ret: {ret}")
+    print(f"Return: {ret}")
 
     
     sys.exit(app.exec_())
