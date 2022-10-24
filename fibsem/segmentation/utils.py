@@ -162,7 +162,6 @@ def convert_folder_format(directory, path_save):
             os.mkdir(path)
 
         im = Image.open(im)
-        im = Image.fromarray(np.array(im)[:,:,0])
         im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
 
         label = Image.open(label)
