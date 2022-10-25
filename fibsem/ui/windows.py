@@ -15,7 +15,7 @@ from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
 
 import numpy as np
-
+import napari
 def ask_user_interaction(
     msg="Default Ask User Message", image: np.ndarray = None
 ):
@@ -37,15 +37,21 @@ def ask_user_movement(
 
     logging.info(f"Asking user for confirmation for {msg_type} movement")
 
-    movement_window = GUIMMovementWindow(
+    viewer = napari.Viewer()
+
+    movement_ui = GUIMMovementWindow(
         microscope=microscope,
         settings=settings,
         msg_type=msg_type,
         msg=msg,
         parent=parent,
+        viewer=viewer
     )
-    movement_window.show()
-    movement_window.exec_()
+    
+    viewer.window.add_dock_widget(movement_ui, area="right", add_vertical_stretch=False)
+    movement_ui.exec_()
+
+    # napari.run()
 
 
 def detect_features(
