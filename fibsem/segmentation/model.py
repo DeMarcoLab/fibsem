@@ -2,10 +2,11 @@ from typing import Optional, List
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 import utils
 import segmentation_models_pytorch as smp
-import model_utils
+from utils import decode_segmap
 
 
 class SegmentationModel:
@@ -16,29 +17,34 @@ class SegmentationModel:
 
         self.mode = mode
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.num_classes = num_classes
 
         self.load_model(checkpoint=checkpoint, num_classes=num_classes)
         # TODO: inference transforms?
 
-    def load_model(self, checkpoint: Optional[str], num_classes: int) -> None:
+    def load_model(self, checkpoint: Optional[str]) -> None:
         """Load the model, and optionally load a checkpoint"""
-        self.model = smp.Unet(
-            encoder_name="resnet18",
+        self.model = self.load_encoder(encoder_name="resnet18")
+        self.load_weights(checkpoint=checkpoint)
+        self.model.eval()
+        if self.mode == "train":
+            # TODO: pass state to optimizer
+            self.model.train()
+
+    def load_encoder(self, encoder_name="resnet18"):
+        model = smp.Unet(
+            encoder_name=encoder_name,
             encoder_weights="imagenet",
             in_channels=1,  # grayscale images
-            classes=num_classes,  # num_layers meaning number of classes? Or depth of the model?
+            classes=self.num_classes,
         )
-        self.model.to(self.device)
+        model.to(self.device)
+        return model
 
+    def load_weights(self, checkpoint: Optional[str]):
         if checkpoint:
             checkpoint_state = torch.load(checkpoint, map_location=self.device)
-
             self.model.load_state_dict(checkpoint_state["state_dict"])
-            self.model.eval()
-
-            if self.mode == "train":
-                # TODO: pass state to optimizer
-                self.model.train()
 
     def pre_process(self, img: np.ndarray) -> torch.Tensor:
         """Pre-process the image for inference"""
@@ -58,15 +64,21 @@ class SegmentationModel:
         """Run model inference on the input image"""
         with torch.no_grad():
             img_t = self.pre_process(img)
-            masks = []
 
-            for i in range(img_t.shape[0]):
-                # inference
-                output = self.model(img_t[i][None, :, :, :]).detach()
-                output_mask = model_utils.decode_output(output)
-                masks.append(output_mask)
+            outputs = self.model(img_t)
+            outputs = F.softmax(outputs, dim=1)
+            masks = torch.argmax(outputs, dim=1).detach().cpu().numpy()
 
-            return masks
+        output_masks = self.postprocess(masks, nc=self.num_classes)
+
+        return output_masks
+    
+    def postprocess(self, masks, nc):
+        output_masks = []
+        for i in range(len(masks)):
+            output_masks.append(decode_segmap(masks[i], nc=nc))
+        
+        return output_masks
 
 
 if __name__ == "__main__":
