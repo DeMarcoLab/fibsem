@@ -8,7 +8,7 @@ import segmentation_models_pytorch as smp
 import torch
 import wandb
 import yaml
-from fibsem.segmentation import dataset, model_utils, validate_config
+import dataset, utils, validate_config
 from tqdm import tqdm
 
 
@@ -59,11 +59,11 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
             idx = random.choice(np.arange(0, batch_size))
 
             output = model(images[idx][None, :, :, :])
-            output_mask = model_utils.decode_output(output)
+            output_mask = utils.decode_output(output)
             
             img_base = images[idx].detach().cpu().squeeze().numpy()
             img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = model_utils.decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+            gt_base = utils.decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
 
             wb_img = wandb.Image(img_rgb, caption="Input Image")
             wb_gt = wandb.Image(gt_base, caption="Ground Truth")
@@ -99,11 +99,11 @@ def validate(model, device, data_loader, criterion, WANDB):
             val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
             output = model(images[0][None, :, :, :])
-            output_mask = model_utils.decode_output(output)
+            output_mask = utils.decode_output(output)
             
             img_base = images[0].detach().cpu().squeeze().numpy()
             img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = model_utils.decode_segmap(masks[0].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+            gt_base = utils.decode_segmap(masks[0].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
 
             wb_img = wandb.Image(img_rgb, caption="Validation Input Image")
             wb_gt = wandb.Image(gt_base, caption="Validation Ground Truth")
