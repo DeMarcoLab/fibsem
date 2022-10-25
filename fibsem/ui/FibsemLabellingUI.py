@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import glob
-import fibsem
+# import fibsem
 import napari
 import napari.utils.notifications
 import numpy as np
@@ -11,8 +11,9 @@ import zarr
 from PIL import Image
 from qtdesigner_files import FibsemLabellingUI
 from PyQt5 import QtWidgets
+import dask.array as da
 
-BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
+# BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
 
 class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
@@ -92,6 +93,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         im = Image.fromarray(label) 
         im.save(os.path.join(self.save_path, "labels", f"{bname}.tif"))  # or 'test.tif'
+        im.save(os.path.join(self.save_path, "labels", f"{bname}.png"))
         
     def update_image(self):
         
@@ -115,8 +117,10 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
     def get_label_image(self) -> np.ndarray:
 
-        if os.path.basename(self.fname).split(".")[0] in os.listdir(os.path.join(self.save_path, "images")): 
-            label_image = tff.imread(os.path.join(self.save_path, "labels", self.fname))
+        if os.path.basename(self.fname) in os.listdir(os.path.join(self.save_path, "images")): 
+            label_image = tff.imread(os.path.join(self.save_path, "labels", os.path.basename(self.fname)), aszarr=True)
+            label_image = da.from_zarr(label_image)
+            label_image = np.array(label_image, dtype=np.uint8)
         else:
             label_image = np.zeros_like(self.img)
 

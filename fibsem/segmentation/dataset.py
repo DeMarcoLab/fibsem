@@ -96,8 +96,8 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
 def validate_dataset(data_path):
     print("validating dataset...")
     # get data
-    filenames = sorted(glob.glob(os.path.join(data_path, "**/image.tif*")))
-    labels = sorted(glob.glob(os.path.join(data_path, "**/label.tif*")))
+    filenames = sorted(glob.glob(os.path.join(data_path, "images", "*.tif*")))  
+    labels = sorted(glob.glob(os.path.join(data_path, "labels", "*.tif*")))  
 
     # check length
     assert len(filenames) == len(labels), "Images and labels are not the same length"
@@ -133,7 +133,7 @@ def validate_dataset(data_path):
                 "You can run convert_to_grayscale() in utils.py to convert all images and labels in the dataset to the desired format."
             )
             
-        if (img.shape[0]/32 != 0) or (img.shape[1]/32 != 0):
+        if (img.shape[0]%32 != 0) or (img.shape[1]%32 != 0):
             raise ValueError(
                 "Wrong padding, dimensions must be divisible by 32.",
                 i,
