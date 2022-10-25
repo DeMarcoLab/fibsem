@@ -56,24 +56,12 @@ def retract_needle(microscope: SdbMicroscopeClient) -> None:
 
     # Retract the needle, preserving the correct parking postiion
     needle = microscope.specimen.manipulator
-    # current_position = needle.current_position
     park_position = needle.get_saved_position(
         ManipulatorSavedPosition.PARK, ManipulatorCoordinateSystem.RAW
     )
 
-    # To prevent collisions with the sample; first retract in z, then y, then x
-    logging.info(
-        f"retracting needle to {park_position}"
-    )  # TODO: replace with move_needle_relative...
-    # needle.relative_move(
-    #     ManipulatorPosition(z=park_position.z - current_position.z)
-    # )  # noqa: E501
-    # needle.relative_move(
-    #     ManipulatorPosition(y=park_position.y - current_position.y)
-    # )  # noqa: E501
-    # needle.relative_move(
-    #     ManipulatorPosition(x=park_position.x - current_position.x)
-    # )  # noqa: E501
+    logging.info(f"retracting needle to {park_position}")
+
     needle.absolute_move(park_position)
     time.sleep(1)  # AutoScript sometimes throws errors if you retract too quick?
     logging.info(f"retracting needle...")

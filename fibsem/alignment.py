@@ -45,7 +45,6 @@ def correct_stage_eucentric_alignment(
     xcorr_limit: int = 250,
 ) -> None:
 
-    # iteratively?
     # TODO: does the direction of tilt change this?
 
     # take images
@@ -78,7 +77,6 @@ def correct_stage_eucentric_alignment(
     )
 
     # move vertically to correct eucentric position
-    # TODO: check dy direction?
     movement.move_stage_eucentric_correction(microscope, dy)
 
 

@@ -162,8 +162,8 @@ def convert_folder_format(directory, path_save):
         num_file = str(x).zfill(9) 
         path = path_save
         
-        if not os.path.exists(path):
-            os.mkdir(path)
+        os.mkdir(os.path.join(path, "images"), exist_ok=True)
+        os.mkdir(os.path.join(path, "labels"), exist_ok=True)
 
         im = Image.open(im)
         im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
