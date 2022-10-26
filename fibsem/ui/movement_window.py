@@ -280,10 +280,6 @@ class GUIMMovementWindow(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
         self.update_displays()
 
-
-# TODO: override enter
-
-
 def main():
     from fibsem import utils
     from fibsem.ui import windows as fibsem_ui_windows

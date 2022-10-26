@@ -19,14 +19,14 @@ class SegmentationModel:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
 
-        self.load_model(checkpoint=checkpoint, num_classes=num_classes)
+        self.load_model(checkpoint=checkpoint)
         # TODO: inference transforms?
 
     def load_model(self, checkpoint: Optional[str]) -> None:
         """Load the model, and optionally load a checkpoint"""
         self.model = self.load_encoder(encoder_name="resnet18")
         self.load_weights(checkpoint=checkpoint)
-        self.model.eval()
+        # self.model.eval()
         if self.mode == "train":
             # TODO: pass state to optimizer
             self.model.train()
@@ -44,7 +44,7 @@ class SegmentationModel:
     def load_weights(self, checkpoint: Optional[str]):
         if checkpoint:
             checkpoint_state = torch.load(checkpoint, map_location=self.device)
-            self.model.load_state_dict(checkpoint_state["state_dict"])
+            self.model.load_state_dict(checkpoint_state)
 
     def pre_process(self, img: np.ndarray) -> torch.Tensor:
         """Pre-process the image for inference"""
