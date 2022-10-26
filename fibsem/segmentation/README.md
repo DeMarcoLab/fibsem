@@ -7,14 +7,24 @@ This section of the repository contains all of the code needed to label a segmen
 ## Getting started
 1. All of the required installation steps should have already been completed in the base README.
 
-2. (Optional) Download the sample dataset [Google Drive](Add link here)
+2. (Optional) Download the sample dataset ([Google Drive](https://drive.google.com/file/d/1Q0UscceYAY4cdbBndNMJpaogTkFZ73hY/view?usp=sharing)).
+
+### Install additional dependencies
+In addition to the base fibsem dependencies you will also need to install the following with anaconda:
+
+```bash
+$ conda activate fibsem
+$ conda install pytorch torchvision cudatoolkit segmentation-models-pytorch -c pytorch -c conda-forge
+
+```
+
 
 ## Running the segmentation code
 NOTE: The code relating to the creation and training of a segmentation model expects the dataset images and labels to be in a TIFF File format. If you are utilising the labelling code within this repository to label your dataset, this is automatically done for you. If you are using a pre-existing dataset that is not in TIFF File format, there is a helper function in dataset.py that can be used to convert images of any extension to TIFF. 
 
 NOTE: It is assumed during labelling and training that all of your input images are of the same size. This is a prerequisite.
 
-Labelling is performed by labelling.py, training and validation is performed by train.py, and inference is performed by inference.py. All of these files expect a yaml config file that is used to specify the directories and parameters to be used.
+Labelling is performed by the labelling ui, training and validation is performed by train.py, and inference is performed by inference.py. Training, and inference expect a yaml config file that is used to specify the directories and parameters to be used.
 
 ### Config.yml
 ```
@@ -50,21 +60,18 @@ inference:
 The code for labelling the dataset can be found in labelling.py. It expects the directory of unlabelled images and the directory to save the labelled images to be found in the config.yml file. 
 
 To run this file from the command line:
-1. cd into the segmentation directory
-
-2. 
+ 
 ```
-$ python labelling.py --config config.yml
+$ conda activate fibsem
+$ fibsem_labelling
 ```
-
-Once labelling.py is running and the unlabelled images have been imported, a napari viewer will open with the image already loaded. To create a segmentation label:
-1. Create a new 'Labels' layer
-2. Select the paint brush icon, and begin painting the objects of interest. To save time it is recommended to paint the outline of each object, and then use the fill tool. 
+Once labelling is running and the unlabelled images have been imported, a napari viewer will open with the image already loaded. To create a segmentation label:
+1. Select the paint brush icon, and begin painting the objects of interest. To save time it is recommended to paint the outline of each object, and then use the fill tool. 
 3. If you have multiple classes, do not create a new Labels layer for each class, simply use a different index for each class in the Labels layer. NOTE: MAKE SURE YOU ARE CONSISTENT WITH THE INDEX FOR EACH CLASS.
-4. When you have finished labelling an image, exit the viewer to save the image into the images folder and the segmentation label in the labels folder of the destination you specified in the config. A new viewer will then pop up with the next image.
-5. When you would like to take a break from labelling the dataset, press the key combination 'ctrl+c' to stop the script. It will remember where you left off.
-6. Once you stop the script either intentionally or accidentally, the script will begin where you left off.
+4. When you have finished labelling an image,  press next to go to the next image. You can return to any image at any time to edit. 
+5. When you are finished, close the viewer
 
+TODO: @patrickcleeve2 update
 ![Napari Viewer](docs/example_napari.png)
 
 ### Format requirements
@@ -92,7 +99,7 @@ To run this file from the command line:
 $ python train.py --config config.yml
 ```
 
-The following is a list of encoders that are available for use. By default resnet18 is chosen.
+The following is a list of encoders that are available for use with segmentation-model-pytorch. By default resnet18 is chosen.
 * "resnet18",
 * "resnet34",
 * "resnet50",
@@ -146,23 +153,7 @@ $ python inference.py --config config.yml
 ```
 
 ## Visualisation
-Training and inference can be visualised with the use of WandB. This is done by setting the wandb parameter to true in the config settings.
-
-## File Description
-dataset.py - contains the dataset class, as well as the TIFF file conversion helper function.
-
-inference.py - segment any image using a trained segmentation model.
-
-labelling.py - label a dataset using napari.
-
-model_utils.py - contains helper functions used behind the scenes in train.py.
-
-train.py - train and validate a segmentation model.
-
-validate_config.py - Used by labelling.py, train.py, and inference.py to ensure that the config.yml file contains all of the correct parameters.
-
-config.yml - Config file that contains all of the necessary directories and parameters for labelling.py, train.py, and inference.py.
-
+Training and inference can be visualised with the use of WandB. This is done by setting the wandb parameter to true in the config settings. You will need a wandb account to view the logs. 
 
 ### Segmentation Examples
 Data - raw data images can be found in docs/imgs/raw
