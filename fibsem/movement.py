@@ -481,7 +481,7 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
 
 
         # these movements move the needle...
-        if f1.detection_type in [DetectionType.NeedleTip, DetectionType.LamellaEdge]:
+        if f1.detection_type in [DetectionType.NeedleTip, DetectionType.LamellaRightEdge]:
             logging.info(f"MOVING NEEDLE")
             
             # move_needle_relative_with_corrected_movement(

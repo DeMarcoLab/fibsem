@@ -20,9 +20,10 @@ from PIL import Image
 class DetectionType(Enum):
     LamellaCentre = 1
     NeedleTip = 2
-    LamellaEdge = 3
-    LandingPost = 4
-    ImageCentre = 5
+    LamellaRightEdge = 3
+    LamellaLeftEdge = 4
+    LandingPost = 5
+    ImageCentre = 6
 
 
 @dataclass
@@ -44,7 +45,8 @@ class DetectionResult:
 DETECTION_TYPE_COLOURS = {
     DetectionType.LamellaCentre: (1, 0, 0, 1),
     DetectionType.NeedleTip: (0, 1, 0, 1),
-    DetectionType.LamellaEdge: (1, 0.5, 0, 1),
+    DetectionType.LamellaLeftEdge: (1, 0.5, 0.5, 1),
+    DetectionType.LamellaRightEdge: (1, 0.5, 0, 1),
     DetectionType.LandingPost: (0, 1, 1, 1),
     DetectionType.ImageCentre: (1, 1, 1, 1)
 }
@@ -52,7 +54,8 @@ DETECTION_TYPE_COLOURS = {
 DETECTION_TYPE_COLOURS_v2 = {
     DetectionType.LamellaCentre: "red",
     DetectionType.NeedleTip: "green",
-    DetectionType.LamellaEdge: "orange",
+    DetectionType.LamellaLeftEdge: "magenta",
+    DetectionType.LamellaRightEdge: "orange",
     DetectionType.LandingPost: "cyan",
     DetectionType.ImageCentre: "white"
 }

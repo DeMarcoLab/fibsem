@@ -80,7 +80,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         self.pushButton_detection_update_features.clicked.connect(self.update_detection_features)
         self.comboBox_detection_beam_type.addItems([beam.name for beam in BeamType])
         self.comboBox_detection_feature_1.currentTextChanged.connect(self.update_available_features)
-        available_feature_1 = [DetectionType.LamellaCentre, DetectionType.LamellaEdge, DetectionType.NeedleTip]
+        available_feature_1 = [DetectionType.LamellaCentre, DetectionType.LamellaRightEdge, DetectionType.NeedleTip]
         self.comboBox_detection_feature_1.addItems([feature.name for feature in available_feature_1])
         
 
@@ -398,7 +398,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         if feature_1 is DetectionType.NeedleTip:
             available_feature_2 = [DetectionType.LamellaCentre, DetectionType.ImageCentre]
 
-        if feature_1 is DetectionType.LamellaEdge:
+        if feature_1 is DetectionType.LamellaRightEdge:
             available_feature_2 = [DetectionType.LandingPost]
 
         if feature_1 is DetectionType.LamellaCentre:

@@ -12,6 +12,7 @@ from fibsem.structures import Point
 from fibsem.detection import utils as det_utils
 from fibsem.detection.utils import (DetectionFeature, DetectionResult,
                                      DetectionType)
+from fibsem.imaging import masks
 from scipy.spatial import distance
 from skimage import feature
 from fibsem.imaging.masks import apply_circular_mask
@@ -22,7 +23,7 @@ from fibsem.imaging.masks import apply_circular_mask
 DETECTION_COLOURS_UINT8 = {
     DetectionType.ImageCentre: (255, 255, 255),
     DetectionType.LamellaCentre: (255, 165, 0),
-    DetectionType.LamellaEdge: (255, 0, 0),
+    DetectionType.LamellaRightEdge: (255, 0, 0),
     DetectionType.NeedleTip: (0, 255, 0),
     DetectionType.LandingPost: (255, 255, 255),
 }
@@ -61,7 +62,7 @@ def detect_features(img: AdornedImage, features: tuple[DetectionFeature]) -> lis
         if det_type == DetectionType.LamellaCentre:
             feature_px = detect_landing_post_v2(img, initial_point) # TODO: fix 
 
-        if det_type == DetectionType.LamellaEdge:
+        if det_type == DetectionType.LamellaRightEdge:
             feature_px = detect_lamella_edge(img)
 
         if det_type == DetectionType.LandingPost:
@@ -111,7 +112,7 @@ def get_initial_position(img: AdornedImage, det_type: DetectionType) -> Point:
     if det_type in [DetectionType.ImageCentre, DetectionType.LamellaCentre, DetectionType.LandingPost, DetectionType.NeedleTip]:
         point = Point(x=img.data.shape[1] // 2, y=img.data.shape[0] // 2)  # midpoint
 
-    if det_type == DetectionType.LamellaEdge:
+    if det_type == DetectionType.LamellaRightEdge:
         point = Point(0, 0)
 
     # if det_type == DetectionType.NeedleTip:
@@ -265,6 +266,11 @@ def detect_landing_post_v2(img: AdornedImage, landing_pt: Point) -> Point:
     feature_px = detect_closest_edge_v2(edge, landing_pt)
     return feature_px
 
+def detect_landing_post_v3(img: AdornedImage, landing_pt: Point) -> Point:
+    landing_pt = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
+    edge = edge_detection(img, sigma=3)
+    feature_px = detect_closest_edge_v2(edge, landing_pt)
+    return feature_px
 
 def detect_centre_point(mask: np.ndarray, color: tuple, threshold:int=25) -> Point:
     """ Detect the centre (mean) point of the mask for a given color (label)
@@ -353,7 +359,26 @@ def detect_corner(mask: np.ndarray, threshold=25, left: bool = False, bottom: bo
     return Point(x=edge_px[1], y=edge_px[0])
 
 
+def detect_lamella(mask:np.ndarray, feature_type: DetectionType, mask_radius: int = 512) -> Point:
 
+    lamella_mask, _ = extract_class_pixels(mask, (255, 0, 0))
+    lamella_mask = masks.apply_circular_mask(lamella_mask, radius=512)
+    lamella_centre = detect_centre_point(lamella_mask, color=(255, 0, 0))
+
+    if feature_type is DetectionType.LamellaCentre:
+        feature_px = detect_centre_point(lamella_mask, color=(255, 0, 0))
+
+    if feature_type is DetectionType.LamellaLeftEdge:
+        feature_px = detect_corner(lamella_mask, left=True)
+    
+    if feature_type is DetectionType.LamellaRightEdge:
+        feature_px = detect_corner(lamella_mask, left=False)
+    
+    return feature_px
+
+def detect_needle_v4(mask: np.ndarray, ) -> Point:
+    needle_mask, _ = extract_class_pixels(mask, (0, 255, 0))
+    return detect_corner(needle_mask)
 
 def edge_detection(img: np.ndarray, sigma=3) -> np.ndarray:
     return feature.canny(img, sigma=sigma)  # sigma higher usually better
