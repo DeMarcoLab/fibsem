@@ -291,7 +291,6 @@ def plot_detection_result(det_result: DetectionResult):
 
 def write_data_to_disk(path: Path, detection_result: DetectionResult) -> None:
     
-    # TODO: move this
     from fibsem import utils
     label = utils.current_timestamp() + "_label"
 

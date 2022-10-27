@@ -111,10 +111,6 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
         # microscope.auto_functions.run_auto_focus()
         # microscope.specimen.stage.link()
 
-    if mode == "fourier":
-        logging.info(f"TODO: Not Yet Implemented")
-
-
     return 
 
 

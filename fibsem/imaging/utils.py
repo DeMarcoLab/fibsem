@@ -40,16 +40,13 @@ def cosine_stretch(img: AdornedImage, tilt_degrees: float):
     Returns:
         _type_: _description_
     """
-    # TODO: do smaller version for negative tilt??
+    # note: do smaller version for negative tilt??
 
     tilt = np.deg2rad(tilt_degrees)
 
     shape = int(img.data.shape[0] / np.cos(tilt)), int(img.data.shape[1] / np.cos(tilt))
 
     # cosine stretch
-    # print(f"tilt: {tilt}, cosine: {np.cos(tilt)}")
-    # print("initial ", img.data.shape, "new shape: ", shape)
-
     # larger
     resized_img = np.asarray(Image.fromarray(img.data).resize(size=(shape[1], shape[0])))
     
@@ -58,9 +55,6 @@ def cosine_stretch(img: AdornedImage, tilt_degrees: float):
     dy, dx = img.data.shape[0]//2, img.data.shape[1]//2
     scaled_img = resized_img[c.y-dy:c.y+dy, c.x-dx:c.x+dx]
 
-    # TODO: smaller?
-
-    # print("rescaled shape:", scaled_img.shape)
 
     return AdornedImage(data=scaled_img, metadata=img.metadata)
 

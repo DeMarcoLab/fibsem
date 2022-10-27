@@ -166,7 +166,7 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
             estimated_time = utils._format_time_seconds(sum([pattern.time for pattern in patterns]))
             self.label_milling_estimated_time.setText(f"Estimated Time: {estimated_time}") 
 
-            # TODO: convert pattern to napari shape..
+            # convert pattern to napari shape..
 
         pixelsize = self.ib_image.metadata.binary_result.pixel_size.x
 
@@ -180,7 +180,7 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
         self.viewer.add_shapes(shape_patterns, name="Reverse", shape_type='rectangle', edge_width=1,
                                 edge_color='royalblue', face_color='royalblue')
 
-        # TODO: get currently selected pattern
+        # get currently selected pattern
         selected_data_idx = list(self.viewer.layers[pname].selected_data)
         data = self.viewer.layers[pname].data 
         selected_data = [data[i] for i in selected_data_idx]

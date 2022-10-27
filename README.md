@@ -145,7 +145,7 @@ Slice and View
 - Recreation of a slice and view program in ~50 lines of code.
 
 Lithography
-- An example of how to perform the milling of a lithography profile using a bitmap pattern.
+- Milling of a lithography profile using a bitmap pattern.
 
 
 ## Docs

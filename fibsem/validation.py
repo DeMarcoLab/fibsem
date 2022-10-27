@@ -35,7 +35,7 @@ def validate_initial_microscope_state(
     _validate_scanning_rotation(microscope=microscope)
 
 
-# TODO: need to get this initial state from the user some how... FINISH THIS
+# TODO: need to get this initial state from the user some how...
 def set_initial_microscope_state(
     microscope: SdbMicroscopeClient, microscope_state: MicroscopeState
 ) -> None:
@@ -46,9 +46,6 @@ def set_initial_microscope_state(
     # set state
     # calibration.set_microscope_state(microscope, microscope_state)
 
-    # # TODO: test?
-    # microscope.specimen.stage.move_to_device(BeamType.ELECTRON.value)
-
     return
 
 
@@ -58,11 +55,11 @@ def _validate_stage_calibration(microscope: SdbMicroscopeClient) -> None:
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope instance
     """
-    # TODO: should we home?
+    # QUERY: should we home?
     if not microscope.specimen.stage.is_homed:
         logging.warning("Stage is not homed.")
 
-    # TODO: should we focus and link?
+    # QUERY: should we focus and link?
     if not microscope.specimen.stage.is_linked:
         logging.warning("Stage is not linked.")
 

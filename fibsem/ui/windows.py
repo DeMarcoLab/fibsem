@@ -127,7 +127,6 @@ def run_validation_ui(
     validation.validate_initial_microscope_state(microscope, settings)
 
     # validate user configuration
-    # TODO: this will change when settings goes from dict -> struct
     validation._validate_configuration_values(microscope, settings.protocol)
 
     # reminders

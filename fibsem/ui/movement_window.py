@@ -48,7 +48,7 @@ class GUIMMovementWindow(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
         self.destination_points = (Point(), Point())
 
-        # TODO: set initial movement mode
+        # TODO: add user defined initial movement mode
 
         # msg
         self.msg_type = msg_type
@@ -93,7 +93,6 @@ class GUIMMovementWindow(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
         except:
             napari.utils.notifications.show_info(f"Unable to update movement image: {traceback.format_exc()}")
-        # TODO: if you attach the callback to all image layers, can enable movement everywhere
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
 
@@ -184,7 +183,7 @@ class GUIMMovementWindow(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.pushButton_continue.clicked.connect(self.continue_button_pressed)
         self.pushButton_take_image.clicked.connect(self.take_image_button_pressed)
 
-        self.doubleSpinBox_hfw.setMinimum(30e-6 * constants.METRE_TO_MICRON) # TODO: dynamic limits
+        self.doubleSpinBox_hfw.setMinimum(30e-6 * constants.METRE_TO_MICRON)
         self.doubleSpinBox_hfw.setMaximum(900e-6 * constants.METRE_TO_MICRON)
         self.doubleSpinBox_hfw.setValue(self.settings.image.hfw * constants.METRE_TO_MICRON)
 

@@ -315,10 +315,6 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         self.close()
         self.viewer.close()
 
-
-# TODO: change ion beam current to comboBox
-
-
 def main():
 
     viewer = napari.Viewer(ndisplay=2)

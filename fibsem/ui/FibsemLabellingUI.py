@@ -137,8 +137,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             pass
         event.accept()
 
-    # TODO: port functionality
-    # TODO: show existing labels if exist
     # TODO: remove use of PIl, use tf to save
     # TODO: doesnt work for a single image dataset..?
     # BUG: no way to save the last image in the dataset? except go back?

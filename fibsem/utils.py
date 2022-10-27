@@ -94,7 +94,6 @@ def sputter_platinum(
 
     # Run sputtering
     microscope.beams.electron_beam.blank()
-    # TODO: synchronous sputtering version, fix the safety on this...
     if microscope.patterning.state == "Idle":
         logging.info("Sputtering with platinum for {} seconds...".format(sputter_time))
         microscope.patterning.start()  # asynchronous patterning
@@ -345,7 +344,7 @@ def _format_dictionary(dictionary: dict) -> dict:
                 if isinstance(i, list) or isinstance(i, dict)
             ]
         else:
-            if item is not None:  # TODO: change to isinstance(int/float)
+            if item is not None:  
                 try:
                     dictionary[key] = float(dictionary[key])
                 except ValueError:

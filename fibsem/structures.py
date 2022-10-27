@@ -152,7 +152,7 @@ class BeamSettings:
     @staticmethod
     def __from_dict__(state_dict: dict) -> 'BeamSettings':
         beam_settings = BeamSettings(
-            beam_type=BeamType[state_dict["beam_type"].upper()], # TODO: remove this key, just assign directly
+            beam_type=BeamType[state_dict["beam_type"].upper()],
             working_distance=state_dict["working_distance"],
             beam_current=state_dict["beam_current"],
             hfw=state_dict["hfw"],

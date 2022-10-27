@@ -32,8 +32,7 @@ def detect_features(img: AdornedImage, features: tuple[DetectionFeature]) -> lis
 
     args:
         img: the input img (AdornedImage)
-        ref_image: the reference image (AdornedImage) # TODO: remove
-        shift_type: the type of feature detection to run (tuple)
+        features: the type of feature detections to run (tuple)
 
     return:
         detection_features [DetectionFeature, DetectionFeature]: the detected feature coordinates and types

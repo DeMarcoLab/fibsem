@@ -347,7 +347,7 @@ def x_corrected_stage_movement(
 
 def y_corrected_stage_movement(
     microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings, # TODO: change to StageSettings
+    settings: MicroscopeSettings,
     expected_y: float,
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> StagePosition:
@@ -382,7 +382,7 @@ def y_corrected_stage_movement(
     stage_rotation = microscope.specimen.stage.current_position.r % (2 * np.pi)
     stage_tilt = microscope.specimen.stage.current_position.t
 
-    # TODO: what should happen if we arent close?
+    
     PRETILT_SIGN = 1.0
     # pretilt angle depends on rotation
     if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
@@ -495,7 +495,7 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
             if f2.detection_type is DetectionType.ImageCentre:
                 
                 logging.info(f"MOVING STAGE")
-                # need to reverse the direction to move correctly. TODO: investigate if this is to do with scan rotation?
+                # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
                 # move_stage_relative_with_corrected_movement(
                 #     microscope = microscope, 
                 #     settings=settings,

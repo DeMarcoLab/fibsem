@@ -20,7 +20,6 @@ class SegmentationModel:
         self.num_classes = num_classes
 
         self.load_model(checkpoint=checkpoint)
-        # TODO: inference transforms?
 
     def load_model(self, checkpoint: Optional[str]) -> None:
         """Load the model, and optionally load a checkpoint"""
