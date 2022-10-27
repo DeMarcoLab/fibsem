@@ -10,7 +10,7 @@ from fibsem.detection.detection import DetectionFeature, DetectionResult
 from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.detection_window import GUIDetectionWindow
-from fibsem.ui.movement_window import GUIMMovementWindow
+from fibsem.ui.FibsemMovementUI import FibsemMovementUI
 from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
 

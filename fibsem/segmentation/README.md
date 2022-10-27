@@ -1,23 +1,18 @@
 # FIBSEM Segmentation
-
-This section of the repository contains all of the code needed to label a segmentation dataset, create and train an automated segmentation model, as well as utilise said model for inference purposes.
+This module contains all the code to label a segmentation dataset, train a model, and deploy the model for inference.
 
 ![Segmented Image](docs/imgs/combined/combined.jpg)
 
 ## Getting started
 1. All of the required installation steps should have already been completed in the base README.
-
-2. (Optional) Download the sample dataset ([Google Drive](https://drive.google.com/file/d/1Q0UscceYAY4cdbBndNMJpaogTkFZ73hY/view?usp=sharing)).
-3. (Optional) Download the sample model ([Google Drive](https://drive.google.com/file/d/1rON6AalnloPkpan-ASrjbI83sQmCceSF/view?usp=sharing))
-
-### Install additional dependencies
-In addition to the base fibsem dependencies you will also need to install the following with anaconda:
-
+2. Install the additional dependencies
 ```bash
 $ conda activate fibsem
 $ conda install pytorch torchvision cudatoolkit segmentation-models-pytorch -c pytorch -c conda-forge
 
 ```
+3. (Optional) Download the sample dataset ([Google Drive](https://drive.google.com/file/d/1Q0UscceYAY4cdbBndNMJpaogTkFZ73hY/view?usp=sharing)).
+4. (Optional) Download the sample model ([Google Drive](https://drive.google.com/file/d/1rON6AalnloPkpan-ASrjbI83sQmCceSF/view?usp=sharing))
 
 
 ## Running the segmentation code
@@ -81,7 +76,9 @@ Labels need to be in class index format (1,2,3..., with 0 being background) and 
 
 A function called validate_dataset() is run when the SegDataset class is instantiated. This function checks to ensure that the training dataset are .tif/.tiff images, that they are the same size, and that they are 2D grayscale images. If any of these requirements are not met, an error is raised explaining which requirements have not been met, and which utility functions can be utilised to fix them.
 
-### Training and Validation
+update will relax these requirements.
+
+### Training
 The code for training and validation can be found in train.py. It expects the labelled dataset directory as well as the directory to save your trained model in the config.yml file. The rest of the options have defaults that can be changed as needed. 
 
 If you have a pre-existing dataset that is already labelled and thus have not used labelling.py, train.py expects the data formatted as follows:

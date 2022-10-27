@@ -7,6 +7,7 @@ from pprint import pprint
 import fibsem
 from fibsem import acquire, milling, utils, alignment
 from fibsem.structures import ImageSettings, MillingSettings
+import numpy as np
 
 def main():
 
@@ -15,6 +16,9 @@ def main():
 
     # setup for milling
     milling.setup_milling(microscope, settings.system.application_file)
+
+    # angle correction
+    microscope.beams.electron_beam.angular_correction.angle.value = np.deg2rad(-38)
 
     settings.image.label = "reference"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)

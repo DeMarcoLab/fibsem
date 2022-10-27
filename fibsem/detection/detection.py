@@ -7,7 +7,7 @@ import numpy as np
 import PIL
 import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem import calibration
+
 from fibsem.structures import Point
 from fibsem.detection import utils as det_utils
 from fibsem.detection.utils import (DetectionFeature, DetectionResult,
@@ -213,7 +213,7 @@ def detect_lamella_edge(img:AdornedImage):
 
 
 def detect_needle_tip_v2(ref_image: AdornedImage, new_image:AdornedImage, initial_point: Point = Point(400, 200) ) -> Point:
-
+    from fibsem import calibration
     minus = calibration.normalise_image(ref_image) - calibration.normalise_image(new_image)
 
     filt = ndi.filters.gaussian_filter(minus, sigma=12)
@@ -326,9 +326,9 @@ def detect_corner(mask: np.ndarray, threshold=25, left: bool = False, bottom: bo
 
     # get mask px coordinates
     edge_mask = np.where(mask)
-    import matplotlib.pyplot as plt
-    plt.imshow(edge_mask)
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.imshow(edge_mask)
+    # plt.show()
     edge_px = (0, 0)
 
     # only return an edge point if detection is above a threshold        

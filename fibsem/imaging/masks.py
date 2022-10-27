@@ -193,4 +193,9 @@ def create_lamella_mask(img: AdornedImage, protocol: dict, scale: int = 2, circ:
 
 def apply_circular_mask(img: np.ndarray, radius: int, sigma: int = 0) -> np.ndarray:
         circ_mask = create_circle_mask(img.shape, radius=radius, sigma=sigma)
+
+        if img.ndim == 3:
+            circ_mask = np.moveaxis(np.array([circ_mask, circ_mask, circ_mask]), 0, 2)
+
+
         return  img * circ_mask
