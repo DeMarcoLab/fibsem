@@ -8,6 +8,7 @@ This section of the repository contains all of the code needed to label a segmen
 1. All of the required installation steps should have already been completed in the base README.
 
 2. (Optional) Download the sample dataset ([Google Drive](https://drive.google.com/file/d/1Q0UscceYAY4cdbBndNMJpaogTkFZ73hY/view?usp=sharing)).
+3. (Optional) Download the sample model ([Google Drive](https://drive.google.com/file/d/1rON6AalnloPkpan-ASrjbI83sQmCceSF/view?usp=sharing))
 
 ### Install additional dependencies
 In addition to the base fibsem dependencies you will also need to install the following with anaconda:
