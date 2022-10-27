@@ -105,6 +105,32 @@ To get started, see the example/example.py:
 
 This example shows you have to connect to the microscope, and take an image with both beams, and then plot.
 
+```python
+from fibsem import utils, acquire
+import matplotlib.pyplot as plt
+
+
+def main():
+
+    # connect to microscope
+    microscope, settings = utils.setup_session()
+
+    # take image with both beams
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+
+    # show images
+    fig, ax = plt.subplots(1, 2, figsize=(7, 5))
+    ax[0].imshow(eb_image.data, cmap="gray")
+    ax[1].imshow(ib_image.data, cmap="gray")
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
+
+
+```
+
 For more detailed examples, see the Examples sections below.
 
 
@@ -119,57 +145,17 @@ Slice and View
 - Recreation of a slice and view program in ~50 lines of code.
 
 Lithography
-- An example of how to perform the milling of a micro-lens in Lithium Niabate substrate using a bitmap pattern.
-
-
+- An example of how to perform the milling of a lithography profile using a bitmap pattern.
 
 
 ## Docs
 
-Overview of the individual modules:
-
-acquire
-- helper functions for setting imaging settings, acquiring images, and post-processing.
-
-alignment
-- automated alignments of the stage and beams based fourier cross-correlation
-
-calibration
-- automated calibration routines, and microscope state management
-
-conversions
-- standard conversions between coordinate systems used in FIBSEM
-
-milling
-- helper functions for setting up, running, and finishing ion beam milling
-- patterning examples
-
-movement
-- movement functionality for the stage and needle, corrected for both the view perspective and stage orientation
-
-structures
-- fibsem structures for settings, types, etc.
-
-utils
-- general microscope utilities including network connection and filesystem access 
-
-validation
-- automated validation of microscope settings (based on user configuration)
-
-detection
-- automated detection for common fibsem classes, e.g. NeedleTip, LandingPost
-
-segmentation
-- deep learning based segmentation workflow, including labelling, training and inference 
-
-imaging
-- helper functions for manipulating, analysing and masking images
-
-ui
-- user interface windows for interacting with fibsem, e.g. movement window, detection window...
+TODO: finish once site is up
 
 
+## Citation
+
+TODO:
 
 
-
-enjoy
+enjoy :)

@@ -17,7 +17,3 @@ fibsem/segmentation/lucile_config.yml
 fibsem/segmentation/lachie_config.yml
 wandb/*
 
-example/profile.npy
-example/**/*.tif
-example/*.npy
-example/*.bmp

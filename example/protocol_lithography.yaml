@@ -8,6 +8,8 @@ plasma_gas: Xenon
 profile: profile.npy
 pixelsize: 1.e-6
 milling:
+  width: 50.e-6
+  height: 30.0e-6
   milling_current: 60.e-9
   initial_depth: 600.e-9 
   milling_depth: 5.0e-6
