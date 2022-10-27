@@ -1,6 +1,5 @@
-# fibsem
+# OpenFIBSEM
 Python API for advanced FIBSEM control
-
 
 ## Design
 - Designed to act as lego blocks, users can mix and match
@@ -50,7 +49,7 @@ AutoScript
 ```
 
 
-OpenFIB
+OpenFIBSEM
 
 ```python
 
@@ -71,85 +70,57 @@ image_settings = ImageSettings(
 # take electron image
 eb_image = acquire.new_image(microscope, image_settings)
 
-# take reference image with both beams..
-eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
+```
+## Install
+
+### Install OpenFIBSEM
+Clone this repository: 
+
+```
+$ git clone https://github.com/DeMarcoLab/fibsem.git
 ```
 
-More things going on under the hood: 
-- Additional options in ImageSettings to auto-gamma correct, and save the image.
-- Will try to prevent user errors, e.g. Won't crash when you try to take an image with larger hfw than maximum, will just clip to the maximum hfw.
-
-## Three primary use cases
-
-### Customising workflows
-As openFIB gives complete control over how workflows run, you can customise, iterate and experiment with different strategies. It becomes simple to script workflows that would be tedious or error prone to do manually.
-
-E.g. Slice and View: denoising data collection strategy
-Take 5 fast dwell time images, then a long dwell time image...
-
-``` python
-
-def custom_data_collection(microscope: SdbMicroscopeClient, image_settings: ImageSettings):
-
-    image_settings.save = True
-    image_settings.dwell_time = 0.1e-9
-    label = "short_dwell_time"
-
-    for i in range(5):
-        image_settings.label = f"{label}_{i}"
-        acquire.new_image(microscope, image_settings)
-
-    image_settings.dwell_time = 4e-6
-    label = "long_dwell_time"
-
-    acquire.new_image(microscope, image_settings)
+Install dependencies and package
+```bash
+$ cd fibsem
+$ conda env create -f environment.yml
+$ conda activate fibsem
+$ pip install -e .
 
 ```
 
-### Automating existing workflows
-E.g. Autolamella, Lens Milling
+### Install AutoScript
+You will also need to install AutoScript 4.6+. 
 
-As the modules of openfib act like lego blocks, you can quickly re-write existing workflows to use the components and automated functionality. You can also mix and match with existing code and libraries easily.
+Please see the [Installation Guide](INSTALLATION.md) for detailed instructions.
 
-See example/autolamella.py
-See example/napari_visualisation.py
-
-### Creating new workflows and tools
-E.g. AutoLiftout, automated tools: auto-discharge, auto-needle-calibration
-
-As more functionality is developed, openfib enables you to make higher level and more automated workflows. 
+Copy AutoScript /into home/user/miniconda3/envs/fibsem/lib/python3.9/site-packages/
 
 
-``` python
+## Getting Started
 
-def auto_discharge_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, n_iterations: int = 10):
+# connect to microscope
 
-    # take sequence of images quickly to discharge the sample
-    resolution = image_settings.resolution
-    dwell_time = image_settings.dwell_time
-    autocontrast = image_settings.autocontrast
-    beam_type = image_settings.beam_type
-    
-    image_settings.beam_type = BeamType.ELECTRON
-    image_settings.resolution = "768x512"
-    image_settings.dwell_time = 200e-9
-    image_settings.autocontrast = False
-        
-    for i in range(n_iterations):
-        acquire.new_image(microscope, image_settings)
+# 
 
-    # autocontrast
-    acquire.autocontrast(microscope, BeamType.ELECTRON)
 
-    # restore settings, take image
-    image_settings.resolution = resolution
-    image_settings.dwell_time = dwell_time
-    image_settings.autocontrast = autocontrast
-    acquire.new_image(microscope, image_settings)
-    
-    image_settings.beam_type = beam_type
 
-```
+For more detailed examples, see the Examples sections below.
+
+
+## Examples
+
+The example directory contains 
+
+Autolamella
+- Recreation of https://github.com/DeMarcoLab/autolamella, in ~150 lines of code.
+
+Slice and View
+- Recreation of a slice and view program in ~50 lines of code.
+
+Lithography
+- An example of how to perform the milling of a micro-lens in Lithium Niabate substrate using a bitmap pattern.
+
 
 
 
@@ -198,33 +169,7 @@ ui
 - user interface windows for interacting with fibsem, e.g. movement window, detection window...
 
 
-## Examples
 
 
-Autolamella
-- Recreation of https://github.com/DeMarcoLab/autolamella, in ~150 lines of code.
-
-Slice and View
-- Recreation of a slice and view program in ~50 lines of code.
-
-Lithography Milling
-- An example of how to perform the milling of a micro-lens in Lithium Niabate substrate using a bitmap pattern.
-
-Fibsem UI
-- A user interface for major fibsem components (imaging, movement, milling, tools) in napari 
-```bash
-$ fibsem_ui
-```
-
-
-## Install
-
-
-```bash
-$ conda env create -f environment.yml
-$ pip install -e .
-
-```
-Copy AutoScript into home/user/miniconda3/envs/fibsem/lib/python3.9/site-packages/
 
 enjoy

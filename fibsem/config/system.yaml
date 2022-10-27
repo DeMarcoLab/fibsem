@@ -1,7 +1,7 @@
 # system
 system:
-  ip_address: 10.0.0.1
-  application_file: "autolamella"
+  ip_address: 192.168.0.1
+  application_file: "Si"
   # beams
   ion:
     voltage: 30000

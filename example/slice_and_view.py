@@ -19,6 +19,8 @@ def main():
     settings.image.label = "reference"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
 
+    ref_eb, ref_ib = None, None
+
     for slice_idx in range(settings.protocol["steps"]):
 
         # slice
@@ -30,18 +32,18 @@ def main():
         milling.run_milling(microscope, milling_current=milling_settings.milling_current)
 
 
-        milling.finish_milling(microscope, settings.default.imaging_current) # dont think this is required.
+        milling.finish_milling(microscope, settings.default.imaging_current)
 
         # view
         logging.info("------------------------ VIEW ------------------------")
         settings.image.label = f"slice_{slice_idx}"
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
 
-        # move?
 
-        # align?
-        # alignment.align_using_reference_images(microscope, settings, ref_image, eb_image)
-
+        # align
+        # if ref_eb is not None:
+        #     alignment.align_using_reference_images(microscope, settings, ref_eb, eb_image)
+        #     ref_eb, ref_ib = eb_image, ib_image
 
     
 
