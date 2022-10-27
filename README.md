@@ -99,11 +99,11 @@ Copy AutoScript /into home/user/miniconda3/envs/fibsem/lib/python3.9/site-packag
 
 ## Getting Started
 
-# connect to microscope
+To get started, see the example/example.py:
 
-# 
+(Note: You might need to edit fibsem/config/system.yaml to change the IP address of your microscope.)
 
-
+This example shows you have to connect to the microscope, and take an image with both beams, and then plot.
 
 For more detailed examples, see the Examples sections below.
 

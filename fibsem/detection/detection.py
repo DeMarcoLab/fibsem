@@ -16,13 +16,7 @@ from scipy.spatial import distance
 from skimage import feature
 from fibsem.imaging.masks import apply_circular_mask
 
-# TODO:
-# rename DetectionResult to Detection
-
-# TODO: determine if there is a better way to figure out where the needle is without looking at it...
-# do the coordinates helP?
-# would be better to move into centre image.
-# probably need to do full transformation matrix to get it working properly.. long temr
+# TODO:rename DetectionResult to Detection
 
 
 DETECTION_COLOURS_UINT8 = {
