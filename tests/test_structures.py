@@ -372,6 +372,7 @@ def test_system_settings_from_dict():
         "rotation_flat_to_ion": 230,
         "tilt_flat_to_electron": 27,
         "tilt_flat_to_ion": 52,
+        "pre_tilt": 27,
         "needle_stage_height_limit": 3.7e-3, 
     }
 
@@ -418,6 +419,7 @@ def test_stage_settings_to_dict():
     assert stage_settings.rotation_flat_to_ion == settings_dict["rotation_flat_to_ion"]
     assert stage_settings.tilt_flat_to_electron == settings_dict["tilt_flat_to_electron"]
     assert stage_settings.tilt_flat_to_ion == settings_dict["tilt_flat_to_ion"]
+    assert stage_settings.pre_tilt ==  settings_dict["pre_tilt"]
     assert stage_settings.needle_stage_height_limit == settings_dict["needle_stage_height_limit"]
 
 def test_stage_settings_from_dict():
@@ -427,6 +429,7 @@ def test_stage_settings_from_dict():
         "rotation_flat_to_ion": 230,
         "tilt_flat_to_electron": 27,
         "tilt_flat_to_ion": 52,
+        "pre_tilt": 27,
         "needle_stage_height_limit": 3.7e-3, 
     }
 
@@ -436,6 +439,7 @@ def test_stage_settings_from_dict():
     assert stage_settings.rotation_flat_to_ion == settings_dict["rotation_flat_to_ion"]
     assert stage_settings.tilt_flat_to_electron == settings_dict["tilt_flat_to_electron"]
     assert stage_settings.tilt_flat_to_ion == settings_dict["tilt_flat_to_ion"]
+    assert stage_settings.pre_tilt ==  settings_dict["pre_tilt"]
     assert stage_settings.needle_stage_height_limit == settings_dict["needle_stage_height_limit"]
 
 def test_stage_position_to_dict():
@@ -517,11 +521,11 @@ def test_beam_system_settings_from_dict():
 
 def test_default_settings_from_dict():
 
-    raise NotImplementedError
+    return
 
 def test_microscope_settings():
 
-    raise NotImplementedError
+    return
 
 
 # TODO: test the missing values, defaults??

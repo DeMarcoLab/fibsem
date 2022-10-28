@@ -39,7 +39,7 @@ def ask_user_movement(
 
     viewer = napari.Viewer()
 
-    movement_ui = GUIMMovementWindow(
+    movement_ui = FibsemMovementUI(
         microscope=microscope,
         settings=settings,
         msg_type=msg_type,
