@@ -16,6 +16,7 @@ from fibsem import conversions
 from fibsem.structures import Point
 from PIL import Image
 
+# TODO: rename from detection to features, e.g. FeatureType
 
 class DetectionType(Enum):
     LamellaCentre = 1
@@ -29,7 +30,7 @@ class DetectionType(Enum):
 @dataclass
 class DetectionFeature:
     detection_type: DetectionType
-    feature_px: Point  # x, y
+    feature_px: Point  = None # x, y
 
 
 @dataclass

@@ -8,10 +8,11 @@ import utils
 import segmentation_models_pytorch as smp
 from utils import decode_segmap
 
+from pathlib import Path
 
 class SegmentationModel:
     def __init__(
-        self, checkpoint: str = None, mode: str = "eval", num_classes: int = 3
+        self, checkpoint: str = None, encoder: str = "resnet18", mode: str = "eval", num_classes: int = 3
     ) -> None:
         super().__init__()
 
@@ -19,20 +20,19 @@ class SegmentationModel:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
 
-        self.load_model(checkpoint=checkpoint)
+        self.load_model(checkpoint=checkpoint, encoder=encoder)
 
-    def load_model(self, checkpoint: Optional[str]) -> None:
+    def load_model(self, checkpoint: Optional[str], encoder: str = "resnet18") -> None:
         """Load the model, and optionally load a checkpoint"""
-        self.model = self.load_encoder(encoder_name="resnet18")
+        self.model = self.load_encoder(encoder=encoder)
         self.load_weights(checkpoint=checkpoint)
-        # self.model.eval()
+        # self.model.eval() # TODO: this causes a bug? why
         if self.mode == "train":
-            # TODO: pass state to optimizer
             self.model.train()
 
-    def load_encoder(self, encoder_name="resnet18"):
+    def load_encoder(self, encoder: str ="resnet18"):
         model = smp.Unet(
-            encoder_name=encoder_name,
+            encoder_name=encoder,
             encoder_weights="imagenet",
             in_channels=1,  # grayscale images
             classes=self.num_classes,
@@ -77,7 +77,21 @@ class SegmentationModel:
         for i in range(len(masks)):
             output_masks.append(decode_segmap(masks[i], nc=nc))
         
+        if len(output_masks) == 1:
+            output_masks = output_masks[0]
         return output_masks
+
+
+
+
+def load_model(checkpoint: Path, encoder: str = "resnet18", nc: int =3) -> SegmentationModel:
+
+    # load model
+    model = SegmentationModel(checkpoint=checkpoint, num_classes=3)
+
+
+    return model
+
 
 
 if __name__ == "__main__":

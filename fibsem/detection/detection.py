@@ -17,12 +17,10 @@ from scipy.spatial import distance
 from skimage import feature
 from fibsem.imaging.masks import apply_circular_mask
 
-# TODO:rename DetectionResult to Detection
-
-
 DETECTION_COLOURS_UINT8 = {
     DetectionType.ImageCentre: (255, 255, 255),
-    DetectionType.LamellaCentre: (255, 165, 0),
+    DetectionType.LamellaCentre: (255, 0, 0),
+    DetectionType.LamellaLeftEdge: (255, 0, 0),
     DetectionType.LamellaRightEdge: (255, 0, 0),
     DetectionType.NeedleTip: (0, 255, 0),
     DetectionType.LandingPost: (255, 255, 255),
@@ -156,6 +154,8 @@ def extract_class_pixels(mask, color):
         idx: the indexes of the detected class in the mask
 
     """
+    # TODO: should the class masks be binary?? probs easier
+       
     # extract only label pixels to find edges
     class_mask = np.zeros_like(mask)
     idx = np.where(np.all(mask == color, axis=-1))
