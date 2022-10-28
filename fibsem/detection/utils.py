@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem.conversions import pixel_to_realspace_coordinate
+from fibsem import conversions
 from fibsem.structures import Point
 from PIL import Image
 
@@ -87,14 +87,18 @@ def decode_segmap(image, nc=3):
 
 
 
+
+
+
+# TODO: refactor usage to distance between two points
 def convert_pixel_distance_to_metres(p1: Point, p2: Point, adorned_image: AdornedImage):
     """Convert from pixel coordinates to distance in metres """
 
     # convert pixel coordinate to realspace coordinate
-    x1_real, y1_real = pixel_to_realspace_coordinate(
+    x1_real, y1_real = conversions.pixel_to_realspace_coordinate(
         (p1.x, p1.y), adorned_image
     )
-    x2_real, y2_real = pixel_to_realspace_coordinate(
+    x2_real, y2_real = conversions.pixel_to_realspace_coordinate(
         (p2.x, p2.y), adorned_image
     )
 
