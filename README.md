@@ -4,8 +4,8 @@ Python API for advanced FIBSEM control
 ## Design
 - Designed to act as lego blocks, users can mix and match
 - Focus on the microscopy, not learning the API
-- Can script together a workflow in a few hours. 
-- Can abstract common functionality, and automate manual tasks.
+- Script together a workflow in a few hours. 
+- Abstract common functionality, and automate manual tasks.
 
 End goal is to make developing workflows for FIBSEM faster, easier, cheaper, and more accessible. 
 
@@ -103,7 +103,7 @@ To get started, see the example/example.py:
 
 (Note: You might need to edit fibsem/config/system.yaml to change the IP address of your microscope.)
 
-This example shows you have to connect to the microscope, and take an image with both beams, and then plot.
+This example shows you how to connect to the microscope, take an image with both beams, and then plot.
 
 ```python
 from fibsem import utils, acquire
@@ -158,4 +158,4 @@ TODO: finish once site is up
 TODO:
 
 
-enjoy :)
+enjoy :) 

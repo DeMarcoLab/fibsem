@@ -72,13 +72,34 @@ def get_lamella_size_in_pixels(img: AdornedImage, protocol: dict, use_trench_hei
 
 def convert_metres_to_pixels(distance: float, pixelsize: float) -> int:
     """Convert distance in metres to pixels"""
-    return int(distance * pixelsize)
+    return int(distance / pixelsize)
 
 def convert_pixels_to_metres(pixels: int, pixelsize: float) -> float:
     """Convert pixels to distance in metres"""
-    return float(pixels / pixelsize)
+    return float(pixels * pixelsize)
 
 
+from fibsem.structures import Point
+
+def distance_between_points(p1: Point, p2: Point) -> Point:
+    """Calculate the distance between two points in each coordinate"""
+
+    return Point(x=(p2.x - p1.x), y=(p2.y - p1.y))
+
+def convert_point_from_pixel_to_metres(point: Point, pixelsize: float) -> Point:
+
+    point_m = Point(
+        x= convert_pixels_to_metres(point.x, pixelsize), 
+        y= convert_pixels_to_metres(point.y, pixelsize)
+    )
+
+    return point_m 
 
 
-    
+def convert_point_from_metres_to_pixel(point: Point, pixelsize: float) -> Point:
+
+    point_px = Point(
+        x= convert_metres_to_pixels(point.x, pixelsize), 
+        y= convert_metres_to_pixels(point.y, pixelsize)
+    )
+    return point_px
