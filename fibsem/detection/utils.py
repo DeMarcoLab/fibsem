@@ -18,7 +18,7 @@ from PIL import Image
 
 # TODO: rename from detection to features, e.g. FeatureType
 
-class DetectionType(Enum):
+class FeatureType(Enum):
     LamellaCentre = 1
     NeedleTip = 2
     LamellaRightEdge = 3
@@ -28,14 +28,14 @@ class DetectionType(Enum):
 
 
 @dataclass
-class DetectionFeature:
-    detection_type: DetectionType
+class Feature:
+    detection_type: FeatureType
     feature_px: Point  = None # x, y
 
 
 @dataclass
 class DetectionResult:
-    features: list[DetectionFeature]
+    features: list[Feature]
     adorned_image: AdornedImage
     display_image: np.ndarray
     distance_metres: Point = Point(0, 0)  # x, y
@@ -44,21 +44,21 @@ class DetectionResult:
 
 # detection colour map
 DETECTION_TYPE_COLOURS = {
-    DetectionType.LamellaCentre: (1, 0, 0, 1),
-    DetectionType.NeedleTip: (0, 1, 0, 1),
-    DetectionType.LamellaLeftEdge: (1, 0.5, 0.5, 1),
-    DetectionType.LamellaRightEdge: (1, 0.5, 0, 1),
-    DetectionType.LandingPost: (0, 1, 1, 1),
-    DetectionType.ImageCentre: (1, 1, 1, 1)
+    FeatureType.LamellaCentre: (1, 0, 0, 1),
+    FeatureType.NeedleTip: (0, 1, 0, 1),
+    FeatureType.LamellaLeftEdge: (1, 0.5, 0.5, 1),
+    FeatureType.LamellaRightEdge: (1, 0.5, 0, 1),
+    FeatureType.LandingPost: (0, 1, 1, 1),
+    FeatureType.ImageCentre: (1, 1, 1, 1)
 }
 
 DETECTION_TYPE_COLOURS_v2 = {
-    DetectionType.LamellaCentre: "red",
-    DetectionType.NeedleTip: "green",
-    DetectionType.LamellaLeftEdge: "magenta",
-    DetectionType.LamellaRightEdge: "orange",
-    DetectionType.LandingPost: "cyan",
-    DetectionType.ImageCentre: "white"
+    FeatureType.LamellaCentre: "red",
+    FeatureType.NeedleTip: "green",
+    FeatureType.LamellaLeftEdge: "magenta",
+    FeatureType.LamellaRightEdge: "orange",
+    FeatureType.LandingPost: "cyan",
+    FeatureType.ImageCentre: "white"
 }
 
 def decode_segmap(image, nc=3):
@@ -242,9 +242,9 @@ def load_detection_result(path: Path, data) -> DetectionResult:
     """Read detection result from dataframe row, and return"""
 
     label = data["label"]
-    p1_type = DetectionType[data["p1.type"]]
+    p1_type = FeatureType[data["p1.type"]]
     p1 = Point(x=data["p1.x"], y=data["p1.y"])
-    p2_type = DetectionType[data["p2.type"]]
+    p2_type = FeatureType[data["p2.type"]]
     p2 = Point(x=data["p2.x"], y=data["p2.y"])
 
     fname = glob.glob(os.path.join(path, f"*{label}*.tif"))[0]
@@ -255,8 +255,8 @@ def load_detection_result(path: Path, data) -> DetectionResult:
 
     det = DetectionResult(
         features=[
-            DetectionFeature(detection_type=p1_type, feature_px=p1),
-            DetectionFeature(detection_type=p2_type, feature_px=p2),
+            Feature(detection_type=p1_type, feature_px=p1),
+            Feature(detection_type=p2_type, feature_px=p2),
         ],
         adorned_image=img,
         display_image=None,

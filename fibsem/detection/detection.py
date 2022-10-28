@@ -10,23 +10,23 @@ from autoscript_sdb_microscope_client.structures import AdornedImage
 
 from fibsem.structures import Point
 from fibsem.detection import utils as det_utils
-from fibsem.detection.utils import (DetectionFeature, DetectionResult,
-                                     DetectionType)
+from fibsem.detection.utils import (Feature, DetectionResult,
+                                     FeatureType)
 from fibsem.imaging import masks
 from scipy.spatial import distance
 from skimage import feature
 from fibsem.imaging.masks import apply_circular_mask
 
 DETECTION_COLOURS_UINT8 = {
-    DetectionType.ImageCentre: (255, 255, 255),
-    DetectionType.LamellaCentre: (255, 0, 0),
-    DetectionType.LamellaLeftEdge: (255, 0, 0),
-    DetectionType.LamellaRightEdge: (255, 0, 0),
-    DetectionType.NeedleTip: (0, 255, 0),
-    DetectionType.LandingPost: (255, 255, 255),
+    FeatureType.ImageCentre: (255, 255, 255),
+    FeatureType.LamellaCentre: (255, 0, 0),
+    FeatureType.LamellaLeftEdge: (255, 0, 0),
+    FeatureType.LamellaRightEdge: (255, 0, 0),
+    FeatureType.NeedleTip: (0, 255, 0),
+    FeatureType.LandingPost: (255, 255, 255),
 }
 
-def detect_features(img: AdornedImage, features: tuple[DetectionFeature]) -> list[DetectionFeature]:
+def detect_features(img: AdornedImage, features: tuple[Feature]) -> list[Feature]:
     """
 
     args:
@@ -34,7 +34,7 @@ def detect_features(img: AdornedImage, features: tuple[DetectionFeature]) -> lis
         features: the type of feature detections to run (tuple)
 
     return:
-        detection_features [DetectionFeature, DetectionFeature]: the detected feature coordinates and types
+        detection_features [Feature, Feature]: the detected feature coordinates and types
     """
 
     detection_features = []
@@ -44,35 +44,35 @@ def detect_features(img: AdornedImage, features: tuple[DetectionFeature]) -> lis
         det_type = feature.detection_type
         initial_point = feature.feature_px
 
-        if not isinstance(det_type, DetectionType):
+        if not isinstance(det_type, FeatureType):
             raise TypeError(f"Detection Type {det_type} is not supported.")
 
         # get the initial position estimate
         if initial_point is None:
             initial_point = get_initial_position(img, det_type)
 
-        if det_type == DetectionType.ImageCentre:
+        if det_type == FeatureType.ImageCentre:
             feature_px = initial_point
 
-        if det_type == DetectionType.NeedleTip:
+        if det_type == FeatureType.NeedleTip:
             feature_px = detect_needle_tip_v3(img, initial_point)
 
-        if det_type == DetectionType.LamellaCentre:
+        if det_type == FeatureType.LamellaCentre:
             feature_px = detect_landing_post_v2(img, initial_point) # TODO: fix 
 
-        if det_type == DetectionType.LamellaRightEdge:
+        if det_type == FeatureType.LamellaRightEdge:
             feature_px = detect_lamella_edge(img)
 
-        if det_type == DetectionType.LandingPost:
+        if det_type == FeatureType.LandingPost:
             feature_px = detect_landing_post_v2(img, initial_point)
 
         detection_features.append(
-            DetectionFeature(detection_type=det_type, feature_px=feature_px)
+            Feature(detection_type=det_type, feature_px=feature_px)
         )
 
     return detection_features
 
-def locate_shift_between_features(adorned_img: AdornedImage, features: tuple[DetectionFeature]):
+def locate_shift_between_features(adorned_img: AdornedImage, features: tuple[Feature]):
     """
     Calculate the distance between two features in the image coordinate system.
 
@@ -103,17 +103,17 @@ def locate_shift_between_features(adorned_img: AdornedImage, features: tuple[Det
 
     return detection_result
 
-def get_initial_position(img: AdornedImage, det_type: DetectionType) -> Point:
+def get_initial_position(img: AdornedImage, det_type: FeatureType) -> Point:
 
     beam_type = img.metadata.acquisition.beam_type
 
-    if det_type in [DetectionType.ImageCentre, DetectionType.LamellaCentre, DetectionType.LandingPost, DetectionType.NeedleTip]:
+    if det_type in [FeatureType.ImageCentre, FeatureType.LamellaCentre, FeatureType.LandingPost, FeatureType.NeedleTip]:
         point = Point(x=img.data.shape[1] // 2, y=img.data.shape[0] // 2)  # midpoint
 
-    if det_type == DetectionType.LamellaRightEdge:
+    if det_type == FeatureType.LamellaRightEdge:
         point = Point(0, 0)
 
-    # if det_type == DetectionType.NeedleTip:
+    # if det_type == FeatureType.NeedleTip:
         
     #     if beam_type == "Electron": 
     #         pt = (400, 200) 
@@ -126,7 +126,7 @@ def get_initial_position(img: AdornedImage, det_type: DetectionType) -> Point:
    
     return point
 
-def filter_selected_masks(mask: np.ndarray, shift_type: tuple[DetectionType]) -> np.ndarray:
+def filter_selected_masks(mask: np.ndarray, shift_type: tuple[FeatureType]) -> np.ndarray:
     """Combine only the masks for the selected detection types"""
     c1 = DETECTION_COLOURS_UINT8[shift_type[0]]
     c2 = DETECTION_COLOURS_UINT8[shift_type[1]]
@@ -359,19 +359,19 @@ def detect_corner(mask: np.ndarray, threshold=25, left: bool = False, bottom: bo
     return Point(x=edge_px[1], y=edge_px[0])
 
 
-def detect_lamella(mask:np.ndarray, feature_type: DetectionType, mask_radius: int = 512) -> Point:
+def detect_lamella(mask:np.ndarray, feature_type: FeatureType, mask_radius: int = 512) -> Point:
 
     lamella_mask, _ = extract_class_pixels(mask, (255, 0, 0))
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=512)
     lamella_centre = detect_centre_point(lamella_mask, color=(255, 0, 0))
 
-    if feature_type is DetectionType.LamellaCentre:
+    if feature_type is FeatureType.LamellaCentre:
         feature_px = detect_centre_point(lamella_mask, color=(255, 0, 0))
 
-    if feature_type is DetectionType.LamellaLeftEdge:
+    if feature_type is FeatureType.LamellaLeftEdge:
         feature_px = detect_corner(lamella_mask, left=True)
     
-    if feature_type is DetectionType.LamellaRightEdge:
+    if feature_type is FeatureType.LamellaRightEdge:
         feature_px = detect_corner(lamella_mask, left=False)
     
     return feature_px

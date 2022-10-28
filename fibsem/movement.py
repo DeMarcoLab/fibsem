@@ -13,7 +13,7 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
 )
 from fibsem.structures import BeamType, MicroscopeSettings
-from fibsem.detection.detection import DetectionResult, DetectionType
+from fibsem.detection.detection import DetectionResult, FeatureType
 
 
 ############################## NEEDLE ##############################
@@ -481,7 +481,7 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
 
 
         # these movements move the needle...
-        if f1.detection_type in [DetectionType.NeedleTip, DetectionType.LamellaRightEdge]:
+        if f1.detection_type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
             logging.info(f"MOVING NEEDLE")
             
             # move_needle_relative_with_corrected_movement(
@@ -491,8 +491,8 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
             #     beam_type=beam_type,
             # )
         
-        if f1.detection_type is DetectionType.LamellaCentre:
-            if f2.detection_type is DetectionType.ImageCentre:
+        if f1.detection_type is FeatureType.LamellaCentre:
+            if f2.detection_type is FeatureType.ImageCentre:
                 
                 logging.info(f"MOVING STAGE")
                 # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?

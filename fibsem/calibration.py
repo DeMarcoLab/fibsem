@@ -226,7 +226,7 @@ def align_needle_to_eucentric_position(
     """
 
     from fibsem.ui import windows as fibsem_ui_windows
-    from fibsem.detection.utils import DetectionType, DetectionFeature
+    from fibsem.detection.utils import FeatureType, Feature
     from fibsem.detection import detection
     
     # take reference images
@@ -239,8 +239,8 @@ def align_needle_to_eucentric_position(
     #     settings=settings,
     #     ref_image=ref_eb,
     #     features=[
-    #         DetectionFeature(DetectionType.NeedleTip, None),
-    #         DetectionFeature(DetectionType.ImageCentre, None),
+    #         Feature(FeatureType.NeedleTip, None),
+    #         Feature(FeatureType.ImageCentre, None),
     #     ],
     #     validate=validate,
     # )
@@ -248,8 +248,8 @@ def align_needle_to_eucentric_position(
     det = detection.locate_shift_between_features(
         image,
         features=[
-            DetectionFeature(DetectionType.NeedleTip, None),
-            DetectionFeature(DetectionType.ImageCentre, None),
+            Feature(FeatureType.NeedleTip, None),
+            Feature(FeatureType.ImageCentre, None),
         ],
     )
 
@@ -269,8 +269,8 @@ def align_needle_to_eucentric_position(
     det = detection.locate_shift_between_features(
         image,
         features=[
-            DetectionFeature(DetectionType.NeedleTip, None),
-            DetectionFeature(DetectionType.ImageCentre, None),
+            Feature(FeatureType.NeedleTip, None),
+            Feature(FeatureType.ImageCentre, None),
         ],
     )
 
@@ -279,8 +279,8 @@ def align_needle_to_eucentric_position(
     #     settings=settings,
     #     ref_image=ref_ib,
     #     features=[
-    #         DetectionFeature(DetectionType.NeedleTip, None),
-    #         DetectionFeature(DetectionType.ImageCentre, None),
+    #         Feature(FeatureType.NeedleTip, None),
+    #         Feature(FeatureType.ImageCentre, None),
     #     ],
     #     validate=validate,
     # )

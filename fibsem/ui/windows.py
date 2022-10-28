@@ -6,7 +6,7 @@ from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import AdornedImage
 from fibsem import acquire, validation
 from fibsem.detection import detection
-from fibsem.detection.detection import DetectionFeature, DetectionResult
+from fibsem.detection.detection import Feature, DetectionResult
 from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.detection_window import GUIDetectionWindow
@@ -58,7 +58,7 @@ def detect_features(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
     ref_image: AdornedImage,
-    features: tuple[DetectionFeature],
+    features: tuple[Feature],
     validate: bool = True,
 ) -> DetectionResult:
     """_summary_
@@ -68,7 +68,7 @@ def detect_features(
         settings (dict): _description_
         image_settings (ImageSettings): _description_
         ref_image (AdornedImage): _description_
-        features (tuple[DetectionFeature]): _description_
+        features (tuple[Feature]): _description_
         validate (bool, optional): _description_. Defaults to True.
 
     Returns:
