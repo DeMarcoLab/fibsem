@@ -30,7 +30,7 @@ def insert_needle(
         insert_position (ManipulatorSavedPosition, optional): saved needle position. Defaults to ManipulatorSavedPosition.PARK.
     """
     needle = microscope.specimen.manipulator
-    # logging.info(f"inserting needle to {insert_position.explain} position.")
+    # logging.info(f"inserting needle to {insert_position} position.")
     insert_position = needle.get_saved_position(
         insert_position, ManipulatorCoordinateSystem.RAW
     )
@@ -364,6 +364,7 @@ def y_corrected_stage_movement(
     """
     
     # TODO: replace with camera matrix * inverse kinematics
+    # TODO: replace stage_tilt_flat_to_electron with pre-tilt 
 
     # all angles in radians
     stage_tilt_flat_to_electron = np.deg2rad(

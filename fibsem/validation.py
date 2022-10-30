@@ -153,7 +153,7 @@ def _validate_beam_system_state(
 
     if microscope_beam.high_voltage.value != settings.voltage:
         logging.warning(
-            f"Ion Beam High Voltage should be {settings.voltage}V (Currently {microscope_beam.high_voltage.value}V)"
+            f"{beam_name} Beam High Voltage should be {settings.voltage}V (Currently {microscope_beam.high_voltage.value}V)"
         )
 
         if bool(microscope_beam.high_voltage.is_controllable):

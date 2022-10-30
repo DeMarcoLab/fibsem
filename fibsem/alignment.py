@@ -1,5 +1,4 @@
 import logging
-from turtle import xcor
 
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient

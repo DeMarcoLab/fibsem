@@ -359,14 +359,14 @@ def detect_corner(mask: np.ndarray, threshold=25, left: bool = False, bottom: bo
     return Point(x=edge_px[1], y=edge_px[0])
 
 
-def detect_lamella(mask:np.ndarray, feature_type: FeatureType, mask_radius: int = 512) -> Point:
+def detect_lamella(mask:np.ndarray, feature_type: FeatureType, color: tuple = (255, 0, 0), mask_radius: int = 512) -> Point:
 
-    lamella_mask, _ = extract_class_pixels(mask, (255, 0, 0))
-    lamella_mask = masks.apply_circular_mask(lamella_mask, radius=512)
-    lamella_centre = detect_centre_point(lamella_mask, color=(255, 0, 0))
+    lamella_mask, _ = extract_class_pixels(mask, color)
+    lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
+    lamella_centre = detect_centre_point(lamella_mask, color=color)
 
     if feature_type is FeatureType.LamellaCentre:
-        feature_px = detect_centre_point(lamella_mask, color=(255, 0, 0))
+        feature_px = detect_centre_point(lamella_mask, color=color)
 
     if feature_type is FeatureType.LamellaLeftEdge:
         feature_px = detect_corner(lamella_mask, left=True)
@@ -378,7 +378,7 @@ def detect_lamella(mask:np.ndarray, feature_type: FeatureType, mask_radius: int 
 
 def detect_needle_v4(mask: np.ndarray, ) -> Point:
     needle_mask, _ = extract_class_pixels(mask, (0, 255, 0))
-    return detect_corner(needle_mask)
+    return detect_corner(needle_mask, threshold=100)
 
 def edge_detection(img: np.ndarray, sigma=3) -> np.ndarray:
     return feature.canny(img, sigma=sigma)  # sigma higher usually better
