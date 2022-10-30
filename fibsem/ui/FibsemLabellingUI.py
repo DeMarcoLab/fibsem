@@ -48,9 +48,9 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         print(raw_path)
         print(self.save_path)
 
-        vol = tff.imread(os.path.join(raw_path, "*.tif*"), aszarr=True) # loading folder of .tif into zarr array)
-        self.zarr_set = zarr.open(vol)
         self.filenames = sorted(glob.glob(os.path.join(raw_path, "*.tif*")))
+        vol = tff.imread(self.filenames, aszarr=True) # loading folder of .tif into zarr array)
+        self.zarr_set = zarr.open(vol)
         
         # create required directories        
         os.makedirs(os.path.join(self.save_path, "images"), exist_ok=True)
