@@ -234,3 +234,25 @@ def set_arr_as_qlabel(
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
     return label
+
+
+
+
+
+from fibsem.structures import BeamType
+def get_beam_coords_from_click(coords: tuple[float], image: np.ndarray) -> tuple:
+
+    # check inside image dimensions, (y, x)
+    eb_shape = image.data.shape[0], image.shape[1] 
+    ib_shape = image.data.shape[0], int(image.shape[1] * 2)
+
+    if (coords[0] > 0 and coords[0] < eb_shape[0]) and (coords[1] > 0 and coords[1] < eb_shape[1]):
+        beam_type = BeamType.ELECTRON
+
+    elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (coords[1] > eb_shape[0] and coords[1] < ib_shape[1]):
+        coords = (coords[0], coords[1] - ib_shape[1] // 2)
+        beam_type = BeamType.ION
+    else:
+        beam_type =  None
+    
+    return coords, beam_type

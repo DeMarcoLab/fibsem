@@ -45,7 +45,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         resolutions = ["1536x1024", "3072x2048", "6144x4096"]
         self.comboBox_image_resolution.addItems(resolutions)
 
-        self.pushButton_save.clicked.connect(self.get_settings_from_ui)
+        self.pushButton_take_image.clicked.connect(self.take_image)
+
+        self.checkBox_image_save_image.toggled.connect(self.update_ui)
 
     def set_ui_from_settings(self, image_settings: ImageSettings):
 
@@ -59,6 +61,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.lineEdit_image_path.setText(image_settings.save_path)
         self.lineEdit_image_label.setText(image_settings.label)
 
+    def update_ui(self):
+
+        self.label_image_save_path.setVisible(self.checkBox_image_save_image.isChecked())
+        self.lineEdit_image_path.setVisible(self.checkBox_image_save_image.isChecked())
+        self.label_image_label.setVisible(self.checkBox_image_save_image.isChecked())
+        self.lineEdit_image_label.setVisible(self.checkBox_image_save_image.isChecked())
+        
     def get_settings_from_ui(self):
 
         self.image_settings = ImageSettings(
@@ -76,9 +85,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             
         )
 
+        from pprint import pprint
+        pprint(self.image_settings)
+        return self.image_settings
 
-        print(self.image_settings)
+    def take_image(self):
+        print(f"take image")
+        self.image_settings = self.get_settings_from_ui()
 
+        # acquire.new_image(self.microscope, self.image_settings)
 
 def main():
 
