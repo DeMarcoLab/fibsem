@@ -51,8 +51,6 @@ def run_milling(
     # change to milling current
     microscope.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
     if microscope.beams.ion_beam.beam_current.value != milling_current:
-        # if milling_current not in microscope.beams.ion_beam.beam_current.available_values:
-        #   switch to closest # TODO: add check here
         logging.info(f"changing to milling current: {milling_current:.2e}")
         microscope.beams.ion_beam.beam_current.value = milling_current
 

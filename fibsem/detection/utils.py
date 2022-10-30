@@ -12,28 +12,30 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem.conversions import pixel_to_realspace_coordinate
+from fibsem import conversions
 from fibsem.structures import Point
 from PIL import Image
 
+# TODO: rename from detection to features, e.g. FeatureType
 
-class DetectionType(Enum):
+class FeatureType(Enum):
     LamellaCentre = 1
     NeedleTip = 2
-    LamellaEdge = 3
-    LandingPost = 4
-    ImageCentre = 5
+    LamellaRightEdge = 3
+    LamellaLeftEdge = 4
+    LandingPost = 5
+    ImageCentre = 6
 
 
 @dataclass
-class DetectionFeature:
-    detection_type: DetectionType
-    feature_px: Point  # x, y
+class Feature:
+    detection_type: FeatureType
+    feature_px: Point  = None # x, y
 
 
 @dataclass
 class DetectionResult:
-    features: list[DetectionFeature]
+    features: list[Feature]
     adorned_image: AdornedImage
     display_image: np.ndarray
     distance_metres: Point = Point(0, 0)  # x, y
@@ -42,19 +44,21 @@ class DetectionResult:
 
 # detection colour map
 DETECTION_TYPE_COLOURS = {
-    DetectionType.LamellaCentre: (1, 0, 0, 1),
-    DetectionType.NeedleTip: (0, 1, 0, 1),
-    DetectionType.LamellaEdge: (1, 0.5, 0, 1),
-    DetectionType.LandingPost: (0, 1, 1, 1),
-    DetectionType.ImageCentre: (1, 1, 1, 1)
+    FeatureType.LamellaCentre: (1, 0, 0, 1),
+    FeatureType.NeedleTip: (0, 1, 0, 1),
+    FeatureType.LamellaLeftEdge: (1, 0.5, 0.5, 1),
+    FeatureType.LamellaRightEdge: (1, 0.5, 0, 1),
+    FeatureType.LandingPost: (0, 1, 1, 1),
+    FeatureType.ImageCentre: (1, 1, 1, 1)
 }
 
 DETECTION_TYPE_COLOURS_v2 = {
-    DetectionType.LamellaCentre: "red",
-    DetectionType.NeedleTip: "green",
-    DetectionType.LamellaEdge: "orange",
-    DetectionType.LandingPost: "cyan",
-    DetectionType.ImageCentre: "white"
+    FeatureType.LamellaCentre: "red",
+    FeatureType.NeedleTip: "green",
+    FeatureType.LamellaLeftEdge: "magenta",
+    FeatureType.LamellaRightEdge: "orange",
+    FeatureType.LandingPost: "cyan",
+    FeatureType.ImageCentre: "white"
 }
 
 def decode_segmap(image, nc=3):
@@ -84,14 +88,18 @@ def decode_segmap(image, nc=3):
 
 
 
+
+
+
+# TODO: refactor usage to distance between two points
 def convert_pixel_distance_to_metres(p1: Point, p2: Point, adorned_image: AdornedImage):
     """Convert from pixel coordinates to distance in metres """
 
     # convert pixel coordinate to realspace coordinate
-    x1_real, y1_real = pixel_to_realspace_coordinate(
+    x1_real, y1_real = conversions.pixel_to_realspace_coordinate(
         (p1.x, p1.y), adorned_image
     )
-    x2_real, y2_real = pixel_to_realspace_coordinate(
+    x2_real, y2_real = conversions.pixel_to_realspace_coordinate(
         (p2.x, p2.y), adorned_image
     )
 
@@ -234,9 +242,9 @@ def load_detection_result(path: Path, data) -> DetectionResult:
     """Read detection result from dataframe row, and return"""
 
     label = data["label"]
-    p1_type = DetectionType[data["p1.type"]]
+    p1_type = FeatureType[data["p1.type"]]
     p1 = Point(x=data["p1.x"], y=data["p1.y"])
-    p2_type = DetectionType[data["p2.type"]]
+    p2_type = FeatureType[data["p2.type"]]
     p2 = Point(x=data["p2.x"], y=data["p2.y"])
 
     fname = glob.glob(os.path.join(path, f"*{label}*.tif"))[0]
@@ -247,8 +255,8 @@ def load_detection_result(path: Path, data) -> DetectionResult:
 
     det = DetectionResult(
         features=[
-            DetectionFeature(detection_type=p1_type, feature_px=p1),
-            DetectionFeature(detection_type=p2_type, feature_px=p2),
+            Feature(detection_type=p1_type, feature_px=p1),
+            Feature(detection_type=p2_type, feature_px=p2),
         ],
         adorned_image=img,
         display_image=None,
@@ -291,7 +299,6 @@ def plot_detection_result(det_result: DetectionResult):
 
 def write_data_to_disk(path: Path, detection_result: DetectionResult) -> None:
     
-    # TODO: move this
     from fibsem import utils
     label = utils.current_timestamp() + "_label"
 

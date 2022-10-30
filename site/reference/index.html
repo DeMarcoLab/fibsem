@@ -2032,7 +2032,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="kn">from</span> <span class="nn">fibsem.ui</span> <span class="kn">import</span> <span class="n">windows</span> <span class="k">as</span> <span class="n">fibsem_ui_windows</span>
-    <span class="kn">from</span> <span class="nn">fibsem.detection.utils</span> <span class="kn">import</span> <span class="n">DetectionType</span><span class="p">,</span> <span class="n">DetectionFeature</span>
+    <span class="kn">from</span> <span class="nn">fibsem.detection.utils</span> <span class="kn">import</span> <span class="n">FeatureType</span><span class="p">,</span> <span class="n">Feature</span>
     <span class="kn">from</span> <span class="nn">fibsem</span> <span class="kn">import</span> <span class="n">utils</span>
 
     <span class="c1"># TODO: remove ui elements from this function... just use base detect_features</span>
@@ -2047,8 +2047,8 @@
         <span class="n">settings</span><span class="o">=</span><span class="n">settings</span><span class="p">,</span>
         <span class="n">ref_image</span><span class="o">=</span><span class="n">ref_eb</span><span class="p">,</span>
         <span class="n">features</span><span class="o">=</span><span class="p">[</span>
-            <span class="n">DetectionFeature</span><span class="p">(</span><span class="n">DetectionType</span><span class="o">.</span><span class="n">NeedleTip</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-            <span class="n">DetectionFeature</span><span class="p">(</span><span class="n">DetectionType</span><span class="o">.</span><span class="n">ImageCentre</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">Feature</span><span class="p">(</span><span class="n">FeatureType</span><span class="o">.</span><span class="n">NeedleTip</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">Feature</span><span class="p">(</span><span class="n">FeatureType</span><span class="o">.</span><span class="n">ImageCentre</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
         <span class="p">],</span>
         <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span>
     <span class="p">)</span>
@@ -2070,8 +2070,8 @@
         <span class="n">settings</span><span class="o">=</span><span class="n">settings</span><span class="p">,</span>
         <span class="n">ref_image</span><span class="o">=</span><span class="n">ref_ib</span><span class="p">,</span>
         <span class="n">features</span><span class="o">=</span><span class="p">[</span>
-            <span class="n">DetectionFeature</span><span class="p">(</span><span class="n">DetectionType</span><span class="o">.</span><span class="n">NeedleTip</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-            <span class="n">DetectionFeature</span><span class="p">(</span><span class="n">DetectionType</span><span class="o">.</span><span class="n">ImageCentre</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">Feature</span><span class="p">(</span><span class="n">FeatureType</span><span class="o">.</span><span class="n">NeedleTip</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">Feature</span><span class="p">(</span><span class="n">FeatureType</span><span class="o">.</span><span class="n">ImageCentre</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
         <span class="p">],</span>
         <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span>
     <span class="p">)</span>

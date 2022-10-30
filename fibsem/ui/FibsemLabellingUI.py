@@ -9,7 +9,7 @@ import numpy as np
 import tifffile as tff
 import zarr
 from PIL import Image
-from qtdesigner_files import FibsemLabellingUI
+from fibsem.ui.qtdesigner_files import FibsemLabellingUI
 from PyQt5 import QtWidgets
 import dask.array as da
 
@@ -51,6 +51,9 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.filenames = sorted(glob.glob(os.path.join(raw_path, "*.tif*")))
         vol = tff.imread(self.filenames, aszarr=True) # loading folder of .tif into zarr array)
         self.zarr_set = zarr.open(vol)
+        if self.zarr_set.ndim == 2:
+            print("only one image loaded...")
+            self.zarr_set = [self.zarr_set]
         
         # create required directories        
         os.makedirs(os.path.join(self.save_path, "images"), exist_ok=True)
@@ -126,9 +129,22 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         return label_image
 
-    # TODO: port functionality
-    # TODO: show existing labels if exist
+    def closeEvent(self, event):
+        # try to save the current image on close
+        try:
+            self.save_image()
+        except: 
+            pass
+        event.accept()
+
     # TODO: remove use of PIl, use tf to save
+    # TODO: doesnt work for a single image dataset..?
+    # BUG: no way to save the last image in the dataset? except go back?
+
+    # TODO: change raw -> images. dont want to duplicate data this way currently no way to go back into an existing dataset? 
+    # TODO: go to index
+    # TODO: hotkeys
+    # 
 
 def main():
 

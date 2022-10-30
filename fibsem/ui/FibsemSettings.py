@@ -39,6 +39,9 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         # connect to microscope, if required
         if microscope is None:
             self.microscope, self.settings = utils.setup_session()
+        else:
+            self.microscope = microscope
+            self.settings = settings
 
         self.setup_connections()
         self.update_ui_from_settings(self.settings)
@@ -311,10 +314,6 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
 
         self.close()
         self.viewer.close()
-
-
-# TODO: change ion beam current to comboBox
-
 
 def main():
 

@@ -1,8 +1,11 @@
 import numpy as np
 from autoscript_sdb_microscope_client.structures import AdornedImage
+from fibsem.structures import Point
 
 ### UTILS
-def pixel_to_realspace_coordinate(coord: list, image: AdornedImage, pixelsize: int = None) -> list:
+def pixel_to_realspace_coordinate(
+    coord: list, image: AdornedImage, pixelsize: int = None
+) -> list:
     """Convert pixel image coordinate to real space coordinate.
 
     This conversion deliberately ignores the nominal pixel size in y,
@@ -36,11 +39,12 @@ def pixel_to_realspace_coordinate(coord: list, image: AdornedImage, pixelsize: i
     # reset origin to center
     coord -= np.array([x_shape / 2, y_shape / 2]).astype(np.int32)
     realspace_coord = list(np.array(coord) * pixelsize)  # to real space
-    return realspace_coord # TODO: convert to use Point struct
+    return realspace_coord  # TODO: convert to use Point struct
 
 
-
-def get_lamella_size_in_pixels(img: AdornedImage, protocol: dict, use_trench_height: bool = False) -> tuple[int]:
+def get_lamella_size_in_pixels(
+    img: AdornedImage, protocol: dict, use_trench_height: bool = False
+) -> tuple[int]:
     """Get the relative size of the lamella in pixels based on the hfw of the image.
 
     Args:
@@ -54,31 +58,54 @@ def get_lamella_size_in_pixels(img: AdornedImage, protocol: dict, use_trench_hei
     # get real size from protocol
     lamella_width = protocol["lamella_width"]
     lamella_height = protocol["lamella_height"]
-        
+
     total_height = lamella_height
     if use_trench_height:
         trench_height = protocol["protocol_stages"][0]["trench_height"]
         total_height += 2 * trench_height
 
-    # convert to px
+    # convert to m
     pixelsize = img.metadata.binary_result.pixel_size.x
-    vfw = img.height * pixelsize
-    hfw = img.width * pixelsize
-    
-    lamella_height_px = int((total_height / vfw) * img.height) 
-    lamella_width_px = int((lamella_width / hfw) * img.width) 
+    vfw = convert_pixels_to_metres(img.height, pixelsize)
+    hfw = convert_pixels_to_metres(img.width, pixelsize)
+
+    # lamella size in px (% of image)
+    lamella_height_px = int((total_height / vfw) * img.height)
+    lamella_width_px = int((lamella_width / hfw) * img.width)
 
     return (lamella_height_px, lamella_width_px)
 
+
 def convert_metres_to_pixels(distance: float, pixelsize: float) -> int:
     """Convert distance in metres to pixels"""
-    return int(distance * pixelsize)
+    return int(distance / pixelsize)
+
 
 def convert_pixels_to_metres(pixels: int, pixelsize: float) -> float:
     """Convert pixels to distance in metres"""
-    return float(pixels / pixelsize)
+    return float(pixels * pixelsize)
 
 
+def distance_between_points(p1: Point, p2: Point) -> Point:
+    """Calculate the distance between two points in each coordinate"""
+
+    return Point(x=(p2.x - p1.x), y=(p2.y - p1.y))
 
 
-    
+def convert_point_from_pixel_to_metres(point: Point, pixelsize: float) -> Point:
+
+    point_m = Point(
+        x=convert_pixels_to_metres(point.x, pixelsize),
+        y=convert_pixels_to_metres(point.y, pixelsize),
+    )
+
+    return point_m
+
+
+def convert_point_from_metres_to_pixel(point: Point, pixelsize: float) -> Point:
+
+    point_px = Point(
+        x=convert_metres_to_pixels(point.x, pixelsize),
+        y=convert_metres_to_pixels(point.y, pixelsize),
+    )
+    return point_px

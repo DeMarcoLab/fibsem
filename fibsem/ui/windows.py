@@ -6,16 +6,16 @@ from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import AdornedImage
 from fibsem import acquire, validation
 from fibsem.detection import detection
-from fibsem.detection.detection import DetectionFeature, DetectionResult
+from fibsem.detection.detection import Feature, DetectionResult
 from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.detection_window import GUIDetectionWindow
-from fibsem.ui.movement_window import GUIMMovementWindow
+from fibsem.ui.FibsemMovementUI import FibsemMovementUI
 from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
 
 import numpy as np
-
+import napari
 def ask_user_interaction(
     msg="Default Ask User Message", image: np.ndarray = None
 ):
@@ -37,22 +37,28 @@ def ask_user_movement(
 
     logging.info(f"Asking user for confirmation for {msg_type} movement")
 
-    movement_window = GUIMMovementWindow(
+    viewer = napari.Viewer()
+
+    movement_ui = FibsemMovementUI(
         microscope=microscope,
         settings=settings,
         msg_type=msg_type,
         msg=msg,
         parent=parent,
+        viewer=viewer
     )
-    movement_window.show()
-    movement_window.exec_()
+    
+    viewer.window.add_dock_widget(movement_ui, area="right", add_vertical_stretch=False)
+    movement_ui.exec_()
+
+    # napari.run()
 
 
 def detect_features(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
     ref_image: AdornedImage,
-    features: tuple[DetectionFeature],
+    features: tuple[Feature],
     validate: bool = True,
 ) -> DetectionResult:
     """_summary_
@@ -62,7 +68,7 @@ def detect_features(
         settings (dict): _description_
         image_settings (ImageSettings): _description_
         ref_image (AdornedImage): _description_
-        features (tuple[DetectionFeature]): _description_
+        features (tuple[Feature]): _description_
         validate (bool, optional): _description_. Defaults to True.
 
     Returns:
@@ -121,7 +127,6 @@ def run_validation_ui(
     validation.validate_initial_microscope_state(microscope, settings)
 
     # validate user configuration
-    # TODO: this will change when settings goes from dict -> struct
     validation._validate_configuration_values(microscope, settings.protocol)
 
     # reminders

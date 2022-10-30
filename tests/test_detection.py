@@ -3,7 +3,7 @@ import pytest
 
 import numpy as np
 from fibsem.structures import Point
-from fibsem.detection import detection
+from fibsem.detection import detection, utils
 
 
 
@@ -41,3 +41,4 @@ def test_detect_closest_edge():
 
     assert top == Point(100, 100)
     assert bot == Point(199, 199)
+

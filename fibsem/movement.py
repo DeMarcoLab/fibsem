@@ -13,7 +13,7 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
 )
 from fibsem.structures import BeamType, MicroscopeSettings
-from fibsem.detection.detection import DetectionResult, DetectionType
+from fibsem.detection.detection import DetectionResult, FeatureType
 
 
 ############################## NEEDLE ##############################
@@ -30,7 +30,7 @@ def insert_needle(
         insert_position (ManipulatorSavedPosition, optional): saved needle position. Defaults to ManipulatorSavedPosition.PARK.
     """
     needle = microscope.specimen.manipulator
-    # logging.info(f"inserting needle to {insert_position.explain} position.")
+    # logging.info(f"inserting needle to {insert_position} position.")
     insert_position = needle.get_saved_position(
         insert_position, ManipulatorCoordinateSystem.RAW
     )
@@ -347,7 +347,7 @@ def x_corrected_stage_movement(
 
 def y_corrected_stage_movement(
     microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings, # TODO: change to StageSettings
+    settings: MicroscopeSettings,
     expected_y: float,
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> StagePosition:
@@ -364,6 +364,7 @@ def y_corrected_stage_movement(
     """
     
     # TODO: replace with camera matrix * inverse kinematics
+    # TODO: replace stage_tilt_flat_to_electron with pre-tilt 
 
     # all angles in radians
     stage_tilt_flat_to_electron = np.deg2rad(
@@ -382,7 +383,7 @@ def y_corrected_stage_movement(
     stage_rotation = microscope.specimen.stage.current_position.r % (2 * np.pi)
     stage_tilt = microscope.specimen.stage.current_position.t
 
-    # TODO: what should happen if we arent close?
+    
     PRETILT_SIGN = 1.0
     # pretilt angle depends on rotation
     if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
@@ -481,7 +482,7 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
 
 
         # these movements move the needle...
-        if f1.detection_type in [DetectionType.NeedleTip, DetectionType.LamellaEdge]:
+        if f1.detection_type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
             logging.info(f"MOVING NEEDLE")
             
             # move_needle_relative_with_corrected_movement(
@@ -491,11 +492,11 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
             #     beam_type=beam_type,
             # )
         
-        if f1.detection_type is DetectionType.LamellaCentre:
-            if f2.detection_type is DetectionType.ImageCentre:
+        if f1.detection_type is FeatureType.LamellaCentre:
+            if f2.detection_type is FeatureType.ImageCentre:
                 
                 logging.info(f"MOVING STAGE")
-                # need to reverse the direction to move correctly. TODO: investigate if this is to do with scan rotation?
+                # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
                 # move_stage_relative_with_corrected_movement(
                 #     microscope = microscope, 
                 #     settings=settings,

@@ -90,7 +90,7 @@ def main():
             alignment.beam_shift_alignment(microscope, settings.image, lamella.reference_image)
                        
             if stage_no == 0:
-                print("TODO: microexpansion joints")
+                print("add microexpansion joints here")
 
             # mill trenches
             milling._draw_trench_patterns(microscope, milling_dict)

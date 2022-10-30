@@ -12,7 +12,7 @@ from fibsem import acquire, conversions, movement, constants, alignment, utils, 
 from fibsem.structures import BeamType, MicroscopeSettings, MillingSettings, Point
 from fibsem.ui.qtdesigner_files import FibsemUI
 from PyQt5 import QtCore, QtWidgets
-from fibsem.detection.detection import DetectionType, DetectionFeature, DetectionResult
+from fibsem.detection.detection import FeatureType, Feature, DetectionResult
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 
@@ -80,7 +80,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         self.pushButton_detection_update_features.clicked.connect(self.update_detection_features)
         self.comboBox_detection_beam_type.addItems([beam.name for beam in BeamType])
         self.comboBox_detection_feature_1.currentTextChanged.connect(self.update_available_features)
-        available_feature_1 = [DetectionType.LamellaCentre, DetectionType.LamellaEdge, DetectionType.NeedleTip]
+        available_feature_1 = [FeatureType.LamellaCentre, FeatureType.LamellaRightEdge, FeatureType.NeedleTip]
         self.comboBox_detection_feature_1.addItems([feature.name for feature in available_feature_1])
         
 
@@ -393,16 +393,16 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
     def update_available_features(self):
 
-        feature_1 = DetectionType[self.comboBox_detection_feature_1.currentText()]
+        feature_1 = FeatureType[self.comboBox_detection_feature_1.currentText()]
 
-        if feature_1 is DetectionType.NeedleTip:
-            available_feature_2 = [DetectionType.LamellaCentre, DetectionType.ImageCentre]
+        if feature_1 is FeatureType.NeedleTip:
+            available_feature_2 = [FeatureType.LamellaCentre, FeatureType.ImageCentre]
 
-        if feature_1 is DetectionType.LamellaEdge:
-            available_feature_2 = [DetectionType.LandingPost]
+        if feature_1 is FeatureType.LamellaRightEdge:
+            available_feature_2 = [FeatureType.LandingPost]
 
-        if feature_1 is DetectionType.LamellaCentre:
-            available_feature_2 = [DetectionType.ImageCentre]
+        if feature_1 is FeatureType.LamellaCentre:
+            available_feature_2 = [FeatureType.ImageCentre]
 
         self.comboBox_detection_feature_2.clear()
         self.comboBox_detection_feature_2.addItems([feature.name for feature in available_feature_2])
@@ -417,8 +417,8 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.take_detection_image()
         features = [
-            DetectionFeature(DetectionType[features_names[0]], Point(0, 0)),
-            DetectionFeature(DetectionType[features_names[1]], Point(0, 0))
+            Feature(FeatureType[features_names[0]], Point(0, 0)),
+            Feature(FeatureType[features_names[1]], Point(0, 0))
             ]
         self.detection = detection.locate_shift_between_features(self.image, features=features)
         

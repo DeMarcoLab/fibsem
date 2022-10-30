@@ -9,7 +9,7 @@ from fibsem.structures import MicroscopeSettings
 from fibsem.ui import utils as fibsem_ui_utils
 
 from fibsem.detection import utils as det_utils
-from fibsem.detection.utils import DetectionResult, DetectionType, Point
+from fibsem.detection.utils import DetectionResult, FeatureType, Point
                                      
 from fibsem.ui.qtdesigner_files import detection_dialog as detection_gui
 from PyQt5 import QtCore, QtWidgets
@@ -200,7 +200,7 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         event.accept()
 
 def main():
-    from fibsem.detection.detection import DetectionFeature
+    from fibsem.detection.detection import Feature
     import fibsem.ui.windows as fibsem_ui_windows
 
     microscope, settings = utils.setup_session()
@@ -208,8 +208,8 @@ def main():
     app = QtWidgets.QApplication([])
 
     # select features
-    features = [DetectionFeature(detection_type=DetectionType.ImageCentre, feature_px=None),
-                DetectionFeature(detection_type=DetectionType.LamellaCentre, feature_px=None)]
+    features = [Feature(detection_type=FeatureType.ImageCentre, feature_px=None),
+                Feature(detection_type=FeatureType.LamellaCentre, feature_px=None)]
     det = fibsem_ui_windows.detect_features(microscope=microscope, 
         settings=settings, ref_image=None, features=features, validate=True)
 
