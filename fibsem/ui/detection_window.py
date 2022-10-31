@@ -4,8 +4,9 @@ import sys
 from pprint import pprint
 
 import matplotlib.patches as mpatches
+from regex import D
 from fibsem import conversions, utils
-from fibsem.structures import MicroscopeSettings
+from fibsem.structures import BeamType, MicroscopeSettings
 from fibsem.ui import utils as fibsem_ui_utils
 
 from fibsem.detection import utils as det_utils
@@ -16,6 +17,7 @@ from fibsem.detection.detection import DetectedFeatures
 from fibsem.ui.qtdesigner_files import detection_dialog as detection_gui
 from PyQt5 import QtCore, QtWidgets
 
+# TODO: convert to napari
 class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
@@ -194,23 +196,44 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
         event.accept()
 
+
 def main():
-    from fibsem.detection.detection import Feature
+    from fibsem.detection.detection import Feature, move_based_on_detection
     import fibsem.ui.windows as fibsem_ui_windows
+    from fibsem import movement, acquire
+
 
     microscope, settings = utils.setup_session(protocol_path=r"C:\Users\Admin\Github\autoliftout\liftout\protocol\protocol.yaml")
     
     app = QtWidgets.QApplication([])
 
-    features = [Feature(FeatureType.NeedleTip), 
-                Feature(FeatureType.LamellaCentre)]
-    det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
+    import random
 
-    print("features: ", det.features)
-    print("distance: ", det.distance)
+    # beam_type = BeamType.ELECTRON
+    features = [Feature(FeatureType.NeedleTip), 
+                Feature(FeatureType.ImageCentre)]
+
+    while True:
+        beam_type = random.choice([BeamType.ELECTRON, BeamType.ION])
+        settings.image.beam_type = beam_type
+
+        from liftout import actions 
+        actions.move_needle_to_liftout_position(microscope)
+        det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
+
+        print("features: ", det.features)
+        print("distance: ", det.distance)
+
+        # for eb needle move: positive = up
+        # for ib needle move: positive = down
+        move_based_on_detection(microscope, settings, det, beam_type=beam_type, move_x=False)
+
+        acquire.take_reference_images(microscope, settings.image)
+
 
     sys.exit(app.exec_())
 
 
 if __name__ == "__main__":
     main()
+

@@ -30,7 +30,8 @@ class FeatureType(Enum):
 @dataclass
 class Feature:
     detection_type: FeatureType
-    feature_px: Point  = None # x, y
+    feature_px: Point  = None # x, y (image)
+    feature_m: Point = None # x, y (microscope image coord)
 
 
 @dataclass

@@ -7,7 +7,7 @@ import napari
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem import acquire, validation
+from fibsem import acquire, conversions, validation
 from fibsem.detection import detection
 from fibsem.detection.detection import (DetectedFeatures,Feature)
 from fibsem.segmentation.model import load_model
@@ -118,6 +118,10 @@ def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSett
         detection_window.exec_()
 
         det = detection_window.detected_features
+
+    # calculate features in microscope image coords
+    det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].feature_px, image.data, pixelsize)
+    det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].feature_px, image.data, pixelsize)
 
     return det
 

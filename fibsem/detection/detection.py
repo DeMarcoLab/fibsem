@@ -549,3 +549,58 @@ def plot_det_result_v2(det: DetectedFeatures):
     ax[1].plot([det.features[0].feature_px.x, det.features[1].feature_px.x], [det.features[0].feature_px.y, det.features[1].feature_px.y], "w--")
     ax[1].legend(loc="best")
     plt.show()
+
+
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from fibsem.structures import MicroscopeSettings, BeamType
+# TODO: finish this @patrick
+def move_based_on_detection(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, 
+    det: DetectedFeatures, beam_type: BeamType, move_x: bool=True, move_y: bool = True):
+
+        from fibsem import movement
+        
+        # nulify movements in unsupported axes
+        if not move_x:
+            det.distance.x = 0
+        if not move_y:
+            det.distance.y = 0
+
+        # f1 = move from, f2 = move to
+        f1 = det.features[0]
+        f2 = det.features[1]
+
+        logging.info(f"move_x: {move_x}, move_y: {move_y}")
+        logging.info(f"movement: x={det.distance.x:.2e}, y={det.distance.y:.2e}")
+        logging.info(f"features: {f1}, {f2}, beam_type: {beam_type}")
+
+        # these movements move the needle...
+        if f1.detection_type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
+            logging.info(f"MOVING NEEDLE")
+            
+            # electron: neg = down, ion: neg = up
+            if beam_type is BeamType.ELECTRON:
+                det.distance.y *= -1
+
+
+            movement.move_needle_relative_with_corrected_movement(
+                microscope=microscope,
+                dx=det.distance.x,
+                dy=det.distance.y,
+                beam_type=beam_type,
+            )
+        
+        if f1.detection_type is FeatureType.LamellaCentre:
+            if f2.detection_type is FeatureType.ImageCentre:
+                
+                logging.info(f"MOVING STAGE")
+                # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
+                movement.move_stage_relative_with_corrected_movement(
+                    microscope = microscope, 
+                    settings=settings,
+                    dx=-det.distance_metres.x,
+                    dy=-det.distance_metres.y,
+                    beam_type=beam_type
+                )
+
+                # TODO: support other movements?
+        return
