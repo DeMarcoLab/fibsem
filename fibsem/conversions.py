@@ -49,6 +49,26 @@ def pixel_to_realspace_coordinate(
     return realspace_coord  # TODO: convert to use Point struct
 
 
+# TODO: refactor over pixel_to_realspace_coordinate
+def image_to_microscope_image_coordinates(
+    coord: Point, image: np.ndarray, pixelsize: float
+) -> Point:
+
+    # convert from image pixel coord (0, 0) top left to microscope image (0, 0) mid
+
+    # shape
+    cy, cx = np.asarray(image.shape) // 2
+
+    # distance from centre?
+    dy = coord.y - cy   # neg = left
+    dx = coord.x - cx   # neg = up
+    
+    point_m = convert_point_from_pixel_to_metres(Point(dx, dy), pixelsize)
+    
+    return point_m
+
+
+
 def get_lamella_size_in_pixels(
     img: AdornedImage, protocol: dict, use_trench_height: bool = False
 ) -> tuple[int]:
