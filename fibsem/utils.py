@@ -116,6 +116,72 @@ def sputter_platinum(
     logging.info("sputtering platinum finished.")
 
 
+
+def sputter_multichem_v2(
+    microscope: SdbMicroscopeClient,
+    mc_settings: MultiChemSettings,
+    default_application_file: str = "autolamella",
+):
+    """Sputter platinum over the sample.
+
+    Args:
+        microscope (SdbMicroscopeClient): autoscript microscope instance
+        mc_settings (MultiChemSettings): multichem settings
+    Raises:
+        RuntimeError: Error Sputtering
+    """
+
+    # protcol = settings.protocol["platinum"] in old system
+    # protocol = settings.protocol["platinum"] in new
+
+    from fibsem.structures import MultiChemSettings
+
+    mc_settings = MultiChemSettings()
+
+    # Setup
+    microscope.imaging.set_active_view(mc_settings.beam_type.value)
+    microscope.patterning.clear_patterns()
+    microscope.patterning.set_default_application_file(mc_settings.application_file)
+    microscope.patterning.set_default_beam_type(mc_settings.beam_type.value)
+    multichem = microscope.gas.get_multichem()
+    multichem.insert(mc_settings.position)
+    multichem.turn_heater_on(mc_settings.gas)  # "Pt cryo")
+    time.sleep(3)
+
+    # Create sputtering pattern
+    microscope.beams.electron_beam.horizontal_field_width.value = hfw
+    pattern = microscope.patterning.create_line(
+        -mc_settings.length / 2,  # x_start
+        +mc_settings.length,  # y_start
+        +mc_settings.length / 2,  # x_end
+        +mc_settings.length,  # y_end
+        2e-6,
+    )  # milling depth
+    pattern.time = sputter_time + 0.1
+
+    # Run sputtering
+    microscope.beams.electron_beam.blank()
+    if microscope.patterning.state == "Idle":
+        logging.info("Sputtering with platinum for {} seconds...".format(sputter_time))
+        microscope.patterning.start()  # asynchronous patterning
+        time.sleep(sputter_time + 5)
+    else:
+        raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
+    if microscope.patterning.state == "Running":
+        microscope.patterning.stop()
+    else:
+        logging.warning("Patterning state is {}".format(microscope.patterning.state))
+        logging.warning("Consider adjusting the patterning line depth.")
+
+    # Cleanup
+    microscope.patterning.clear_patterns()
+    microscope.beams.electron_beam.unblank()
+    microscope.patterning.set_default_application_file(default_application_file)
+    microscope.patterning.set_default_beam_type(BeamType.ION.value)  # set ion beam
+    multichem.retract()
+    logging.info("sputtering multichem finished.")
+
+
 def save_image(image: AdornedImage, save_path: Path, label: str = "image"):
     os.makedirs(save_path, exist_ok=True)
     path = os.path.join(save_path, f"{label}.tif")

@@ -504,3 +504,39 @@ class FibsemState:
         )
 
         return autoliftout_state
+
+
+@dataclass
+class MultiChemSettings:
+    application_file: str = "cryo_Pt_dep"
+    gas: str = "Pt cryo"
+    position: str = "cryo"
+    hfw: float = 100e-6
+    length: float = 15e-6
+    time: float = 30
+    beam_type: BeamType = BeamType.ELECTRON
+
+    def __to_dict__(self) -> dict:
+        
+        return {
+            "application_file": self.application_file,
+            "gas": self.gas,
+            "position": self.position,
+            "hfw": self.hfw,
+            "length": self.length,
+            "time": self.time,
+            "beam_type": self.beam_type.name
+        }
+    
+    @staticmethod
+    def __from_dict__(settings_dict: dict) -> 'MultiChemSettings':
+
+        return MultiChemSettings(
+            application_file=settings_dict["application_file"],
+            gas = settings_dict["gas"],
+            position = settings_dict["position"],
+            hfw = settings_dict["hfw"],
+            length= settings_dict["length"],
+            time = settings_dict["time"],
+            beam_type=BeamType[settings_dict["beam_type"]]
+        )
