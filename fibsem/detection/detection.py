@@ -538,7 +538,7 @@ def locate_shift_between_features_v2(image: np.ndarray, model: SegmentationModel
     return det
 
 def plot_det_result_v2(det: DetectedFeatures):
-
+    import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")

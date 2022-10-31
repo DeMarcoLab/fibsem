@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 import utils
 import segmentation_models_pytorch as smp
-from utils import decode_segmap
+from fibsem.segmentation.utils import decode_segmap
 
 from pathlib import Path
 
@@ -17,7 +17,7 @@ class SegmentationModel:
         super().__init__()
 
         self.mode = mode
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
 
         self.load_model(checkpoint=checkpoint, encoder=encoder)

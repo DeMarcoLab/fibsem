@@ -27,10 +27,17 @@ def pixel_to_realspace_coordinate(
         Output is in (x, y) format.
     """
     coord = np.array(coord).astype(np.float64)
-    if len(image.data.shape) > 2:
-        y_shape, x_shape = image.data.shape[0:2]
+
+    if isinstance(image, AdornedImage):
+        if len(image.data.shape) > 2:
+            y_shape, x_shape = image.data.shape[0:2]
+        else:
+            y_shape, x_shape = image.data.shape
     else:
-        y_shape, x_shape = image.data.shape
+        if len(image.shape) > 2:
+            y_shape, x_shape = image.shape[0:2]
+        else:
+            y_shape, x_shape = image.shape
 
     if pixelsize is None:
         pixelsize = image.metadata.binary_result.pixel_size.x
