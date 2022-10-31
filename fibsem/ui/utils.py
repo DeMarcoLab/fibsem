@@ -282,6 +282,11 @@ def open_existing_file_ui(parent = None, caption: str = "Open File", directory: 
 
     return filename, ext
 
+def get_existing_directory(parent = None, caption: str = "Open File", directory: Path = None)
+    path = QtWidgets.QFileDialog.getExistingDirectory(
+        parent=parent, caption=caption, directory=directory
+    )
+    return path
 
 def save_filename_ui(parent = None, caption: str = "Open File", directory: Path = None, filter_ext: str = None) -> tuple[str]: 
 
@@ -296,3 +301,4 @@ def save_filename_ui(parent = None, caption: str = "Open File", directory: Path 
     )
 
     return filename, ext
+
