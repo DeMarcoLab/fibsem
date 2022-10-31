@@ -241,7 +241,17 @@ def set_arr_as_qlabel(
 
 from fibsem.structures import BeamType
 def get_beam_coords_from_click(coords: tuple[float], image: np.ndarray) -> tuple:
+    """Check the coords are inside one of the images
+    Get the relative coordinate of the beam image
+    Get the beam type for that image
 
+    Args:
+        coords (tuple[float]): _description_
+        image (np.ndarray): _description_
+
+    Returns:
+        tuple: _description_
+    """
     # check inside image dimensions, (y, x)
     eb_shape = image.data.shape[0], image.shape[1] 
     ib_shape = image.data.shape[0], int(image.shape[1] * 2)
@@ -256,3 +266,35 @@ def get_beam_coords_from_click(coords: tuple[float], image: np.ndarray) -> tuple
         beam_type =  None
     
     return coords, beam_type
+
+
+def open_existing_file_ui(parent = None, caption: str = "Open File", directory: Path = None, filter_ext: str = None) -> tuple[str]: 
+
+    if directory is None:
+        directory = config.CONFIG_PATH
+
+    # "Yaml Files (*.yml *.yaml)"
+
+    filename, ext = QtWidgets.QFileDialog.getOpenFileName(
+        parent,
+        caption=caption,
+        directory=config.CONFIG_PATH,
+        filter=filter_ext,
+    )
+
+    return filename, ext
+
+
+def save_filename_ui(parent = None, caption: str = "Open File", directory: Path = None, filter_ext: str = None) -> tuple[str]: 
+
+    if directory is None:
+        directory = config.CONFIG_PATH
+
+    filename, ext = QtWidgets.QFileDialog.getSaveFileName(
+            parent,
+            caption=caption,
+            directory=directory,
+            filter=filter_ext,
+    )
+
+    return filename, ext

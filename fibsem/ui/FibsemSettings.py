@@ -7,7 +7,7 @@ import napari
 import napari.utils.notifications
 import yaml
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from fibsem import calibration, constants, utils
+from fibsem import calibration, constants, utils, config
 from fibsem.structures import (
     BeamSystemSettings,
     BeamType,
@@ -18,10 +18,10 @@ from fibsem.structures import (
     StageSettings,
     SystemSettings,
 )
+from fibsem.ui import utils as ui_utils
+
 from fibsem.ui.qtdesigner_files import FibsemSettings
 from PyQt5 import QtWidgets
-
-BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
 
 class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
@@ -85,14 +85,20 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
 
         # imaging
         self.comboBox_imaging_beam_type.addItems([beam.name for beam in BeamType])
-        self.comboBox_imaging_resolution.addItems([res for res in self.microscope.beams.electron_beam.scanning.resolution.available_values])
-
+        self.comboBox_imaging_resolution.addItems(
+            [
+                res
+                for res in self.microscope.beams.electron_beam.scanning.resolution.available_values
+            ]
+        )
 
     def update_ui_from_settings(self, settings: MicroscopeSettings):
 
         # system
         self.lineEdit_system_ip_address.setText(settings.system.ip_address)
-        self.comboBox_system_application_file.setCurrentText(settings.system.application_file)
+        self.comboBox_system_application_file.setCurrentText(
+            settings.system.application_file
+        )
 
         # stage
         self.spinBox_stage_rotation_flat_to_electron.setValue(
@@ -105,9 +111,12 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         self.spinBox_stage_tilt_flat_to_electron.setValue(
             settings.system.stage.tilt_flat_to_electron
         )
-        self.spinBox_stage_tilt_flat_to_ion.setValue(settings.system.stage.tilt_flat_to_ion)
+        self.spinBox_stage_tilt_flat_to_ion.setValue(
+            settings.system.stage.tilt_flat_to_ion
+        )
         self.doubleSpinBox_stage_needle_height_limit.setValue(
-            settings.system.stage.needle_stage_height_limit * constants.METRE_TO_MILLIMETRE
+            settings.system.stage.needle_stage_height_limit
+            * constants.METRE_TO_MILLIMETRE
         )
 
         # electron
@@ -134,8 +143,12 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         self.doubleSpinBox_ion_current.setValue(
             settings.system.ion.current * constants.SI_TO_PICO
         )
-        self.comboBox_ion_detector_mode.setCurrentText(settings.system.ion.detector_mode)
-        self.comboBox_ion_detector_type.setCurrentText(settings.system.ion.detector_type)
+        self.comboBox_ion_detector_mode.setCurrentText(
+            settings.system.ion.detector_mode
+        )
+        self.comboBox_ion_detector_type.setCurrentText(
+            settings.system.ion.detector_type
+        )
         self.doubleSpinBox_ion_eucentric_height.setValue(
             settings.system.ion.eucentric_height * constants.METRE_TO_MILLIMETRE
         )
@@ -143,12 +156,15 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
 
         # imaging
         self.comboBox_imaging_resolution.setCurrentText(settings.image.resolution)
-        self.doubleSpinBox_imaging_dwell_time.setValue(settings.image.dwell_time * constants.SI_TO_MICRO)
-        self.doubleSpinBox_imaging_hfw.setValue(settings.image.hfw * constants.SI_TO_MICRO)
+        self.doubleSpinBox_imaging_dwell_time.setValue(
+            settings.image.dwell_time * constants.SI_TO_MICRO
+        )
+        self.doubleSpinBox_imaging_hfw.setValue(
+            settings.image.hfw * constants.SI_TO_MICRO
+        )
         self.checkBox_imaging_use_autocontrast.setChecked(settings.image.autocontrast)
         self.checkBox_imaging_use_autogamma.setChecked(settings.image.gamma.enabled)
         self.checkBox_imaging_save_image.setChecked(settings.image.save)
-
 
     def get_beam_settings(self):
 
@@ -197,8 +213,8 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
 
     def get_settings_from_ui(self) -> dict:
 
-        settings = MicroscopeSettings( 
-            system = SystemSettings(
+        settings = MicroscopeSettings(
+            system=SystemSettings(
                 ip_address=self.lineEdit_system_ip_address.text(),
                 application_file=self.comboBox_system_application_file.currentText(),
                 stage=StageSettings(
@@ -219,13 +235,19 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
                 electron=BeamSystemSettings(
                     beam_type=BeamType.ELECTRON,
                     voltage=float(
-                        self.doubleSpinBox_electron_voltage.value() * constants.KILO_TO_SI
+                        self.doubleSpinBox_electron_voltage.value()
+                        * constants.KILO_TO_SI
                     ),
                     current=float(
-                        self.doubleSpinBox_electron_current.value() * constants.PICO_TO_SI
+                        self.doubleSpinBox_electron_current.value()
+                        * constants.PICO_TO_SI
                     ),
-                    detector_type=str(self.comboBox_electron_detector_type.currentText()),
-                    detector_mode=str(self.comboBox_electron_detector_mode.currentText()),
+                    detector_type=str(
+                        self.comboBox_electron_detector_type.currentText()
+                    ),
+                    detector_mode=str(
+                        self.comboBox_electron_detector_mode.currentText()
+                    ),
                     eucentric_height=float(
                         self.doubleSpinBox_electron_eucentric_height.value()
                         * constants.MILLIMETRE_TO_METRE
@@ -249,32 +271,27 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
                     plasma_gas=str(self.comboBox_ion_plasma_gas.currentText()),
                 ),
             ),
-            image = ImageSettings(
-                beam_type = BeamType.ELECTRON,
+            image=ImageSettings(
+                beam_type=BeamType.ELECTRON,
                 resolution=self.comboBox_imaging_resolution.currentText(),
-                dwell_time=self.doubleSpinBox_imaging_dwell_time.value() * constants.MICRO_TO_SI,
-                hfw = self.doubleSpinBox_imaging_hfw.value() * constants.MICRO_TO_SI,
+                dwell_time=self.doubleSpinBox_imaging_dwell_time.value()
+                * constants.MICRO_TO_SI,
+                hfw=self.doubleSpinBox_imaging_hfw.value() * constants.MICRO_TO_SI,
                 autocontrast=self.checkBox_imaging_use_autocontrast.isChecked(),
                 save=self.checkBox_imaging_save_image.isChecked(),
-                gamma = GammaSettings(
-                    self.checkBox_imaging_use_autogamma.isChecked()
-                ),
-                label = None
+                gamma=GammaSettings(self.checkBox_imaging_use_autogamma.isChecked()),
+                label=None,
             ),
-            default=DefaultSettings(
-                imaging_current= None,
-                milling_current=None
-
-            )
+            default=DefaultSettings(imaging_current=None, milling_current=None),
         )
         return settings.__to_dict__()
 
     def save_settings(self):
 
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self,
+        filename, _ = ui_utils.save_filename_ui(
+            parent=self,
             caption="Save Settings File",
-            directory=BASE_PATH,
+            directory=config.CONFIG_PATH,
             filter="Yaml Files (*.yaml)",
         )
 
@@ -292,11 +309,11 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
 
         logging.info(f"save settings")
 
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self,
+        filename, _ = ui_utils.open_existing_file_ui(
+            parent=self,
             caption="Load Settings File",
-            directory=BASE_PATH,
-            filter="Yaml Files (*.yaml)",
+            directory=config.CONFIG_PATH,
+            filter_ext="Yaml Files (*.yml *.yaml)",
         )
 
         if filename == "":
