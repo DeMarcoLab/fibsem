@@ -21,6 +21,7 @@ from fibsem.structures import (
     StageSettings,
     SystemSettings,
     DefaultSettings,
+    MultiChemSettings
 )
 
 
