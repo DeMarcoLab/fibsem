@@ -11,7 +11,7 @@ from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.detection_window import GUIDetectionWindow
 from fibsem.ui.FibsemMovementUI import FibsemMovementUI
-from fibsem.ui.user_window import GUIUserWindow
+from fibsem.ui.FibsemAskUserUI import FibsemAskUserUI
 from PyQt5.QtWidgets import QMessageBox
 
 import numpy as np
@@ -20,7 +20,7 @@ def ask_user_interaction(
     msg="Default Ask User Message", image: np.ndarray = None
 ):
     """Create user interaction window and get return response"""
-    ask_user_window = GUIUserWindow(msg=msg, image=image)
+    ask_user_window = FibsemAskUserUI(msg=msg, image=image)
     ask_user_window.show()
 
     response = bool(ask_user_window.exec_())

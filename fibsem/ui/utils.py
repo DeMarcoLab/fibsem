@@ -14,6 +14,8 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 
+from pathlib import Path
+
 # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 class _WidgetPlot(QWidget):
     def __init__(self, *args, display_image, **kwargs):
@@ -234,10 +236,6 @@ def set_arr_as_qlabel(
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
     return label
-
-
-
-
 
 from fibsem.structures import BeamType
 def get_beam_coords_from_click(coords: tuple[float], image: np.ndarray) -> tuple:

@@ -8,14 +8,14 @@ from fibsem.ui.qtdesigner_files import user_dialog as user_gui
 from PyQt5 import QtCore, QtWidgets
 
 
-class GUIUserWindow(user_gui.Ui_Dialog, QtWidgets.QDialog):
+class FibsemAskUserUI(user_gui.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
         msg: str = "Default Message",
         image: np.ndarray = None,
         parent=None,
     ):
-        super(GUIUserWindow, self).__init__(parent=parent)
+        super(FibsemAskUserUI, self).__init__(parent=parent)
         self.setupUi(self)
 
         self.setWindowTitle("FIBSEM Ask User")
@@ -52,7 +52,7 @@ def main():
     ret = fibsem_ui_windows.ask_user_interaction(msg="hi user", image=img)
     print(f"Return: {ret}")
 
-    
+
     sys.exit(app.exec_())
 
 

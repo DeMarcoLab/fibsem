@@ -88,7 +88,7 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         self.comboBox_imaging_resolution.addItems(
             [
                 res
-                for res in self.microscope.beams.electron_beam.scanning.resolution.available_values
+                for res in sorted(self.microscope.beams.electron_beam.scanning.resolution.available_values)
             ]
         )
 
