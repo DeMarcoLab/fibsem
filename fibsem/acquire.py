@@ -75,7 +75,7 @@ def take_set_of_reference_images(
 
 def auto_gamma(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
     """Automatic gamma correction"""
-    std = np.std(image.data)
+    std = np.std(image.data) # unused variable?
     mean = np.mean(image.data)
     diff = mean - 255 / 2.0
     gam = np.clip(
