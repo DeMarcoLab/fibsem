@@ -56,6 +56,7 @@ class ImageSettings:
     label: str
     gamma: GammaSettings
     save_path: Path = None
+    # reduced_area: Rectangle = None
 
     @staticmethod
     def __from_dict__(settings: dict) -> 'ImageSettings':
