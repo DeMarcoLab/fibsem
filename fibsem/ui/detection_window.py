@@ -117,7 +117,6 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
     def update_display(self):
         """Update the window display. Redraw the crosshair"""
 
-        # TODO: consolidate with plot_detected_features
 
         # point position, image coordinates
         point_1 = self.detected_features.features[0].feature_px
@@ -203,17 +202,12 @@ def main():
     
     app = QtWidgets.QApplication([])
 
-    # select features
-    # features = [Feature(detection_type=FeatureType.ImageCentre, feature_px=None),
-    #             Feature(detection_type=FeatureType.LamellaCentre, feature_px=None)]
-    # det = fibsem_ui_windows.detect_features(microscope=microscope, 
-    #     settings=settings, ref_image=None, features=features, validate=True)
-
     features = [Feature(FeatureType.NeedleTip), 
                 Feature(FeatureType.LamellaCentre)]
     det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
 
-    pprint(det)
+    print("features: ", det.features)
+    print("distance: ", det.distance)
 
     sys.exit(app.exec_())
 

@@ -296,39 +296,39 @@ def plot_detection_result(det_result: DetectionResult):
 
     return fig
 
-# from fibsem.detection.detection import DetectedFeatures
 
-# def write_data_to_disk(path: Path, detected_features: DetectedFeatures) -> None:
-    
-#     from fibsem import utils
-#     label = utils.current_timestamp() + "_label"
+def write_data_to_disk(path: Path, detected_features) -> None:
+    from fibsem.detection.detection import DetectedFeatures
 
-#     # utils.save_image(
-#     # image=detected_features.image,
-#     # save_path=path,
-#     # label=label,
-#     # )
+    from fibsem import utils
+    label = utils.current_timestamp() + "_label"
 
-#     import tifffile as tf
-#     import os 
-#     os.makedirs(path, exist_ok=True)
-#     tf.imsave(os.path.join(path, f"{label}.tif"), detected_features.image)
+    # utils.save_image(
+    # image=detected_features.image,
+    # save_path=path,
+    # label=label,
+    # )
 
-#     # get scale invariant coords
-#     shape = detected_features.image.shape
-#     scaled_p0 = get_scale_invariant_coordinates(detected_features.features[0].feature_px, shape=shape)
-#     scaled_p1 = get_scale_invariant_coordinates(detected_features.features[1].feature_px, shape=shape)
+    import tifffile as tf
+    import os 
+    os.makedirs(path, exist_ok=True)
+    tf.imsave(os.path.join(path, f"{label}.tif"), detected_features.image)
 
-#     # get info
-#     logging.info(f"Label: {label}")
-#     info = [label, 
-#         detected_features.features[0].detection_type.name, 
-#         scaled_p0.x, 
-#         scaled_p0.y, 
-#         detected_features.features[1].detection_type.name, 
-#         scaled_p1.x, 
-#         scaled_p1.y
-#         ]
+    # get scale invariant coords
+    shape = detected_features.image.shape
+    scaled_p0 = get_scale_invariant_coordinates(detected_features.features[0].feature_px, shape=shape)
+    scaled_p1 = get_scale_invariant_coordinates(detected_features.features[1].feature_px, shape=shape)
 
-#     write_data_to_csv(path, info)
+    # get info
+    logging.info(f"Label: {label}")
+    info = [label, 
+        detected_features.features[0].detection_type.name, 
+        scaled_p0.x, 
+        scaled_p0.y, 
+        detected_features.features[1].detection_type.name, 
+        scaled_p1.x, 
+        scaled_p1.y
+        ]
+
+    write_data_to_csv(path, info)
 
