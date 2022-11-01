@@ -74,6 +74,8 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.settings.image)
             self.image = np.concatenate([self.eb_image.data, self.ib_image.data], axis=1) # stack both images together
 
+            # TODO: convert this to use grid layout instead of concat images (see salami)
+
             # crosshair
             # cy, cx_eb = self.image.shape[0] // 2, self.image.shape[1] // 4 
             # cx_ib = cx_eb + self.image.shape[1] // 2 
@@ -111,7 +113,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         else:
             beam_type, adorned_image = None, None
         
-        return beam_type, adorned_image
+        return beam_type, adorned_image, coords
 
     def _single_click(self, layer, event):
         
@@ -134,7 +136,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
         # TODO: dimensions are mixed which makes this confusing to interpret... resolve
         
-        beam_type, adorned_image = self.get_data_from_coord(coords)
+        beam_type, adorned_image, coords = self.get_data_from_coord(coords)
 
         if beam_type is None:
             napari.utils.notifications.show_info(f"Clicked outside image dimensions. Please click inside the image to move.")
@@ -159,7 +161,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
                 dy=-dy
             )
 
-        elif self.movement_mode is MovementMode.Stable:
+        else:
             logging.info(f"moving stably in {beam_type}")
             # corrected stage movement
             movement.move_stage_relative_with_corrected_movement(
@@ -170,9 +172,9 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
                 beam_type=beam_type,
             )
 
-        elif self.movement_mode is MovementMode.Needle:
+        # elif self.movement_mode is MovementMode.Needle:
 
-            logging.info(f"moving needle in {beam_type}")
+        #     logging.info(f"moving needle in {beam_type}")
 
         self.update_displays()
 

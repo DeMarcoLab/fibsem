@@ -53,45 +53,10 @@ def ask_user_movement(
     
     viewer.window.add_dock_widget(movement_ui, area="right", add_vertical_stretch=False)
     movement_ui.exec_()
+    viewer.close()
 
     # napari.run()
 
-
-# def detect_features(
-#     microscope: SdbMicroscopeClient,
-#     settings: MicroscopeSettings,
-#     ref_image: AdornedImage,
-#     features: tuple[Feature],
-#     validate: bool = True,
-# ) -> DetectionResult:
-#     """_summary_
-
-#     Args:
-#         microscope (SdbMicroscopeClient): _description_
-#         settings (dict): _description_
-#         image_settings (ImageSettings): _description_
-#         ref_image (AdornedImage): _description_
-#         features (tuple[Feature]): _description_
-#         validate (bool, optional): _description_. Defaults to True.
-
-#     Returns:
-#         DetectionResult: _description_
-#     """
-#     # detect features
-#     image = acquire.new_image(microscope, settings.image)
-
-#     # detect features
-#     det = detection.locate_shift_between_features(image, features=features)
-
-#     # user validate features...
-#     if validate:
-#         det = validate_detection(
-#             microscope,
-#             settings,
-#             det,
-#         )
-
-#     return det
 
 def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
 
@@ -125,23 +90,6 @@ def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSett
 
     return det
 
-
-
-# def validate_detection(
-#     microscope: SdbMicroscopeClient,
-#     settings: MicroscopeSettings,
-#     detected_features: DetectedFeatures,
-# ):
-#     # user validates detection result
-#     detection_window = GUIDetectionWindow(
-#         microscope=microscope,
-#         settings=settings,
-#         detected_features=detected_features,
-#     )
-#     detection_window.show()
-#     detection_window.exec_()
-
-#     return detection_window.detected_features
 
 def run_validation_ui(
     microscope: SdbMicroscopeClient, settings: MicroscopeSettings, log_path: Path

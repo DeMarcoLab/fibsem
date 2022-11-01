@@ -223,13 +223,13 @@ def main():
 
         print("features: ", det.features)
         print("distance: ", det.distance)
+        print("feature 1 position: ", det.features[0].feature_m)
 
         # for eb needle move: positive = up
         # for ib needle move: positive = down
         move_based_on_detection(microscope, settings, det, beam_type=beam_type, move_x=False)
 
         acquire.take_reference_images(microscope, settings.image)
-
 
     sys.exit(app.exec_())
 

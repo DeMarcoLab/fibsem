@@ -233,61 +233,33 @@ def align_needle_to_eucentric_position(
     settings.image.save = False
     settings.image.beam_type = BeamType.ELECTRON
 
-    # ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
-    # det = fibsem_ui_windows.detect_features(
-    #     microscope=microscope,
-    #     settings=settings,
-    #     ref_image=ref_eb,
-    #     features=[
-    #         Feature(FeatureType.NeedleTip, None),
-    #         Feature(FeatureType.ImageCentre, None),
-    #     ],
-    #     validate=validate,
-    # )
-    image = acquire.new_image(microscope, settings.image)
-    det = detection.locate_shift_between_features(
-        image,
+    det = fibsem_ui_windows.detect_features_v2(
+        microscope=microscope,
+        settings=settings,
         features=[
             Feature(FeatureType.NeedleTip, None),
             Feature(FeatureType.ImageCentre, None),
         ],
+        validate=validate,
     )
-
-    movement.move_needle_relative_with_corrected_movement(
-        microscope=microscope,
-        dx=det.distance_metres.x,
-        dy=det.distance_metres.y,
-        beam_type=BeamType.ELECTRON,
-    )
+    detection.move_based_on_detection(microscope, settings, det, beam_type=settings.image.beam_type)
 
     # take reference images
     settings.image.save = False
     settings.image.beam_type = BeamType.ION
-    ref_ib = acquire.new_image(microscope=microscope, settings=settings.image)
 
     image = acquire.new_image(microscope, settings.image)
-    det = detection.locate_shift_between_features(
-        image,
+
+    det = fibsem_ui_windows.detect_features_v2(
+        microscope=microscope,
+        settings=settings,
         features=[
             Feature(FeatureType.NeedleTip, None),
             Feature(FeatureType.ImageCentre, None),
         ],
+        validate=validate,
     )
-
-    # det = fibsem_ui_windows.detect_features(
-    #     microscope=microscope,
-    #     settings=settings,
-    #     ref_image=ref_ib,
-    #     features=[
-    #         Feature(FeatureType.NeedleTip, None),
-    #         Feature(FeatureType.ImageCentre, None),
-    #     ],
-    #     validate=validate,
-    # )
-
-    movement.move_needle_relative_with_corrected_movement(
-        microscope=microscope, dx=0, dy=-det.distance_metres.y, beam_type=BeamType.ION,
-    )
+    detection.move_based_on_detection(microscope, settings, det, beam_type=settings.image.beam_type, move_x=False)
 
     # take image
     acquire.take_reference_images(microscope, settings.image)
