@@ -201,6 +201,7 @@ def main():
     from fibsem.detection.detection import Feature, move_based_on_detection
     import fibsem.ui.windows as fibsem_ui_windows
     from fibsem import movement, acquire
+    from liftout import actions 
 
 
     microscope, settings = utils.setup_session(protocol_path=r"C:\Users\Admin\Github\autoliftout\liftout\protocol\protocol.yaml")
@@ -213,21 +214,30 @@ def main():
     features = [Feature(FeatureType.NeedleTip), 
                 Feature(FeatureType.ImageCentre)]
 
-    while True:
-        beam_type = random.choice([BeamType.ELECTRON, BeamType.ION])
-        settings.image.beam_type = beam_type
+        
+    for beam_type in [BeamType.ELECTRON, BeamType.ION]:
 
-        from liftout import actions 
-        actions.move_needle_to_liftout_position(microscope)
+        settings.image.beam_type = beam_type
+        settings.image.hfw = 400e-6
+
+        # actions.move_needle_to_liftout_position(microscope)
+
         det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
 
         print("features: ", det.features)
         print("distance: ", det.distance)
         print("feature 1 position: ", det.features[0].feature_m)
 
+        # move back 5um x
+        # det.distance.x += -5e-6
+
         # for eb needle move: positive = up
         # for ib needle move: positive = down
-        move_based_on_detection(microscope, settings, det, beam_type=beam_type, move_x=False)
+        if beam_type is BeamType.ION:
+            move_x = False
+        else:
+            move_x = True
+        move_based_on_detection(microscope, settings, det, beam_type=beam_type, move_x=True)
 
         acquire.take_reference_images(microscope, settings.image)
 

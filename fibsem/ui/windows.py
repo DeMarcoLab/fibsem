@@ -57,7 +57,6 @@ def ask_user_movement(
 
     # napari.run()
 
-
 def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
 
     # take new image
