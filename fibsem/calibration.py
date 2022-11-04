@@ -45,10 +45,10 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
     # # Restore original settings
     microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
 
-def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, 
+def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings,  
     mode: str = "default",  
     wd_delta: float = 0.05e-3, steps: int  = 5, 
-    reduced_area: Rectangle = Rectangle(0.3, 0.3, 0.4, 0.4) ) -> None:
+    reduced_area: Rectangle = Rectangle(0.3, 0.3, 0.4, 0.4), focus_image_settings: ImageSettings = None ) -> None:
 
     if mode == "default":
         microscope.imaging.set_active_device(BeamType.ELECTRON.value)
@@ -59,14 +59,18 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
 
     if mode == "sharpness":
         
-       
-        prev_image_settings = image_settings
-        image_settings.resolution = "768x512"  # "1536x1024"
-        image_settings.dwell_time = 0.2e-6
-        image_settings.hfw = 50e-6
-        image_settings.autocontrast = True
-        image_settings.beam_type = BeamType.ELECTRON
-        image_settings.save = False
+        if focus_image_settings is None:
+            focus_image_settings = ImageSettings(
+                resolution = "768x512",
+                dwell_time = 200e-9,
+                hfw=50e-6,
+                beam_type = BeamType.ELECTRON,
+                save=False,
+                autocontrast=True,
+                gamma=GammaSettings(enabled=False),
+                label=None
+
+            )
 
         current_wd = microscope.beams.electron_beam.working_distance.value
         logging.info(f"sharpness (accutance) based auto-focus routine")
@@ -86,7 +90,7 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
             logging.info(f"Img {i}: {wd:.2e}")
             microscope.beams.electron_beam.working_distance.value = wd
             
-            img = acquire.new_image(microscope, image_settings, reduced_area=reduced_area)
+            img = acquire.new_image(microscope, focus_image_settings, reduced_area=reduced_area)
 
             # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance
             out = gradient(skimage.filters.median(np.copy(img.data)), disk(5))
@@ -103,13 +107,18 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
 
         # reset working distance
         microscope.beams.electron_beam.working_distance.value = working_distances[idx]
-        image_settings = prev_image_settings
 
         # run fine auto focus and link
         # microscope.imaging.set_active_device(BeamType.ELECTRON.value)
         # microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
         # microscope.auto_functions.run_auto_focus()
         # microscope.specimen.stage.link()
+
+    if mode == "dog":
+        # TODO: implement difference of gaussian based auto-focus
+
+        pass
+
 
     return 
 
