@@ -120,6 +120,8 @@ def auto_discharge_beam(
     n_iterations: int = 10,
 ):
 
+    logging.warning(f"This function is depreceated. Please use auto_charge_neutralisation instead.")
+
     # take sequence of 5 images quickly,
     
     resolution = image_settings.resolution
@@ -150,9 +152,40 @@ def auto_discharge_beam(
     image_settings.save = save
 
 
+def auto_charge_neutralisation(
+    microscope: SdbMicroscopeClient,
+    image_settings: ImageSettings,
+    discharge_settings: ImageSettings = None,
+    n_iterations: int = 10,
+) -> None:
+
+    # take sequence of 5 images quickly,
+
+    # use preset settings if not defined
+    if discharge_settings is None:
+        discharge_settings = ImageSettings(
+            resolution = "768x512",
+            dwell_time = 200e-9,
+            hfw=image_settings.hfw,
+            beam_type = BeamType.ELECTRON,
+            save=False,
+            autocontrast=False,
+            gamma=GammaSettings(enabled=False),
+            label=None
+        )
+
+    for i in range(n_iterations):
+        acquire.new_image(microscope, discharge_settings)
+
+    # take image
+    acquire.new_image(microscope, image_settings)
+
+    logging.info(f"BAM! and the charge is gone!") # important information  
+
 def auto_needle_calibration(
     microscope: SdbMicroscopeClient, settings: MicroscopeSettings, validate: bool = True
 ):
+    # TODO: use ml version
 
     settings.image.hfw = 2700e-6
     acquire.take_reference_images(microscope, settings.image)
