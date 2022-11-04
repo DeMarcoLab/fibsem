@@ -443,6 +443,15 @@ def move_stage_relative_with_corrected_movement(
     logging.info(f"moving stage ({beam_type.name}): {stage_position}")
     stage.relative_move(stage_position)
 
+    # adjust working distance to compensate for stage movement
+    microscope.beams.electron_beam.working_distance.value += yz_move.z
+    microscope.beams.ion_beam.working_distance.value += yz_move.z
+    # FLAG_TEST 
+    # Q: is this the correct way to adjust the working distance?
+    # Q: does this work for both electron and ion beam?
+    # do we need to relink?
+    # does having z-y link on on the XTUI affect this?
+
     return
 
 
@@ -460,5 +469,7 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, dy: float) 
     microscope.specimen.stage.relative_move(z_move, move_settings)
     logging.info(f"eucentric movement: {z_move}")
 
+    # FLAG_TEST 
+    # do we need to do the working distance adjustment here?
 
 

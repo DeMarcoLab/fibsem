@@ -128,6 +128,7 @@ def correct_stage_drift(
     use_ref_mask: bool = False,
     mask_scale: int = 4,
     xcorr_limit: tuple = None,
+    constrain_vertical: bool = True
 ) -> bool:
     """Correct the stage drift by crosscorrelating low-res and high-res reference images"""
 
@@ -176,6 +177,7 @@ def correct_stage_drift(
             new_image,
             ref_mask=ref_mask,
             xcorr_limit=xcorr_limit[i],
+            constrain_vertical=constrain_vertical,
         )
 
         if ret is False:
@@ -191,6 +193,7 @@ def align_using_reference_images(
     new_image: AdornedImage,
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
+    constrain_vertical: bool = False,
 ) -> bool:
 
     # import matplotlib.pyplot as plt
@@ -222,6 +225,10 @@ def align_using_reference_images(
         xcorr_limit=xcorr_limit,
     )
 
+    # constrain movement to vertical
+    if constrain_vertical:
+        dx = 0
+
     shift_within_tolerance = validation.check_shift_within_tolerance(
         dx=dx, dy=dy, ref_image=ref_image, limit=0.5
     )
@@ -233,7 +240,6 @@ def align_using_reference_images(
             microscope,
             settings,
             dx=dx,
-            # dy=dy,
             dy=-dy,
             beam_type=new_beam_type,
         )
