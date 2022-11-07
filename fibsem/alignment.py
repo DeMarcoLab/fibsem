@@ -133,7 +133,7 @@ def correct_stage_drift(
     use_ref_mask: bool = False,
     mask_scale: int = 4,
     xcorr_limit: tuple = None,
-    constrain_vertical: bool = True,
+    constrain_vertical: bool = False,
 ) -> bool:
     """Correct the stage drift by crosscorrelating low-res and high-res reference images"""
 
@@ -289,7 +289,7 @@ def shift_from_crosscorrelation(
         xcorr = masks.apply_circular_mask(xcorr, xcorr_limit)
 
     # calculate maximum crosscorrelation
-    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
+    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape) # TODO: backwards
     cen = np.asarray(xcorr.shape) / 2
     err = np.array(cen - [maxX, maxY], int)
 

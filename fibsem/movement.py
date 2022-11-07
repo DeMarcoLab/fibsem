@@ -428,6 +428,7 @@ def move_stage_relative_with_corrected_movement(
         beam_type (BeamType): beam type to move in
     """
     stage = microscope.specimen.stage
+    wd = microscope.beams.electron_beam.working_distance.value
 
     # calculate stage movement
     x_move = x_corrected_stage_movement(dx)
@@ -444,13 +445,8 @@ def move_stage_relative_with_corrected_movement(
     stage.relative_move(stage_position)
 
     # adjust working distance to compensate for stage movement
-    microscope.beams.electron_beam.working_distance.value += yz_move.z
-    microscope.beams.ion_beam.working_distance.value += yz_move.z
-    # FLAG_TEST 
-    # Q: is this the correct way to adjust the working distance?
-    # Q: does this work for both electron and ion beam?
-    # do we need to relink?
-    # does having z-y link on on the XTUI affect this?
+    microscope.beams.electron_beam.working_distance.value = wd
+    microscope.specimen.stage.link()
 
     return
 

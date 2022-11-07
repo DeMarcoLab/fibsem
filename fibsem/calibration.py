@@ -16,7 +16,8 @@ from fibsem.structures import (
     BeamType,
     ImageSettings,
     MicroscopeSettings,
-    BeamSystemSettings
+    BeamSystemSettings,
+    GammaSettings
 )
 
 from pathlib import Path
@@ -330,6 +331,24 @@ def auto_home_and_link(microscope: SdbMicroscopeClient, state: MicroscopeState =
     microscope.specimen.stage.link()
 
 
+def auto_home_and_link_v2(microscope: SdbMicroscopeClient, state: MicroscopeState = None) -> None:
+
+    # home the stage and return the linked state
+    
+    # home the stage
+    logging.info(f"Homing stage...")
+    microscope.specimen.stage.home()
+
+    if state is None:
+        state = get_current_microscope_state(microscope)
+
+    # move to saved linked state
+    set_microscope_state(microscope, state)
+
+    # relink (set state also links...)
+    microscope.specimen.stage.link()
+
+
 # STATE MANAGEMENT
 
 
@@ -405,6 +424,7 @@ def set_microscope_state(
     #     microscope_state.eb_settings.stigmation
     # )
 
+
     # restore ion beam
     logging.info(f"restoring ion beam settings...")
     microscope.beams.ion_beam.working_distance.value = (
@@ -424,6 +444,7 @@ def set_microscope_state(
     )
     # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
 
+    microscope.specimen.stage.link()
     logging.info(f"microscope state restored")
     return
 

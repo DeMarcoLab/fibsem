@@ -9,7 +9,7 @@ from fibsem import acquire, conversions, movement, constants, alignment
 from fibsem.structures import BeamType, MicroscopeSettings, Point
 from fibsem.ui.qtdesigner_files import movement_dialog 
 from PyQt5 import QtCore, QtWidgets
-
+import scipy.ndimage as ndi
 import traceback
 
 class MovementMode(Enum):
@@ -74,6 +74,8 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.settings.image)
             self.image = np.concatenate([self.eb_image.data, self.ib_image.data], axis=1) # stack both images together
 
+            # median filter
+            self.image = ndi.median_filter(self.image, size=3)
             # TODO: convert this to use grid layout instead of concat images (see salami)
 
             # crosshair
@@ -87,11 +89,12 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
                 symbol="cross", size=50,
                 edge_color="yellow", face_color="yellow",
             )
-            self.points_layer.editable = False
+            # self.points_layer.editable = False
 
-            self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9)
+            self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9, blending="additive")
             self.image_layer.mouse_double_click_callbacks.append(self._double_click) # append callback
             # self.image_layer.mouse_drag_callbacks.append(self._single_click) # append callback
+            self.viewer.layers.selection.active = self.image_layer
 
         except:
             napari.utils.notifications.show_info(f"Unable to update movement image: {traceback.format_exc()}")
@@ -217,9 +220,9 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         # set instruction message
         self.set_message(self.msg_type, self.msg)
 
-        DESTINATION_MODE = self.movement_mode is MovementMode.Needle
-        self.label_needle_coordinate.setVisible(DESTINATION_MODE)
-        self.comboBox_needle_coordinate.setVisible(DESTINATION_MODE)
+        # DESTINATION_MODE = self.movement_mode is MovementMode.Needle
+        # self.label_needle_coordinate.setVisible(DESTINATION_MODE)
+        # self.comboBox_needle_coordinate.setVisible(DESTINATION_MODE)
 
     def set_message(self, msg_type: str, msg: str = None):
             
