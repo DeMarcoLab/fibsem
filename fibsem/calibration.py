@@ -335,12 +335,12 @@ def auto_home_and_link_v2(microscope: SdbMicroscopeClient, state: MicroscopeStat
 
     # home the stage and return the linked state
     
+    if state is None:
+        state = get_current_microscope_state(microscope)
+
     # home the stage
     logging.info(f"Homing stage...")
     microscope.specimen.stage.home()
-
-    if state is None:
-        state = get_current_microscope_state(microscope)
 
     # move to saved linked state
     set_microscope_state(microscope, state)
