@@ -87,7 +87,7 @@ class SegmentationModel:
 def load_model(checkpoint: Path, encoder: str = "resnet18", nc: int =3) -> SegmentationModel:
 
     # load model
-    model = SegmentationModel(checkpoint=checkpoint, num_classes=3)
+    model = SegmentationModel(checkpoint=checkpoint, encoder=encoder,num_classes=nc)
 
 
     return model
