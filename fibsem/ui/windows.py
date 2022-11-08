@@ -13,7 +13,7 @@ from fibsem.detection.detection import (DetectedFeatures,Feature)
 from fibsem.segmentation.model import load_model
 from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
-from fibsem.ui.detection_window import GUIDetectionWindow
+from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
 from fibsem.ui.FibsemMovementUI import FibsemMovementUI
 from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
@@ -76,15 +76,15 @@ def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSett
     # user validate features...
     if validate:
         # user validates detection result
-        detection_window = GUIDetectionWindow(
+        detection_ui = FibsemDetectionUI(
             microscope=microscope,
             settings=settings,
             detected_features=det,
         )
-        detection_window.show()
-        detection_window.exec_()
+        detection_ui.show()
+        detection_ui.exec_()
 
-        det = detection_window.detected_features
+        det = detection_ui.detected_features
 
     # calculate features in microscope image coords
     det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].feature_px, image.data, pixelsize)

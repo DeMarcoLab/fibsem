@@ -41,7 +41,7 @@ def detect_features(img: AdornedImage, features: tuple[Feature]) -> list[Feature
 
     for feature in features:
         
-        det_type = feature.detection_type
+        det_type = feature.type
         initial_point = feature.feature_px
 
         if not isinstance(det_type, FeatureType):
@@ -67,7 +67,7 @@ def detect_features(img: AdornedImage, features: tuple[Feature]) -> list[Feature
             feature_px = detect_landing_post_v2(img, initial_point)
 
         detection_features.append(
-            Feature(detection_type=det_type, feature_px=feature_px)
+            Feature(type=det_type, feature_px=feature_px)
         )
 
     return detection_features
@@ -487,7 +487,7 @@ def detect_features_v2(img: np.ndarray, mask: np.ndarray, features: tuple[Featur
 
     for feature in features:
         
-        det_type = feature.detection_type
+        det_type = feature.type
         initial_point = feature.feature_px
         
         if not isinstance(det_type, FeatureType):
@@ -510,7 +510,7 @@ def detect_features_v2(img: np.ndarray, mask: np.ndarray, features: tuple[Featur
             feature_px = detect_landing_post_v3(img, initial_point)
 
         detection_features.append(
-            Feature(detection_type=det_type, feature_px=feature_px)
+            Feature(type=det_type, feature_px=feature_px)
         )
 
     return detection_features
@@ -544,8 +544,8 @@ def plot_det_result_v2(det: DetectedFeatures):
     ax[0].set_title(f"Image")
     ax[1].imshow(det.mask)
     ax[1].set_title("Prediction")
-    ax[1].plot(det.features[0].feature_px.x, det.features[0].feature_px.y, "g+", ms=20, label=det.features[0].detection_type.name)
-    ax[1].plot(det.features[1].feature_px.x, det.features[1].feature_px.y, "w+", ms=20, label=det.features[1].detection_type.name)
+    ax[1].plot(det.features[0].feature_px.x, det.features[0].feature_px.y, "g+", ms=20, label=det.features[0].type.name)
+    ax[1].plot(det.features[1].feature_px.x, det.features[1].feature_px.y, "w+", ms=20, label=det.features[1].type.name)
     ax[1].plot([det.features[0].feature_px.x, det.features[1].feature_px.x], [det.features[0].feature_px.y, det.features[1].feature_px.y], "w--")
     ax[1].legend(loc="best")
     plt.show()
@@ -574,7 +574,7 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
         logging.info(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
         # these movements move the needle...
-        if f1.detection_type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
+        if f1.type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
             logging.info(f"MOVING NEEDLE")
             
             # electron: neg = down, ion: neg = up
@@ -589,8 +589,8 @@ def move_based_on_detection(microscope: SdbMicroscopeClient, settings: Microscop
                 beam_type=beam_type,
             )
         
-        if f1.detection_type is FeatureType.LamellaCentre:
-            if f2.detection_type is FeatureType.ImageCentre:
+        if f1.type is FeatureType.LamellaCentre:
+            if f2.type is FeatureType.ImageCentre:
                 
                 logging.info(f"MOVING STAGE")
                 # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?

@@ -4,13 +4,12 @@ import sys
 from pprint import pprint
 
 import matplotlib.patches as mpatches
-from regex import D
 from fibsem import conversions, utils
 from fibsem.structures import BeamType, MicroscopeSettings
 from fibsem.ui import utils as fibsem_ui_utils
 
 from fibsem.detection import utils as det_utils
-from fibsem.detection.utils import DetectionResult, FeatureType, Point
+from fibsem.detection.utils import FeatureType, Point
 from fibsem.detection.detection import DetectedFeatures
                                      
 
@@ -18,14 +17,14 @@ from fibsem.ui.qtdesigner_files import detection_dialog as detection_gui
 from PyQt5 import QtCore, QtWidgets
 
 # TODO: convert to napari
-class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
+class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
         microscope,
         settings: MicroscopeSettings,
         detected_features: DetectedFeatures,
     ):
-        super(GUIDetectionWindow, self).__init__()
+        super(FibsemDetectionUI, self).__init__()
         self.setupUi(self)
         self.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
 
@@ -36,12 +35,10 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
         # detection data
         self.detected_features = detected_features
-        self.current_selected_feature = 0
-        self.current_detection_selected = (
-            self.detected_features.features[
-                self.current_selected_feature
-            ].detection_type,
-        )
+        self.selected_feature_idx = 0
+        self.selected_feature = self.detected_features.features[
+                self.selected_feature_idx
+            ].type
         self.logged_detection_types = []
 
         # images
@@ -57,7 +54,7 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         self.setup_connections()
         self.update_display()
 
-        AUTO_CONTINUE = False
+        AUTO_CONTINUE = False # TODO:
         if AUTO_CONTINUE:
             self.continue_button_pressed() # automatically continue
 
@@ -65,10 +62,10 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
         self.comboBox_detection_type.clear()
         self.comboBox_detection_type.addItems(
-            [feature.detection_type.name for feature in self.detected_features.features]
+            [feature.type.name for feature in self.detected_features.features]
         )
         self.comboBox_detection_type.setCurrentText(
-            self.detected_features.features[0].detection_type.name
+            self.detected_features.features[0].type.name
         )
         self.comboBox_detection_type.currentTextChanged.connect(
             self.update_detection_type
@@ -78,12 +75,12 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
     def update_detection_type(self):
 
-        self.current_selected_feature = self.comboBox_detection_type.currentIndex()
-        self.current_detection_selected = self.detected_features.features[
-            self.current_selected_feature
-        ].detection_type
+        self.selected_feature_idx = self.comboBox_detection_type.currentIndex()
+        self.selected_feature = self.detected_features.features[
+            self.selected_feature_idx
+        ].type
         logging.info(
-            f"Changed to {self.current_selected_feature}, {self.current_detection_selected.name}"
+            f"Changed to {self.selected_feature_idx}, {self.selected_feature.name}"
         )
 
     def on_click(self, event):
@@ -91,25 +88,24 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         if event.button == 1 and event.inaxes is not None:
             self.xclick = event.xdata
             self.yclick = event.ydata
-            self.center_x, self.center_y = conversions.pixel_to_realspace_coordinate(
-                (self.xclick, self.yclick), self.image, self.detected_features.pixelsize
-            )
+
+            self.point_m = conversions.image_to_microscope_image_coordinates(Point(self.xclick, self.yclick), self.image, self.detected_features.pixelsize)
 
             logging.info(
-                f"""on_click: {event.button} | {self.current_detection_selected} | IMAGE COORDINATE | {int(self.xclick)}, {int(self.yclick)} | REAL COORDINATE | {self.center_x:.2e}, {self.center_y:.2e}"""
+                f"""DectectedFeature {self.selected_feature.name} | IMAGE COORDINATE | {int(self.xclick)}, {int(self.yclick)} | REAL COORDINATE | {self.point_m.x:.2e}, {self.point_m.y:.2e}"""
             )
 
             # update detection data
             self.detected_features.features[
-                self.current_selected_feature
+                self.selected_feature_idx
             ].feature_px = Point(self.xclick, self.yclick)
 
             # logging statistics
             logging.info(
-                f"detection | {self.current_detection_selected} | {False}"
+                f"Feature | {self.selected_feature} | {False}"
             )
 
-            self.logged_detection_types.append(self.current_detection_selected)
+            self.logged_detection_types.append(self.selected_feature)
 
             # flag that the user corrected a detection.
             self._USER_CORRECTED = True
@@ -126,10 +122,10 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
         # colours
         c1 = det_utils.DETECTION_TYPE_COLOURS[
-            self.detected_features.features[0].detection_type
+            self.detected_features.features[0].type
         ]
         c2 = det_utils.DETECTION_TYPE_COLOURS[
-            self.detected_features.features[1].detection_type
+            self.detected_features.features[1].type
         ]
 
         # redraw all crosshairs
@@ -148,15 +144,14 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
         # legend
         patch_one = mpatches.Patch(
-            color=c1, label=self.detected_features.features[0].detection_type.name
+            color=c1, label=self.detected_features.features[0].type.name
         )
         patch_two = mpatches.Patch(
-            color=c2, label=self.detected_features.features[1].detection_type.name
+            color=c2, label=self.detected_features.features[1].type.name
         )
         self.wp.canvas.ax11.legend(handles=[patch_one, patch_two])
 
         # calculate movement distance
-        from fibsem import conversions 
         point_diff_px  = conversions.distance_between_points(point_1, point_2)
         point_diff_m = conversions.convert_point_from_pixel_to_metres(point_diff_px, self.detected_features.pixelsize)
         self.detected_features.distance = point_diff_m  # move from 1 to 2 (reverse direction)
@@ -165,7 +160,7 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         self.label_movement_header.setText(f"Movement")
         self.label_movement_header.setStyleSheet("font-weight:bold")
         self.label_movement.setText(
-            f"""Moving {self.detected_features.features[0].detection_type.name} to {self.detected_features.features[1].detection_type.name}
+            f"""Moving {self.detected_features.features[0].type.name} to {self.detected_features.features[1].type.name}
          \nx distance: {self.detected_features.distance.x*1e6:.2f}um 
          \ny distance: {self.detected_features.distance.y*1e6:.2f}um"""
         )
@@ -179,19 +174,19 @@ class GUIDetectionWindow(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         self.close() #exit
 
     def closeEvent(self, event):
-        logging.info("Closing Detection Window")
+        logging.info("Closing Detection UI")
 
         # log active learning data...
-        logging.info(f"Writing machine learning data to disk...")
         if self._USER_CORRECTED:
+            logging.info(f"Logging corrected ml data to disk.")
             path = os.path.join(self.log_path, "label")
             det_utils.write_data_to_disk(path, self.detected_features)
 
         # log correct detection types
         for feature in self.detected_features.features:
-            if feature.detection_type not in self.logged_detection_types:
+            if feature.type not in self.logged_detection_types:
                 logging.info(
-                    f" detection | {self.current_detection_selected} | {True}"
+                    f"Feature | {feature.type} | {True}"
                 )
 
         event.accept()
@@ -228,18 +223,31 @@ def main():
         print("distance: ", det.distance)
         print("feature 1 position: ", det.features[0].feature_m)
 
+        # from liftout.patterning import MillingPattern
+        # milling_pattern = MillingPattern.Weld
+        # point = det.features[0].feature_m
+        # change_pattern = True
+        # auto_continue = False
+
+        # settings.image.hfw = 80e-6
+
+        # from liftout.autoliftout import milling_ui
+
+        # milling_ui(microscope, settings, milling_pattern, point = point, change_pattern = change_pattern, auto_continue=auto_continue)
+
+
         # move back 5um x
         # det.distance.x += -5e-6
 
         # for eb needle move: positive = up
         # for ib needle move: positive = down
-        if beam_type is BeamType.ION:
-            move_x = False
-        else:
-            move_x = True
-        move_based_on_detection(microscope, settings, det, beam_type=beam_type, move_x=True)
+        # if beam_type is BeamType.ION:
+        #     move_x = False
+        # else:
+        #     move_x = True
+        # move_based_on_detection(microscope, settings, det, beam_type=beam_type, move_x=True)
 
-        acquire.take_reference_images(microscope, settings.image)
+        # acquire.take_reference_images(microscope, settings.image)
 
     sys.exit(app.exec_())
 

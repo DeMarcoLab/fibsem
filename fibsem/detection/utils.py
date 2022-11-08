@@ -29,7 +29,7 @@ class FeatureType(Enum):
 
 @dataclass
 class Feature:
-    detection_type: FeatureType
+    type: FeatureType # rename from type to type
     feature_px: Point  = None # x, y (image)
     feature_m: Point = None # x, y (microscope image coord)
 
@@ -256,8 +256,8 @@ def load_detection_result(path: Path, data) -> DetectionResult:
 
     det = DetectionResult(
         features=[
-            Feature(detection_type=p1_type, feature_px=p1),
-            Feature(detection_type=p2_type, feature_px=p2),
+            Feature(type=p1_type, feature_px=p1),
+            Feature(type=p2_type, feature_px=p2),
         ],
         adorned_image=img,
         display_image=None,
@@ -270,13 +270,13 @@ def plot_detection_result(det_result: DetectionResult):
     """Plot the Detection Result using matplotlib using the full scale image and coordinates"""
     from fibsem.detection.utils import DETECTION_TYPE_COLOURS
 
-    # TODO: consolidate this with what is in detection_window
+    # TODO: consolidate this with what is in FibsemDetectionUI
 
     p1 = det_result.features[0].feature_px
     p2 = det_result.features[1].feature_px
 
-    c1 = DETECTION_TYPE_COLOURS[det_result.features[0].detection_type]
-    c2 = DETECTION_TYPE_COLOURS[det_result.features[1].detection_type]
+    c1 = DETECTION_TYPE_COLOURS[det_result.features[0].type]
+    c2 = DETECTION_TYPE_COLOURS[det_result.features[1].type]
 
     if det_result.display_image is None:
         display_image = det_result.adorned_image.data
@@ -284,15 +284,15 @@ def plot_detection_result(det_result: DetectionResult):
         display_image = det_result.display_image
 
     fig = plt.figure(figsize=(15, 15))
-    plt.title(f"{det_result.features[0].detection_type.name} to {det_result.features[1].detection_type.name}")
+    plt.title(f"{det_result.features[0].type.name} to {det_result.features[1].type.name}")
     plt.imshow(display_image, cmap="gray")
     plt.plot(p1.x, p1.y, color=c1, marker="+", ms=50, markeredgewidth=2)
     plt.plot(p2.x, p2.y, color=c2, marker="+", ms=50, markeredgewidth=2)
     plt.plot((p1.x, p2.x),(p1.y, p2.y), color="white", ms=50, markeredgewidth=2) # line between
 
     # legend
-    patch_one = mpatches.Patch(color=c1, label=det_result.features[0].detection_type.name)
-    patch_two = mpatches.Patch(color=c2, label=det_result.features[1].detection_type.name)
+    patch_one = mpatches.Patch(color=c1, label=det_result.features[0].type.name)
+    patch_two = mpatches.Patch(color=c2, label=det_result.features[1].type.name)
     plt.legend(handles=[patch_one, patch_two])
 
     return fig
@@ -323,10 +323,10 @@ def write_data_to_disk(path: Path, detected_features) -> None:
     # get info
     logging.info(f"Label: {label}")
     info = [label, 
-        detected_features.features[0].detection_type.name, 
+        detected_features.features[0].type.name, 
         scaled_p0.x, 
         scaled_p0.y, 
-        detected_features.features[1].detection_type.name, 
+        detected_features.features[1].type.name, 
         scaled_p1.x, 
         scaled_p1.y
         ]

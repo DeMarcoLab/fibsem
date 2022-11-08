@@ -473,13 +473,13 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
             (f1.feature_px.y, f1.feature_px.x),
              (f2.feature_px.y, f2.feature_px.x)]
 
-        features = {"label": [f1.detection_type.name, 
-                f2.detection_type.name],
+        features = {"label": [f1.type.name, 
+                f2.type.name],
                 "choice": [True, False]}
 
         face_color_cycle = [
-            det_utils.DETECTION_TYPE_COLOURS_v2[f1.detection_type], 
-            det_utils.DETECTION_TYPE_COLOURS_v2[f2.detection_type]
+            det_utils.DETECTION_TYPE_COLOURS_v2[f1.type], 
+            det_utils.DETECTION_TYPE_COLOURS_v2[f2.type]
             ]
 
         # TODO: why doesnt the text label work??
