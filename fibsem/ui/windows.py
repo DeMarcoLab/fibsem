@@ -65,9 +65,9 @@ def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSett
     # load model
     checkpoint = settings.protocol["ml"]["weights"]
     encoder = settings.protocol["ml"]["encoder"]
-    num_classes = settings.protocol["ml"]["num_classes"]
+    num_classes = int(settings.protocol["ml"]["num_classes"])
     cuda = settings.protocol["ml"]["cuda"]
-    model = load_model(checkpoint, encoder=encoder, num_classes=num_classes)
+    model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
     # detect features
     pixelsize = image.metadata.binary_result.pixel_size.x
