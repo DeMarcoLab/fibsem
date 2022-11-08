@@ -123,45 +123,6 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
 
     return 
 
-
-def auto_discharge_beam(
-    microscope: SdbMicroscopeClient,
-    image_settings: ImageSettings,
-    n_iterations: int = 10,
-):
-
-    logging.warning(f"This function is depreceated. Please use auto_charge_neutralisation instead.")
-
-    # take sequence of 5 images quickly,
-    
-    resolution = image_settings.resolution
-    dwell_time = image_settings.dwell_time
-    autocontrast = image_settings.autocontrast
-    beam_type = image_settings.beam_type
-    save = image_settings.save 
-
-    image_settings.beam_type = BeamType.ELECTRON
-    image_settings.resolution = "768x512"
-    image_settings.dwell_time = 200e-9
-    image_settings.autocontrast = False
-    image_settings.gamma.enabled = False
-    image_settings.save = False
-
-    logging.info(f"Bring me Thanos!")  # important information
-
-    for i in range(n_iterations):
-        acquire.new_image(microscope, image_settings)
-
-    # take image
-    image_settings.resolution = resolution
-    image_settings.dwell_time = dwell_time
-    image_settings.autocontrast = autocontrast
-    acquire.new_image(microscope, image_settings)
-
-    image_settings.beam_type = beam_type
-    image_settings.save = save
-
-
 def auto_charge_neutralisation(
     microscope: SdbMicroscopeClient,
     image_settings: ImageSettings,
