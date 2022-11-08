@@ -598,7 +598,7 @@
            </widget>
           </item>
           <item row="8" column="0">
-           <widget class="QPushButton" name="pushButton_auto_discharge_beam">
+           <widget class="QPushButton" name="pushButton_auto_charge_neutralisation">
             <property name="text">
              <string>Auto Discharge</string>
             </property>

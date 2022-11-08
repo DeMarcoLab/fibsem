@@ -87,7 +87,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         # tools
         self.pushButton_sputter_platinum.clicked.connect(self.run_tools)
         self.pushButton_move_stage_out.clicked.connect(self.run_tools)
-        self.pushButton_auto_discharge_beam.clicked.connect(self.run_tools)
+        self.pushButton_auto_charge_neutralisation.clicked.connect(self.run_tools)
         self.pushButton_auto_focus_beam.clicked.connect(self.run_tools)
         self.pushButton_auto_home_stage.clicked.connect(self.run_tools)
         self.pushButton_auto_link_stage.clicked.connect(self.run_tools)
@@ -531,9 +531,9 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         if sender == self.pushButton_auto_focus_beam:
             logging.info(f"Auto Focus")
 
-        if sender == self.pushButton_auto_discharge_beam:
+        if sender == self.pushButton_auto_charge_neutralisation:
             logging.info(f"Auto Discharge Beam")
-            calibration.auto_discharge_beam(self.microscope, self.settings.image)
+            calibration.auto_charge_neutralisation(self.microscope, self.settings.image)
 
         if sender == self.pushButton_auto_home_stage:
             logging.info(f"Auto Home Stage")

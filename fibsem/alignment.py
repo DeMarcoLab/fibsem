@@ -29,7 +29,8 @@ def auto_eucentric_correction(
 ) -> None:
 
     image_settings.save = False
-    calibration.auto_discharge_beam(microscope, image_settings)
+    image_settings.beam_type = BeamType.ELECTRON
+    calibration.auto_charge_neutralisation(microscope, image_settings)
 
     for hfw in [400e-6, 150e-6, 80e-6, 80e-6]:
         image_settings.hfw = hfw
