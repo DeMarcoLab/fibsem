@@ -26,82 +26,82 @@ DETECTION_COLOURS_UINT8 = {
     FeatureType.LandingPost: (255, 255, 255),
 }
 
-def detect_features(img: AdornedImage, features: tuple[Feature]) -> list[Feature]:
-    """
+# def detect_features(img: AdornedImage, features: tuple[Feature]) -> list[Feature]:
+#     """
 
-    args:
-        img: the input img (AdornedImage)
-        features: the type of feature detections to run (tuple)
+#     args:
+#         img: the input img (AdornedImage)
+#         features: the type of feature detections to run (tuple)
 
-    return:
-        detection_features [Feature, Feature]: the detected feature coordinates and types
-    """
+#     return:
+#         detection_features [Feature, Feature]: the detected feature coordinates and types
+#     """
 
-    detection_features = []
+#     detection_features = []
 
-    for feature in features:
+#     for feature in features:
         
-        det_type = feature.type
-        initial_point = feature.feature_px
+#         det_type = feature.type
+#         initial_point = feature.feature_px
 
-        if not isinstance(det_type, FeatureType):
-            raise TypeError(f"Detection Type {det_type} is not supported.")
+#         if not isinstance(det_type, FeatureType):
+#             raise TypeError(f"Detection Type {det_type} is not supported.")
 
-        # get the initial position estimate
-        if initial_point is None:
-            initial_point = get_initial_position(img, det_type)
+#         # get the initial position estimate
+#         if initial_point is None:
+#             initial_point = get_initial_position(img, det_type)
 
-        if det_type == FeatureType.ImageCentre:
-            feature_px = initial_point
+#         if det_type == FeatureType.ImageCentre:
+#             feature_px = initial_point
 
-        if det_type == FeatureType.NeedleTip:
-            feature_px = detect_needle_tip_v3(img, initial_point)
+#         if det_type == FeatureType.NeedleTip:
+#             feature_px = detect_needle_tip_v3(img, initial_point)
 
-        if det_type == FeatureType.LamellaCentre:
-            feature_px = detect_landing_post_v2(img, initial_point) # TODO: fix 
+#         if det_type == FeatureType.LamellaCentre:
+#             feature_px = detect_landing_post_v2(img, initial_point) # TODO: fix 
 
-        if det_type == FeatureType.LamellaRightEdge:
-            feature_px = detect_lamella_edge(img)
+#         if det_type == FeatureType.LamellaRightEdge:
+#             feature_px = detect_lamella_edge(img)
 
-        if det_type == FeatureType.LandingPost:
-            feature_px = detect_landing_post_v2(img, initial_point)
+#         if det_type == FeatureType.LandingPost:
+#             feature_px = detect_landing_post_v2(img, initial_point)
 
-        detection_features.append(
-            Feature(type=det_type, feature_px=feature_px)
-        )
+#         detection_features.append(
+#             Feature(type=det_type, feature_px=feature_px)
+#         )
 
-    return detection_features
+#     return detection_features
 
-def locate_shift_between_features(adorned_img: AdornedImage, features: tuple[Feature]):
-    """
-    Calculate the distance between two features in the image coordinate system.
+# def locate_shift_between_features(adorned_img: AdornedImage, features: tuple[Feature]):
+#     """
+#     Calculate the distance between two features in the image coordinate system.
 
-    args:
-        adorned_img: input image (AdornedImage)
-        ref_img: the reference image to align (AdornedImage)
-        shift_type: the type of feature detection shift to calculation
+#     args:
+#         adorned_img: input image (AdornedImage)
+#         ref_img: the reference image to align (AdornedImage)
+#         shift_type: the type of feature detection shift to calculation
 
-    return:
-        detection_result (DetectionResult): The detection result containing the feature coordinates, and images
+#     return:
+#         detection_result (DetectionResult): The detection result containing the feature coordinates, and images
 
-    """
-    # detect features for calculation
-    feature_1, feature_2 = detect_features(adorned_img, features)
+#     """
+#     # detect features for calculation
+#     feature_1, feature_2 = detect_features(adorned_img, features)
 
-    # calculate movement distance
-    x_distance_m, y_distance_m = det_utils.convert_pixel_distance_to_metres(
-        feature_1.feature_px, feature_2.feature_px, adorned_img
-    )
+#     # calculate movement distance
+#     x_distance_m, y_distance_m = det_utils.convert_pixel_distance_to_metres(
+#         feature_1.feature_px, feature_2.feature_px, adorned_img
+#     )
 
-    detection_result = DetectionResult(
-        features=[feature_1, feature_2],
-        adorned_image=adorned_img,
-        display_image=adorned_img.data,
-        distance_metres=Point(x_distance_m, y_distance_m),
-        microscope_coordinate=[Point(0, 0), Point(0, 0)],
-    )
+#     detection_result = DetectionResult(
+#         features=[feature_1, feature_2],
+#         adorned_image=adorned_img,
+#         display_image=adorned_img.data,
+#         distance_metres=Point(x_distance_m, y_distance_m),
+#         microscope_coordinate=[Point(0, 0), Point(0, 0)],
+#     )
 
-    return detection_result
+#     return detection_result
 
 def get_initial_position(img: AdornedImage, det_type: FeatureType) -> Point:
 

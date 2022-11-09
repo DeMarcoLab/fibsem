@@ -222,12 +222,11 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
             napari.utils.notifications.show_info(f"Clicked outside image dimensions. Please click inside the image to move.")
             return
 
-        dx, dy = conversions.pixel_to_realspace_coordinate(
-                (coords[1], coords[0]), adorned_image
-            )
+        point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
+                adorned_image.data, adorned_image.metadata.binary_result.pixel_size.x)  
 
         logging.info(f"coords: {coords}, beam_type: {beam_type}")
-        logging.info(f"movement: x={dx:.2e}, y={dy:.2e}")
+        logging.info(f"movement: x={point.x:.2e}, y={point.y:.2e}")
 
         # move
 
@@ -239,7 +238,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
             movement.move_stage_eucentric_correction(
                 microscope=self.microscope, 
-                dy=-dy
+                dy=-point.y
             )
 
         else:
@@ -248,8 +247,8 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
             movement.move_stage_relative_with_corrected_movement(
                 microscope=self.microscope,
                 settings=self.settings,
-                dx=dx,
-                dy=dy,
+                dx=point.x,
+                dy=point.y,
                 beam_type=beam_type,
             )
 

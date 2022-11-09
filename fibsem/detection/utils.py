@@ -92,25 +92,6 @@ def decode_segmap(image, nc=3):
 
 
 
-# TODO: refactor usage to distance between two points
-def convert_pixel_distance_to_metres(p1: Point, p2: Point, adorned_image: AdornedImage):
-    """Convert from pixel coordinates to distance in metres """
-
-    # convert pixel coordinate to realspace coordinate
-    x1_real, y1_real = conversions.pixel_to_realspace_coordinate(
-        (p1.x, p1.y), adorned_image
-    )
-    x2_real, y2_real = conversions.pixel_to_realspace_coordinate(
-        (p2.x, p2.y), adorned_image
-    )
-
-    p1_real = Point(x1_real, y1_real)
-    p2_real = Point(x2_real, y2_real)
-
-    # calculate distance between points along each axis
-    x_distance_m, y_distance_m = coordinate_distance(p1_real, p2_real)
-
-    return x_distance_m, y_distance_m
 
 def coordinate_distance(p1: Point, p2: Point):
     """Calculate the distance between two points in each coordinate"""
