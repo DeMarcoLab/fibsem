@@ -15,6 +15,7 @@ from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 
 from pathlib import Path
+from fibsem import config
 
 # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 class _WidgetPlot(QWidget):
@@ -282,7 +283,7 @@ def open_existing_file_ui(parent = None, caption: str = "Open File", directory: 
 
     return filename, ext
 
-def get_existing_directory(parent = None, caption: str = "Open File", directory: Path = None)
+def get_existing_directory(parent = None, caption: str = "Open File", directory: Path = None) -> Path:
     path = QtWidgets.QFileDialog.getExistingDirectory(
         parent=parent, caption=caption, directory=directory
     )
