@@ -268,7 +268,7 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
     if mill_settings.cleaning_cross_section:
         pattern = microscope.patterning.create_cleaning_cross_section(
         center_x=mill_settings.centre_x,
-        center_y=mill_settings.centre_x,
+        center_y=mill_settings.centre_y,
         width=mill_settings.width,
         height=mill_settings.height,
         depth=mill_settings.depth,
