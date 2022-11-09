@@ -19,7 +19,6 @@ from fibsem.structures import (
     BeamType,
     MicroscopeSettings,
     ImageSettings,
-    StageSettings,
     SystemSettings,
     DefaultSettings,
 )

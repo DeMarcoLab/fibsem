@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from scipy.spatial import distance
 from skimage import feature
 
@@ -10,7 +11,7 @@ from fibsem import conversions
 from fibsem.detection.utils import Feature, FeatureType
 from fibsem.imaging import masks
 from fibsem.segmentation.model import SegmentationModel
-from fibsem.structures import Point
+from fibsem.structures import BeamType, MicroscopeSettings, Point
 
 FEATURE_COLOURS_UINT8 = {
     FeatureType.ImageCentre: (255, 255, 255),
@@ -359,12 +360,8 @@ def plot_det_result_v2(det: DetectedFeatures):
     plt.show()
 
 
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-from fibsem.structures import BeamType, MicroscopeSettings
 
 
-# TODO: finish this @patrick
 def move_based_on_detection(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
