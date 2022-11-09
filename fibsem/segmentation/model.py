@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-import utils
 import segmentation_models_pytorch as smp
 from fibsem.segmentation.utils import decode_segmap
 
