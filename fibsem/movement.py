@@ -13,7 +13,7 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
 )
 from fibsem.structures import BeamType, MicroscopeSettings
-from fibsem.detection.detection import DetectionResult, FeatureType
+# from fibsem.detection.detection import DetectionResult, FeatureType
 
 
 ############################## NEEDLE ##############################
@@ -428,6 +428,7 @@ def move_stage_relative_with_corrected_movement(
         beam_type (BeamType): beam type to move in
     """
     stage = microscope.specimen.stage
+    wd = microscope.beams.electron_beam.working_distance.value
 
     # calculate stage movement
     x_move = x_corrected_stage_movement(dx)
@@ -442,6 +443,10 @@ def move_stage_relative_with_corrected_movement(
     stage_position = StagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
     logging.info(f"moving stage ({beam_type.name}): {stage_position}")
     stage.relative_move(stage_position)
+
+    # adjust working distance to compensate for stage movement
+    microscope.beams.electron_beam.working_distance.value = wd
+    microscope.specimen.stage.link()
 
     return
 
@@ -460,50 +465,7 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, dy: float) 
     microscope.specimen.stage.relative_move(z_move, move_settings)
     logging.info(f"eucentric movement: {z_move}")
 
+    # FLAG_TEST 
+    # do we need to do the working distance adjustment here?
 
 
-# TODO: finish this @patrick
-def move_based_on_detection(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, 
-    det: DetectionResult, beam_type: BeamType, move_x: bool=True, move_y: bool = True):
-
-        # nulify movements in unsupported axes
-        if not move_x:
-            det.distance_metres.x = 0
-        if not move_y:
-            det.distance_metres.y = 0
-
-        f1 = det.features[0]
-        f2 = det.features[1]
-
-        logging.info(f"move_x: {move_x}, move_y: {move_y}")
-        logging.info(f"movement: x={det.distance_metres.x:.2e}, y={det.distance_metres.y:.2e}")
-        logging.info(f"features: {f1}, {f2}")
-        logging.info(f"beam_type: {beam_type}")
-
-
-        # these movements move the needle...
-        if f1.detection_type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
-            logging.info(f"MOVING NEEDLE")
-            
-            # move_needle_relative_with_corrected_movement(
-            #     microscope=microscope,
-            #     dx=det.distance_metres.x,
-            #     dy=det.distance_metres.y,
-            #     beam_type=beam_type,
-            # )
-        
-        if f1.detection_type is FeatureType.LamellaCentre:
-            if f2.detection_type is FeatureType.ImageCentre:
-                
-                logging.info(f"MOVING STAGE")
-                # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
-                # move_stage_relative_with_corrected_movement(
-                #     microscope = microscope, 
-                #     settings=settings,
-                #     dx=-det.distance_metres.x,
-                #     dy=-det.distance_metres.y,
-                #     beam_type=beam_type
-                # )
-
-                # TODO: support other movements?
-        return

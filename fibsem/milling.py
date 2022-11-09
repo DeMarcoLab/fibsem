@@ -268,7 +268,7 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
     if mill_settings.cleaning_cross_section:
         pattern = microscope.patterning.create_cleaning_cross_section(
         center_x=mill_settings.centre_x,
-        center_y=mill_settings.centre_x,
+        center_y=mill_settings.centre_y,
         width=mill_settings.width,
         height=mill_settings.height,
         depth=mill_settings.depth,
@@ -335,7 +335,6 @@ def _draw_trench_patterns(
 def _draw_fiducial_patterns(
     microscope: SdbMicroscopeClient,
     mill_settings: MillingSettings,
-    point: Point = Point()
 ):
     """draw the fiducial milling patterns
 
@@ -349,8 +348,8 @@ def _draw_fiducial_patterns(
             List of rectangular patterns used to create the fiducial marker.
     """
 
-    pattern_1 = _draw_rectangle_pattern_v2(microscope, mill_settings, point.x, point.y)
-    pattern_2 = _draw_rectangle_pattern_v2(microscope, mill_settings, point.x, point.y)
-    pattern_2.rotation = np.deg2rad(mill_settings.rotation + 90)
+    pattern_1 = _draw_rectangle_pattern_v2(microscope, mill_settings)
+    pattern_2 = _draw_rectangle_pattern_v2(microscope, mill_settings)
+    pattern_2.rotation = mill_settings.rotation + np.deg2rad(90)
 
     return [pattern_1, pattern_2]

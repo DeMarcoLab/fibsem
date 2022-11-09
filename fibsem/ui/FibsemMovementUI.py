@@ -9,13 +9,13 @@ from fibsem import acquire, conversions, movement, constants, alignment
 from fibsem.structures import BeamType, MicroscopeSettings, Point
 from fibsem.ui.qtdesigner_files import movement_dialog 
 from PyQt5 import QtCore, QtWidgets
-
+import scipy.ndimage as ndi
 import traceback
 
 class MovementMode(Enum):
     Stable = 1
     Eucentric = 2
-    Needle = 3
+    # Needle = 3
 
 class MovementType(Enum):
     StableEnabled = 0 
@@ -74,22 +74,28 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.settings.image)
             self.image = np.concatenate([self.eb_image.data, self.ib_image.data], axis=1) # stack both images together
 
+            # median filter
+            self.image = ndi.median_filter(self.image, size=3)
+
+            # TODO: convert this to use grid layout instead of concat images (see salami)
+
             # crosshair
-            # cy, cx_eb = self.image.shape[0] // 2, self.image.shape[1] // 4 
-            # cx_ib = cx_eb + self.image.shape[1] // 2 
+            cy, cx_eb = self.image.shape[0] // 2, self.image.shape[1] // 4 
+            cx_ib = cx_eb + self.image.shape[1] // 2 
             
             # # refresh viewer
             self.viewer.layers.clear()
-            # self.points_layer = self.viewer.add_points(
-            #     data=[[cy, cx_eb], [cy, cx_ib]], 
-            #     symbol="cross", size=50,
-            #     edge_color="yellow", face_color="yellow",
-            # )
-            # self.points_layer.editable = False
+            self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9, blending="additive")
+            self.points_layer = self.viewer.add_points(
+                data=[[cy, cx_eb], [cy, cx_ib]], 
+                symbol="cross", size=50,
+                edge_color="yellow", face_color="yellow",
+            )
+            self.points_layer.editable = False
 
-            self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9)
             self.image_layer.mouse_double_click_callbacks.append(self._double_click) # append callback
-            self.image_layer.mouse_drag_callbacks.append(self._single_click) # append callback
+            # self.image_layer.mouse_drag_callbacks.append(self._single_click) # append callback
+            self.viewer.layers.selection.active = self.image_layer
 
         except:
             napari.utils.notifications.show_info(f"Unable to update movement image: {traceback.format_exc()}")
@@ -111,21 +117,22 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         else:
             beam_type, adorned_image = None, None
         
-        return beam_type, adorned_image
+        return coords, beam_type, adorned_image
 
-    def _single_click(self, layer, event):
+    # def _single_click(self, layer, event):
         
-        if event.type == "mouse_press" and self.movement_mode is MovementMode.Needle:
+    #     if event.type == "mouse_press" and self.movement_mode is MovementMode.Needle:
+    #         pass # TODO:
             # get coords
-            coords = layer.world_to_data(event.position)
+            # coords = layer.world_to_data(event.position)
 
-            beam_type, adorned_image = self.get_data_from_coord(coords)
+            # beam_type, adorned_image = self.get_data_from_coord(coords)
 
-            coord_type = self.comboBox_needle_coordinate.currentText()
+            # coord_type = self.comboBox_needle_coordinate.currentText()
 
-            logging.info(f"Layer: {layer}, Event: {event}")
-            logging.info(f"Coords: {coords}, Type: {coord_type}")
-            logging.info(f"BeamType: {beam_type}, ")
+            # logging.info(f"Layer: {layer}, Event: {event}")
+            # logging.info(f"Coords: {coords}, Type: {coord_type}")
+            # logging.info(f"BeamType: {beam_type}, ")
 
     def _double_click(self, layer, event):
 
@@ -134,51 +141,40 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
         # TODO: dimensions are mixed which makes this confusing to interpret... resolve
         
-        beam_type, adorned_image = self.get_data_from_coord(coords)
+        coords, beam_type, adorned_image = self.get_data_from_coord(coords)
 
         if beam_type is None:
             napari.utils.notifications.show_info(f"Clicked outside image dimensions. Please click inside the image to move.")
             return
 
-        dx, dy = conversions.pixel_to_realspace_coordinate(
-                (coords[1], coords[0]), adorned_image
-            )
+        point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
+                adorned_image.data, adorned_image.metadata.binary_result.pixel_size.x)  
 
-        logging.info(f"coords: {coords}, beam_type: {beam_type}")
-        logging.info(f"movement: x={dx:.2e}, y={dy:.2e}")
+        logging.info(f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}")
 
         # move
         self.movement_mode = MovementMode[self.comboBox_movement_mode.currentText()]
 
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
-            logging.info(f"moving eucentricly in {beam_type}")
-
             movement.move_stage_eucentric_correction(
                 microscope=self.microscope, 
-                dy=-dy
+                dy=-point.y
             )
 
-        elif self.movement_mode is MovementMode.Stable:
-            logging.info(f"moving stably in {beam_type}")
+        else:
             # corrected stage movement
             movement.move_stage_relative_with_corrected_movement(
                 microscope=self.microscope,
                 settings=self.settings,
-                dx=dx,
-                dy=dy,
+                dx=point.x,
+                dy=point.y,
                 beam_type=beam_type,
             )
-
-        elif self.movement_mode is MovementMode.Needle:
-
-            logging.info(f"moving needle in {beam_type}")
 
         self.update_displays()
 
     def setup_connections(self):
-
-        logging.info("setup connections")
 
         self.pushButton_continue.clicked.connect(self.continue_button_pressed)
         self.pushButton_take_image.clicked.connect(self.take_image_button_pressed)
@@ -196,7 +192,8 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.pushButton_auto_eucentric.clicked.connect(self.auto_eucentric_button_pressed)
         self.comboBox_needle_coordinate.addItems(["Source", "Destination"])
 
-        DESTINATION_MODE = self.movement_mode is MovementMode.Needle
+        # DESTINATION_MODE = self.movement_mode is MovementMode.Needle
+        DESTINATION_MODE = False
         self.label_needle_coordinate.setVisible(DESTINATION_MODE)
         self.comboBox_needle_coordinate.setVisible(DESTINATION_MODE)
 
@@ -223,9 +220,9 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         # set instruction message
         self.set_message(self.msg_type, self.msg)
 
-        DESTINATION_MODE = self.movement_mode is MovementMode.Needle
-        self.label_needle_coordinate.setVisible(DESTINATION_MODE)
-        self.comboBox_needle_coordinate.setVisible(DESTINATION_MODE)
+        # DESTINATION_MODE = self.movement_mode is MovementMode.Needle
+        # self.label_needle_coordinate.setVisible(DESTINATION_MODE)
+        # self.comboBox_needle_coordinate.setVisible(DESTINATION_MODE)
 
     def set_message(self, msg_type: str, msg: str = None):
             

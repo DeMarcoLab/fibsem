@@ -46,10 +46,7 @@ def validate_config(config, func):
             raise ValueError("checkpoint is missing. Either a path leading to the desired saved model, or None value.")
         else:
             path = config[func]["checkpoint"]
-            if path == type(str):
-                if not os.path.exists(path):
-                    raise ValueError(f"{path} directory does not exist. (checkpoint)")
-            elif path != None:
+            if path is not None and not os.path.exists(path):
                 raise ValueError(f"{path} directory does not exist. (checkpoint)")
         if "encoder" not in config[func]:
             raise ValueError("encoder is missing. Used to specify which model architecture to use. Default is resnet18.")

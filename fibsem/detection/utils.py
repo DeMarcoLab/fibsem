@@ -29,8 +29,9 @@ class FeatureType(Enum):
 
 @dataclass
 class Feature:
-    detection_type: FeatureType
-    feature_px: Point  = None # x, y
+    type: FeatureType # rename from type to type
+    feature_px: Point  = None # x, y (image)
+    feature_m: Point = None # x, y (microscope image coord)
 
 
 @dataclass
@@ -91,25 +92,6 @@ def decode_segmap(image, nc=3):
 
 
 
-# TODO: refactor usage to distance between two points
-def convert_pixel_distance_to_metres(p1: Point, p2: Point, adorned_image: AdornedImage):
-    """Convert from pixel coordinates to distance in metres """
-
-    # convert pixel coordinate to realspace coordinate
-    x1_real, y1_real = conversions.pixel_to_realspace_coordinate(
-        (p1.x, p1.y), adorned_image
-    )
-    x2_real, y2_real = conversions.pixel_to_realspace_coordinate(
-        (p2.x, p2.y), adorned_image
-    )
-
-    p1_real = Point(x1_real, y1_real)
-    p2_real = Point(x2_real, y2_real)
-
-    # calculate distance between points along each axis
-    x_distance_m, y_distance_m = coordinate_distance(p1_real, p2_real)
-
-    return x_distance_m, y_distance_m
 
 def coordinate_distance(p1: Point, p2: Point):
     """Calculate the distance between two points in each coordinate"""
@@ -255,8 +237,8 @@ def load_detection_result(path: Path, data) -> DetectionResult:
 
     det = DetectionResult(
         features=[
-            Feature(detection_type=p1_type, feature_px=p1),
-            Feature(detection_type=p2_type, feature_px=p2),
+            Feature(type=p1_type, feature_px=p1),
+            Feature(type=p2_type, feature_px=p2),
         ],
         adorned_image=img,
         display_image=None,
@@ -269,13 +251,13 @@ def plot_detection_result(det_result: DetectionResult):
     """Plot the Detection Result using matplotlib using the full scale image and coordinates"""
     from fibsem.detection.utils import DETECTION_TYPE_COLOURS
 
-    # TODO: consolidate this with what is in detection_window
+    # TODO: consolidate this with what is in FibsemDetectionUI
 
     p1 = det_result.features[0].feature_px
     p2 = det_result.features[1].feature_px
 
-    c1 = DETECTION_TYPE_COLOURS[det_result.features[0].detection_type]
-    c2 = DETECTION_TYPE_COLOURS[det_result.features[1].detection_type]
+    c1 = DETECTION_TYPE_COLOURS[det_result.features[0].type]
+    c2 = DETECTION_TYPE_COLOURS[det_result.features[1].type]
 
     if det_result.display_image is None:
         display_image = det_result.adorned_image.data
@@ -283,45 +265,52 @@ def plot_detection_result(det_result: DetectionResult):
         display_image = det_result.display_image
 
     fig = plt.figure(figsize=(15, 15))
-    plt.title(f"{det_result.features[0].detection_type.name} to {det_result.features[1].detection_type.name}")
+    plt.title(f"{det_result.features[0].type.name} to {det_result.features[1].type.name}")
     plt.imshow(display_image, cmap="gray")
     plt.plot(p1.x, p1.y, color=c1, marker="+", ms=50, markeredgewidth=2)
     plt.plot(p2.x, p2.y, color=c2, marker="+", ms=50, markeredgewidth=2)
     plt.plot((p1.x, p2.x),(p1.y, p2.y), color="white", ms=50, markeredgewidth=2) # line between
 
     # legend
-    patch_one = mpatches.Patch(color=c1, label=det_result.features[0].detection_type.name)
-    patch_two = mpatches.Patch(color=c2, label=det_result.features[1].detection_type.name)
+    patch_one = mpatches.Patch(color=c1, label=det_result.features[0].type.name)
+    patch_two = mpatches.Patch(color=c2, label=det_result.features[1].type.name)
     plt.legend(handles=[patch_one, patch_two])
 
     return fig
 
 
-def write_data_to_disk(path: Path, detection_result: DetectionResult) -> None:
-    
+def write_data_to_disk(path: Path, detected_features) -> None:
+    from fibsem.detection.detection import DetectedFeatures
+
     from fibsem import utils
     label = utils.current_timestamp() + "_label"
 
-    utils.save_image(
-        image=detection_result.adorned_image,
-        save_path=path,
-        label=label,
-    )
+    # utils.save_image(
+    # image=detected_features.image,
+    # save_path=path,
+    # label=label,
+    # )
+
+    import tifffile as tf
+    import os 
+    os.makedirs(path, exist_ok=True)
+    tf.imsave(os.path.join(path, f"{label}.tif"), detected_features.image)
 
     # get scale invariant coords
-    shape = detection_result.adorned_image.data.shape
-    scaled_p0 = get_scale_invariant_coordinates(detection_result.features[0].feature_px, shape=shape)
-    scaled_p1 = get_scale_invariant_coordinates(detection_result.features[1].feature_px, shape=shape)
+    shape = detected_features.image.shape
+    scaled_p0 = get_scale_invariant_coordinates(detected_features.features[0].feature_px, shape=shape)
+    scaled_p1 = get_scale_invariant_coordinates(detected_features.features[1].feature_px, shape=shape)
 
     # get info
     logging.info(f"Label: {label}")
     info = [label, 
-        detection_result.features[0].detection_type.name, 
+        detected_features.features[0].type.name, 
         scaled_p0.x, 
         scaled_p0.y, 
-        detection_result.features[1].detection_type.name, 
+        detected_features.features[1].type.name, 
         scaled_p1.x, 
         scaled_p1.y
         ]
 
     write_data_to_csv(path, info)
+

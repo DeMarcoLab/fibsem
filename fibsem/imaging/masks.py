@@ -202,7 +202,7 @@ def apply_circular_mask(img: np.ndarray, radius: int, sigma: int = 0) -> np.ndar
 
 
 
-def get_area_mask(arr, left = False, right = False, upper = False, lower = False):
+def create_area_mask(arr, left = False, right = False, upper = False, lower = False):
     cy, cx = np.asarray(arr.shape) //2
 
     # left 
@@ -237,4 +237,11 @@ def get_area_mask(arr, left = False, right = False, upper = False, lower = False
 
     mask = np.logical_and((v_mask), (h_mask))
 
+    return mask
+
+
+def create_vertical_mask(arr, width=128):
+    mask = np.zeros_like(arr)
+    mid = arr.shape[1] // 2
+    mask[:, mid-width:mid+width] = 1
     return mask

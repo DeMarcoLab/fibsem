@@ -1,21 +1,24 @@
 
 import logging
+from copy import deepcopy
 from pathlib import Path
 
+import napari
+import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem import acquire, validation
+from fibsem import acquire, conversions, validation
 from fibsem.detection import detection
-from fibsem.detection.detection import Feature, DetectionResult
+from fibsem.detection.detection import (DetectedFeatures,Feature)
+from fibsem.segmentation.model import load_model
 from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
-from fibsem.ui.detection_window import GUIDetectionWindow
+from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
 from fibsem.ui.FibsemMovementUI import FibsemMovementUI
 from fibsem.ui.FibsemAskUserUI import FibsemAskUserUI
 from PyQt5.QtWidgets import QMessageBox
 
-import numpy as np
-import napari
+
 def ask_user_interaction(
     msg="Default Ask User Message", image: np.ndarray = None
 ):
@@ -35,8 +38,6 @@ def ask_user_movement(
     parent=None,
 ):
 
-    logging.info(f"Asking user for confirmation for {msg_type} movement")
-
     viewer = napari.Viewer()
 
     movement_ui = FibsemMovementUI(
@@ -50,62 +51,45 @@ def ask_user_movement(
     
     viewer.window.add_dock_widget(movement_ui, area="right", add_vertical_stretch=False)
     movement_ui.exec_()
+    viewer.close()
 
     # napari.run()
 
+def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
 
-def detect_features(
-    microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings,
-    ref_image: AdornedImage,
-    features: tuple[Feature],
-    validate: bool = True,
-) -> DetectionResult:
-    """_summary_
-
-    Args:
-        microscope (SdbMicroscopeClient): _description_
-        settings (dict): _description_
-        image_settings (ImageSettings): _description_
-        ref_image (AdornedImage): _description_
-        features (tuple[Feature]): _description_
-        validate (bool, optional): _description_. Defaults to True.
-
-    Returns:
-        DetectionResult: _description_
-    """
-    # detect features
+    # take new image
     image = acquire.new_image(microscope, settings.image)
 
+    # load model
+    checkpoint = settings.protocol["ml"]["weights"]
+    encoder = settings.protocol["ml"]["encoder"]
+    num_classes = int(settings.protocol["ml"]["num_classes"])
+    cuda = settings.protocol["ml"]["cuda"]
+    model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
+
     # detect features
-    det = detection.locate_shift_between_features(image, features=features)
+    pixelsize = image.metadata.binary_result.pixel_size.x
+    det = detection.locate_shift_between_features_v2(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
 
     # user validate features...
     if validate:
-        det = validate_detection(
-            microscope,
-            settings,
-            det,
+        # user validates detection result
+        detection_ui = FibsemDetectionUI(
+            microscope=microscope,
+            settings=settings,
+            detected_features=det,
         )
+        detection_ui.show()
+        detection_ui.exec_()
+
+        det = detection_ui.detected_features
+
+    # calculate features in microscope image coords
+    det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].feature_px, image.data, pixelsize)
+    det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].feature_px, image.data, pixelsize)
 
     return det
 
-
-def validate_detection(
-    microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings,
-    detection_result: DetectionResult,
-):
-    # user validates detection result
-    detection_window = GUIDetectionWindow(
-        microscope=microscope,
-        settings=settings,
-        detection_result=detection_result,
-    )
-    detection_window.show()
-    detection_window.exec_()
-
-    return detection_window.detection_result
 
 def run_validation_ui(
     microscope: SdbMicroscopeClient, settings: MicroscopeSettings, log_path: Path

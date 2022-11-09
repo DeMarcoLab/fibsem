@@ -45,26 +45,16 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         raw_path = self.lineEdit_raw_data.text()
         self.save_path = self.lineEdit_save_path.text()
 
-        print(raw_path)
-        print(self.save_path)
-
-        vol = tff.imread(os.path.join(raw_path, "*.tif*"), aszarr=True) # loading folder of .tif into zarr array)
-        self.zarr_set = zarr.open(vol)
-        if self.zarr_set.ndim == 2:
-            print("only one image loaded...")
-            self.zarr_set = [self.zarr_set]
+        # get filenames
         self.filenames = sorted(glob.glob(os.path.join(raw_path, "*.tif*")))
         
         # create required directories        
-        os.makedirs(os.path.join(self.save_path, "images"), exist_ok=True)
         os.makedirs(os.path.join(self.save_path, "labels"), exist_ok=True)
         
         self.update_image()
 
 
     def next_image(self):
-
-        print("next image")
 
         self.save_image()
 
@@ -75,8 +65,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.update_image()
 
     def previous_image(self):
-
-        print("previous_image")
 
         self.save_image()
 
@@ -91,12 +79,12 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         # save current image
         bname = os.path.basename(self.fname).split(".")[0]
         
-        self.viewer.layers["img"].save(os.path.join(self.save_path, "images", f"{bname}.tif"))
+        # only resave the labels...
         label = self.viewer.layers["Labels"].data.astype(np.uint8)
 
         im = Image.fromarray(label) 
         im.save(os.path.join(self.save_path, "labels", f"{bname}.tif"))  # or 'test.tif'
-        im.save(os.path.join(self.save_path, "labels", f"{bname}.png"))
+        im.save(os.path.join(self.save_path, "labels", f"{bname}.png")) # TODO: convert to RBG
         
     def update_image(self):
         
@@ -105,8 +93,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         # update / clear viewer
         self.viewer.layers.clear()
-        self.img = self.zarr_set[self.idx]
         self.fname = self.filenames[self.idx]
+        self.img = tff.imread(self.fname)
         self.viewer.add_image(self.img, name="img")
 
         label_image = self.get_label_image()
@@ -120,9 +108,10 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
     def get_label_image(self) -> np.ndarray:
 
-        if os.path.basename(self.fname) in os.listdir(os.path.join(self.save_path, "images")): 
-            label_image = tff.imread(os.path.join(self.save_path, "labels", os.path.basename(self.fname)), aszarr=True)
-            label_image = da.from_zarr(label_image)
+        if os.path.basename(self.fname) in os.listdir(os.path.join(self.save_path, "labels")): 
+            
+            label_fname = os.path.join(self.save_path, "labels", os.path.basename(self.fname))
+            label_image = tff.imread(label_fname)
             label_image = np.array(label_image, dtype=np.uint8)
         else:
             label_image = np.zeros_like(self.img)
@@ -138,10 +127,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         event.accept()
 
     # TODO: remove use of PIl, use tf to save
-    # TODO: doesnt work for a single image dataset..?
     # BUG: no way to save the last image in the dataset? except go back?
 
-    # TODO: change raw -> images. dont want to duplicate data this way currently no way to go back into an existing dataset? 
     # TODO: go to index
     # TODO: hotkeys
     # 

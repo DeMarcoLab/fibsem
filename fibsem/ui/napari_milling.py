@@ -83,10 +83,10 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
             return
 
 
-        center_x, center_y = conversions.pixel_to_realspace_coordinate(
-                (coords[1], coords[0]), adorned_image
+        point = conversions.image_to_microscope_image_coordinates(
+                (coords[1], coords[0]), adorned_image, adorned_image.metadata.binary_result.pixel_size.x
             )
-        napari.utils.notifications.show_info(f"Inside {beam_type.name} Image Dimensions - centre: {center_x}, {center_y}")
+        napari.utils.notifications.show_info(f"Inside {beam_type.name} Image Dimensions - centre: {point.x}, {point.y}")
 
         # move
 
@@ -97,7 +97,7 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
 
             movement.move_stage_eucentric_correction(
                 microscope=self.microscope, 
-                dy=-center_y
+                dy=-point.y
             )
 
         else:
@@ -105,8 +105,8 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
             movement.move_stage_relative_with_corrected_movement(
                 microscope=self.microscope,
                 settings=self.settings,
-                dx=center_x,
-                dy=center_y,
+                dx=point.x,
+                dy=point.y,
                 beam_type=beam_type,
             )
 

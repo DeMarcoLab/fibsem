@@ -20,21 +20,27 @@ from fibsem.structures import (
     ReferenceImages,
 )
 
-def auto_eucentric_correction(microscope: SdbMicroscopeClient, 
+
+def auto_eucentric_correction(
+    microscope: SdbMicroscopeClient,
     image_settings: ImageSettings,
     tilt_degrees: int = 25,
-    xcorr_limit: int = 250) -> None:
+    xcorr_limit: int = 250,
+) -> None:
 
     image_settings.save = False
-    calibration.auto_discharge_beam(microscope, image_settings)
+    image_settings.beam_type = BeamType.ELECTRON
+    calibration.auto_charge_neutralisation(microscope, image_settings)
 
-    for hfw in [400e-6, 150e-6, 80e-6,  80e-6]:
+    for hfw in [400e-6, 150e-6, 80e-6, 80e-6]:
         image_settings.hfw = hfw
 
-        correct_stage_eucentric_alignment(microscope, 
-            image_settings, 
-            tilt_degrees=tilt_degrees, 
-            xcorr_limit=xcorr_limit)
+        correct_stage_eucentric_alignment(
+            microscope,
+            image_settings,
+            tilt_degrees=tilt_degrees,
+            xcorr_limit=xcorr_limit,
+        )
 
 
 def correct_stage_eucentric_alignment(
@@ -53,8 +59,8 @@ def correct_stage_eucentric_alignment(
     ib_image = image_utils.cosine_stretch(ib_image, tilt_degrees)
 
     # cross correlate
-    lp_px = 128 #int(max(ib_image.data.shape) / 12)
-    hp_px = 6 #int(max(ib_image.data.shape) / 256)
+    lp_px = 128  # int(max(ib_image.data.shape) / 12)
+    hp_px = 6  # int(max(ib_image.data.shape) / 256)
     sigma = 6
 
     ref_mask = masks.create_circle_mask(eb_image.data.shape, radius=64)
@@ -67,7 +73,7 @@ def correct_stage_eucentric_alignment(
         sigma=sigma,
         use_rect_mask=True,
         ref_mask=ref_mask,
-        xcorr_limit=xcorr_limit
+        xcorr_limit=xcorr_limit,
     )
 
     # move vertically to correct eucentric position
@@ -128,6 +134,7 @@ def correct_stage_drift(
     use_ref_mask: bool = False,
     mask_scale: int = 4,
     xcorr_limit: tuple = None,
+    constrain_vertical: bool = False,
 ) -> bool:
     """Correct the stage drift by crosscorrelating low-res and high-res reference images"""
 
@@ -156,7 +163,10 @@ def correct_stage_drift(
 
         if use_ref_mask:
             ref_mask = masks.create_lamella_mask(
-                ref_image, settings.protocol["lamella"], scale=mask_scale, use_trench_height=True
+                ref_image,
+                settings.protocol["lamella"],
+                scale=mask_scale,
+                use_trench_height=True,
             )  # TODO: refactor, liftout specific
         else:
             ref_mask = None
@@ -176,6 +186,7 @@ def correct_stage_drift(
             new_image,
             ref_mask=ref_mask,
             xcorr_limit=xcorr_limit[i],
+            constrain_vertical=constrain_vertical,
         )
 
         if ret is False:
@@ -191,14 +202,8 @@ def align_using_reference_images(
     new_image: AdornedImage,
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
+    constrain_vertical: bool = False,
 ) -> bool:
-
-    # import matplotlib.pyplot as plt
-    # fig, ax = plt.subplots(1, 2)
-    # ax[0].imshow(ref_image.data, cmap="gray")
-    # ax[1].imshow(new_image.data, cmap="gray")
-
-    # plt.show()
 
     # get beam type
     ref_beam_type = BeamType[ref_image.metadata.acquisition.beam_type.upper()]
@@ -208,8 +213,8 @@ def align_using_reference_images(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."
     )
     sigma = 6
-    hp_px = 8 #int(max(new_image.data.shape) / 256)
-    lp_px = 128 #int(max(new_image.data.shape) / 6)
+    hp_px = 8  
+    lp_px = 128  # MAGIC_NUMBER
 
     dx, dy, xcorr = shift_from_crosscorrelation(
         ref_image,
@@ -228,15 +233,18 @@ def align_using_reference_images(
 
     if shift_within_tolerance:
 
-        # move the stage
-        movement.move_stage_relative_with_corrected_movement(
-            microscope,
-            settings,
-            dx=dx,
-            # dy=dy,
-            dy=-dy,
-            beam_type=new_beam_type,
-        )
+        # vertical constraint = eucentric movement
+        if constrain_vertical:
+            movement.move_stage_eucentric_correction(microscope, dy=-dy) # FLAG_TEST
+        else:
+            # move the stage
+            movement.move_stage_relative_with_corrected_movement(
+                microscope,
+                settings,
+                dx=dx,
+                dy=-dy,
+                beam_type=new_beam_type,
+            )
 
     return shift_within_tolerance
 
@@ -270,7 +278,9 @@ def shift_from_crosscorrelation(
         ref_data_norm = ref_mask * ref_data_norm  # mask the reference
 
     # bandpass mask
-    bandpass = masks.create_bandpass_mask(shape=ref_data_norm.shape, lp=lowpass, hp=highpass, sigma=sigma)
+    bandpass = masks.create_bandpass_mask(
+        shape=ref_data_norm.shape, lp=lowpass, hp=highpass, sigma=sigma
+    )
 
     # crosscorrelation
     xcorr = crosscorrelation_v2(ref_data_norm, new_data_norm, bandpass=bandpass)
@@ -280,7 +290,7 @@ def shift_from_crosscorrelation(
         xcorr = masks.apply_circular_mask(xcorr, xcorr_limit)
 
     # calculate maximum crosscorrelation
-    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)
+    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape) # TODO: backwards
     cen = np.asarray(xcorr.shape) / 2
     err = np.array(cen - [maxX, maxY], int)
 
@@ -298,10 +308,9 @@ def shift_from_crosscorrelation(
     # metres
     return x_shift, y_shift, xcorr
 
+
 def crosscorrelation_v2(
-    img1: np.ndarray,
-    img2: np.ndarray,
-    bandpass: np.ndarray = None
+    img1: np.ndarray, img2: np.ndarray, bandpass: np.ndarray = None
 ) -> np.ndarray:
     """Cross-correlate images (fourier convolution matching)
 
@@ -344,7 +353,6 @@ def crosscorrelation_v2(
     # plt.title("Power Spectra")
     # plt.imshow(np.log(np.abs(np.fft.fftshift(np.fft.fft2(img1)))))
     # plt.show()
-
 
     xcorr = np.real(np.fft.fftshift(np.fft.ifft2(img1ft * np.conj(img2ft))))
 

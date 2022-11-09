@@ -87,7 +87,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         # tools
         self.pushButton_sputter_platinum.clicked.connect(self.run_tools)
         self.pushButton_move_stage_out.clicked.connect(self.run_tools)
-        self.pushButton_auto_discharge_beam.clicked.connect(self.run_tools)
+        self.pushButton_auto_charge_neutralisation.clicked.connect(self.run_tools)
         self.pushButton_auto_focus_beam.clicked.connect(self.run_tools)
         self.pushButton_auto_home_stage.clicked.connect(self.run_tools)
         self.pushButton_auto_link_stage.clicked.connect(self.run_tools)
@@ -222,12 +222,11 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
             napari.utils.notifications.show_info(f"Clicked outside image dimensions. Please click inside the image to move.")
             return
 
-        dx, dy = conversions.pixel_to_realspace_coordinate(
-                (coords[1], coords[0]), adorned_image
-            )
+        point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
+                adorned_image.data, adorned_image.metadata.binary_result.pixel_size.x)  
 
         logging.info(f"coords: {coords}, beam_type: {beam_type}")
-        logging.info(f"movement: x={dx:.2e}, y={dy:.2e}")
+        logging.info(f"movement: x={point.x:.2e}, y={point.y:.2e}")
 
         # move
 
@@ -239,7 +238,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
             movement.move_stage_eucentric_correction(
                 microscope=self.microscope, 
-                dy=-dy
+                dy=-point.y
             )
 
         else:
@@ -248,8 +247,8 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
             movement.move_stage_relative_with_corrected_movement(
                 microscope=self.microscope,
                 settings=self.settings,
-                dx=dx,
-                dy=dy,
+                dx=point.x,
+                dy=point.y,
                 beam_type=beam_type,
             )
 
@@ -473,13 +472,13 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
             (f1.feature_px.y, f1.feature_px.x),
              (f2.feature_px.y, f2.feature_px.x)]
 
-        features = {"label": [f1.detection_type.name, 
-                f2.detection_type.name],
+        features = {"label": [f1.type.name, 
+                f2.type.name],
                 "choice": [True, False]}
 
         face_color_cycle = [
-            det_utils.DETECTION_TYPE_COLOURS_v2[f1.detection_type], 
-            det_utils.DETECTION_TYPE_COLOURS_v2[f2.detection_type]
+            det_utils.DETECTION_TYPE_COLOURS_v2[f1.type], 
+            det_utils.DETECTION_TYPE_COLOURS_v2[f2.type]
             ]
 
         # TODO: why doesnt the text label work??
@@ -531,9 +530,9 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
         if sender == self.pushButton_auto_focus_beam:
             logging.info(f"Auto Focus")
 
-        if sender == self.pushButton_auto_discharge_beam:
+        if sender == self.pushButton_auto_charge_neutralisation:
             logging.info(f"Auto Discharge Beam")
-            calibration.auto_discharge_beam(self.microscope, self.settings.image)
+            calibration.auto_charge_neutralisation(self.microscope, self.settings.image)
 
         if sender == self.pushButton_auto_home_stage:
             logging.info(f"Auto Home Stage")

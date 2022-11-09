@@ -16,7 +16,8 @@ from fibsem.structures import (
     BeamType,
     ImageSettings,
     MicroscopeSettings,
-    BeamSystemSettings
+    BeamSystemSettings,
+    GammaSettings
 )
 
 from pathlib import Path
@@ -45,10 +46,10 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
     # # Restore original settings
     microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
 
-def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings, 
+def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettings,  
     mode: str = "default",  
     wd_delta: float = 0.05e-3, steps: int  = 5, 
-    reduced_area: Rectangle = Rectangle(0.3, 0.3, 0.4, 0.4) ) -> None:
+    reduced_area: Rectangle = Rectangle(0.3, 0.3, 0.4, 0.4), focus_image_settings: ImageSettings = None ) -> None:
 
     if mode == "default":
         microscope.imaging.set_active_device(BeamType.ELECTRON.value)
@@ -59,14 +60,18 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
 
     if mode == "sharpness":
         
-       
-        prev_image_settings = image_settings
-        image_settings.resolution = "768x512"  # "1536x1024"
-        image_settings.dwell_time = 0.2e-6
-        image_settings.hfw = 50e-6
-        image_settings.autocontrast = True
-        image_settings.beam_type = BeamType.ELECTRON
-        image_settings.save = False
+        if focus_image_settings is None:
+            focus_image_settings = ImageSettings(
+                resolution = "768x512",
+                dwell_time = 200e-9,
+                hfw=50e-6,
+                beam_type = BeamType.ELECTRON,
+                save=False,
+                autocontrast=True,
+                gamma=GammaSettings(enabled=False),
+                label=None
+
+            )
 
         current_wd = microscope.beams.electron_beam.working_distance.value
         logging.info(f"sharpness (accutance) based auto-focus routine")
@@ -86,7 +91,7 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
             logging.info(f"Img {i}: {wd:.2e}")
             microscope.beams.electron_beam.working_distance.value = wd
             
-            img = acquire.new_image(microscope, image_settings, reduced_area=reduced_area)
+            img = acquire.new_image(microscope, focus_image_settings, reduced_area=reduced_area)
 
             # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance
             out = gradient(skimage.filters.median(np.copy(img.data)), disk(5))
@@ -103,7 +108,6 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
 
         # reset working distance
         microscope.beams.electron_beam.working_distance.value = working_distances[idx]
-        image_settings = prev_image_settings
 
         # run fine auto focus and link
         # microscope.imaging.set_active_device(BeamType.ELECTRON.value)
@@ -111,104 +115,72 @@ def auto_focus_beam(microscope: SdbMicroscopeClient, image_settings: ImageSettin
         # microscope.auto_functions.run_auto_focus()
         # microscope.specimen.stage.link()
 
+    if mode == "dog":
+        # TODO: implement difference of gaussian based auto-focus
+
+        pass
+
+
     return 
 
-
-def auto_discharge_beam(
+def auto_charge_neutralisation(
     microscope: SdbMicroscopeClient,
     image_settings: ImageSettings,
+    discharge_settings: ImageSettings = None,
     n_iterations: int = 10,
-):
+) -> None:
 
-    # take sequence of 5 images quickly,
-    
-    resolution = image_settings.resolution
-    dwell_time = image_settings.dwell_time
-    autocontrast = image_settings.autocontrast
-    beam_type = image_settings.beam_type
-    save = image_settings.save 
+    # take sequence of images quickly,
 
-    image_settings.beam_type = BeamType.ELECTRON
-    image_settings.resolution = "768x512"
-    image_settings.dwell_time = 200e-9
-    image_settings.autocontrast = False
-    image_settings.gamma.enabled = False
-    image_settings.save = False
-
-    logging.info(f"Bring me Thanos!")  # important information
+    # use preset settings if not defined
+    if discharge_settings is None:
+        discharge_settings = ImageSettings(
+            resolution = "768x512",
+            dwell_time = 200e-9,
+            hfw=image_settings.hfw,
+            beam_type = BeamType.ELECTRON,
+            save=False,
+            autocontrast=False,
+            gamma=GammaSettings(enabled=False),
+            label=None
+        )
 
     for i in range(n_iterations):
-        acquire.new_image(microscope, image_settings)
+        acquire.new_image(microscope, discharge_settings)
 
     # take image
-    image_settings.resolution = resolution
-    image_settings.dwell_time = dwell_time
-    image_settings.autocontrast = autocontrast
     acquire.new_image(microscope, image_settings)
 
-    image_settings.beam_type = beam_type
-    image_settings.save = save
-
+    logging.info(f"BAM! and the charge is gone!") # important information  
 
 def auto_needle_calibration(
     microscope: SdbMicroscopeClient, settings: MicroscopeSettings, validate: bool = True
 ):
-
-    settings.image.hfw = 2700e-6
-    acquire.take_reference_images(microscope, settings.image)
-
-    # retract needle to move stage
-    # if microscope.specimen.manipulator.state == "Inserted":
-    #     movement.retract_needle(microscope)
-
-    # # TODO: move stage out of the way
-    # initial_state = get_current_microscope_state(microscope)
-    # out_position = StagePosition(x=-0.0030200833, y=0.026756667, 
-    #     z=0.031735179, t=0, r=0.87264982, coordinate_system="Raw")
-    # movement.safe_absolute_stage_movement(microscope, out_position)
-    
-    # # reinsert needle
-    # movement.insert_needle(microscope)
-
-    # move needle to position. NB: needle needs to have been calibrated once for this to work,
-    # otherwise we needle to first do the alignment at 2700e-6 in EB
-    # movement.move_needle_to_position_offset(microscope)
-
-    # TODO: add flag, if eucentric position is defined use it, otherwise do very low alignment
-
     # set coordinate system
     microscope.specimen.manipulator.set_default_coordinate_system(
         ManipulatorCoordinateSystem.STAGE
     )
 
+    # current working distance
+    wd = microscope.beams.electron_beam.working_distance.value
+    needle_wd_eb = 4.0e-3
+
     # focus on the needle
+    microscope.beams.electron_beam.working_distance.value = needle_wd_eb
+    microscope.specimen.stage.link()
+
     settings.image.hfw = 2700e-6
-    acquire.autocontrast(microscope, BeamType.ELECTRON)
-    microscope.auto_functions.run_auto_focus() # TODO: set focus at 4mm?
     acquire.take_reference_images(microscope, settings.image)
 
     # very low res alignment
-    align_needle_to_eucentric_position(microscope, settings, validate=validate)
+    hfws = [2700e-6, 900e-6, 400e-6, 150e-6]
+    for hfw in hfws:
+        settings.image.hfw = hfw
+        align_needle_to_eucentric_position(microscope, settings, validate=validate)
 
-    # low res alignment
-    settings.image.hfw = 900e-6
-    align_needle_to_eucentric_position(microscope, settings, validate=validate)
-
-    # focus on needle
-    acquire.autocontrast(microscope, BeamType.ELECTRON)
-    microscope.auto_functions.run_auto_focus()
-    acquire.take_reference_images(microscope, settings.image)
-
-    # medium res alignment
-    settings.image.hfw = 400e-6
-    align_needle_to_eucentric_position(microscope, settings, validate=validate)
-
-    # high res alignment
-    settings.image.hfw = 150e-6
-    align_needle_to_eucentric_position(microscope, settings, validate=validate)
-
-    # restore initial state
-    # set_microscope_state(microscope, initial_state)
+    # restore working distance
+    microscope.beams.electron_beam.working_distance.value = wd
+    microscope.specimen.stage.link()    
 
     logging.info(f"Finished automatic needle calibration.")
 
@@ -223,6 +195,7 @@ def align_needle_to_eucentric_position(
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope instance
         settings (MicroscopeSettings): microscope settings
+        validate (bool, optional): validate the alignment. Defaults to False.
     """
 
     from fibsem.ui import windows as fibsem_ui_windows
@@ -233,61 +206,33 @@ def align_needle_to_eucentric_position(
     settings.image.save = False
     settings.image.beam_type = BeamType.ELECTRON
 
-    # ref_eb = acquire.new_image(microscope=microscope, settings=settings.image)
-    # det = fibsem_ui_windows.detect_features(
-    #     microscope=microscope,
-    #     settings=settings,
-    #     ref_image=ref_eb,
-    #     features=[
-    #         Feature(FeatureType.NeedleTip, None),
-    #         Feature(FeatureType.ImageCentre, None),
-    #     ],
-    #     validate=validate,
-    # )
-    image = acquire.new_image(microscope, settings.image)
-    det = detection.locate_shift_between_features(
-        image,
+    det = fibsem_ui_windows.detect_features_v2(
+        microscope=microscope,
+        settings=settings,
         features=[
             Feature(FeatureType.NeedleTip, None),
             Feature(FeatureType.ImageCentre, None),
         ],
+        validate=validate,
     )
-
-    movement.move_needle_relative_with_corrected_movement(
-        microscope=microscope,
-        dx=det.distance_metres.x,
-        dy=det.distance_metres.y,
-        beam_type=BeamType.ELECTRON,
-    )
+    detection.move_based_on_detection(microscope, settings, det, beam_type=settings.image.beam_type)
 
     # take reference images
     settings.image.save = False
     settings.image.beam_type = BeamType.ION
-    ref_ib = acquire.new_image(microscope=microscope, settings=settings.image)
 
     image = acquire.new_image(microscope, settings.image)
-    det = detection.locate_shift_between_features(
-        image,
+
+    det = fibsem_ui_windows.detect_features_v2(
+        microscope=microscope,
+        settings=settings,
         features=[
             Feature(FeatureType.NeedleTip, None),
             Feature(FeatureType.ImageCentre, None),
         ],
+        validate=validate,
     )
-
-    # det = fibsem_ui_windows.detect_features(
-    #     microscope=microscope,
-    #     settings=settings,
-    #     ref_image=ref_ib,
-    #     features=[
-    #         Feature(FeatureType.NeedleTip, None),
-    #         Feature(FeatureType.ImageCentre, None),
-    #     ],
-    #     validate=validate,
-    # )
-
-    movement.move_needle_relative_with_corrected_movement(
-        microscope=microscope, dx=0, dy=-det.distance_metres.y, beam_type=BeamType.ION,
-    )
+    detection.move_based_on_detection(microscope, settings, det, beam_type=settings.image.beam_type, move_x=False)
 
     # take image
     acquire.take_reference_images(microscope, settings.image)
@@ -313,6 +258,24 @@ def auto_home_and_link(microscope: SdbMicroscopeClient, state: MicroscopeState =
     logging.info("Linking stage...")
     acquire.autocontrast(microscope, beam_type=BeamType.ELECTRON)
     microscope.auto_functions.run_auto_focus()
+    microscope.specimen.stage.link()
+
+
+def auto_home_and_link_v2(microscope: SdbMicroscopeClient, state: MicroscopeState = None) -> None:
+
+    # home the stage and return the linked state
+    
+    if state is None:
+        state = get_current_microscope_state(microscope)
+
+    # home the stage
+    logging.info(f"Homing stage...")
+    microscope.specimen.stage.home()
+
+    # move to saved linked state
+    set_microscope_state(microscope, state)
+
+    # relink (set state also links...)
     microscope.specimen.stage.link()
 
 
@@ -391,6 +354,7 @@ def set_microscope_state(
     #     microscope_state.eb_settings.stigmation
     # )
 
+
     # restore ion beam
     logging.info(f"restoring ion beam settings...")
     microscope.beams.ion_beam.working_distance.value = (
@@ -410,6 +374,7 @@ def set_microscope_state(
     )
     # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
 
+    microscope.specimen.stage.link()
     logging.info(f"microscope state restored")
     return
 
