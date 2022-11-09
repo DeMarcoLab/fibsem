@@ -24,7 +24,7 @@ def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -
         resolution="768x512",  # low resolution, so as not to damage the sample
         number_of_frames=5,
     )
-    logging.info("automatically adjusting contrast...")
+    logging.debug("automatically adjusting contrast...")
     microscope.auto_functions.run_auto_cb()  # cb_settings, TODO: pass through settings
 
 
@@ -83,7 +83,7 @@ def auto_gamma(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
     )
     if abs(diff) < settings.threshold:
         gam = 1.0
-    logging.info(
+    logging.debug(
         f"AUTO_GAMMA | {image.metadata.acquisition.beam_type} | {diff:.3f} | {gam:.3f}"
     )
     image_data = exposure.adjust_gamma(image.data, gam)
@@ -119,8 +119,6 @@ def new_image(
         settings.hfw = np.clip(settings.hfw, hfw_limits.min, hfw_limits.max)
         microscope.beams.electron_beam.horizontal_field_width.value = settings.hfw
         label = f"{settings.label}_eb"
-
-
 
     if settings.beam_type is BeamType.ION:
         hfw_limits = microscope.beams.ion_beam.horizontal_field_width.limits
@@ -163,7 +161,9 @@ def last_image(
         AdornedImage: last image
     """
 
+
     microscope.imaging.set_active_view(beam_type.value)
+    microscope.imaging.set_active_device(beam_type.value)
     image = microscope.imaging.get_image()
     return image
 
@@ -184,8 +184,8 @@ def acquire_image(
         AdornedImage: new image
     """
     logging.info(f"acquiring new {beam_type.name} image.")
-    # microscope.imaging.set_active_device(beam_type.value)
     microscope.imaging.set_active_view(beam_type.value)
+    microscope.imaging.set_active_device(beam_type.value)
     image = microscope.imaging.grab_frame(settings)
 
     return image
@@ -199,12 +199,12 @@ def reset_beam_shifts(microscope: SdbMicroscopeClient):
     from autoscript_sdb_microscope_client.structures import Point
 
     # reset zero beamshift
-    logging.info(
+    logging.debug(
         f"reseting ebeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
     )
     microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
-    logging.info(
+    logging.debug(
         f"reseting ibeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
     )
     microscope.beams.ion_beam.beam_shift.value = Point(0, 0)
-    logging.info(f"reset beam shifts to zero complete")
+    logging.debug(f"reset beam shifts to zero complete")

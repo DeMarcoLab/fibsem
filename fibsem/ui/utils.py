@@ -147,7 +147,6 @@ def draw_crosshair_v2(image: AdornedImage, canvas: _PlotCanvas, point: Point, co
 
 def display_error_message(message, title="Error"):
     """PyQt dialog box displaying an error message."""
-    logging.info("display_error_message")
     logging.exception(message)
 
     error_dialog = QMessageBox()

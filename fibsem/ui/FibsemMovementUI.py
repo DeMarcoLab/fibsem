@@ -150,7 +150,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
                 adorned_image.data, adorned_image.metadata.binary_result.pixel_size.x)  
 
-        logging.info(f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}")
+        logging.debug(f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}")
 
         # move
         self.movement_mode = MovementMode[self.comboBox_movement_mode.currentText()]
@@ -246,11 +246,9 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.update_displays()
 
     def continue_button_pressed(self):
-        logging.info("continue button pressed")
         self.close()
 
     def closeEvent(self, event):
-        logging.info("closing movement window")
         event.accept()
 
     def stage_tilt(self):

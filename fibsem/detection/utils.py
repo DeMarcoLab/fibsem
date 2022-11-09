@@ -302,7 +302,6 @@ def write_data_to_disk(path: Path, detected_features) -> None:
     scaled_p1 = get_scale_invariant_coordinates(detected_features.features[1].feature_px, shape=shape)
 
     # get info
-    logging.info(f"Label: {label}")
     info = [label, 
         detected_features.features[0].type.name, 
         scaled_p0.x, 
