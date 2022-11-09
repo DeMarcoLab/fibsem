@@ -38,8 +38,6 @@ def ask_user_movement(
     parent=None,
 ):
 
-    logging.info(f"Asking user for confirmation for {msg_type} movement")
-
     viewer = napari.Viewer()
 
     movement_ui = FibsemMovementUI(

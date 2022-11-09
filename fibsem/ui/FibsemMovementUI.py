@@ -76,6 +76,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
             # median filter
             self.image = ndi.median_filter(self.image, size=3)
+
             # TODO: convert this to use grid layout instead of concat images (see salami)
 
             # crosshair
@@ -84,14 +85,14 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             
             # # refresh viewer
             self.viewer.layers.clear()
+            self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9, blending="additive")
             self.points_layer = self.viewer.add_points(
                 data=[[cy, cx_eb], [cy, cx_ib]], 
                 symbol="cross", size=50,
                 edge_color="yellow", face_color="yellow",
             )
-            # self.points_layer.editable = False
+            self.points_layer.editable = False
 
-            self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9, blending="additive")
             self.image_layer.mouse_double_click_callbacks.append(self._double_click) # append callback
             # self.image_layer.mouse_drag_callbacks.append(self._single_click) # append callback
             self.viewer.layers.selection.active = self.image_layer
