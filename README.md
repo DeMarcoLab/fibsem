@@ -54,7 +54,7 @@ OpenFIBSEM
 ```python
 
 from fibsem import utils, acquire
-from fibsem.structures import BeamType
+from fibsem.structures import BeamType, ImageSettings
 
 # connect to microscope
 microscope = utils.connect_to_microscope(ip_address="10.0.0.1")
