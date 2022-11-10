@@ -2,36 +2,36 @@
 # FIBSEM
 
 
-# Acquire
+## Acquire
 ::: fibsem.acquire
 
-# Alignment
+## Alignment
 
 ::: fibsem.alignment
 
-# Calibration
+## Calibration
 ::: fibsem.calibration
 
-# Conversions
+## Conversions
 ::: fibsem.conversions
 
-# Milling
+## Milling
 ::: fibsem.milling
 
-# Movement
+## Movement
 ::: fibsem.movement
 
-# Structures
+## Structures
 ::: fibsem.structures
 
-# Utils
+## Utils
 ::: fibsem.utils
 
-# Validation
+## Validation
 ::: fibsem.validation
 
-# Detection
+## Detection
 ::: fibsem.detection.detection
 
-# User Interface
+## User Interface
 ::: fibsem.ui
