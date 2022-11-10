@@ -10,7 +10,7 @@ from fibsem import constants
 from fibsem.structures import BeamType, GammaSettings, ImageSettings
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
-BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
+import numpy as np
 
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
@@ -45,6 +45,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_image.clicked.connect(self.take_image)
 
         self.checkBox_image_save_image.toggled.connect(self.update_ui)
+
+        # register initial images
+        self.eb_image = np.zeros(shape=(1024, 1536))
+        self.ib_image = np.ones(shape=(1024, 1536))
+
+        self.ib_layer = self.viewer.add_image(self.ib_image, name=BeamType.ION.name)
+        self.eb_layer = self.viewer.add_image(self.eb_image, name=BeamType.ELECTRON.name)
+
+
 
     def set_ui_from_settings(self, image_settings: ImageSettings):
 
@@ -92,19 +101,27 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         print(f"take image")
         self.image_settings = self.get_settings_from_ui()
 
-        # acquire.new_image(self.microscope, self.image_settings)
+        # arr =  acquire.new_image(self.microscope, self.image_settings)
 
-        self.update_viewer()
-
-    
-    def update_viewer(self):
-
-        import numpy as np
-        
         name = f"{self.image_settings.beam_type.name}"
-
         arr = np.random.random((1024, 1536))
-        
+
+        self.update_viewer(arr, name)
+
+    def take_reference_images(self):
+
+        self.image_settings = self.get_settings_from_ui()
+
+        # eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_widget.image_settings)
+        eb_image = np.random.random(size=(1024, 1536))
+        ib_image = np.random.random(size=(1024, 1536))
+
+        self.update_viewer(eb_image, BeamType.ELECTRON.name)
+        self.update_viewer(ib_image, BeamType.ION.name)
+
+
+    def update_viewer(self, arr: np.ndarray, name: str):
+       
         try:
             self.viewer.layers[name].data = arr
         except:    

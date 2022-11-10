@@ -32,6 +32,10 @@ class FibsemSystemWidget(FibsemSystemWidget.Ui_Form, QtWidgets.QWidget):
         print("connect to microscope")
         # self.microscope, self.settings = utils.setup_session()
 
+    # connect to microscope
+
+    # apply settings / validate
+
 
 def main():
 

@@ -541,3 +541,10 @@ class MultiChemSettings:
             time = settings_dict["time"],
             beam_type=BeamType[settings_dict["beam_type"]]
         )
+
+
+
+
+class MovementMode(Enum):
+    Stable = 1
+    Eucentric = 2
