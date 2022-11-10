@@ -1,19 +1,13 @@
 #v2
 
-
-
 import logging
 import sys
 from enum import Enum
 import traceback
 
 import numpy as np
-import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import (MoveSettings,
-                                                         StagePosition)
-from fibsem import acquire, conversions, movement, constants, alignment, utils, milling, calibration
-from fibsem.structures import BeamType, MicroscopeSettings, MillingSettings, Point, MovementMode
+from fibsem import utils
 from fibsem.ui.qtdesigner_files import FibsemUI2
 from PyQt5 import QtCore, QtWidgets
 
@@ -44,19 +38,18 @@ class FibsemUI(FibsemUI2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.viewer.axes.dashed = True
 
         # manually connect to microscope...
+        self.microscope, self.settings = utils.setup_session()
 
         self.setup_connections()
 
 
     def setup_connections(self):
 
-        print("setup_connections")
-
         # setup layout
 
         # reusable components
-        self.image_widget = FibsemImageSettingsWidget(viewer=self.viewer)
-        self.movement_widget = FibsemMovementWidget(image_widget=self.image_widget)
+        self.image_widget = FibsemImageSettingsWidget(microscope = self.microscope, image_settings=self.settings.image, viewer=self.viewer)
+        self.movement_widget = FibsemMovementWidget(microscope = self.microscope, settings=self.settings, image_widget=self.image_widget)
         self.tools_widget = FibsemToolsWidget()
         self.system_widget = FibsemSystemWidget()
         
@@ -72,7 +65,7 @@ def main():
     
     viewer = napari.Viewer()
     fibsem_ui = FibsemUI(viewer=viewer)
-    viewer.window.add_dock_widget(fibsem_ui, area='right')  
+    viewer.window.add_dock_widget(fibsem_ui, area='right', add_vertical_stretch=False)  
 
     napari.run()
 

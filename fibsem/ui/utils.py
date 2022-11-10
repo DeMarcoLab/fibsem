@@ -251,8 +251,8 @@ def get_beam_coords_from_click(coords: tuple[float], image: np.ndarray) -> tuple
         tuple: _description_
     """
     # check inside image dimensions, (y, x)
-    eb_shape = image.data.shape[0], image.shape[1] 
-    ib_shape = image.data.shape[0], int(image.shape[1] * 2)
+    eb_shape = image.shape[0], image.shape[1] 
+    ib_shape = image.shape[0], int(image.shape[1] * 2)
 
     if (coords[0] > 0 and coords[0] < eb_shape[0]) and (coords[1] > 0 and coords[1] < eb_shape[1]):
         beam_type = BeamType.ELECTRON

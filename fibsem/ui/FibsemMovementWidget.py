@@ -9,8 +9,9 @@ from PyQt5 import QtWidgets
 from fibsem.ui import utils as ui_utils
 from fibsem.structures import MicroscopeSettings, BeamType, MovementMode, Point
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
-from fibsem import conversions
+from fibsem import conversions, movement
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+import logging
 
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
@@ -66,7 +67,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         coords = layer.world_to_data(event.position)
 
         # get the relative coords in the beam image
-        coords, beam_type = ui_utils.get_beam_coords_from_click(coords, self.image_widget.eb_image)
+        # TODO: update this function to take in the actual shapes of the images... not just assume theyre the same size
+        coords, beam_type = ui_utils.get_beam_coords_from_click(coords, self.image_widget.eb_image.data) # TODO: assumes both images are the same size?
 
         if beam_type is None:
             napari.utils.notifications.show_info(f"Please click inside image to move.")
@@ -77,18 +79,31 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if beam_type is BeamType.ION:
             adorned_image = self.image_widget.ib_image
 
-        print(f"beam_type: {beam_type}, coords: {coords}")
-
         # move
         mode = MovementMode[self.comboBox_movement_mode.currentText()]
-
         point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
-                adorned_image, 50e-8)  
+                adorned_image.data, adorned_image.metadata.binary_result.pixel_size.x) 
+        logging.debug(f"Movement: {mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}")
 
-        # take new images
-        print(f"{mode}: {point}")
+        # move the stage...
+        # eucentric is only supported for ION beam
+        if beam_type is BeamType.ION and mode is MovementMode.Eucentric:
+            movement.move_stage_eucentric_correction(
+                microscope=self.microscope, 
+                dy=-point.y
+            )
 
-        # TODO: move...
+        else:
+            # corrected stage movement
+            movement.move_stage_relative_with_corrected_movement(
+                microscope=self.microscope,
+                settings=self.settings,
+                dx=point.x,
+                dy=point.y,
+                beam_type=beam_type,
+            )
+
+
         self.image_widget.take_reference_images()
 
 

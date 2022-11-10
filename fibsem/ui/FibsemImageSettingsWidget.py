@@ -1,12 +1,9 @@
-import os
-
 import napari
 import napari.utils.notifications
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from PyQt5 import QtWidgets
 
-import fibsem
-from fibsem import constants
+from fibsem import constants, acquire
 from fibsem.structures import BeamType, GammaSettings, ImageSettings
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
@@ -26,32 +23,27 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.microscope = microscope
         self.viewer = viewer
+        self.eb_layer, self.ib_layer = None, None
 
         self.setup_connections()
     
         if image_settings is not None:
             self.set_ui_from_settings(image_settings)
 
+        # register initial images
+        self.take_reference_images()
 
     def setup_connections(self):
 
         # set ui elements
         self.comboBox_image_beam_type.addItems([beam.name for beam in BeamType])
         
-        # resolutions = self.microscope.beams.electron_beam.scanning.resolution.available_values
-        resolutions = ["1536x1024", "3072x2048", "6144x4096"]
+        resolutions = self.microscope.beams.electron_beam.scanning.resolution.available_values
         self.comboBox_image_resolution.addItems(resolutions)
 
         self.pushButton_take_image.clicked.connect(self.take_image)
 
         self.checkBox_image_save_image.toggled.connect(self.update_ui)
-
-        # register initial images
-        self.eb_image = np.zeros(shape=(1024, 1536))
-        self.ib_image = np.ones(shape=(1024, 1536))
-
-        self.ib_layer = self.viewer.add_image(self.ib_image, name=BeamType.ION.name)
-        self.eb_layer = self.viewer.add_image(self.eb_image, name=BeamType.ELECTRON.name)
 
 
 
@@ -83,7 +75,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             beam_type=BeamType[self.comboBox_image_beam_type.currentText()],
             autocontrast=self.checkBox_image_use_autocontrast.isChecked(),
             gamma=GammaSettings(
-                enabled=self.checkBox_image_use_autogamma.isChecked()
+                enabled=self.checkBox_image_use_autogamma.isChecked(),
+                min_gamma = 0.15,
+                max_gamma = 1.8,
+                scale_factor = 0.01,
+                threshold = 46 # px
             ),
             save=self.checkBox_image_save_image.isChecked(),
             save_path=self.lineEdit_image_path.text(),
@@ -91,33 +87,31 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             
         )
 
-        from pprint import pprint
-        
-        pprint(self.image_settings)
-
         return self.image_settings
 
     def take_image(self):
-        print(f"take image")
         self.image_settings = self.get_settings_from_ui()
 
-        # arr =  acquire.new_image(self.microscope, self.image_settings)
+        arr =  acquire.new_image(self.microscope, self.image_settings)
+        # arr = np.random.random((1024, 1536))
 
         name = f"{self.image_settings.beam_type.name}"
-        arr = np.random.random((1024, 1536))
 
-        self.update_viewer(arr, name)
+        if self.image_settings.beam_type == BeamType.ELECTRON:
+            self.eb_image = arr
+        if self.image_settings.beam_type == BeamType.ION:
+            self.ib_image = arr
+
+        self.update_viewer(arr.data, name)
 
     def take_reference_images(self):
 
         self.image_settings = self.get_settings_from_ui()
 
-        # eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_widget.image_settings)
-        eb_image = np.random.random(size=(1024, 1536))
-        ib_image = np.random.random(size=(1024, 1536))
+        self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
-        self.update_viewer(eb_image, BeamType.ELECTRON.name)
-        self.update_viewer(ib_image, BeamType.ION.name)
+        self.update_viewer(self.ib_image.data, BeamType.ION.name)
+        self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
 
 
     def update_viewer(self, arr: np.ndarray, name: str):
@@ -125,7 +119,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         try:
             self.viewer.layers[name].data = arr
         except:    
-            self.viewer.add_image(arr, name = name)
+            layer = self.viewer.add_image(arr, name = name)
+            
+            if self.eb_layer is None and name == BeamType.ELECTRON.name:
+                self.eb_layer = layer
+            if self.ib_layer is None and name == BeamType.ION.name:
+                self.ib_layer = layer
 
 
 
