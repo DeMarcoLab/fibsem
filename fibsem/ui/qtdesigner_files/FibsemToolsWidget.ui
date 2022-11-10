@@ -14,67 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_tools_utils_header">
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Utilities</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QPushButton" name="pushButton_sputter_multichem">
-     <property name="text">
-      <string>Sputter MultiChem</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QPushButton" name="pushButton_move_stage_out">
-     <property name="text">
-      <string>Move Stage Out</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_tools_calibration_header">
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Calibration</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QPushButton" name="pushButton_auto_focus_beam">
-     <property name="text">
-      <string>Auto Focus</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QPushButton" name="pushButton_auto_discharge_beam">
-     <property name="text">
-      <string>Auto Discharge</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0">
-    <widget class="QPushButton" name="pushButton_auto_home_stage">
-     <property name="text">
-      <string>Auto Home</string>
-     </property>
-    </widget>
-   </item>
    <item row="7" column="0">
     <widget class="QPushButton" name="pushButton_auto_link_stage">
      <property name="text">
@@ -86,6 +25,13 @@
     <widget class="QPushButton" name="pushButton_auto_needle_calibration">
      <property name="text">
       <string>Auto Needle Calibration</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QPushButton" name="pushButton_auto_discharge_beam">
+     <property name="text">
+      <string>Auto Discharge</string>
      </property>
     </widget>
    </item>
@@ -108,6 +54,73 @@
       <string>Validate Microscope Settings</string>
      </property>
     </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_tools_utils_header">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Utilities</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_tools_calibration_header">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Calibration</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QPushButton" name="pushButton_move_stage_out">
+     <property name="text">
+      <string>Move Stage Out</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QPushButton" name="pushButton_sputter_multichem">
+     <property name="text">
+      <string>Sputter MultiChem</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QPushButton" name="pushButton_auto_home_stage">
+     <property name="text">
+      <string>Auto Home</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QPushButton" name="pushButton_auto_focus_beam">
+     <property name="text">
+      <string>Auto Focus</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

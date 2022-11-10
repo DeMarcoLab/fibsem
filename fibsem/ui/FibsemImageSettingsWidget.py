@@ -1,18 +1,14 @@
 import os
 
-
-import fibsem
 import napari
 import napari.utils.notifications
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from fibsem import calibration, constants, utils
-from fibsem.structures import (
-    BeamType,
-    GammaSettings,
-    ImageSettings,
-)
-from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 from PyQt5 import QtWidgets
+
+import fibsem
+from fibsem import constants
+from fibsem.structures import BeamType, GammaSettings, ImageSettings
+from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
 BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
@@ -22,13 +18,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self,
         microscope: SdbMicroscopeClient = None,
         image_settings: ImageSettings = None,
+        viewer: napari.Viewer = None,
         parent=None,
     ):
         super(FibsemImageSettingsWidget, self).__init__(parent=parent)
         self.setupUi(self)
 
-
         self.microscope = microscope
+        self.viewer = viewer
 
         self.setup_connections()
     
@@ -86,7 +83,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         from pprint import pprint
+        
         pprint(self.image_settings)
+
         return self.image_settings
 
     def take_image(self):
@@ -94,6 +93,24 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.image_settings = self.get_settings_from_ui()
 
         # acquire.new_image(self.microscope, self.image_settings)
+
+        self.update_viewer()
+
+    
+    def update_viewer(self):
+
+        import numpy as np
+        
+        name = f"{self.image_settings.beam_type.name}"
+
+        arr = np.random.random((1024, 1536))
+        
+        try:
+            self.viewer.layers[name].data = arr
+        except:    
+            self.viewer.add_image(arr, name = name)
+
+
 
 def main():
 

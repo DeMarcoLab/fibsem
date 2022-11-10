@@ -22,10 +22,10 @@ class FibsemToolsWidget(FibsemToolsWidget.Ui_Form, QtWidgets.QWidget):
 
         # self.microscope = microscope
 
-        if microscope is None:
-            self.microscope, self.settings = utils.setup_session()
-        else:
-            self.microscope, self.settings = microscope, None
+        # if microscope is None:
+        #     self.microscope, self.settings = utils.setup_session()
+        # else:
+        #     self.microscope, self.settings = microscope, None
         self.setup_connections()
 
 

@@ -18,4 +18,4 @@ fibsem/segmentation/lachie_config.yml
 wandb/*
 
 fibsem/segmentation/data/*
-fibsem/segmentation/results/*
+fibsem/segmentation/results*/*

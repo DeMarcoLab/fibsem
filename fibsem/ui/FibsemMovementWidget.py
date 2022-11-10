@@ -10,6 +10,7 @@ from fibsem.structures import (
     BeamType,
     GammaSettings,
     ImageSettings,
+    MicroscopeSettings
 )
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
 from PyQt5 import QtWidgets
@@ -26,15 +27,18 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
         self,
         microscope: SdbMicroscopeClient = None,
+        settings: MicroscopeSettings = None,
+        viewer: napari.Viewer = None,
         parent=None,
     ):
         super(FibsemMovementWidget, self).__init__(parent=parent)
         self.setupUi(self)
 
         self.microscope = microscope
+        self.settings = settings
+        self.viewer = viewer
 
         self.setup_connections()
-
 
     def setup_connections(self):
 
