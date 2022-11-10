@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from scipy.spatial import distance
 from skimage import feature
 
@@ -10,7 +11,7 @@ from fibsem import conversions
 from fibsem.detection.utils import Feature, FeatureType
 from fibsem.imaging import masks
 from fibsem.segmentation.model import SegmentationModel
-from fibsem.structures import Point
+from fibsem.structures import BeamType, MicroscopeSettings, Point
 
 FEATURE_COLOURS_UINT8 = {
     FeatureType.ImageCentre: (255, 255, 255),
@@ -359,12 +360,8 @@ def plot_det_result_v2(det: DetectedFeatures):
     plt.show()
 
 
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-from fibsem.structures import BeamType, MicroscopeSettings
 
 
-# TODO: finish this @patrick
 def move_based_on_detection(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
@@ -386,13 +383,12 @@ def move_based_on_detection(
     f1 = det.features[0]
     f2 = det.features[1]
 
-    logging.info(f"move_x: {move_x}, move_y: {move_y}")
-    logging.info(f"movement: x={det.distance.x:.2e}, y={det.distance.y:.2e}")
-    logging.info(f"features: {f1}, {f2}, beam_type: {beam_type}")
+    logging.debug(f"move_x: {move_x}, move_y: {move_y}")
+    logging.debug(f"movement: x={det.distance.x:.2e}, y={det.distance.y:.2e}")
+    logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
     # these movements move the needle...
     if f1.type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
-        logging.info(f"MOVING NEEDLE")
 
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ELECTRON:
@@ -408,7 +404,6 @@ def move_based_on_detection(
     if f1.type is FeatureType.LamellaCentre:
         if f2.type is FeatureType.ImageCentre:
 
-            logging.info(f"MOVING STAGE")
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             movement.move_stage_relative_with_corrected_movement(
                 microscope=microscope,

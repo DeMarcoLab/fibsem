@@ -12,11 +12,25 @@ import yaml
 
 #@patrickcleeve: dataclasses.asdict -> :(
 
+# TODO: overload constructors instead of from_dict...
 @dataclass
 class Point:
     x: float = 0.0
     y: float = 0.0
 
+    def __to_dict__(self):
+        return {"x": self.x, "y": self.y}
+    
+    @staticmethod
+    def __from_dict__(d):
+        return Point(d["x"], d["y"])
+    
+    def __to_list__(self):
+        return [self.x, self.y]
+
+    @staticmethod
+    def __from_list__(l):
+        return Point(l[0], l[1])
 
 # TODO: convert these to match autoscript...
 class BeamType(Enum):
@@ -134,7 +148,8 @@ class BeamSettings:
     hfw: float = None
     resolution: str = None
     dwell_time: float = None
-    # stigmation: tuple[float] = None
+    stigmation: Point = None
+    shift: Point = None
 
     def __to_dict__(self) -> dict:
 

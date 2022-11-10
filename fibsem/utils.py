@@ -5,6 +5,7 @@ import logging
 import os
 import time
 from pathlib import Path
+import sys 
 
 import yaml
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
@@ -18,21 +19,20 @@ from fibsem.structures import (
     BeamType,
     MicroscopeSettings,
     ImageSettings,
-    StageSettings,
     SystemSettings,
     DefaultSettings,
     MultiChemSettings
 )
 
 
-def connect_to_microscope(ip_address="10.0.0.1"):
+def connect_to_microscope(ip_address="10.0.0.1", port: int = 7520) -> SdbMicroscopeClient:
     """Connect to the FIBSEM microscope."""
     try:
         # TODO: get the port
-        logging.info(f"Microscope client connecting to [{ip_address}]")
+        logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
         microscope = SdbMicroscopeClient()
-        microscope.connect(ip_address)
-        logging.info(f"Microscope client connected to [{ip_address}]")
+        microscope.connect(host=ip_address, port=port)
+        logging.info(f"Microscope client connected to [{ip_address}:{port}]")
     except Exception as e:
         logging.error(f"Unable to connect to the microscope: {e}")
         microscope = None
@@ -199,16 +199,22 @@ def _format_time_seconds(seconds: float) -> str:
 
 
 # TODO: better logs: https://www.toptal.com/python/in-depth-python-logging
-def configure_logging(path: Path = "", log_filename="logfile", log_level=logging.INFO):
+# https://stackoverflow.com/questions/61483056/save-logging-debug-and-show-only-logging-info-python
+def configure_logging(path: Path = "", log_filename="logfile", log_level=logging.DEBUG):
     """Log to the terminal and to file simultaneously."""
     logfile = os.path.join(path, f"{log_filename}.log")
+
+    file_handler = logging.FileHandler(logfile)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setLevel(logging.INFO)
 
     logging.basicConfig(
         format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s",
         level=log_level,
         # Multiple handlers can be added to your logging configuration.
         # By default log messages are appended to the file if it exists already
-        handlers=[logging.FileHandler(logfile), logging.StreamHandler(),],
+        handlers=[file_handler, stream_handler], 
+        force=True
     )
 
     return logfile

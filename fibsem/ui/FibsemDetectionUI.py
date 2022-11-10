@@ -91,7 +91,7 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
             self.point_m = conversions.image_to_microscope_image_coordinates(Point(self.xclick, self.yclick), self.image, self.detected_features.pixelsize)
 
-            logging.info(
+            logging.debug(
                 f"""DectectedFeature {self.selected_feature.name} | IMAGE COORDINATE | {int(self.xclick)}, {int(self.yclick)} | REAL COORDINATE | {self.point_m.x:.2e}, {self.point_m.y:.2e}"""
             )
 
@@ -101,7 +101,7 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
             ].feature_px = Point(self.xclick, self.yclick)
 
             # logging statistics
-            logging.info(
+            logging.debug(
                 f"Feature | {self.selected_feature} | {False}"
             )
 
@@ -169,23 +169,19 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
     
     def continue_button_pressed(self):
 
-        logging.info(f"Continue button pressed: {self.sender()}")
-
         self.close() #exit
 
     def closeEvent(self, event):
-        logging.info("Closing Detection UI")
-
+        """Override the close event to save the data"""
         # log active learning data...
         if self._USER_CORRECTED:
-            logging.info(f"Logging corrected ml data to disk.")
             path = os.path.join(self.log_path, "label")
             det_utils.write_data_to_disk(path, self.detected_features)
 
         # log correct detection types
         for feature in self.detected_features.features:
             if feature.type not in self.logged_detection_types:
-                logging.info(
+                logging.debug(
                     f"Feature | {feature.type} | {True}"
                 )
 

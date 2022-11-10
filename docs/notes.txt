@@ -1,0 +1,13 @@
+
+
+docs instructions
+
+https://squidfunk.github.io/mkdocs-material/
+
+
+local build
+mkdocs serve
+
+
+deploy
+see .github/workflows/ci.yml

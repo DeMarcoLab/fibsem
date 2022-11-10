@@ -298,12 +298,11 @@ def shift_from_crosscorrelation(
     x_shift = err[1] * pixelsize_x
     y_shift = err[0] * pixelsize_y  # this could be the issue?
 
-    logging.info(f"pixelsize: x: {pixelsize_x}, y: {pixelsize_y}")
-
-    logging.info(f"cross-correlation:")
-    logging.info(f"maxX: {maxX}, {maxY}, centre: {cen}")
-    logging.info(f"x: {err[1]}px, y: {err[0]}px")
-    logging.info(f"x: {x_shift:.2e}m, y: {y_shift:.2e} meters")
+    logging.debug(f"cross-correlation:")
+    logging.debug(f"pixelsize: x: {pixelsize_x:.2e}, y: {pixelsize_y:.2e}")
+    logging.debug(f"maxX: {maxX}, {maxY}, centre: {cen}")
+    logging.debug(f"x: {err[1]}px, y: {err[0]}px")
+    logging.debug(f"x: {x_shift:.2e}m, y: {y_shift:.2e} meters")
 
     # metres
     return x_shift, y_shift, xcorr

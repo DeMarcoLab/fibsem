@@ -31,7 +31,7 @@
 ::: fibsem.validation
 
 # Detection
-::: fibsem.detection
+::: fibsem.detection.detection
 
 # User Interface
 ::: fibsem.ui

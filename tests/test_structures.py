@@ -529,3 +529,46 @@ def test_microscope_settings():
 
 
 # TODO: test the missing values, defaults??
+
+
+from fibsem.structures import Point
+
+def test_point_to_dict():
+
+    point = Point(1, 2)
+
+    point_dict = Point.__to_dict__(point)
+
+    assert point.x == point_dict["x"]
+    assert point.y == point_dict["y"]
+
+
+def test_point_from_dict():
+
+    point_dict = {
+        "x": 1,
+        "y": 2
+    }
+
+    point = Point.__from_dict__(point_dict)
+
+    assert point.x == point_dict["x"]
+    assert point.y == point_dict["y"]
+
+def test_point_from_list():
+
+    point_list = [1, 2]
+
+    point = Point.__from_list__(point_list)
+
+    assert point.x == point_list[0]
+    assert point.y == point_list[1]
+
+def test_point_to_list():
+
+    point = Point(1, 2)
+
+    point_list = Point.__to_list__(point)
+
+    assert point.x == point_list[0]
+    assert point.y == point_list[1]
