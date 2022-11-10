@@ -19,3 +19,7 @@ wandb/*
 
 fibsem/segmentation/data/*
 fibsem/segmentation/results/*
+fibsem/segmentation/results*/*
+
+
+site/*
