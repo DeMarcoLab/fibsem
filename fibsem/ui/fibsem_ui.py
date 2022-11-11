@@ -238,6 +238,7 @@ class FibsemUI(FibsemUI.Ui_Dialog, QtWidgets.QDialog):
 
             movement.move_stage_eucentric_correction(
                 microscope=self.microscope, 
+                settings=self.settings,
                 dy=-point.y
             )
 

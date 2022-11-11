@@ -97,6 +97,7 @@ class NapariMillingUI(NapariMilling.Ui_MainWindow, QtWidgets.QMainWindow):
 
             movement.move_stage_eucentric_correction(
                 microscope=self.microscope, 
+                settings=self.settings,
                 dy=-point.y
             )
 

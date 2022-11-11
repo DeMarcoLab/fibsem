@@ -159,6 +159,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
             movement.move_stage_eucentric_correction(
                 microscope=self.microscope, 
+                settings=self.settings,
                 dy=-point.y
             )
 
@@ -270,7 +271,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
     def auto_eucentric_button_pressed(self):
 
-        alignment.auto_eucentric_correction(self.microscope, self.settings.image)
+        alignment.auto_eucentric_correction(self.microscope, self.settings, self.settings.image)
 
         self.update_displays()
 

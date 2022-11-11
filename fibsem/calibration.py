@@ -327,7 +327,7 @@ def set_microscope_state(
     """Reset the microscope state to the provided state"""
 
     logging.info(f"restoring microscope state...")
-
+    
     # move to position
     movement.safe_absolute_stage_movement(
         microscope=microscope, stage_position=microscope_state.absolute_position
