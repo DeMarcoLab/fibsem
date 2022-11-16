@@ -13,31 +13,41 @@ class fibsemImage():
         metadata: dict = None
     ):  
         if data is not None:
-            self.__construct_image_data(data)
+            self.data = data
+            #self.__construct_image_data(data)
         if metadata is not None:
             self.__metadata_from_dict(metadata)
-
-    def load_from_TIFF(self, tiff_image):
-        data = tff.asarray(tiff_image)
-        self.__construct_image_data(data)
-        metadata = tiff_image.imagej_metadata
-        self.__metadata_from_dict(metadata)    
-
-    def save_to_TIFF(self, save_path: str = None):
-        if save_path is not None:
-            tff.imsave(
-                os.path.join(save_path, self.metadata["label"]), # check that
-                self.data,
-                ijmetadata=self.metadata,
-            )
-        elif self.metadata["save_path"] is not None:
-            tff.imsave(
-                os.path.join(self.metadata["save_path"], self.metadata["label"]), # check that
-                self.data,
-                ijmetadata=self.metadata,
-            )
         else:
-            raise TypeError("No save path provided.")
+            self.metadata = None
+
+    def load_from_TIFF(self, tiff_path):
+        tiff_image = tff.TiffFile(tiff_path)
+        data = tiff_image.asarray()
+        self.data = data
+        # self.__construct_image_data(data)
+        self.metadata = tiff_image.imagej_metadata
+        # self.__metadata_from_dict(metadata)    
+
+    def save_to_TIFF(self, save_path: str):
+        if self.metadata is not None:
+            if save_path is not None:
+                tff.imwrite(
+                    os.path.join(save_path), # check that
+                    self.data,
+                    metadata=self.metadata,
+                )
+            else:
+                raise TypeError("No save path provided.")
+        else:
+            if save_path is not None:
+                tff.imwrite(
+                    os.path.join(save_path), # check that
+                    self.data,
+                    metadata=None,
+                )
+            else:
+                raise TypeError("No save path provided.")
+        
 
 
     def __construct_image_data(self, data: np.ndarray):
