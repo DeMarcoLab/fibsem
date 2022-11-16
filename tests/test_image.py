@@ -16,7 +16,7 @@ def test_image():
     assert img.data.shape[1] == 32
     
 def test_metadata():
-    array1 = np.random.rand(32,32)
+    array1 = np.zeros((256,128)) 
     gamma_dict = {
         "enabled": True,
         "min_gamma": 0.5,
@@ -39,14 +39,12 @@ def test_metadata():
     metadata = fb.Metadata(
             image_settings = ImageSettings.__from_dict__(Image_settings)
         )
-    print(metadata)
     img = fb.fibsemImage(array1, metadata)
-    print(img.metadata)
     img.save_to_TIFF('test.tif')
     img.load_from_TIFF('test.tif')
     assert np.array_equal(array1, img.data)
-    assert img.data.shape[0] == 32
-    assert img.data.shape[1] == 32
+    assert img.data.shape[0] == 256
+    assert img.data.shape[1] == 128
     assert img.metadata == metadata
     
     pass

@@ -30,7 +30,6 @@ class fibsemImage():
         self.data = data
         # self.__construct_image_data(data)
         metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value)
-        print(metadata)
         # self.__metadata_from_dict(metadata)    
         self.metadata = Metadata(
             image_settings=ImageSettings.__from_dict__(metadata)                
