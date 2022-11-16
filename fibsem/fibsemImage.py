@@ -28,19 +28,20 @@ class fibsemImage():
         tiff_image = tff.TiffFile(tiff_path)
         data = tiff_image.asarray()
         self.data = data
-        # self.__construct_image_data(data)
-        metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value)
-        print(metadata)
-        # self.__metadata_from_dict(metadata)    
-        self.metadata = Metadata(
-            image_settings=ImageSettings.__from_dict__(metadata)                
-        )
+        try:
+            metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value) 
+            self.metadata = Metadata(
+                image_settings=ImageSettings.__from_dict__(metadata)                
+            )
+        except:
+            self.metadata = None
+
     def save_to_TIFF(self, save_path: str):
         if self.metadata is not None:
             if save_path is not None:
                 metadata_dict = self.metadata.image_settings.__to_dict__()
                 tff.imwrite(
-                    os.path.join(save_path), # check that
+                    save_path, 
                     self.data,
                     metadata=metadata_dict,
                 )
@@ -49,14 +50,13 @@ class fibsemImage():
         else:
             if save_path is not None:
                 tff.imwrite(
-                    os.path.join(save_path), # check that
+                    save_path,
                     self.data,
                     metadata=None,
                 )
             else:
                 raise TypeError("No save path provided.")
         
-
 
     def __construct_image_data(self, data: np.ndarray):
         '''

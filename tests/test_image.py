@@ -25,7 +25,7 @@ def test_metadata():
         "threshold": 46
     }
     Image_settings = {
-        "resolution": "1536x1024",
+        "resolution": "32x32",
         "dwell_time": 1.e-6,
         "hfw": 150.e-6,
         "autocontrast": True,
