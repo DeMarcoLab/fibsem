@@ -3,20 +3,24 @@ import numpy as np
 import tifffile as tff
 import os
 from dataclasses import dataclass
+import json
 from fibsem.structures import BeamType, GammaSettings, ImageSettings
 
+@dataclass
+class Metadata:
+    image_settings: ImageSettings
 
 class fibsemImage():
     def __init__(
         self,
         data: np.ndarray = None,
-        metadata: dict = None
+        metadata: Metadata = None
     ):  
         if data is not None:
             self.data = data
             #self.__construct_image_data(data)
         if metadata is not None:
-            self.__metadata_from_dict(metadata)
+            self.metadata = metadata
         else:
             self.metadata = None
 
@@ -25,16 +29,20 @@ class fibsemImage():
         data = tiff_image.asarray()
         self.data = data
         # self.__construct_image_data(data)
-        self.metadata = tiff_image.imagej_metadata
+        metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value)
+        print(metadata)
         # self.__metadata_from_dict(metadata)    
-
+        self.metadata = Metadata(
+            image_settings=ImageSettings.__from_dict__(metadata)                
+        )
     def save_to_TIFF(self, save_path: str):
         if self.metadata is not None:
             if save_path is not None:
+                metadata_dict = self.metadata.image_settings.__to_dict__()
                 tff.imwrite(
                     os.path.join(save_path), # check that
                     self.data,
-                    metadata=self.metadata,
+                    metadata=metadata_dict,
                 )
             else:
                 raise TypeError("No save path provided.")
@@ -86,9 +94,7 @@ class fibsemImage():
             image_settings = ImageSettings.__from_dict__(metadata)
         )
 
-@dataclass
-class Metadata:
-    image_settings: ImageSettings
+
 
 
 
