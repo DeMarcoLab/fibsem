@@ -5,6 +5,7 @@ import os
 from dataclasses import dataclass
 import json
 from fibsem.structures import BeamType, GammaSettings, ImageSettings
+from autoscript_sdb_microscope_client.structures import AdornedImage
 
 @dataclass
 class Metadata:
@@ -18,7 +19,6 @@ class fibsemImage():
     ):  
         if data is not None:
             self.data = data
-            #self.__construct_image_data(data)
         if metadata is not None:
             self.metadata = metadata
         else:
@@ -26,8 +26,7 @@ class fibsemImage():
 
     def load_from_TIFF(self, tiff_path):
         tiff_image = tff.TiffFile(tiff_path)
-        data = tiff_image.asarray()
-        self.data = data
+        self.data = tiff_image.asarray()
         try:
             metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value) 
             self.metadata = Metadata(
@@ -38,25 +37,23 @@ class fibsemImage():
 
     def save_to_TIFF(self, save_path: str):
         if self.metadata is not None:
-            if save_path is not None:
                 metadata_dict = self.metadata.image_settings.__to_dict__()
                 tff.imwrite(
                     save_path, 
                     self.data,
                     metadata=metadata_dict,
                 )
-            else:
-                raise TypeError("No save path provided.")
         else:
-            if save_path is not None:
                 tff.imwrite(
                     save_path,
                     self.data,
                     metadata=None,
                 )
-            else:
-                raise TypeError("No save path provided.")
         
+    def convert_adorned_to_fibsemImage(self, adorned: AdornedImage):
+        self.data = adorned.data
+        self.metadata
+        pass
 
     def __construct_image_data(self, data: np.ndarray):
         '''
