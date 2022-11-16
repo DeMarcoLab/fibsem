@@ -18,18 +18,18 @@ class Point:
     x: float = 0.0
     y: float = 0.0
 
-    def __to_dict__(self):
+    def __to_dict__(self) -> dict:
         return {"x": self.x, "y": self.y}
     
     @staticmethod
-    def __from_dict__(d):
+    def __from_dict__(d: dict) -> "Point":
         return Point(d["x"], d["y"])
     
-    def __to_list__(self):
+    def __to_list__(self) -> list:
         return [self.x, self.y]
 
     @staticmethod
-    def __from_list__(l):
+    def __from_list__(l: list) -> "Point":
         return Point(l[0], l[1])
 
 # TODO: convert these to match autoscript...
