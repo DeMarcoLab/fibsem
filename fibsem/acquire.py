@@ -12,6 +12,7 @@ from skimage import exposure
 
 from fibsem import utils
 from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages
+from fibsem.fibsemImage import fibsemImage
 
 
 
@@ -147,6 +148,27 @@ def new_image(
     
     return image
 
+def new_fibsemImage(
+    microscope, settings: ImageSettings, reduced_area = None
+) -> fibsemImage:
+    if type(microscope) == SdbMicroscopeClient:
+        image = new_image(microscope, settings, reduced_area)
+        fibsem_image = fibsemImage()
+        fibsem_image.convert_adorned_to_fibsemImage(image, settings)
+    else:
+        fibsem_image = None
+    return fibsem_image
+
+def last_fibsemImage(
+    microscope, beam_type
+) -> fibsemImage:
+    if type(microscope) == SdbMicroscopeClient:
+        image = last_image(microscope, beam_type)
+        fibsem_image = fibsemImage()
+        fibsem_image.convert_adorned_to_fibsemImage(image) # Cannot access metadata
+    else:
+        fibsem_image = None
+    return fibsem_image
 
 def last_image(
     microscope: SdbMicroscopeClient, beam_type: BeamType =BeamType.ELECTRON
