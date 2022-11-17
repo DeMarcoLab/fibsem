@@ -2,9 +2,10 @@ import pytest
 import tifffile as tff
 import fibsem.fibsemImage as fb
 import numpy as np
-import os
-from fibsem.structures import BeamType, GammaSettings, ImageSettings
-from autoscript_sdb_microscope_client.structures import AdornedImage
+from fibsem.structures import ImageSettings
+THERMO_ENABLED = True
+if THERMO_ENABLED:
+    from autoscript_sdb_microscope_client.structures import AdornedImage
 
 
 def test_image():
