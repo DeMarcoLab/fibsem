@@ -11,6 +11,10 @@ from autoscript_sdb_microscope_client.structures import AdornedImage
 class Metadata:
     image_settings: ImageSettings
 
+    def __to_dict__(self):
+        settings_dict = self.image_settings.__to_dict__()
+        return settings_dict
+
 class fibsemImage():
     def __init__(
         self,
@@ -18,6 +22,7 @@ class fibsemImage():
         metadata: Metadata = None
     ):  
         if data is not None:
+            self.check_data(data)
             self.data = data
         if metadata is not None:
             self.metadata = metadata
@@ -37,7 +42,7 @@ class fibsemImage():
 
     def save_to_TIFF(self, save_path: str):
         if self.metadata is not None:
-                metadata_dict = self.metadata.image_settings.__to_dict__()
+                metadata_dict = self.metadata.__to_dict__()
                 tff.imwrite(
                     save_path, 
                     self.data,
@@ -50,48 +55,14 @@ class fibsemImage():
                     metadata=None,
                 )
         
-    def convert_adorned_to_fibsemImage(self, adorned: AdornedImage):
+    def convert_adorned_to_fibsemImage(self, adorned: AdornedImage, metadata: ImageSettings = None):
         self.data = adorned.data
-        self.metadata
-        pass
+        self.check_data(self.data)
+        self.metadata  = metadata
 
-    def __construct_image_data(self, data: np.ndarray):
-        '''
-        Determines the image dimensions such as height, width, and bit depth and saves them as class variables.
-
-        Inputs:
-        :param data: Image data in the form of a numpy array.
-        '''
-        if type(data) != np.ndarray:
-            raise TypeError("The input argument 'data' must be a numpy array.")
-        try:
-            if data.ndim == 2 and data.dtype == np.uint8:
-                self.height, self.width, self.bit_depth = data.shape[0], data.shape[1], 8
-            elif data.ndim == 2 and data.dtype == np.uint16:
-                self.height, self.width, self.bit_depth = data.shape[0], data.shape[1], 16
-            elif data.ndim == 3 and data.dtype == np.uint8 and data.shape[2] == 3:
-                self.height, self.width, self.bit_depth = data.shape[0], data.shape[1], 24
-            else:
-                raise ValueError("The image dimensions of the input data could not be determined.")
-        except:
-            raise ValueError("Could not construct fibsemImage based on the input argument.")
-
-        # Default image data form is numpy array.
-        self.data = data
-
-    def __metadata_from_dict(self, metadata):
-        '''
-        Fills in missing metadata with defaults if needed 
-
-        Inputs:
-        :param metadata: Image metadata in the form of a dictionary 
-        '''
-        #load into class 
-        self.metadata = Metadata(
-            image_settings = ImageSettings.__from_dict__(metadata)
-        )
-
-
-
-
-
+    def check_data(self, data):
+        assert data.ndim == 2 or data.ndim == 3
+        assert data.dtype == np.uint8
+        if data.ndim == 3 and data.shape[2] == 1:
+            data = data[:,:,0]
+            
