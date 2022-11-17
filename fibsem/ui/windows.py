@@ -33,7 +33,6 @@ def ask_user_interaction(
 def ask_user_movement(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
-    msg_type="eucentric",
     msg: str = None,
     parent=None,
 ):
@@ -43,7 +42,6 @@ def ask_user_movement(
     movement_ui = FibsemMovementUI(
         microscope=microscope,
         settings=settings,
-        msg_type=msg_type,
         msg=msg,
         parent=parent,
         viewer=viewer

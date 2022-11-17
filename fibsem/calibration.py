@@ -133,6 +133,8 @@ def auto_charge_neutralisation(
     # take sequence of images quickly,
 
     # get initial image
+    from fibsem.utils import current_timestamp
+    ts = current_timestamp()
     image_settings.label = f"{ts}_charge_neutralisation_start"
     acquire.new_image(microscope, image_settings)
 
@@ -149,9 +151,6 @@ def auto_charge_neutralisation(
             gamma=GammaSettings(enabled=False),
             label=None
         )
-
-    from fibsem.utils import current_timestamp
-    ts = current_timestamp()
 
     for i in range(n_iterations):
         acquire.new_image(microscope, discharge_settings)

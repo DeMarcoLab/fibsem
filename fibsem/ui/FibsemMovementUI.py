@@ -32,7 +32,6 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self,
         microscope: SdbMicroscopeClient,
         settings: MicroscopeSettings,
-        msg_type: str = None,
         msg: str = None,
         parent=None,
         viewer: napari.Viewer = None
@@ -51,18 +50,14 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         # TODO: add user defined initial movement mode
 
         # msg
-        self.msg_type = msg_type
         self.msg = msg
         self.movement_mode = MovementMode.Stable
 
         # enable / disable movement
         self.tilt_movement_enabled = False
 
-        if msg_type in ["alignment"]:
-            self.tilt_movement_enabled = True
-
         self.setup_connections()
-        self.set_message(self.msg_type, self.msg)
+        self.set_message()
         self.update_displays()
 
     def update_displays(self):
@@ -219,27 +214,19 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         logging.info(f"changed mode to: {self.movement_mode}")
 
         # set instruction message
-        self.set_message(self.msg_type, self.msg)
+        self.set_message()
 
         # DESTINATION_MODE = self.movement_mode is MovementMode.Needle
         # self.label_needle_coordinate.setVisible(DESTINATION_MODE)
         # self.comboBox_needle_coordinate.setVisible(DESTINATION_MODE)
 
-    def set_message(self, msg_type: str, msg: str = None):
+    def set_message(self):
             
-        # set message
-        msg_dict = {
-            "eucentric": "Please centre a feature in both Beam views (Double click to move). ",
-            "alignment": "Please centre the lamella in the Ion Beam, and tilt so the lamella face is perpendicular to the Ion Beam.",
-        }
-        if msg is None:
-            msg = msg_dict[msg_type]
-
         if self.movement_mode is MovementMode.Eucentric:
             self.label_message.setText("Centre a feature in the Electron Beam, then double click the same feature in the Ion Beam.") 
 
         if self.movement_mode is MovementMode.Stable:
-            self.label_message.setText(msg)
+            self.label_message.setText(self.msg)
 
     def take_image_button_pressed(self):
         """Take a new image with the current image settings."""
@@ -284,7 +271,6 @@ def main():
     fibsem_ui_windows.ask_user_movement(
         microscope,
         settings,
-        msg_type="eucentric",
         msg="Move around",
 
     )
