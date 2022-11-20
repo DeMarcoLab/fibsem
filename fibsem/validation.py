@@ -279,11 +279,11 @@ def check_shift_within_tolerance(
 
 
 
-def _validate_milling_protocol(stage_protocol: dict, settings: MicroscopeSettings) -> dict:
+def _validate_milling_protocol(stage_protocol: dict) -> dict:
     
     
     if "milling_current" not in stage_protocol:
-        stage_protocol["milling_current"] = settings.default.milling_current
+        stage_protocol["milling_current"] = 2.0e-9
     if "cleaning_cross_section" not in stage_protocol:
         stage_protocol["cleaning_cross_section"] = False
     if "rotation" not in stage_protocol:

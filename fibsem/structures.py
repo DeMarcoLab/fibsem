@@ -458,7 +458,6 @@ class DefaultSettings:
 @dataclass
 class MicroscopeSettings:
     system: SystemSettings
-    default: DefaultSettings
     image: ImageSettings
     protocol: dict = None
 
@@ -478,7 +477,6 @@ class MicroscopeSettings:
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
             image = ImageSettings.__from_dict__(settings["user"]),
-            default=DefaultSettings.__from_dict__(settings["user"]),
             protocol= protocol
         )
 
