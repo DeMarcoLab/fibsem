@@ -23,6 +23,7 @@ from fibsem.structures import (
 
 def auto_eucentric_correction(
     microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
     image_settings: ImageSettings,
     tilt_degrees: int = 25,
     xcorr_limit: int = 250,
@@ -37,6 +38,7 @@ def auto_eucentric_correction(
 
         correct_stage_eucentric_alignment(
             microscope,
+            settings,
             image_settings,
             tilt_degrees=tilt_degrees,
             xcorr_limit=xcorr_limit,
@@ -45,6 +47,7 @@ def auto_eucentric_correction(
 
 def correct_stage_eucentric_alignment(
     microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
     image_settings: ImageSettings,
     tilt_degrees: float = 52,
     xcorr_limit: int = 250,
@@ -77,7 +80,7 @@ def correct_stage_eucentric_alignment(
     )
 
     # move vertically to correct eucentric position
-    movement.move_stage_eucentric_correction(microscope, dy)
+    movement.move_stage_eucentric_correction(microscope, settings, dy)
 
 
 def coarse_eucentric_alignment(
@@ -235,7 +238,7 @@ def align_using_reference_images(
 
         # vertical constraint = eucentric movement
         if constrain_vertical:
-            movement.move_stage_eucentric_correction(microscope, dy=-dy) # FLAG_TEST
+            movement.move_stage_eucentric_correction(microscope, settings=settings, dy=-dy) # FLAG_TEST
         else:
             # move the stage
             movement.move_stage_relative_with_corrected_movement(

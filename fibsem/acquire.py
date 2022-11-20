@@ -103,7 +103,7 @@ def new_image(
         reduced_area (Rectangle, optional): image with the reduced area . Defaults to None.
 
     Returns:
-            AdornedImage: new autoscript adorned image
+            AdornedImage: new image
     """
 
     # set frame settings

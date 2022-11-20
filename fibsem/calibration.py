@@ -132,6 +132,12 @@ def auto_charge_neutralisation(
 
     # take sequence of images quickly,
 
+    # get initial image
+    from fibsem.utils import current_timestamp
+    ts = current_timestamp()
+    image_settings.label = f"{ts}_charge_neutralisation_start"
+    acquire.new_image(microscope, image_settings)
+
     # use preset settings if not defined
     if discharge_settings is None:
         discharge_settings = ImageSettings(
@@ -140,6 +146,7 @@ def auto_charge_neutralisation(
             hfw=image_settings.hfw,
             beam_type = BeamType.ELECTRON,
             save=False,
+            save_path=image_settings.save_path,
             autocontrast=False,
             gamma=GammaSettings(enabled=False),
             label=None
@@ -149,6 +156,7 @@ def auto_charge_neutralisation(
         acquire.new_image(microscope, discharge_settings)
 
     # take image
+    image_settings.label = f"{ts}_charge_neutralisation_end"
     acquire.new_image(microscope, image_settings)
 
     logging.info(f"BAM! and the charge is gone!") # important information  
@@ -327,7 +335,7 @@ def set_microscope_state(
     """Reset the microscope state to the provided state"""
 
     logging.info(f"restoring microscope state...")
-
+    
     # move to position
     movement.safe_absolute_stage_movement(
         microscope=microscope, stage_position=microscope_state.absolute_position

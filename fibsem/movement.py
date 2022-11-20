@@ -215,7 +215,7 @@ def move_flat_to_beam(
 
     # updated safe rotation move
     logging.info(f"moving flat to {beam_type.name}")
-    stage_position = StagePosition(r=rotation, t=tilt)
+    stage_position = StagePosition(r=rotation, t=tilt, coordinate_system="Raw")
     safe_absolute_stage_movement(microscope, stage_position)
 
     return
@@ -327,6 +327,15 @@ def safe_absolute_stage_movement(
     )
     logging.info(f"safe moving to {stage_position}")
     stage.absolute_move(stage_position, stage_settings)
+
+    # # rotation check
+    # while rotation_angle_is_larger(stage_position.r, stage.current_position.r, 0.5):
+        
+    #     # rotate the difference
+    #     diff = stage_position.r - stage.current_position.r
+    #     logging.info(f"rotation angle is larger ({np.rad2deg(diff):.2f} deg) than desired, moving again.")
+    #     stage.relative_move(StagePosition(r=diff), stage_settings)
+
     logging.info(f"safe movement complete.")
 
     return
@@ -451,19 +460,28 @@ def move_stage_relative_with_corrected_movement(
     return
 
 
-def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, dy: float) -> None:
+def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, dy: float, static_wd: bool = True) -> None:
     """Move the stage vertically to correct eucentric point
 
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope instance
         dy (float): distance in y-axis (image coordinates)
     """
+    wd = microscope.beams.electron_beam.working_distance.value
+
     z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
     move_settings = MoveSettings(link_z_y=True)
     z_move = StagePosition(z=z_move, coordinate_system="Specimen")
     microscope.specimen.stage.relative_move(z_move, move_settings)
     logging.info(f"eucentric movement: {z_move}")
+
+    if static_wd:
+        microscope.beams.electron_beam.working_distance.value = settings.system.electron.eucentric_height
+        microscope.beams.ion_beam.working_distance.value = settings.system.ion.eucentric_height
+    else:
+        microscope.beams.electron_beam.working_distance.value = wd
+    microscope.specimen.stage.link()
 
     # FLAG_TEST 
     # do we need to do the working distance adjustment here?

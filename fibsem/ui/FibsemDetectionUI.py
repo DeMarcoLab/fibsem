@@ -93,7 +93,9 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
             logging.debug(
                 f"""DectectedFeature {self.selected_feature.name} | IMAGE COORDINATE | {int(self.xclick)}, {int(self.yclick)} | REAL COORDINATE | {self.point_m.x:.2e}, {self.point_m.y:.2e}"""
+                
             )
+            logging.debug(f"DectectedFeature {self.selected_feature.name} | COORD {int(self.xclick)}, {int(self.yclick)} | SHIFT | {self.point_m.x:.2e}, {self.point_m.y:.2e} | {self.settings.image.beam_type}")
 
             # update detection data
             self.detected_features.features[

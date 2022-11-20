@@ -302,8 +302,8 @@ def setup_session(
     """Setup microscope session
 
     Args:
-        log_path (Path): path to logging directory
-        config_path (Path): path to config directory
+        session_path (Path): path to logging directory
+        config_path (Path): path to config directory (system.yaml)
         protocol_path (Path): path to protocol file
 
     Returns:
@@ -350,7 +350,7 @@ def load_settings_from_config(
     Returns:
         MicroscopeSettings: microscope settings
     """
-
+    # TODO: this should just be system.yaml path, not directory
     if config_path is None:
         config_path = os.path.join(os.path.dirname(fibsem.__file__), "config")
 

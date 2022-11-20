@@ -42,7 +42,6 @@ def main():
     windows.ask_user_movement(
         microscope,
         settings,
-        msg_type="eucentric",
         msg="Select a position to mill the pattern.",
     )
 
