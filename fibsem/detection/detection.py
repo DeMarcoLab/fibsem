@@ -416,3 +416,50 @@ def move_based_on_detection(
             # TODO: support other movements?
     return
 
+
+
+# convert to grayscale mask
+def convert_rgb_to_binary_mask(rgb):
+    mask = np.sum(rgb, axis=2).astype(bool)
+
+    return mask
+
+def get_mask_point(arr: np.ndarray, hor: str = "centre", vert: str = "centre") -> Point:
+    """Get a point from a mask"""
+
+    # get all pixels equal to 1
+    if arr.ndim == 3:
+        arr = convert_rgb_to_binary_mask(arr)
+    
+    mask = arr == 1
+
+    # get the x and y coordinates of the pixels
+    x, y = np.where(mask)
+
+    # get the bounding box
+    xmin, xmax = np.min(x), np.max(x)
+    ymin, ymax = np.min(y), np.max(y)
+
+    # get the width and height of the bounding box
+    w = (xmax - xmin)
+    h = (ymax - ymin)
+
+    # get the centre of the bounding box
+    xc = xmin + w // 2
+    yc = ymin + h // 2
+
+    if hor == "left":
+        px = xmin
+    if hor == "right":
+        px = xmax
+    if hor == "centre":
+        px = xc
+
+    if vert == "upper":
+        py = ymin
+    if vert == "lower":
+        py = ymax
+    if vert =="centre":
+        py = yc
+
+    return Point(px, py)
