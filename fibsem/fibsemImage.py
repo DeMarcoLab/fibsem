@@ -16,9 +16,10 @@ class FibsemImageMetadata:
 
     image_settings: ImageSettings
     version: str = METADATA_VERSION
-    pixel_size: float = 0.0
+    pixel_size_x: float = 0.0
+    pixel_size_y: float = 0.0
 
-    def __to_dict__(self)  -> dict:
+    def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
 
         Returns:
@@ -26,28 +27,35 @@ class FibsemImageMetadata:
         """
         settings_dict = self.image_settings.__to_dict__()
         settings_dict["version"] = METADATA_VERSION
-        settings_dict["pixel_size"] = self.pixel_size
+        settings_dict["pixel_size_x"] = self.pixel_size_x
+        settings_dict["pixel_size_y"] = self.pixel_size_y
         return settings_dict
-    
+
     @staticmethod
-    def __from_dict__(settings: dict) -> 'ImageSettings':
+    def __from_dict__(settings: dict) -> "ImageSettings":
         """Converts a dictionary to metadata."""
 
         image_settings = ImageSettings(
             resolution=settings["resolution"],
             dwell_time=settings["dwell_time"],
-            hfw=settings["hfw"], 
-            autocontrast=settings["autocontrast"], 
+            hfw=settings["hfw"],
+            autocontrast=settings["autocontrast"],
             beam_type=BeamType[settings["beam_type"].upper()],
             gamma=GammaSettings.__from_dict__(settings["gamma"]),
-            save=settings["save"], 
+            save=settings["save"],
             save_path=settings["save_path"],
-            label=settings["label"]
+            label=settings["label"],
         )
         version = settings["version"]
-        pixel_size = settings["pixel_size"]
+        pixel_size_x = settings["pixel_size_x"]
+        pixel_size_y = settings["pixel_size_y"]
 
-        metadata = FibsemImageMetadata(image_settings=image_settings, version=version, pixel_size=pixel_size)
+        metadata = FibsemImageMetadata(
+            image_settings=image_settings,
+            version=version,
+            pixel_size_x=pixel_size_x,
+            pixel_size_y=pixel_size_y,
+        )
         return metadata
 
 
@@ -110,6 +118,7 @@ class FibsemImage:
             FibsemImage: instance of FibsemImage from AdornedImage
         """
         return cls(data=adorned.data, metadata=metadata)
+
 
 def check_data_format(data: np.ndarray) -> np.ndarray:
     """Checks that data is in the correct format."""

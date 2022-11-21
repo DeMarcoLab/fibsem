@@ -41,8 +41,11 @@ def metadata_fixture(gamma_settings: GammaSettings) -> ImageSettings:
         label="label",
     )
     version: str = METADATA_VERSION
-    pixel_size: float = 0.0
-    metadata = fb.FibsemImageMetadata(image_settings, version, pixel_size)
+    pixel_size_x: float = 0.0
+    pixel_size_y: float = 0.0
+    metadata = fb.FibsemImageMetadata(
+        image_settings, version, pixel_size_x, pixel_size_y
+    )
 
     return metadata
 
