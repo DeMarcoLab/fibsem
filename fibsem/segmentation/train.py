@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
-    
+
     # datetime object containing current date and time
     now = datetime.now()
     # format
@@ -23,6 +23,7 @@ def save_model(save_dir, model, epoch):
     torch.save(model.state_dict(), model_save_file)
 
     print(f"Model saved to {model_save_file}")
+
 
 def train(model, device, data_loader, criterion, optimizer, WANDB):
     data_loader = tqdm(data_loader)
@@ -60,10 +61,12 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
 
             output = model(images[idx][None, :, :, :])
             output_mask = utils.decode_output(output)
-            
+
             img_base = images[idx].detach().cpu().squeeze().numpy()
             img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = utils.decode_segmap(masks[idx].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+            gt_base = utils.decode_segmap(
+                masks[idx].detach().cpu()[:, :, None]
+            )  # .permute(1, 2, 0))
 
             wb_img = wandb.Image(img_rgb, caption="Input Image")
             wb_gt = wandb.Image(gt_base, caption="Ground Truth")
@@ -72,14 +75,15 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
 
     return train_loss
 
+
 def validate(model, device, data_loader, criterion, WANDB):
     val_loader = tqdm(data_loader)
     val_loss = 0
 
     for i, (images, masks) in enumerate(val_loader):
-        
+
         model.eval()
-        
+
         # move img and mask to device, reshape mask
         images = images.to(device)
         masks = masks.type(torch.LongTensor)
@@ -87,7 +91,6 @@ def validate(model, device, data_loader, criterion, WANDB):
             masks.shape[0], masks.shape[2], masks.shape[3]
         )  # remove channel dim
         masks = masks.to(device)
-
 
         # forward pass
         outputs = model(images).type(torch.FloatTensor).to(device)
@@ -100,26 +103,44 @@ def validate(model, device, data_loader, criterion, WANDB):
 
             output = model(images[0][None, :, :, :])
             output_mask = utils.decode_output(output)
-            
+
             img_base = images[0].detach().cpu().squeeze().numpy()
             img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = utils.decode_segmap(masks[0].detach().cpu()[:, :, None])  #.permute(1, 2, 0))
+            gt_base = utils.decode_segmap(
+                masks[0].detach().cpu()[:, :, None]
+            )  # .permute(1, 2, 0))
 
             wb_img = wandb.Image(img_rgb, caption="Validation Input Image")
             wb_gt = wandb.Image(gt_base, caption="Validation Ground Truth")
             wb_mask = wandb.Image(output_mask, caption="Validation Output Mask")
-            wandb.log({"Validation image": wb_img, "Validation mask": wb_mask, "Validation ground_truth": wb_gt})
+            wandb.log(
+                {
+                    "Validation image": wb_img,
+                    "Validation mask": wb_mask,
+                    "Validation ground_truth": wb_gt,
+                }
+            )
 
     return val_loss
 
-def train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs, save_dir, WANDB=True):
-    """ Helper function for training the model """
+
+def train_model(
+    model,
+    device,
+    optimizer,
+    train_data_loader,
+    val_data_loader,
+    epochs,
+    save_dir,
+    WANDB=True,
+):
+    """Helper function for training the model"""
     # initialise loss function and optimizer
     def multi_loss(pred, target) -> float:
         c_loss = torch.nn.CrossEntropyLoss()
         d_loss = smp.losses.DiceLoss(mode="multiclass")
         f_loss = smp.losses.FocalLoss(mode="multiclass")
-        return  c_loss(pred, target) + d_loss(pred, target) + f_loss(pred, target)
+        return c_loss(pred, target) + d_loss(pred, target) + f_loss(pred, target)
 
     criterion = multi_loss
     # criterion = torch.nn.CrossEntropyLoss()
@@ -134,10 +155,12 @@ def train_model(model, device, optimizer, train_data_loader, val_data_loader, ep
     # training loop
     for epoch in range(epochs):
         print(f"------- Epoch {epoch+1} of {epochs}  --------")
-        
-        train_loss = train(model, device, train_data_loader, criterion, optimizer, WANDB)
+
+        train_loss = train(
+            model, device, train_data_loader, criterion, optimizer, WANDB
+        )
         val_loss = validate(model, device, val_data_loader, criterion, WANDB)
-   
+
         train_losses.append(train_loss / len(train_data_loader))
         val_losses.append(val_loss / len(val_data_loader))
 
@@ -155,13 +178,13 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "config.yml")
+        default=os.path.join("fibsem", "segmentation", "config.yml"),
     )
     args = parser.parse_args()
     config_dir = args.config
 
     # NOTE: Setup your config.yml file
-    with open(config_dir, 'r') as f:
+    with open(config_dir, "r") as f:
         config = yaml.safe_load(f)
 
     print("Validating config file.")
@@ -174,7 +197,7 @@ if __name__ == "__main__":
 
     # hyper-params
     epochs = config["train"]["epochs"]
-    num_classes = config["train"]["num_classes"] # Includes background class
+    num_classes = config["train"]["num_classes"]  # Includes background class
     batch_size = config["train"]["batch_size"]
 
     # other parameters
@@ -182,22 +205,29 @@ if __name__ == "__main__":
     WANDB = config["train"]["wandb"]
     if WANDB:
         # weights and biases setup
-        wandb.init(project=config["train"]["wandb_project"], entity=config["train"]["wandb_entity"])
+        wandb.init(
+            project=config["train"]["wandb_project"],
+            entity=config["train"]["wandb_entity"],
+        )
 
         wandb.config = {
-        "epochs": epochs,
-        "batch_size": batch_size,
-        "num_classes": num_classes
-    }
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "num_classes": num_classes,
+        }
 
     ################################## LOAD DATASET ##################################
     print(
         "\n----------------------- Loading and Preparing Data -----------------------"
     )
 
-    train_data_loader, val_data_loader = dataset.preprocess_data(data_path, num_classes=num_classes, batch_size=batch_size)
+    train_data_loader, val_data_loader = dataset.preprocess_data(
+        data_path, num_classes=num_classes, batch_size=batch_size
+    )
 
-    print("\n----------------------- Data Preprocessing Completed -----------------------")
+    print(
+        "\n----------------------- Data Preprocessing Completed -----------------------"
+    )
 
     ################################## LOAD MODEL ##################################
     print("\n----------------------- Loading Model -----------------------")
@@ -218,10 +248,20 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(model_checkpoint, map_location=device))
         print(f"Checkpoint file {model_checkpoint} loaded.")
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=config["train"]["learning_rate"]
+    )
     ################################## TRAINING ##################################
     print("\n----------------------- Begin Training -----------------------\n")
 
     # train model
-    model = train_model(model, device, optimizer, train_data_loader, val_data_loader, epochs = epochs, save_dir=save_dir, WANDB=WANDB)
-
+    model = train_model(
+        model,
+        device,
+        optimizer,
+        train_data_loader,
+        val_data_loader,
+        epochs=epochs,
+        save_dir=save_dir,
+        WANDB=WANDB,
+    )

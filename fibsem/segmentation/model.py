@@ -9,9 +9,14 @@ from fibsem.segmentation.utils import decode_segmap
 
 from pathlib import Path
 
+
 class SegmentationModel:
     def __init__(
-        self, checkpoint: str = None, encoder: str = "resnet18", mode: str = "eval", num_classes: int = 3
+        self,
+        checkpoint: str = None,
+        encoder: str = "resnet18",
+        mode: str = "eval",
+        num_classes: int = 3,
     ) -> None:
         super().__init__()
 
@@ -29,7 +34,7 @@ class SegmentationModel:
         if self.mode == "train":
             self.model.train()
 
-    def load_encoder(self, encoder: str ="resnet18"):
+    def load_encoder(self, encoder: str = "resnet18"):
         model = smp.Unet(
             encoder_name=encoder,
             encoder_weights="imagenet",
@@ -51,10 +56,10 @@ class SegmentationModel:
         if img_t.ndim == 2:
             img_t = img_t.unsqueeze(0).unsqueeze(0)  # add batch dim and channel dim
         elif img_t.ndim == 3:
-            if img_t.shape[0] > 1: # means the first dim is batch dim
-                img_t = img_t.unsqueeze(1) # add channel dim
+            if img_t.shape[0] > 1:  # means the first dim is batch dim
+                img_t = img_t.unsqueeze(1)  # add channel dim
             else:
-                img_t = img_t.unsqueeze(0) # add batch dim
+                img_t = img_t.unsqueeze(0)  # add batch dim
 
         return img_t
 
@@ -70,27 +75,25 @@ class SegmentationModel:
         output_masks = self.postprocess(masks, nc=self.num_classes)
 
         return output_masks
-    
+
     def postprocess(self, masks, nc):
         output_masks = []
         for i in range(len(masks)):
             output_masks.append(decode_segmap(masks[i], nc=nc))
-        
+
         if len(output_masks) == 1:
             output_masks = output_masks[0]
         return output_masks
 
 
-
-
-def load_model(checkpoint: Path, encoder: str = "resnet18", nc: int =3) -> SegmentationModel:
+def load_model(
+    checkpoint: Path, encoder: str = "resnet18", nc: int = 3
+) -> SegmentationModel:
 
     # load model
-    model = SegmentationModel(checkpoint=checkpoint, encoder=encoder,num_classes=nc)
-
+    model = SegmentationModel(checkpoint=checkpoint, encoder=encoder, num_classes=nc)
 
     return model
-
 
 
 if __name__ == "__main__":

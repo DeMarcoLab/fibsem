@@ -17,12 +17,11 @@ def convert_img_size(path_ini, img_size, path_save=None, inference=False):
         masks_sorted = sorted(glob.glob(os.path.join(path_ini, "labels", "*.tif*")))
 
     images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", "*.tif*")))
-    
 
     pil_size = [img_size[1], img_size[0]]
 
     for x, (im, label) in tqdm(enumerate(zip(images_sorted, masks_sorted))):
-        num_file = str(x).zfill(9) 
+        num_file = str(x).zfill(9)
         path = path_save
 
         if not os.path.exists(path):
@@ -35,7 +34,10 @@ def convert_img_size(path_ini, img_size, path_save=None, inference=False):
         if not inference:
             label = Image.open(label)
             label = label.resize(pil_size)
-            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
+            label.save(
+                os.path.join(path, "labels", f"{num_file}.tiff")
+            )  # or 'test.tif'
+
 
 def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None, inference=False):
     """converts images to tiff"""
@@ -44,12 +46,14 @@ def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None, inference=False)
 
     images_sorted = sorted(glob.glob(os.path.join(path_ini, "images", f"*.{img_ext}")))
     if not inference:
-        masks_sorted = sorted(glob.glob(os.path.join(path_ini, "labels", f"*.{lab_ext}")))
+        masks_sorted = sorted(
+            glob.glob(os.path.join(path_ini, "labels", f"*.{lab_ext}"))
+        )
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_file = str(x).zfill(9) 
+        num_file = str(x).zfill(9)
         path = path_save
-        
+
         if not os.path.exists(path):
             os.mkdir(path)
 
@@ -58,7 +62,9 @@ def convert_to_tiff(path_ini, img_ext, lab_ext, path_save=None, inference=False)
 
         if not inference:
             label = Image.open(label)
-            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
+            label.save(
+                os.path.join(path, "labels", f"{num_file}.tiff")
+            )  # or 'test.tif'
 
 
 def convert_to_grayscale(path_ini, path_save=None, inference=False):
@@ -72,25 +78,27 @@ def convert_to_grayscale(path_ini, path_save=None, inference=False):
         path_save = path_ini
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_file = str(x).zfill(9) 
+        num_file = str(x).zfill(9)
         path = path_save
-        
+
         if not os.path.exists(path):
             os.mkdir(path)
 
         im = Image.open(im)
-        im = Image.fromarray(np.array(im)[:,:,0])
+        im = Image.fromarray(np.array(im)[:, :, 0])
         im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
 
         if not inference:
             label = Image.open(label)
-            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
+            label.save(
+                os.path.join(path, "labels", f"{num_file}.tiff")
+            )  # or 'test.tif'
 
 
-def round_to_32_pad(num:int)->tuple[int,int]:
+def round_to_32_pad(num: int) -> tuple[int, int]:
     """Rounds up an integer to the nearest multiple of 32. The difference
     between the number and its nearest multiple of 32 is then split in half
-    and provided. This function is used to easily calculate padding values 
+    and provided. This function is used to easily calculate padding values
     when padding images for suitability with PyTorch NN
 
     e.g. if num == 60
@@ -101,20 +109,21 @@ def round_to_32_pad(num:int)->tuple[int,int]:
         num (int): value of dimension
 
     Returns:
-        tuple[int,int]:  
+        tuple[int,int]:
     """
 
-    m1 = -(-num//32)
-    m2 = 32*m1
+    m1 = -(-num // 32)
+    m2 = 32 * m1
 
     val = m2 - num
     if val % 2 == 0:
-        x1,x2 = val/2,val/2
+        x1, x2 = val / 2, val / 2
     else:
-        x1 = round(val/2)
+        x1 = round(val / 2)
         x2 = val - x1
 
-    return int(x1),int(x2)
+    return int(x1), int(x2)
+
 
 def pad_data(path_ini, path_save=None, inference=False):
     """converts image size to multiple of 32"""
@@ -127,9 +136,9 @@ def pad_data(path_ini, path_save=None, inference=False):
         path_save = path_ini
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_file = str(x).zfill(9) 
+        num_file = str(x).zfill(9)
         path = path_save
-        
+
         if not os.path.exists(path):
             os.mkdir(path)
 
@@ -137,9 +146,9 @@ def pad_data(path_ini, path_save=None, inference=False):
         im = np.array(im)
 
         r1, r2 = round_to_32_pad(im.shape[0])
-        c1,c2 = round_to_32_pad(im.shape[1])
+        c1, c2 = round_to_32_pad(im.shape[1])
 
-        im = Image.fromarray(np.pad(im,pad_width=((r1,r2),(c1,c2))))
+        im = Image.fromarray(np.pad(im, pad_width=((r1, r2), (c1, c2))))
         im.save(os.path.join(path, "images", f"{num_file}.tiff"))  # or 'test.tif'
 
         if not inference:
@@ -147,10 +156,12 @@ def pad_data(path_ini, path_save=None, inference=False):
             label = np.array(label)
 
             r1, r2 = round_to_32_pad(label.shape[0])
-            c1,c2 = round_to_32_pad(label.shape[1])
-            
-            label = Image.fromarray(np.pad(label,pad_width=((r1,r2),(c1,c2))))
-            label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
+            c1, c2 = round_to_32_pad(label.shape[1])
+
+            label = Image.fromarray(np.pad(label, pad_width=((r1, r2), (c1, c2))))
+            label.save(
+                os.path.join(path, "labels", f"{num_file}.tiff")
+            )  # or 'test.tif'
 
 
 def convert_folder_format(directory, path_save):
@@ -159,9 +170,9 @@ def convert_folder_format(directory, path_save):
     masks_sorted = sorted(glob.glob(os.path.join(directory, "**", "label.tif*")))
 
     for x, (im, label) in enumerate(zip(images_sorted, masks_sorted)):
-        num_file = str(x).zfill(9) 
+        num_file = str(x).zfill(9)
         path = path_save
-        
+
         os.mkdir(os.path.join(path, "images"), exist_ok=True)
         os.mkdir(os.path.join(path, "labels"), exist_ok=True)
 
@@ -170,6 +181,7 @@ def convert_folder_format(directory, path_save):
 
         label = Image.open(label)
         label.save(os.path.join(path, "labels", f"{num_file}.tiff"))  # or 'test.tif'
+
 
 # helper functions
 def decode_output(output):
@@ -183,7 +195,7 @@ def decode_output(output):
 def decode_segmap(image, nc=3):
 
     """
-    Decode segmentation class mask into an RGB image mask 
+    Decode segmentation class mask into an RGB image mask
     ref: https://learnopencv.com/pytorch-for-beginners-semantic-segmentation-using-torchvision/
     """
 
@@ -202,8 +214,8 @@ def decode_segmap(image, nc=3):
 
     # apply the class label colours to each pixel
     for class_idx in range(1, nc):
-        idx = (image == class_idx)
-        class_idx = class_idx%5
+        idx = image == class_idx
+        class_idx = class_idx % 5
         r[idx] = label_colors[class_idx, 0]
         g[idx] = label_colors[class_idx, 1]
         b[idx] = label_colors[class_idx, 2]
