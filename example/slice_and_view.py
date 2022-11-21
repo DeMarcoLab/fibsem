@@ -36,7 +36,7 @@ def main():
         milling.run_milling(microscope, milling_current=milling_settings.milling_current)
 
 
-        milling.finish_milling(microscope, settings.default.imaging_current)
+        milling.finish_milling(microscope, settings.system.ion.current)
 
         # view
         logging.info("------------------------ VIEW ------------------------")

@@ -300,7 +300,6 @@ def load_settings_from_config(
 
     settings = MicroscopeSettings(
         system=system_settings,
-        default=default_settings,
         image=image_settings,
         protocol=protocol,
     )

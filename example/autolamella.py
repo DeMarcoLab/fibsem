@@ -95,7 +95,7 @@ def main():
             # mill trenches
             milling._draw_trench_patterns(microscope, milling_dict)
             milling.run_milling(microscope, milling_dict["milling_current"])
-            milling.finish_milling(microscope, settings.default.imaging_current)
+            milling.finish_milling(microscope, settings.system.ion.current)
 
             # retake reference image
             settings.image.save_path = lamella.path
