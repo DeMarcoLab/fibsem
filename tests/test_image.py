@@ -75,7 +75,7 @@ def test_saving_metadata(img_settings):
     Args:
         img_settings (fixture): fixture returning ImageSettings object
     """
-    array1 = np.uint8(np.zeros((256, 128)))
+array1 = np.zeros((256, 128)), dtype=np.uint8)
     metadata = fb.FibsemImageMetadata(image_settings=img_settings)
     img = fb.FibsemImage(array1, metadata)
     img.save("test.tif")
