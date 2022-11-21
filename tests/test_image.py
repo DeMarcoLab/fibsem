@@ -5,6 +5,7 @@ import numpy as np
 import json
 from matplotlib import pyplot as plt
 from fibsem.structures import GammaSettings, ImageSettings, BeamType
+from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
 if THERMO_ENABLED:
@@ -106,6 +107,7 @@ def test_loading_metadata(img_settings):
     assert img.data.shape[0] == array1.shape[0]
     assert img.data.shape[1] == array1.shape[1]
     assert img.metadata == metadata
+    assert img.metadata.version == METADATA_VERSION
 
 
 def test_getting_data_from_adorned_image():

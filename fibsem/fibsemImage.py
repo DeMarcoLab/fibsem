@@ -3,9 +3,9 @@ import tifffile as tff
 from dataclasses import dataclass
 import json
 from fibsem.structures import ImageSettings
+from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
-METADATA_VERSION = "v1"
 if THERMO_ENABLED:
     from autoscript_sdb_microscope_client.structures import AdornedImage
 

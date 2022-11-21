@@ -1,5 +1,4 @@
-
-
+METADATA_VERSION = "v1"
 
 # sputtering rates, from microscope application files
 MILLING_SPUTTER_RATE = {
