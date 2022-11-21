@@ -1,4 +1,3 @@
-import fibsem
 import numpy as np
 import tifffile as tff
 from dataclasses import dataclass
