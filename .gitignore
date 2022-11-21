@@ -20,6 +20,8 @@ wandb/*
 fibsem/segmentation/data/*
 fibsem/segmentation/results/*
 fibsem/segmentation/results*/*
+fibsem/segmentation/training/*
 
 
 site/*
+scratch/training/*

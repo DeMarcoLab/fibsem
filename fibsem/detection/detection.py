@@ -135,12 +135,12 @@ def detect_lamella(
     mask: np.ndarray,
     feature_type: FeatureType,
     color: tuple = (255, 0, 0),
-    mask_radius: int = 512,
+    mask_radius: int = 256,
 ) -> Point:
 
     lamella_mask, _ = extract_class_pixels(mask, color)
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
-    lamella_centre = detect_centre_point(lamella_mask, color=color)
+    # lamella_centre = detect_centre_point(lamella_mask, color=color)
 
     if feature_type is FeatureType.LamellaCentre:
         feature_px = detect_centre_point(lamella_mask, color=color)
@@ -152,6 +152,29 @@ def detect_lamella(
         feature_px = detect_corner(lamella_mask, left=False)
 
     return feature_px
+
+
+def detect_lamella_v2(
+    mask: np.ndarray,
+    feature_type: FeatureType,
+    color: tuple = (255, 0, 0),
+    mask_radius: int = 256,
+) -> Point:
+
+    lamella_mask, _ = extract_class_pixels(mask, color)
+    lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
+
+    if feature_type is FeatureType.LamellaCentre:
+        feature_px = get_mask_point(lamella_mask, "centre", "centre")
+
+    if feature_type is FeatureType.LamellaLeftEdge:
+        feature_px = get_mask_point(lamella_mask, "left", "centre")
+
+    if feature_type is FeatureType.LamellaRightEdge:
+        feature_px = get_mask_point(lamella_mask, "right", "centre")
+
+    return feature_px
+
 
 
 def detect_needle_v4(mask: np.ndarray,) -> Point:
@@ -289,7 +312,7 @@ def detect_features_v2(
             FeatureType.LamellaLeftEdge,
             FeatureType.LamellaRightEdge,
         ]:
-            feature_px = detect_lamella(mask, det_type)
+            feature_px = detect_lamella_v2(mask, det_type)
 
         if det_type == FeatureType.LandingPost:
             feature_px = detect_landing_post_v3(img, initial_point)
@@ -434,7 +457,7 @@ def get_mask_point(arr: np.ndarray, hor: str = "centre", vert: str = "centre") -
     mask = arr == 1
 
     # get the x and y coordinates of the pixels
-    x, y = np.where(mask)
+    y, x = np.where(mask)
 
     # get the bounding box
     xmin, xmax = np.min(x), np.max(x)
@@ -462,4 +485,4 @@ def get_mask_point(arr: np.ndarray, hor: str = "centre", vert: str = "centre") -
     if vert =="centre":
         py = yc
 
-    return Point(px, py)
+    return Point(px, py) # y, x
