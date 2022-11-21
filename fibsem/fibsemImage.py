@@ -2,7 +2,7 @@ import numpy as np
 import tifffile as tff
 from dataclasses import dataclass
 import json
-from fibsem.structures import ImageSettings
+from fibsem.structures import ImageSettings, BeamType, GammaSettings
 from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
@@ -16,6 +16,7 @@ class FibsemImageMetadata:
 
     image_settings: ImageSettings
     version: str = METADATA_VERSION
+    pixel_size: float = 0.0
 
     def __to_dict__(self)  -> dict:
         """Converts metadata to a dictionary.
@@ -25,7 +26,29 @@ class FibsemImageMetadata:
         """
         settings_dict = self.image_settings.__to_dict__()
         settings_dict["version"] = METADATA_VERSION
+        settings_dict["pixel_size"] = self.pixel_size
         return settings_dict
+    
+    @staticmethod
+    def __from_dict__(settings: dict) -> 'ImageSettings':
+        """Converts a dictionary to metadata."""
+
+        image_settings = ImageSettings(
+            resolution=settings["resolution"],
+            dwell_time=settings["dwell_time"],
+            hfw=settings["hfw"], 
+            autocontrast=settings["autocontrast"], 
+            beam_type=BeamType[settings["beam_type"].upper()],
+            gamma=GammaSettings.__from_dict__(settings["gamma"]),
+            save=settings["save"], 
+            save_path=settings["save_path"],
+            label=settings["label"]
+        )
+        version = settings["version"]
+        pixel_size = settings["pixel_size"]
+
+        metadata = FibsemImageMetadata(image_settings=image_settings, version=version, pixel_size=pixel_size)
+        return metadata
 
 
 class FibsemImage:
@@ -52,9 +75,7 @@ class FibsemImage:
                 metadata = json.loads(
                     tiff_image.pages[0].tags["ImageDescription"].value
                 )
-                metadata = FibsemImageMetadata(
-                    image_settings=ImageSettings.__from_dict__(metadata)
-                )
+                metadata = FibsemImageMetadata.__from_dict__(metadata)
             except:
                 metadata = None
         return cls(data=data, metadata=metadata)

@@ -27,7 +27,7 @@ def gamma_settings() -> GammaSettings:
 
 
 @pytest.fixture
-def img_settings(gamma_settings: GammaSettings) -> ImageSettings:
+def metadata_fixture(gamma_settings: GammaSettings) -> ImageSettings:
 
     image_settings = ImageSettings(
         resolution="32x32",
@@ -40,8 +40,11 @@ def img_settings(gamma_settings: GammaSettings) -> ImageSettings:
         save_path="path",
         label="label",
     )
+    version: str = METADATA_VERSION
+    pixel_size: float = 0.0
+    metadata = fb.FibsemImageMetadata(image_settings, version, pixel_size)
 
-    return image_settings
+    return metadata
 
 
 def test_saving_image():
@@ -70,21 +73,21 @@ def test_loading_image():
     assert img.data.dtype == np.uint8
 
 
-def test_saving_metadata(img_settings):
+def test_saving_metadata(metadata_fixture):
     """Test saving FibsemImage metadata to file.
 
     Args:
         img_settings (fixture): fixture returning ImageSettings object
     """
     array1 = np.zeros((256, 128), dtype=np.uint8)
-    metadata = fb.FibsemImageMetadata(image_settings=img_settings)
+    metadata = fb.FibsemImageMetadata(metadata_fixture)
     img = fb.FibsemImage(array1, metadata)
     img.save("test.tif")
     with tff.TiffFile("test.tif") as tiff_image:
         data = tiff_image.asarray()
         metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value)
         metadata = fb.FibsemImageMetadata(
-            image_settings=ImageSettings.__from_dict__(metadata)
+            image_settings=fb.FibsemImageMetadata.__from_dict__(metadata)
         )
 
     assert np.array_equal(array1, data)
@@ -93,13 +96,13 @@ def test_saving_metadata(img_settings):
     assert img.metadata == metadata
 
 
-def test_loading_metadata(img_settings):
+def test_loading_metadata(metadata_fixture):
     """Test loading FibsemImage metadata from file.
     Args:
         img_settings (fixture): fixture returning ImageSettings object
     """
     array1 = np.uint8(np.zeros((256, 128)))
-    metadata = fb.FibsemImageMetadata(image_settings=img_settings)
+    metadata = fb.FibsemImageMetadata(metadata_fixture)
     img = fb.FibsemImage(array1, metadata)
     img.save("test.tif")
     img.load("test.tif")
@@ -119,12 +122,12 @@ def test_getting_data_from_adorned_image():
     assert np.array_equal(img1.data, img2.data)
 
 
-def test_converting_metadata_from_adorned_image(img_settings):
+def test_converting_metadata_from_adorned_image(metadata_fixture):
     """Test getting data from an adorned image (microscope output format).
     Args:
         img_settings (fixture): fixture returning ImageSettings object
     """
-    metadata = img_settings
+    metadata = metadata_fixture
     array1 = np.uint8(255 * np.random.rand(32, 32))
     img1 = fb.FibsemImage(array1, metadata=metadata)
     adorned = AdornedImage(array1)
