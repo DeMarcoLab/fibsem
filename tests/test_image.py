@@ -52,7 +52,7 @@ def test_saving_image():
     with tff.TiffFile("test.tif") as tiff_image:
         data = tiff_image.asarray()
     assert np.array_equal(array1, data)
-    assert img.data.shape[0] == 32
+    assert img.data.shape == array1.shape
     assert img.data.shape[1] == 32
     assert img.data.dtype == np.uint8
 
