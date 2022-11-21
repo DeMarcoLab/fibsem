@@ -17,6 +17,7 @@ transformation = transforms.Compose(
     ]
 )
 
+
 class SegmentationDataset(Dataset):
     def __init__(self, images, masks, num_classes: int, transforms=None):
         self.images = images
@@ -42,8 +43,10 @@ class SegmentationDataset(Dataset):
 
 
 def load_dask_dataset(data_dir: str):
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "images", "*.tif*")))  
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(data_dir, "labels", "*.tif*"))) 
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "images", "*.tif*")))
+    sorted_mask_filenames = sorted(
+        glob.glob(os.path.join(data_dir, "labels", "*.tif*"))
+    )
 
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
     mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
@@ -51,15 +54,18 @@ def load_dask_dataset(data_dir: str):
     images = da.from_zarr(img_arr)
     masks = da.from_zarr(mask_arr)
 
-    images = images.rechunk(chunks = (1, images.shape[1], images.shape[2]))
-    masks = masks.rechunk(chunks = (1, images.shape[1], images.shape[2])) 
+    images = images.rechunk(chunks=(1, images.shape[1], images.shape[2]))
+    masks = masks.rechunk(chunks=(1, images.shape[1], images.shape[2]))
 
     return images, masks
 
-def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
+
+def preprocess_data(
+    data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2
+):
     validate_dataset(data_path)
     images, masks = load_dask_dataset(data_path)
-    
+
     print(f"Loading dataset from {data_path} of length {images.shape[0]}")
 
     # load dataset
@@ -78,7 +84,7 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
     val_sampler = SubsetRandomSampler(val_idx)
 
     train_data_loader = DataLoader(
-        seg_dataset, batch_size=batch_size, sampler = train_sampler, drop_last=True
+        seg_dataset, batch_size=batch_size, sampler=train_sampler, drop_last=True
     )  # shuffle=True,
     print(f"Train dataset has {len(train_data_loader)} batches of size {batch_size}")
 
@@ -96,8 +102,8 @@ def preprocess_data(data_path: str, num_classes: int = 3, batch_size: int = 1, v
 def validate_dataset(data_path):
     print("validating dataset...")
     # get data
-    filenames = sorted(glob.glob(os.path.join(data_path, "images", "*.tif*")))  
-    labels = sorted(glob.glob(os.path.join(data_path, "labels", "*.tif*")))  
+    filenames = sorted(glob.glob(os.path.join(data_path, "images", "*.tif*")))
+    labels = sorted(glob.glob(os.path.join(data_path, "labels", "*.tif*")))
 
     # check length
     assert len(filenames) == len(labels), "Images and labels are not the same length"
@@ -117,11 +123,11 @@ def validate_dataset(data_path):
                 img.shape,
                 label.shape,
                 "\n",
-                "You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size."
+                "You can run convert_img_size() in utils.py to convert all images and labels in the dataset to the desired size.",
             )
 
         if (img.ndim > 2) or (label.ndim > 2):
-            
+
             raise ValueError(
                 "Image has too many dimensions, must be in 2D grayscale format.",
                 i,
@@ -130,10 +136,10 @@ def validate_dataset(data_path):
                 img.shape,
                 label.shape,
                 "\n",
-                "You can run convert_to_grayscale() in utils.py to convert all images and labels in the dataset to the desired format."
+                "You can run convert_to_grayscale() in utils.py to convert all images and labels in the dataset to the desired format.",
             )
-            
-        if (img.shape[0]%32 != 0) or (img.shape[1]%32 != 0):
+
+        if (img.shape[0] % 32 != 0) or (img.shape[1] % 32 != 0):
             raise ValueError(
                 "Wrong padding, dimensions must be divisible by 32.",
                 i,
@@ -142,8 +148,7 @@ def validate_dataset(data_path):
                 img.shape,
                 label.shape,
                 "\n",
-                "You can run pad_data in utils.py to convert the dataset to correct format."
+                "You can run pad_data in utils.py to convert the dataset to correct format.",
             )
 
     print("finished validating dataset.")
-

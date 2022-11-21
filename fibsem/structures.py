@@ -110,6 +110,7 @@ class ImageSettings:
     def __to_dict__(self) -> dict:
 
         settings_dict = {
+            "beam_type": self.beam_type.name,
             "resolution": self.resolution,
             "dwell_time": self.dwell_time,
             "hfw": self.hfw,

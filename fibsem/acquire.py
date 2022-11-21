@@ -147,7 +147,6 @@ def new_image(
     
     return image
 
-
 def last_image(
     microscope: SdbMicroscopeClient, beam_type: BeamType =BeamType.ELECTRON
 ) -> AdornedImage:
