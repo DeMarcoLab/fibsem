@@ -88,10 +88,10 @@ class FibsemImage:
         """
         return cls(data=adorned.data, metadata=metadata)
 
-    def check_data_format(self, data: np.ndarray) -> np.ndarray:
-        """Checks that data is in the correct format."""
-        assert data.ndim == 2  # or data.ndim == 3
-        assert data.dtype == np.uint8
-        # if data.ndim == 3 and data.shape[2] == 1:
-        #     data = data[:, :, 0]
-        return data
+def check_data_format(data: np.ndarray) -> np.ndarray:
+    """Checks that data is in the correct format."""
+    assert data.ndim == 2  # or data.ndim == 3
+    assert data.dtype == np.uint8
+    # if data.ndim == 3 and data.shape[2] == 1:
+    #     data = data[:, :, 0]
+    return data
