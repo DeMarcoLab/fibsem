@@ -54,8 +54,6 @@ def test_saving_image():
     assert np.array_equal(array1, data)
     assert img.data.shape[0] == 32
     assert img.data.shape[1] == 32
-    assert img.data.all() >= 0
-    assert img.data.all() <= 255
     assert img.data.dtype == np.uint8
 
 
@@ -68,8 +66,6 @@ def test_loading_image():
     assert np.array_equal(array1, img.data)
     assert img.data.shape[0] == 32
     assert img.data.shape[1] == 32
-    assert img.data.all() >= 0
-    assert img.data.all() <= 255
     assert img.data.dtype == np.uint8
 
 
