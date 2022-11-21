@@ -5,6 +5,7 @@ import json
 from fibsem.structures import ImageSettings
 
 THERMO_ENABLED = True
+METADATA_VERSION = "v1"
 if THERMO_ENABLED:
     from autoscript_sdb_microscope_client.structures import AdornedImage
 
@@ -14,6 +15,7 @@ class FibsemImageMetadata:
     """Metadata for a FibsemImage."""
 
     image_settings: ImageSettings
+    version: str = METADATA_VERSION
 
     def __to_dict__(self)  -> dict:
         """Converts metadata to a dictionary.
@@ -22,6 +24,7 @@ class FibsemImageMetadata:
             dictionary: self as a dictionary
         """
         settings_dict = self.image_settings.__to_dict__()
+        settings_dict["version"] = METADATA_VERSION
         return settings_dict
 
 
