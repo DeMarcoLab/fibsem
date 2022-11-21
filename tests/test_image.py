@@ -1,6 +1,6 @@
 import pytest
 import tifffile as tff
-import fibsem.fibsemImage as fb
+import fibsem.FibsemImage as fb
 import numpy as np
 import json
 from matplotlib import pyplot as plt
