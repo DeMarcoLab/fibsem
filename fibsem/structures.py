@@ -39,19 +39,13 @@ class BeamType(Enum):
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
+@dataclass
 class FibsemRectangle():
     """Universal Rectangle class used for ReducedArea"""
-    def __init__(
-        self,
-        left: float = 0.0,
-        top: float = 0.0,
-        width: float = 0.0,
-        height: float = 0.0
-    ):
-        self.left = left,
-        self.top = top,
-        self.width = width,
-        self.height = height,
+    left: float = 0.0,
+    top: float = 0.0,
+    width: float = 0.0,
+    height: float = 0.0
 
     def __from_dict__(settings: dict) -> "FibsemRectangle":
         return FibsemRectangle(

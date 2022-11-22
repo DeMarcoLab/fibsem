@@ -94,6 +94,7 @@ def test_loading_image():
     assert img.data.shape[1] == 32
     assert img.data.dtype == np.uint8
 
+int
 
 def test_saving_metadata(metadata_fixture):
     """Test saving FibsemImage metadata to file.
