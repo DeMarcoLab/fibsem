@@ -27,7 +27,6 @@ class FibsemImageMetadata:
         settings_dict["version"] = METADATA_VERSION
         return settings_dict
 
-
 class FibsemImage:
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
         self.data = check_data_format(data)

@@ -39,6 +39,19 @@ class BeamType(Enum):
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
+class FibsemRectangle():
+    """Universal Rectangle class used for ReducedArea"""
+    def __init__(
+        self,
+        left: float = 0.0,
+        top: float = 0.0,
+        width: float = 0.0,
+        height: float = 0.0
+    ):
+        self.left = left,
+        self.top = top,
+        self.width = width,
+        self.height = height,
 
 @dataclass
 class GammaSettings:
@@ -70,7 +83,7 @@ class ImageSettings:
     label: str
     gamma: GammaSettings
     save_path: Path = None
-    # reduced_area: Rectangle = None
+    reduced_area: FibsemRectangle = None
 
     @staticmethod
     def __from_dict__(settings: dict) -> 'ImageSettings':
@@ -91,6 +104,8 @@ class ImageSettings:
                 "scale_factor": 0.1,
                 "threshold": 45,
             }
+        if "reduced_area" not in settings:
+            settings["reduced_area"] = None
 
         image_settings = ImageSettings(
             resolution=settings["resolution"],
@@ -101,7 +116,8 @@ class ImageSettings:
             gamma=GammaSettings.__from_dict__(settings["gamma"]),
             save=settings["save"], 
             save_path=settings["save_path"],
-            label=settings["label"]
+            label=settings["label"],
+            reduced_area=settings["reduced_area"],
         )
 
         return image_settings
@@ -124,7 +140,8 @@ class ImageSettings:
             },
             "save": self.save,
             "save_path": self.save_path,
-            "label": self.label
+            "label": self.label,
+            "reduced_area": self.reduced_area,
         }
 
         return settings_dict
