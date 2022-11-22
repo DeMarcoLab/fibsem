@@ -205,7 +205,7 @@ def main():
 
     # beam_type = BeamType.ELECTRON
     features = [Feature(FeatureType.NeedleTip), 
-                Feature(FeatureType.ImageCentre)]
+                Feature(FeatureType.LamellaCentre)]
 
         
     for beam_type in [BeamType.ELECTRON, BeamType.ION]:
