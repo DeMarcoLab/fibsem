@@ -12,6 +12,7 @@ from skimage import exposure
 
 from fibsem import utils
 from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages
+from fibsem.FibsemImage import FibsemImage 
 
 
 
@@ -145,7 +146,7 @@ def new_image(
     if settings.save:
         utils.save_image(image=image, save_path=settings.save_path, label=label)
     
-    return image
+    return FibsemImage.fromAdornedImage(image, settings)
 
 def last_image(
     microscope: SdbMicroscopeClient, beam_type: BeamType =BeamType.ELECTRON
