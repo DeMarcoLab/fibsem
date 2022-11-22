@@ -5,7 +5,7 @@ import numpy as np
 import json
 from datetime import datetime
 from matplotlib import pyplot as plt
-from fibsem.structures import GammaSettings, ImageSettings, BeamType, Point, StagePosition, BeamSettings, MicroscopeState
+from fibsem.structures import GammaSettings, ImageSettings, BeamType, Point, StagePosition, BeamSettings, MicroscopeState, FibsemRectangle
 from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
@@ -39,7 +39,13 @@ def microscope_state() -> MicroscopeState:
     return microscope_state
 
 @pytest.fixture
-def metadata_fixture(gamma_settings: GammaSettings, microscope_state: MicroscopeState) -> fb.FibsemImageMetadata:
+def rectangle() -> FibsemRectangle:
+    """Fixture for a rectangle"""
+    rectangle = FibsemRectangle(left =0.0, top = 0.0, height =1.0, width=1.0)
+    return rectangle
+
+@pytest.fixture
+def metadata_fixture(gamma_settings: GammaSettings, microscope_state: MicroscopeState, rectangle: FibsemRectangle) -> fb.FibsemImageMetadata:
 
     image_settings = ImageSettings(
         resolution="32x32",
@@ -51,6 +57,7 @@ def metadata_fixture(gamma_settings: GammaSettings, microscope_state: Microscope
         save=False,
         save_path="path",
         label="label",
+        reduced_area=rectangle,
     )
     version: str = METADATA_VERSION
     pixel_size: Point = Point(0.0, 0.0)

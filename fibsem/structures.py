@@ -53,6 +53,21 @@ class FibsemRectangle():
         self.width = width,
         self.height = height,
 
+    def __from_dict__(settings: dict) -> "FibsemRectangle":
+        return FibsemRectangle(
+            left=settings["left"],
+            top=settings["top"],
+            width=settings["width"],
+            height=settings["height"],
+        )
+    def __to_dict__(self) -> dict:
+        return {
+            "left": self.left,
+            "top": self.top,
+            "width": self.width,
+            "height": self.height,
+        }
+
 @dataclass
 class GammaSettings:
     enabled: bool = False
@@ -117,7 +132,7 @@ class ImageSettings:
             save=settings["save"], 
             save_path=settings["save_path"],
             label=settings["label"],
-            reduced_area=settings["reduced_area"],
+            reduced_area=FibsemRectangle.__from_dict__(settings["reduced_area"]),
         )
 
         return image_settings
@@ -141,7 +156,12 @@ class ImageSettings:
             "save": self.save,
             "save_path": self.save_path,
             "label": self.label,
-            "reduced_area": self.reduced_area,
+            "reduced_area": {
+                "left": self.reduced_area.left,
+                "top": self.reduced_area.top,
+                "width": self.reduced_area.width,
+                "height": self.reduced_area.height,
+            },
         }
 
         return settings_dict

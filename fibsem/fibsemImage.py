@@ -2,7 +2,7 @@ import numpy as np
 import tifffile as tff
 from dataclasses import dataclass
 import json
-from fibsem.structures import ImageSettings, BeamType, GammaSettings, Point, MicroscopeState, BeamSettings
+from fibsem.structures import ImageSettings, BeamType, GammaSettings, Point, MicroscopeState, BeamSettings, FibsemRectangle
 from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
 from fibsem.config import METADATA_VERSION
 
@@ -46,7 +46,7 @@ class FibsemImageMetadata:
             save=settings["save"],
             save_path=settings["save_path"],
             label=settings["label"],
-            reduced_area=settings["reduced_area"],
+            reduced_area=FibsemRectangle.__from_dict__(settings["reduced_area"]),
         )
         version = settings["version"]
         pixel_size = Point.__from_dict__(settings["pixel_size"])
