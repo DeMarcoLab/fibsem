@@ -5,7 +5,16 @@ import numpy as np
 import json
 from datetime import datetime
 from matplotlib import pyplot as plt
-from fibsem.structures import GammaSettings, ImageSettings, BeamType, Point, StagePosition, BeamSettings, MicroscopeState, FibsemRectangle
+from fibsem.structures import (
+    GammaSettings,
+    ImageSettings,
+    BeamType,
+    Point,
+    StagePosition,
+    BeamSettings,
+    MicroscopeState,
+    FibsemRectangle,
+)
 from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
@@ -31,22 +40,26 @@ def gamma_settings() -> GammaSettings:
 def microscope_state() -> MicroscopeState:
 
     microscope_state = MicroscopeState(
-        timestamp=datetime.timestamp(datetime.now()), 
+        timestamp=datetime.timestamp(datetime.now()),
         absolute_position=StagePosition(),
         eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
         ib_settings=BeamSettings(beam_type=BeamType.ION),
     )
     return microscope_state
 
+
 @pytest.fixture
 def rectangle() -> FibsemRectangle:
     """Fixture for a rectangle"""
-    rectangle = FibsemRectangle(left =0.0, top = 0.0, height =1.0, width=1.0)
+    rectangle = FibsemRectangle(left=0.0, top=0.0, height=1.0, width=1.0)
     return rectangle
 
+
 @pytest.fixture
-def image_settings(gamma_settings: GammaSettings, rectangle: FibsemRectangle) -> ImageSettings:
-    
+def image_settings(
+    gamma_settings: GammaSettings, rectangle: FibsemRectangle
+) -> ImageSettings:
+
     image_settings = ImageSettings(
         resolution="32x32",
         dwell_time=1.0e-6,
@@ -63,14 +76,19 @@ def image_settings(gamma_settings: GammaSettings, rectangle: FibsemRectangle) ->
 
 
 @pytest.fixture
-def metadata_fixture(image_settings, microscope_state: MicroscopeState) -> fb.FibsemImageMetadata:
+def metadata_fixture(
+    image_settings, microscope_state: MicroscopeState
+) -> fb.FibsemImageMetadata:
 
     image_settings = image_settings
     version: str = METADATA_VERSION
     pixel_size: Point = Point(0.0, 0.0)
     microscope_state: microscope_state
     metadata = fb.FibsemImageMetadata(
-        image_settings = image_settings,version= version, pixel_size= pixel_size, microscope_state= microscope_state
+        image_settings=image_settings,
+        version=version,
+        pixel_size=pixel_size,
+        microscope_state=microscope_state,
     )
 
     return metadata
@@ -101,7 +119,9 @@ def test_loading_image():
     assert img.data.shape[1] == 32
     assert img.data.dtype == np.uint8
 
+
 int
+
 
 def test_saving_metadata(metadata_fixture):
     """Test saving FibsemImage metadata to file.
@@ -110,14 +130,17 @@ def test_saving_metadata(metadata_fixture):
         img_settings (fixture): fixture returning ImageSettings object
     """
     array1 = np.zeros((256, 128), dtype=np.uint8)
-    metadata = fb.FibsemImageMetadata(metadata_fixture.image_settings, metadata_fixture.pixel_size, metadata_fixture.microscope_state, metadata_fixture.version)
+    metadata = fb.FibsemImageMetadata(
+        metadata_fixture.image_settings,
+        metadata_fixture.pixel_size,
+        metadata_fixture.microscope_state,
+        metadata_fixture.version,
+    )
     img = fb.FibsemImage(array1, metadata)
     img.save("test.tif")
     with tff.TiffFile("test.tif") as tiff_image:
         data = tiff_image.asarray()
-        metadata = json.loads(
-                    tiff_image.pages[0].tags["ImageDescription"].value
-                )
+        metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value)
         metadata = fb.FibsemImageMetadata.__from_dict__(metadata)
 
     assert np.array_equal(array1, data)
@@ -132,7 +155,12 @@ def test_loading_metadata(metadata_fixture):
         img_settings (fixture): fixture returning ImageSettings object
     """
     array1 = np.uint8(np.zeros((256, 128)))
-    metadata = fb.FibsemImageMetadata(metadata_fixture.image_settings, metadata_fixture.pixel_size, metadata_fixture.microscope_state, metadata_fixture.version)
+    metadata = fb.FibsemImageMetadata(
+        metadata_fixture.image_settings,
+        metadata_fixture.pixel_size,
+        metadata_fixture.microscope_state,
+        metadata_fixture.version,
+    )
     img = fb.FibsemImage(array1, metadata)
     img.save("test.tif")
     img.load("test.tif")
@@ -145,11 +173,8 @@ def test_loading_metadata(metadata_fixture):
 
 def test_getting_data_from_adorned_image(image_settings):
     """Test getting data from an adorned image (microscope output format)"""
-    array1 = np.uint8(255 * np.random.rand(32, 32))
-
     with tff.TiffFile("fibsem\\2022-11-17.01-35-21PM_ib.tif") as tiff_image:
         data = tiff_image.asarray()
-
     adorned = AdornedImage.load("fibsem\\2022-11-17.01-35-21PM_ib.tif")
     img1 = fb.FibsemImage(data, metadata_fixture)
     img2 = fb.FibsemImage.fromAdornedImage(adorned, image_settings)
@@ -159,11 +184,11 @@ def test_getting_data_from_adorned_image(image_settings):
 def test_converting_metadata_from_adorned_image(metadata_fixture, image_settings):
     """Test getting data from an adorned image (microscope output format).
     Args:
-        img_settings (fixture): fixture returning ImageSettings object
+        image_settings (fixture): fixture returning ImageSettings object
+        metadata_fixture (fixture): fixture returning FibsemImageMetadata object
     """
     with tff.TiffFile("fibsem\\2022-11-17.01-35-21PM_ib.tif") as tiff_image:
         data = tiff_image.asarray()
-
     adorned = AdornedImage.load("fibsem\\2022-11-17.01-35-21PM_ib.tif")
     img1 = fb.FibsemImage(data, metadata_fixture)
     img2 = fb.FibsemImage.fromAdornedImage(adorned, image_settings)
