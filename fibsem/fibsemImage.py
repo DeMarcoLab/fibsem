@@ -16,9 +16,9 @@ class FibsemImageMetadata:
     """Metadata for a FibsemImage."""
 
     image_settings: ImageSettings
-    version: str
     pixel_size: Point
     microscope_state: MicroscopeState
+    version: str = METADATA_VERSION
 
     def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
@@ -124,6 +124,7 @@ class FibsemImage:
         Returns:
             FibsemImage: instance of FibsemImage from AdornedImage
         """
+        metadata.pixel_size = Point(adorned.metadata.binary_result.pixel_size.x, adorned.metadata.binary_result.pixel_size.y)
         return cls(data=adorned.data, metadata=metadata)
 
 
