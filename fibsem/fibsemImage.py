@@ -2,7 +2,7 @@ import numpy as np
 import tifffile as tff
 from dataclasses import dataclass
 import json
-from fibsem.structures import ImageSettings, BeamType, GammaSettings
+from fibsem.structures import ImageSettings, BeamType, GammaSettings, Point
 from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
@@ -16,8 +16,7 @@ class FibsemImageMetadata:
 
     image_settings: ImageSettings
     version: str = METADATA_VERSION
-    pixel_size_x: float = 0.0
-    pixel_size_y: float = 0.0
+    pixel_size: Point = Point(0.0, 0.0)
 
     def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
@@ -27,8 +26,7 @@ class FibsemImageMetadata:
         """
         settings_dict = self.image_settings.__to_dict__()
         settings_dict["version"] = METADATA_VERSION
-        settings_dict["pixel_size_x"] = self.pixel_size_x
-        settings_dict["pixel_size_y"] = self.pixel_size_y
+        settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
         return settings_dict
 
     @staticmethod
@@ -47,14 +45,12 @@ class FibsemImageMetadata:
             label=settings["label"],
         )
         version = settings["version"]
-        pixel_size_x = settings["pixel_size_x"]
-        pixel_size_y = settings["pixel_size_y"]
+        pixel_size = Point.__from_dict__(settings["pixel_size"])
 
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
             version=version,
-            pixel_size_x=pixel_size_x,
-            pixel_size_y=pixel_size_y,
+            pixel_size=pixel_size,
         )
         return metadata
 

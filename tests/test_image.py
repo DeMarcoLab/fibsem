@@ -4,7 +4,7 @@ import fibsem.fibsemImage as fb
 import numpy as np
 import json
 from matplotlib import pyplot as plt
-from fibsem.structures import GammaSettings, ImageSettings, BeamType
+from fibsem.structures import GammaSettings, ImageSettings, BeamType, Point
 from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
@@ -41,10 +41,9 @@ def metadata_fixture(gamma_settings: GammaSettings) -> ImageSettings:
         label="label",
     )
     version: str = METADATA_VERSION
-    pixel_size_x: float = 0.0
-    pixel_size_y: float = 0.0
+    pixel_size: Point = Point(0.0, 0.0)
     metadata = fb.FibsemImageMetadata(
-        image_settings, version, pixel_size_x, pixel_size_y
+        image_settings, version, pixel_size
     )
 
     return metadata
@@ -89,9 +88,7 @@ def test_saving_metadata(metadata_fixture):
     with tff.TiffFile("test.tif") as tiff_image:
         data = tiff_image.asarray()
         metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value)
-        metadata = fb.FibsemImageMetadata(
-            image_settings=fb.FibsemImageMetadata.__from_dict__(metadata)
-        )
+        metadata = fb.FibsemImageMetadata(fb.FibsemImageMetadata.__from_dict__(metadata))
 
     assert np.array_equal(array1, data)
     assert img.data.shape[0] == array1.shape[0]
