@@ -113,7 +113,7 @@ class FibsemImage:
 
     @classmethod
     def fromAdornedImage(
-        cls, adorned: AdornedImage, metadata: FibsemImageMetadata = None
+        cls, adorned: AdornedImage, image_settings: ImageSettings
     ) -> "FibsemImage":
         """Creates FibsemImage from an AdornedImage (microscope output format).
 
@@ -124,7 +124,8 @@ class FibsemImage:
         Returns:
             FibsemImage: instance of FibsemImage from AdornedImage
         """
-        metadata.pixel_size = Point(adorned.metadata.binary_result.pixel_size.x, adorned.metadata.binary_result.pixel_size.y)
+        pixel_size = Point(adorned.metadata.binary_result.pixel_size.x, adorned.metadata.binary_result.pixel_size.y)
+        metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixel_size,microscope_state=None)
         return cls(data=adorned.data, metadata=metadata)
 
 
