@@ -43,6 +43,7 @@ class FibsemImageMetadata:
             save=settings["save"],
             save_path=settings["save_path"],
             label=settings["label"],
+            reduced_area=settings["reduced_area"],
         )
         version = settings["version"]
         pixel_size = Point.__from_dict__(settings["pixel_size"])
