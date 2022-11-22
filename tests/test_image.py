@@ -146,8 +146,12 @@ def test_loading_metadata(metadata_fixture):
 def test_getting_data_from_adorned_image(image_settings):
     """Test getting data from an adorned image (microscope output format)"""
     array1 = np.uint8(255 * np.random.rand(32, 32))
-    img1 = fb.FibsemImage(array1)
-    adorned = AdornedImage(array1)
+
+    with tff.TiffFile("fibsem\\2022-11-17.01-35-21PM_ib.tif") as tiff_image:
+        data = tiff_image.asarray()
+
+    adorned = AdornedImage.load("fibsem\\2022-11-17.01-35-21PM_ib.tif")
+    img1 = fb.FibsemImage(data, metadata_fixture)
     img2 = fb.FibsemImage.fromAdornedImage(adorned, image_settings)
     assert np.array_equal(img1.data, img2.data)
 
@@ -157,12 +161,13 @@ def test_converting_metadata_from_adorned_image(metadata_fixture, image_settings
     Args:
         img_settings (fixture): fixture returning ImageSettings object
     """
-    metadata = metadata_fixture
-    array1 = np.uint8(255 * np.random.rand(32, 32))
-    img1 = fb.FibsemImage(array1, metadata=metadata)
-    adorned = AdornedImage(array1)
+    with tff.TiffFile("fibsem\\2022-11-17.01-35-21PM_ib.tif") as tiff_image:
+        data = tiff_image.asarray()
+
+    adorned = AdornedImage.load("fibsem\\2022-11-17.01-35-21PM_ib.tif")
+    img1 = fb.FibsemImage(data, metadata_fixture)
     img2 = fb.FibsemImage.fromAdornedImage(adorned, image_settings)
-    assert img1.metadata == img2.metadata
+    assert img1.metadata.image_settings == img2.metadata.image_settings
 
 
 def test_data_checks():

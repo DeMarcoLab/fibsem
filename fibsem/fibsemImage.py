@@ -128,8 +128,8 @@ class FibsemImage:
         microscope = MicroscopeState(
             timestamp=adorned.metadata.acquisition.acquisition_datetime,
             absolute_position=StagePosition(),
-            eb_settings=BeamSettings(BeamType=BeamType.ELECTRON),
-            ib_settings=BeamSettings(BeamType=BeamType.ION),
+            eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
+            ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
         pixel_size = Point(adorned.metadata.binary_result.pixel_size.x, adorned.metadata.binary_result.pixel_size.y)
         metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixel_size, microscope_state=microscope)
