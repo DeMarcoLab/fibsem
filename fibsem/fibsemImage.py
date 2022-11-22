@@ -2,7 +2,8 @@ import numpy as np
 import tifffile as tff
 from dataclasses import dataclass
 import json
-from fibsem.structures import ImageSettings, BeamType, GammaSettings, Point
+from fibsem.structures import ImageSettings, BeamType, GammaSettings, Point, MicroscopeState, BeamSettings
+from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
 from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
@@ -15,8 +16,9 @@ class FibsemImageMetadata:
     """Metadata for a FibsemImage."""
 
     image_settings: ImageSettings
-    version: str = METADATA_VERSION
-    pixel_size: Point = Point(0.0, 0.0)
+    version: str
+    pixel_size: Point
+    microscope_state: MicroscopeState
 
     def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
@@ -25,8 +27,9 @@ class FibsemImageMetadata:
             dictionary: self as a dictionary
         """
         settings_dict = self.image_settings.__to_dict__()
-        settings_dict["version"] = METADATA_VERSION
+        settings_dict["version"] = self.version
         settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
+        settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
         return settings_dict
 
     @staticmethod
@@ -46,11 +49,18 @@ class FibsemImageMetadata:
         )
         version = settings["version"]
         pixel_size = Point.__from_dict__(settings["pixel_size"])
+        microscope_state = MicroscopeState(
+            timestamp=settings["microscope_state"]["timestamp"],
+            absolute_position=StagePosition(),
+            eb_settings=BeamSettings.__from_dict__(settings["microscope_state"]["eb_settings"]),
+            ib_settings=BeamSettings.__from_dict__(settings["microscope_state"]["ib_settings"]),
+        )
 
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
             version=version,
             pixel_size=pixel_size,
+            microscope_state=microscope_state,
         )
         return metadata
 
