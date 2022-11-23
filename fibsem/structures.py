@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 
 import numpy as np
-from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
+from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition, Rectangle)
 import yaml
 
 #@patrickcleeve: dataclasses.asdict -> :(
@@ -61,6 +61,13 @@ class FibsemRectangle():
             "width": self.width,
             "height": self.height,
         }
+    
+    def __to_FEI__(left: float, top: float, width: float, height: float) -> Rectangle:
+        return Rectangle(left, top, width, height)
+    
+    @classmethod
+    def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
+        return cls(rect.left, rect.top, rect.width, rect.height)
 
 @dataclass
 class GammaSettings:

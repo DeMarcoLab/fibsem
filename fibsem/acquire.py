@@ -95,7 +95,7 @@ def new_image(
     microscope: SdbMicroscopeClient,
     settings: ImageSettings,
     reduced_area: Rectangle = None,
-) -> AdornedImage:
+) -> FibsemImage:
     """Apply the image settings and take a new image
 
     Args:
