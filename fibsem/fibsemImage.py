@@ -3,12 +3,11 @@ import tifffile as tff
 from dataclasses import dataclass
 import json
 from fibsem.structures import ImageSettings, BeamType, GammaSettings, Point, MicroscopeState, BeamSettings, FibsemRectangle
-from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
 from fibsem.config import METADATA_VERSION
 
 THERMO_ENABLED = True
 if THERMO_ENABLED:
-    from autoscript_sdb_microscope_client.structures import AdornedImage
+    from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition)
 
 
 @dataclass
