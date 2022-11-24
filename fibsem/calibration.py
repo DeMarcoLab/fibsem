@@ -336,10 +336,17 @@ def set_microscope_state(
 
     logging.info(f"restoring microscope state...")
     
-    # move to position
-    movement.safe_absolute_stage_movement(
-        microscope=microscope, stage_position=microscope_state.absolute_position
-    )
+    i = 0
+    while get_raw_stage_position(microscope) != microscope_state.absolute_position:
+
+        # move to position
+        movement.safe_absolute_stage_movement(
+            microscope=microscope, stage_position=microscope_state.absolute_position
+        )
+
+        i += 1
+        if i > 3:
+            break
 
     # restore electron beam
     logging.info(f"restoring electron beam settings...")
