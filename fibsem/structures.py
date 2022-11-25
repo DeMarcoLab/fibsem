@@ -120,7 +120,7 @@ class ImageSettings:
                 "scale_factor": 0.1,
                 "threshold": 45,
             }
-        if "reduced_area" in settings:
+        if "reduced_area" in settings and settings["reduced_area"] is not None:
             reduced_area = FibsemRectangle.__from_dict__(settings["reduced_area"]), # TODO: decide whether this should be None, or a default rectangle
         else:
             reduced_area = None

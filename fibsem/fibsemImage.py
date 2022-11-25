@@ -10,6 +10,7 @@ THERMO_ENABLED = True
 if THERMO_ENABLED:
     from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition)
 
+from pathlib import Path
 
 @dataclass
 class FibsemImageMetadata:
@@ -80,18 +81,20 @@ class FibsemImage:
                     tiff_image.pages[0].tags["ImageDescription"].value
                 )
                 metadata = FibsemImageMetadata.__from_dict__(metadata)
-            except:
+            except Exception as e:
                 metadata = None
+                print(f"Error: {e}")
         return cls(data=data, metadata=metadata)
 
-    def save(self, save_path: str) -> None:
+    def save(self, save_path: Path) -> None:
         """Saves a FibsemImage to a tiff file.
 
         Inputs:
             save_path (path): path to save directory and filename
         """
-        os.makedirs(save_path, exist_ok=True)
-        save_path = os.path.join(save_path, f"{self.metadata.image_settings.label}")
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        save_path = Path(save_path).with_suffix(".tif")
+        
         if self.metadata is not None:
             metadata_dict = self.metadata.__to_dict__()
         else:
@@ -104,7 +107,7 @@ class FibsemImage:
 
     @classmethod
     def fromAdornedImage(
-        cls, adorned: AdornedImage, image_settings: ImageSettings
+        cls, adorned: AdornedImage, image_settings: ImageSettings, state: MicroscopeState = None
     ) -> "FibsemImage":
         """Creates FibsemImage from an AdornedImage (microscope output format).
 
@@ -116,14 +119,18 @@ class FibsemImage:
             FibsemImage: instance of FibsemImage from AdornedImage
         """
 
-        microscope = MicroscopeState(
-            timestamp=adorned.metadata.acquisition.acquisition_datetime,
-            absolute_position=StagePosition(),
-            eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
-            ib_settings=BeamSettings(beam_type=BeamType.ION),
-        )
+        if state is None:
+            state = MicroscopeState(
+                timestamp=adorned.metadata.acquisition.acquisition_datetime,
+                absolute_position=StagePosition(),
+                eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
+                ib_settings=BeamSettings(beam_type=BeamType.ION),
+            )
+        else:
+            state.timestamp = adorned.metadata.acquisition.acquisition_datetime
+
         pixel_size = Point(adorned.metadata.binary_result.pixel_size.x, adorned.metadata.binary_result.pixel_size.y)
-        metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixel_size, microscope_state=microscope)
+        metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixel_size, microscope_state=state)
         return cls(data=adorned.data, metadata=metadata)
 
 
