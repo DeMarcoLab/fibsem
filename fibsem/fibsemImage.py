@@ -36,9 +36,7 @@ class FibsemImageMetadata:
     def __from_dict__(settings: dict) -> "ImageSettings":
         """Converts a dictionary to metadata."""
 
-        image_settings = ImageSettings.__from_dict__(
-            settings
-        )
+        image_settings = ImageSettings.__from_dict__(settings)
         version = settings["version"]
         pixel_size = Point.__from_dict__(settings["pixel_size"])
         microscope_state = MicroscopeState(
@@ -93,6 +91,7 @@ class FibsemImage:
             save_path (path): path to save directory and filename
         """
         os.makedirs(save_path, exist_ok=True)
+        save_path = os.path.join(save_path, f"{self.metadata.image_settings.label}")
         if self.metadata is not None:
             metadata_dict = self.metadata.__to_dict__()
         else:

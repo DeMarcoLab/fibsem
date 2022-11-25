@@ -142,6 +142,15 @@ class ImageSettings:
 
     def __to_dict__(self) -> dict:
 
+        if self.reduced_area is not None:
+            reduced_area = {
+                "left": self.reduced_area.left,
+                "top": self.reduced_area.top,
+                "width": self.reduced_area.width,
+                "height": self.reduced_area.height,
+            }
+        else:
+            reduced_area = None
         settings_dict = {
             "beam_type": self.beam_type.name,
             "resolution": self.resolution,
@@ -158,12 +167,7 @@ class ImageSettings:
             "save": self.save,
             "save_path": self.save_path,
             "label": self.label,
-            "reduced_area": {
-                "left": self.reduced_area.left,
-                "top": self.reduced_area.top,
-                "width": self.reduced_area.width,
-                "height": self.reduced_area.height,
-            },
+            "reduced_area": reduced_area,
         }
 
         return settings_dict

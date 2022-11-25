@@ -2,6 +2,7 @@ import pytest
 import tifffile as tff
 import fibsem.FibsemImage as fb
 import numpy as np
+import os
 import json
 from datetime import datetime
 from matplotlib import pyplot as plt
@@ -51,7 +52,7 @@ def microscope_state() -> MicroscopeState:
 @pytest.fixture
 def rectangle() -> FibsemRectangle:
     """Fixture for a rectangle"""
-    rectangle = FibsemRectangle(left=0.0, top=0.0, height=1.0, width=1.0)
+    rectangle = None #FibsemRectangle(left=0.0, top=0.0, height=1.0, width=1.0)
     return rectangle
 
 
@@ -162,8 +163,10 @@ def test_loading_metadata(metadata_fixture):
         metadata_fixture.version,
     )
     img = fb.FibsemImage(array1, metadata)
-    img.save("test.tif")
-    img.load("test.tif")
+    img.save("fibsem\\tests")
+    save_path = os.path.join("fibsem\\tests", f"{metadata.image_settings.label}")
+    img.load(save_path)
+    print(img.metadata.pixel_size)
     assert np.array_equal(array1, img.data)
     assert img.data.shape[0] == array1.shape[0]
     assert img.data.shape[1] == array1.shape[1]
