@@ -283,6 +283,7 @@ def load_settings_from_config(
     Returns:
         MicroscopeSettings: microscope settings
     """
+    # print("HELLO")
     # TODO: this should just be system.yaml path, not directory
     if config_path is None:
         config_path = os.path.join(os.path.dirname(fibsem.__file__), "config")
@@ -292,7 +293,7 @@ def load_settings_from_config(
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
-    default_settings = DefaultSettings.__from_dict__(settings["user"])
+    # default_settings = DefaultSettings.__from_dict__(settings["user"])
     image_settings = ImageSettings.__from_dict__(settings["user"])
 
     # protocol settings
@@ -300,7 +301,7 @@ def load_settings_from_config(
 
     settings = MicroscopeSettings(
         system=system_settings,
-        default=default_settings,
+        # default=default_settings,
         image=image_settings,
         protocol=protocol,
     )

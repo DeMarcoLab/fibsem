@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import os
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (
     AdornedImage,
@@ -138,15 +139,20 @@ def new_image(
         beam_type=settings.beam_type,
     )
 
+    
+
     # apply gamma correction
     if settings.gamma.enabled:
         image = auto_gamma(image, settings.gamma)
 
+    image = FibsemImage.fromAdornedImage(image, settings)
+
     # save image
     if settings.save:
-        utils.save_image(image=image, save_path=settings.save_path, label=label)
+        #utils.save_image(image=image, save_path=settings.save_path, label=label)
+        image.save(save_path=os.path.join(settings.save_path, label))
     
-    return FibsemImage.fromAdornedImage(image, settings)
+    return image
 
 def last_image(
     microscope: SdbMicroscopeClient, beam_type: BeamType =BeamType.ELECTRON

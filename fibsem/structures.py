@@ -62,8 +62,8 @@ class FibsemRectangle():
             "height": self.height,
         }
     
-    def __to_FEI__(left: float, top: float, width: float, height: float) -> Rectangle:
-        return Rectangle(left, top, width, height)
+    def __to_FEI__(self) -> Rectangle:
+        return Rectangle(self.left, self.top, self.width, self.height)
     
     @classmethod
     def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
@@ -120,8 +120,10 @@ class ImageSettings:
                 "scale_factor": 0.1,
                 "threshold": 45,
             }
-        if "reduced_area" not in settings:
-            settings["reduced_area"] = None
+        if "reduced_area" in settings:
+            reduced_area = FibsemRectangle.__from_dict__(settings["reduced_area"]), # TODO: decide whether this should be None, or a default rectangle
+        else:
+            reduced_area = None
 
         image_settings = ImageSettings(
             resolution=settings["resolution"],
@@ -133,8 +135,7 @@ class ImageSettings:
             save=settings["save"], 
             save_path=settings["save_path"],
             label=settings["label"],
-            reduced_area=FibsemRectangle.__from_dict__(settings["reduced_area"]),
-        )
+            reduced_area=reduced_area)
 
         return image_settings
 
@@ -497,7 +498,7 @@ class DefaultSettings:
 @dataclass
 class MicroscopeSettings:
     system: SystemSettings
-    default: DefaultSettings
+    # default: DefaultSettings
     image: ImageSettings
     protocol: dict = None
 
@@ -517,7 +518,7 @@ class MicroscopeSettings:
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
             image = ImageSettings.__from_dict__(settings["user"]),
-            default=DefaultSettings.__from_dict__(settings["user"]),
+            # default=DefaultSettings.__from_dict__(settings["user"]),
             protocol= protocol
         )
 

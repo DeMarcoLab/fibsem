@@ -2,6 +2,7 @@ import numpy as np
 import tifffile as tff
 from dataclasses import dataclass
 import json
+import os
 from fibsem.structures import ImageSettings, BeamType, GammaSettings, Point, MicroscopeState, BeamSettings, FibsemRectangle
 from fibsem.config import METADATA_VERSION
 
@@ -35,17 +36,8 @@ class FibsemImageMetadata:
     def __from_dict__(settings: dict) -> "ImageSettings":
         """Converts a dictionary to metadata."""
 
-        image_settings = ImageSettings(
-            resolution=settings["resolution"],
-            dwell_time=settings["dwell_time"],
-            hfw=settings["hfw"],
-            autocontrast=settings["autocontrast"],
-            beam_type=BeamType[settings["beam_type"].upper()],
-            gamma=GammaSettings.__from_dict__(settings["gamma"]),
-            save=settings["save"],
-            save_path=settings["save_path"],
-            label=settings["label"],
-            reduced_area=FibsemRectangle.__from_dict__(settings["reduced_area"]),
+        image_settings = ImageSettings.__from_dict__(
+            settings
         )
         version = settings["version"]
         pixel_size = Point.__from_dict__(settings["pixel_size"])
@@ -100,6 +92,7 @@ class FibsemImage:
         Inputs:
             save_path (path): path to save directory and filename
         """
+        os.makedirs(save_path, exist_ok=True)
         if self.metadata is not None:
             metadata_dict = self.metadata.__to_dict__()
         else:
