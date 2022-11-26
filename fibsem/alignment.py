@@ -8,7 +8,6 @@ from autoscript_sdb_microscope_client.structures import (
     Rectangle,
     StagePosition,
 )
-from scipy import fftpack
 
 from fibsem import acquire, calibration, movement, utils, validation
 from fibsem.imaging import masks
