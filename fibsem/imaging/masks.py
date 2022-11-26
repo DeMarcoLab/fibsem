@@ -9,41 +9,6 @@ from PIL import Image, ImageDraw
 
 
 ### MASKING
-def bandpass_mask(size=(128, 128), lp=32, hp=2, sigma=3):
-    x = size[0]
-    y = size[1]
-    lowpass = circ_mask(size=(x, y), radius=lp, sigma=0)
-    hpass_tmp = circ_mask(size=(x, y), radius=hp, sigma=0)
-    highpass = -1 * (hpass_tmp - 1)
-    tmp = lowpass * highpass
-    print(tmp.dtype, type(tmp))
-    if sigma > 0:
-        bandpass = ndi.filters.gaussian_filter(tmp, sigma=sigma)
-    else:
-        bandpass = tmp
-    return bandpass
-
-
-def circ_mask(size=(128, 128), radius=32, sigma=3):
-    x = size[0]
-    y = size[1]
-    img = Image.new("I", size)
-    draw = ImageDraw.Draw(img)
-    draw.ellipse(
-        (x / 2 - radius, y / 2 - radius, x / 2 + radius, y / 2 + radius),
-        fill="white",
-        outline="white",
-    )
-    tmp = np.array(img, float) / 255
-    if sigma > 0:
-        mask = ndi.filters.gaussian_filter(tmp, sigma=sigma)
-    else:
-        mask = tmp
-    return mask
-
-# new masks below
-
-
 def create_circle_mask(shape: tuple = (128, 128), radius: int = 32, sigma: int = 3) -> np.ndarray:
     """_summary_
 
@@ -178,8 +143,8 @@ def create_lamella_mask(img: AdornedImage, protocol: dict, scale: int = 2, circ:
     lamella_height_px, lamella_width_px = conversions.get_lamella_size_in_pixels(img, protocol, use_trench_height)
 
     if circ:
-        mask = circ_mask(
-            size=(img.data.shape[1], img.data.shape[0]), 
+        mask = create_circle_mask(
+            shape=img.data.shape, 
             radius=max(lamella_height_px, lamella_width_px) * scale , sigma=12
         )
     else:
@@ -196,7 +161,6 @@ def apply_circular_mask(img: np.ndarray, radius: int, sigma: int = 0) -> np.ndar
 
         if img.ndim == 3:
             circ_mask = np.moveaxis(np.array([circ_mask, circ_mask, circ_mask]), 0, 2)
-
 
         return  img * circ_mask
 
@@ -244,4 +208,26 @@ def create_vertical_mask(arr, width=128):
     mask = np.zeros_like(arr)
     mid = arr.shape[1] // 2
     mask[:, mid-width:mid+width] = 1
+    return mask
+
+
+
+def create_mask(arr: np.ndarray, mask_info: dict) -> np.ndarray:
+
+    # mask_info = {
+    #     "type": "circle",
+    #     "radius": 500,
+    #     "sigma": 0,
+    #     "invert": False
+    # }
+
+    if mask_info["type"] == "circle":
+        mask = create_circle_mask(arr.shape, radius=mask_info["radius"], sigma=mask_info["sigma"])
+
+    if mask_info["type"] == "rect":
+        mask = create_rect_mask(arr, pt=mask_info["pt"], w=mask_info["w"], h=mask_info["h"], sigma=mask_info["sigma"])
+
+    if mask_info["invert"]:
+        mask = np.logical_not(mask)
+
     return mask

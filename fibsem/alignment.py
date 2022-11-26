@@ -164,15 +164,17 @@ def correct_stage_drift(
     # align lowres, then highres
     for i, ref_image in enumerate([ref_lowres, ref_highres]):
 
-        if use_ref_mask:
-            ref_mask = masks.create_lamella_mask(
-                ref_image,
-                settings.protocol["lamella"],
-                scale=mask_scale,
-                use_trench_height=True,
-            )  # TODO: refactor, liftout specific
-        else:
-            ref_mask = None
+        ref_mask = masks.create_circle_mask(ref_image.data.shape, radius=512)
+        # if use_ref_mask:
+        #     pass
+        #     # ref_mask = masks.create_lamella_mask(
+        #     #     ref_image,
+        #     #     settings.protocol["lamella"],
+        #     #     scale=mask_scale,
+        #     #     use_trench_height=True,
+        #     # )  # TODO: refactor, liftout specific
+        # else:
+        #     ref_mask = None
 
         # take new images
         # set new image settings (same as reference)
@@ -196,6 +198,64 @@ def correct_stage_drift(
             break  # cross correlation has failed...
 
     return ret
+
+
+def eucentric_correct_stage_drift(
+    microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
+    reference_images: ReferenceImages,
+    rotate: bool = False,
+    xcorr_limit: tuple = None,
+) -> bool:
+    """Eucentric correction of the stage drift by crosscorrelating low-res and high-res reference images"""
+
+    if xcorr_limit is None:
+        xcorr_limit = (None, None, None, None)
+
+    # target images
+    targets = (BeamType.ELECTRON, BeamType.ION, BeamType.ELECTRON, BeamType.ION)
+    eucentric_move = (False, True, False, True) 
+
+    if rotate:
+        # rotate references
+        # align ref ib -> new eb
+        # eucentric align ref eb -> new ib
+        ref_order = (reference_images.low_res_ib, reference_images.low_res_eb, reference_images.high_res_ib, reference_images.high_res_eb)
+        ref_order = [image_utils.rotate_image(ref) for ref in ref_order]
+    else:
+        # not rotated
+        # align ref eb -> new eb
+        # eucentric align ref ib -> new ib
+        ref_order = (reference_images.low_res_eb, reference_images.low_res_ib, reference_images.high_res_eb, reference_images.high_res_ib)
+
+    # align lowres, then highres
+    for i, (ref_image, target, euc_move) in enumerate(zip(ref_order, targets, eucentric_move)):
+
+        ref_mask = masks.create_circle_mask(ref_image.data.shape, radius=512)
+
+        # take new images
+        # set new image settings (same as reference)
+        settings.image = utils.match_image_settings(
+            ref_image, settings.image, beam_type=target
+        )
+        new_image = acquire.new_image(microscope, settings.image)
+
+        # crosscorrelation alignment
+        align_using_reference_images(
+            microscope,
+            settings,
+            ref_image,
+            new_image,
+            ref_mask=ref_mask,
+            xcorr_limit=xcorr_limit[i],
+            constrain_vertical=euc_move,
+        )
+
+
+
+
+
+
 
 
 def align_using_reference_images(
@@ -240,6 +300,7 @@ def align_using_reference_images(
         if constrain_vertical:
             movement.move_stage_eucentric_correction(microscope, settings=settings, dy=-dy) # FLAG_TEST
         else:
+            # TODO: does rotating the reference need to be taken into account? i believe so
             # move the stage
             movement.move_stage_relative_with_corrected_movement(
                 microscope,

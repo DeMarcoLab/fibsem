@@ -135,11 +135,6 @@ class ReferenceImages:
     low_res_ib: AdornedImage
     high_res_ib: AdornedImage
 
-    def __iter__(self) -> list[AdornedImage]:
-
-        yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
-
-
 @dataclass
 class BeamSettings:
     beam_type: BeamType
