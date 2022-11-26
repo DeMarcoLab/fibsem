@@ -134,8 +134,6 @@ def correct_stage_drift(
     reference_images: ReferenceImages,
     alignment: tuple(BeamType) = (BeamType.ELECTRON, BeamType.ELECTRON),
     rotate: bool = False,
-    use_ref_mask: bool = False,
-    mask_scale: int = 4,
     xcorr_limit: tuple = None,
     constrain_vertical: bool = False,
 ) -> bool:
