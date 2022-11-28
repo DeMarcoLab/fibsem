@@ -248,13 +248,6 @@ def eucentric_correct_stage_drift(
             constrain_vertical=euc_move,
         )
 
-
-
-
-
-
-
-
 def align_using_reference_images(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
@@ -358,6 +351,34 @@ def shift_from_crosscorrelation(
     # calculate shift in metres
     x_shift = err[1] * pixelsize_x
     y_shift = err[0] * pixelsize_y  # this could be the issue?
+
+    ########################################
+
+    # plot ref, new and xcorr with matplotlib with titles and midpoint
+    import matplotlib.pyplot as plt
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 5))
+    ax1.imshow(ref_data_norm, cmap="gray")
+    ax1.set_title(f"ref (lp: {lowpass}, hp: {highpass}, sigma: {sigma})")
+    ax1.plot(cen[1], cen[0], "w+", ms=20)
+    ax2.imshow(new_data_norm, cmap="gray")
+    ax2.set_title("new")
+    ax2.plot(cen[1], cen[0], "w+", ms=20)
+    ax3.imshow(xcorr, cmap="turbo")
+    ax3.set_title(f"xcorr (shift: {x_shift:.2e}, {y_shift:.2e})")
+    ax3.plot(maxY, maxX, "w+", ms=20)
+  
+    # save with timestamp
+    import datetime
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+    try:
+        from liftout.config import config
+        import os
+        plt.savefig(os.path.join(config.LOG_DATA_PATH, f"crosscorrelation_{timestamp}.png"))
+        plt.show()
+    except:
+        pass
+    ###############
 
     logging.debug(f"cross-correlation:")
     logging.debug(f"pixelsize: x: {pixelsize_x:.2e}, y: {pixelsize_y:.2e}")

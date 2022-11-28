@@ -339,6 +339,8 @@ def set_microscope_state(
     i = 0
     while get_raw_stage_position(microscope) != microscope_state.absolute_position:
 
+        logging.info(f"restoring stage position: {i}")
+        
         # move to position
         movement.safe_absolute_stage_movement(
             microscope=microscope, stage_position=microscope_state.absolute_position
