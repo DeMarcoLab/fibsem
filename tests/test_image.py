@@ -1,6 +1,6 @@
 import pytest
 import tifffile as tff
-import fibsem.FibsemImage as fb
+import fibsem.fibsemImage as fb
 import numpy as np
 import os
 import json
@@ -121,9 +121,6 @@ def test_loading_image():
     assert img.data.dtype == np.uint8
 
 
-int
-
-
 def test_saving_metadata(metadata_fixture):
     """Test saving FibsemImage metadata to file.
 
@@ -138,8 +135,8 @@ def test_saving_metadata(metadata_fixture):
         metadata_fixture.version,
     )
     img = fb.FibsemImage(array1, metadata)
-    img.save("test.tif")
-    with tff.TiffFile("test.tif") as tiff_image:
+    img.save("C:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\tests\\tests_images\\first")
+    with tff.TiffFile("C:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\tests\\tests_images\\first.tif") as tiff_image:
         data = tiff_image.asarray()
         metadata = json.loads(tiff_image.pages[0].tags["ImageDescription"].value)
         metadata = fb.FibsemImageMetadata.__from_dict__(metadata)
