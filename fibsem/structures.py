@@ -90,14 +90,14 @@ class GammaSettings:
 
 @dataclass
 class ImageSettings:
-    resolution: str
-    dwell_time: float
-    hfw: float
-    autocontrast: bool
-    beam_type: BeamType
-    save: bool
-    label: str
-    gamma: GammaSettings
+    resolution: str = None
+    dwell_time: float = None
+    hfw: float = None
+    autocontrast: bool = None
+    beam_type: BeamType = None
+    save: bool = None
+    label: str = None
+    gamma: GammaSettings = None
     save_path: Path = None
     reduced_area: FibsemRectangle = None
 
@@ -130,8 +130,8 @@ class ImageSettings:
             dwell_time=settings["dwell_time"],
             hfw=settings["hfw"], 
             autocontrast=settings["autocontrast"], 
-            beam_type=BeamType[settings["beam_type"].upper()],
-            gamma=GammaSettings.__from_dict__(settings["gamma"]),
+            beam_type=BeamType[settings["beam_type"].upper()] if settings["beam_type"] is not None else None,
+            gamma=GammaSettings.__from_dict__(settings["gamma"]) if settings["gamma"] is not None else None,
             save=settings["save"], 
             save_path=settings["save_path"],
             label=settings["label"],
@@ -141,33 +141,29 @@ class ImageSettings:
 
 
     def __to_dict__(self) -> dict:
-
-        if self.reduced_area is not None:
-            reduced_area = {
-                "left": self.reduced_area.left,
-                "top": self.reduced_area.top,
-                "width": self.reduced_area.width,
-                "height": self.reduced_area.height,
-            }
-        else:
-            reduced_area = None
+        
         settings_dict = {
-            "beam_type": self.beam_type.name,
-            "resolution": self.resolution,
-            "dwell_time": self.dwell_time,
-            "hfw": self.hfw,
-            "autocontrast": self.autocontrast,
+            "beam_type": self.beam_type.name if self.beam_type is not None else None,
+            "resolution": self.resolution if self.resolution is not None else None, 
+            "dwell_time": self.dwell_time if self.dwell_time is not None else None,
+            "hfw": self.hfw if self.hfw is not None else None,
+            "autocontrast": self.autocontrast if self.autocontrast is not None else None,
             "gamma": {
                 "enabled": self.gamma.enabled,
                 "min_gamma": self.gamma.min_gamma,
                 "max_gamma": self.gamma.max_gamma,
                 "scale_factor": self.gamma.scale_factor,
                 "threshold": self.gamma.threshold,
-            },
-            "save": self.save,
-            "save_path": self.save_path,
-            "label": self.label,
-            "reduced_area": reduced_area,
+            } if self.gamma is not None else None,
+            "save": self.save if self.save is not None else None,
+            "save_path": self.save_path if self.save_path is not None else None,
+            "label": self.label if self.label is not None else None,
+            "reduced_area": {
+                "left": self.reduced_area.left,
+                "top": self.reduced_area.top,
+                "width": self.reduced_area.width,
+                "height": self.reduced_area.height,
+                } if self.reduced_area is not None else None,
         }
 
         return settings_dict

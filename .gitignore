@@ -29,3 +29,5 @@ fibsem/000000001.tiff
 fibsem/test2.tif/label
 fibsem/tests/label
 tests/tests_images
+fibsem/tests/label.tif
+fibsem/tests/None.tif

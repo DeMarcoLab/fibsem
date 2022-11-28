@@ -13,7 +13,9 @@ from skimage import exposure
 
 from fibsem import utils
 from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages
-from fibsem.FibsemImage import FibsemImage 
+from fibsem.fibsemImage import FibsemImage 
+from fibsem import calibration
+
 
 
 
@@ -75,7 +77,7 @@ def take_set_of_reference_images(
     return reference_images
 
 
-def auto_gamma(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
+def auto_gamma(image: FibsemImage, settings: GammaSettings) -> FibsemImage:
     """Automatic gamma correction"""
     std = np.std(image.data) # unused variable?
     mean = np.mean(image.data)
@@ -86,11 +88,11 @@ def auto_gamma(image: AdornedImage, settings: GammaSettings) -> AdornedImage:
     if abs(diff) < settings.threshold:
         gam = 1.0
     logging.debug(
-        f"AUTO_GAMMA | {image.metadata.acquisition.beam_type} | {diff:.3f} | {gam:.3f}"
+        f"AUTO_GAMMA | {image.metadata.image_settings.beam_type} | {diff:.3f} | {gam:.3f}"
     )
     image_data = exposure.adjust_gamma(image.data, gam)
     
-    return AdornedImage(data=image_data, metadata=image.metadata)
+    return FibsemImage(data=image_data, metadata=image.metadata)
 
 def new_image(
     microscope: SdbMicroscopeClient,
@@ -139,15 +141,15 @@ def new_image(
         beam_type=settings.beam_type,
     )
 
+    #convert to FibsemImage
+    image = FibsemImage.fromAdornedImage(image, settings, state)
+
     # apply gamma correction
     if settings.gamma.enabled:
         image = auto_gamma(image, settings.gamma)
     
-    from fibsem import calibration
     state = calibration.get_current_microscope_state(microscope)
     
-    image = FibsemImage.fromAdornedImage(image, settings, state)
-
     # save image
     if settings.save:
         filename = os.path.join(settings.save_path, label)
@@ -172,7 +174,21 @@ def last_image(
     microscope.imaging.set_active_view(beam_type.value)
     microscope.imaging.set_active_device(beam_type.value)
     image = microscope.imaging.get_image()
-    return image
+    state = calibration.get_current_microscope_state(microscope)
+    image_settings = ImageSettings(
+        resolution=f"{image.width}x{image.height}",
+        dwell_time=image.metadata.scan_settings.dwell_time,
+        hfw=image.width * image.metadata.binary_result.pixel_size.x,
+        autocontrast=True,
+        beam_type=BeamType.ELECTRON,
+        gamma=GammaSettings()
+        save=False,
+        save_path="path",
+        label=current_timestamp(),
+        reduced_area=None
+    )
+    fibsem_img = FibsemImage.fromAdornedImage(image, image_settings, state)
+    return fibsem_img
 
 
 def acquire_image(

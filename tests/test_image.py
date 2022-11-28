@@ -61,18 +61,19 @@ def image_settings(
     gamma_settings: GammaSettings, rectangle: FibsemRectangle
 ) -> ImageSettings:
 
-    image_settings = ImageSettings(
-        resolution="32x32",
-        dwell_time=1.0e-6,
-        hfw=150.0e-6,
-        autocontrast=True,
-        beam_type=BeamType.ELECTRON,
-        gamma=gamma_settings,
-        save=False,
-        save_path="path",
-        label="label",
-        reduced_area=rectangle,
-    )
+    # image_settings = ImageSettings(
+    #     resolution="32x32",
+    #     dwell_time=1.0e-6,
+    #     hfw=150.0e-6,
+    #     autocontrast=True,
+    #     beam_type=BeamType.ELECTRON,
+    #     gamma=gamma_settings,
+    #     save=False,
+    #     save_path="path",
+    #     label="label",
+    #     reduced_area=rectangle,
+    # )
+    image_settings = ImageSettings()
     return image_settings
 
 
@@ -100,8 +101,8 @@ def test_saving_image():
 
     array1 = np.uint8(255 * np.random.rand(32, 32))
     img = fb.FibsemImage(array1)
-    img.save("test.tif")
-    with tff.TiffFile("test.tif") as tiff_image:
+    img.save("C:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\tests\\tests_images\\third.tif")
+    with tff.TiffFile("C:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\tests\\tests_images\\third.tif") as tiff_image:
         data = tiff_image.asarray()
     assert np.array_equal(array1, data)
     assert img.data.shape == array1.shape
@@ -113,8 +114,8 @@ def test_loading_image():
     """Test loading FibsemImage data from file"""
     array1 = np.uint8(255 * np.random.rand(32, 32))
     img = fb.FibsemImage(array1)
-    img.save("test.tif")
-    img.load("test.tif")
+    img.save("C:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\tests\\tests_images\\second.tif")
+    img.load("C:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\tests\\tests_images\\second.tif")
     assert np.array_equal(array1, img.data)
     assert img.data.shape[0] == 32
     assert img.data.shape[1] == 32
@@ -160,8 +161,8 @@ def test_loading_metadata(metadata_fixture):
         metadata_fixture.version,
     )
     img = fb.FibsemImage(array1, metadata)
-    img.save("fibsem\\tests")
-    save_path = os.path.join("fibsem\\tests", f"{metadata.image_settings.label}")
+    save_path = os.path.join("C:\\Users\\lucil\\OneDrive\\Bureau\\DeMarco_Lab\\fibsem\\tests\\tests_images", f"{metadata.image_settings.label}.tif")
+    img.save(save_path)
     img.load(save_path)
     print(img.metadata.pixel_size)
     assert np.array_equal(array1, img.data)

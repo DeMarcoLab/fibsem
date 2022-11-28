@@ -27,10 +27,14 @@ class FibsemImageMetadata:
         Returns:
             dictionary: self as a dictionary
         """
-        settings_dict = self.image_settings.__to_dict__()
-        settings_dict["version"] = self.version
-        settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
-        settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
+        if self.image_settings is not None:
+            settings_dict = self.image_settings.__to_dict__()
+        if self.version is not None:
+            settings_dict["version"] = self.version
+        if self.pixel_size is not None:
+            settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
+        if self.microscope_state is not None:
+            settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
         return settings_dict
 
     @staticmethod
@@ -38,14 +42,17 @@ class FibsemImageMetadata:
         """Converts a dictionary to metadata."""
 
         image_settings = ImageSettings.__from_dict__(settings)
-        version = settings["version"]
-        pixel_size = Point.__from_dict__(settings["pixel_size"])
-        microscope_state = MicroscopeState(
-            timestamp=settings["microscope_state"]["timestamp"],
-            absolute_position=StagePosition(),
-            eb_settings=BeamSettings.__from_dict__(settings["microscope_state"]["eb_settings"]),
-            ib_settings=BeamSettings.__from_dict__(settings["microscope_state"]["ib_settings"]),
-        )
+        if settings["version"] is not None:
+            version = settings["version"]
+        if settings["pixel_size"] is not None:
+            pixel_size = Point.__from_dict__(settings["pixel_size"])
+        if settings["microscope_state"] is not None:
+            microscope_state = MicroscopeState(
+                timestamp=settings["microscope_state"]["timestamp"],
+                absolute_position=StagePosition(),
+                eb_settings=BeamSettings.__from_dict__(settings["microscope_state"]["eb_settings"]),
+                ib_settings=BeamSettings.__from_dict__(settings["microscope_state"]["ib_settings"]),
+            )
 
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
