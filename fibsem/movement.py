@@ -469,7 +469,7 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, settings: M
     """
     wd = microscope.beams.electron_beam.working_distance.value
 
-    z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
+    z_move = (dy / np.cos(np.deg2rad(38))) * 0.9 # patented technology  # TODO: MAGIC NUMBER, 90 - fib tilt
 
     move_settings = MoveSettings(link_z_y=True)
     z_move = StagePosition(z=z_move, coordinate_system="Specimen")
@@ -482,8 +482,5 @@ def move_stage_eucentric_correction(microscope: SdbMicroscopeClient, settings: M
     else:
         microscope.beams.electron_beam.working_distance.value = wd
     microscope.specimen.stage.link()
-
-    # FLAG_TEST 
-    # do we need to do the working distance adjustment here?
 
 
