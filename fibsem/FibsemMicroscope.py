@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 class FibsemMicroscope(ABC):
 
     @abstractmethod
-    def connect(self, host: str = "10.0.0.1", port: int = 7520):
+    def connect(self, host: str, port: int):
         pass
 
     @abstractmethod
@@ -15,7 +15,7 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def patterning(self):
+    def patterning(self, patterning_mode: str, patterning_settings: dict):
         pass
 
     @abstractmethod

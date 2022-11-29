@@ -5,7 +5,7 @@ import logging
 import os
 import time
 from pathlib import Path
-import sys 
+import sys
 import re
 
 import yaml
@@ -25,7 +25,9 @@ from fibsem.structures import (
 )
 
 
-def connect_to_microscope(ip_address="10.0.0.1", port: int = 7520) -> SdbMicroscopeClient:
+def connect_to_microscope(
+    ip_address="10.0.0.1", port: int = 7520
+) -> SdbMicroscopeClient:
     """Connect to the FIBSEM microscope."""
     try:
         # TODO: get the port
@@ -147,8 +149,8 @@ def configure_logging(path: Path = "", log_filename="logfile", log_level=logging
         level=log_level,
         # Multiple handlers can be added to your logging configuration.
         # By default log messages are appended to the file if it exists already
-        handlers=[file_handler, stream_handler], 
-        force=True
+        handlers=[file_handler, stream_handler],
+        force=True,
     )
 
     return logfile
@@ -160,6 +162,7 @@ def load_yaml(fname: Path) -> dict:
         config = yaml.safe_load(f)
 
     return config
+
 
 def save_yaml(path: Path, data: dict) -> None:
 
@@ -184,7 +187,10 @@ def load_needle_yaml(path: Path) -> ManipulatorPosition:
 
     return position
 
+
 from fibsem.structures import MicroscopeState
+
+
 def save_state_yaml(path: Path, state: MicroscopeState) -> None:
 
     state_dict = state.__to_dict__()
@@ -352,7 +358,7 @@ def _format_dictionary(dictionary: dict) -> dict:
                 if isinstance(i, list) or isinstance(i, dict)
             ]
         else:
-            if item is not None:  
+            if item is not None:
                 try:
                     dictionary[key] = float(dictionary[key])
                 except ValueError:
@@ -375,7 +381,8 @@ def match_image_settings(
 
     return image_settings
 
-def get_params(main_str:str) -> list:
+
+def get_params(main_str: str) -> list:
     """Helper function to access relevant metadata parameters from sub field
 
     Args:
@@ -385,10 +392,10 @@ def get_params(main_str:str) -> list:
         list: Parameters covered by metadata
     """
     cats = []
-    cat_str =""
+    cat_str = ""
 
     i = main_str.find("\n")
-    i+=1
+    i += 1
     while i < len(main_str):
 
         if main_str[i] == "=":
@@ -398,15 +405,16 @@ def get_params(main_str:str) -> list:
         else:
             cat_str += main_str[i]
 
-        i+=1
+        i += 1
     return cats
 
 
-class subField():
+class subField:
     """Helper class for ini_metadata class
-        Creates sub classes for each subfield of metadata
+    Creates sub classes for each subfield of metadata
     """
-    def __init__(self,user_str) -> None:
+
+    def __init__(self, user_str) -> None:
 
         params = get_params(user_str)
 
@@ -414,34 +422,58 @@ class subField():
 
             try:
                 search_str = param + "=(.+?)\r"
-                attr = re.search(search_str,user_str).group(1)
-                setattr(self,param,attr)
+                attr = re.search(search_str, user_str).group(1)
+                setattr(self, param, attr)
             except:
                 attr = "No Data"
-                setattr(self,param,attr)
-
+                setattr(self, param, attr)
 
 
 class ini_metadata:
     """Takes in the ini_metadata string from adorned images and converts into an easily accessible format
-        - Class must be initialsed with an input of the ini metadata acquired from the
-        - AdornedImage.metadata.metadata_as_ini (Which is a long string formatted in ini)
-        - Class has attributes relating to each property of the metadata which can be easily accessed.
-        e.g. finding the date of the image goes like this:
-            metadata = ini_metadata(AdornedImage.metadata.metadata_as_ini)
-            metadata.User.Time --> 1:04:03 PM
-        - All output is in string
+    - Class must be initialsed with an input of the ini metadata acquired from the
+    - AdornedImage.metadata.metadata_as_ini (Which is a long string formatted in ini)
+    - Class has attributes relating to each property of the metadata which can be easily accessed.
+    e.g. finding the date of the image goes like this:
+        metadata = ini_metadata(AdornedImage.metadata.metadata_as_ini)
+        metadata.User.Time --> 1:04:03 PM
+    - All output is in string
     """
-    def __init__(self,metadata_full):
-        
+
+    def __init__(self, metadata_full):
+
         self.metadata_full = metadata_full
 
-        headings = ["[User]","[System]","[Beam]","[EBeam]","[IBeam]","[GIS]","[Scan]","[EScan]","[IScan]","[Stage]","[Image]","[Vacuum]","[Specimen]","[Detectors]","[ETD]","[Accessories]","[EBeamDeceleration]","[PrivateFei]","[HiResIllumination]","[EasyLift]","[HotStageMEMS]"]
+        headings = [
+            "[User]",
+            "[System]",
+            "[Beam]",
+            "[EBeam]",
+            "[IBeam]",
+            "[GIS]",
+            "[Scan]",
+            "[EScan]",
+            "[IScan]",
+            "[Stage]",
+            "[Image]",
+            "[Vacuum]",
+            "[Specimen]",
+            "[Detectors]",
+            "[ETD]",
+            "[Accessories]",
+            "[EBeamDeceleration]",
+            "[PrivateFei]",
+            "[HiResIllumination]",
+            "[EasyLift]",
+            "[HotStageMEMS]",
+        ]
 
         for heading in headings:
 
-            met_sub1 = metadata_full.find(heading) 
-            met_sub2 = metadata_full[(met_sub1+len(heading)):].find("[")
-            met_sub_full = metadata_full[met_sub1:(met_sub1+met_sub2+len(heading))]
+            met_sub1 = metadata_full.find(heading)
+            met_sub2 = metadata_full[(met_sub1 + len(heading)) :].find("[")
+            met_sub_full = metadata_full[
+                met_sub1 : (met_sub1 + met_sub2 + len(heading))
+            ]
             attr = subField(met_sub_full)
-            setattr(self,heading[1:-1],attr)
+            setattr(self, heading[1:-1], attr)
