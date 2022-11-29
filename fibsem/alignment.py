@@ -18,6 +18,7 @@ from fibsem.structures import (
     ImageSettings,
     MicroscopeSettings,
     ReferenceImages,
+    FibsemImage
 )
 
 
@@ -102,7 +103,7 @@ def coarse_eucentric_alignment(
 def beam_shift_alignment(
     microscope: SdbMicroscopeClient,
     image_settings: ImageSettings,
-    ref_image: AdornedImage,
+    ref_image: FibsemImage,
     reduced_area: Rectangle,
 ):
     """Align the images by adjusting the beam shift, instead of moving the stage
@@ -201,16 +202,16 @@ def correct_stage_drift(
 def align_using_reference_images(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
-    ref_image: AdornedImage,
-    new_image: AdornedImage,
+    ref_image: FibsemImage,
+    new_image: FibsemImage,
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
     constrain_vertical: bool = False,
 ) -> bool:
 
     # get beam type
-    ref_beam_type = BeamType[ref_image.metadata.acquisition.beam_type.upper()]
-    new_beam_type = BeamType[new_image.metadata.acquisition.beam_type.upper()]
+    ref_beam_type = BeamType[ref_image.metadata.image_settings.beam_type.upper()]
+    new_beam_type = BeamType[new_image.metadata.image_settings.beam_type.upper()]
 
     logging.info(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."
@@ -253,8 +254,8 @@ def align_using_reference_images(
 
 
 def shift_from_crosscorrelation(
-    ref_image: AdornedImage,
-    new_image: AdornedImage,
+    ref_image: FibsemImage,
+    new_image: FibsemImage,
     lowpass: int = 128,
     highpass: int = 6,
     sigma: int = 6,
@@ -264,8 +265,8 @@ def shift_from_crosscorrelation(
 ) -> tuple[float, float, np.ndarray]:
 
     # get pixel_size
-    pixelsize_x = new_image.metadata.binary_result.pixel_size.x
-    pixelsize_y = new_image.metadata.binary_result.pixel_size.y
+    pixelsize_x = new_image.metadata.pixel_size.x
+    pixelsize_y = new_image.metadata.pixel_size.y
 
     # normalise both images
     ref_data_norm = image_utils.normalise_image(ref_image)

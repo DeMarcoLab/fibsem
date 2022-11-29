@@ -13,7 +13,7 @@ from autoscript_sdb_microscope_client.structures import (
 from skimage import exposure
 
 from fibsem import utils
-from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages
+from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages, FibsemImage
 from fibsem import calibration
 
 
