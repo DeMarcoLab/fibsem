@@ -141,15 +141,17 @@ def detect_lamella(
     lamella_mask, _ = extract_class_pixels(mask, color)
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
     # lamella_centre = detect_centre_point(lamella_mask, color=color)
+    try:
+        if feature_type is FeatureType.LamellaCentre:
+            feature_px = detect_centre_point(lamella_mask, color=color)
 
-    if feature_type is FeatureType.LamellaCentre:
-        feature_px = detect_centre_point(lamella_mask, color=color)
+        if feature_type is FeatureType.LamellaLeftEdge:
+            feature_px = detect_corner(lamella_mask, left=True)
 
-    if feature_type is FeatureType.LamellaLeftEdge:
-        feature_px = detect_corner(lamella_mask, left=True)
-
-    if feature_type is FeatureType.LamellaRightEdge:
-        feature_px = detect_corner(lamella_mask, left=False)
+        if feature_type is FeatureType.LamellaRightEdge:
+            feature_px = detect_corner(lamella_mask, left=False)
+    except:
+        feature_px = Point(x=0, y=0)
 
     return feature_px
 
@@ -164,14 +166,18 @@ def detect_lamella_v2(
     lamella_mask, _ = extract_class_pixels(mask, color)
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
 
-    if feature_type is FeatureType.LamellaCentre:
-        feature_px = get_mask_point(lamella_mask, "centre", "centre")
+    try:
+        if feature_type is FeatureType.LamellaCentre:
+            feature_px = get_mask_point(lamella_mask, "centre", "centre")
 
-    if feature_type is FeatureType.LamellaLeftEdge:
-        feature_px = get_mask_point(lamella_mask, "left", "centre")
+        if feature_type is FeatureType.LamellaLeftEdge:
+            feature_px = get_mask_point(lamella_mask, "left", "centre")
 
-    if feature_type is FeatureType.LamellaRightEdge:
-        feature_px = get_mask_point(lamella_mask, "right", "centre")
+        if feature_type is FeatureType.LamellaRightEdge:
+            feature_px = get_mask_point(lamella_mask, "right", "centre")
+
+    except:
+        feature_px = Point(x=0, y=0)
 
     return feature_px
 

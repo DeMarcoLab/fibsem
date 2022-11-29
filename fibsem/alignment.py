@@ -375,7 +375,8 @@ def shift_from_crosscorrelation(
         from liftout.config import config
         import os
         plt.savefig(os.path.join(config.LOG_DATA_PATH, f"crosscorrelation_{timestamp}.png"))
-        plt.show()
+        # plt.show()
+        plt.close(fig)
     except:
         pass
     ###############
