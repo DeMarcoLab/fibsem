@@ -6,6 +6,7 @@ import os
 import time
 from pathlib import Path
 import sys 
+import re
 
 import yaml
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
@@ -373,3 +374,74 @@ def match_image_settings(
     image_settings.label = current_timestamp()
 
     return image_settings
+
+def get_params(main_str:str) -> list:
+    """Helper function to access relevant metadata parameters from sub field
+
+    Args:
+        main_str (str): Sub string of relevant metadata
+
+    Returns:
+        list: Parameters covered by metadata
+    """
+    cats = []
+    cat_str =""
+
+    i = main_str.find("\n")
+    i+=1
+    while i < len(main_str):
+
+        if main_str[i] == "=":
+            cats.append(cat_str)
+            cat_str = ""
+            i += main_str[i:].find("\n")
+        else:
+            cat_str += main_str[i]
+
+        i+=1
+    return cats
+
+
+class subField():
+    """Helper class for ini_metadata class
+        Creates sub classes for each subfield of metadata
+    """
+    def __init__(self,user_str) -> None:
+
+        params = get_params(user_str)
+
+        for param in params:
+
+            try:
+                search_str = param + "=(.+?)\r"
+                attr = re.search(search_str,user_str).group(1)
+                setattr(self,param,attr)
+            except:
+                attr = "No Data"
+                setattr(self,param,attr)
+
+
+
+class ini_metadata:
+    """Takes in the ini_metadata string from adorned images and converts into an easily accessible format
+        - Class must be initialsed with an input of the ini metadata acquired from the
+        - AdornedImage.metadata.metadata_as_ini (Which is a long string formatted in ini)
+        - Class has attributes relating to each property of the metadata which can be easily accessed.
+        e.g. finding the date of the image goes like this:
+            metadata = ini_metadata(AdornedImage.metadata.metadata_as_ini)
+            metadata.User.Time --> 1:04:03 PM
+        - All output is in string
+    """
+    def __init__(self,metadata_full):
+        
+        self.metadata_full = metadata_full
+
+        headings = ["[User]","[System]","[Beam]","[EBeam]","[IBeam]","[GIS]","[Scan]","[EScan]","[IScan]","[Stage]","[Image]","[Vacuum]","[Specimen]","[Detectors]","[ETD]","[Accessories]","[EBeamDeceleration]","[PrivateFei]","[HiResIllumination]","[EasyLift]","[HotStageMEMS]"]
+
+        for heading in headings:
+
+            met_sub1 = metadata_full.find(heading) 
+            met_sub2 = metadata_full[(met_sub1+len(heading)):].find("[")
+            met_sub_full = metadata_full[met_sub1:(met_sub1+met_sub2+len(heading))]
+            attr = subField(met_sub_full)
+            setattr(self,heading[1:-1],attr)
