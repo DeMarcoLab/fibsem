@@ -14,7 +14,6 @@ from skimage import exposure
 
 from fibsem import utils
 from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages
-from fibsem.fibsemImage import FibsemImage 
 from fibsem import calibration
 
 
