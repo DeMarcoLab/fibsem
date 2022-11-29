@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import os
+import time
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (
     AdornedImage,
@@ -183,12 +184,13 @@ def last_image(
         hfw=image.width * image.metadata.binary_result.pixel_size.x,
         autocontrast=True,
         beam_type=BeamType.ELECTRON,
-        gamma=GammaSettings()
+        gamma=GammaSettings(),
         save=False,
         save_path="path",
-        label=current_timestamp(),
-        reduced_area=None
-    )
+        label=utils.current_timestamp(),
+        reduced_area=None,
+        )
+    
     fibsem_img = FibsemImage.fromAdornedImage(image, image_settings, state)
     return fibsem_img
 
