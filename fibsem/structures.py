@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition, Rectangle)
 import yaml
+from fibsemImage import FibsemImage
 
 #@patrickcleeve: dataclasses.asdict -> :(
 
@@ -170,12 +171,12 @@ class ImageSettings:
 
 @dataclass
 class ReferenceImages:
-    low_res_eb: AdornedImage
-    high_res_eb: AdornedImage
-    low_res_ib: AdornedImage
-    high_res_ib: AdornedImage
+    low_res_eb: FibsemImage
+    high_res_eb: FibsemImage
+    low_res_ib: FibsemImage
+    high_res_ib: FibsemImage
 
-    def __iter__(self) -> list[AdornedImage]:
+    def __iter__(self) -> list[FibsemImage]:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 

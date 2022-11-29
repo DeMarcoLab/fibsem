@@ -34,7 +34,7 @@ def autocontrast(microscope: SdbMicroscopeClient, beam_type=BeamType.ELECTRON) -
 
 def take_reference_images(
     microscope: SdbMicroscopeClient, image_settings: ImageSettings
-) -> list[AdornedImage]:
+) -> list[FibsemImage]:
     """Take a reference image using both beams
 
     Args:
@@ -47,10 +47,12 @@ def take_reference_images(
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
     eb_image = new_image(microscope, image_settings)
+    state_eb = calibration.get_current_microscope_state(microscope)
     image_settings.beam_type = BeamType.ION
     ib_image = new_image(microscope, image_settings)
+    state_ib = calibration.get_current_microscope_state(microscope)
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
-    return eb_image, ib_image
+    return FibsemImage.fromAdornedImage(eb_image, image_settings, state_eb), FibsemImage.fromAdornedImage(ib_image, image_settings, state_ib)
 
 
 def take_set_of_reference_images(
