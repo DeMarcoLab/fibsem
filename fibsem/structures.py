@@ -446,6 +446,7 @@ class SystemSettings:
     stage: StageSettings = None
     ion: BeamSystemSettings = None
     electron: BeamSystemSettings = None
+    manufacturer: str = None
 
 
     def __to_dict__(self) -> dict:
@@ -455,7 +456,8 @@ class SystemSettings:
             "application_file": self.application_file,
             "stage": self.stage.__to_dict__(),
             "ion": self.ion.__to_dict__(),
-            "electron": self.electron.__to_dict__() 
+            "electron": self.electron.__to_dict__(), 
+            "manufacturer": self.manufacturer
         }
 
         return settings_dict
@@ -468,7 +470,8 @@ class SystemSettings:
             application_file=settings["application_file"],
             stage=StageSettings.__from_dict__(settings["stage"]),
             ion=BeamSystemSettings.__from_dict__(settings["ion"], BeamType.ION),
-            electron=BeamSystemSettings.__from_dict__(settings["electron"], BeamType.ELECTRON)
+            electron=BeamSystemSettings.__from_dict__(settings["electron"], BeamType.ELECTRON),
+            manufacturer=settings["manufacturer"],
         )
 
         return system_settings

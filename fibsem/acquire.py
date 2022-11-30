@@ -47,12 +47,14 @@ def take_reference_images(
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
     eb_image = new_image(microscope, image_settings)
-    state_eb = calibration.get_current_microscope_state(microscope)
+    # state_eb = calibration.get_current_microscope_state(microscope)
     image_settings.beam_type = BeamType.ION
     ib_image = new_image(microscope, image_settings)
-    state_ib = calibration.get_current_microscope_state(microscope)
+    # state_ib = calibration.get_current_microscope_state(microscope)
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
-    return FibsemImage.fromAdornedImage(eb_image, image_settings, state_eb), FibsemImage.fromAdornedImage(ib_image, image_settings, state_ib)
+
+    return eb_image, ib_image
+    # return FibsemImage.fromAdornedImage(eb_image, image_settings, state_eb), FibsemImage.fromAdornedImage(ib_image, image_settings, state_ib)
 
 
 def take_set_of_reference_images(
@@ -111,6 +113,7 @@ def new_image(
     Returns:
             AdornedImage: new image
     """
+    microscope = microscope.connection
 
     # set frame settings
     frame_settings = GrabFrameSettings(
@@ -144,13 +147,12 @@ def new_image(
     )
 
     #convert to FibsemImage
+    state = calibration.get_current_microscope_state(microscope)
     image = FibsemImage.fromAdornedImage(image, settings, state)
 
     # apply gamma correction
     if settings.gamma.enabled:
         image = auto_gamma(image, settings.gamma)
-    
-    state = calibration.get_current_microscope_state(microscope)
     
     # save image
     if settings.save:
@@ -172,6 +174,7 @@ def last_image(
         AdornedImage: last image
     """
 
+    microscope = microscope.connection
 
     microscope.imaging.set_active_view(beam_type.value)
     microscope.imaging.set_active_device(beam_type.value)

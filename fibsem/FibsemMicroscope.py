@@ -22,8 +22,8 @@ class ThermoMicroscope(FibsemMicroscope):
     Args:
         FibsemMicroscope (ABC): abstract implementation
     """
-    def __init__(self):
-        self.microscope = SdbMicroscopeClient()
+    def __init__(self, connection  = None):
+        self.connection = connection
 
     def disconnect(self):
         pass
@@ -34,10 +34,14 @@ class ThermoMicroscope(FibsemMicroscope):
         try:
             # TODO: get the port
             logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
-            microscope = SdbMicroscopeClient()
-            microscope.connect(host=ip_address, port=port)
+            connection = SdbMicroscopeClient()
+            connection.connect(host=ip_address, port=port)
             logging.info(f"Microscope client connected to [{ip_address}:{port}]")
         except Exception as e:
             logging.error(f"Unable to connect to the microscope: {e}")
-            microscope = None
-        return cls(microscope)
+            connection = None
+        scope = cls()
+        scope.connection = connection
+        
+        return scope
+        # return cls(microscope)
