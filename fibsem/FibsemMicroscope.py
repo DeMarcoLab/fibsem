@@ -7,7 +7,7 @@ from autoscript_sdb_microscope_client import SdbMicroscopeClient
 
 class FibsemMicroscope(ABC):
     @abstractmethod
-    def setup_session(self, host: str, port: int):
+    def connect(self, host: str, port: int):
         pass
 
     @abstractmethod
