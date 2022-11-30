@@ -270,7 +270,7 @@ def setup_session(
 
     # connect to microscope
     if settings.system.manufacturer == "Thermo":
-        microscope = FibSem.ThermoMicroscope.connect(ip_address=settings.system.ip_address)
+        microscope = FibSem.ThermoMicroscope.connect(ip_address=settings.system.ip_address, port = 7520)
 
     # image_setttings
     settings.image.save_path = session_path

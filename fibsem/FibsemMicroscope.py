@@ -6,6 +6,7 @@ import logging
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 
 class FibsemMicroscope(ABC):
+    """Abstract class containing all the core microscope functionalities"""    
     @abstractmethod
     def connect(self, host: str, port: int):
         pass
@@ -16,6 +17,11 @@ class FibsemMicroscope(ABC):
 
 
 class ThermoMicroscope(FibsemMicroscope):
+    """ThermoFisher Microscope class, uses FibsemMicroscope as blueprint 
+
+    Args:
+        FibsemMicroscope (ABC): abstract implementation
+    """
     def __init__(self):
         self.microscope = SdbMicroscopeClient()
 
