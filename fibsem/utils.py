@@ -16,6 +16,7 @@ from autoscript_sdb_microscope_client.structures import (
 )
 from PIL import Image
 import fibsem
+import fibsem.FibsemMicroscope as FibSem
 from fibsem.structures import (
     BeamType,
     MicroscopeSettings,
@@ -268,7 +269,8 @@ def setup_session(
         configure_logging(session_path)
 
     # connect to microscope
-    microscope = connect_to_microscope(ip_address=settings.system.ip_address)
+    if settings.system.manufacturer == "Thermo":
+        microscope = FibSem.ThermoMicroscope.connect(ip_address=settings.system.ip_address)
 
     # image_setttings
     settings.image.save_path = session_path

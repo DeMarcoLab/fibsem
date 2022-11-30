@@ -2,6 +2,7 @@
 system:
   ip_address: 10.0.0.1
   application_file: autolamella
+  manufacturer: "Thermo"
   # beams
   ion:
     voltage: 30000
