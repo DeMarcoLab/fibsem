@@ -256,6 +256,9 @@ def align_using_reference_images(
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
     constrain_vertical: bool = False,
+    lp_px: int  = 128,  # MAGIC_NUMBER
+    hp_px: int = 8,  
+    sigma: int = 6,
 ) -> bool:
 
     # get beam type
@@ -265,9 +268,6 @@ def align_using_reference_images(
     logging.info(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."
     )
-    sigma = 6
-    hp_px = 8  
-    lp_px = 128  # MAGIC_NUMBER
 
     dx, dy, xcorr = shift_from_crosscorrelation(
         ref_image,
