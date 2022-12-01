@@ -45,7 +45,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def disconnect(self):
         self.connection.disconnect()
-        pass
+        
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 7520) -> None:
