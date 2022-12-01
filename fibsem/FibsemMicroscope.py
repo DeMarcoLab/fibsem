@@ -6,7 +6,7 @@ import os
 import logging
 from autoscript_sdb_microscope_client.structures import GrabFrameSettings
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages, FibsemImage
+from fibsem.structures import BeamType, ImageSettings, FibsemImage, FibsemImageMetadata
 
 
 class FibsemMicroscope(ABC):
@@ -85,18 +85,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         state = calibration.get_current_microscope_state(self.connection)
         
-        image_settings = ImageSettings(
-            resolution=f"{image.width}x{image.height}",
-            dwell_time=image.metadata.scan_settings.dwell_time,
-            hfw=image.width * image.metadata.binary_result.pixel_size.x,
-            autocontrast=True,
-            beam_type=BeamType.ELECTRON,
-            gamma=GammaSettings(),
-            save=False,
-            save_path="path",
-            label=utils.current_timestamp(),
-            reduced_area=None,
-            )
+        image_settings = FibsemImageMetadata.image_settings_from_adorned(image)
         
         fibsem_img = FibsemImage.fromAdornedImage(image, image_settings, state)
         return fibsem_img     

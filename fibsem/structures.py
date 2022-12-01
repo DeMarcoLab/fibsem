@@ -9,6 +9,7 @@ import tifffile as tff
 import json
 
 import numpy as np
+import fibsem.utils as utils
 from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition, Rectangle)
 import yaml
 from fibsem.config import METADATA_VERSION
@@ -607,6 +608,21 @@ class FibsemImageMetadata:
             microscope_state=microscope_state,
         )
         return metadata
+    
+    def image_settings_from_adorned(image = AdornedImage, beam_type: BeamType = BeamType.ELECTRON) -> ImageSettings:
+        image_settings = ImageSettings(
+            resolution=f"{image.width}x{image.height}",
+            dwell_time=image.metadata.scan_settings.dwell_time,
+            hfw=image.width * image.metadata.binary_result.pixel_size.x,
+            autocontrast=True,
+            beam_type=beam_type.value,
+            gamma=GammaSettings(),
+            save=False,
+            save_path="path",
+            label=utils.current_timestamp(),
+            reduced_area=None,
+            )
+        return image_settings
 
 
 class FibsemImage:
