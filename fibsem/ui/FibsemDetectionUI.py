@@ -190,6 +190,8 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         event.accept()
 
 
+
+
 def main():
     from fibsem.detection.detection import Feature, move_based_on_detection
     import fibsem.ui.windows as fibsem_ui_windows
@@ -208,44 +210,32 @@ def main():
                 Feature(FeatureType.LamellaCentre)]
 
         
-    for beam_type in [BeamType.ELECTRON, BeamType.ION]:
+    # for beam_type in [BeamType.ELECTRON, BeamType.ION]:
 
-        settings.image.beam_type = beam_type
-        settings.image.hfw = 400e-6
+    #     settings.image.beam_type = beam_type
+    #     settings.image.hfw = 400e-6
 
-        # actions.move_needle_to_liftout_position(microscope)
+    #     # actions.move_needle_to_liftout_position(microscope)
 
-        det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
+    #     # det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
 
-        print("features: ", det.features)
-        print("distance: ", det.distance)
-        print("feature 1 position: ", det.features[0].feature_m)
+    #     print("features: ", det.features)
+    #     print("distance: ", det.distance)
+    #     print("feature 1 position: ", det.features[0].feature_m)
 
-        # from liftout.patterning import MillingPattern
-        # milling_pattern = MillingPattern.Weld
-        # point = det.features[0].feature_m
-        # change_pattern = True
-        # auto_continue = False
-
-        # settings.image.hfw = 80e-6
-
-        # from liftout.autoliftout import milling_ui
-
-        # milling_ui(microscope, settings, milling_pattern, point = point, change_pattern = change_pattern, auto_continue=auto_continue)
+    VALIDATE = True
+    from liftout import autoliftout
 
 
-        # move back 5um x
-        # det.distance.x += -5e-6
+    while True:
 
-        # for eb needle move: positive = up
-        # for ib needle move: positive = down
-        # if beam_type is BeamType.ION:
-        #     move_x = False
-        # else:
-        #     move_x = True
-        # move_based_on_detection(microscope, settings, det, beam_type=beam_type, move_x=True)
+        movement.retract_needle(microscope)
 
-        # acquire.take_reference_images(microscope, settings.image)
+        autoliftout.landing_entry_procedure(microscope, settings, VALIDATE)
+
+
+
+
 
     sys.exit(app.exec_())
 
