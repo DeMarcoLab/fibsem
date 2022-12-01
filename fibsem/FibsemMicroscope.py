@@ -124,3 +124,22 @@ class ThermoMicroscope(FibsemMicroscope):
         """Automatically adjust the microscope image contrast."""
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.auto_functions.run_auto_cb()
+
+    def reset_beam_shifts(self):
+        """Set the beam shift to zero for the electron and ion beams
+
+        Args:
+            microscope (SdbMicroscopeClient): Autoscript microscope object
+        """
+        from autoscript_sdb_microscope_client.structures import Point
+
+        # reset zero beamshift
+        logging.debug(
+            f"reseting ebeam shift to (0, 0) from: {self.connection.beams.electron_beam.beam_shift.value}"
+        )
+        self.connection.beams.electron_beam.beam_shift.value = Point(0, 0)
+        logging.debug(
+            f"reseting ibeam shift to (0, 0) from: {self.connection.beams.electron_beam.beam_shift.value}"
+        )
+        self.connection.beams.ion_beam.beam_shift.value = Point(0, 0)
+        logging.debug(f"reset beam shifts to zero complete")
