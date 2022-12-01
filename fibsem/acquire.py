@@ -15,6 +15,7 @@ from skimage import exposure
 from fibsem import utils
 from fibsem.structures import BeamType, GammaSettings, ImageSettings, ReferenceImages, FibsemImage
 from fibsem import calibration
+import copy
 
 
 
@@ -153,7 +154,7 @@ def new_image(
 
     #convert to FibsemImage
     state = calibration.get_current_microscope_state(microscope)
-    image = FibsemImage.fromAdornedImage(image, settings, state)
+    image = FibsemImage.fromAdornedImage(copy.deepcopy(image), copy.deepcopy(settings), copy.deepcopy(state))
 
     # apply gamma correction
     if settings.gamma.enabled:

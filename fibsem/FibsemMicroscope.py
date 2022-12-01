@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import fibsem.utils as utils
 from pathlib import Path
 import fibsem.calibration as calibration
-import os
+import copy
 import logging
 import numpy as np
 from autoscript_sdb_microscope_client.structures import GrabFrameSettings, RunAutoCbSettings
@@ -93,7 +93,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         state = calibration.get_current_microscope_state(self.connection)
 
-        fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state)
+        fibsem_image = FibsemImage.fromAdornedImage(copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(state))
 
         return fibsem_image
 
