@@ -10,12 +10,17 @@ import json
 
 import numpy as np
 import fibsem.utils as utils
-from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition, Rectangle)
+from autoscript_sdb_microscope_client.structures import (
+    AdornedImage,
+    StagePosition,
+    ManipulatorPosition,
+    Rectangle,
+)
 import yaml
 from fibsem.config import METADATA_VERSION
 
 
-#@patrickcleeve: dataclasses.asdict -> :(
+# @patrickcleeve: dataclasses.asdict -> :(
 
 # TODO: overload constructors instead of from_dict...
 @dataclass
@@ -25,11 +30,11 @@ class Point:
 
     def __to_dict__(self) -> dict:
         return {"x": self.x, "y": self.y}
-    
+
     @staticmethod
     def __from_dict__(d: dict) -> "Point":
         return Point(d["x"], d["y"])
-    
+
     def __to_list__(self) -> list:
         return [self.x, self.y]
 
@@ -37,19 +42,22 @@ class Point:
     def __from_list__(l: list) -> "Point":
         return Point(l[0], l[1])
 
+
 # TODO: convert these to match autoscript...
 class BeamType(Enum):
-    ELECTRON = 1 # Electron
-    ION = 2      # Ion
+    ELECTRON = 1  # Electron
+    ION = 2  # Ion
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
+
 @dataclass
-class FibsemRectangle():
+class FibsemRectangle:
     """Universal Rectangle class used for ReducedArea"""
-    left: float = 0.0,
-    top: float = 0.0,
-    width: float = 0.0,
+
+    left: float = (0.0,)
+    top: float = (0.0,)
+    width: float = (0.0,)
     height: float = 0.0
 
     def __from_dict__(settings: dict) -> "FibsemRectangle":
@@ -59,6 +67,7 @@ class FibsemRectangle():
             width=settings["width"],
             height=settings["height"],
         )
+
     def __to_dict__(self) -> dict:
         return {
             "left": self.left,
@@ -66,13 +75,14 @@ class FibsemRectangle():
             "width": self.width,
             "height": self.height,
         }
-    
+
     def __to_FEI__(self) -> Rectangle:
         return Rectangle(self.left, self.top, self.width, self.height)
-    
+
     @classmethod
     def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
         return cls(rect.left, rect.top, rect.width, rect.height)
+
 
 @dataclass
 class GammaSettings:
@@ -80,10 +90,10 @@ class GammaSettings:
     min_gamma: float = 0.0
     max_gamma: float = 2.0
     scale_factor: float = 0.1
-    threshold: int  = 45 #px
+    threshold: int = 45  # px
 
     @staticmethod
-    def __from_dict__(settings: dict) -> 'GammaSettings':
+    def __from_dict__(settings: dict) -> "GammaSettings":
         gamma_settings = GammaSettings(
             enabled=settings["enabled"],
             min_gamma=settings["min_gamma"],
@@ -92,6 +102,7 @@ class GammaSettings:
             threshold=settings["threshold"],
         )
         return gamma_settings
+
 
 @dataclass
 class ImageSettings:
@@ -107,11 +118,11 @@ class ImageSettings:
     reduced_area: FibsemRectangle = None
 
     @staticmethod
-    def __from_dict__(settings: dict) -> 'ImageSettings':
+    def __from_dict__(settings: dict) -> "ImageSettings":
 
         if "autocontrast" not in settings:
             settings["autocontrast"] = False
-        if "save" not in settings: 
+        if "save" not in settings:
             settings["save"] = False
         if "save_path" not in settings:
             settings["save_path"] = os.getcwd()
@@ -126,40 +137,48 @@ class ImageSettings:
                 "threshold": 45,
             }
         if "reduced_area" in settings and settings["reduced_area"] is not None:
-            reduced_area = FibsemRectangle.__from_dict__(settings["reduced_area"]),
+            reduced_area = (FibsemRectangle.__from_dict__(settings["reduced_area"]),)
         else:
             reduced_area = None
 
         image_settings = ImageSettings(
             resolution=settings["resolution"],
             dwell_time=settings["dwell_time"],
-            hfw=settings["hfw"], 
-            autocontrast=settings["autocontrast"], 
-            beam_type=BeamType[settings["beam_type"].upper()] if settings["beam_type"] is not None else None,
-            gamma=GammaSettings.__from_dict__(settings["gamma"]) if settings["gamma"] is not None else None,
-            save=settings["save"], 
+            hfw=settings["hfw"],
+            autocontrast=settings["autocontrast"],
+            beam_type=BeamType[settings["beam_type"].upper()]
+            if settings["beam_type"] is not None
+            else None,
+            gamma=GammaSettings.__from_dict__(settings["gamma"])
+            if settings["gamma"] is not None
+            else None,
+            save=settings["save"],
             save_path=settings["save_path"],
             label=settings["label"],
-            reduced_area=reduced_area)
+            reduced_area=reduced_area,
+        )
 
         return image_settings
 
-
     def __to_dict__(self) -> dict:
-        
+
         settings_dict = {
             "beam_type": self.beam_type.name if self.beam_type is not None else None,
-            "resolution": self.resolution if self.resolution is not None else None, 
+            "resolution": self.resolution if self.resolution is not None else None,
             "dwell_time": self.dwell_time if self.dwell_time is not None else None,
             "hfw": self.hfw if self.hfw is not None else None,
-            "autocontrast": self.autocontrast if self.autocontrast is not None else None,
+            "autocontrast": self.autocontrast
+            if self.autocontrast is not None
+            else None,
             "gamma": {
                 "enabled": self.gamma.enabled,
                 "min_gamma": self.gamma.min_gamma,
                 "max_gamma": self.gamma.max_gamma,
                 "scale_factor": self.gamma.scale_factor,
                 "threshold": self.gamma.threshold,
-            } if self.gamma is not None else None,
+            }
+            if self.gamma is not None
+            else None,
             "save": self.save if self.save is not None else None,
             "save_path": self.save_path if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
@@ -168,7 +187,9 @@ class ImageSettings:
                 "top": self.reduced_area.top,
                 "width": self.reduced_area.width,
                 "height": self.reduced_area.height,
-                } if self.reduced_area is not None else None,
+            }
+            if self.reduced_area is not None
+            else None,
         }
 
         return settings_dict
@@ -200,7 +221,7 @@ class BeamSettings:
         return state_dict
 
     @staticmethod
-    def __from_dict__(state_dict: dict) -> 'BeamSettings':
+    def __from_dict__(state_dict: dict) -> "BeamSettings":
         beam_settings = BeamSettings(
             beam_type=BeamType[state_dict["beam_type"].upper()],
             working_distance=state_dict["working_distance"],
@@ -216,7 +237,7 @@ class BeamSettings:
 
 @dataclass
 class MicroscopeState:
-    timestamp: float = datetime.timestamp(datetime.now()) 
+    timestamp: float = datetime.timestamp(datetime.now())
     absolute_position: StagePosition = StagePosition()
     eb_settings: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
     ib_settings: BeamSettings = BeamSettings(beam_type=BeamType.ION)
@@ -225,7 +246,7 @@ class MicroscopeState:
 
         state_dict = {
             "timestamp": self.timestamp,
-            "absolute_position": stage_position_to_dict(self.absolute_position), 
+            "absolute_position": stage_position_to_dict(self.absolute_position),
             "eb_settings": self.eb_settings.__to_dict__(),
             "ib_settings": self.ib_settings.__to_dict__(),
         }
@@ -233,7 +254,7 @@ class MicroscopeState:
         return state_dict
 
     @staticmethod
-    def __from_dict__(state_dict: dict) -> 'MicroscopeState':
+    def __from_dict__(state_dict: dict) -> "MicroscopeState":
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
             absolute_position=stage_position_from_dict(state_dict["absolute_position"]),
@@ -249,13 +270,12 @@ class MillingSettings:
     width: float
     height: float
     depth: float
-    rotation: float = 0.0 # deg
-    centre_x: float = 0.0 # TODO: change to Point?
-    centre_y: float = 0.0 
+    rotation: float = 0.0  # deg
+    centre_x: float = 0.0  # TODO: change to Point?
+    centre_y: float = 0.0
     milling_current: float = 20.0e-12
     scan_direction: str = "TopToBottom"
     cleaning_cross_section: bool = False
-
 
     def __to_dict__(self) -> dict:
 
@@ -268,13 +288,13 @@ class MillingSettings:
             "centre_y": self.centre_y,
             "milling_current": self.milling_current,
             "scan_direction": self.scan_direction,
-            "cleaning_cross_section": self.cleaning_cross_section
+            "cleaning_cross_section": self.cleaning_cross_section,
         }
 
         return settings_dict
 
     @staticmethod
-    def __from_dict__(settings: dict) -> 'MillingSettings':
+    def __from_dict__(settings: dict) -> "MillingSettings":
 
         if "centre_x" not in settings:
             settings["centre_x"] = 0
@@ -286,7 +306,7 @@ class MillingSettings:
             settings["scan_direction"] = "TopToBottom"
         if "cleaning_cross_section" not in settings:
             settings["cleaning_cross_section"] = False
-        
+
         milling_settings = MillingSettings(
             width=settings["width"],
             height=settings["height"],
@@ -305,13 +325,13 @@ class MillingSettings:
 def stage_position_to_dict(stage_position: StagePosition) -> dict:
 
     stage_position_dict = {
-                "x": stage_position.x,
-                "y": stage_position.y,
-                "z": stage_position.z,
-                "r": stage_position.r,
-                "t": stage_position.t,
-                "coordinate_system": stage_position.coordinate_system,
-            }
+        "x": stage_position.x,
+        "y": stage_position.y,
+        "z": stage_position.z,
+        "r": stage_position.r,
+        "t": stage_position.t,
+        "coordinate_system": stage_position.coordinate_system,
+    }
 
     return stage_position_dict
 
@@ -337,7 +357,7 @@ def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
         "y": position.y,
         "z": position.z,
         "r": None,
-        "coordinate_system": position.coordinate_system
+        "coordinate_system": position.coordinate_system,
     }
 
     return position_dict
@@ -350,13 +370,10 @@ def manipulator_position_from_dict(position_dict: dict) -> ManipulatorPosition:
         y=position_dict["y"],
         z=position_dict["z"],
         r=position_dict["r"],
-        coordinate_system=position_dict["coordinate_system"] 
-
+        coordinate_system=position_dict["coordinate_system"],
     )
 
     return position
-
-
 
 
 @dataclass
@@ -366,7 +383,7 @@ class BeamSystemSettings:
     current: float
     detector_type: str
     detector_mode: str
-    eucentric_height: float 
+    eucentric_height: float
     plasma_gas: str = None
 
     def __to_dict__(self) -> dict:
@@ -378,22 +395,20 @@ class BeamSystemSettings:
             "detector_mode": self.detector_mode,
             "eucentric_height": self.eucentric_height,
             "plasma_gas": self.plasma_gas,
-
         }
 
         return settings_dict
-    
+
     @staticmethod
-    def __from_dict__(settings: dict, beam_type: BeamType) -> 'BeamSystemSettings':
+    def __from_dict__(settings: dict, beam_type: BeamType) -> "BeamSystemSettings":
 
         if "plasma_gas" not in settings:
             settings["plasma_gas"] = "NULL"
 
-
         system_settings = BeamSystemSettings(
             beam_type=beam_type,
-            voltage = settings["voltage"],
-            current = settings["current"],
+            voltage=settings["voltage"],
+            current=settings["current"],
             detector_type=settings["detector_type"],
             detector_mode=settings["detector_mode"],
             eucentric_height=settings["eucentric_height"],
@@ -402,14 +417,15 @@ class BeamSystemSettings:
 
         return system_settings
 
+
 # TODO: change this to use pretilt_angle, flat_to_electron, and flat_to_ion tilts, for better separation
 @dataclass
 class StageSettings:
-    rotation_flat_to_electron: float = 50 # degrees
-    rotation_flat_to_ion: float = 230 # degrees
-    tilt_flat_to_electron: float = 27 # degrees (pre_tilt)
-    tilt_flat_to_ion: float = 52 # degrees
-    pre_tilt: float = 35 # degrees
+    rotation_flat_to_electron: float = 50  # degrees
+    rotation_flat_to_ion: float = 230  # degrees
+    tilt_flat_to_electron: float = 27  # degrees (pre_tilt)
+    tilt_flat_to_ion: float = 52  # degrees
+    pre_tilt: float = 35  # degrees
     needle_stage_height_limit: float = 3.7e-3
 
     def __to_dict__(self) -> dict:
@@ -420,24 +436,23 @@ class StageSettings:
             "tilt_flat_to_electron": self.tilt_flat_to_electron,
             "tilt_flat_to_ion": self.tilt_flat_to_ion,
             "pre_tilt": self.pre_tilt,
-            "needle_stage_height_limit": self.needle_stage_height_limit
+            "needle_stage_height_limit": self.needle_stage_height_limit,
         }
         return settings
 
     @staticmethod
-    def __from_dict__(settings: dict) -> 'StageSettings':
-            
+    def __from_dict__(settings: dict) -> "StageSettings":
+
         stage_settings = StageSettings(
             rotation_flat_to_electron=settings["rotation_flat_to_electron"],
             rotation_flat_to_ion=settings["rotation_flat_to_ion"],
             tilt_flat_to_electron=settings["tilt_flat_to_electron"],
             tilt_flat_to_ion=settings["tilt_flat_to_ion"],
             pre_tilt=settings["pre_tilt"],
-            needle_stage_height_limit=settings["needle_stage_height_limit"]  
+            needle_stage_height_limit=settings["needle_stage_height_limit"],
         )
 
         return stage_settings
-
 
 
 @dataclass
@@ -449,7 +464,6 @@ class SystemSettings:
     electron: BeamSystemSettings = None
     manufacturer: str = None
 
-
     def __to_dict__(self) -> dict:
 
         settings_dict = {
@@ -457,40 +471,43 @@ class SystemSettings:
             "application_file": self.application_file,
             "stage": self.stage.__to_dict__(),
             "ion": self.ion.__to_dict__(),
-            "electron": self.electron.__to_dict__(), 
-            "manufacturer": self.manufacturer
+            "electron": self.electron.__to_dict__(),
+            "manufacturer": self.manufacturer,
         }
 
         return settings_dict
-    
+
     @staticmethod
-    def __from_dict__(settings: dict) -> 'SystemSettings':
+    def __from_dict__(settings: dict) -> "SystemSettings":
 
         system_settings = SystemSettings(
             ip_address=settings["ip_address"],
             application_file=settings["application_file"],
             stage=StageSettings.__from_dict__(settings["stage"]),
             ion=BeamSystemSettings.__from_dict__(settings["ion"], BeamType.ION),
-            electron=BeamSystemSettings.__from_dict__(settings["electron"], BeamType.ELECTRON),
+            electron=BeamSystemSettings.__from_dict__(
+                settings["electron"], BeamType.ELECTRON
+            ),
             manufacturer=settings["manufacturer"],
         )
 
         return system_settings
 
+
 @dataclass
 class DefaultSettings:
-    imaging_current: float = 20.e-12
-    milling_current: float = 2.e-9
-
+    imaging_current: float = 20.0e-12
+    milling_current: float = 2.0e-9
 
     @staticmethod
-    def __from_dict__(settings: dict) -> 'DefaultSettings':
-        
+    def __from_dict__(settings: dict) -> "DefaultSettings":
+
         default_settings = DefaultSettings(
             imaging_current=settings["imaging_current"],
             milling_current=settings["milling_current"],
         )
         return default_settings
+
 
 @dataclass
 class MicroscopeSettings:
@@ -504,19 +521,18 @@ class MicroscopeSettings:
         settings_dict = {
             "system": self.system.__to_dict__(),
             "user": self.image.__to_dict__(),
-
         }
 
         return settings_dict
 
     @staticmethod
-    def __from_dict__(settings: dict, protocol: dict = None) -> 'MicroscopeSettings':
+    def __from_dict__(settings: dict, protocol: dict = None) -> "MicroscopeSettings":
 
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
-            image = ImageSettings.__from_dict__(settings["user"]),
+            image=ImageSettings.__from_dict__(settings["user"]),
             # default=DefaultSettings.__from_dict__(settings["user"]),
-            protocol= protocol
+            protocol=protocol,
         )
 
 
@@ -524,9 +540,9 @@ class MicroscopeSettings:
 from abc import ABC, abstractmethod, abstractstaticmethod
 
 
-
 class FibsemStage(Enum):
     Base = 1
+
 
 @dataclass
 class FibsemState:
@@ -547,17 +563,19 @@ class FibsemState:
         return state_dict
 
     @abstractstaticmethod
-    def __from_dict__(self, state_dict: dict) -> 'FibsemState':
+    def __from_dict__(self, state_dict: dict) -> "FibsemState":
 
         autoliftout_state = FibsemState(
             stage=FibsemState[state_dict["stage"]],
-            microscope_state=MicroscopeState.__from_dict__(state_dict["microscope_state"]),
+            microscope_state=MicroscopeState.__from_dict__(
+                state_dict["microscope_state"]
+            ),
             start_timestamp=state_dict["start_timestamp"],
             end_timestamp=state_dict["end_timestamp"],
         )
 
         return autoliftout_state
-    
+
 
 @dataclass
 class FibsemImageMetadata:
@@ -597,8 +615,12 @@ class FibsemImageMetadata:
             microscope_state = MicroscopeState(
                 timestamp=settings["microscope_state"]["timestamp"],
                 absolute_position=StagePosition(),
-                eb_settings=BeamSettings.__from_dict__(settings["microscope_state"]["eb_settings"]),
-                ib_settings=BeamSettings.__from_dict__(settings["microscope_state"]["ib_settings"]),
+                eb_settings=BeamSettings.__from_dict__(
+                    settings["microscope_state"]["eb_settings"]
+                ),
+                ib_settings=BeamSettings.__from_dict__(
+                    settings["microscope_state"]["ib_settings"]
+                ),
             )
 
         metadata = FibsemImageMetadata(
@@ -608,8 +630,10 @@ class FibsemImageMetadata:
             microscope_state=microscope_state,
         )
         return metadata
-    
-    def image_settings_from_adorned(image = AdornedImage, beam_type: BeamType = BeamType.ELECTRON) -> ImageSettings:
+
+    def image_settings_from_adorned(
+        image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
+    ) -> ImageSettings:
         image_settings = ImageSettings(
             resolution=f"{image.width}x{image.height}",
             dwell_time=image.metadata.scan_settings.dwell_time,
@@ -621,7 +645,7 @@ class FibsemImageMetadata:
             save_path="path",
             label=utils.current_timestamp(),
             reduced_area=None,
-            )
+        )
         return image_settings
 
 
@@ -663,7 +687,7 @@ class FibsemImage:
         """
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         save_path = Path(save_path).with_suffix(".tif")
-        
+
         if self.metadata is not None:
             metadata_dict = self.metadata.__to_dict__()
         else:
@@ -676,7 +700,10 @@ class FibsemImage:
 
     @classmethod
     def fromAdornedImage(
-        cls, adorned: AdornedImage, image_settings: ImageSettings, state: MicroscopeState = None
+        cls,
+        adorned: AdornedImage,
+        image_settings: ImageSettings,
+        state: MicroscopeState = None,
     ) -> "FibsemImage":
         """Creates FibsemImage from an AdornedImage (microscope output format).
 
@@ -698,8 +725,13 @@ class FibsemImage:
         else:
             state.timestamp = adorned.metadata.acquisition.acquisition_datetime
 
-        pixel_size = Point(adorned.metadata.binary_result.pixel_size.x, adorned.metadata.binary_result.pixel_size.y)
-        metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixel_size, microscope_state=state)
+        pixel_size = Point(
+            adorned.metadata.binary_result.pixel_size.x,
+            adorned.metadata.binary_result.pixel_size.y,
+        )
+        metadata = FibsemImageMetadata(
+            image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
+        )
         return cls(data=adorned.data, metadata=metadata)
 
 
@@ -713,6 +745,7 @@ class ReferenceImages:
     def __iter__(self) -> list[FibsemImage]:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
+
 
 def check_data_format(data: np.ndarray) -> np.ndarray:
     """Checks that data is in the correct format."""
