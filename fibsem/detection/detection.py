@@ -131,29 +131,29 @@ def detect_corner(
     return Point(x=edge_px[1], y=edge_px[0])
 
 
-def detect_lamella(
-    mask: np.ndarray,
-    feature_type: FeatureType,
-    color: tuple = (255, 0, 0),
-    mask_radius: int = 256,
-) -> Point:
+# def detect_lamella(
+#     mask: np.ndarray,
+#     feature_type: FeatureType,
+#     color: tuple = (255, 0, 0),
+#     mask_radius: int = 256,
+# ) -> Point:
 
-    lamella_mask, _ = extract_class_pixels(mask, color)
-    lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
-    # lamella_centre = detect_centre_point(lamella_mask, color=color)
-    try:
-        if feature_type is FeatureType.LamellaCentre:
-            feature_px = detect_centre_point(lamella_mask, color=color)
+#     lamella_mask, _ = extract_class_pixels(mask, color)
+#     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
+#     # lamella_centre = detect_centre_point(lamella_mask, color=color)
+#     try:
+#         if feature_type is FeatureType.LamellaCentre:
+#             feature_px = detect_centre_point(lamella_mask, color=color)
 
-        if feature_type is FeatureType.LamellaLeftEdge:
-            feature_px = detect_corner(lamella_mask, left=True)
+#         if feature_type is FeatureType.LamellaLeftEdge:
+#             feature_px = detect_corner(lamella_mask, left=True)
 
-        if feature_type is FeatureType.LamellaRightEdge:
-            feature_px = detect_corner(lamella_mask, left=False)
-    except:
-        feature_px = Point(x=0, y=0)
+#         if feature_type is FeatureType.LamellaRightEdge:
+#             feature_px = detect_corner(lamella_mask, left=False)
+#     except:
+#         feature_px = Point(x=0, y=0)
 
-    return feature_px
+#     return feature_px
 
 
 def detect_lamella_v2(
@@ -290,7 +290,7 @@ class DetectedFeatures:
 
 
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature]
+    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], mask_radius: int = 256
 ) -> list[Feature]:
 
     detection_features = []
@@ -318,7 +318,7 @@ def detect_features_v2(
             FeatureType.LamellaLeftEdge,
             FeatureType.LamellaRightEdge,
         ]:
-            feature_px = detect_lamella_v2(mask, det_type)
+            feature_px = detect_lamella_v2(mask, det_type, mask_radius=mask_radius)
 
         if det_type == FeatureType.LandingPost:
             feature_px = detect_landing_post_v3(img, initial_point)
@@ -333,13 +333,14 @@ def locate_shift_between_features_v2(
     model: SegmentationModel,
     features: tuple[Feature],
     pixelsize: float,
+    mask_radius: int = 256,
 ) -> DetectedFeatures:
 
     # model inference
     mask = model.inference(image)
 
     # detect features
-    feature_1, feature_2 = detect_features_v2(image, mask, features)
+    feature_1, feature_2 = detect_features_v2(image, mask, features, mask_radius=mask_radius)
 
     # calculate distance between features
     distance_px = conversions.distance_between_points(
