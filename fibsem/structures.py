@@ -9,7 +9,7 @@ import tifffile as tff
 import json
 
 import numpy as np
-import fibsem.utils as utils
+import time
 from autoscript_sdb_microscope_client.structures import (
     AdornedImage,
     StagePosition,
@@ -643,7 +643,7 @@ class FibsemImageMetadata:
             gamma=GammaSettings(),
             save=False,
             save_path="path",
-            label=utils.current_timestamp(),
+            label=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d.%I-%M-%S%p"),
             reduced_area=None,
         )
         return image_settings
