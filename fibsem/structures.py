@@ -634,6 +634,8 @@ class FibsemImageMetadata:
     def image_settings_from_adorned(
         image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
     ) -> ImageSettings:
+
+        from fibsem.utils import current_timestamp
         image_settings = ImageSettings(
             resolution=f"{image.width}x{image.height}",
             dwell_time=image.metadata.scan_settings.dwell_time,
@@ -643,7 +645,7 @@ class FibsemImageMetadata:
             gamma=GammaSettings(),
             save=False,
             save_path="path",
-            label=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d.%I-%M-%S%p"),
+            label=current_timestamp(),
             reduced_area=None,
         )
         return image_settings
@@ -750,7 +752,7 @@ class ReferenceImages:
 def check_data_format(data: np.ndarray) -> np.ndarray:
     """Checks that data is in the correct format."""
     assert data.ndim == 2  # or data.ndim == 3
-    assert data.dtype == np.uint8
+    assert data.dtype in [np.uint8, np.uint16]
     # if data.ndim == 3 and data.shape[2] == 1:
     #     data = data[:, :, 0]
     return data

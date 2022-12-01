@@ -127,7 +127,7 @@ def save_image(image: AdornedImage, save_path: Path, label: str = "image"):
 
 
 def current_timestamp():
-    return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d.%I-%M-%S%p")
+    return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%I-%M-%S%p")
 
 
 def _format_time_seconds(seconds: float) -> str:

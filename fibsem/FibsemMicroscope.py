@@ -14,7 +14,7 @@ class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
 
     @abstractmethod
-    def connect(self, host: str, port: int):
+    def connect_to_microscope(self):
         pass
 
     @abstractmethod
