@@ -4,7 +4,8 @@ from pathlib import Path
 import fibsem.calibration as calibration
 import os
 import logging
-from autoscript_sdb_microscope_client.structures import GrabFrameSettings
+import numpy as np
+from autoscript_sdb_microscope_client.structures import GrabFrameSettings, RunAutoCbSettings
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, FibsemImageMetadata
 
@@ -26,6 +27,10 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def last_image(self):
+        pass
+
+    @abstractmethod
+    def autocontrast(self):
         pass
 
 class ThermoMicroscope(FibsemMicroscope):
@@ -70,6 +75,17 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             AdornedImage: new image
         """
+        if image_settings.beam_type == BeamType.ELECTRON:
+            hfw_limits = self.connection.beams.electron_beam.horizontal_field_width.limits
+            image_settings.hfw = np.clip(image_settings.hfw, hfw_limits.min, hfw_limits.max)
+            self.connection.beams.electron_beam.horizontal_field_width.value = image_settings.hfw
+    
+        if image_settings.beam_type == BeamType.ION:
+            hfw_limits = self.connection.beams.ion_beam.horizontal_field_width.limits
+            image_settings.hfw = np.clip(image_settings.hfw, hfw_limits.min, hfw_limits.max)
+            self.connection.beams.ion_beam.horizontal_field_width.value = image_settings.hfw
+
+
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
         self.connection.imaging.set_active_view(image_settings.beam_type.value)
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
@@ -103,3 +119,8 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state)
 
         return fibsem_image
+    
+    def autocontrast(self, beam_type=BeamType.ELECTRON) -> None:
+        """Automatically adjust the microscope image contrast."""
+        self.connection.imaging.set_active_view(beam_type.value)
+        self.connection.auto_functions.run_auto_cb()
