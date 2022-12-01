@@ -122,17 +122,22 @@ def new_image(
         reduced_area=reduced_area,
     )
 
-    # set horizontal field width
-    if settings.beam_type is BeamType.ELECTRON:
+    # set imaging settings
+    if settings.beam_type == BeamType.ELECTRON:
         hfw_limits = microscope.beams.electron_beam.horizontal_field_width.limits
         settings.hfw = np.clip(settings.hfw, hfw_limits.min, hfw_limits.max)
         microscope.beams.electron_beam.horizontal_field_width.value = settings.hfw
-        label = f"{settings.label}_eb"
-
-    if settings.beam_type is BeamType.ION:
+    
+    if settings.beam_type == BeamType.ION:
         hfw_limits = microscope.beams.ion_beam.horizontal_field_width.limits
         settings.hfw = np.clip(settings.hfw, hfw_limits.min, hfw_limits.max)
         microscope.beams.ion_beam.horizontal_field_width.value = settings.hfw
+
+    # set label
+    if settings.beam_type is BeamType.ELECTRON:
+        label = f"{settings.label}_eb"
+
+    if settings.beam_type is BeamType.ION:
         label = f"{settings.label}_ib"
 
     # run autocontrast
