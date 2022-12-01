@@ -20,6 +20,13 @@ class FibsemMicroscope(ABC):
     def disconnect(self):
         pass
 
+    @abstractmethod
+    def acquire_image(self):
+        pass
+
+    @abstractmethod
+    def last_image(self):
+        pass
 
 class ThermoMicroscope(FibsemMicroscope):
     """ThermoFisher Microscope class, uses FibsemMicroscope as blueprint
