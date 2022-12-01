@@ -197,7 +197,6 @@ def last_image(
         label=utils.current_timestamp(),
         reduced_area=None,
         )
-    
     fibsem_img = FibsemImage.fromAdornedImage(image, image_settings, state)
     return fibsem_img
 
