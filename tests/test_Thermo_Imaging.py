@@ -201,6 +201,28 @@ def last_image(microscope,image_settings,last_label):
 
 
 
+def beam_shift(microscope):
+
+    microscope.reset_beam_shifts()
+
+    assert microscope.connection.beams.electron_beam.beam_shift.value.x == 0
+    assert microscope.connection.beams.electron_beam.beam_shift.value.y ==  0
+
+    assert microscope.connection.beams.ion_beam.beam_shift.value.x == 0
+    assert microscope.connection.beams.ion_beam.beam_shift.value.y ==  0
+
+
+
+def auto_contrast(microscope):
+
+    microscope.connection.detector.brightness = 1
+
+    microscope.auto_contrast(beam_type=image_settings.beam_type)
+
+    assert microscope.connection.detector.brightness != 1
+
+    
+
 
 
 
