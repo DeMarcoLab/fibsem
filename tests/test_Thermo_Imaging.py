@@ -101,10 +101,11 @@ def image_settings():
 
 pytest.fixture
 def frame_settings(image_settings):
+
     frame_settings = GrabFrameSettings(
-        resolution=image_settings.resolution
-        dwell_time=image_settings.dwell_time,
-        reduced_area=image_settings.reduced_area,
+    resolution=image_settings.resolution,
+    dwell_time=image_settings.dwell_time,
+    reduced_area=image_settings.reduced_area,
     )
 
     return frame_settings
