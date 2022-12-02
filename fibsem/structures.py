@@ -636,6 +636,7 @@ class FibsemImageMetadata:
     ) -> ImageSettings:
 
         from fibsem.utils import current_timestamp
+
         image_settings = ImageSettings(
             resolution=f"{image.width}x{image.height}",
             dwell_time=image.metadata.scan_settings.dwell_time,
@@ -649,6 +650,59 @@ class FibsemImageMetadata:
             reduced_area=None,
         )
         return image_settings
+
+    def compare_image_settings(self, image_settings: ImageSettings) -> bool:
+        """Compares image settings to the metadata image settings.
+
+        Args:
+            image_settings (ImageSettings): Image settings to compare to.
+
+        Returns:
+            bool: True if the image settings match the metadata image settings.
+        """
+        assert (
+            self.image_settings.resolution == image_settings.resolution
+        ), f"hfw: {self.image_settings.resolution} != {image_settings.resolution}"
+        assert (
+            self.image_settings.dwell_time == image_settings.dwell_time
+        ), f"dwell_time: {self.image_settings.dwell_time} != {image_settings.dwell_time}"
+        assert (
+            self.image_settings.hfw == image_settings.hfw
+        ), f"hfw: {self.image_settings.hfw} != {image_settings.hfw}"
+        assert (
+            self.image_settings.autocontrast == image_settings.autocontrast
+        ), f"autocontrast: {self.image_settings.autocontrast} != {image_settings.autocontrast}"
+        assert (
+            self.image_settings.beam_type == image_settings.beam_type
+        ), f"beam_type: {self.image_settings.beam_type} != {image_settings.beam_type}"
+        assert (
+            self.image_settings.gamma == image_settings.gamma
+        ), f"gamma: {self.image_settings.gamma} != {image_settings.gamma}"
+        assert (
+            self.image_settings.save == image_settings.save
+        ), f"save: {self.image_settings.save} != {image_settings.save}"
+        assert (
+            self.image_settings.save_path == image_settings.save_path
+        ), f"save_path: {self.image_settings.save_path} != {image_settings.save_path}"
+        assert (
+            self.image_settings.label == image_settings.label
+        ), f"label: {self.image_settings.label} != {image_settings.label}"
+        assert (
+            self.image_settings.reduced_area == image_settings.reduced_area
+        ), f"reduced_area: {self.image_settings.reduced_area} != {image_settings.reduced_area}"
+        
+        return (
+            (self.image_settings.resolution == image_settings.resolution)
+            and (self.image_settings.dwell_time == image_settings.dwell_time)
+            and (self.image_settings.hfw == image_settings.hfw)
+            and (self.image_settings.autocontrast == image_settings.autocontrast)
+            and (self.image_settings.beam_type == image_settings.beam_type)
+            and (self.image_settings.gamma == image_settings.gamma)
+            and (self.image_settings.save == image_settings.save)
+            and (self.image_settings.save_path == image_settings.save_path)
+            and (self.image_settings.label == image_settings.label)
+            and (self.image_settings.reduced_area == image_settings.reduced_area)
+        )
 
 
 class FibsemImage:
