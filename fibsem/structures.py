@@ -749,10 +749,10 @@ class ReferenceImages:
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
 
-def check_data_format(data: np.ndarray) -> np.ndarray:
+def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
-    assert data.ndim == 2  # or data.ndim == 3
-    assert data.dtype in [np.uint8, np.uint16]
+    # assert data.ndim == 2  # or data.ndim == 3
+    # assert data.dtype in [np.uint8, np.uint16]
     # if data.ndim == 3 and data.shape[2] == 1:
     #     data = data[:, :, 0]
-    return data
+    return True if data.ndim == 2 and data.dtype in [np.uint8,np.uint16] else False
