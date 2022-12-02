@@ -19,10 +19,10 @@ for more information.
 Create a new virutal environment from the Anaconda Prompt terminal:
 ```
 cd fibsem
-conda create -f environment.yml
+conda env create -f environment.yml
 conda activate fibsem
 pip install -e .
-```
+``` 
 
 ### Installing Autoscript
 Autoscript provides an API (application programming interface) for scripting
