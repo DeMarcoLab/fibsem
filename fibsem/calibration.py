@@ -144,7 +144,7 @@ def auto_charge_neutralisation(
             resolution = "768x512",
             dwell_time = 200e-9,
             hfw=image_settings.hfw,
-            beam_type = BeamType.ELECTRON,
+            beam_type = image_settings.beam_type,
             save=False,
             save_path=image_settings.save_path,
             autocontrast=False,

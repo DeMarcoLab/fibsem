@@ -213,6 +213,14 @@ def eucentric_correct_stage_drift(
     targets = (BeamType.ELECTRON, BeamType.ION, BeamType.ELECTRON, BeamType.ION)
     eucentric_move = (False, True, False, True) 
 
+    # lp, hp, sigma
+    params = [
+        (256, 12, 6),
+        (256, 12, 6),
+        (128, 8, 6),
+        (128, 8, 6),
+    ]
+
     if rotate:
         # rotate references
         # align ref ib -> new eb
@@ -246,6 +254,9 @@ def eucentric_correct_stage_drift(
             ref_mask=ref_mask,
             xcorr_limit=xcorr_limit[i],
             constrain_vertical=euc_move,
+            lp_px=params[i][0],
+            hp_px=params[i][1],
+            sigma=params[i][2],
         )
 
 def align_using_reference_images(
