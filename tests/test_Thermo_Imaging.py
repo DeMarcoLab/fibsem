@@ -81,7 +81,7 @@ def gamma_settings():
 
     return gamma_settings
 
-pytest.fixture
+@pytest.fixture
 def image_settings():
 
     image_settings =  ImageSettings(
@@ -99,7 +99,7 @@ def image_settings():
     
     return image_settings
 
-pytest.fixture
+@pytest.fixture
 def frame_settings(image_settings):
 
     frame_settings = GrabFrameSettings(
@@ -110,7 +110,7 @@ def frame_settings(image_settings):
 
     return frame_settings
 
-pytest.fixture
+@pytest.fixture
 def label(image_settings):
 
     if image_settings.beam_type is BeamType.ELECTRON:
@@ -122,7 +122,7 @@ def label(image_settings):
     return label
 
 
-def acquire_image_electron(microscope,image_settings,frame_settings):
+def test_acquire_image_electron(microscope,image_settings,frame_settings):
 
     try:
         new_image = microscope.acquire_image(frame_settings, image_settings)
@@ -151,7 +151,7 @@ def acquire_image_electron(microscope,image_settings,frame_settings):
         print("Image saved")
 
 
-def acquire_image_ion(microscope,image_settings,frame_settings):
+def test_acquire_image_ion(microscope,image_settings,frame_settings):
 
     image_settings.beam_type = BeamType.ION
 
@@ -188,7 +188,7 @@ def last_label(image_settings):
 
     return label
 
-def last_image(microscope,image_settings,last_label):
+def test_last_image(microscope,image_settings,last_label):
 
     last_image = microscope.last_image(image_settings.beam_type)
 
@@ -202,7 +202,7 @@ def last_image(microscope,image_settings,last_label):
 
 
 
-def beam_shift(microscope):
+def test_beam_shift(microscope):
 
     microscope.reset_beam_shifts()
 
@@ -214,7 +214,7 @@ def beam_shift(microscope):
 
 
 
-def auto_contrast(microscope):
+def test_auto_contrast(microscope):
 
     microscope.connection.detector.brightness = 1
 
