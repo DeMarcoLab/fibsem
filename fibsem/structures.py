@@ -707,7 +707,9 @@ class FibsemImageMetadata:
 
 class FibsemImage:
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
-        self.data = check_data_format(data)
+        
+        if check_data_format(data):
+            self.data = data
         if metadata is not None:
             self.metadata = metadata
         else:
