@@ -102,8 +102,26 @@ def acquire_image(
 
     return image
 
+def reset_beam_shifts(microscope: SdbMicroscopeClient):
+    """Set the beam shift to zero for the electron and ion beams
 
-"""==================== Deprecated Functions==================== """
+    Args:
+        microscope (SdbMicroscopeClient): Autoscript microscope object
+    """
+    from autoscript_sdb_microscope_client.structures import Point
+
+    # reset zero beamshift
+    logging.debug(
+        f"reseting ebeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
+    )
+    microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
+    logging.debug(
+        f"reseting ibeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
+    )
+    microscope.beams.ion_beam.beam_shift.value = Point(0, 0)
+    logging.debug(f"reset beam shifts to zero complete")
+
+"""====================================================== """
 
 
 def take_reference_images(
@@ -225,21 +243,3 @@ def new_image(
     return image, filename
 
 
-def reset_beam_shifts(microscope: SdbMicroscopeClient):
-    """Set the beam shift to zero for the electron and ion beams
-
-    Args:
-        microscope (SdbMicroscopeClient): Autoscript microscope object
-    """
-    from autoscript_sdb_microscope_client.structures import Point
-
-    # reset zero beamshift
-    logging.debug(
-        f"reseting ebeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
-    )
-    microscope.beams.electron_beam.beam_shift.value = Point(0, 0)
-    logging.debug(
-        f"reseting ibeam shift to (0, 0) from: {microscope.beams.electron_beam.beam_shift.value}"
-    )
-    microscope.beams.ion_beam.beam_shift.value = Point(0, 0)
-    logging.debug(f"reset beam shifts to zero complete")
