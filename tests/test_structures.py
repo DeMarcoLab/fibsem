@@ -8,8 +8,7 @@ from fibsem.structures import (BeamSettings, BeamType,
                                GammaSettings, ImageSettings, MicroscopeState,
                                MillingSettings, StageSettings, SystemSettings,
                                BeamSystemSettings,
-                               stage_position_from_dict,
-                               stage_position_to_dict)
+                               FibsemStagePosition)
 
 
 @pytest.fixture
@@ -573,3 +572,50 @@ def test_point_to_list():
 
     assert point.x == point_list[0]
     assert point.y == point_list[1]
+
+
+@pytest.fixture
+def fibsem_stage_position() -> FibsemStagePosition:
+
+    stage_position = FibsemStagePosition(
+        x=1.0,
+        y=2.0,
+        z=3.0,
+        r=4.0,
+        t=5.0,
+        coordinate_system="Raw"
+    )
+
+    return stage_position
+
+
+def test_milling_settings_to_dict(fibsem_stage_position: FibsemStagePosition):
+
+    fibsem_stage_position_dict = fibsem_stage_position.__to_dict__()
+
+    assert fibsem_stage_position.x == fibsem_stage_position_dict["x"]
+    assert fibsem_stage_position.y == fibsem_stage_position_dict["y"]
+    assert fibsem_stage_position.z == fibsem_stage_position_dict["z"]
+    assert fibsem_stage_position.r == fibsem_stage_position_dict["r"]
+    assert fibsem_stage_position.t == fibsem_stage_position_dict["t"]
+    assert fibsem_stage_position.coordinate_system == fibsem_stage_position_dict["coordinate_system"]
+    
+
+def test_stage_position_from_dict():
+    fibsem_stage_position_dict = {
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0, 
+        "r": 4.0,
+        "t": 5.0,
+        "coordinate_system": "stage"
+    }
+
+    fibsem_stage_position = FibsemStagePosition.__from_dict__(fibsem_stage_position_dict)
+
+    assert fibsem_stage_position.x == fibsem_stage_position_dict["x"]
+    assert fibsem_stage_position.y == fibsem_stage_position_dict["y"]
+    assert fibsem_stage_position.z == fibsem_stage_position_dict["z"]
+    assert fibsem_stage_position.r == fibsem_stage_position_dict["r"]
+    assert fibsem_stage_position.t == fibsem_stage_position_dict["t"]
+    assert fibsem_stage_position.coordinate_system == fibsem_stage_position_dict["coordinate_system"]

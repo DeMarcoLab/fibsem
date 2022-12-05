@@ -823,6 +823,7 @@ class FibsemStagePosition:
         position_dict["z"] = self.z
         position_dict["r"] = self.r
         position_dict["t"] = self.t
+        position_dict["coordinate_system"] = self.coordinate_system
 
         return position_dict
 
@@ -834,6 +835,7 @@ class FibsemStagePosition:
             z=data["z"],
             r=data["r"],
             t=data["t"],
+            coordinate_system=data["coordinate_system"],
         )
 
     def to_autoscript_position(self) -> StagePosition:
