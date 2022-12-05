@@ -710,6 +710,8 @@ class FibsemImage:
         
         if check_data_format(data):
             self.data = data
+        else:
+            raise Exception("Invalid Data format for Fibsem Image")
         if metadata is not None:
             self.metadata = metadata
         else:
