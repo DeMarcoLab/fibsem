@@ -778,7 +778,13 @@ class FibsemImage:
         if state is None:
             state = MicroscopeState(
                 timestamp=adorned.metadata.acquisition.acquisition_datetime,
-                absolute_position=StagePosition(),
+                absolute_position=FibsemStagePosition(
+                    adorned.metadata.stage_settings.stage_position.x,
+                    adorned.metadata.stage_settings.stage_position.y,
+                    adorned.metadata.stage_settings.stage_position.z,
+                    adorned.metadata.stage_settings.stage_position.r,
+                    adorned.metadata.stage_settings.stage_position.t,
+                ),
                 eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
                 ib_settings=BeamSettings(beam_type=BeamType.ION),
             )
