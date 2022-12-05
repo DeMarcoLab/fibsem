@@ -690,7 +690,7 @@ class FibsemImageMetadata:
         assert (
             self.image_settings.reduced_area == image_settings.reduced_area
         ), f"reduced_area: {self.image_settings.reduced_area} != {image_settings.reduced_area}"
-        
+
         return (
             (self.image_settings.resolution == image_settings.resolution)
             and (self.image_settings.dwell_time == image_settings.dwell_time)
@@ -707,7 +707,7 @@ class FibsemImageMetadata:
 
 class FibsemImage:
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
-        
+
         if check_data_format(data):
             self.data = data
         else:
@@ -806,6 +806,7 @@ class ReferenceImages:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
+
 @dataclass
 class FibsemStagePosition:
     x: float
@@ -813,6 +814,7 @@ class FibsemStagePosition:
     z: float
     r: float
     t: float
+    coordinate_system: str
 
     def __to_dict__(self) -> dict:
         position_dict = {}
@@ -824,7 +826,6 @@ class FibsemStagePosition:
 
         return position_dict
 
-
     @classmethod
     def __from_dict__(cls, data: dict) -> "FibsemStagePosition":
         return cls(
@@ -835,10 +836,32 @@ class FibsemStagePosition:
             t=data["t"],
         )
 
+    def to_autoscript_position(self) -> StagePosition:
+        return StagePosition(
+            x=self.x,
+            y=self.y,
+            z=self.z,
+            r=self.r,
+            t=self.t,
+            coordinate_system=self.coordinate_system,
+        )
+
+    @classmethod
+    def from_autoscript_position(cls, position: StagePosition) -> None:
+        return cls(
+            x=position.x,
+            y=position.y,
+            z=position.z,
+            r=position.r,
+            t=position.t,
+            coordinate_system=position.coordinate_system,
+        )
+
+
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
     # assert data.ndim == 2  # or data.ndim == 3
     # assert data.dtype in [np.uint8, np.uint16]
     # if data.ndim == 3 and data.shape[2] == 1:
     #     data = data[:, :, 0]
-    return True if data.ndim == 2 and data.dtype in [np.uint8,np.uint16] else False
+    return True if data.ndim == 2 and data.dtype in [np.uint8, np.uint16] else False
