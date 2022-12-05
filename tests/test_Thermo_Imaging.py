@@ -195,6 +195,7 @@ def test_last_image(microscope,image_settings,last_label):
     if image_settings.save:
         filename = os.path.join(image_settings.save_path, last_label)
         last_image.save(save_path=filename)
+        assert os.path.exists(f"{filename}.tif")
 
     assert isinstance(last_image,FibsemImage)
     assert check_data_format(last_image.data)
