@@ -623,9 +623,8 @@ def test_stage_position_from_dict():
 
 def test_stage_position_from_auto(fibsem_stage_position: FibsemStagePosition):
 
-    fibsem_stage_position_auto = StagePosition(1.0, 2.0, 3.0, 4.0, 5.0, "stage")
+    fibsem_stage_position_auto = StagePosition(x=1.0, y=2.0, z=3.0, r=4.0, t=5.0, coordinate_system="stage")
     fibsem_stage_position = FibsemStagePosition.from_autoscript_position(fibsem_stage_position_auto)
-
 
     assert fibsem_stage_position.x == fibsem_stage_position_auto.x
     assert fibsem_stage_position.y == fibsem_stage_position_auto.y
