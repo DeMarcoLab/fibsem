@@ -806,6 +806,34 @@ class ReferenceImages:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
+@dataclass
+class FibsemStagePosition:
+    x: float
+    y: float
+    z: float
+    r: float
+    t: float
+
+    def __to_dict__(self) -> dict:
+        position_dict = {}
+        position_dict["x"] = self.x
+        position_dict["y"] = self.y
+        position_dict["z"] = self.z
+        position_dict["r"] = self.r
+        position_dict["t"] = self.t
+
+        return position_dict
+
+
+    @classmethod
+    def __from_dict__(cls, data: dict) -> "FibsemStagePosition":
+        return cls(
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            r=data["r"],
+            t=data["t"],
+        )
 
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
