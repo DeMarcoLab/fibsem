@@ -161,7 +161,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
 
         current_microscope_state = MicroscopeState(
-            timestamp=datetime.timestamp(datetime.now()),
+            timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
             absolute_position= self.get_stage_position,
             # electron beam settings
