@@ -589,7 +589,7 @@ def fibsem_stage_position() -> FibsemStagePosition:
     return stage_position
 
 
-def test_milling_settings_to_dict(fibsem_stage_position: FibsemStagePosition):
+def test_stage_position_to_dict(fibsem_stage_position: FibsemStagePosition):
 
     fibsem_stage_position_dict = fibsem_stage_position.__to_dict__()
 
@@ -619,3 +619,39 @@ def test_stage_position_from_dict():
     assert fibsem_stage_position.r == fibsem_stage_position_dict["r"]
     assert fibsem_stage_position.t == fibsem_stage_position_dict["t"]
     assert fibsem_stage_position.coordinate_system == fibsem_stage_position_dict["coordinate_system"]
+
+
+def test_stage_position_from_auto(fibsem_stage_position: FibsemStagePosition):
+
+    fibsem_stage_position_auto = StagePosition(1.0, 2.0, 3.0, 4.0, 5.0, "stage")
+    fibsem_stage_position = FibsemStagePosition.from_autoscript_position(fibsem_stage_position_auto)
+
+
+    assert fibsem_stage_position.x == fibsem_stage_position_auto.x
+    assert fibsem_stage_position.y == fibsem_stage_position_auto.y
+    assert fibsem_stage_position.z == fibsem_stage_position_auto.z
+    assert fibsem_stage_position.r == fibsem_stage_position_auto.r
+    assert fibsem_stage_position.t == fibsem_stage_position_auto.t
+    assert fibsem_stage_position.coordinate_system == fibsem_stage_position_auto.coordinate_system
+    
+
+def test_stage_position_to_auto():
+    fibsem_stage_position_dict = {
+        "x": 1.0,
+        "y": 2.0,
+        "z": 3.0, 
+        "r": 4.0,
+        "t": 5.0,
+        "coordinate_system": "stage"
+    }
+
+    fibsem_stage_position = FibsemStagePosition.__from_dict__(fibsem_stage_position_dict)
+
+    fibsem_stage_position_auto = fibsem_stage_position.to_autoscript_position()
+
+    assert fibsem_stage_position.x == fibsem_stage_position_auto.x
+    assert fibsem_stage_position.y == fibsem_stage_position_auto.y
+    assert fibsem_stage_position.z == fibsem_stage_position_auto.z
+    assert fibsem_stage_position.r == fibsem_stage_position_auto.r
+    assert fibsem_stage_position.t == fibsem_stage_position_auto.t
+    assert fibsem_stage_position.coordinate_system == fibsem_stage_position_auto.coordinate_system
