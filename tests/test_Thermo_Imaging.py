@@ -24,7 +24,7 @@ def settings():
 
     return settings
 
-
+@pytest.fixture
 def general_setup(settings):
 
     session_path: Path = None
@@ -52,21 +52,23 @@ def general_setup(settings):
 
     # image_settings
     settings.image.save_path = session_path
+    
+    return settings
 
 
 @pytest.fixture
-def microscope():
+def microscope_thermo():
     microscope = FibsemMicroscope.ThermoMicroscope()
     return microscope
 
-
-def connection(microscope,settings):
+@pytest.fixture
+def connection(microscope=microscope_thermo,settings=general_setup):
 
     try:
         microscope.connect_to_microscope(settings.system.ip_address)
     except:
         logging.info('Could not connect to microscope')
-
+    return microscope
 
 @pytest.fixture
 def gamma_settings():
@@ -122,13 +124,18 @@ def label(image_settings):
     return label
 
 
-def test_acquire_image_electron(microscope,image_settings,frame_settings):
+def test_acquire_image_electron():
 
-    try:
-        new_image = microscope.acquire_image(frame_settings, image_settings)
-    except:
-        logging.info("Image could not be taken")
-
+    microscope, settings = utils.setup_session()
+    image_settings = settings.image
+    frame_settings = GrabFrameSettings(
+        resolution=image_settings.resolution,
+        dwell_time=image_settings.dwell_time,
+        reduced_area=None,
+    )
+    
+    new_image = microscope.acquire_image(frame_settings, image_settings)
+    
     assert new_image is not None
     assert isinstance(new_image,FibsemImage)
     assert check_data_format(new_image.data)
@@ -151,7 +158,7 @@ def test_acquire_image_electron(microscope,image_settings,frame_settings):
         print("Image saved")
 
 
-def test_acquire_image_ion(microscope,image_settings,frame_settings):
+def test_acquire_image_ion(image_settings,frame_settings, microscope=connection):
 
     image_settings.beam_type = BeamType.ION
 
@@ -188,7 +195,7 @@ def last_label(image_settings):
 
     return label
 
-def test_last_image(microscope,image_settings,last_label):
+def test_last_image(image_settings,last_label, microscope=connection):
 
     last_image = microscope.last_image(image_settings.beam_type)
 
@@ -203,7 +210,7 @@ def test_last_image(microscope,image_settings,last_label):
 
 
 
-def test_beam_shift(microscope):
+def test_beam_shift(microscope=connection):
 
     microscope.reset_beam_shifts()
 
