@@ -214,13 +214,13 @@ def test_beam_shift(microscope):
 
 
 
-def test_auto_contrast(microscope):
+# def test_auto_contrast(microscope):
 
-    microscope.connection.detector.contrast = 1
+#     microscope.connection.detector.contrast = 1
 
-    microscope.auto_contrast(beam_type=image_settings.beam_type)
+#     microscope.auto_contrast(beam_type=image_settings.beam_type)
 
-    assert microscope.connection.detector.contrast != 1
+#     assert microscope.connection.detector.contrast != 1
 
     
 
