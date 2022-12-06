@@ -5,6 +5,8 @@ import datetime
 import numpy as np
 from autoscript_sdb_microscope_client.structures import GrabFrameSettings
 from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
+import sys
+from tescanautomation import Automation
 
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, FibsemImageMetadata, MicroscopeState, BeamSettings
@@ -191,16 +193,16 @@ class TescanMicroscope(FibsemMicroscope):
         FibsemMicroscope (ABC): abstract implementation
     """
 
-    def __init__(self):
-        self.connection 
+    def __init__(self,ip_address: str ='localhost'):
+        self.connection = Automation(ip_address)
 
     def disconnect(self):
-        self.connection.disconnect()
+        self.connection.Disconnect()
         
 
     # @classmethod
-    def connect_to_microscope(self, ip_address: str, port: int = 7520) -> None:
-        pass
+    def connect_to_microscope(self, ip_address: str, port: int = 8300) -> None:
+        self.connection = Automation(ip_address,port)
 
     def acquire_image(
         self, frame_settings: GrabFrameSettings = None, image_settings=ImageSettings
