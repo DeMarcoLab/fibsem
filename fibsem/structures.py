@@ -7,7 +7,6 @@ from enum import Enum
 from pathlib import Path
 import tifffile as tff
 import json
-
 import numpy as np
 import time
 from autoscript_sdb_microscope_client.structures import (
@@ -800,6 +799,31 @@ class FibsemImage:
         )
         return cls(data=adorned.data, metadata=metadata)
 
+    @classmethod
+    def fromTescanImage(
+        cls,
+        image,
+        image_settings: ImageSettings,
+        state: MicroscopeState,
+    ) -> "FibsemImage":
+        """Creates FibsemImage from an AdornedImage (microscope output format).
+
+        Args:
+            adorned (AdornedImage): Adorned Image from microscope
+            metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
+
+        Returns:
+            FibsemImage: instance of FibsemImage from AdornedImage
+        """
+
+        pixel_size = Point(
+            image.Header["Main"]["PixelSizeX"],
+            image.Header["Main"]["PixelSizeX"]
+        )
+        metadata = FibsemImageMetadata(
+            image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
+        )
+        return cls(data=image.data, metadata=metadata)
 
 @dataclass
 class ReferenceImages:
