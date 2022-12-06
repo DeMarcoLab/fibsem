@@ -1,7 +1,4 @@
 from abc import ABC, abstractmethod
-import fibsem.utils as utils
-from pathlib import Path
-import fibsem.calibration as calibration
 import copy
 import logging
 import datetime
