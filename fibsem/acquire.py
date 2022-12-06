@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 import os
-import time
+
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (
     AdornedImage,
@@ -22,11 +22,8 @@ from fibsem.structures import (
 )
 from fibsem.FibsemMicroscope import FibsemMicroscope
 
-THERMO_ENABLED = True
-if THERMO_ENABLED:
-    from fibsem.FibsemMicroscope import ThermoMicroscope
 from fibsem import calibration
-import copy
+
 
 
 """==================== Deprecated Functions ===================="""
