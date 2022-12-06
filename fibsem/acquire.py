@@ -206,7 +206,7 @@ def new_image(
     """
     # set frame settings
     frame_settings = GrabFrameSettings(
-        resolution=settings.resolution,
+        resolution=settings.resolution, # TODO: move into acquire_image
         dwell_time=settings.dwell_time,
         reduced_area=reduced_area,
     )
