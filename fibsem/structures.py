@@ -641,7 +641,7 @@ class FibsemImageMetadata:
             dwell_time=image.metadata.scan_settings.dwell_time,
             hfw=image.width * image.metadata.binary_result.pixel_size.x,
             autocontrast=True,
-            beam_type=beam_type.value,
+            beam_type=beam_type,
             gamma=GammaSettings(),
             save=False,
             save_path="path",
@@ -672,10 +672,10 @@ class FibsemImageMetadata:
             self.image_settings.autocontrast == image_settings.autocontrast
         ), f"autocontrast: {self.image_settings.autocontrast} != {image_settings.autocontrast}"
         assert (
-            self.image_settings.beam_type == image_settings.beam_type
-        ), f"beam_type: {self.image_settings.beam_type} != {image_settings.beam_type}"
+            self.image_settings.beam_type.value == image_settings.beam_type.value
+        ), f"beam_type: {self.image_settings.beam_type.value} != {image_settings.beam_type.value}"
         assert (
-            self.image_settings.gamma == image_settings.gamma
+            self.image_settings.gamma.enabled == image_settings.gamma.enabled
         ), f"gamma: {self.image_settings.gamma} != {image_settings.gamma}"
         assert (
             self.image_settings.save == image_settings.save
@@ -690,19 +690,7 @@ class FibsemImageMetadata:
             self.image_settings.reduced_area == image_settings.reduced_area
         ), f"reduced_area: {self.image_settings.reduced_area} != {image_settings.reduced_area}"
 
-        return (
-            (self.image_settings.resolution == image_settings.resolution)
-            and (self.image_settings.dwell_time == image_settings.dwell_time)
-            and (self.image_settings.hfw == image_settings.hfw)
-            and (self.image_settings.autocontrast == image_settings.autocontrast)
-            and (self.image_settings.beam_type == image_settings.beam_type)
-            and (self.image_settings.gamma == image_settings.gamma)
-            and (self.image_settings.save == image_settings.save)
-            and (self.image_settings.save_path == image_settings.save_path)
-            and (self.image_settings.label == image_settings.label)
-            and (self.image_settings.reduced_area == image_settings.reduced_area)
-        )
-
+        return True
 
 class FibsemImage:
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
