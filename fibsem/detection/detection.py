@@ -356,6 +356,8 @@ def locate_shift_between_features_v2(
         pixelsize=pixelsize,
     )
 
+    plot_det_result_v2(det)
+
     return det
 
 
@@ -387,7 +389,10 @@ def plot_det_result_v2(det: DetectedFeatures):
         "w--",
     )
     ax[1].legend(loc="best")
-    plt.show()
+    # plt.show()
+
+    from fibsem import utils as f_utils
+    f_utils.log_current_figure(fig, "ml")
 
 
 

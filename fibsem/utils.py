@@ -371,3 +371,22 @@ def match_image_settings(
     image_settings.label = current_timestamp()
 
     return image_settings
+
+
+def log_current_figure(fig, name: str):
+    # save with timestamp
+    import matplotlib.pyplot as plt
+    import datetime
+    import os
+    from liftout.config import config
+
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+    day = now.strftime("%Y-%m-%d")
+    os.makedirs(os.path.join(config.LOG_DATA_PATH, day), exist_ok=True)
+
+    try:
+        plt.savefig(os.path.join(config.LOG_DATA_PATH, day, f"{name}_{timestamp}.png"))
+        plt.close(fig)
+    except Exception as e:
+        print(f"Error: {e}")

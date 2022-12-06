@@ -210,14 +210,14 @@ def main():
                 Feature(FeatureType.LamellaCentre)]
 
         
-    # for beam_type in [BeamType.ELECTRON, BeamType.ION]:
+    for beam_type in [BeamType.ELECTRON, BeamType.ELECTRON]:
 
-    #     settings.image.beam_type = beam_type
-    #     settings.image.hfw = 400e-6
+        settings.image.beam_type = beam_type
+        settings.image.hfw = 400e-6
 
     #     # actions.move_needle_to_liftout_position(microscope)
 
-    #     # det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
+        det = fibsem_ui_windows.detect_features_v2(microscope, settings, features, validate=True)
 
     #     print("features: ", det.features)
     #     print("distance: ", det.distance)
@@ -227,14 +227,11 @@ def main():
     from liftout import autoliftout
 
 
-    while True:
+    # while True:
 
-        movement.retract_needle(microscope)
+        # movement.retract_needle(microscope)
 
-        autoliftout.landing_entry_procedure(microscope, settings, VALIDATE)
-
-
-
+        # autoliftout.landing_entry_procedure(microscope, settings, VALIDATE)
 
 
     sys.exit(app.exec_())

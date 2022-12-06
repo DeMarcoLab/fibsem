@@ -378,18 +378,24 @@ def shift_from_crosscorrelation(
     ax3.set_title(f"xcorr (shift: {x_shift:.2e}, {y_shift:.2e})")
     ax3.plot(maxY, maxX, "w+", ms=20)
   
-    # save with timestamp
-    import datetime
-    now = datetime.datetime.now()
-    timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
-    try:
-        from liftout.config import config
-        import os
-        plt.savefig(os.path.join(config.LOG_DATA_PATH, f"crosscorrelation_{timestamp}.png"))
-        # plt.show()
-        plt.close(fig)
-    except:
-        pass
+    from fibsem import utils as f_utils
+    f_utils.log_current_figure(fig, "crosscorrelation")
+
+    # # save with timestamp
+    # import datetime
+    # from liftout.config import config
+    # import os
+    # now = datetime.datetime.now()
+    # timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+    # day = now.strftime("%Y-%m-%d")
+    # os.makedirs(os.path.join(config.LOG_DATA_PATH, day), exist_ok=True)
+
+    # try:
+    #     plt.savefig(os.path.join(config.LOG_DATA_PATH, day, f"crosscorrelation_{timestamp}.png"))
+    #     # plt.show()
+    #     plt.close(fig)
+    # except:
+    #     pass
     ###############
 
     logging.debug(f"cross-correlation:")
