@@ -203,7 +203,7 @@ if __name__ == "__main__":
     print("\n----------------------- Loading Model -----------------------")
     # from smp
     model = smp.Unet(
-        encoder_name="resnet18",
+        encoder_name=config["train"]["encoder"],
         encoder_weights="imagenet",
         in_channels=1,  # grayscale images
         classes=num_classes,  # background, needle, lamella

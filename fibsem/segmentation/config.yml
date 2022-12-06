@@ -3,7 +3,7 @@ labelling:
   data_dir: /home/patrick/github/fibsem/example/data/data2
 train:
   data_dir: /home/patrick/github/data/liftout/training/train
-  save_dir: /home/patrick/github/fibsem/fibsem/segmentation/models/c/34
+  save_dir: /home/patrick/github/fibsem/fibsem/segmentation/models/d/34
   wandb: true # Logs information and plots to wandb
   checkpoint: null #"/home/patrick/github/fibsem/fibsem/segmentation/models/model.pt"
   encoder: "resnet34" # Specify model architecture. List of available encoders in readme.
