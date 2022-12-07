@@ -268,11 +268,15 @@ def setup_session(
         configure_logging(session_path)
 
     # connect to microscope
-    # if settings.system.manufacturer == "Thermo":
     import fibsem.FibsemMicroscope as FibSem
 
-    microscope = FibSem.ThermoMicroscope()
-    microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 7520)
+    if settings.system.manufacturer == "Thermo":
+        microscope = FibSem.ThermoMicroscope()
+        microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 7520)
+    if settings.system.manufacturer == "Tescan":
+        microscope = FibSem.TescanMicroscope()
+        microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 8300)
+
 
     # image_setttings
     settings.image.save_path = session_path
