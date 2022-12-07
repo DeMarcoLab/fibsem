@@ -47,6 +47,11 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
+        # TODO: replace with this
+        def _set_napari_formatting(viewer: napari.Viewer):    
+            viewer.window._qt_viewer.dockLayerList.setVisible(False)
+            viewer.window._qt_viewer.dockLayerControls.setVisible(False)
+
         # milling
         self.milling_pattern = pattern
         self.all_patterns = None
