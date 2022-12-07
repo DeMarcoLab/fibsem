@@ -1,18 +1,21 @@
 import logging
+import traceback
 from enum import Enum
 
 import numpy as np
+import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (MoveSettings,
                                                          StagePosition)
-from fibsem import acquire, conversions, movement, constants, alignment
-from fibsem.structures import BeamType, MicroscopeSettings, Point
-from fibsem.ui.qtdesigner_files import movement_dialog 
 from PyQt5 import QtCore, QtWidgets
-import scipy.ndimage as ndi
-import traceback
 
-from fibsem.ui import utils as fibsem_ui 
+from fibsem import (acquire, alignment, constants, conversions, movement,
+                    patterning)
+from fibsem.patterning import MillingPattern
+from fibsem.structures import BeamType, MicroscopeSettings, Point
+from fibsem.ui import utils as fibsem_ui
+from fibsem.ui.qtdesigner_files import movement_dialog
+import napari
 
 class MovementMode(Enum):
     Stable = 1
@@ -22,11 +25,8 @@ class MovementMode(Enum):
 # TODO: save state...?
 # TODO: focus and link?
 
-import napari
 
-# TODO: move to FIBSEM
-from liftout import patterning
-from liftout.patterning import MillingPattern
+
 
 class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
@@ -332,9 +332,10 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.update_displays()
 
 def main():
+    from liftout.config import config
+
     from fibsem import utils
     from fibsem.ui import windows as fibsem_ui_windows
-    from liftout.config import config
     microscope, settings= utils.setup_session(
         protocol_path=config.protocol_path,
     )

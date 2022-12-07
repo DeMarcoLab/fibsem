@@ -6,7 +6,7 @@ import napari
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem import acquire, conversions, validation
+from fibsem import acquire, conversions, validation, patterning
 from fibsem.detection import detection
 from fibsem.detection.detection import DetectedFeatures, Feature
 from fibsem.segmentation.model import load_model
@@ -15,6 +15,7 @@ from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
 from fibsem.ui.FibsemMovementUI import FibsemMovementUI
 from fibsem.ui.user_window import GUIUserWindow
+from fibsem.ui.FibsemMillingUI import FibsemMillingUI
 from PyQt5.QtWidgets import QMessageBox
 
 
@@ -159,3 +160,33 @@ def run_validation_ui(
         )
 
     logging.info(f"INIT | PRE_RUN_VALIDATION | FINISHED")
+
+
+def milling_ui(
+    microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
+    milling_pattern: patterning.MillingPattern,
+    point: Point = None,
+    change_pattern: bool = False,
+    auto_continue: bool = False,
+):
+
+    viewer = napari.Viewer()
+    milling_ui = FibsemMillingUI(
+        viewer=viewer,
+        microscope=microscope,
+        settings=settings,
+        milling_pattern=milling_pattern,
+        point=point,
+        change_pattern=change_pattern,
+        auto_continue=auto_continue,
+    )
+
+    viewer.window.add_dock_widget(milling_ui, area="right", add_vertical_stretch=False)
+
+    if auto_continue:
+        milling_ui.run_milling()
+    else:
+        milling_ui.exec_()
+
+    # napari.run(max_loop_level=2)
