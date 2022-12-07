@@ -3,12 +3,21 @@ import copy
 import logging
 import datetime
 import numpy as np
-from autoscript_sdb_microscope_client.structures import GrabFrameSettings
-from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
-import sys
-from tescanautomation import Automation
 
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
+TESCAN_ENABLED = False
+THERMO_ENABLED = True
+
+if TESCAN_ENABLED:
+    from tescanautomation import Automation
+
+if THERMO_ENABLED:
+    from autoscript_sdb_microscope_client.structures import GrabFrameSettings
+    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
+    from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
+import sys
+
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, FibsemImageMetadata, MicroscopeState, BeamSettings
 
 
@@ -123,7 +132,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         state = self.get_current_microscope_state()
 
-        image_settings = FibsemImageMetadata.image_settings_from_adorned(image)
+        image_settings = FibsemImageMetadata.image_settings_from_adorned(image, beam_type)
 
         fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state)
 
@@ -169,7 +178,7 @@ class ThermoMicroscope(FibsemMicroscope):
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
-            absolute_position= self.get_stage_position,
+            absolute_position= self.get_stage_position(),
             # electron beam settings
             eb_settings=BeamSettings(
                 beam_type=BeamType.ELECTRON,

@@ -231,6 +231,6 @@ def new_image(
         filename = os.path.join(settings.save_path, label)
         image.save(save_path=filename)
 
-    return image, filename
+    return image
 
 

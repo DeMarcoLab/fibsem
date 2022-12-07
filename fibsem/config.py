@@ -15,5 +15,5 @@ MILLING_SPUTTER_RATE = {
 
 import os
 import fibsem
-BASE_PATH = os.path.dirname(fibsem.__file__)
+BASE_PATH = os.path.dirname(fibsem.__path__[0])
 CONFIG_PATH = os.path.join(BASE_PATH, "config")

@@ -16,7 +16,6 @@ from autoscript_sdb_microscope_client.structures import (
 )
 from PIL import Image
 import fibsem
-import fibsem.FibsemMicroscope as FibSem
 from fibsem.structures import (
     BeamType,
     MicroscopeSettings,
@@ -270,6 +269,8 @@ def setup_session(
 
     # connect to microscope
     # if settings.system.manufacturer == "Thermo":
+    import fibsem.FibsemMicroscope as FibSem
+
     microscope = FibSem.ThermoMicroscope()
     microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 7520)
 
@@ -296,7 +297,8 @@ def load_settings_from_config(
     # print("HELLO")
     # TODO: this should just be system.yaml path, not directory
     if config_path is None:
-        config_path = os.path.join(os.path.dirname(fibsem.__file__), "config")
+        from fibsem.config import CONFIG_PATH
+        config_path = CONFIG_PATH
 
     # system settings
     settings = load_yaml(os.path.join(config_path, "system.yaml"))
