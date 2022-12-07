@@ -233,3 +233,74 @@ def set_arr_as_qlabel(
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
     return label
+
+
+
+def convert_pattern_to_napari_rect(
+    pattern, image: np.ndarray, pixelsize: float
+) -> np.ndarray:
+
+    # image centre
+    icy, icx = image.shape[0] // 2, image.shape[1] // 2
+
+    # pattern to pixel coords
+    w = int(pattern.width / pixelsize)
+    h = int(pattern.height / pixelsize)
+    cx = int(icx + (pattern.center_x / pixelsize))
+    cy = int(icy - (pattern.center_y / pixelsize))
+
+    r = -pattern.rotation #
+
+    xmin, xmax = - w / 2, w / 2
+    ymin, ymax = - h / 2, h / 2
+
+    px0 = cx + (xmin * np.cos(r) - ymin * np.sin(r))
+    py0 = cy + (xmin * np.sin(r) + ymin * np.cos(r))
+
+    px1 = cx + (xmax * np.cos(r) - ymin * np.sin(r))
+    py1 = cy + (xmax * np.sin(r) + ymin * np.cos(r))
+
+    px2 = cx + (xmax * np.cos(r) - ymax * np.sin(r))
+    py2 = cy + (xmax * np.sin(r) + ymax * np.cos(r))
+
+    px3 = cx + (xmin * np.cos(r) - ymax * np.sin(r))
+    py3 = cy + (xmin * np.sin(r) + ymax * np.cos(r))
+
+    # napari shape format
+    shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
+
+    return shape
+
+from fibsem.structures import MillingSettings
+def convert_napari_rect_to_mill_settings(
+    arr: np.array, image: np.array, pixelsize: float, depth: float = 10e-6
+) -> MillingSettings:
+    # convert napari rect to milling pattern
+
+    # get centre of image
+    cy_mid, cx_mid = image.data.shape[0] // 2, image.shape[1] // 2
+
+    # TODO: account for rotation, different shape types
+
+    # get rect dimensions in px
+    ymin, xmin = arr[0]
+    ymax, xmax = arr[2]
+
+    width = int(xmax - xmin)
+    height = int(ymax - ymin)
+
+    cx = int(xmin + width / 2)
+    cy = int(ymin + height / 2)
+
+    # get rect dimensions in real space
+    cy_real = (cy_mid - cy) * pixelsize
+    cx_real = -(cx_mid - cx) * pixelsize
+    width = width * pixelsize
+    height = height * pixelsize
+
+    # set milling settings
+    mill_settings = MillingSettings(
+        width=width, height=height, depth=depth, centre_x=cx_real, centre_y=cy_real
+    )
+
+    return mill_settings

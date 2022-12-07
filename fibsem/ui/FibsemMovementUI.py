@@ -12,20 +12,21 @@ from PyQt5 import QtCore, QtWidgets
 import scipy.ndimage as ndi
 import traceback
 
+from fibsem.ui import utils as fibsem_ui 
+
 class MovementMode(Enum):
     Stable = 1
     Eucentric = 2
     # Needle = 3
 
-class MovementType(Enum):
-    StableEnabled = 0 
-    EucentricEnabled = 1
-    TiltEnabled = 2
-
 # TODO: save state...?
 # TODO: focus and link?
 
 import napari
+
+# TODO: move to FIBSEM
+from liftout import patterning
+from liftout.patterning import MillingPattern
 
 class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
@@ -33,7 +34,8 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         microscope: SdbMicroscopeClient,
         settings: MicroscopeSettings,
         msg: str = None,
-        parent=None,
+        pattern: MillingPattern = MillingPattern.Trench,
+        parent = None,
         viewer: napari.Viewer = None
     ):
         super(FibsemMovementUI, self).__init__(parent=parent)
@@ -45,9 +47,9 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
-        self.destination_points = (Point(), Point())
-
-        # TODO: add user defined initial movement mode
+        # milling
+        self.milling_pattern = pattern
+        self.all_patterns = None
 
         # msg
         self.msg = msg
@@ -89,7 +91,11 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             self.points_layer.editable = False
 
             self.image_layer.mouse_double_click_callbacks.append(self._double_click) # append callback
-            # self.image_layer.mouse_drag_callbacks.append(self._single_click) # append callback
+            
+            if self.checkBox_show_milling_pattern.isChecked():
+                self._update_milling_pattern()
+
+            # set active layer, must be done last
             self.viewer.layers.selection.active = self.image_layer
 
         except:
@@ -114,20 +120,76 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         
         return coords, beam_type, adorned_image
 
-    # def _single_click(self, layer, event):
+    def _toggle_milling_pattern_visibility(self):
+
+        # draw patterns in napari
+        if "Stage 1" in self.viewer.layers:
+            self.viewer.layers["Stage 1"].visible = self.checkBox_show_milling_pattern.isChecked()
+        if "Stage 2" in self.viewer.layers:
+            self.viewer.layers["Stage 2"].visible = self.checkBox_show_milling_pattern.isChecked()
+
+    def _update_milling_pattern(self):
+
+        # # milling pattern
+
+        ################### DO ONCE ###################
+        if self.all_patterns is None:
+            # draw patterns in microscope
+            self.microscope.patterning.clear_patterns()
+            all_patterns = []
+
+            # get all milling stages for the pattern
+            milling_protocol_stages = patterning.get_milling_protocol_stage_settings(
+                self.settings, self.milling_pattern
+            )
+
+            milling_stages = {}
+            for i, stage_settings in enumerate(milling_protocol_stages, 1):
+                milling_stages[f"{self.milling_pattern.name}_{i}"] = stage_settings
+
+            for stage_name, stage_settings in milling_stages.items():
+
+                patterns = patterning.create_milling_patterns(
+                    self.microscope,
+                    stage_settings,
+                    self.milling_pattern,
+                )
+                all_patterns.append(patterns)  # 2D
+
+            self.all_patterns = all_patterns
         
-    #     if event.type == "mouse_press" and self.movement_mode is MovementMode.Needle:
-    #         pass # TODO:
-            # get coords
-            # coords = layer.world_to_data(event.position)
+        ################### UPDATE EVERY TIME ###################
+        # draw patterns in napari
+        if "Stage 1" in self.viewer.layers:
+            self.viewer.layers.remove(self.viewer.layers["Stage 1"])
+        if "Stage 2" in self.viewer.layers:
+            self.viewer.layers.remove(self.viewer.layers["Stage 2"])
 
-            # beam_type, adorned_image = self.get_data_from_coord(coords)
+        pixelsize = self.ib_image.metadata.binary_result.pixel_size.x
 
-            # coord_type = self.comboBox_needle_coordinate.currentText()
+        for i, stage in enumerate(self.all_patterns, 1):
+            shape_patterns = []
+            for pattern in stage:
+                shape = fibsem_ui.convert_pattern_to_napari_rect(
+                    pattern, self.ib_image.data, pixelsize
+                )
+                
+                # offset the x coord by image width
+                for c in shape:
+                    c[1] += self.eb_image.data.shape[1]
+                    
+                shape_patterns.append(shape)
 
-            # logging.info(f"Layer: {layer}, Event: {event}")
-            # logging.info(f"Coords: {coords}, Type: {coord_type}")
-            # logging.info(f"BeamType: {beam_type}, ")
+            colour = "yellow" if i == 1 else "cyan"
+            self.viewer.add_shapes(
+                shape_patterns,
+                name=f"Stage {i}",
+                shape_type="rectangle",
+                edge_width=0.5,
+                edge_color=colour,
+                face_color=colour,
+                opacity=0.5,
+            )
 
     def _double_click(self, layer, event):
 
@@ -185,6 +247,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.comboBox_movement_mode.currentTextChanged.connect(
             self.movement_mode_changed
         )
+        self.pushButton_auto_eucentric.setVisible(False)
         self.pushButton_auto_eucentric.clicked.connect(self.auto_eucentric_button_pressed)
         self.comboBox_needle_coordinate.addItems(["Source", "Destination"])
 
@@ -193,6 +256,12 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.label_needle_coordinate.setVisible(DESTINATION_MODE)
         self.comboBox_needle_coordinate.setVisible(DESTINATION_MODE)
 
+        # milling pattern
+        SHOW_MILLING = bool(self.milling_pattern is not None)
+        self.checkBox_show_milling_pattern.setVisible(SHOW_MILLING)
+        self.checkBox_show_milling_pattern.setChecked(SHOW_MILLING)
+
+        self.checkBox_show_milling_pattern.stateChanged.connect(self._toggle_milling_pattern_visibility)
 
         # tilt functionality
         self.doubleSpinBox_tilt_degrees.setMinimum(0)
@@ -265,7 +334,10 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 def main():
     from fibsem import utils
     from fibsem.ui import windows as fibsem_ui_windows
-    microscope, settings= utils.setup_session()
+    from liftout.config import config
+    microscope, settings= utils.setup_session(
+        protocol_path=config.protocol_path,
+    )
 
 
     fibsem_ui_windows.ask_user_movement(
