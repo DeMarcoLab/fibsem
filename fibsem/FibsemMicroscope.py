@@ -3,6 +3,7 @@ import copy
 import logging
 import datetime
 import numpy as np
+from tescanautomation import Automation
 
 
 TESCAN_ENABLED = True
