@@ -240,19 +240,25 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
                 if k not in config.NON_SCALED_MILLING_PARAMETERS:
                     v = float(v) * constants.METRE_TO_MICRON
 
+                    
                 label = QLabel()
                 label.setText(str(k))
-                spinBox_value = QtWidgets.QDoubleSpinBox()
-                spinBox_value.setValue(v)
-                spinBox_value.valueChanged.connect(self.update_milling_settings_from_ui)
+                if k == "cleaning_cross_section":
+                    value_widget = QtWidgets.QCheckBox()
+                    value_widget.setChecked(bool(v))
+                    value_widget.stateChanged.connect(self.update_milling_settings_from_ui)
+                else:
+                    value_widget = QtWidgets.QDoubleSpinBox()
+                    value_widget.setValue(v)
+                    value_widget.valueChanged.connect(self.update_milling_settings_from_ui)
 
                 if k == "rotation":
-                    spinBox_value.setRange(-360, 360)
+                    value_widget.setRange(-360, 360)
 
                 self.gridLayout_2.addWidget(label, i, 0)
-                self.gridLayout_2.addWidget(spinBox_value, i, 1)
+                self.gridLayout_2.addWidget(value_widget, i, 1)
 
-                self.milling_ui_dict[k] = spinBox_value
+                self.milling_ui_dict[k] = value_widget
 
                 i += 1
 
@@ -276,7 +282,11 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         # map keys to ui widgets
         current_stage = self.comboBox_milling_stage.currentText()
         for k, v in self.milling_ui_dict.items():
-            value = v.value()
+            if k == "cleaning_cross_section":
+                value = v.isChecked()
+            else:
+                value = v.value()
+    
             if k not in config.NON_SCALED_MILLING_PARAMETERS:
                 value = float(value) * constants.MICRON_TO_METRE
             self.milling_stages[current_stage][k] = value
@@ -400,13 +410,13 @@ def main():
     settings = fibsem_utils.load_settings_from_config(
         protocol_path=liftout_config.protocol_path
     )
-    settings.image.hfw = 50e-6
-    milling_pattern = MillingPattern.Polish
+    settings.image.hfw = 150e-6
+    milling_pattern = MillingPattern.JCut
     point = None
     change_pattern = True
     auto_continue = False
 
-    settings.image.hfw = 80e-6
+    settings.image.hfw = 150e-6
 
     milling_ui(
         microscope,

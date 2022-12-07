@@ -48,7 +48,6 @@ NON_CHANGEABLE_MILLING_PARAMETERS = [
     "dwell_time",
     "reduced_area",
     "scan_direction",
-    "cleaning_cross_section",
 ]
 NON_SCALED_MILLING_PARAMETERS = [
     "size_ratio",
@@ -57,4 +56,5 @@ NON_SCALED_MILLING_PARAMETERS = [
     "needle_angle",
     "percentage_roi_height",
     "percentage_from_lamella_surface",
+    "cleaning_cross_section"
 ]

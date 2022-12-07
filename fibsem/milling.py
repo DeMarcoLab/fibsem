@@ -282,7 +282,6 @@ def _draw_rectangle_pattern_v2(microscope:SdbMicroscopeClient, mill_settings: Mi
             depth=mill_settings.depth,
         )
 
-
     pattern.rotation=mill_settings.rotation
     pattern.scan_direction = mill_settings.scan_direction
 
@@ -300,6 +299,7 @@ def _draw_trench_patterns(
     upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
     offset = protocol["offset"]
     milling_depth = protocol["milling_depth"]
+    use_cleaning_cross_section = bool(protocol["cleaning_cross_section"])
 
     centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
     centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
@@ -312,7 +312,7 @@ def _draw_trench_patterns(
         centre_x=point.x, 
         centre_y=centre_lower_y,
         scan_direction="BottomToTop",
-        cleaning_cross_section=True
+        cleaning_cross_section=use_cleaning_cross_section
     )
 
     upper_settings = MillingSettings(
@@ -322,7 +322,7 @@ def _draw_trench_patterns(
         centre_x=point.x, 
         centre_y=centre_upper_y,
         scan_direction="TopToBottom",
-        cleaning_cross_section=True
+        cleaning_cross_section=use_cleaning_cross_section
     )
 
     # draw patterns
