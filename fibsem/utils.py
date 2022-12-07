@@ -274,7 +274,7 @@ def setup_session(
         microscope = FibSem.ThermoMicroscope()
         microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 7520)
     if settings.system.manufacturer == "Tescan":
-        microscope = FibSem.TescanMicroscope()
+        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
         microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 8300)
 
 
