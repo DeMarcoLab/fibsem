@@ -823,7 +823,7 @@ class FibsemImage:
         metadata = FibsemImageMetadata(
             image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
         )
-        return cls(data=image.data, metadata=metadata)
+        return cls(data=np.array(image.Image), metadata=metadata)
 
 @dataclass
 class ReferenceImages:

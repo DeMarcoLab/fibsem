@@ -66,7 +66,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.error(f"Unable to connect to the microscope: {e}")
 
     def acquire_image(
-        self, frame_settings: GrabFrameSettings = None, image_settings=ImageSettings
+        self, image_settings=ImageSettings
     ) -> FibsemImage:
         """Acquire a new image.
 
@@ -77,6 +77,13 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             AdornedImage: new image
         """
+        # set frame settings
+        frame_settings = GrabFrameSettings(
+            resolution=image_settings.resolution,
+            dwell_time=image_settings.dwell_time,
+            reduced_area=image_settings.reduced_area,
+        )
+
         if image_settings.beam_type == BeamType.ELECTRON:
             hfw_limits = self.connection.beams.electron_beam.horizontal_field_width.limits
             image_settings.hfw = np.clip(image_settings.hfw, hfw_limits.min, hfw_limits.max)
