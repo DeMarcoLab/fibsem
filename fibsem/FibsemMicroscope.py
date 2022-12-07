@@ -332,6 +332,15 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             MicroscopeState: current microscope state
         """
+        params = self.connection.FIB.Optics.EnumParameters()
+        split_params = params.split("\n")
+        for i, word in enumerate(split_params):
+            if "Working Distance" in word:
+                idx = int(word.split(".")[1])
+                count = int(split_params[i+1].split("=")[-1]) - 1
+                unit = split_params[i+2].split("=")[-1]
+        wd_ion = self.connection.FIB.Optics.Get(idx)[count]
+
 
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
@@ -351,7 +360,7 @@ class TescanMicroscope(FibsemMicroscope):
             # ion beam settings
             ib_settings=BeamSettings(
                 beam_type=BeamType.ION,
-                working_distance=None, 
+                working_distance=wd_ion/1000 if unit == 'mm' else wd_ion, 
                 beam_current=self.connection.FIB.Beam.ReadProbeCurrent()/(10e12),
                 hfw=self.connection.FIB.Optics.GetViewfield()/1000, 
             ),
