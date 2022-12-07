@@ -335,7 +335,7 @@ def locate_shift_between_features_v2(
     return det
 
 
-def plot_det_result_v2(det: DetectedFeatures):
+def plot_det_result_v2(det: DetectedFeatures, save:bool=True):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
@@ -365,9 +365,11 @@ def plot_det_result_v2(det: DetectedFeatures):
     ax[1].legend(loc="best")
     # plt.show()
 
-    from fibsem import utils as f_utils
-    f_utils.log_current_figure(fig, "ml")
-
+    if save is True:
+        from fibsem import utils as f_utils
+        f_utils.log_current_figure(fig, "ml")
+    else:
+        plt.show()
 
 
 

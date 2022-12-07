@@ -430,3 +430,28 @@ def get_current_beam_system_state(microscope: SdbMicroscopeClient, beam_type: Be
         eucentric_height = eucentric_height,
         plasma_gas = plasma_gas
     )
+
+# TODO: migrate to this...from validation func
+def set_beam_system_state(microscope: SdbMicroscopeClient, beam_system_settings: BeamSystemSettings):
+
+    if beam_system_settings.beam_type is BeamType.ELECTRON:
+        microscope_beam = microscope.beams.electron_beam
+    if beam_system_settings.beam_type is BeamType.ION:
+        microscope_beam = microscope.beams.ion_beam
+
+    # set beam active view and device
+    microscope.imaging.set_active_view(beam_system_settings.beam_type.value)
+    microscope.imaging.set_active_device(beam_system_settings.beam_type.value)
+
+    # set beam settings
+    microscope_beam.high_voltage.value = beam_system_settings.voltage
+    microscope_beam.beam_current.value = beam_system_settings.current
+    microscope.detector.type.value = beam_system_settings.detector_type
+    microscope.detector.mode.value = beam_system_settings.detector_mode
+
+    if beam_system_settings.beam_type is BeamType.ION:
+        microscope_beam.source.plasma_gas.value = beam_system_settings.plasma_gas
+
+    return
+
+
