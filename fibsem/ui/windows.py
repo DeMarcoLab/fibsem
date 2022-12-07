@@ -5,7 +5,6 @@ from pathlib import Path
 import napari
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import AdornedImage
 from fibsem import acquire, conversions, validation, patterning
 from fibsem.detection import detection
 from fibsem.detection.detection import DetectedFeatures, Feature
