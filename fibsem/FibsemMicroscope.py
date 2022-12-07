@@ -276,11 +276,92 @@ class TescanMicroscope(FibsemMicroscope):
 
         return fibsem_image
 
-    def _get_ib_image():
-        pass
+    def _get_ib_image(self, image_settings = ImageSettings):
+        # At first make sure the beam is ON
+        self.connection.FIB.Beam.On()
+        # important: stop the scanning before we start scanning or before automatic procedures,
+        # even before we configure the detectors
+        self.connection.FIB.Scan.Stop()
+        # Select the detector for image i.e.:
+        # 1. assign the detector to a channel
+        # 2. enable the channel for acquisition
+        detectors = self.connection.FIB.Detector.Enum()
+        detector_active = detectors[0]
+        self.connection.FIB.Detector.Set(0, detector_active, Bpp.Grayscale_8_bit)
+
+        #resolution
+        numbers = re.findall(r'\d+', image_settings.resolution)
+        imageWidth = int(numbers[0])
+        imageHeight = int(numbers[1])
+
+        image = self.connection.FIB.Scan.AcquireImageFromChannel(0, imageWidth, imageHeight, 1000)
+
+        microscope_state = MicroscopeState(
+            timestamp= datetime.datetime.timestamp(datetime.datetime.now()),
+            absolute_position= FibsemStagePosition(
+                x = float(image.Header["FIB"]["StageX"]),
+                y = float(image.Header["FIB"]["StageY"]),
+                z = float(image.Header["FIB"]["StageZ"]),
+                r = float(image.Header["FIB"]["StageRotation"]),
+                t = float(image.Header["FIB"]["StageTilt"]),
+                coordinate_system= "Raw",
+            ),
+            eb_settings = BeamSettings(beam_type=BeamType.ELECTRON),
+            ib_settings = BeamSettings(beam_type=BeamType.ION, 
+                working_distance=float(image.Header["FIB"]["WD"]),
+                beam_current = float(image.Header["FIB"]["BeamCurrent"]),
+                resolution = "{}x{}".format(imageWidth,imageHeight),
+                dwell_time = float(image.Header["FIB"]["DwellTime"]),
+                stigmation= Point(float(image.Header["FIB"]["StigmatorX"]), float(image.Header["FIB"]["StigmatorY"])),
+                shift=Point(0.0, 0.0),
+                ),
+        )
+
+        fibsem_image = FibsemImage.fromTescanImage(image, image_settings, microscope_state)
+
+        return fibsem_image
+
+    def get_stage_position(self):
+        x,y,z,r,t = self.connection.Stage.GetPosition()
+        stage_position = FibsemStagePosition(x,y,z,r,t)
+        return stage_position
+
+    def get_current_microscope_state(self) -> MicroscopeState:
+        """Get the current microscope state
+
+        Returns:
+            MicroscopeState: current microscope state
+        """
+
+        current_microscope_state = MicroscopeState(
+            timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
+            # get absolute stage coordinates (RAW)
+            absolute_position= self.get_stage_position(),
+            # electron beam settings
+            eb_settings=BeamSettings(
+                beam_type=BeamType.ELECTRON,
+                working_distance=self.connection.SEM.Optics.GetWD()/1000,
+                beam_current=self.connection.SEM.Beam.GetCurrent()/(10e6),
+                hfw=self.connection.SEM.Optics.GetViewfield()/1000,
+                resolution=None, # TODO fix these empty parameters
+                dwell_time=None,
+                stigmation=None,
+                shift=None,
+            ),
+            # ion beam settings
+            ib_settings=BeamSettings(
+                beam_type=BeamType.ION,
+                working_distance=None, 
+                beam_current=self.connection.FIB.Beam.ReadProbeCurrent()/(10e12),
+                hfw=self.connection.FIB.Optics.GetViewfield()/1000, 
+            ),
+        )
+
+        return current_microscope_state
 
 
     def last_image():
+
         pass
     
     def autocontrast(self, beam_type:BeamType) -> None:
