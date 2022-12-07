@@ -5,11 +5,14 @@ import datetime
 import numpy as np
 
 
-TESCAN_ENABLED = False
-THERMO_ENABLED = True
+TESCAN_ENABLED = True
+THERMO_ENABLED = False
 
 if TESCAN_ENABLED:
     from tescanautomation import Automation
+    from tescanautomation.SEM import HVBeamStatus as SEMStatus
+    from tescanautomation.Common import Bpp
+    from tescanautomation.GUI import SEMInfobar
 
 if THERMO_ENABLED:
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
@@ -18,7 +21,7 @@ if THERMO_ENABLED:
 
 import sys
 
-from fibsem.structures import BeamType, ImageSettings, FibsemImage, FibsemImageMetadata, MicroscopeState, BeamSettings
+from fibsem.structures import BeamType, ImageSettings, Point, FibsemImage, FibsemImageMetadata, MicroscopeState, BeamSettings, FibsemStagePosition
 
 
 class FibsemMicroscope(ABC):
@@ -221,14 +224,68 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address,port)
 
     def acquire_image(
-        self, frame_settings: GrabFrameSettings = None, image_settings=ImageSettings
+        self, image_settings=ImageSettings
     ) -> FibsemImage:
+        if image_settings.beam_type.name == BeamType.ELECTRON:
+            image = self.get_eb_image(image_settings)
+        if image_settings.beam_type.name == BeamType.ION:
+            image = self.get_ib_image(image_settings)
+        return image
+
+    def get_eb_image(self, image_settings =ImageSettings) -> FibsemImage:
+        # At first make sure the beam is ON
+        self.connection.SEM.Beam.On()
+        # important: stop the scanning before we start scanning or before automatic procedures,
+        # even before we configure the detectors
+        self.connection.SEM.Scan.Stop()
+        # Select the detector for image i.e.:
+        # 1. assign the detector to a channel
+        # 2. enable the channel for acquisition
+        detector = self.connection.SEM.Detector.SESuitable()
+        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_16_bit)
+        
+        self.autocontrast()
+
+        #resolution
+        import re
+        numbers = re.findall(r'\d+', image_settings.resolution)
+        imageWidth = numbers[0]
+        imageHeight = numbers[1]
+
+        image = self.connection.SEM.Scan.AcquireImageFromChannel(0, imageWidth, imageHeight, 1000)
+
+        microscope_state = MicroscopeState(
+            timestamp= datetime.timestamp(datetime.now()),
+            absolute_position= FibsemStagePosition(
+                x = image.Header["SEM"]["StageX"],
+                y = image.Header["SEM"]["StageY"],
+                z = image.Header["SEM"]["StageZ"],
+                r = image.Header["SEM"]["StageRotation"],
+                t = image.Header["SEM"]["StageTilt"],
+            ),
+            eb_settings = BeamSettings(beam_type=BeamType.ELECTRON, 
+                working_distance=image.Header["SEM"]["WD"],
+                beam_current = image.Header["SEM"]["BeamCurrent"],
+                resolution = "{}x{}".format(imageWidth,imageHeight),
+                dwell_time = image.Header["SEM"]["DwellTime"],
+                stigmation= Point(image.Header["SEM"]["StigmatorX"], image.Header["SEM"]["StigmatorY"]),
+                shift=Point(image.Header["SEM"]["GunShiftX"], image.Header["SEM"]["GunShiftY"]),
+                ), 
+            ib_settings = BeamSettings(beam_type=BeamType.ION)
+        )
+
+        fibsem_image = FibsemImage.fromTescanImage(image, image_settings, microscope_state)
+        return fibsem_image
+
+    def get_ib_image():
         pass
 
-    def last_image(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemImage:
+
+    def last_image():
         pass
     
-    def autocontrast(self, beam_type=BeamType.ELECTRON) -> None:
-        pass
+    def autocontrast(self) -> None:
+        self.connection.SEM.Detector.StartAutoSignal(0)
+
     def reset_beam_shifts(self):
         pass

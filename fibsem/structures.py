@@ -613,7 +613,7 @@ class FibsemImageMetadata:
         if settings["microscope_state"] is not None:
             microscope_state = MicroscopeState(
                 timestamp=settings["microscope_state"]["timestamp"],
-                absolute_position=StagePosition(),
+                absolute_position=FibsemStagePosition(),
                 eb_settings=BeamSettings.__from_dict__(
                     settings["microscope_state"]["eb_settings"]
                 ),
