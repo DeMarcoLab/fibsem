@@ -34,7 +34,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         microscope: SdbMicroscopeClient,
         settings: MicroscopeSettings,
         msg: str = None,
-        pattern: MillingPattern = MillingPattern.Trench,
+        pattern: MillingPattern = None,
         parent = None,
         viewer: napari.Viewer = None
     ):
@@ -333,19 +333,18 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
 def main():
     from liftout.config import config
-
     from fibsem import utils
     from fibsem.ui import windows as fibsem_ui_windows
+
     microscope, settings= utils.setup_session(
         protocol_path=config.protocol_path,
     )
-
 
     fibsem_ui_windows.ask_user_movement(
         microscope,
         settings,
         msg="Move around",
-
+        pattern = MillingPattern.Trench
     )
 
 if __name__ == "__main__":

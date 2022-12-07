@@ -121,7 +121,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
 
         # for trenches, move the stage, not the pattern
         # (trench should always be in centre of image)
-        if self.milling_pattern is MillingPattern.Trench:
+        if self.milling_pattern in [MillingPattern.Trench, MillingPattern.Thin]:
 
             point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
                     self.image.data, self.image.metadata.binary_result.pixel_size.x)  

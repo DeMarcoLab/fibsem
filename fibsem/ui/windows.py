@@ -31,13 +31,18 @@ def ask_user_movement(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
     msg: str = None,
+    pattern: patterning.MillingPattern = None,
     parent=None,
 ):
 
     viewer = napari.Viewer()
 
     movement_ui = FibsemMovementUI(
-        microscope=microscope, settings=settings, msg=msg, parent=parent, viewer=viewer
+        microscope=microscope, 
+        settings=settings, 
+        msg=msg, 
+        pattern=pattern,
+        parent=parent, viewer=viewer
     )
 
     viewer.window.add_dock_widget(movement_ui, area="right", add_vertical_stretch=False)
