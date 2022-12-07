@@ -3,8 +3,6 @@ import copy
 import logging
 import datetime
 import numpy as np
-from tescanautomation import Automation
-
 
 TESCAN_ENABLED = True
 THERMO_ENABLED = False
@@ -14,6 +12,7 @@ if TESCAN_ENABLED:
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
     from tescanautomation.GUI import SEMInfobar
+    import re
 
 if THERMO_ENABLED:
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
@@ -233,7 +232,7 @@ class TescanMicroscope(FibsemMicroscope):
             image = self.get_ib_image(image_settings)
         return image
 
-    def get_eb_image(self, image_settings =ImageSettings) -> FibsemImage:
+    def _get_eb_image(self, image_settings =ImageSettings) -> FibsemImage:
         # At first make sure the beam is ON
         self.connection.SEM.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
@@ -246,7 +245,6 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_16_bit)
 
         #resolution
-        import re
         numbers = re.findall(r'\d+', image_settings.resolution)
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
@@ -281,7 +279,7 @@ class TescanMicroscope(FibsemMicroscope):
         print("bla")
         return fibsem_image
 
-    def get_ib_image():
+    def _get_ib_image():
         pass
 
 
