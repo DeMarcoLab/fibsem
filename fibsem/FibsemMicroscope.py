@@ -214,6 +214,8 @@ class TescanMicroscope(FibsemMicroscope):
 
     def __init__(self,ip_address: str ='localhost'):
         self.connection = Automation(ip_address)
+        detectors = self.connection.FIB.Detector.Enum()
+        self.ion_detector_active = detectors[0]
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -285,9 +287,8 @@ class TescanMicroscope(FibsemMicroscope):
         # Select the detector for image i.e.:
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
-        detectors = self.connection.FIB.Detector.Enum()
-        detector_active = detectors[0]
-        self.connection.FIB.Detector.Set(0, detector_active, Bpp.Grayscale_8_bit)
+        self.connection.FIB.Detector.Set(0, self.ion_detector_active, Bpp.Grayscale_8_bit)
+
 
         #resolution
         numbers = re.findall(r'\d+', image_settings.resolution)
@@ -376,6 +377,8 @@ class TescanMicroscope(FibsemMicroscope):
     def autocontrast(self, beam_type:BeamType) -> None:
         if beam_type.name == BeamType.ELECTRON:
             self.connection.SEM.Detector.StartAutoSignal(0)
+        if beam_type.name == BeamType.ION:
+            self.connection.FIB.Detector.AutoSignal(0)	
 
     def reset_beam_shifts(self):
         pass
