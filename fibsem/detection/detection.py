@@ -130,32 +130,6 @@ def detect_corner(
 
     return Point(x=edge_px[1], y=edge_px[0])
 
-
-# def detect_lamella(
-#     mask: np.ndarray,
-#     feature_type: FeatureType,
-#     color: tuple = (255, 0, 0),
-#     mask_radius: int = 256,
-# ) -> Point:
-
-#     lamella_mask, _ = extract_class_pixels(mask, color)
-#     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
-#     # lamella_centre = detect_centre_point(lamella_mask, color=color)
-#     try:
-#         if feature_type is FeatureType.LamellaCentre:
-#             feature_px = detect_centre_point(lamella_mask, color=color)
-
-#         if feature_type is FeatureType.LamellaLeftEdge:
-#             feature_px = detect_corner(lamella_mask, left=True)
-
-#         if feature_type is FeatureType.LamellaRightEdge:
-#             feature_px = detect_corner(lamella_mask, left=False)
-#     except:
-#         feature_px = Point(x=0, y=0)
-
-#     return feature_px
-
-
 def detect_lamella_v2(
     mask: np.ndarray,
     feature_type: FeatureType,
