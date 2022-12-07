@@ -18,6 +18,7 @@ from fibsem.patterning import MillingPattern
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QLabel
 
+
 class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
@@ -44,16 +45,16 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         self.milling_pattern = milling_pattern
         self.point = point
         self.auto_continue = auto_continue
-        self.USER_UPDATED_PROTOCOL = False 
+        self.USER_UPDATED_PROTOCOL = False
         self.CHANGE_PATTERN_ENABLED = change_pattern
 
         self.setup_ui()
         self.setup_connections()
 
         milling.setup_milling(
-            microscope = self.microscope,
-            application_file = self.settings.system.application_file,
-            hfw=self.settings.image.hfw
+            microscope=self.microscope,
+            application_file=self.settings.system.application_file,
+            hfw=self.settings.image.hfw,
         )
 
         self.update_milling_stages()
@@ -123,8 +124,11 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         # (trench should always be in centre of image)
         if self.milling_pattern in [MillingPattern.Trench, MillingPattern.Thin]:
 
-            point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
-                    self.image.data, self.image.metadata.binary_result.pixel_size.x)  
+            point = conversions.image_to_microscope_image_coordinates(
+                Point(x=coords[1], y=coords[0]),
+                self.image.data,
+                self.image.metadata.binary_result.pixel_size.x,
+            )
 
             movement.move_stage_relative_with_corrected_movement(
                 microscope=self.microscope,
@@ -142,8 +146,11 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         if coords is None:
             coords = np.asarray(self.image.data.shape) // 2
 
-        self.point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
-            self.image.data, self.image.metadata.binary_result.pixel_size.x)  
+        self.point = conversions.image_to_microscope_image_coordinates(
+            Point(x=coords[1], y=coords[0]),
+            self.image.data,
+            self.image.metadata.binary_result.pixel_size.x,
+        )
 
         logging.debug(
             f"Milling, {BeamType.ION}, {self.milling_pattern.name}, p=({coords[1]:.2f}, {coords[0]:.2f})  c=({self.point.x:.2e}, {self.point.y:.2e}) "
@@ -152,7 +159,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         self.update_milling_pattern()
 
     def update_milling_pattern(self):
-        
+
         try:
             # draw patterns in microscope
             self.microscope.patterning.clear_patterns()
@@ -160,49 +167,24 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
             for stage_name, stage_settings in self.milling_stages.items():
 
                 patterns = patterning.create_milling_patterns(
-                    self.microscope,
-                    stage_settings,
-                    self.milling_pattern,
-                    self.point,
+                    self.microscope, stage_settings, self.milling_pattern, self.point,
                 )
                 all_patterns.append(patterns)  # 2D
 
-            # draw patterns in napari
-            if "Stage 1" in self.viewer.layers:
-                self.viewer.layers.remove(self.viewer.layers["Stage 1"])
-            if "Stage 2" in self.viewer.layers:
-                self.viewer.layers.remove(self.viewer.layers["Stage 2"])
-
-            pixelsize = self.image.metadata.binary_result.pixel_size.x
-
-            for i, stage in enumerate(all_patterns, 1):
-                shape_patterns = []
-                for pattern in stage:
-                    shape = fibsem_ui.convert_pattern_to_napari_rect(
-                        pattern, self.image.data, pixelsize
-                    )
-                    shape_patterns.append(shape)
-
-                # draw shapes
-                colour = "yellow" if i == 1 else "cyan"
-                self.viewer.add_shapes(
-                    shape_patterns,
-                    name=f"Stage {i}",
-                    shape_type="rectangle",
-                    edge_width=0.5,
-                    edge_color=colour,
-                    face_color=colour,
-                    opacity=0.5,
-                )
+            # # draw patterns in napari
+            fibsem_ui._draw_patterns_in_napari(
+                viewer=self.viewer,
+                ib_image=self.image,
+                eb_image=None,
+                all_patterns=all_patterns,
+            )
 
             self.update_estimated_time(all_patterns)
 
             self.viewer.layers.selection.active = self.image_layer
-        
+
         except Exception as e:
-            napari.utils.notifications.show_info(
-                f"Error: {e}"
-            )
+            napari.utils.notifications.show_info(f"Error: {e}")
 
     def update_estimated_time(self, patterns: list):
 
@@ -263,7 +245,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
                 spinBox_value = QtWidgets.QDoubleSpinBox()
                 spinBox_value.setValue(v)
                 spinBox_value.valueChanged.connect(self.update_milling_settings_from_ui)
-                
+
                 if k == "rotation":
                     spinBox_value.setRange(-360, 360)
 
@@ -317,14 +299,14 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         )  # set ion beam view
         for stage_name, stage_settings in self.milling_stages.items():
 
+            logging.debug(f"MILLING | {self.millling_pattern} | {stage_name} | {stage_settings}")
+
             # redraw patterns, and run milling
             self.microscope.patterning.clear_patterns()
             self.patterns = patterning.create_milling_patterns(
-                self.microscope,
-                stage_settings,
-                self.milling_pattern,
-                self.point,
+                self.microscope, stage_settings, self.milling_pattern, self.point,
             )
+            
             milling.run_milling(
                 microscope=self.microscope,
                 milling_current=stage_settings["milling_current"],
@@ -333,19 +315,18 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
 
             # update progress bar
             time.sleep(3)  # wait for milling to start
-            elapsed_time = 0
 
             milling_time_seconds = milling.estimate_milling_time_in_seconds(
                 [self.patterns]
             )
             logging.info(f"milling time: {milling_time_seconds}")
             dt = 0.1
-            progressbar = napari.utils.progress(milling_time_seconds*1/dt)
+            progressbar = napari.utils.progress(milling_time_seconds * 1 / dt)
             progressbar.display(msg=f"Milling: {stage_name}")
 
             # TODO: thread https://forum.image.sc/t/napari-progress-bar-modification-on-the-fly/62496/7
             while self.microscope.patterning.state == "Running":
-                
+
                 # elapsed_time += dt
                 # prog_val = int(elapsed_time)
                 progressbar.update(1)
@@ -360,7 +341,6 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
             microscope=self.microscope,
             imaging_current=self.settings.system.ion.current,
         )
-        napari.utils.notifications.show_info(f"Milling Complete.")
 
         # update image
         self.setup_ui()
@@ -381,7 +361,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
 
         if response:
             logging.info("Redoing milling")
-            
+
             # re-update patterns
             self.update_milling_pattern()
             return response
@@ -411,14 +391,15 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         self.viewer.window.close()
 
 
-
-
 def main():
 
     from liftout.config import config as liftout_config
     from fibsem.ui.windows import milling_ui
+
     microscope, settings = fibsem_utils.setup_session()
-    settings = fibsem_utils.load_settings_from_config(protocol_path=liftout_config.protocol_path)
+    settings = fibsem_utils.load_settings_from_config(
+        protocol_path=liftout_config.protocol_path
+    )
     settings.image.hfw = 50e-6
     milling_pattern = MillingPattern.Polish
     point = None
@@ -428,13 +409,13 @@ def main():
     settings.image.hfw = 80e-6
 
     milling_ui(
-        microscope, 
-        settings, 
-        milling_pattern, 
-        point = point, 
-        change_pattern = change_pattern, 
-        auto_continue=auto_continue)
-
+        microscope,
+        settings,
+        milling_pattern,
+        point=point,
+        change_pattern=change_pattern,
+        auto_continue=auto_continue,
+    )
 
 
 if __name__ == "__main__":

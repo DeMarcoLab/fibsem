@@ -304,3 +304,40 @@ def convert_napari_rect_to_mill_settings(
     )
 
     return mill_settings
+
+import napari
+
+def _draw_patterns_in_napari(viewer: napari.Viewer, ib_image: AdornedImage, eb_image: AdornedImage, all_patterns: list):
+
+    # remove all shapes layers
+    for layer in viewer.layers:
+        if (isinstance(layer, napari.layers.shapes.shapes.Shapes)):
+            viewer.layers.remove(layer)
+
+    pixelsize = ib_image.metadata.binary_result.pixel_size.x
+
+    # convert autoscript patterns to napari shapes
+    for i, stage in enumerate(all_patterns, 1):
+        shape_patterns = []
+        for pattern in stage:
+            shape = convert_pattern_to_napari_rect(
+                pattern, ib_image.data, pixelsize
+            )
+            
+            # offset the x coord by image width
+            if eb_image is not None:
+                for c in shape:
+                    c[1] += eb_image.data.shape[1]
+                
+            shape_patterns.append(shape)
+
+        colour = "yellow" if i == 1 else "cyan"
+        viewer.add_shapes(
+            shape_patterns,
+            name=f"Stage {i}",
+            shape_type="rectangle",
+            edge_width=0.5,
+            edge_color=colour,
+            face_color=colour,
+            opacity=0.5,
+        )

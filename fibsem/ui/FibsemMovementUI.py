@@ -6,7 +6,7 @@ import numpy as np
 import scipy.ndimage as ndi
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (MoveSettings,
-                                                         StagePosition)
+                                                         StagePosition, AdornedImage)
 from PyQt5 import QtCore, QtWidgets
 
 from fibsem import (acquire, alignment, constants, conversions, movement,
@@ -50,6 +50,8 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         # milling
         self.milling_pattern = pattern
         self.all_patterns = None
+        if self.milling_pattern is not None:
+            self._update_milling_pattern()
 
         # msg
         self.msg = msg
@@ -93,7 +95,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             self.image_layer.mouse_double_click_callbacks.append(self._double_click) # append callback
             
             if self.checkBox_show_milling_pattern.isChecked():
-                self._update_milling_pattern()
+                fibsem_ui._draw_patterns_in_napari(self.viewer, self.ib_image, self.eb_image, self.all_patterns)
 
             # set active layer, must be done last
             self.viewer.layers.selection.active = self.image_layer
@@ -121,12 +123,10 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         return coords, beam_type, adorned_image
 
     def _toggle_milling_pattern_visibility(self):
-
-        # draw patterns in napari
-        if "Stage 1" in self.viewer.layers:
-            self.viewer.layers["Stage 1"].visible = self.checkBox_show_milling_pattern.isChecked()
-        if "Stage 2" in self.viewer.layers:
-            self.viewer.layers["Stage 2"].visible = self.checkBox_show_milling_pattern.isChecked()
+        
+        for layer in self.viewer.layers:
+            if (isinstance(layer, napari.layers.shapes.shapes.Shapes)):
+                layer.visible = self.checkBox_show_milling_pattern.isChecked()
 
     def _update_milling_pattern(self):
 
@@ -158,38 +158,6 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
             self.all_patterns = all_patterns
         
-        ################### UPDATE EVERY TIME ###################
-        # draw patterns in napari
-        if "Stage 1" in self.viewer.layers:
-            self.viewer.layers.remove(self.viewer.layers["Stage 1"])
-        if "Stage 2" in self.viewer.layers:
-            self.viewer.layers.remove(self.viewer.layers["Stage 2"])
-
-        pixelsize = self.ib_image.metadata.binary_result.pixel_size.x
-
-        for i, stage in enumerate(self.all_patterns, 1):
-            shape_patterns = []
-            for pattern in stage:
-                shape = fibsem_ui.convert_pattern_to_napari_rect(
-                    pattern, self.ib_image.data, pixelsize
-                )
-                
-                # offset the x coord by image width
-                for c in shape:
-                    c[1] += self.eb_image.data.shape[1]
-                    
-                shape_patterns.append(shape)
-
-            colour = "yellow" if i == 1 else "cyan"
-            self.viewer.add_shapes(
-                shape_patterns,
-                name=f"Stage {i}",
-                shape_type="rectangle",
-                edge_width=0.5,
-                edge_color=colour,
-                face_color=colour,
-                opacity=0.5,
-            )
 
     def _double_click(self, layer, event):
 
