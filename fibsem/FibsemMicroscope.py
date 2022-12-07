@@ -3,10 +3,10 @@ import copy
 import logging
 import datetime
 import numpy as np
+from tescanautomation import Automation
 
-
-TESCAN_ENABLED = False
-THERMO_ENABLED = True
+TESCAN_ENABLED = True
+THERMO_ENABLED = False
 
 if TESCAN_ENABLED:
     from tescanautomation import Automation
@@ -220,9 +220,7 @@ class TescanMicroscope(FibsemMicroscope):
     def connect_to_microscope(self, ip_address: str, port: int = 8300) -> None:
         self.connection = Automation(ip_address,port)
 
-    def acquire_image(
-        self, frame_settings: GrabFrameSettings = None, image_settings=ImageSettings
-    ) -> FibsemImage:
+    def acquire_image():
         pass
 
     def last_image(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemImage:
