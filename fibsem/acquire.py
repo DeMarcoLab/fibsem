@@ -204,12 +204,7 @@ def new_image(
             FibsemImage: new image
             String: filename of saved FibsemImage
     """
-    # set frame settings
-    frame_settings = GrabFrameSettings(
-        resolution=settings.resolution,
-        dwell_time=settings.dwell_time,
-        reduced_area=reduced_area,
-    )
+   
 
     # set label
     if settings.beam_type is BeamType.ELECTRON:
@@ -224,7 +219,6 @@ def new_image(
 
     # acquire the image
     image = microscope.acquire_image(
-        frame_settings=frame_settings,
         image_settings=settings,
     )
 
