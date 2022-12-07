@@ -226,10 +226,10 @@ class TescanMicroscope(FibsemMicroscope):
     def acquire_image(
         self, image_settings=ImageSettings
     ) -> FibsemImage:
-        if image_settings.beam_type == BeamType.ELECTRON:
-            image = self.get_eb_image(image_settings)
-        if image_settings.beam_type == BeamType.ION:
-            image = self.get_ib_image(image_settings)
+        if image_settings.beam_type.value == 1:
+            image = self._get_eb_image(image_settings)
+        if image_settings.beam_type.value == 2:
+            image = self._get_ib_image(image_settings)
         return image
 
     def _get_eb_image(self, image_settings =ImageSettings) -> FibsemImage:
@@ -254,29 +254,26 @@ class TescanMicroscope(FibsemMicroscope):
         microscope_state = MicroscopeState(
             timestamp= datetime.datetime.timestamp(datetime.datetime.now()),
             absolute_position= FibsemStagePosition(
-                x = image.Header["SEM"]["StageX"],
-                y = image.Header["SEM"]["StageY"],
-                z = image.Header["SEM"]["StageZ"],
-                r = image.Header["SEM"]["StageRotation"],
-                t = image.Header["SEM"]["StageTilt"],
+                x = float(image.Header["SEM"]["StageX"]),
+                y = float(image.Header["SEM"]["StageY"]),
+                z = float(image.Header["SEM"]["StageZ"]),
+                r = float(image.Header["SEM"]["StageRotation"]),
+                t = float(image.Header["SEM"]["StageTilt"]),
                 coordinate_system= "Raw",
             ),
             eb_settings = BeamSettings(beam_type=BeamType.ELECTRON, 
-                working_distance=image.Header["SEM"]["WD"],
-                beam_current = image.Header["SEM"]["BeamCurrent"],
+                working_distance=float(image.Header["SEM"]["WD"]),
+                beam_current = float(image.Header["SEM"]["BeamCurrent"]),
                 resolution = "{}x{}".format(imageWidth,imageHeight),
-                dwell_time = image.Header["SEM"]["DwellTime"],
-                stigmation= Point(image.Header["SEM"]["StigmatorX"], image.Header["SEM"]["StigmatorY"]),
-                shift=Point(image.Header["SEM"]["GunShiftX"], image.Header["SEM"]["GunShiftY"]),
+                dwell_time = float(image.Header["SEM"]["DwellTime"]),
+                stigmation= Point(float(image.Header["SEM"]["StigmatorX"]), float(image.Header["SEM"]["StigmatorY"])),
+                shift=Point(float(image.Header["SEM"]["GunShiftX"]), float(image.Header["SEM"]["GunShiftY"])),
                 ), 
             ib_settings = BeamSettings(beam_type=BeamType.ION)
         )
 
-        fibsem_image = FibsemImage()
         fibsem_image = FibsemImage.fromTescanImage(image, image_settings, microscope_state)
 
-        fibsem_image.metadata.compare_image_settings(image_settings)
-        print("bla")
         return fibsem_image
 
     def _get_ib_image():

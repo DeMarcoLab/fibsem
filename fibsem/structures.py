@@ -9,6 +9,7 @@ import tifffile as tff
 import json
 import numpy as np
 import time
+from tescanautomation.Common import Document
 from autoscript_sdb_microscope_client.structures import (
     AdornedImage,
     StagePosition,
@@ -790,7 +791,7 @@ class FibsemImage:
     @classmethod
     def fromTescanImage(
         cls,
-        image,
+        image: Document,
         image_settings: ImageSettings,
         state: MicroscopeState,
     ) -> "FibsemImage":
@@ -805,8 +806,8 @@ class FibsemImage:
         """
 
         pixel_size = Point(
-            image.Header["Main"]["PixelSizeX"],
-            image.Header["Main"]["PixelSizeX"]
+            float(image.Header["MAIN"]["PixelSizeX"]),
+            float(image.Header["MAIN"]["PixelSizeY"]),
         )
         metadata = FibsemImageMetadata(
             image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
