@@ -352,15 +352,6 @@ class TescanMicroscope(FibsemMicroscope):
         image_eb = self.last_image(BeamType.ELECTRON)
         image_ib = self.last_image(BeamType.ION)
 
-        # params = self.connection.FIB.Optics.EnumParameters()
-        # split_params = params.split("\n")
-        # for i, word in enumerate(split_params):
-        #     if "Working Distance" in word:
-        #         idx = int(word.split(".")[1])
-        #         count = int(split_params[i+1].split("=")[-1]) - 1
-        #         unit = split_params[i+2].split("=")[-1]
-        # wd_ion = self.connection.FIB.Optics.Get(idx)[count]
-
         if image_ib is not None:
                 ib_settings=BeamSettings(
                     beam_type=BeamType.ION,
