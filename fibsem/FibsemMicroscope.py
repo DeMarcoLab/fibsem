@@ -216,6 +216,8 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address)
         detectors = self.connection.FIB.Detector.Enum()
         self.ion_detector_active = detectors[0]
+        self.last_image_eb = None
+        self.last_image_ib = None
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -230,8 +232,13 @@ class TescanMicroscope(FibsemMicroscope):
     ) -> FibsemImage:
         if image_settings.beam_type.value == 1:
             image = self._get_eb_image(image_settings)
+            self.last_image_eb = image
         if image_settings.beam_type.value == 2:
             image = self._get_ib_image(image_settings)
+            self.last_image_ib = image
+
+        
+
         return image
 
     def _get_eb_image(self, image_settings =ImageSettings) -> FibsemImage:
@@ -273,7 +280,7 @@ class TescanMicroscope(FibsemMicroscope):
                 ), 
             ib_settings = BeamSettings(beam_type=BeamType.ION)
         )
-
+        print(microscope_state.eb_settings.stigmation)
         fibsem_image = FibsemImage.fromTescanImage(image, image_settings, microscope_state)
 
         return fibsem_image
@@ -322,9 +329,18 @@ class TescanMicroscope(FibsemMicroscope):
 
         return fibsem_image
 
+    def last_image(self, beam_type: BeamType.ELECTRON) -> FibsemImage:
+        if beam_type == BeamType.ELECTRON:
+            image = self.last_image_eb
+        elif beam_type == BeamType.ION:
+            image = self.last_image_ib
+        else:
+            raise Exception("Beam type error")
+        return image 
+
     def get_stage_position(self):
         x,y,z,r,t = self.connection.Stage.GetPosition()
-        stage_position = FibsemStagePosition(x,y,z,r,t)
+        stage_position = FibsemStagePosition(x,y,z,r,t, "raw")
         return stage_position
 
     def get_current_microscope_state(self) -> MicroscopeState:
@@ -333,14 +349,43 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             MicroscopeState: current microscope state
         """
-        params = self.connection.FIB.Optics.EnumParameters()
-        split_params = params.split("\n")
-        for i, word in enumerate(split_params):
-            if "Working Distance" in word:
-                idx = int(word.split(".")[1])
-                count = int(split_params[i+1].split("=")[-1]) - 1
-                unit = split_params[i+2].split("=")[-1]
-        wd_ion = self.connection.FIB.Optics.Get(idx)[count]
+        image_eb = self.last_image(BeamType.ELECTRON)
+        image_ib = self.last_image(BeamType.ION)
+
+        # params = self.connection.FIB.Optics.EnumParameters()
+        # split_params = params.split("\n")
+        # for i, word in enumerate(split_params):
+        #     if "Working Distance" in word:
+        #         idx = int(word.split(".")[1])
+        #         count = int(split_params[i+1].split("=")[-1]) - 1
+        #         unit = split_params[i+2].split("=")[-1]
+        # wd_ion = self.connection.FIB.Optics.Get(idx)[count]
+
+        if image_ib is not None:
+                ib_settings=BeamSettings(
+                    beam_type=BeamType.ION,
+                    working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance, 
+                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent()/(10e12),
+                    hfw=self.connection.FIB.Optics.GetViewfield()/1000,
+                    resolution=image_ib.metadata.image_settings.resolution,
+                    dwell_time=image_ib.metadata.image_settings.dwell_time, 
+                    stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
+                    shift= image_ib.metadata.microscope_state.ib_settings.shift
+                ),
+        else: ib_settings = BeamSettings(BeamType.ION)
+
+        if image_eb is not None:
+            eb_settings=BeamSettings(
+                beam_type=BeamType.ELECTRON,
+                working_distance=self.connection.SEM.Optics.GetWD()/1000,
+                beam_current=self.connection.SEM.Beam.GetCurrent()/(10e6),
+                hfw=self.connection.SEM.Optics.GetViewfield()/1000,
+                resolution=image_eb.metadata.image_settings.resolution, # TODO fix these empty parameters
+                dwell_time=image_eb.metadata.image_settings.dwell_time,
+                stigmation=image_eb.metadata.microscope_state.eb_settings.stigmation,
+                shift= image_eb.metadata.microscope_state.eb_settings.shift
+            )
+        else: eb_settings = BeamSettings(BeamType.ELECTRON)
 
 
         current_microscope_state = MicroscopeState(
@@ -348,31 +393,12 @@ class TescanMicroscope(FibsemMicroscope):
             # get absolute stage coordinates (RAW)
             absolute_position= self.get_stage_position(),
             # electron beam settings
-            eb_settings=BeamSettings(
-                beam_type=BeamType.ELECTRON,
-                working_distance=self.connection.SEM.Optics.GetWD()/1000,
-                beam_current=self.connection.SEM.Beam.GetCurrent()/(10e6),
-                hfw=self.connection.SEM.Optics.GetViewfield()/1000,
-                resolution=None, # TODO fix these empty parameters
-                dwell_time=None,
-                stigmation=None,
-                shift=None,
-            ),
+            eb_settings=eb_settings,
             # ion beam settings
-            ib_settings=BeamSettings(
-                beam_type=BeamType.ION,
-                working_distance=wd_ion/1000 if unit == 'mm' else wd_ion, 
-                beam_current=self.connection.FIB.Beam.ReadProbeCurrent()/(10e12),
-                hfw=self.connection.FIB.Optics.GetViewfield()/1000, 
-            ),
+            ib_settings=ib_settings
         )
 
         return current_microscope_state
-
-
-    def last_image():
-
-        pass
     
     def autocontrast(self, beam_type:BeamType) -> None:
         if beam_type.name == BeamType.ELECTRON:
