@@ -302,6 +302,11 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
 
         logging.info(f"Running milling for {len(self.milling_stages)} Stages")
 
+        # TODO: fix this properly
+        self.milling_pattern = MillingPattern[
+            self.comboBox_select_pattern.currentText()
+        ]
+
         # clear state
         self.microscope.imaging.set_active_view(BeamType.ION.value)
         self.microscope.imaging.set_active_device(
@@ -309,7 +314,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         )  # set ion beam view
         for stage_name, stage_settings in self.milling_stages.items():
 
-            logging.debug(f"MILLING | {self.millling_pattern} | {stage_name} | {stage_settings}")
+            logging.debug(f"MILLING | {self.milling_pattern} | {stage_name} | {stage_settings}")
 
             # redraw patterns, and run milling
             self.microscope.patterning.clear_patterns()
