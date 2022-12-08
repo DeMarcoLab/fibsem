@@ -416,7 +416,7 @@ def main():
         protocol_path=liftout_config.protocol_path
     )
     settings.image.hfw = 150e-6
-    milling_pattern = MillingPattern.JCut
+    milling_pattern = MillingPattern.Trench
     point = None
     change_pattern = True
     auto_continue = False

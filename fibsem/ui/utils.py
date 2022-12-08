@@ -310,9 +310,13 @@ import napari
 def _draw_patterns_in_napari(viewer: napari.Viewer, ib_image: AdornedImage, eb_image: AdornedImage, all_patterns: list):
 
     # remove all shapes layers
+    layers_to_remove = []
     for layer in viewer.layers:
         if (isinstance(layer, napari.layers.shapes.shapes.Shapes)):
-            viewer.layers.remove(layer)
+            layers_to_remove.append(layer)
+            
+    for layer in layers_to_remove:
+        viewer.layers.remove(layer) # Not removing the second layer?
 
     pixelsize = ib_image.metadata.binary_result.pixel_size.x
 
