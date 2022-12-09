@@ -189,6 +189,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
     def update_estimated_time(self, patterns: list):
 
         milling_time_seconds = milling.estimate_milling_time_in_seconds(patterns)
+        # multiple by the ratio of the imaging_current to milling_current
         time_str = fibsem_utils._format_time_seconds(milling_time_seconds)
         self.label_milling_time.setText(f"Estimated Time: {time_str}")
 
@@ -318,7 +319,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
 
             # redraw patterns, and run milling
             self.microscope.patterning.clear_patterns()
-            self.patterns = patterning.create_milling_patterns(
+            patterns = patterning.create_milling_patterns(
                 self.microscope, stage_settings, self.milling_pattern, self.point,
             )
             
@@ -332,12 +333,12 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
             time.sleep(3)  # wait for milling to start
 
             milling_time_seconds = milling.estimate_milling_time_in_seconds(
-                [self.patterns]
+                [patterns]
             )
             logging.info(f"milling time: {milling_time_seconds}")
             dt = 0.1
-            progressbar = napari.utils.progress(milling_time_seconds * 1 / dt)
-            progressbar.display(msg=f"Milling: {stage_name}")
+            progressbar = napari.utils.progress(total= int(milling_time_seconds / dt))
+            progressbar.set_description(f"Milling: {stage_name}")
 
             # TODO: thread https://forum.image.sc/t/napari-progress-bar-modification-on-the-fly/62496/7
             while self.microscope.patterning.state == "Running":
