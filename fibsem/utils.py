@@ -9,6 +9,7 @@ import sys
 import re
 
 import yaml
+
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import (
     AdornedImage,
@@ -23,6 +24,7 @@ from fibsem.structures import (
     SystemSettings,
     DefaultSettings,
 )
+
 
 
 def connect_to_microscope(
@@ -270,12 +272,15 @@ def setup_session(
     # connect to microscope
     import fibsem.FibsemMicroscope as FibSem
 
+    
     if settings.system.manufacturer == "Thermo":
         microscope = FibSem.ThermoMicroscope()
         microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 7520)
+        
     if settings.system.manufacturer == "Tescan":
         microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
         microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 8300)
+        
 
 
     # image_setttings

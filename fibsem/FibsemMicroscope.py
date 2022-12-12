@@ -3,18 +3,17 @@ import copy
 import logging
 import datetime
 import numpy as np
+from fibsem import utils
 
-TESCAN_ENABLED = True
-THERMO_ENABLED = False
-
-if TESCAN_ENABLED:
+settings = utils.load_settings_from_config()
+if settings.system.manufacturer == "Tescan":
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
     from tescanautomation.GUI import SEMInfobar
     import re
 
-if THERMO_ENABLED:
+if settings.system.manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
     from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
@@ -258,6 +257,8 @@ class TescanMicroscope(FibsemMicroscope):
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
 
+        self.connection.SEM.Optics.SetViewfield(image_settings.hfw*1000)
+
         image = self.connection.SEM.Scan.AcquireImageFromChannel(0, imageWidth, imageHeight, 1000)
 
         microscope_state = MicroscopeState(
@@ -276,11 +277,10 @@ class TescanMicroscope(FibsemMicroscope):
                 resolution = "{}x{}".format(imageWidth,imageHeight),
                 dwell_time = float(image.Header["SEM"]["DwellTime"]),
                 stigmation= Point(float(image.Header["SEM"]["StigmatorX"]), float(image.Header["SEM"]["StigmatorY"])),
-                shift=Point(float(image.Header["SEM"]["GunShiftX"]), float(image.Header["SEM"]["GunShiftY"])),
+                shift=Point(float(image.Header["SEM"]["ImageShiftX"]), float(image.Header["SEM"]["ImageShiftY"])),
                 ), 
             ib_settings = BeamSettings(beam_type=BeamType.ION)
         )
-        print(microscope_state.eb_settings.stigmation)
         fibsem_image = FibsemImage.fromTescanImage(image, image_settings, microscope_state)
 
         return fibsem_image
@@ -301,6 +301,8 @@ class TescanMicroscope(FibsemMicroscope):
         numbers = re.findall(r'\d+', image_settings.resolution)
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
+        
+        self.connection.FIB.Optics.SetViewfield(image_settings.hfw*1000)
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(0, imageWidth, imageHeight, 1000)
 
@@ -321,7 +323,7 @@ class TescanMicroscope(FibsemMicroscope):
                 resolution = "{}x{}".format(imageWidth,imageHeight),
                 dwell_time = float(image.Header["FIB"]["DwellTime"]),
                 stigmation= Point(float(image.Header["FIB"]["StigmatorX"]), float(image.Header["FIB"]["StigmatorY"])),
-                shift=Point(0.0, 0.0),
+                shift=Point(float(image.Header["FIB"]["ImageShiftX"]), float(image.Header["FIB"]["ImageShiftY"]))
                 ),
         )
 
