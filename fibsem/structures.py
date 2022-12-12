@@ -9,15 +9,20 @@ import tifffile as tff
 import json
 import numpy as np
 import time
-from tescanautomation.Common import Document
-from autoscript_sdb_microscope_client.structures import (
-    AdornedImage,
-    StagePosition,
-    ManipulatorPosition,
-    Rectangle,
-)
+from fibsem.utils import load_settings_from_config, load_yaml
+settings = load_settings_from_config()
+if settings.system.manufacturer == "Tescan":
+    from tescanautomation.Common import Document
+elif settings.system.manufacturer == "Thermo":
+    from autoscript_sdb_microscope_client.structures import (
+        AdornedImage,
+        StagePosition,
+        ManipulatorPosition,
+        Rectangle,
+    )
 import yaml
 from fibsem.config import METADATA_VERSION
+
 
 
 # @patrickcleeve: dataclasses.asdict -> :(
@@ -321,6 +326,22 @@ class MillingSettings:
 
         return milling_settings
 
+def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
+    """Save the manipulator position from disk"""
+    from fibsem.structures import manipulator_position_to_dict
+
+    with open(os.path.join(path, "needle.yaml"), "w") as f:
+        yaml.dump(manipulator_position_to_dict(position), f, indent=4)
+
+
+def load_needle_yaml(path: Path) -> ManipulatorPosition:
+    """Load the manipulator position from disk"""
+    from fibsem.structures import manipulator_position_from_dict
+
+    position_dict = load_yaml(os.path.join(path, "needle.yaml"))
+    position = manipulator_position_from_dict(position_dict)
+
+    return position
 
 def stage_position_to_dict(stage_position: StagePosition) -> dict:
 

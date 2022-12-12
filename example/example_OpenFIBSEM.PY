@@ -43,6 +43,8 @@ def main():
     # show images
 
     fig, ax = plt.subplots(1, 2, figsize=(7, 5))
+    ax[0].set_title("Electron Beam Image")
+    ax[1].set_title("Ion Beam Image")
     ax[0].imshow(eb_image.data, cmap="gray")
     ax[1].imshow(ib_image.data, cmap="gray")
     plt.show()
