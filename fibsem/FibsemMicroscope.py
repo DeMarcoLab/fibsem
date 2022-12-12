@@ -102,6 +102,14 @@ class ThermoMicroscope(FibsemMicroscope):
             reduced_area=image_settings.reduced_area,
         )
 
+        numbers = re.findall(r"\d+", image_settings.resolution)
+        imageWidth = int(numbers[0])
+
+        if image_settings.pixel_size is None:
+            field_width = image_settings.hfw
+        else:
+            field_width = image_settings.pixel_size.x * imageWidth
+
         if image_settings.beam_type == BeamType.ELECTRON:
             hfw_limits = (
                 self.connection.beams.electron_beam.horizontal_field_width.limits
@@ -110,7 +118,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 image_settings.hfw, hfw_limits.min, hfw_limits.max
             )
             self.connection.beams.electron_beam.horizontal_field_width.value = (
-                image_settings.hfw
+                field_width
             )
 
         if image_settings.beam_type == BeamType.ION:
@@ -276,7 +284,10 @@ class TescanMicroscope(FibsemMicroscope):
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
 
-        self.connection.SEM.Optics.SetViewfield(image_settings.hfw * 1000)
+        if image_settings.pixel_size is None:
+            self.connection.SEM.Optics.SetViewfield(image_settings.hfw*1000)
+        else:
+            self.connection.SEM.Optics.SetViewfield(image_settings.pixel_size * imageWidth)
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
             0, imageWidth, imageHeight, 1000
@@ -333,7 +344,12 @@ class TescanMicroscope(FibsemMicroscope):
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
 
-        self.connection.FIB.Optics.SetViewfield(image_settings.hfw * 1000)
+        if image_settings.pixel_size is None:
+            self.connection.FIB.Optics.SetViewfield(image_settings.hfw*1000)
+        else:
+            self.connection.FIB.Optics.SetViewfield(image_settings.pixel_size.x * imageWidth * 1000)
+            image_settings.hfw = image_settings.pixel_size.x * imageWidth
+
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(
             0, imageWidth, imageHeight, 1000
