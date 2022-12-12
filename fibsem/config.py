@@ -17,3 +17,20 @@ import os
 import fibsem
 BASE_PATH = os.path.dirname(fibsem.__path__[0])
 CONFIG_PATH = os.path.join(BASE_PATH, "fibsem", "config")
+
+import yaml
+def load_yaml(fname):
+    with open(fname, "r") as f:
+        config = yaml.safe_load(f)
+
+    return config
+
+def load_microscope_manufacturer(config_path=None) -> str:
+    if config_path is None:
+            config_path = CONFIG_PATH
+
+    # system settings
+    settings = load_yaml(os.path.join(config_path, "system.yaml"))
+    manufacturer = settings["system"]["manufacturer"]
+
+    return manufacturer

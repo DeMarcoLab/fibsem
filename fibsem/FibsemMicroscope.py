@@ -3,17 +3,16 @@ import copy
 import logging
 import datetime
 import numpy as np
-from fibsem import utils
-
-settings = utils.load_settings_from_config()
-if settings.system.manufacturer == "Tescan":
+from fibsem.config import load_microscope_manufacturer
+manufacturer = load_microscope_manufacturer()
+if manufacturer == "Tescan":
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
     from tescanautomation.GUI import SEMInfobar
     import re
 
-if settings.system.manufacturer == "Thermo":
+if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
     from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client import SdbMicroscopeClient

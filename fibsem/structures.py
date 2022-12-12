@@ -8,12 +8,11 @@ from pathlib import Path
 import tifffile as tff
 import json
 import numpy as np
-import time
-from fibsem.utils import load_settings_from_config, load_yaml
-settings = load_settings_from_config()
-if settings.system.manufacturer == "Tescan":
+from fibsem.config import load_microscope_manufacturer, load_yaml
+manufacturer = load_microscope_manufacturer()
+if manufacturer == "Tescan":
     from tescanautomation.Common import Document
-elif settings.system.manufacturer == "Thermo":
+elif manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage,
         StagePosition,
@@ -55,6 +54,58 @@ class BeamType(Enum):
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
+@dataclass
+class FibsemStagePosition:
+    x: float = None
+    y: float = None
+    z: float = None
+    r: float = None
+    t: float = None
+    coordinate_system: str = None
+
+    def __to_dict__(self) -> dict:
+        position_dict = {}
+        position_dict["x"] = self.x
+        position_dict["y"] = self.y
+        position_dict["z"] = self.z
+        position_dict["r"] = self.r
+        position_dict["t"] = self.t
+        position_dict["coordinate_system"] = self.coordinate_system
+
+        return position_dict
+
+    @classmethod
+    def __from_dict__(cls, data: dict) -> "FibsemStagePosition":
+        return cls(
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            r=data["r"],
+            t=data["t"],
+            coordinate_system=data["coordinate_system"],
+        )
+
+    if manufacturer == "Thermo":
+        def to_autoscript_position(self) -> StagePosition:
+            return StagePosition(
+                x=self.x,
+                y=self.y,
+                z=self.z,
+                r=self.r,
+                t=self.t,
+                coordinate_system=self.coordinate_system,
+            )
+    
+        @classmethod
+        def from_autoscript_position(cls, position: StagePosition) -> None:
+            return cls(
+                x=position.x,
+                y=position.y,
+                z=position.z,
+                r=position.r,
+                t=position.t,
+                coordinate_system=position.coordinate_system,
+            )
 
 @dataclass
 class FibsemRectangle:
@@ -80,13 +131,14 @@ class FibsemRectangle:
             "width": self.width,
             "height": self.height,
         }
+    
+    if manufacturer == "Thermo":
+        def __to_FEI__(self) -> Rectangle:
+            return Rectangle(self.left, self.top, self.width, self.height)
 
-    def __to_FEI__(self) -> Rectangle:
-        return Rectangle(self.left, self.top, self.width, self.height)
-
-    @classmethod
-    def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
-        return cls(rect.left, rect.top, rect.width, rect.height)
+        @classmethod
+        def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
+            return cls(rect.left, rect.top, rect.width, rect.height)
 
 
 @dataclass
@@ -243,7 +295,7 @@ class BeamSettings:
 @dataclass
 class MicroscopeState:
     timestamp: float = datetime.timestamp(datetime.now())
-    absolute_position: StagePosition = StagePosition()
+    absolute_position: FibsemStagePosition = FibsemStagePosition()
     eb_settings: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
     ib_settings: BeamSettings = BeamSettings(beam_type=BeamType.ION)
 
@@ -326,24 +378,25 @@ class MillingSettings:
 
         return milling_settings
 
-def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
-    """Save the manipulator position from disk"""
-    from fibsem.structures import manipulator_position_to_dict
+if manufacturer == "Thermo":
+    def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
+        """Save the manipulator position from disk"""
+        from fibsem.structures import manipulator_position_to_dict
 
-    with open(os.path.join(path, "needle.yaml"), "w") as f:
-        yaml.dump(manipulator_position_to_dict(position), f, indent=4)
+        with open(os.path.join(path, "needle.yaml"), "w") as f:
+            yaml.dump(manipulator_position_to_dict(position), f, indent=4)
 
 
-def load_needle_yaml(path: Path) -> ManipulatorPosition:
-    """Load the manipulator position from disk"""
-    from fibsem.structures import manipulator_position_from_dict
+    def load_needle_yaml(path: Path) -> ManipulatorPosition:
+        """Load the manipulator position from disk"""
+        from fibsem.structures import manipulator_position_from_dict
 
-    position_dict = load_yaml(os.path.join(path, "needle.yaml"))
-    position = manipulator_position_from_dict(position_dict)
+        position_dict = load_yaml(os.path.join(path, "needle.yaml"))
+        position = manipulator_position_from_dict(position_dict)
 
-    return position
+        return position
 
-def stage_position_to_dict(stage_position: StagePosition) -> dict:
+def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
 
     stage_position_dict = {
         "x": stage_position.x,
@@ -357,9 +410,9 @@ def stage_position_to_dict(stage_position: StagePosition) -> dict:
     return stage_position_dict
 
 
-def stage_position_from_dict(state_dict: dict) -> StagePosition:
+def stage_position_from_dict(state_dict: dict) -> FibsemStagePosition:
 
-    stage_position = StagePosition(
+    stage_position = FibsemStagePosition(
         x=state_dict["x"],
         y=state_dict["y"],
         z=state_dict["z"],
@@ -370,31 +423,31 @@ def stage_position_from_dict(state_dict: dict) -> StagePosition:
 
     return stage_position
 
+if manufacturer == "Thermo":
+    def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
 
-def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
+        position_dict = {
+            "x": position.x,
+            "y": position.y,
+            "z": position.z,
+            "r": None,
+            "coordinate_system": position.coordinate_system,
+        }
 
-    position_dict = {
-        "x": position.x,
-        "y": position.y,
-        "z": position.z,
-        "r": None,
-        "coordinate_system": position.coordinate_system,
-    }
-
-    return position_dict
+        return position_dict
 
 
-def manipulator_position_from_dict(position_dict: dict) -> ManipulatorPosition:
+    def manipulator_position_from_dict(position_dict: dict) -> ManipulatorPosition:
 
-    position = ManipulatorPosition(
-        x=position_dict["x"],
-        y=position_dict["y"],
-        z=position_dict["z"],
-        r=position_dict["r"],
-        coordinate_system=position_dict["coordinate_system"],
-    )
+        position = ManipulatorPosition(
+            x=position_dict["x"],
+            y=position_dict["y"],
+            z=position_dict["z"],
+            r=position_dict["r"],
+            coordinate_system=position_dict["coordinate_system"],
+        )
 
-    return position
+        return position
 
 
 @dataclass
@@ -652,25 +705,26 @@ class FibsemImageMetadata:
         )
         return metadata
 
-    def image_settings_from_adorned(
-        image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
-    ) -> ImageSettings:
+    if manufacturer == "Thermo":
+        def image_settings_from_adorned(
+            image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
+        ) -> ImageSettings:
 
-        from fibsem.utils import current_timestamp
+            from fibsem.utils import current_timestamp
 
-        image_settings = ImageSettings(
-            resolution=f"{image.width}x{image.height}",
-            dwell_time=image.metadata.scan_settings.dwell_time,
-            hfw=image.width * image.metadata.binary_result.pixel_size.x,
-            autocontrast=True,
-            beam_type=beam_type,
-            gamma=GammaSettings(),
-            save=False,
-            save_path="path",
-            label=current_timestamp(),
-            reduced_area=None,
-        )
-        return image_settings
+            image_settings = ImageSettings(
+                resolution=f"{image.width}x{image.height}",
+                dwell_time=image.metadata.scan_settings.dwell_time,
+                hfw=image.width * image.metadata.binary_result.pixel_size.x,
+                autocontrast=True,
+                beam_type=beam_type,
+                gamma=GammaSettings(),
+                save=False,
+                save_path="path",
+                label=current_timestamp(),
+                reduced_area=None,
+            )
+            return image_settings
 
     def compare_image_settings(self, image_settings: ImageSettings) -> bool:
         """Compares image settings to the metadata image settings.
@@ -766,74 +820,76 @@ class FibsemImage:
             self.data,
             metadata=metadata_dict,
         )
+    
+    if manufacturer == "Thermo":
+        @classmethod
+        def fromAdornedImage(
+            cls,
+            adorned: AdornedImage,
+            image_settings: ImageSettings,
+            state: MicroscopeState = None,
+        ) -> "FibsemImage":
+            """Creates FibsemImage from an AdornedImage (microscope output format).
 
-    @classmethod
-    def fromAdornedImage(
-        cls,
-        adorned: AdornedImage,
-        image_settings: ImageSettings,
-        state: MicroscopeState = None,
-    ) -> "FibsemImage":
-        """Creates FibsemImage from an AdornedImage (microscope output format).
+            Args:
+                adorned (AdornedImage): Adorned Image from microscope
+                metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
 
-        Args:
-            adorned (AdornedImage): Adorned Image from microscope
-            metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
+            Returns:
+                FibsemImage: instance of FibsemImage from AdornedImage
+            """
 
-        Returns:
-            FibsemImage: instance of FibsemImage from AdornedImage
-        """
+            if state is None:
+                state = MicroscopeState(
+                    timestamp=adorned.metadata.acquisition.acquisition_datetime,
+                    absolute_position=FibsemStagePosition(
+                        adorned.metadata.stage_settings.stage_position.x,
+                        adorned.metadata.stage_settings.stage_position.y,
+                        adorned.metadata.stage_settings.stage_position.z,
+                        adorned.metadata.stage_settings.stage_position.r,
+                        adorned.metadata.stage_settings.stage_position.t,
+                    ),
+                    eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
+                    ib_settings=BeamSettings(beam_type=BeamType.ION),
+                )
+            else:
+                state.timestamp = adorned.metadata.acquisition.acquisition_datetime
 
-        if state is None:
-            state = MicroscopeState(
-                timestamp=adorned.metadata.acquisition.acquisition_datetime,
-                absolute_position=FibsemStagePosition(
-                    adorned.metadata.stage_settings.stage_position.x,
-                    adorned.metadata.stage_settings.stage_position.y,
-                    adorned.metadata.stage_settings.stage_position.z,
-                    adorned.metadata.stage_settings.stage_position.r,
-                    adorned.metadata.stage_settings.stage_position.t,
-                ),
-                eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
-                ib_settings=BeamSettings(beam_type=BeamType.ION),
+            pixel_size = Point(
+                adorned.metadata.binary_result.pixel_size.x,
+                adorned.metadata.binary_result.pixel_size.y,
             )
-        else:
-            state.timestamp = adorned.metadata.acquisition.acquisition_datetime
+            metadata = FibsemImageMetadata(
+                image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
+            )
+            return cls(data=adorned.data, metadata=metadata)
 
-        pixel_size = Point(
-            adorned.metadata.binary_result.pixel_size.x,
-            adorned.metadata.binary_result.pixel_size.y,
-        )
-        metadata = FibsemImageMetadata(
-            image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
-        )
-        return cls(data=adorned.data, metadata=metadata)
+    if manufacturer == "Tescan":
+        @classmethod
+        def fromTescanImage(
+            cls,
+            image: Document,
+            image_settings: ImageSettings,
+            state: MicroscopeState,
+        ) -> "FibsemImage":
+            """Creates FibsemImage from an AdornedImage (microscope output format).
 
-    @classmethod
-    def fromTescanImage(
-        cls,
-        image: Document,
-        image_settings: ImageSettings,
-        state: MicroscopeState,
-    ) -> "FibsemImage":
-        """Creates FibsemImage from an AdornedImage (microscope output format).
+            Args:
+                adorned (AdornedImage): Adorned Image from microscope
+                metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
 
-        Args:
-            adorned (AdornedImage): Adorned Image from microscope
-            metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
+            Returns:
+                FibsemImage: instance of FibsemImage from AdornedImage
+            """
 
-        Returns:
-            FibsemImage: instance of FibsemImage from AdornedImage
-        """
-
-        pixel_size = Point(
-            float(image.Header["MAIN"]["PixelSizeX"]),
-            float(image.Header["MAIN"]["PixelSizeY"]),
-        )
-        metadata = FibsemImageMetadata(
-            image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
-        )
-        return cls(data=np.array(image.Image), metadata=metadata)
+            pixel_size = Point(
+                float(image.Header["MAIN"]["PixelSizeX"]),
+                float(image.Header["MAIN"]["PixelSizeY"]),
+            )
+            metadata = FibsemImageMetadata(
+                image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
+            )
+            return cls(data=np.array(image.Image), metadata=metadata)
 
 @dataclass
 class ReferenceImages:
@@ -846,58 +902,6 @@ class ReferenceImages:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
-
-@dataclass
-class FibsemStagePosition:
-    x: float
-    y: float
-    z: float
-    r: float
-    t: float
-    coordinate_system: str
-
-    def __to_dict__(self) -> dict:
-        position_dict = {}
-        position_dict["x"] = self.x
-        position_dict["y"] = self.y
-        position_dict["z"] = self.z
-        position_dict["r"] = self.r
-        position_dict["t"] = self.t
-        position_dict["coordinate_system"] = self.coordinate_system
-
-        return position_dict
-
-    @classmethod
-    def __from_dict__(cls, data: dict) -> "FibsemStagePosition":
-        return cls(
-            x=data["x"],
-            y=data["y"],
-            z=data["z"],
-            r=data["r"],
-            t=data["t"],
-            coordinate_system=data["coordinate_system"],
-        )
-
-    def to_autoscript_position(self) -> StagePosition:
-        return StagePosition(
-            x=self.x,
-            y=self.y,
-            z=self.z,
-            r=self.r,
-            t=self.t,
-            coordinate_system=self.coordinate_system,
-        )
-
-    @classmethod
-    def from_autoscript_position(cls, position: StagePosition) -> None:
-        return cls(
-            x=position.x,
-            y=position.y,
-            z=position.z,
-            r=position.r,
-            t=position.t,
-            coordinate_system=position.coordinate_system,
-        )
 
 
 def check_data_format(data: np.ndarray) -> bool:
