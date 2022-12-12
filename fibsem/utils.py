@@ -27,23 +27,6 @@ from fibsem.structures import (
 
 
 
-def connect_to_microscope(
-    ip_address="10.0.0.1", port: int = 7520
-) -> SdbMicroscopeClient:
-    """Connect to the FIBSEM microscope."""
-    try:
-        # TODO: get the port
-        logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
-        microscope = SdbMicroscopeClient()
-        microscope.connect(host=ip_address, port=port)
-        logging.info(f"Microscope client connected to [{ip_address}:{port}]")
-    except Exception as e:
-        logging.error(f"Unable to connect to the microscope: {e}")
-        microscope = None
-
-    return microscope
-
-
 def sputter_platinum(
     microscope: SdbMicroscopeClient,
     protocol: dict,
