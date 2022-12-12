@@ -287,11 +287,17 @@ class TescanMicroscope(FibsemMicroscope):
         if image_settings.pixel_size is None:
             self.connection.SEM.Optics.SetViewfield(image_settings.hfw*1000)
         else:
-            self.connection.SEM.Optics.SetViewfield(image_settings.pixel_size * imageWidth)
+            self.connection.SEM.Optics.SetViewfield(image_settings.pixel_size * imageWidth * 1000)
+            image_settings.hfw = image_settings.pixel_size.x * imageWidth
+        
+        #dwell time conversion s to ms
+        dwell_time_ms = image_settings.dwell_time * 1000
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, 1000
+            0, imageWidth, imageHeight, dwell_time_ms
         )
+
+
 
         microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
@@ -350,9 +356,12 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.FIB.Optics.SetViewfield(image_settings.pixel_size.x * imageWidth * 1000)
             image_settings.hfw = image_settings.pixel_size.x * imageWidth
 
+        
+        #dwell time conversion s to ms
+        dwell_time_ms = image_settings.dwell_time * 1000
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, 1000
+            0, imageWidth, imageHeight, dwell_time_ms
         )
 
         microscope_state = MicroscopeState(
