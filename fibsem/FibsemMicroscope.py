@@ -287,7 +287,7 @@ class TescanMicroscope(FibsemMicroscope):
         if image_settings.pixel_size is None:
             self.connection.SEM.Optics.SetViewfield(image_settings.hfw*1000)
         else:
-            self.connection.SEM.Optics.SetViewfield(image_settings.pixel_size * imageWidth * 1000)
+            self.connection.SEM.Optics.SetViewfield(image_settings.pixel_size.x * imageWidth * 1000)
             image_settings.hfw = image_settings.pixel_size.x * imageWidth
         
         #dwell time conversion s to ms
@@ -327,7 +327,7 @@ class TescanMicroscope(FibsemMicroscope):
             ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
         fibsem_image = FibsemImage.fromTescanImage(
-            image, image_settings, microscope_state
+            copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(microscope_state)
         )
 
         return fibsem_image
@@ -393,7 +393,7 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         fibsem_image = FibsemImage.fromTescanImage(
-            image, image_settings, microscope_state
+            copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(microscope_state)
         )
 
         return fibsem_image

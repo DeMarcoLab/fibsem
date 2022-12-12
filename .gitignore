@@ -31,3 +31,5 @@ fibsem/tests/label
 tests/tests_images
 fibsem/tests/label.tif
 fibsem/tests/None.tif
+fibsem/fibsem/test_images
+
