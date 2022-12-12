@@ -4,6 +4,7 @@ import logging
 import datetime
 import numpy as np
 from fibsem.config import load_microscope_manufacturer
+import re
 
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
@@ -11,7 +12,7 @@ if manufacturer == "Tescan":
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
     from tescanautomation.GUI import SEMInfobar
-    import re
+
 
 if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
@@ -105,10 +106,9 @@ class ThermoMicroscope(FibsemMicroscope):
         numbers = re.findall(r"\d+", image_settings.resolution)
         imageWidth = int(numbers[0])
 
-        if image_settings.pixel_size is None:
-            field_width = image_settings.hfw
-        else:
-            field_width = image_settings.pixel_size.x * imageWidth
+
+        if image_settings.pixel_size is not None:
+            image_settings.hfw = image_settings.pixel_size.x * imageWidth
 
         if image_settings.beam_type == BeamType.ELECTRON:
             hfw_limits = (
@@ -118,7 +118,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 image_settings.hfw, hfw_limits.min, hfw_limits.max
             )
             self.connection.beams.electron_beam.horizontal_field_width.value = (
-                field_width
+                 image_settings.hfw
             )
 
         if image_settings.beam_type == BeamType.ION:
