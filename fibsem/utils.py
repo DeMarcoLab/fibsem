@@ -142,23 +142,24 @@ def setup_session(
     # connect to microscope
     import fibsem.FibsemMicroscope as FibSem
 
-    
     if settings.system.manufacturer == "Thermo":
         microscope = FibSem.ThermoMicroscope()
-        microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 7520)
-        
+        microscope.connect_to_microscope(
+            ip_address=settings.system.ip_address, port=7520
+        )
+
     elif settings.system.manufacturer == "Tescan":
         microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
-        microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 8300)
-        
-
+        microscope.connect_to_microscope(
+            ip_address=settings.system.ip_address, port=8300
+        )
 
     # image_setttings
     settings.image.save_path = session_path
 
     logging.info(f"Finished setup for session: {session}")
 
-    return  microscope, settings
+    return microscope, settings
 
 
 def load_settings_from_config(
@@ -177,6 +178,7 @@ def load_settings_from_config(
     # TODO: this should just be system.yaml path, not directory
     if config_path is None:
         from fibsem.config import CONFIG_PATH
+
         config_path = CONFIG_PATH
 
     # system settings

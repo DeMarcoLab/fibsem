@@ -16,7 +16,6 @@ from fibsem.structures import (
 from fibsem.FibsemMicroscope import FibsemMicroscope
 
 
-
 def take_reference_images(
     microscope: FibsemMicroscope, image_settings: ImageSettings
 ) -> list[FibsemImage]:
@@ -100,7 +99,6 @@ def new_image(
             FibsemImage: new image
             String: filename of saved FibsemImage
     """
-   
 
     # set label
     if settings.beam_type is BeamType.ELECTRON:
@@ -128,5 +126,3 @@ def new_image(
         image.save(save_path=filename)
 
     return image
-
-

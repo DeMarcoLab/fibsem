@@ -9,6 +9,7 @@ import tifffile as tff
 import json
 import numpy as np
 from fibsem.config import load_microscope_manufacturer, load_yaml
+
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
     from tescanautomation.Common import Document
@@ -21,7 +22,6 @@ elif manufacturer == "Thermo":
     )
 import yaml
 from fibsem.config import METADATA_VERSION
-
 
 
 # @patrickcleeve: dataclasses.asdict -> :(
@@ -53,6 +53,7 @@ class BeamType(Enum):
     ION = 2  # Ion
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
+
 
 @dataclass
 class FibsemStagePosition:
@@ -86,6 +87,7 @@ class FibsemStagePosition:
         )
 
     if manufacturer == "Thermo":
+
         def to_autoscript_position(self) -> StagePosition:
             return StagePosition(
                 x=self.x,
@@ -95,7 +97,7 @@ class FibsemStagePosition:
                 t=self.t,
                 coordinate_system=self.coordinate_system,
             )
-    
+
         @classmethod
         def from_autoscript_position(cls, position: StagePosition) -> None:
             return cls(
@@ -106,6 +108,7 @@ class FibsemStagePosition:
                 t=position.t,
                 coordinate_system=position.coordinate_system,
             )
+
 
 @dataclass
 class FibsemRectangle:
@@ -131,8 +134,9 @@ class FibsemRectangle:
             "width": self.width,
             "height": self.height,
         }
-    
+
     if manufacturer == "Thermo":
+
         def __to_FEI__(self) -> Rectangle:
             return Rectangle(self.left, self.top, self.width, self.height)
 
@@ -378,14 +382,15 @@ class MillingSettings:
 
         return milling_settings
 
+
 if manufacturer == "Thermo":
+
     def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
         """Save the manipulator position from disk"""
         from fibsem.structures import manipulator_position_to_dict
 
         with open(os.path.join(path, "needle.yaml"), "w") as f:
             yaml.dump(manipulator_position_to_dict(position), f, indent=4)
-
 
     def load_needle_yaml(path: Path) -> ManipulatorPosition:
         """Load the manipulator position from disk"""
@@ -395,6 +400,7 @@ if manufacturer == "Thermo":
         position = manipulator_position_from_dict(position_dict)
 
         return position
+
 
 def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
 
@@ -423,7 +429,9 @@ def stage_position_from_dict(state_dict: dict) -> FibsemStagePosition:
 
     return stage_position
 
+
 if manufacturer == "Thermo":
+
     def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
 
         position_dict = {
@@ -435,7 +443,6 @@ if manufacturer == "Thermo":
         }
 
         return position_dict
-
 
     def manipulator_position_from_dict(position_dict: dict) -> ManipulatorPosition:
 
@@ -706,6 +713,7 @@ class FibsemImageMetadata:
         return metadata
 
     if manufacturer == "Thermo":
+
         def image_settings_from_adorned(
             image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
         ) -> ImageSettings:
@@ -768,6 +776,7 @@ class FibsemImageMetadata:
 
         return True
 
+
 class FibsemImage:
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
 
@@ -820,8 +829,9 @@ class FibsemImage:
             self.data,
             metadata=metadata_dict,
         )
-    
+
     if manufacturer == "Thermo":
+
         @classmethod
         def fromAdornedImage(
             cls,
@@ -860,11 +870,14 @@ class FibsemImage:
                 adorned.metadata.binary_result.pixel_size.y,
             )
             metadata = FibsemImageMetadata(
-                image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
+                image_settings=image_settings,
+                pixel_size=pixel_size,
+                microscope_state=state,
             )
             return cls(data=adorned.data, metadata=metadata)
 
     if manufacturer == "Tescan":
+
         @classmethod
         def fromTescanImage(
             cls,
@@ -887,9 +900,12 @@ class FibsemImage:
                 float(image.Header["MAIN"]["PixelSizeY"]),
             )
             metadata = FibsemImageMetadata(
-                image_settings=image_settings, pixel_size=pixel_size, microscope_state=state
+                image_settings=image_settings,
+                pixel_size=pixel_size,
+                microscope_state=state,
             )
             return cls(data=np.array(image.Image), metadata=metadata)
+
 
 @dataclass
 class ReferenceImages:
@@ -903,11 +919,10 @@ class ReferenceImages:
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
 
-
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
     # assert data.ndim == 2  # or data.ndim == 3
     # assert data.dtype in [np.uint8, np.uint16]
     # if data.ndim == 3 and data.shape[2] == 1:
     #     data = data[:, :, 0]
-    return  data.ndim == 2 and data.dtype in [np.uint8, np.uint16] 
+    return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]

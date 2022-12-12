@@ -13,13 +13,12 @@ def image_to_microscope_image_coordinates(
     cy, cx = np.asarray(image.shape) // 2
 
     # distance from centre?
-    dy = -(coord.y - cy)   # neg = down
-    dx = coord.x - cx      # neg = left
-    
-    point_m = convert_point_from_pixel_to_metres(Point(dx, dy), pixelsize)
-    
-    return point_m
+    dy = -(coord.y - cy)  # neg = down
+    dx = coord.x - cx  # neg = left
 
+    point_m = convert_point_from_pixel_to_metres(Point(dx, dy), pixelsize)
+
+    return point_m
 
 
 def get_lamella_size_in_pixels(

@@ -18,7 +18,7 @@ from fibsem.structures import (
     ImageSettings,
     MicroscopeSettings,
     ReferenceImages,
-    FibsemImage
+    FibsemImage,
 )
 
 
@@ -217,7 +217,7 @@ def align_using_reference_images(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."
     )
     sigma = 6
-    hp_px = 8  
+    hp_px = 8
     lp_px = 128  # MAGIC_NUMBER
 
     dx, dy, xcorr = shift_from_crosscorrelation(
@@ -239,7 +239,9 @@ def align_using_reference_images(
 
         # vertical constraint = eucentric movement
         if constrain_vertical:
-            movement.move_stage_eucentric_correction(microscope, settings=settings, dy=-dy) # FLAG_TEST
+            movement.move_stage_eucentric_correction(
+                microscope, settings=settings, dy=-dy
+            )  # FLAG_TEST
         else:
             # move the stage
             movement.move_stage_relative_with_corrected_movement(
@@ -294,7 +296,7 @@ def shift_from_crosscorrelation(
         xcorr = masks.apply_circular_mask(xcorr, xcorr_limit)
 
     # calculate maximum crosscorrelation
-    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape) # TODO: backwards
+    maxX, maxY = np.unravel_index(np.argmax(xcorr), xcorr.shape)  # TODO: backwards
     cen = np.asarray(xcorr.shape) / 2
     err = np.array(cen - [maxX, maxY], int)
 
