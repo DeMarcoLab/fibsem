@@ -6,105 +6,21 @@ import os
 import time
 from pathlib import Path
 import sys
-import re
 
 import yaml
 
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import (
-    AdornedImage,
-    ManipulatorPosition,
-)
 from PIL import Image
-import fibsem
 from fibsem.structures import (
     BeamType,
     MicroscopeSettings,
     ImageSettings,
     SystemSettings,
-    DefaultSettings,
+    FibsemImage,
 )
+from fibsem.FibsemMicroscope import FibsemMicroscope
 
 
-
-def sputter_platinum(
-    microscope: SdbMicroscopeClient,
-    protocol: dict,
-    whole_grid: bool = False,
-    default_application_file: str = "autolamella",
-):
-    """Sputter platinum over the sample.
-
-    Args:
-        microscope (SdbMicroscopeClient): autoscript microscope instance
-        protocol (dict): platinum protcol dictionary
-        whole_grid (bool, optional): sputtering protocol. Defaults to False.
-
-    Raises:
-        RuntimeError: Error Sputtering
-    """
-
-    # protcol = settings.protocol["platinum"] in old system
-    # protocol = settings.protocol["platinum"] in new
-    if whole_grid:
-
-        sputter_time = protocol["whole_grid"]["time"]  # 20
-        hfw = protocol["whole_grid"]["hfw"]  # 30e-6
-        line_pattern_length = protocol["whole_grid"]["length"]  # 7e-6
-        logging.info("sputtering platinum over the whole grid.")
-    else:
-        sputter_time = protocol["weld"]["time"]  # 20
-        hfw = protocol["weld"]["hfw"]  # 100e-6
-        line_pattern_length = protocol["weld"]["length"]  # 15e-6
-        logging.info("sputtering platinum to weld.")
-
-    # Setup
-    original_active_view = microscope.imaging.get_active_view()
-    microscope.imaging.set_active_view(BeamType.ELECTRON.value)
-    microscope.patterning.clear_patterns()
-    microscope.patterning.set_default_application_file(protocol["application_file"])
-    microscope.patterning.set_default_beam_type(BeamType.ELECTRON.value)
-    multichem = microscope.gas.get_multichem()
-    multichem.insert(protocol["position"])
-    multichem.turn_heater_on(protocol["gas"])  # "Pt cryo")
-    time.sleep(3)
-
-    # Create sputtering pattern
-    microscope.beams.electron_beam.horizontal_field_width.value = hfw
-    pattern = microscope.patterning.create_line(
-        -line_pattern_length / 2,  # x_start
-        +line_pattern_length,  # y_start
-        +line_pattern_length / 2,  # x_end
-        +line_pattern_length,  # y_end
-        2e-6,
-    )  # milling depth
-    pattern.time = sputter_time + 0.1
-
-    # Run sputtering
-    microscope.beams.electron_beam.blank()
-    if microscope.patterning.state == "Idle":
-        logging.info("Sputtering with platinum for {} seconds...".format(sputter_time))
-        microscope.patterning.start()  # asynchronous patterning
-        time.sleep(sputter_time + 5)
-    else:
-        raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
-    if microscope.patterning.state == "Running":
-        microscope.patterning.stop()
-    else:
-        logging.warning("Patterning state is {}".format(microscope.patterning.state))
-        logging.warning("Consider adjusting the patterning line depth.")
-
-    # Cleanup
-    microscope.patterning.clear_patterns()
-    microscope.beams.electron_beam.unblank()
-    microscope.patterning.set_default_application_file(default_application_file)
-    microscope.imaging.set_active_view(original_active_view)
-    microscope.patterning.set_default_beam_type(BeamType.ION.value)  # set ion beam
-    multichem.retract()
-    logging.info("sputtering platinum finished.")
-
-
-def save_image(image: AdornedImage, save_path: Path, label: str = "image"):
+def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
     os.makedirs(save_path, exist_ok=True)
     path = os.path.join(save_path, f"{label}.tif")
     image.save(path)
@@ -155,24 +71,6 @@ def save_yaml(path: Path, data: dict) -> None:
         yaml.dump(data, f, indent=4)
 
 
-def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
-    """Save the manipulator position from disk"""
-    from fibsem.structures import manipulator_position_to_dict
-
-    with open(os.path.join(path, "needle.yaml"), "w") as f:
-        yaml.dump(manipulator_position_to_dict(position), f, indent=4)
-
-
-def load_needle_yaml(path: Path) -> ManipulatorPosition:
-    """Load the manipulator position from disk"""
-    from fibsem.structures import manipulator_position_from_dict
-
-    position_dict = load_yaml(os.path.join(path, "needle.yaml"))
-    position = manipulator_position_from_dict(position_dict)
-
-    return position
-
-
 from fibsem.structures import MicroscopeState
 
 
@@ -181,17 +79,6 @@ def save_state_yaml(path: Path, state: MicroscopeState) -> None:
     state_dict = state.__to_dict__()
 
     save_yaml(path, state_dict)
-
-
-def get_updated_needle_insertion_position(path: Path) -> ManipulatorPosition:
-
-    position = None
-
-    # if os.path.exists(os.path.join(path, "needle.yaml")):
-
-    #     position = load_needle_yaml(path)
-
-    return position
 
 
 def save_metadata(settings: MicroscopeSettings, path: Path):
@@ -207,7 +94,7 @@ def save_metadata(settings: MicroscopeSettings, path: Path):
 def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
     filenames = glob.glob(os.path.join(path, search))
 
-    imgs = [Image.fromarray(AdornedImage.load(fname).data) for fname in filenames]
+    imgs = [Image.fromarray(FibsemImage.load(fname).data) for fname in filenames]
 
     print(f"{len(filenames)} images added to gif.")
     imgs[0].save(
@@ -223,7 +110,7 @@ def setup_session(
     config_path: Path = None,
     protocol_path: Path = None,
     setup_logging: bool = True,
-) -> tuple[SdbMicroscopeClient, MicroscopeSettings]:
+) -> tuple[FibsemMicroscope, MicroscopeSettings]:
     """Setup microscope session
 
     Args:
@@ -260,7 +147,7 @@ def setup_session(
         microscope = FibSem.ThermoMicroscope()
         microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 7520)
         
-    if settings.system.manufacturer == "Tescan":
+    elif settings.system.manufacturer == "Tescan":
         microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
         microscope.connect_to_microscope(ip_address=settings.system.ip_address, port = 8300)
         
@@ -364,7 +251,7 @@ def _format_dictionary(dictionary: dict) -> dict:
 
 
 def match_image_settings(
-    ref_image: AdornedImage,
+    ref_image: FibsemImage,
     image_settings: ImageSettings,
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> ImageSettings:
@@ -404,73 +291,3 @@ def get_params(main_str: str) -> list:
 
         i += 1
     return cats
-
-
-class subField:
-    """Helper class for ini_metadata class
-    Creates sub classes for each subfield of metadata
-    """
-
-    def __init__(self, user_str) -> None:
-
-        params = get_params(user_str)
-
-        for param in params:
-
-            try:
-                search_str = param + "=(.+?)\r"
-                attr = re.search(search_str, user_str).group(1)
-                setattr(self, param, attr)
-            except:
-                attr = "No Data"
-                setattr(self, param, attr)
-
-
-class ini_metadata:
-    """Takes in the ini_metadata string from adorned images and converts into an easily accessible format
-    - Class must be initialsed with an input of the ini metadata acquired from the
-    - AdornedImage.metadata.metadata_as_ini (Which is a long string formatted in ini)
-    - Class has attributes relating to each property of the metadata which can be easily accessed.
-    e.g. finding the date of the image goes like this:
-        metadata = ini_metadata(AdornedImage.metadata.metadata_as_ini)
-        metadata.User.Time --> 1:04:03 PM
-    - All output is in string
-    """
-
-    def __init__(self, metadata_full):
-
-        self.metadata_full = metadata_full
-
-        headings = [
-            "[User]",
-            "[System]",
-            "[Beam]",
-            "[EBeam]",
-            "[IBeam]",
-            "[GIS]",
-            "[Scan]",
-            "[EScan]",
-            "[IScan]",
-            "[Stage]",
-            "[Image]",
-            "[Vacuum]",
-            "[Specimen]",
-            "[Detectors]",
-            "[ETD]",
-            "[Accessories]",
-            "[EBeamDeceleration]",
-            "[PrivateFei]",
-            "[HiResIllumination]",
-            "[EasyLift]",
-            "[HotStageMEMS]",
-        ]
-
-        for heading in headings:
-
-            met_sub1 = metadata_full.find(heading)
-            met_sub2 = metadata_full[(met_sub1 + len(heading)) :].find("[")
-            met_sub_full = metadata_full[
-                met_sub1 : (met_sub1 + met_sub2 + len(heading))
-            ]
-            attr = subField(met_sub_full)
-            setattr(self, heading[1:-1], attr)
