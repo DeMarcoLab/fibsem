@@ -465,9 +465,15 @@ class TescanMicroscope(FibsemMicroscope):
 
     def autocontrast(self, beam_type: BeamType) -> None:
         if beam_type.name == BeamType.ELECTRON:
-            self.connection.SEM.Detector.StartAutoSignal(0)
+            self.connection.SEM.Detector.AutoSignal(0)
         if beam_type.name == BeamType.ION:
             self.connection.FIB.Detector.AutoSignal(0)
 
     def reset_beam_shifts(self):
         pass
+
+
+    def move_stage(self, x: float = None, y: float = None, z: float = None, r: float = None, tx: float = None, ty: float = None,):
+        self.connection.Stage.MoveTo(x*1000,y*1000,z*1000,r,tx,ty)
+
+
