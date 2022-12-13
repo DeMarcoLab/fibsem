@@ -247,6 +247,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address)
         detectors = self.connection.FIB.Detector.Enum()
         self.ion_detector_active = detectors[0]
+        self.electron_detector_active = self.connection.SEM.Detector.SESuitable()
         self.last_image_eb = None
         self.last_image_ib = None
 
@@ -276,8 +277,8 @@ class TescanMicroscope(FibsemMicroscope):
         # Select the detector for image i.e.:
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
-        detector = self.connection.SEM.Detector.SESuitable()
-        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_16_bit)
+        
+        self.connection.SEM.Detector.Set(0, self.electron_detector_active, Bpp.Grayscale_16_bit)
 
         # resolution
         numbers = re.findall(r"\d+", image_settings.resolution)
@@ -291,10 +292,10 @@ class TescanMicroscope(FibsemMicroscope):
             image_settings.hfw = image_settings.pixel_size.x * imageWidth
         
         #dwell time conversion s to ms
-        dwell_time_ms = image_settings.dwell_time * 1000
+        dwell_time_ns = int(image_settings.dwell_time * 1e9)
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, dwell_time_ms
+            0, imageWidth, imageHeight, DwellTime=dwell_time_ns
         )
 
 
@@ -464,10 +465,10 @@ class TescanMicroscope(FibsemMicroscope):
         return current_microscope_state
 
     def autocontrast(self, beam_type: BeamType) -> None:
-        if beam_type.name == BeamType.ELECTRON:
-            self.connection.SEM.Detector.AutoSignal(0)
-        if beam_type.name == BeamType.ION:
-            self.connection.FIB.Detector.AutoSignal(0)
+        if beam_type == BeamType.ELECTRON:
+            self.connection.SEM.Detector.AutoSignal(self.electron_detector_active.name)
+        if beam_type == BeamType.ION:
+            self.connection.FIB.Detector.AutoSignal(self.ion_detector_active.name)
 
     def reset_beam_shifts(self):
         pass
