@@ -275,10 +275,11 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
         self.update_displays()
 
-    def continue_button_pressed(self):
+    def continue_button_pressed(self):        
         self.close()
 
     def closeEvent(self, event):
+        self.microscope.patterning.clear_patterns()
         event.accept()
 
     def stage_tilt(self):

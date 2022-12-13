@@ -153,6 +153,7 @@ def auto_charge_neutralisation(
         )
 
     for i in range(n_iterations):
+        # discharge_settings.label = f"{ts}_charge_neutralisation_{i}"
         acquire.new_image(microscope, discharge_settings)
 
     # take image
