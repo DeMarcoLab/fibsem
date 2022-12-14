@@ -9,16 +9,8 @@ The microscope client is set up using an internet connection. Hence the microsco
 
 The microscope organisation is abstracted away in the FibsemMicroscope class. All hardware implementations follow the same abstract organisation. This allows for a black box approach in the external modules, where all calls to the microscope are independent of the specific hardware, and all direct calls to the APIs are limited to the class methods. 
 
-
-<figure>
-  <img
-  src="https://docs.google.com/drawings/d/1rxXLB_iLTuy5rzk3FiQ0u5LPHhKI2WgfYZIn8Ui3aUM/edit?usp=sharing"
-  alt="Segmentation 4D">
-  <figcaption style="text-align:center">Segmentation 4D Pipeline</figcaption>
-</figure>
-
-
-[Figure 1: Implemented methods in microscope class](https://docs.google.com/drawings/d/1rxXLB_iLTuy5rzk3FiQ0u5LPHhKI2WgfYZIn8Ui3aUM/edit?usp=sharing)
+  
+![Figure 1: Implemented methods in microscope class](/docs/openFibsemv2.png)
 
 As an example, to take a set of reference images from the microscope using an electron beam and an ion beam, the syntax is as follows:
 
@@ -122,7 +114,7 @@ if __name__ == "__main__":
     main()
 ```
 
-[Figure 2: Example output ](https://drive.google.com/file/d/1A_iBYTaDCVvD9F0F-lBJqLZiv1wjKG2u/view?usp=sharing)
+![Figure 2: Example output ](/docs/Figure_1.png)
 
 
 
