@@ -1,6 +1,6 @@
 # OpenFIBSEM Documentation
 
-### Overview
+## Overview
 OpenFIBSEM is a platform built with python to allow high level FIB-SEM microscope control using a single package across multiple supported microscopes. Currently, support for microscopes of Thermo Fisher Scientific and TESCAN are actively being developed. 
 
 The OpenFIBSEM package allows control of the microscope in the same syntactic manner regardless of the brand of microscope in use as the package is built upon the existing SDKs for both the different microscopes. 
@@ -20,7 +20,7 @@ In this case, the type of microscope is not relevant for the user and this metho
 
 Along with taking images, specific imaging parameters can also be specified. This can be done by creating and initialising an image settings object.
 
-### Setting up Microscope
+## Setting up Microscope
 
 To set up a session with a microscope, relevant microscope type and connection parameters need to be set up in the system.yaml config file that is located in the following directory in the package:
 
@@ -95,7 +95,7 @@ User parameters can also be preset using the system.yaml file. All numerical val
 - Time: Seconds (s)
 - Distance: Metres (m)
 
-Example code
+## Example code
 An example function for taking images with both beams can be found in the example_OpenFIBSEM file. 
 
 ```python
