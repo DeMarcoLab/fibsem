@@ -10,7 +10,7 @@ The microscope client is set up using an internet connection. Hence the microsco
 The microscope organisation is abstracted away in the FibsemMicroscope class. All hardware implementations follow the same abstract organisation. This allows for a black box approach in the external modules, where all calls to the microscope are independent of the specific hardware, and all direct calls to the APIs are limited to the class methods. 
 
   
-[Figure 1: Implemented methods in microscope class](https://docs.google.com/drawings/d/1rxXLB_iLTuy5rzk3FiQ0u5LPHhKI2WgfYZIn8Ui3aUM/edit?usp=sharing)
+[Figure 1: Implemented methods in microscope class](openFibsem2.png)
 
 As an example, to take a set of reference images from the microscope using an electron beam and an ion beam, the syntax is as follows:
 
