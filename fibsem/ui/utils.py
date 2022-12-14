@@ -6,13 +6,17 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-    CleaningCrossSectionPattern, RectanglePattern)
+    CleaningCrossSectionPattern,
+    RectanglePattern,
+)
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem.structures import Point
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
+
+from fibsem.structures import MillingSettings, Point
+
 
 # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 class _WidgetPlot(QWidget):
@@ -117,13 +121,17 @@ def create_crosshair(
         rectangle_horizontal=rect_horizontal, rectangle_vertical=rect_vertical
     )
 
+
 # TODO update with Point
-def draw_crosshair(image, canvas, x: float = None, y: float = None, colour: str ="yellow"):
+def draw_crosshair(
+    image, canvas, x: float = None, y: float = None, colour: str = "yellow"
+):
     # draw crosshairs
     crosshair = create_crosshair(image, x, y, colour=colour)
     for patch in crosshair.__dataclass_fields__:
         canvas.ax11.add_patch(getattr(crosshair, patch))
         getattr(crosshair, patch).set_visible(True)
+
 
 # draw arrow
 def draw_arrow(p1: Point, p2: Point, canvas) -> None:
@@ -137,13 +145,18 @@ def draw_arrow(p1: Point, p2: Point, canvas) -> None:
     return
 
 
-def draw_crosshair_v2(image: AdornedImage, canvas: _PlotCanvas, point: Point, colour: str = "yellow"):
+def draw_crosshair_v2(
+    image: AdornedImage, canvas: _PlotCanvas, point: Point, colour: str = "yellow"
+):
 
     markersize = max(image.data.shape) // 20
-    
-    canvas.ax11.plot(point.x, point.y, marker="+", color=colour, ms=markersize, markeredgewidth=2)
 
-    return 
+    canvas.ax11.plot(
+        point.x, point.y, marker="+", color=colour, ms=markersize, markeredgewidth=2
+    )
+
+    return
+
 
 def display_error_message(message, title="Error"):
     """PyQt dialog box displaying an error message."""
@@ -158,21 +171,29 @@ def display_error_message(message, title="Error"):
     return error_dialog
 
 
-def message_box_ui(title: str, text: str, buttons = QMessageBox.Yes | QMessageBox.No):
+def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
 
     msg = QMessageBox()
     msg.setWindowTitle(title)
     msg.setText(text)
     msg.setStandardButtons(buttons)
     msg.exec_()
-    
-    response = True if (msg.clickedButton() == msg.button(QMessageBox.Yes)) or (msg.clickedButton() == msg.button(QMessageBox.Ok) ) else False
+
+    response = (
+        True
+        if (msg.clickedButton() == msg.button(QMessageBox.Yes))
+        or (msg.clickedButton() == msg.button(QMessageBox.Ok))
+        else False
+    )
 
     return response
 
 
-
-def draw_rectangle_pattern(adorned_image: AdornedImage, pattern: Union[RectanglePattern, CleaningCrossSectionPattern], colour: str ="yellow") -> Rectangle:
+def draw_rectangle_pattern(
+    adorned_image: AdornedImage,
+    pattern: Union[RectanglePattern, CleaningCrossSectionPattern],
+    colour: str = "yellow",
+) -> Rectangle:
     """Draw a AutoSCript Rectangle Pattern as Matplotib Rectangle"""
     rectangle = Rectangle(
         (0, 0),
@@ -218,22 +239,15 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QGridLayout, QLabel
 
+
 def set_arr_as_qlabel(
-    arr: np.ndarray,
-    label: QLabel,
-    shape: tuple = (1536//4, 1024//4),
+    arr: np.ndarray, label: QLabel, shape: tuple = (1536 // 4, 1024 // 4),
 ) -> QLabel:
 
-    image = QImage(
-        arr.data,
-        arr.shape[1],
-        arr.shape[0],
-        QImage.Format_Grayscale8,
-    )
+    image = QImage(arr.data, arr.shape[1], arr.shape[0], QImage.Format_Grayscale8,)
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
     return label
-
 
 
 def convert_pattern_to_napari_rect(
@@ -249,10 +263,10 @@ def convert_pattern_to_napari_rect(
     cx = int(icx + (pattern.center_x / pixelsize))
     cy = int(icy - (pattern.center_y / pixelsize))
 
-    r = -pattern.rotation #
+    r = -pattern.rotation  #
 
-    xmin, xmax = - w / 2, w / 2
-    ymin, ymax = - h / 2, h / 2
+    xmin, xmax = -w / 2, w / 2
+    ymin, ymax = -h / 2, h / 2
 
     px0 = cx + (xmin * np.cos(r) - ymin * np.sin(r))
     py0 = cy + (xmin * np.sin(r) + ymin * np.cos(r))
@@ -271,7 +285,7 @@ def convert_pattern_to_napari_rect(
 
     return shape
 
-from fibsem.structures import MillingSettings
+
 def convert_napari_rect_to_mill_settings(
     arr: np.array, image: np.array, pixelsize: float, depth: float = 10e-6
 ) -> MillingSettings:
@@ -305,18 +319,25 @@ def convert_napari_rect_to_mill_settings(
 
     return mill_settings
 
+
 import napari
 
-def _draw_patterns_in_napari(viewer: napari.Viewer, ib_image: AdornedImage, eb_image: AdornedImage, all_patterns: list):
+
+def _draw_patterns_in_napari(
+    viewer: napari.Viewer,
+    ib_image: AdornedImage,
+    eb_image: AdornedImage,
+    all_patterns: list,
+):
 
     # remove all shapes layers
     layers_to_remove = []
     for layer in viewer.layers:
-        if (isinstance(layer, napari.layers.shapes.shapes.Shapes)):
+        if isinstance(layer, napari.layers.shapes.shapes.Shapes):
             layers_to_remove.append(layer)
-            
+
     for layer in layers_to_remove:
-        viewer.layers.remove(layer) # Not removing the second layer?
+        viewer.layers.remove(layer)  # Not removing the second layer?
 
     pixelsize = ib_image.metadata.binary_result.pixel_size.x
 
@@ -324,15 +345,13 @@ def _draw_patterns_in_napari(viewer: napari.Viewer, ib_image: AdornedImage, eb_i
     for i, stage in enumerate(all_patterns, 1):
         shape_patterns = []
         for pattern in stage:
-            shape = convert_pattern_to_napari_rect(
-                pattern, ib_image.data, pixelsize
-            )
-            
+            shape = convert_pattern_to_napari_rect(pattern, ib_image.data, pixelsize)
+
             # offset the x coord by image width
             if eb_image is not None:
                 for c in shape:
                     c[1] += eb_image.data.shape[1]
-                
+
             shape_patterns.append(shape)
 
         colour = "yellow" if i == 1 else "cyan"

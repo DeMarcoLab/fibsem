@@ -128,6 +128,7 @@ def auto_charge_neutralisation(
     image_settings: ImageSettings,
     discharge_settings: ImageSettings = None,
     n_iterations: int = 10,
+    save_images: bool = False
 ) -> None:
 
     # take sequence of images quickly,
@@ -153,7 +154,11 @@ def auto_charge_neutralisation(
         )
 
     for i in range(n_iterations):
-        # discharge_settings.label = f"{ts}_charge_neutralisation_{i}"
+        if i % 5 == 0:
+            discharge_settings.save = save_images 
+            discharge_settings.label = f"{ts}_charge_neutralisation_{i}"
+        else:
+            discharge_settings.save = False
         acquire.new_image(microscope, discharge_settings)
 
     # take image
