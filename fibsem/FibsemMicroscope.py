@@ -430,6 +430,17 @@ class TescanMicroscope(FibsemMicroscope):
         return fibsem_image
 
     def last_image(self, beam_type: BeamType.ELECTRON) -> FibsemImage:
+        """Get the last image acquired for the specified beam type.
+
+        Args:
+            beam_type (BeamType): The type of beam to use (either electron or ion).
+
+        Returns:
+            image (FibsemImage): The last image acquired for the specified beam type.
+
+        Raises:
+            Exception: If the beam type is not electron or ion.
+        """
         if beam_type == BeamType.ELECTRON:
             image = self.last_image_eb
         elif beam_type == BeamType.ION:
@@ -439,6 +450,12 @@ class TescanMicroscope(FibsemMicroscope):
         return image
 
     def get_stage_position(self):
+        """Get the current position of the stage.
+
+        Returns:
+            stage_position (FibsemStagePosition): An object containing the current 
+            x, y, z, r, and t coordinates of the stage.
+        """
         x, y, z, r, t = self.connection.Stage.GetPosition()
         stage_position = FibsemStagePosition(x, y, z, r, t, "raw")
         return stage_position
@@ -495,6 +512,14 @@ class TescanMicroscope(FibsemMicroscope):
         return current_microscope_state
 
     def autocontrast(self, beam_type: BeamType) -> None:
+        """Adjust the contrast of the active detector for the specified beam type.
+
+        Args:
+            beam_type (BeamType): The type of beam to use (either electron or ion).
+
+        Returns:
+            None
+        """
         if beam_type == BeamType.ELECTRON:
             self.connection.SEM.Detector.AutoSignal(self.electron_detector_active.name)
         if beam_type == BeamType.ION:
@@ -505,6 +530,19 @@ class TescanMicroscope(FibsemMicroscope):
 
 
     def move_stage(self, x: float = None, y: float = None, z: float = None, r: float = None, tx: float = None, ty: float = None,):
+        """Move the stage to the specified coordinates.
+
+        Args:
+            x (float): The x-coordinate to move to (in meters).
+            y (float): The y-coordinate to move to (in meters).
+            z (float): The z-coordinate to move to (in meters).
+            r (float): The rotation to apply (in degrees).
+            tx (float): The x-axis tilt to apply (in degrees).
+            ty (float): The y-axis tilt to apply (in degrees).
+
+        Returns:
+            None
+        """
         self.connection.Stage.MoveTo(x*1000,y*1000,z*1000,r,tx,ty)
 
 
