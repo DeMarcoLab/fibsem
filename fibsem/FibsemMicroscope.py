@@ -259,6 +259,20 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address, port)
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
+
+        """
+        Acquires an image from the FIB/SEM instrument using the specified settings. Also saves the acquired image
+        to a last image instance so that the most recent image taken can be easily accessed without reacquiring an image.
+        
+        Parameters:
+        self: The instance of the client connection to the TESCAN FIBSEM microscope.
+
+        image_settings (ImageSettings): The settings to use when acquiring the image.
+        
+        Returns:
+        FibsemImage: The image acquired by the microscope as a FibsemImage data type
+        """
+
         if image_settings.beam_type.value == 1:
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
@@ -269,6 +283,15 @@ class TescanMicroscope(FibsemMicroscope):
         return image
 
     def _get_eb_image(self, image_settings=ImageSettings) -> FibsemImage:
+        """Gets an image with the electron beam with the specified settings
+
+        Args:
+            image_settings (_type_, optional): Image settings related to the electron beam. 
+            Defaults to ImageSettings initially created.
+
+        Returns:
+            FibsemImage: returns the electron beam image in FibsemImage format
+        """
         # At first make sure the beam is ON
         self.connection.SEM.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
@@ -291,14 +314,12 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.SEM.Optics.SetViewfield(image_settings.pixel_size.x * imageWidth * 1000)
             image_settings.hfw = image_settings.pixel_size.x * imageWidth
         
-        #dwell time conversion s to ms
+        #dwell time conversion s to ns
         dwell_time_ns = int(image_settings.dwell_time * 1e9)
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
             0, imageWidth, imageHeight, DwellTime=dwell_time_ns
         )
-
-
 
         microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
@@ -334,6 +355,15 @@ class TescanMicroscope(FibsemMicroscope):
         return fibsem_image
 
     def _get_ib_image(self, image_settings=ImageSettings):
+        """Gets an image with the electron beam with the specified settings
+
+        Args:
+            image_settings (_type_, optional): Image settings related to the ion beam. 
+            Defaults to ImageSettings initially created.
+
+        Returns:
+            FibsemImage: returns the ion beam image in FibsemImage format
+        """
         # At first make sure the beam is ON
         self.connection.FIB.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
