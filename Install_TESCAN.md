@@ -13,7 +13,9 @@ Before beginning this install, please ensure the following
 
 ## Installing the SDK
 
-Run the installer exe file. When it asks for the python interpreter, select the one that is on the conda environment and proceed with the install
+Run the installer exe file. When it asks for the python interpreter, select the one that is on the conda environment and proceed with the install.
+
+The package should now be installed successfully
 
 ### Common Issue with Python Interpreter
 
