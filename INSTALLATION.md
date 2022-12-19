@@ -116,10 +116,10 @@ If the conda python interpreter cannot be selected from the drop down options, p
 
 Once the installation has been completed, navigate to where python is installed on which the SDK has been installed.
 
-In there navigate to
+In there, navigate to
 
 
-`.../python/lib/site-packages`
+`...\python\lib\site-packages`
 
 from this folder, find and copy the following folders:
 
@@ -129,13 +129,13 @@ from this folder, find and copy the following folders:
 
 Copy these into the python folder that is set up in the conda environment
 
-`.../Anaconda3/envs/fibsem/lib/site-packages`
+`...\Anaconda3\envs\fibsem\lib\site-packages`
 
 The package should now be installed successfully
 
 ### Checking Install
 
-To check if the module has been installed properly and can be imported run the following python code in FIBSEM:
+To check if the module has been installed properly and can be imported, run the following python code in FIBSEM:
 
 ```python
 import sys
