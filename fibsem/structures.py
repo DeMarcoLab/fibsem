@@ -170,6 +170,7 @@ class ImageSettings:
     resolution: str = None
     dwell_time: float = None
     hfw: float = None
+    pixel_size: Point = None
     autocontrast: bool = None
     beam_type: BeamType = None
     save: bool = None
@@ -206,6 +207,7 @@ class ImageSettings:
             resolution=settings["resolution"],
             dwell_time=settings["dwell_time"],
             hfw=settings["hfw"],
+            pixel_size=Point.__from_dict__(settings["pixel_size"]),
             autocontrast=settings["autocontrast"],
             beam_type=BeamType[settings["beam_type"].upper()]
             if settings["beam_type"] is not None
@@ -228,6 +230,7 @@ class ImageSettings:
             "resolution": self.resolution if self.resolution is not None else None,
             "dwell_time": self.dwell_time if self.dwell_time is not None else None,
             "hfw": self.hfw if self.hfw is not None else None,
+            "pixel_size": Point.__to_dict__(self.pixel_size) if self.pixel_size is not None else None,
             "autocontrast": self.autocontrast
             if self.autocontrast is not None
             else None,
