@@ -10,7 +10,7 @@ Python 3.9+ is required.
 The [Anaconda distribution](https://www.anaconda.com/distribution/)
 of python is recommended.
 
-### Setting up your python virtual environment
+## Setting up your python virtual environment
 It is also highly recommended to use virtual environments for development,
 see [Managing Conda Environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
 for more information.
@@ -24,7 +24,9 @@ conda activate fibsem
 pip install -e .
 ``` 
 
-### Installing Autoscript
+## Installing Microscope Hardware APIs
+
+## Installing Autoscript
 Autoscript provides an API (application programming interface) for scripting
 control of compatible FEI microscope systems.
 This is a commercial product by Thermo Fisher FEI, please visit their website
@@ -78,7 +80,7 @@ You will need to copy:
 * thermoscientific_logging-5.12.1.dist-info
 
 
-## Having problems?
+#### Having problems?
 * Check to see if Autoscript is correctly installed and configured.
 * Check to see if your python environment contains all packages listed in
 the requirements.txt
@@ -88,3 +90,58 @@ environment containing the dependencies listed above
 * Try cloning the repository and running the unit tests,
 you may want to try installing from the source code.
 
+## Installing Tescanautomation
+
+Tescanautomation is a hardware API for controlling TESCAN microscopes. This is a commercially available product from TESCAN. The SDK is available in an .exe file format
+
+### Prerequisites
+
+Before beginning this install, please ensure the following
+
+- FIBSEM conda environment is installed and setup
+- tescan-automation-sdk-install exe file is ready to go
+
+### Installing the SDK
+
+Run the installer exe file. When it asks for the python interpreter, select the one that is on the conda environment and proceed with the install.
+
+The package should now be installed successfully
+
+### ***Common Issue with Python Interpreter***
+
+If the conda python interpreter cannot be selected from the drop down options, proceed with the install and take note of the path of installed python interpreter. 
+
+(If no python interpreter can be found in the drop down, install python 3.9+ seperately and run the installation exe again)
+
+Once the installation has been completed, navigate to where python is installed on which the SDK has been installed.
+
+In there navigate to
+
+
+`.../python/lib/site-packages`
+
+from this folder, find and copy the following folders:
+
+- All folders beginning with `PySide6`
+- All folders beginning with `shiboken`
+- All folders beginning with `tescan`
+
+Copy these into the python folder that is set up in the conda environment
+
+`.../Anaconda3/envs/fibsem/lib/site-packages`
+
+The package should now be installed successfully
+
+### Checking Install
+
+To check if the module has been installed properly and can be imported run the following python code in FIBSEM:
+
+```python
+import sys
+from tescanautomation import Automation
+
+print("Tescan Imported Successfully") if "tescanautomation" in sys.modules else print("Tescan Import was unsuccessful")
+
+```
+
+If the import or install is unsuccessful, check to see if all the packages have been copied to the right directory. 

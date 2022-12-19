@@ -104,7 +104,7 @@ Run the Tescan-Automation-SDK-Installer-3.x.x.exe file
 
 When asked for the python interpretor, select the existing conda environment for FIBSEM, if this python interpretor is not available, see detailed installation guide for a work around
 
-See [Installation Guide](Install_TESCAN.md) for full details
+See [Installation Guide](INSTALLATION.md) for full details
 
 ## Getting Started
 
