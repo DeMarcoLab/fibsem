@@ -228,7 +228,7 @@ def set_arr_as_qlabel(
         arr.data,
         arr.shape[1],
         arr.shape[0],
-        QImage.Format_Grayscale8,
+        QImage.Format_Grayscale16,
     )
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
