@@ -1,6 +1,6 @@
 import sys
 import napari
-
+from datetime import datetime
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtGui import QImage,QPixmap
 from fibsem.ui.qtdesigner_files import connect
@@ -18,32 +18,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.RefImage.clicked.connect(self.take_reference_images)
         self.ResetImage.clicked.connect(self.reset_images)
         self.microscope = None
-        self.settings = None
-        
-    
-    def connect_to_microscope(self):
-        self.microscope, self.settings = utils.setup_session()
-        self.CLog.setText("Connected to microscope successfully")
 
-    def disconnect_from_microscope(self):
-
-        if self.microscope is None:
-            self.CLog.setText("No Microscope Connected")
-            return
-
-        self.microscope.disconnect()
-        self.microscope = None
-        self.CLog.setText('Microscope Disconnected')
-
-    def take_reference_images(self):
-        
-        if self.microscope is None:
-            self.CLog.setText('No Microscope Connected')
-            return
-
-        # gamma settings
-
-        gamma_settings = GammaSettings(
+        self.gamma_settings = GammaSettings(
             enabled=True,
             min_gamma=0.5,
             max_gamma=1.8,
@@ -51,31 +27,61 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             threshold=46,
         )
 
-        # set imaging settings
-        image_settings = ImageSettings(
+        self.image_settings =  ImageSettings(
                 resolution="1536x1024",
                 dwell_time=1.0e-6,
                 hfw=600.0e-6,
                 autocontrast=False,
                 beam_type=BeamType.ION,
-                gamma=gamma_settings,
+                gamma=self.gamma_settings,
                 save=True,
                 save_path="fibsem\\test_images",
                 label=utils.current_timestamp(),
                 reduced_area=None,
             )
+    
+    def update_log(self,log:str):
+
+        now = datetime.now()
+        timestr = now.strftime("%d/%m  %H:%M:%S")
+
+        self.CLog4.setText(self.CLog3.text())
+        self.CLog3.setText(self.CLog2.text())
+        self.CLog2.setText(self.CLog.text())
+
+        self.CLog.setText(timestr+ " : " +log)
+
+    def connect_to_microscope(self):
+
+        self.update_log("Attempting to connect...")
+        
+        try:
+            self.microscope, self.settings = utils.setup_session()
+            self.update_log('Connected to microscope successfully')
+        except:
+            self.update_log('Unable to connect to microscope')
+
+    def disconnect_from_microscope(self):
+
+        if self.microscope is None:
+            self.update_log("No Microscope Connected")
+            return
+
+        self.microscope.disconnect()
+        self.microscope = None
+        self.update_log('Microscope Disconnected')
+
+    def take_reference_images(self):
+        
+        if self.microscope is None:
+            self.update_log('No Microscope Connected')
+            return
 
         # take image with both beams
-        eb_image, ib_image = acquire.take_reference_images(self.microscope, image_settings)
+        eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
         self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
-
-        # print(f'EB Data type: {eb_image.data.dtype} IB Data Type: {ib_image.data.dtype}')
-        # self.IB_Image = ui_utils.set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(300, 300))
-
-        # eb_q_image = QImage(eb_image.data,eb_image.data.shape[0],eb_image.data.shape[1],eb_image.data.shape[0]*3,QImage.Format.Format_Grayscale16)
-        # eb_pix = QPixmap(eb_q_image)
 
         # viewer.layers.clear()
         # viewer.add_image(eb_image.data, name="EB Image")
