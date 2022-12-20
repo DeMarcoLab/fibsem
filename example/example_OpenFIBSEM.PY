@@ -28,7 +28,7 @@ def main():
             resolution="1536x1024",
             dwell_time=1.0e-6,
             hfw=600.0e-6,
-            autocontrast=True,
+            autocontrast=False,
             beam_type=BeamType.ION,
             gamma=gamma_settings,
             save=True,

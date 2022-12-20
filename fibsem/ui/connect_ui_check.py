@@ -26,13 +26,19 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def disconnect_from_microscope(self):
 
+        if self.microscope is None:
+            print("No Microscope Connected")
+            return
+
         self.microscope.disconnect()
+        self.microscope = None
         print('Microscope Disconnected')
 
     def take_reference_images(self):
         
         if self.microscope is None:
             print('No Microscope Connected')
+            return
 
         # gamma settings
 
@@ -61,7 +67,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         # take image with both beams
         eb_image, ib_image = acquire.take_reference_images(self.microscope, image_settings)
 
-        self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(300, 300))
+        self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
+        self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
+
+        print(f'EB Data type: {eb_image.data.dtype} IB Data Type: {ib_image.data.dtype}')
         # self.IB_Image = ui_utils.set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(300, 300))
 
         # eb_q_image = QImage(eb_image.data,eb_image.data.shape[0],eb_image.data.shape[1],eb_image.data.shape[0]*3,QImage.Format.Format_Grayscale16)
@@ -73,8 +82,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def reset_images(self):
 
-        self.EB_Image.setText("Hello EB")
-        # self.IB_Image.setText("Hello IB")
+        self.EB_Image.setText("No Image to Display")
+        self.IB_Image.setText("No Image to Display")
         
     
 
