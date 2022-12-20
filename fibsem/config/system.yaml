@@ -1,10 +1,6 @@
 # system
 system:
-<<<<<<< HEAD
   ip_address: "130.194.195.198"
-=======
-  ip_address: "localhost" 
->>>>>>> 20a781e4c6a6307a3a2df313dd98504158494f18
   application_file: autolamella
   manufacturer: "Tescan"
   # beams
@@ -35,9 +31,6 @@ user:
   milling_current: 2.e-9
   resolution: "1536x1024"
   hfw: 150.e-6  
-  pixel_size: 
-    x: 0.0
-    y: 0.0
   beam_type: "Electron"
   autocontrast: True
   dwell_time: 1.e-6
