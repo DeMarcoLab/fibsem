@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>770</width>
-    <height>403</height>
+    <width>856</width>
+    <height>540</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -70,9 +70,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>80</y>
-      <width>251</width>
-      <height>191</height>
+      <y>100</y>
+      <width>281</width>
+      <height>201</height>
      </rect>
     </property>
     <property name="text">
@@ -83,7 +83,7 @@
     <property name="geometry">
      <rect>
       <x>390</x>
-      <y>90</y>
+      <y>100</y>
       <width>281</width>
       <height>191</height>
      </rect>
@@ -92,13 +92,52 @@
      <string>TextLabel</string>
     </property>
    </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>310</y>
+      <width>141</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Electron Beam</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>310</y>
+      <width>141</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ion Beam</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="CLog">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>420</y>
+      <width>511</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Console Log</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>770</width>
+     <width>856</width>
      <height>21</height>
     </rect>
    </property>
