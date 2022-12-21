@@ -9,6 +9,8 @@ from fibsem import utils, acquire
 from fibsem.structures import BeamType, ImageSettings, GammaSettings
 import napari
 
+import logging
+
 class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def __init__(self,*args,obj=None,**kwargs) -> None:
         super(MainWindow,self).__init__(*args,**kwargs)
@@ -112,9 +114,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         if self.autocontrast_enable.checkState() == 2:
             self.image_settings.autocontrast = True
             self.update_log("Autocontrast Enabled")
+            logging.info(f"UI | AutoContrast Enabled")
         elif self.autocontrast_enable.checkState() == 0:
             self.image_settings.autocontrast = False
             self.update_log("Autocontrast Disabled")
+            logging.info(f"UI | AutoContrast Disabled")
+
     
     def gamma_check(self):
 
