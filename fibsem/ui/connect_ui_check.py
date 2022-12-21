@@ -168,6 +168,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
 
+        self.set_settings()
+
         # viewer.layers.clear()
         # viewer.add_image(eb_image.data, name="EB Image")
         # viewer.add_image(ib_image.data, name="IB Image")
@@ -183,6 +185,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         eb_image = acquire.new_image(self.microscope, self.image_settings)
         self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         self.image_settings.beam_type = tmp_beam_type
+        self.set_settings()
+        self.update_log("EB Image Taken!")
     
     def click_IB_Image(self):
 
@@ -195,11 +199,41 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         ib_image = acquire.new_image(self.microscope, self.image_settings)
         self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
         self.image_settings.beam_type = tmp_beam_type
+        self.set_settings()
+
+        self.update_log("IB Image Taken!")
 
     def reset_images(self):
 
         self.EB_Image.setText("")
         self.IB_Image.setText("")
+
+    def set_settings(self):
+
+        self.gamma_min.setValue(self.gamma_settings.min_gamma)
+        self.gamma_max.setValue(self.gamma_settings.max_gamma)
+        self.gamma_scalefactor.setValue(self.gamma_settings.scale_factor)
+        self.dwell_time_setting.setValue(self.image_settings.dwell_time * 1.0e6)
+        self.hfw_box.setValue(int(self.image_settings.hfw * 1e6))
+
+        res_ful = self.image_settings.resolution.split("x")
+
+        self.res_width.setValue(int(res_ful[0]))
+        self.res_height.setValue(int(res_ful[1]))
+
+
+        if self.gamma_settings.enabled:
+            self.gamma_enabled.setCheckState(2)
+        else:
+            self.gamma_enabled.setCheckState(0)
+
+        if self.image_settings.autocontrast:
+
+            self.autocontrast_enable.setCheckState(2)
+        else:
+            self.autocontrast_enable.setCheckState(0)
+
+    
 
     def reset_image_and_gammaSettings(self):
 
@@ -224,28 +258,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 reduced_area=None,
             )
         
-        self.gamma_min.setValue(self.gamma_settings.min_gamma)
-        self.gamma_max.setValue(self.gamma_settings.max_gamma)
-        self.gamma_scalefactor.setValue(self.gamma_settings.scale_factor)
-        self.dwell_time_setting.setValue(self.image_settings.dwell_time * 1.0e6)
-        self.hfw_box.setValue(int(self.image_settings.hfw * 1e6))
-
-        res_ful = self.image_settings.resolution.split("x")
-
-        self.res_width.setValue(int(res_ful[0]))
-        self.res_height.setValue(int(res_ful[1]))
-
-
-        if self.gamma_settings.enabled:
-            self.gamma_enabled.setCheckState(2)
-        else:
-            self.gamma_enabled.setCheckState(0)
-
-        if self.image_settings.autocontrast:
-
-            self.autocontrast_enable.setCheckState(2)
-        else:
-            self.autocontrast_enable.setCheckState(0)
+        self.set_settings()
         
         self.update_log("Gamma and image settings returned to default values")
 
