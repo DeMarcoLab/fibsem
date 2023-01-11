@@ -5,12 +5,13 @@ from datetime import datetime
 #from PyQt5.QtGui import QImage,QPixmap
 from fibsem.ui.qtdesigner_files import connect
 from PyQt5 import QtWidgets
-from fibsem.ui import utils as ui_utils
+
 from fibsem import utils, acquire
-from fibsem.structures import BeamType, ImageSettings, GammaSettings
+from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemImage
 from pprint import pprint
 import os
-pprint(sys.modules)
+import tkinter
+from tkinter import filedialog
 
 
 from PyQt5 import QtWidgets
@@ -22,38 +23,34 @@ import numpy as np
 import logging
 
 
-
 def set_arr_as_qlabel(
     arr: np.ndarray,
     label: QLabel,
     shape: tuple = (1536//4, 1024//4),
 ) -> QLabel:
 
-    image = QImage(
-        arr.data,
-        arr.shape[1],
-        arr.shape[0],
-        QImage.Format_Grayscale16,
-    )
-    label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
+    if arr.dtype == 'uint8':
 
-    return label
+        image = QImage(
+            arr.data,
+            arr.shape[1],
+            arr.shape[0],
+            QImage.Format_Grayscale8,
+        )
+        label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
-def set_arr_as_qlabel_8(
-    arr: np.ndarray,
-    label: QLabel,
-    shape: tuple = (1536//4, 1024//4),
-) -> QLabel:
+        return label
+    else:
 
-    image = QImage(
-        arr.data,
-        arr.shape[1],
-        arr.shape[0],
-        QImage.Format_Grayscale8,
-    )
-    label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
+        image = QImage(
+            arr.data,
+            arr.shape[1],
+            arr.shape[0],
+            QImage.Format_Grayscale16,
+        )
+        label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
-    return label
+        return label
 
 
 class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
@@ -86,8 +83,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.res_height.valueChanged.connect(self.res_height_change)
         self.dwell_time_setting.valueChanged.connect(self.image_dwell_time_change)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
+        self.autosave_enable.stateChanged.connect(self.autosave_toggle)
 
         # Gamma and Image Settings
+
+        self.FIB_IB = FibsemImage
+        self.FIB_EB = FibsemImage
 
         self.gamma_settings = GammaSettings(
             enabled=True,
@@ -116,8 +117,25 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.reset_ui_settings()
 
     
+    def autosave_toggle(self):
+
+        if self.autosave_enable.checkState() == 2:
+            self.image_settings.save = True
+            self.update_log("Autosave Enabled")
+            logging.info(f"UI | Autosave Enabled")
+        elif self.autosave_enable.checkState() == 0:
+            self.image_settings.save = False
+            self.update_log("Autosave Disabled")
+            logging.info(f"UI | Autosave Disabled")
+
+        
+
     def save_filepath(self):
-        self.savepath_text.setText(self.image_settings.save_path)
+        
+        tkinter.Tk().withdraw()
+        folder_path = filedialog.askdirectory()
+        self.savepath_text.setText(folder_path)
+        self.image_settings.save_path = folder_path
         
 
     def hfw_box_change(self):
@@ -223,8 +241,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         # take image with both beams
         eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
-        self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
-        self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
+        self.FIB_IB = ib_image
+        self.FIB_EB = eb_image
+
+        self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
+        self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
 
         self.reset_ui_settings()
 
@@ -241,7 +262,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
-        self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
+        self.FIB_EB = eb_image
+        print(f"statement is {eb_image.data.dtype == 'uint16'}")
+        self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         self.image_settings.beam_type = tmp_beam_type
         self.reset_ui_settings()
         self.update_log("EB Image Taken!")
@@ -255,21 +278,23 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ION
         ib_image = acquire.new_image(self.microscope, self.image_settings)
-        self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
+        print(ib_image.data.dtype)
+        self.FIB_IB = ib_image
+        self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
         self.image_settings.beam_type = tmp_beam_type
         self.reset_ui_settings()
 
         self.update_log("IB Image Taken!")
 
     def save_EB_Image(self):
-        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label, "_eb")
-        self.EB_Image.save(save_path)
+        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_eb")
+        self.FIB_EB.save(save_path=save_path)
 
         self.update_log(f"EB Image Saved to {save_path}.tif!")
 
     def save_IB_Image(self):
-        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label, "_ib")
-        self.IB_Image.save(save_path)
+        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_ib")
+        self.FIB_IB.save(save_path)
 
         self.update_log(f"IB Image Saved to {save_path}.tif!")
 
@@ -303,6 +328,13 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.autocontrast_enable.setCheckState(2)
         else:
             self.autocontrast_enable.setCheckState(0)
+
+        if self.image_settings.save:
+            self.autosave_enable.setCheckState(2)
+        else:
+            self.autocontrast_enable.setCheckState(0)
+        
+        self.savepath_text.setText(self.image_settings.save_path)
 
     
 

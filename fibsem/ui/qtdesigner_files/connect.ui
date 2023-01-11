@@ -13,6 +13,12 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color rgb(255, 255, 255)</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QPushButton" name="ConnectButton">
     <property name="geometry">
@@ -101,7 +107,7 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>20</x>
       <y>480</y>
       <width>161</width>
       <height>21</height>
@@ -121,7 +127,7 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>450</x>
       <y>480</y>
       <width>141</width>
       <height>21</height>
@@ -370,7 +376,7 @@
    <widget class="QPushButton" name="EB_Click">
     <property name="geometry">
      <rect>
-      <x>310</x>
+      <x>260</x>
       <y>480</y>
       <width>75</width>
       <height>23</height>
@@ -383,7 +389,7 @@
    <widget class="QPushButton" name="IB_click">
     <property name="geometry">
      <rect>
-      <x>730</x>
+      <x>690</x>
       <y>480</y>
       <width>75</width>
       <height>23</height>
@@ -598,8 +604,78 @@
       <height>16</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="autoFillBackground">
+     <bool>true</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">savepath_text-&gt;setStyleSheet(&quot;Qlabel { background-color: red)&quot;)</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
     <property name="text">
      <string/>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="EB_Save">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>480</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Save Image</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="IB_Save">
+    <property name="geometry">
+     <rect>
+      <x>770</x>
+      <y>480</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Save Image</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="autosave_enable">
+    <property name="geometry">
+     <rect>
+      <x>1030</x>
+      <y>415</y>
+      <width>70</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Enabled </string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_19">
+    <property name="geometry">
+     <rect>
+      <x>900</x>
+      <y>415</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Autosave</string>
     </property>
    </widget>
   </widget>
