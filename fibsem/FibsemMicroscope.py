@@ -4,14 +4,23 @@ import logging
 import datetime
 import numpy as np
 from fibsem.config import load_microscope_manufacturer
+import sys
 
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
-    from tescanautomation.GUI import SEMInfobar
+    # from tescanautomation.GUI import SEMInfobar
     import re
+    # del globals()[tescanautomation.GUI]
+    sys.modules.pop('tescanautomation.GUI')
+    sys.modules.pop('tescanautomation.pyside6gui')
+    sys.modules.pop('tescanautomation.pyside6gui.imageViewer_private')
+    sys.modules.pop('tescanautomation.pyside6gui.infobar_private')
+    sys.modules.pop('tescanautomation.pyside6gui.infobar_utils')
+    sys.modules.pop('tescanautomation.pyside6gui.rc_GUI')
+    sys.modules.pop('tescanautomation.pyside6gui.workflow_private')
 
 if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings

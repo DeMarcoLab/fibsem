@@ -12,7 +12,7 @@ from fibsem import acquire, conversions, movement, constants, alignment, utils, 
 from fibsem.structures import BeamType, MicroscopeSettings, MillingSettings, Point
 from fibsem.ui.qtdesigner_files import FibsemUI
 from PyQt5 import QtCore, QtWidgets
-from fibsem.detection.detection import FeatureType, Feature, DetectionResult
+from fibsem.detection.detection import FeatureType, Feature
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 

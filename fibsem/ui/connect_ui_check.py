@@ -1,13 +1,16 @@
 import sys
 import napari
 from datetime import datetime
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtGui import QImage,QPixmap
+
+#from PyQt5.QtGui import QImage,QPixmap
 from fibsem.ui.qtdesigner_files import connect
+from qtpy import QtWidgets
 from fibsem.ui import utils as ui_utils
 from fibsem import utils, acquire
 from fibsem.structures import BeamType, ImageSettings, GammaSettings
-import napari
+from pprint import pprint
+pprint(sys.modules)
+
 
 import logging
 
@@ -39,11 +42,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.dwell_time_setting.valueChanged.connect(self.image_dwell_time_change)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
 
-
-        # Initialise microscope object
-        self.microscope = None
-        self.CLog.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
-
         # Gamma and Image Settings
 
         self.gamma_settings = GammaSettings(
@@ -66,6 +64,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 label=utils.current_timestamp(),
                 reduced_area=None,
             )
+
+        # Initialise microscope object
+        self.microscope = None
+        self.CLog.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+        self.reset_ui_settings()
+
     
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
@@ -93,7 +97,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def image_dwell_time_change(self):
         ### dwell time in ms!!!!! ease of use for UI!!!!
-        self.image_settings.dwell_time = self.dwell_time_setting.value()/1.0e-6
+        self.image_settings.dwell_time = self.dwell_time_setting.value()/1.0e6
 
     def gamma_min_change(self):
 
@@ -135,11 +139,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         now = datetime.now()
         timestr = now.strftime("%d/%m  %H:%M:%S")
 
-        self.CLog4.setText(self.CLog3.text())
-        self.CLog3.setText(self.CLog2.text())
-        self.CLog2.setText(self.CLog.text())
+        self.CLog.setText(self.CLog2.text())
+        self.CLog2.setText(self.CLog3.text())
+        self.CLog3.setText(self.CLog4.text())
 
-        self.CLog.setText(timestr+ " : " +log)
+        self.CLog4.setText(timestr+ " : " +log)
 
     def connect_to_microscope(self):
 
@@ -173,7 +177,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
 
-        self.set_settings()
+        self.reset_ui_settings()
 
         # viewer.layers.clear()
         # viewer.add_image(eb_image.data, name="EB Image")
@@ -190,7 +194,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         eb_image = acquire.new_image(self.microscope, self.image_settings)
         self.EB_Image = ui_utils.set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         self.image_settings.beam_type = tmp_beam_type
-        self.set_settings()
+        self.reset_ui_settings()
         self.update_log("EB Image Taken!")
     
     def click_IB_Image(self):
@@ -204,16 +208,17 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         ib_image = acquire.new_image(self.microscope, self.image_settings)
         self.IB_Image = ui_utils.set_arr_as_qlabel_8(ib_image.data, self.IB_Image, shape=(400, 400))
         self.image_settings.beam_type = tmp_beam_type
-        self.set_settings()
+        self.reset_ui_settings()
 
         self.update_log("IB Image Taken!")
 
     def reset_images(self):
 
-        self.EB_Image.setText("")
-        self.IB_Image.setText("")
+        self.EB_Image.setText(" ")
+        self.IB_Image.setText(" ")
+        print("hello")
 
-    def set_settings(self):
+    def reset_ui_settings(self):
 
         self.gamma_min.setValue(self.gamma_settings.min_gamma)
         self.gamma_max.setValue(self.gamma_settings.max_gamma)
@@ -263,7 +268,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 reduced_area=None,
             )
         
-        self.set_settings()
+        self.reset_ui_settings()
         
         self.update_log("Gamma and image settings returned to default values")
 
@@ -276,11 +281,11 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
   
-    # viewer = napari.Viewer()
+    viewer = napari.Viewer(ndisplay=2)
 
     window = MainWindow()
     window.show()
     
-    # viewer.window.add_dock_widget(window, name="imaging")
-    # napari.run()
+    viewer.window.add_dock_widget(window, name="imaging")
+    napari.run()
     app.exec()

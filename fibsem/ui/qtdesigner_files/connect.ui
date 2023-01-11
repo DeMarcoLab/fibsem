@@ -480,12 +480,12 @@
      <rect>
       <x>1095</x>
       <y>325</y>
-      <width>15</width>
-      <height>13</height>
+      <width>81</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>ms</string>
+     <string>microseconds</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="autocontrast_enable">

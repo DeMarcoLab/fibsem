@@ -46,7 +46,7 @@ def main():
 
     arr = np.random.random(size=(1536, 1024))
 
-    img = AdornedImage.load("/home/patrick/github/fibsem/scratch/figure/baseline_eb.tif").data
+    img = AdornedImage.load(r"C:\Users\lnae0002\Desktop\fibsem\fibsem\2022-11-17.01-35-21PM_ib.tif").data
     img = None
 
     ret = fibsem_ui_windows.ask_user_interaction(msg="hi user", image=img)
