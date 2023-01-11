@@ -11,16 +11,18 @@ if manufacturer == "Tescan":
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
+
     # from tescanautomation.GUI import SEMInfobar
     import re
+
     # del globals()[tescanautomation.GUI]
-    sys.modules.pop('tescanautomation.GUI')
-    sys.modules.pop('tescanautomation.pyside6gui')
-    sys.modules.pop('tescanautomation.pyside6gui.imageViewer_private')
-    sys.modules.pop('tescanautomation.pyside6gui.infobar_private')
-    sys.modules.pop('tescanautomation.pyside6gui.infobar_utils')
-    sys.modules.pop('tescanautomation.pyside6gui.rc_GUI')
-    sys.modules.pop('tescanautomation.pyside6gui.workflow_private')
+    sys.modules.pop("tescanautomation.GUI")
+    sys.modules.pop("tescanautomation.pyside6gui")
+    sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
+    sys.modules.pop("tescanautomation.pyside6gui.infobar_private")
+    sys.modules.pop("tescanautomation.pyside6gui.infobar_utils")
+    sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
+    sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
 
 if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
@@ -237,6 +239,94 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         return current_microscope_state
+
+    def move_stage_absolute(self, position: FibsemStagePosition):
+        """Move the stage to the specified coordinates.
+
+        Args:
+            x (float): The x-coordinate to move to (in meters).
+            y (float): The y-coordinate to move to (in meters).
+            z (float): The z-coordinate to move to (in meters).
+            r (float): The rotation to apply (in degrees).
+            tx (float): The x-axis tilt to apply (in degrees).
+
+        Returns:
+            None
+        """
+        stage = self.connection.specimen.stage
+
+        stage.absolute_move(
+            position.x,
+            position.y,
+            position.z,
+            position.r,
+            position.t,
+        )
+
+    def move_stage_relative(
+        self,
+        dx: float = None,
+        dy: float = None,
+        dz: float = None,
+        dr: float = None,
+        dt: float = None,
+    ):
+        """Move the stage by the specified relative move.
+
+        Args:
+            x (float): The x-coordinate to move to (in meters).
+            y (float): The y-coordinate to move to (in meters).
+            z (float): The z-coordinate to move to (in meters).
+            r (float): The rotation to apply (in degrees).
+            tx (float): The x-axis tilt to apply (in degrees).
+
+        Returns:
+            None
+        """
+
+        stage = self.connection.specimen.stage
+        new_position = FibsemStagePosition(dx, dy, dz, dr, dt, "raw")
+        stage.relative_move(new_position)
+
+    def eucentric_move(
+        self,
+        settings: MicroscopeSettings,
+        dx: float,
+        dy: float,
+        beam_type: BeamType,
+    ) -> None:
+        """Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
+
+        Args:
+            microscope (SdbMicroscopeClient): autoscript microscope instance
+            settings (MicroscopeSettings): microscope settings
+            dx (float): distance along the x-axis (image coordinates)
+            dy (float): distance along the y-axis (image coordinates)
+            beam_type (BeamType): beam type to move in
+        """
+        wd = self.connection.beams.electron_beam.working_distance.value
+
+        # calculate stage movement
+        x_move = move.x_corrected_stage_movement(dx)
+        yz_move = move.y_corrected_stage_movement(
+            microscope=self.connection,
+            settings=settings,
+            expected_y=dy,
+            beam_type=beam_type,
+        )
+
+        # move stage
+        stage_position = FibsemStagePosition(
+            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000
+        )
+        logging.info(f"moving stage ({beam_type.name}): {stage_position}")
+        self.move_stage_relative(stage_position)
+
+        # adjust working distance to compensate for stage movement
+        self.connection.beams.electron_beam.working_distance.value = wd
+        self.connection.specimen.stage.link() 
+
+        return
 
 
 class TescanMicroscope(FibsemMicroscope):
@@ -487,7 +577,7 @@ class TescanMicroscope(FibsemMicroscope):
         dr: float = None,
         dtx: float = None,
     ):
-        """ Move the stage by the specified relative move.
+        """Move the stage by the specified relative move.
 
         Args:
             x (float): The x-coordinate to move to (in meters).
@@ -502,9 +592,9 @@ class TescanMicroscope(FibsemMicroscope):
 
         current_position = self.get_stage_position()
         new_position = FibsemStagePosition(
-            current_position.x + dx*1000,
-            current_position.y + dy*1000,
-            current_position.z + dz*1000,
+            current_position.x + dx * 1000,
+            current_position.y + dy * 1000,
+            current_position.z + dz * 1000,
             current_position.r + dr,
             current_position.t + dtx,
             "raw",
@@ -539,14 +629,14 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         # move stage
-        stage_position = FibsemStagePosition(x=x_move.x*1000, y=yz_move.y*1000, z=yz_move.z*1000)
+        stage_position = FibsemStagePosition(
+            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000
+        )
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
 
         # adjust working distance to compensate for stage movement
         self.connection.SEM.Optics.SetWD(wd)
-        #self.connection.specimen.stage.link() # TODO how to link for TESCAN? 
+        # self.connection.specimen.stage.link() # TODO how to link for TESCAN?
 
         return
-
-
