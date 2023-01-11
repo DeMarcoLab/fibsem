@@ -4,15 +4,57 @@ from datetime import datetime
 
 #from PyQt5.QtGui import QImage,QPixmap
 from fibsem.ui.qtdesigner_files import connect
-from qtpy import QtWidgets
+from PyQt5 import QtWidgets
 from fibsem.ui import utils as ui_utils
 from fibsem import utils, acquire
 from fibsem.structures import BeamType, ImageSettings, GammaSettings
 from pprint import pprint
+import os
 pprint(sys.modules)
 
 
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QGridLayout, QLabel
+import numpy as np
+
 import logging
+
+
+
+def set_arr_as_qlabel(
+    arr: np.ndarray,
+    label: QLabel,
+    shape: tuple = (1536//4, 1024//4),
+) -> QLabel:
+
+    image = QImage(
+        arr.data,
+        arr.shape[1],
+        arr.shape[0],
+        QImage.Format_Grayscale16,
+    )
+    label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
+
+    return label
+
+def set_arr_as_qlabel_8(
+    arr: np.ndarray,
+    label: QLabel,
+    shape: tuple = (1536//4, 1024//4),
+) -> QLabel:
+
+    image = QImage(
+        arr.data,
+        arr.shape[1],
+        arr.shape[0],
+        QImage.Format_Grayscale8,
+    )
+    label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
+
+    return label
+
 
 class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def __init__(self,*args,obj=None,**kwargs) -> None:
@@ -27,6 +69,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.ResetImage.clicked.connect(self.reset_images)
         self.EB_Click.clicked.connect(self.click_EB_Image)
         self.IB_click.clicked.connect(self.click_IB_Image)
+        self.EB_Save.clicked.connect(self.save_EB_Image)
+        self.IB_Save.clicked.connect(self.save_IB_Image)
+        self.open_filepath.clicked.connect(self.save_filepath)
 
         # image and gamma settings buttons/boxes/ui objects
 
@@ -71,6 +116,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.reset_ui_settings()
 
     
+    def save_filepath(self):
+        self.savepath_text.setText(self.image_settings.save_path)
+        
+
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
         self.image_settings.hfw = self.hfw_box.value() / 1.0e6
@@ -212,6 +261,18 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.update_log("IB Image Taken!")
 
+    def save_EB_Image(self):
+        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label, "_eb")
+        self.EB_Image.save(save_path)
+
+        self.update_log(f"EB Image Saved to {save_path}.tif!")
+
+    def save_IB_Image(self):
+        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label, "_ib")
+        self.IB_Image.save(save_path)
+
+        self.update_log(f"IB Image Saved to {save_path}.tif!")
+
     def reset_images(self):
 
         self.EB_Image.setText(" ")
@@ -280,12 +341,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 if __name__ == "__main__":    
 
     app = QtWidgets.QApplication(sys.argv)
-  
-    viewer = napari.Viewer(ndisplay=2)
 
     window = MainWindow()
     window.show()
     
-    viewer.window.add_dock_widget(window, name="imaging")
-    napari.run()
     app.exec()
