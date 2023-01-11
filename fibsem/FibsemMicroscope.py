@@ -455,3 +455,44 @@ class TescanMicroscope(FibsemMicroscope):
 
     def reset_beam_shifts(self):
         pass
+
+    def move_stage_absolute(self, position: FibsemStagePosition):
+        """Move the stage to the specified coordinates.
+
+        Args:
+            x (float): The x-coordinate to move to (in meters).
+            y (float): The y-coordinate to move to (in meters).
+            z (float): The z-coordinate to move to (in meters).
+            r (float): The rotation to apply (in degrees).
+            tx (float): The x-axis tilt to apply (in degrees).
+            ty (float): The y-axis tilt to apply (in degrees).
+
+        Returns:
+            None
+        """
+        self.connection.Stage.MoveTo(
+            position.x * 1000,
+            position.y * 1000,
+            position.z * 1000,
+            position.r,
+            position.tx,
+        )
+
+    def move_stage_relative(
+        self,
+        dx: float = None,
+        dy: float = None,
+        dz: float = None,
+        dr: float = None,
+        dtx: float = None,
+    ):
+        current_position = self.get_stage_position()
+        new_position = FibsemStagePosition(
+            current_position.x + dx,
+            current_position.y + dy,
+            current_position.z + dz,
+            current_position.r + dr,
+            current_position.tx + dtx,
+            "raw",
+        )
+        self.move_stage_absolute(new_position)
