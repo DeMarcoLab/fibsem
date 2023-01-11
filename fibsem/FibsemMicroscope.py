@@ -475,7 +475,7 @@ class TescanMicroscope(FibsemMicroscope):
             position.y * 1000,
             position.z * 1000,
             position.r,
-            position.tx,
+            position.t,
         )
 
     def move_stage_relative(
@@ -492,7 +492,7 @@ class TescanMicroscope(FibsemMicroscope):
             current_position.y + dy,
             current_position.z + dz,
             current_position.r + dr,
-            current_position.tx + dtx,
+            current_position.t + dtx,
             "raw",
         )
         self.move_stage_absolute(new_position)
