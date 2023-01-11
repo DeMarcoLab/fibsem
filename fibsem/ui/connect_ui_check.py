@@ -9,6 +9,8 @@ from fibsem.ui import utils as ui_utils
 from fibsem import utils, acquire
 from fibsem.structures import BeamType, ImageSettings, GammaSettings
 from pprint import pprint
+import os
+pprint(sys.modules)
 
 
 from PyQt5 import QtWidgets
@@ -67,6 +69,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.ResetImage.clicked.connect(self.reset_images)
         self.EB_Click.clicked.connect(self.click_EB_Image)
         self.IB_click.clicked.connect(self.click_IB_Image)
+        self.EB_Save.clicked.connect(self.save_EB_Image)
+        self.IB_Save.clicked.connect(self.save_IB_Image)
         self.open_filepath.clicked.connect(self.save_filepath)
 
         # image and gamma settings buttons/boxes/ui objects
@@ -256,6 +260,18 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.reset_ui_settings()
 
         self.update_log("IB Image Taken!")
+
+    def save_EB_Image(self):
+        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label, "_eb")
+        self.EB_Image.save(save_path)
+
+        self.update_log(f"EB Image Saved to {save_path}.tif!")
+
+    def save_IB_Image(self):
+        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label, "_ib")
+        self.IB_Image.save(save_path)
+
+        self.update_log(f"IB Image Saved to {save_path}.tif!")
 
     def reset_images(self):
 
