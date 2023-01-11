@@ -611,11 +611,10 @@ class TescanMicroscope(FibsemMicroscope):
         """Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
         Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
+            microscope (Tescan Automation): Tescan microscope instance
             settings (MicroscopeSettings): microscope settings
             dx (float): distance along the x-axis (image coordinates)
             dy (float): distance along the y-axis (image coordinates)
-            beam_type (BeamType): beam type to move in
         """
         wd = self.connection.SEM.Optics.GetWD()
 
