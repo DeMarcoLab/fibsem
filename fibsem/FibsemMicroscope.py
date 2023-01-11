@@ -68,6 +68,17 @@ class FibsemMicroscope(ABC):
     def autocontrast(self):
         pass
 
+    @abstractmethod
+    def move_stage_absolute(self):
+        pass
+
+    @abstractmethod
+    def move_stage_relative(self):
+        pass
+
+    @abstractmethod
+    def relative_move(self):
+        pass
 
 class ThermoMicroscope(FibsemMicroscope):
     """ThermoFisher Microscope class, uses FibsemMicroscope as blueprint
