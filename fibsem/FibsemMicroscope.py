@@ -77,7 +77,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def relative_move(self):
+    def eucentric_move(self):
         pass
 
 class ThermoMicroscope(FibsemMicroscope):
