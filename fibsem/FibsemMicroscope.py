@@ -27,6 +27,7 @@ from fibsem.structures import (
     Point,
     FibsemImage,
     FibsemImageMetadata,
+    FibsemStagePosition,
     MicroscopeState,
     BeamSettings,
     FibsemStagePosition,
@@ -106,7 +107,6 @@ class ThermoMicroscope(FibsemMicroscope):
         numbers = re.findall(r"\d+", image_settings.resolution)
         imageWidth = int(numbers[0])
 
-
         if image_settings.pixel_size is not None:
             image_settings.hfw = image_settings.pixel_size.x * imageWidth
 
@@ -118,7 +118,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 image_settings.hfw, hfw_limits.min, hfw_limits.max
             )
             self.connection.beams.electron_beam.horizontal_field_width.value = (
-                 image_settings.hfw
+                image_settings.hfw
             )
 
         if image_settings.beam_type == BeamType.ION:
@@ -263,12 +263,12 @@ class TescanMicroscope(FibsemMicroscope):
         """
         Acquires an image from the FIB/SEM instrument using the specified settings. Also saves the acquired image
         to a last image instance so that the most recent image taken can be easily accessed without reacquiring an image.
-        
+
         Parameters:
         self: The instance of the client connection to the TESCAN FIBSEM microscope.
 
         image_settings (ImageSettings): The settings to use when acquiring the image.
-        
+
         Returns:
         FibsemImage: The image acquired by the microscope as a FibsemImage data type
         """
@@ -286,7 +286,7 @@ class TescanMicroscope(FibsemMicroscope):
         """Gets an image with the electron beam with the specified settings
 
         Args:
-            image_settings (_type_, optional): Image settings related to the electron beam. 
+            image_settings (_type_, optional): Image settings related to the electron beam.
             Defaults to ImageSettings initially created.
 
         Returns:
@@ -300,8 +300,10 @@ class TescanMicroscope(FibsemMicroscope):
         # Select the detector for image i.e.:
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
-        
-        self.connection.SEM.Detector.Set(0, self.electron_detector_active, Bpp.Grayscale_16_bit)
+
+        self.connection.SEM.Detector.Set(
+            0, self.electron_detector_active, Bpp.Grayscale_16_bit
+        )
 
         # resolution
         numbers = re.findall(r"\d+", image_settings.resolution)
@@ -309,12 +311,14 @@ class TescanMicroscope(FibsemMicroscope):
         imageHeight = int(numbers[1])
 
         if image_settings.pixel_size is None:
-            self.connection.SEM.Optics.SetViewfield(image_settings.hfw*1000)
+            self.connection.SEM.Optics.SetViewfield(image_settings.hfw * 1000)
         else:
-            self.connection.SEM.Optics.SetViewfield(image_settings.pixel_size.x * imageWidth * 1000)
+            self.connection.SEM.Optics.SetViewfield(
+                image_settings.pixel_size.x * imageWidth * 1000
+            )
             image_settings.hfw = image_settings.pixel_size.x * imageWidth
-        
-        #dwell time conversion s to ns
+
+        # dwell time conversion s to ns
         dwell_time_ns = int(image_settings.dwell_time * 1e9)
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
@@ -349,7 +353,9 @@ class TescanMicroscope(FibsemMicroscope):
             ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
         fibsem_image = FibsemImage.fromTescanImage(
-            copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(microscope_state)
+            copy.deepcopy(image),
+            copy.deepcopy(image_settings),
+            copy.deepcopy(microscope_state),
         )
 
         return fibsem_image
@@ -358,7 +364,7 @@ class TescanMicroscope(FibsemMicroscope):
         """Gets an image with the electron beam with the specified settings
 
         Args:
-            image_settings (_type_, optional): Image settings related to the ion beam. 
+            image_settings (_type_, optional): Image settings related to the ion beam.
             Defaults to ImageSettings initially created.
 
         Returns:
@@ -382,13 +388,14 @@ class TescanMicroscope(FibsemMicroscope):
         imageHeight = int(numbers[1])
 
         if image_settings.pixel_size is None:
-            self.connection.FIB.Optics.SetViewfield(image_settings.hfw*1000)
+            self.connection.FIB.Optics.SetViewfield(image_settings.hfw * 1000)
         else:
-            self.connection.FIB.Optics.SetViewfield(image_settings.pixel_size.x * imageWidth * 1000)
+            self.connection.FIB.Optics.SetViewfield(
+                image_settings.pixel_size.x * imageWidth * 1000
+            )
             image_settings.hfw = image_settings.pixel_size.x * imageWidth
 
-        
-        #dwell time conversion s to ms
+        # dwell time conversion s to ms
         dwell_time_ms = image_settings.dwell_time * 1000
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(
@@ -424,7 +431,9 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         fibsem_image = FibsemImage.fromTescanImage(
-            copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(microscope_state)
+            copy.deepcopy(image),
+            copy.deepcopy(image_settings),
+            copy.deepcopy(microscope_state),
         )
 
         return fibsem_image
@@ -453,7 +462,7 @@ class TescanMicroscope(FibsemMicroscope):
         """Get the current position of the stage.
 
         Returns:
-            stage_position (FibsemStagePosition): An object containing the current 
+            stage_position (FibsemStagePosition): An object containing the current
             x, y, z, r, and t coordinates of the stage.
         """
         x, y, z, r, t = self.connection.Stage.GetPosition()
@@ -528,8 +537,7 @@ class TescanMicroscope(FibsemMicroscope):
     def reset_beam_shifts(self):
         pass
 
-
-    def move_stage(self, x: float = None, y: float = None, z: float = None, r: float = None, tx: float = None, ty: float = None,):
+    def move_stage_absolute(self, position: FibsemStagePosition):
         """Move the stage to the specified coordinates.
 
         Args:
@@ -543,6 +551,29 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        self.connection.Stage.MoveTo(x*1000,y*1000,z*1000,r,tx,ty)
+        self.connection.Stage.MoveTo(
+            position.x * 1000,
+            position.y * 1000,
+            position.z * 1000,
+            position.r,
+            position.tx,
+        )
 
-
+    def move_stage_relative(
+        self,
+        dx: float = None,
+        dy: float = None,
+        dz: float = None,
+        dr: float = None,
+        dtx: float = None,
+    ):
+        current_position = self.get_stage_position()
+        new_position = FibsemStagePosition(
+            current_position.x + dx,
+            current_position.y + dy,
+            current_position.z + dz,
+            current_position.r + dr,
+            current_position.tx + dtx,
+            "raw",
+        )
+        self.move_stage_absolute(new_position)
