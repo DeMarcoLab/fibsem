@@ -28,6 +28,7 @@ if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
 
 import sys
+import fibsem.movement as move
 
 from fibsem.structures import (
     BeamType,
@@ -36,6 +37,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemImageMetadata,
     MicroscopeState,
+    MicroscopeSettings,
     BeamSettings,
     FibsemStagePosition,
 )
@@ -496,3 +498,43 @@ class TescanMicroscope(FibsemMicroscope):
             "raw",
         )
         self.move_stage_absolute(new_position)
+
+    def eucentric_move(
+        self,
+        settings: MicroscopeSettings,
+        dx: float,
+        dy: float,
+        beam_type: BeamType,
+    ) -> None:
+        """Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
+
+        Args:
+            microscope (SdbMicroscopeClient): autoscript microscope instance
+            settings (MicroscopeSettings): microscope settings
+            dx (float): distance along the x-axis (image coordinates)
+            dy (float): distance along the y-axis (image coordinates)
+            beam_type (BeamType): beam type to move in
+        """
+        wd = self.connection.SEM.Optics.GetWD() / 1000
+
+        # calculate stage movement
+        x_move = move.x_corrected_stage_movement(dx)
+        yz_move = move.y_corrected_stage_movement(
+            microscope=self.connection,
+            settings=settings,
+            expected_y=dy,
+            beam_type=beam_type,
+        )
+
+        # move stage
+        stage_position = FibsemStagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
+        logging.info(f"moving stage ({beam_type.name}): {stage_position}")
+        self.move_stage_relative(stage_position)
+
+        # adjust working distance to compensate for stage movement
+        self.connection.SEM.Optics.SetWD(wd)
+        self.connection.specimen.stage.link()
+
+        return
+
+
