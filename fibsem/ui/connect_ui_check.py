@@ -85,6 +85,26 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.autosave_enable.stateChanged.connect(self.autosave_toggle)
 
+        # Movement controls setup
+
+        # absolute coordinates
+
+        self.xAbs.valueChanged.connect(self.move_microscope)
+        self.yAbs.valueChanged.connect(self.move_microscope)
+        self.zAbs.valueChanged.connect(self.move_microscope)
+        self.rAbs.valueChanged.connect(self.move_microscope)
+        self.tAbs.valueChanged.connect(self.move_microscope)
+
+
+        # moving
+
+        self.dXchange.valueChanged.connect(self.move_microscope)
+        self.dYchange.valueChanged.connect(self.move_microscope)
+        self.dZchange.valueChanged.connect(self.move_microscope)
+        self.dTchange.valueChanged.connect(self.move_microscope)
+        self.dRchange.valueChanged.connect(self.move_microscope)
+        self.eucentric_move.stateChanged.connect(self.move_microscope)
+
         # Gamma and Image Settings
 
         self.FIB_IB = FibsemImage
@@ -116,7 +136,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.CLog.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
         self.reset_ui_settings()
 
-    
+    def move_microscope(self):
+        self.xAbs.setValue(self.xAbs.value() + self.dXchange.value())
+        
+
+
     def autosave_toggle(self):
 
         if self.autosave_enable.checkState() == 2:
@@ -163,7 +187,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.resolution = "x".join(resh)
 
     def image_dwell_time_change(self):
-        ### dwell time in ms!!!!! ease of use for UI!!!!
+        ### dwell time in microseconds!!!!! ease of use for UI!!!!
         self.image_settings.dwell_time = self.dwell_time_setting.value()/1.0e6
 
     def gamma_min_change(self):
@@ -197,9 +221,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         if self.gamma_enabled.checkState() == 2:
             self.gamma_settings.enabled = True
             self.update_log("Gamma Enabled")
+            logging.info(f"UI | Gamma Enabled")
         elif self.gamma_enabled.checkState() == 0:
             self.gamma_settings.enabled = False
             self.update_log("Gamma Disabled")
+            logging.info(f"UI | Gamma Disabled")
 
     def update_log(self,log:str):
 
@@ -263,7 +289,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
         self.FIB_EB = eb_image
-        print(f"statement is {eb_image.data.dtype == 'uint16'}")
         self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         self.image_settings.beam_type = tmp_beam_type
         self.reset_ui_settings()
@@ -304,6 +329,33 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.IB_Image.setText(" ")
         print("hello")
 
+    def reset_image_and_gammaSettings(self):
+
+        self.gamma_settings = GammaSettings(
+            enabled=True,
+            min_gamma=0.5,
+            max_gamma=1.8,
+            scale_factor=0.01,
+            threshold=46,
+        )
+
+        self.image_settings =  ImageSettings(
+                resolution="1536x1024",
+                dwell_time=1.0e-6,
+                hfw=600.0e-6,
+                autocontrast=False,
+                beam_type=BeamType.ION,
+                gamma=self.gamma_settings,
+                save=True,
+                save_path="fibsem\\test_images",
+                label=utils.current_timestamp(),
+                reduced_area=None,
+            )
+        
+        self.reset_ui_settings()
+        
+        self.update_log("Gamma and image settings returned to default values")
+
     def reset_ui_settings(self):
 
         self.gamma_min.setValue(self.gamma_settings.min_gamma)
@@ -336,35 +388,22 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         self.savepath_text.setText(self.image_settings.save_path)
 
-    
+        # TESCAN and Thermo may have different starting coordinate positions
+        # start at 0,0,0 for now (placeholder)
 
-    def reset_image_and_gammaSettings(self):
-
-        self.gamma_settings = GammaSettings(
-            enabled=True,
-            min_gamma=0.5,
-            max_gamma=1.8,
-            scale_factor=0.01,
-            threshold=46,
-        )
-
-        self.image_settings =  ImageSettings(
-                resolution="1536x1024",
-                dwell_time=1.0e-6,
-                hfw=600.0e-6,
-                autocontrast=False,
-                beam_type=BeamType.ION,
-                gamma=self.gamma_settings,
-                save=True,
-                save_path="fibsem\\test_images",
-                label=utils.current_timestamp(),
-                reduced_area=None,
-            )
+        self.xAbs.setValue(0)
+        self.yAbs.setValue(0)
+        self.zAbs.setValue(0)
+        self.rAbs.setValue(0)
+        self.tAbs.setValue(0)
         
-        self.reset_ui_settings()
-        
-        self.update_log("Gamma and image settings returned to default values")
+        self.dXchange.setValue(0)
+        self.dYchange.setValue(0)
+        self.dZchange.setValue(0)
+        self.dRchange.setValue(0)
+        self.dTchange.setValue(0)
 
+        self.eucentric_move.setCheckState(2)
 
         
     
