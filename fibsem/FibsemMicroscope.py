@@ -467,7 +467,6 @@ class TescanMicroscope(FibsemMicroscope):
             z (float): The z-coordinate to move to (in meters).
             r (float): The rotation to apply (in degrees).
             tx (float): The x-axis tilt to apply (in degrees).
-            ty (float): The y-axis tilt to apply (in degrees).
 
         Returns:
             None
@@ -488,11 +487,24 @@ class TescanMicroscope(FibsemMicroscope):
         dr: float = None,
         dtx: float = None,
     ):
+        """ Move the stage by the specified relative move.
+
+        Args:
+            x (float): The x-coordinate to move to (in meters).
+            y (float): The y-coordinate to move to (in meters).
+            z (float): The z-coordinate to move to (in meters).
+            r (float): The rotation to apply (in degrees).
+            tx (float): The x-axis tilt to apply (in degrees).
+
+        Returns:
+            None
+        """
+
         current_position = self.get_stage_position()
         new_position = FibsemStagePosition(
-            current_position.x + dx,
-            current_position.y + dy,
-            current_position.z + dz,
+            current_position.x + dx*1000,
+            current_position.y + dy*1000,
+            current_position.z + dz*1000,
             current_position.r + dr,
             current_position.t + dtx,
             "raw",
@@ -515,7 +527,7 @@ class TescanMicroscope(FibsemMicroscope):
             dy (float): distance along the y-axis (image coordinates)
             beam_type (BeamType): beam type to move in
         """
-        wd = self.connection.SEM.Optics.GetWD() / 1000
+        wd = self.connection.SEM.Optics.GetWD()
 
         # calculate stage movement
         x_move = move.x_corrected_stage_movement(dx)
@@ -527,13 +539,13 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         # move stage
-        stage_position = FibsemStagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
+        stage_position = FibsemStagePosition(x=x_move.x*1000, y=yz_move.y*1000, z=yz_move.z*1000)
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
 
         # adjust working distance to compensate for stage movement
         self.connection.SEM.Optics.SetWD(wd)
-        self.connection.specimen.stage.link()
+        #self.connection.specimen.stage.link() # TODO how to link for TESCAN? 
 
         return
 
