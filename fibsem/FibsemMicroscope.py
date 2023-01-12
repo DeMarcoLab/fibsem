@@ -586,7 +586,7 @@ class TescanMicroscope(FibsemMicroscope):
         dy: float = None,
         dz: float = None,
         dr: float = None,
-        dtx: float = None,
+        dt: float = None,
     ):
         """Move the stage by the specified relative move.
 
@@ -607,7 +607,7 @@ class TescanMicroscope(FibsemMicroscope):
             current_position.y + dy * 1000,
             current_position.z + dz * 1000,
             current_position.r + dr,
-            current_position.t + dtx,
+            current_position.t + dt,
             "raw",
         )
         self.move_stage_absolute(new_position)
@@ -643,7 +643,7 @@ class TescanMicroscope(FibsemMicroscope):
             x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000
         )
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
-        self.move_stage_relative(stage_position)
+        self.move_stage_relative(stage_position.x, stage_position.y, stage_position.z, stage_position.r, stage_position.t)
 
         # adjust working distance to compensate for stage movement
         self.connection.SEM.Optics.SetWD(wd)
