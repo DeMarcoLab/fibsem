@@ -30,7 +30,7 @@ if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
 
 import sys
-import fibsem.movement as move
+
 
 from fibsem.structures import (
     BeamType,
