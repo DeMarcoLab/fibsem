@@ -3,6 +3,7 @@ import glob
 import json
 import logging
 import os
+import numpy as np
 import time
 from pathlib import Path
 import sys
@@ -16,8 +17,10 @@ from fibsem.structures import (
     ImageSettings,
     SystemSettings,
     FibsemImage,
+    FibsemStagePosition
 )
 from fibsem.FibsemMicroscope import FibsemMicroscope
+
 
 
 def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
@@ -293,3 +296,4 @@ def get_params(main_str: str) -> list:
 
         i += 1
     return cats
+
