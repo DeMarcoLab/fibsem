@@ -632,7 +632,7 @@ class TescanMicroscope(FibsemMicroscope):
         # calculate stage movement
         x_move = x_corrected_stage_movement(dx)
         yz_move = y_corrected_stage_movement(
-            microscope=self.connection,
+            self,
             settings=settings,
             expected_y=dy,
             beam_type=beam_type,
@@ -714,7 +714,7 @@ def x_corrected_stage_movement(
 
 
 def y_corrected_stage_movement(
-    self,
+    microscope = FibsemMicroscope,
     settings: MicroscopeSettings,
     expected_y: float,
     beam_type: BeamType = BeamType.ELECTRON,
@@ -748,7 +748,7 @@ def y_corrected_stage_movement(
     ) % (2 * np.pi)
 
     # current stage position
-    current_stage_position = self.connection.get_stage_position()
+    current_stage_position = microscope.get_stage_position()
     stage_rotation = current_stage_position.r % (2 * np.pi)
     stage_tilt = current_stage_position.t
 
