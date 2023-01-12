@@ -714,7 +714,7 @@ def x_corrected_stage_movement(
 
 
 def y_corrected_stage_movement(
-    microscope = FibsemMicroscope,
+    microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     expected_y: float,
     beam_type: BeamType = BeamType.ELECTRON,
