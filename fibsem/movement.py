@@ -13,6 +13,7 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
 )
 from fibsem.structures import BeamType, MicroscopeSettings
+from fibsem.FibsemMicroscope import FibsemMicroscope
 
 # from fibsem.detection.detection import DetectionResult, FeatureType
 
@@ -357,7 +358,7 @@ def x_corrected_stage_movement(
 
 
 def y_corrected_stage_movement(
-    microscope: SdbMicroscopeClient,
+    microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     expected_y: float,
     beam_type: BeamType = BeamType.ELECTRON,
@@ -391,8 +392,9 @@ def y_corrected_stage_movement(
     ) % (2 * np.pi)
 
     # current stage position
-    stage_rotation = microscope.specimen.stage.current_position.r % (2 * np.pi)
-    stage_tilt = microscope.specimen.stage.current_position.t
+    current_stage_position = microscope.get_stage_position()
+    stage_rotation = current_stage_position.r % (2 * np.pi)
+    stage_tilt = current_stage_position.t
 
     PRETILT_SIGN = 1.0
     # pretilt angle depends on rotation
