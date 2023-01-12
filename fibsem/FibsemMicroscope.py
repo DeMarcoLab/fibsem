@@ -496,7 +496,7 @@ class TescanMicroscope(FibsemMicroscope):
 
     def get_stage_position(self):
         x, y, z, r, t = self.connection.Stage.GetPosition()
-        stage_position = FibsemStagePosition(x, y, z, r, t, "raw")
+        stage_position = FibsemStagePosition(x/1000, y/1000, z/1000, r, t, "raw")
         return stage_position
 
     def get_current_microscope_state(self) -> MicroscopeState:
@@ -582,11 +582,11 @@ class TescanMicroscope(FibsemMicroscope):
 
     def move_stage_relative(
         self,
-        dx: float = None,
-        dy: float = None,
-        dz: float = None,
-        dr: float = None,
-        dt: float = None,
+        dx: float = 0.0,
+        dy: float = 0.0,
+        dz: float = 0.0,
+        dr: float = 0.0,
+        dt: float = 0.0,
     ):
         """Move the stage by the specified relative move.
 
@@ -602,10 +602,13 @@ class TescanMicroscope(FibsemMicroscope):
         """
 
         current_position = self.get_stage_position()
+        x_m = current_position.x
+        y_m = current_position.y
+        z_m = current_position.z
         new_position = FibsemStagePosition(
-            current_position.x + dx * 1000,
-            current_position.y + dy * 1000,
-            current_position.z + dz * 1000,
+            x_m + dx,
+            y_m + dy,
+            z_m + dz,
             current_position.r + dr,
             current_position.t + dt,
             "raw",
@@ -640,10 +643,10 @@ class TescanMicroscope(FibsemMicroscope):
 
         # move stage
         stage_position = FibsemStagePosition(
-            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000
+            x=x_move.x, y=yz_move.y, z=yz_move.z
         )
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
-        self.move_stage_relative(stage_position.x, stage_position.y, stage_position.z, stage_position.r, stage_position.t)
+        self.move_stage_relative(stage_position.x, stage_position.y, 0, 0, 0)
 
         # adjust working distance to compensate for stage movement
         self.connection.SEM.Optics.SetWD(wd)

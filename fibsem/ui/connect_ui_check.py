@@ -87,23 +87,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # Movement controls setup
 
-        # absolute coordinates
-
-        self.xAbs.valueChanged.connect(self.move_microscope_abs)
-        self.yAbs.valueChanged.connect(self.move_microscope_abs)
-        self.zAbs.valueChanged.connect(self.move_microscope_abs)
-        self.rAbs.valueChanged.connect(self.move_microscope_abs)
-        self.tAbs.valueChanged.connect(self.move_microscope_abs)
-
-
-        # moving
-
-        self.dXchange.valueChanged.connect(self.move_microscope_rel)
-        self.dYchange.valueChanged.connect(self.move_microscope_rel)
-        self.dZchange.valueChanged.connect(self.move_microscope_rel)
-        self.dTchange.valueChanged.connect(self.move_microscope_rel)
-        self.dRchange.valueChanged.connect(self.move_microscope_rel)
-        self.eucentric_move.stateChanged.connect(self.move_microscope_rel)
+        self.move_rel_button.clicked.connect(self.move_microscope_rel)
+        self.move_abs_button.clicked.connect(self.move_microscope_abs)
 
         # Gamma and Image Settings
 
@@ -131,14 +116,33 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 reduced_area=None,
             )
 
+
+
         # Initialise microscope object
         self.microscope = None
         self.microscope_settings = None
         self.CLog.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
         self.reset_ui_settings()
 
-    def move_microscope(self):
-        pass
+        self.connect_to_microscope()
+
+        position = self.microscope.get_stage_position()
+
+        self.xAbs.setValue(position.x*1000)
+        self.yAbs.setValue(position.y*1000)
+        self.zAbs.setValue(position.z*1000)
+        self.rAbs.setValue(position.r)
+        self.tAbs.setValue(position.t)
+        
+        self.dXchange.setValue(0)
+        self.dYchange.setValue(0)
+        self.dZchange.setValue(0)
+        self.dRchange.setValue(0)
+        self.dTchange.setValue(0)
+
+        self.eucentric_move.setCheckState(2)
+
+        self.ion_rel.setChecked(True)
 
     def move_microscope_abs(self):
 
@@ -160,6 +164,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         if self.microscope is None:
             self.update_log("No Microscope Connected")
+            self.dXchange.setValue(0)
+            self.dYchange.setValue(0)
+            self.dZchange.setValue(0)
+            self.dTchange.setValue(0)
+            self.dRchange.setValue(0)
+            
             return
 
         if self.ion_rel.isChecked():
@@ -171,14 +181,34 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
             self.microscope.eucentric_move(
                 settings=self.microscope_settings,
-                dx = self.dXchange.value(),
-                dy = self.dYchange.value(),
+                dx = self.dXchange.value()/1000,
+                dy = self.dYchange.value()/1000,
                 beam_type=beam_type 
+            )
+        else:
+            self.microscope.move_stage_relative(
+                dx = self.dXchange.value()/1000,
+                dy = self.dYchange.value()/1000,
+                dz = self.dZchange.value()/1000,
+                dr = self.dRchange.value(),
+                dt = self.dTchange.value()
             )
 
         position = self.microscope.get_stage_position()
 
-        self.xAbs.setValue( position.x*1000)
+        self.xAbs.setValue(position.x*1000)
+        self.yAbs.setValue(position.y*1000)
+        self.zAbs.setValue(position.z*1000)
+        self.tAbs.setValue(position.t)
+        self.rAbs.setValue(position.r)
+
+        self.dXchange.setValue(0)
+        self.dYchange.setValue(0)
+        self.dZchange.setValue(0)
+        self.dTchange.setValue(0)
+        self.dRchange.setValue(0)
+
+
 
     def autosave_toggle(self):
 
@@ -430,21 +460,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         # TESCAN and Thermo may have different starting coordinate positions
         # start at 0,0,0 for now (placeholder)
 
-        self.xAbs.setValue(0)
-        self.yAbs.setValue(0)
-        self.zAbs.setValue(0)
-        self.rAbs.setValue(0)
-        self.tAbs.setValue(0)
-        
-        self.dXchange.setValue(0)
-        self.dYchange.setValue(0)
-        self.dZchange.setValue(0)
-        self.dRchange.setValue(0)
-        self.dTchange.setValue(0)
 
-        self.eucentric_move.setCheckState(2)
-
-        self.ion_rel.setChecked(True)
         
 
         
