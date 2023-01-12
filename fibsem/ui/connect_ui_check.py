@@ -7,7 +7,7 @@ from fibsem.ui.qtdesigner_files import connect
 from PyQt5 import QtWidgets
 
 from fibsem import utils, acquire
-from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemImage
+from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemImage, FibsemStagePosition
 from pprint import pprint
 import os
 import tkinter
@@ -89,21 +89,21 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # absolute coordinates
 
-        self.xAbs.valueChanged.connect(self.move_microscope)
-        self.yAbs.valueChanged.connect(self.move_microscope)
-        self.zAbs.valueChanged.connect(self.move_microscope)
-        self.rAbs.valueChanged.connect(self.move_microscope)
-        self.tAbs.valueChanged.connect(self.move_microscope)
+        self.xAbs.valueChanged.connect(self.move_microscope_abs)
+        self.yAbs.valueChanged.connect(self.move_microscope_abs)
+        self.zAbs.valueChanged.connect(self.move_microscope_abs)
+        self.rAbs.valueChanged.connect(self.move_microscope_abs)
+        self.tAbs.valueChanged.connect(self.move_microscope_abs)
 
 
         # moving
 
-        self.dXchange.valueChanged.connect(self.move_microscope)
-        self.dYchange.valueChanged.connect(self.move_microscope)
-        self.dZchange.valueChanged.connect(self.move_microscope)
-        self.dTchange.valueChanged.connect(self.move_microscope)
-        self.dRchange.valueChanged.connect(self.move_microscope)
-        self.eucentric_move.stateChanged.connect(self.move_microscope)
+        self.dXchange.valueChanged.connect(self.move_microscope_rel)
+        self.dYchange.valueChanged.connect(self.move_microscope_rel)
+        self.dZchange.valueChanged.connect(self.move_microscope_rel)
+        self.dTchange.valueChanged.connect(self.move_microscope_rel)
+        self.dRchange.valueChanged.connect(self.move_microscope_rel)
+        self.eucentric_move.stateChanged.connect(self.move_microscope_rel)
 
         # Gamma and Image Settings
 
@@ -133,13 +133,52 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # Initialise microscope object
         self.microscope = None
+        self.microscope_settings = None
         self.CLog.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
         self.reset_ui_settings()
 
     def move_microscope(self):
-        self.xAbs.setValue(self.xAbs.value() + self.dXchange.value())
-        
+        pass
 
+    def move_microscope_abs(self):
+
+        if self.microscope is None:
+            self.update_log("No Microscope Connected")
+            return
+        
+        new_position = FibsemStagePosition(
+            x = self.xAbs.value()/1000,
+            y = self.yAbs.value()/1000,
+            z = self.zAbs.value()/1000,
+            
+            t = self.tAbs.value(),
+            r = self.rAbs.value() )
+
+        self.microscope.move_stage_absolute(new_position)
+    
+    def move_microscope_rel(self):
+
+        if self.microscope is None:
+            self.update_log("No Microscope Connected")
+            return
+
+        if self.ion_rel.isChecked():
+            beam_type = BeamType.ION
+        else:
+            beam_type = BeamType.ELECTRON
+
+        if self.eucentric_move.checkState() == 2:
+
+            self.microscope.eucentric_move(
+                settings=self.microscope_settings,
+                dx = self.dXchange.value(),
+                dy = self.dYchange.value(),
+                beam_type=beam_type 
+            )
+
+        position = self.microscope.get_stage_position()
+
+        self.xAbs.setValue( position.x*1000)
 
     def autosave_toggle(self):
 
@@ -243,7 +282,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.update_log("Attempting to connect...")
         
         try:
-            self.microscope, self.settings = utils.setup_session()
+            self.microscope, self.microscope_settings = utils.setup_session()
             self.update_log('Connected to microscope successfully')
         except:
             self.update_log('Unable to connect to microscope')
@@ -404,6 +443,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.dTchange.setValue(0)
 
         self.eucentric_move.setCheckState(2)
+
+        self.ion_rel.setChecked(True)
+        
 
         
     

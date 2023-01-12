@@ -981,6 +981,32 @@
      <string>Eucentric</string>
     </property>
    </widget>
+   <widget class="QRadioButton" name="ion_rel">
+    <property name="geometry">
+     <rect>
+      <x>1120</x>
+      <y>660</y>
+      <width>82</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ION</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="electron_rel">
+    <property name="geometry">
+     <rect>
+      <x>1170</x>
+      <y>660</y>
+      <width>82</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ELECTRON</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
