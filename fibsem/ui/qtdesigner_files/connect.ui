@@ -144,11 +144,11 @@
      <string>Ion Beam</string>
     </property>
    </widget>
-   <widget class="QLabel" name="CLog">
+   <widget class="QLabel" name="CLog5">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>600</y>
+      <y>710</y>
       <width>500</width>
       <height>20</height>
      </rect>
@@ -157,11 +157,11 @@
      <string/>
     </property>
    </widget>
-   <widget class="QLabel" name="CLog2">
+   <widget class="QLabel" name="CLog6">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>630</y>
+      <y>740</y>
       <width>500</width>
       <height>20</height>
      </rect>
@@ -170,11 +170,11 @@
      <string/>
     </property>
    </widget>
-   <widget class="QLabel" name="CLog3">
+   <widget class="QLabel" name="CLog7">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>660</y>
+      <y>770</y>
       <width>500</width>
       <height>20</height>
      </rect>
@@ -183,11 +183,11 @@
      <string/>
     </property>
    </widget>
-   <widget class="QLabel" name="CLog4">
+   <widget class="QLabel" name="CLog8">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>690</y>
+      <y>800</y>
       <width>500</width>
       <height>20</height>
      </rect>
@@ -1188,6 +1188,58 @@
     </property>
     <property name="text">
      <string>mm</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="CLog">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>590</y>
+      <width>500</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="CLog2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>620</y>
+      <width>500</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="CLog4">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>680</y>
+      <width>500</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="CLog3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>650</y>
+      <width>500</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
     </property>
    </widget>
   </widget>

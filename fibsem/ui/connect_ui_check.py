@@ -126,13 +126,14 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.connect_to_microscope()
 
-        position = self.microscope.get_stage_position()
+        if self.microscope is not None:
+            position = self.microscope.get_stage_position()
 
-        self.xAbs.setValue(position.x*1000)
-        self.yAbs.setValue(position.y*1000)
-        self.zAbs.setValue(position.z*1000)
-        self.rAbs.setValue(position.r)
-        self.tAbs.setValue(position.t)
+            self.xAbs.setValue(position.x*1000)
+            self.yAbs.setValue(position.y*1000)
+            self.zAbs.setValue(position.z*1000)
+            self.rAbs.setValue(position.r)
+            self.tAbs.setValue(position.t)
         
         self.dXchange.setValue(0)
         self.dYchange.setValue(0)
@@ -144,10 +145,22 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.ion_rel.setChecked(True)
 
+
+    ### Movement Functionality 
+
+
     def move_microscope_abs(self):
+        """Moves microscope stage in absolute coordinates
+        """
 
         if self.microscope is None:
             self.update_log("No Microscope Connected")
+            logging.info(f'UI | No Microscope Connected')
+            self.xAbs.setValue(0)
+            self.xAbs.setValue(0)
+            self.zAbs.setValue(0)
+            self.tAbs.setValue(0)
+            self.rAbs.setValue(0)
             return
         
         new_position = FibsemStagePosition(
@@ -159,11 +172,19 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             r = self.rAbs.value() )
 
         self.microscope.move_stage_absolute(new_position)
+
+        self.update_log("Moving Stage in Absolute Coordinates")
+        self.update_log(f"Moved to x:{new_position.x*1000} mm y:{new_position.y*1000} mm z:{new_position.z*1000} mm r:{new_position.r} deg t:{new_position.t} deg")
     
+
+
     def move_microscope_rel(self):
+        """Moves the microscope stage relative to the absolute position
+        """
 
         if self.microscope is None:
             self.update_log("No Microscope Connected")
+            logging.info(f'UI | No Microscope Connected')
             self.dXchange.setValue(0)
             self.dYchange.setValue(0)
             self.dZchange.setValue(0)
@@ -172,10 +193,16 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             
             return
 
+        # Relative to ION or ELECTRON BEAM
+
         if self.ion_rel.isChecked():
             beam_type = BeamType.ION
+            beam_name = "ION"
         else:
             beam_type = BeamType.ELECTRON
+            beam_name = "ELECTRON"
+
+        self.update_log("Moving Stage in Relative Coordinates")
 
         if self.eucentric_move.checkState() == 2:
 
@@ -185,6 +212,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 dy = self.dYchange.value()/1000,
                 beam_type=beam_type 
             )
+            self.update_log(f"Eucentric Move relative to {beam_name} Beam")
+            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
+
         else:
             self.microscope.move_stage_relative(
                 dx = self.dXchange.value()/1000,
@@ -193,6 +223,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 dr = self.dRchange.value(),
                 dt = self.dTchange.value()
             )
+            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
+
+        # Get Stage Position and Set UI Display
 
         position = self.microscope.get_stage_position()
 
@@ -211,6 +244,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
 
     def autosave_toggle(self):
+        """Toggles on Autosave which saves image everytime an image is acquired
+        """
 
         if self.autosave_enable.checkState() == 2:
             self.image_settings.save = True
@@ -224,12 +259,15 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
 
     def save_filepath(self):
+        """Opens file explorer to choose location to save image files
+        """
         
         tkinter.Tk().withdraw()
         folder_path = filedialog.askdirectory()
         self.savepath_text.setText(folder_path)
         self.image_settings.save_path = folder_path
         
+    ################# UI Display helper functions  ###########################################
 
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
@@ -296,6 +334,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.update_log("Gamma Disabled")
             logging.info(f"UI | Gamma Disabled")
 
+    ##################################################################
+
+
     def update_log(self,log:str):
 
         now = datetime.now()
@@ -304,8 +345,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.CLog.setText(self.CLog2.text())
         self.CLog2.setText(self.CLog3.text())
         self.CLog3.setText(self.CLog4.text())
+        self.CLog4.setText(self.CLog5.text())
+        self.CLog5.setText(self.CLog6.text())
+        self.CLog6.setText(self.CLog7.text())
+        self.CLog7.setText(self.CLog8.text())
 
-        self.CLog4.setText(timestr+ " : " +log)
+        self.CLog8.setText(timestr+ " : " +log)
 
     def connect_to_microscope(self):
 
@@ -332,6 +377,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         if self.microscope is None:
             self.update_log("No Microscope Connected")
             return
+
 
         # take image with both beams
         eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
@@ -396,7 +442,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.EB_Image.setText(" ")
         self.IB_Image.setText(" ")
-        print("hello")
 
     def reset_image_and_gammaSettings(self):
 
@@ -457,14 +502,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         self.savepath_text.setText(self.image_settings.save_path)
 
-        # TESCAN and Thermo may have different starting coordinate positions
-        # start at 0,0,0 for now (placeholder)
-
-
-        
-
-        
-    
 
 
 if __name__ == "__main__":    
