@@ -3,7 +3,6 @@ import napari
 from datetime import datetime
 
 from fibsem.ui.qtdesigner_files import connect
-from PyQt5 import QtWidgets
 
 from fibsem import utils, acquire
 from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemImage, FibsemStagePosition
@@ -13,10 +12,10 @@ import tkinter
 from tkinter import filedialog
 
 
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QGridLayout, QLabel
+from qtpy import QtWidgets
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QImage, QPixmap
+from qtpy.QtWidgets import QGridLayout, QLabel
 import numpy as np
 
 import logging
@@ -507,7 +506,13 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
 
-    window = MainWindow()
-    window.show()
+    viewer = napari.Viewer()
+
     
-    app.exec()
+
+    window = MainWindow()
+    # window.show()
+    viewer.window.add_dock_widget(window)
+    
+    sys.exit(app.exec())
+ 
