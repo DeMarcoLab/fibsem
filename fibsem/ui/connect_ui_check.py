@@ -222,7 +222,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 dr = self.dRchange.value(),
                 dt = self.dTchange.value()
             )
-            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
+            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} deg dt:{self.dTchange.value()} deg")
 
         # Get Stage Position and Set UI Display
 
