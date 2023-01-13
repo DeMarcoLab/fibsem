@@ -328,6 +328,7 @@ class MicroscopeState:
 
 @dataclass
 class MillingSettings:
+    # NOTE: Change to FibsemMillingSettings??
     width: float
     height: float
     depth: float
