@@ -2,7 +2,6 @@ import sys
 import napari
 from datetime import datetime
 
-#from PyQt5.QtGui import QImage,QPixmap
 from fibsem.ui.qtdesigner_files import connect
 from PyQt5 import QtWidgets
 
