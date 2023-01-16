@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 from fibsem.config import load_microscope_manufacturer
 import sys
+import fibsem.constants as constants
 
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
@@ -267,22 +268,14 @@ class ThermoMicroscope(FibsemMicroscope):
             None
         """
         stage = self.connection.specimen.stage
+        thermo_position = position.to_autoscript_position()
 
-        stage.absolute_move(
-            position.x,
-            position.y,
-            position.z,
-            position.r,
-            position.t,
-        )
+
+        stage.absolute_move(thermo_position)
 
     def move_stage_relative(
         self,
-        dx: float = None,
-        dy: float = None,
-        dz: float = None,
-        dr: float = None,
-        dt: float = None,
+        position : FibsemStagePosition,
     ):
         """Move the stage by the specified relative move.
 
@@ -298,8 +291,8 @@ class ThermoMicroscope(FibsemMicroscope):
         """
 
         stage = self.connection.specimen.stage
-        new_position = FibsemStagePosition(dx, dy, dz, dr, dt, "raw")
-        stage.relative_move(new_position)
+        thermo = position.to_autoscript_position()
+        stage.relative_move(thermo)
 
     def eucentric_move(
         self,
@@ -330,7 +323,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # move stage
         stage_position = FibsemStagePosition(
-            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000
+            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000, r=0, t=0, coordinate_system="raw"
         )
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
@@ -575,20 +568,16 @@ class TescanMicroscope(FibsemMicroscope):
             None
         """
         self.connection.Stage.MoveTo(
-            position.x * 1000,
-            position.y * 1000,
-            position.z * 1000,
+            position.x * constants.METRE_TO_MILLIMETRE,
+            position.y * constants.METRE_TO_MILLIMETRE,
+            position.z * constants.METRE_TO_MILLIMETRE,
             position.r,
             position.t,
         )
 
     def move_stage_relative(
         self,
-        dx: float = 0.0,
-        dy: float = 0.0,
-        dz: float = 0.0,
-        dr: float = 0.0,
-        dt: float = 0.0,
+        position: FibsemStagePosition,
     ):
         """Move the stage by the specified relative move.
 
@@ -608,11 +597,11 @@ class TescanMicroscope(FibsemMicroscope):
         y_m = current_position.y
         z_m = current_position.z
         new_position = FibsemStagePosition(
-            x_m + dx,
-            y_m + dy,
-            z_m + dz,
-            current_position.r + dr,
-            current_position.t + dt,
+            x_m + position.x,
+            y_m + position.y,
+            z_m + position.z,
+            current_position.r + position.r,
+            current_position.t + position.t,
             "raw",
         )
         self.move_stage_absolute(new_position)

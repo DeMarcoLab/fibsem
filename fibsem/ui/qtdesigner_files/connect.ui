@@ -160,7 +160,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -203,7 +203,7 @@
         <x>0</x>
         <y>0</y>
         <width>421</width>
-        <height>391</height>
+        <height>421</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -214,14 +214,7 @@
          </property>
         </widget>
        </item>
-       <item row="10" column="2" colspan="2">
-        <widget class="QPushButton" name="ResetImage">
-         <property name="text">
-          <string>Reset Images</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
+       <item row="5" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_14">
          <property name="text">
           <string>Save Path</string>
@@ -231,7 +224,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="3" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_13">
          <property name="text">
           <string>Autocontrast</string>
@@ -241,17 +234,30 @@
          </property>
         </widget>
        </item>
+       <item row="15" column="2" colspan="2">
+        <widget class="QPushButton" name="ResetImage">
+         <property name="text">
+          <string>Reset Images</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0" colspan="4">
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item row="1" column="1">
         <widget class="QSpinBox" name="res_width">
          <property name="maximum">
           <number>10000</number>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="QPushButton" name="EB_Click">
-         <property name="text">
-          <string>Take Image</string>
          </property>
         </widget>
        </item>
@@ -262,34 +268,24 @@
          </property>
         </widget>
        </item>
-       <item row="12" column="2" colspan="2">
-        <widget class="QLabel" name="label_2">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="gamma_enabled">
          <property name="text">
-          <string>Ion Beam</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>Enabled</string>
          </property>
         </widget>
        </item>
-       <item row="13" column="3">
-        <widget class="QPushButton" name="IB_Save">
+       <item row="15" column="0" colspan="2">
+        <widget class="QPushButton" name="reset_image_settings">
          <property name="text">
-          <string>Save Image</string>
+          <string>Reset To Default Settings</string>
          </property>
         </widget>
        </item>
-       <item row="13" column="1">
-        <widget class="QPushButton" name="EB_Save">
+       <item row="12" column="1">
+        <widget class="QPushButton" name="save_button">
          <property name="text">
-          <string>Save Image</string>
+          <string>Save</string>
          </property>
         </widget>
        </item>
@@ -299,21 +295,30 @@
           <string>Resolution</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
-       <item row="7" column="2">
+       <item row="8" column="2">
         <widget class="QLabel" name="label_18">
          <property name="text">
           <string>microns</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="dwell_time_setting"/>
+       <item row="12" column="3">
+        <widget class="QCheckBox" name="check_EB">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Electron Beam</string>
+         </property>
+        </widget>
        </item>
-       <item row="0" column="0" colspan="4">
+       <item row="0" column="0" colspan="4" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_10">
          <property name="font">
           <font>
@@ -330,14 +335,10 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QCheckBox" name="autosave_enable">
-         <property name="text">
-          <string>Enabled </string>
-         </property>
-        </widget>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="dwell_time_setting"/>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_17">
          <property name="text">
           <string>Horizontal Field Width</string>
@@ -347,8 +348,28 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="0" colspan="4">
+       <item row="7" column="1">
+        <widget class="QCheckBox" name="autosave_enable">
+         <property name="text">
+          <string>Enabled </string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0" colspan="4">
         <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="14" column="0" colspan="4">
+        <spacer name="horizontalSpacer_5">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -367,10 +388,25 @@
          </property>
         </widget>
        </item>
-       <item row="13" column="2">
-        <widget class="QPushButton" name="IB_click">
+       <item row="12" column="2">
+        <widget class="QCheckBox" name="check_IB">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
          <property name="text">
-          <string>Take Image</string>
+          <string>Ion Beam</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0" alignment="Qt::AlignLeft">
+        <widget class="QLabel" name="label_15">
+         <property name="text">
+          <string>Gamma </string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -390,23 +426,6 @@
          </property>
         </widget>
        </item>
-       <item row="12" column="0" colspan="2">
-        <widget class="QLabel" name="label">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Electron Beam</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
        <item row="5" column="1">
         <widget class="QToolButton" name="open_filepath">
          <property name="text">
@@ -414,7 +433,7 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_19">
          <property name="text">
           <string>Autosave</string>
@@ -424,7 +443,14 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="12" column="0">
+        <widget class="QPushButton" name="take_image">
+         <property name="text">
+          <string>Take Image</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
         <widget class="QSpinBox" name="hfw_box">
          <property name="maximum">
           <number>5000</number>
@@ -444,20 +470,13 @@
          </property>
         </spacer>
        </item>
-       <item row="2" column="0">
+       <item row="2" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_12">
          <property name="text">
           <string>Dwell time</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1" colspan="2">
-        <widget class="QPushButton" name="reset_image_settings">
-         <property name="text">
-          <string>Reset To Default Settings</string>
          </property>
         </widget>
        </item>
@@ -493,20 +512,21 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_15">
+       <item row="6" column="0">
+        <widget class="QLabel" name="label">
          <property name="text">
-          <string>Gamma </string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>Label</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
-        <widget class="QCheckBox" name="gamma_enabled">
-         <property name="text">
-          <string>Enabled</string>
+       <item row="6" column="1" colspan="3">
+        <widget class="QTextEdit" name="image_label">
+         <property name="html">
+          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -687,15 +707,12 @@
        <item row="4" column="2">
         <widget class="QDoubleSpinBox" name="zAbs">
          <property name="minimum">
-          <double>-100.000000000000000</double>
+          <double>-5.000000000000000</double>
          </property>
         </widget>
        </item>
        <item row="6" column="2">
         <widget class="QDoubleSpinBox" name="tAbs">
-         <property name="minimum">
-          <double>-360.000000000000000</double>
-         </property>
          <property name="maximum">
           <double>360.000000000000000</double>
          </property>
@@ -779,7 +796,7 @@
        <item row="3" column="2">
         <widget class="QDoubleSpinBox" name="yAbs">
          <property name="minimum">
-          <double>-100.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -811,11 +828,7 @@
         </widget>
        </item>
        <item row="2" column="2">
-        <widget class="QDoubleSpinBox" name="xAbs">
-         <property name="minimum">
-          <double>-100.000000000000000</double>
-         </property>
-        </widget>
+        <widget class="QDoubleSpinBox" name="xAbs"/>
        </item>
        <item row="4" column="5">
         <widget class="QDoubleSpinBox" name="dZchange">

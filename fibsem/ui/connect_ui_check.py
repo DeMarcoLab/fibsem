@@ -10,7 +10,7 @@ from pprint import pprint
 import os
 import tkinter
 from tkinter import filedialog
-
+import fibsem.constants as constants
 
 from qtpy import QtWidgets
 from qtpy.QtCore import Qt
@@ -114,10 +114,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         ### NAPARI settings and initialisation
 
-        napari_settings = get_settings()
-        # napari_settings.application.grid_height = 2
-        # napari_settings.application.grid_width = -1
-        # napari_settings.application.grid_stride = -1
+        
         viewer.grid.enabled = True
 
         # viewer.add_image(np.zeros((1536,1024),np.uint8),name='EB Image')
@@ -138,11 +135,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
         self.RefImage.clicked.connect(self.take_reference_images)
         self.ResetImage.clicked.connect(self.reset_images)
-        self.EB_Click.clicked.connect(self.click_EB_Image)
-        self.IB_click.clicked.connect(self.click_IB_Image)
-        self.EB_Save.clicked.connect(self.save_EB_Image)
-        self.IB_Save.clicked.connect(self.save_IB_Image)
+        self.take_image.clicked.connect(self.take_image_beams)
+        self.save_button.clicked.connect(self.save_image_beams)
         self.open_filepath.clicked.connect(self.save_filepath)
+        
 
         # image and gamma settings buttons/boxes/ui objects
 
@@ -163,6 +159,59 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     ### Movement Functionality 
 
+    def save_image_beams(self):
+        if self.image_label.toPlainText() != "":
+            self.image_settings.label = self.image_label.toPlainText()
+
+        if self.check_EB.isChecked():
+            self.save_EB_Image()
+        if self.check_IB.isChecked():
+            self.save_IB_Image()
+
+    def take_image_beams(self):
+        self.image_settings.label = utils.current_timestamp()
+        if self.check_EB.isChecked():
+            self.click_EB_Image()
+        if self.check_IB.isChecked():
+            self.click_IB_Image()
+
+    def read_abs_positions_meters(self):
+        """Reads the current position of the microscope stage
+        """
+        if self.microscope_settings.system.manufacturer == "Thermo":
+            position = FibsemStagePosition(
+            x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
+            y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
+            z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
+            
+            t = self.tAbs.value()*constants.RADIAN_TO_DEGREE,
+            r = self.rAbs.value()*constants.RADIAN_TO_DEGREE, 
+            coordinate_system="raw" )
+        
+        else:
+            position = FibsemStagePosition(
+                x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
+                y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
+                z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
+                
+                t = self.tAbs.value(),
+                r = self.rAbs.value(), 
+                coordinate_system="raw" )
+        return position
+
+
+    def read_relative_move_meters(self):
+        """Reads the current position of the microscope stage
+        """
+        position = FibsemStagePosition(
+        x = self.dXchange.value()*constants.MILLIMETRE_TO_METRE,
+        y = self.dYchange.value()*constants.MILLIMETRE_TO_METRE,
+        z = self.dZchange.value()*constants.MILLIMETRE_TO_METRE,
+        t = self.dTchange.value(),
+        r = self.dRchange.value(), 
+        coordinate_system="raw" )
+        
+        return position
 
     def move_microscope_abs(self):
         """Moves microscope stage in absolute coordinates
@@ -170,7 +219,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         if self.microscope is None:
             self.update_log("No Microscope Connected")
-            logging.info(f'UI | No Microscope Connected')
             self.xAbs.setValue(0)
             self.xAbs.setValue(0)
             self.zAbs.setValue(0)
@@ -178,13 +226,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.rAbs.setValue(0)
             return
         
-        new_position = FibsemStagePosition(
-            x = self.xAbs.value()/1000,
-            y = self.yAbs.value()/1000,
-            z = self.zAbs.value()/1000,
-            
-            t = self.tAbs.value(),
-            r = self.rAbs.value() )
+        new_position = self.read_abs_positions_meters()
 
         self.microscope.move_stage_absolute(new_position)
 
@@ -199,7 +241,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         if self.microscope is None:
             self.update_log("No Microscope Connected")
-            logging.info(f'UI | No Microscope Connected')
             self.dXchange.setValue(0)
             self.dYchange.setValue(0)
             self.dZchange.setValue(0)
@@ -210,14 +251,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.update_log("Moving Stage in Relative Coordinates")
 
+        move = self.read_relative_move_meters()
         self.microscope.move_stage_relative(
-            dx = self.dXchange.value()/1000,
-            dy = self.dYchange.value()/1000,
-            dz = self.dZchange.value()/1000,
-            dr = self.dRchange.value(),
-            dt = self.dTchange.value()
+            move
         )
-        self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
+        self.update_log(f"UI | Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
 
         # Get Stage Position and Set UI Display
 
@@ -244,11 +282,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         if self.autosave_enable.checkState() == 2:
             self.image_settings.save = True
             self.update_log("Autosave Enabled")
-            logging.info(f"UI | Autosave Enabled")
+            
         elif self.autosave_enable.checkState() == 0:
             self.image_settings.save = False
             self.update_log("Autosave Disabled")
-            logging.info(f"UI | Autosave Disabled")
+            
 
         
 
@@ -306,18 +344,18 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         autocontrast_enabled = self.autocontrast_enable.isChecked()
         self.image_settings.autocontrast = autocontrast_enabled
         self.update_log(f"Autocontrast Enabled: {autocontrast_enabled}")
-        logging.info(f"UI | AutoContrast Enabled: {autocontrast_enabled}")
+        
     
     def gamma_check(self):
 
         if self.gamma_enabled.checkState() == 2:
             self.gamma_settings.enabled = True
             self.update_log("Gamma Enabled")
-            logging.info(f"UI | Gamma Enabled")
+            
         elif self.gamma_enabled.checkState() == 0:
             self.gamma_settings.enabled = False
             self.update_log("Gamma Disabled")
-            logging.info(f"UI | Gamma Disabled")
+            
 
     ##################################################################
 
@@ -337,6 +375,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.CLog8.setText(timestr+ " : " +log)
 
+        logging.info(f'UI | {log}')
+
     def connect_to_microscope(self):
 
         self.update_log("Attempting to connect...")
@@ -344,8 +384,20 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         try:
             self.microscope, self.microscope_settings = utils.setup_session()
             self.update_log('Connected to microscope successfully')
+            self.RefImage.setEnabled(True)
+            self.ResetImage.setEnabled(True)
+            self.take_image.setEnabled(True)
+            self.save_button.setEnabled(True)
+            self.move_rel_button.setEnabled(True)
+            self.move_abs_button.setEnabled(True)
         except:
             self.update_log('Unable to connect to microscope')
+            self.RefImage.setEnabled(False)
+            self.ResetImage.setEnabled(False)
+            self.take_image.setEnabled(False)
+            self.save_button.setEnabled(False)
+            self.move_rel_button.setEnabled(False)
+            self.move_abs_button.setEnabled(False)
 
     def disconnect_from_microscope(self):
 
@@ -376,24 +428,15 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def update_displays(self):
 
-
-        # self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
-        # self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
-        # print(eb_image.data.shape)
         Eb_normalise = self.FIB_EB.data/np.max(self.FIB_EB.data)
         
         viewer.layers.clear()
         viewer.add_image(self.FIB_IB.data, name="IB Image")
         viewer.add_image(Eb_normalise, name="EB Image")
-        # viewer.layers['EB Image'].data = Eb_normalise
-        # viewer.layers['IB Image'].data = ib_image.data
+
 
         self.reset_ui_settings()
 
-        self.update_log("Reference Images Taken")
-        # viewer.layers.clear()
-        # viewer.add_image(eb_image.data, name="EB Image")
-        # viewer.add_image(ib_image.data, name="IB Image")
 
     def click_EB_Image(self):
 
@@ -405,13 +448,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
         self.FIB_EB = eb_image
-        # self.FIB_EB.data = eb_image.data/np.max(eb_image.data)
         
         self.update_displays()
-        
-        # viewer.layers['EB Image'].data = Eb_normalise
-        # self.image_settings.beam_type = tmp_beam_type
-        # self.reset_ui_settings()
+
         self.update_log("EB Image Taken!")
     
     def click_IB_Image(self):
@@ -426,19 +465,19 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         # print(ib_image.data.dtype)
         self.FIB_IB = ib_image
         self.update_displays()
-        # viewer.layers['IB Image'].data = ib_image.data
-        # self.image_settings.beam_type = tmp_beam_type
-        # self.reset_ui_settings()
-
         self.update_log("IB Image Taken!")
 
     def save_EB_Image(self):
+        
+
         save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_eb")
         self.FIB_EB.save(save_path=save_path)
 
         self.update_log(f"EB Image Saved to {save_path}.tif!")
+        self.image_label.clear()
 
     def save_IB_Image(self):
+        
         save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_ib")
         self.FIB_IB.save(save_path)
 
