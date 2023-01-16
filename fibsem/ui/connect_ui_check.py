@@ -1,5 +1,5 @@
 import sys
-import napari
+
 from datetime import datetime
 
 from fibsem.ui.qtdesigner_files import connect
@@ -19,7 +19,7 @@ from qtpy.QtWidgets import QGridLayout, QLabel
 import numpy as np
 
 import logging
-
+import napari
 
 def set_arr_as_qlabel(
     arr: np.ndarray,
@@ -383,14 +383,14 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.FIB_IB = ib_image
         self.FIB_EB = eb_image
 
-        self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
-        self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
+        # self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
+        # self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
 
         self.reset_ui_settings()
 
-        # viewer.layers.clear()
-        # viewer.add_image(eb_image.data, name="EB Image")
-        # viewer.add_image(ib_image.data, name="IB Image")
+        viewer.layers.clear()
+        viewer.add_image(eb_image.data, name="EB Image")
+        viewer.add_image(ib_image.data, name="IB Image")
 
     def click_EB_Image(self):
 
