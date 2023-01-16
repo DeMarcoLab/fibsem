@@ -204,37 +204,16 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             
             return
 
-        # Relative to ION or ELECTRON BEAM
-
-        if self.ion_rel.isChecked():
-            beam_type = BeamType.ION
-            beam_name = "ION"
-        else:
-            beam_type = BeamType.ELECTRON
-            beam_name = "ELECTRON"
-
         self.update_log("Moving Stage in Relative Coordinates")
 
-        if self.eucentric_move.checkState() == 2:
-
-            self.microscope.eucentric_move(
-                settings=self.microscope_settings,
-                dx = self.dXchange.value()/1000,
-                dy = self.dYchange.value()/1000,
-                beam_type=beam_type 
-            )
-            self.update_log(f"Eucentric Move relative to {beam_name} Beam")
-            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
-
-        else:
-            self.microscope.move_stage_relative(
-                dx = self.dXchange.value()/1000,
-                dy = self.dYchange.value()/1000,
-                dz = self.dZchange.value()/1000,
-                dr = self.dRchange.value(),
-                dt = self.dTchange.value()
-            )
-            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
+        self.microscope.move_stage_relative(
+            dx = self.dXchange.value()/1000,
+            dy = self.dYchange.value()/1000,
+            dz = self.dZchange.value()/1000,
+            dr = self.dRchange.value(),
+            dt = self.dTchange.value()
+        )
+        self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
 
         # Get Stage Position and Set UI Display
 
@@ -521,7 +500,7 @@ if __name__ == "__main__":
     window = MainWindow()
     # window.show()
     widget = viewer.window.add_dock_widget(window)
-    widget.setMinimumWidth(300)
+    widget.setMinimumWidth(400)
 
     sys.exit(app.exec())
  
