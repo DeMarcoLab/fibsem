@@ -269,8 +269,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
-
-
+        thermo_position.coordinate_system = CoordinateSystem.RAW
         stage.absolute_move(thermo_position)
 
     def move_stage_relative(
@@ -289,10 +288,10 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-
         stage = self.connection.specimen.stage
-        thermo = position.to_autoscript_position()
-        stage.relative_move(thermo)
+        thermo_position = position.to_autoscript_position()
+        thermo_position.coordinate_system = CoordinateSystem.RAW
+        stage.relative_move(thermo_position)
 
     def eucentric_move(
         self,
@@ -491,7 +490,7 @@ class TescanMicroscope(FibsemMicroscope):
 
     def get_stage_position(self):
         x, y, z, r, t = self.connection.Stage.GetPosition()
-        stage_position = FibsemStagePosition(x/1000, y/1000, z/1000, r, t, "raw")
+        stage_position = FibsemStagePosition(x/1000, y/1000, z/1000, r*constants.DEGREES_TO_RADIANS, t*constants.DEGREES_TO_RADIANS, "raw")
         return stage_position
 
     def get_current_microscope_state(self) -> MicroscopeState:
@@ -571,8 +570,8 @@ class TescanMicroscope(FibsemMicroscope):
             position.x * constants.METRE_TO_MILLIMETRE,
             position.y * constants.METRE_TO_MILLIMETRE,
             position.z * constants.METRE_TO_MILLIMETRE,
-            position.r,
-            position.t,
+            position.r * constants.RADIANS_TO_DEGREES,
+            position.t * constants.RADIANS_TO_DEGREES,
         )
 
     def move_stage_relative(

@@ -13,43 +13,14 @@ from tkinter import filedialog
 import fibsem.constants as constants
 
 from qtpy import QtWidgets
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QGridLayout, QLabel
+# from qtpy.QtCore import Qt
+# from qtpy.QtGui import QImage, QPixmap
+# from qtpy.QtWidgets import QGridLayout, QLabel
 import numpy as np
 
 import logging
 import napari
 from napari.settings import get_settings
-
-# def set_arr_as_qlabel(
-#     arr: np.ndarray,
-#     label: QLabel,
-#     shape: tuple = (1536//4, 1024//4),
-# ) -> QLabel:
-
-#     if arr.dtype == 'uint8':
-
-#         image = QImage(
-#             arr.data,
-#             arr.shape[1],
-#             arr.shape[0],
-#             QImage.Format_Grayscale8,
-#         )
-#         label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
-
-#         return label
-#     else:
-
-#         image = QImage(
-#             arr.data,
-#             arr.shape[1],
-#             arr.shape[0],
-#             QImage.Format_Grayscale16,
-#         )
-#         label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
-
-#         return label
 
 
 class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
@@ -184,8 +155,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
             z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
             
-            t = self.tAbs.value()*constants.RADIAN_TO_DEGREE,
-            r = self.rAbs.value()*constants.RADIAN_TO_DEGREE, 
+            t = self.tAbs.value()*constants.DEGREES_TO_RADIANS,
+            r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
             coordinate_system="raw" )
         
         else:
@@ -194,8 +165,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
                 z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
                 
-                t = self.tAbs.value(),
-                r = self.rAbs.value(), 
+                t = self.tAbs.value()*constants.DEGREES_TO_RADIANS,
+                r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
                 coordinate_system="raw" )
         return position
 
@@ -207,8 +178,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         x = self.dXchange.value()*constants.MILLIMETRE_TO_METRE,
         y = self.dYchange.value()*constants.MILLIMETRE_TO_METRE,
         z = self.dZchange.value()*constants.MILLIMETRE_TO_METRE,
-        t = self.dTchange.value(),
-        r = self.dRchange.value(), 
+        t = self.dTchange.value()*constants.DEGREES_TO_RADIANS,
+        r = self.dRchange.value()*constants.DEGREES_TO_RADIANS, 
         coordinate_system="raw" )
         
         return position
@@ -216,38 +187,20 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def move_microscope_abs(self):
         """Moves microscope stage in absolute coordinates
         """
-
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            self.xAbs.setValue(0)
-            self.xAbs.setValue(0)
-            self.zAbs.setValue(0)
-            self.tAbs.setValue(0)
-            self.rAbs.setValue(0)
-            return
-        
+              
         new_position = self.read_abs_positions_meters()
 
         self.microscope.move_stage_absolute(new_position)
 
         self.update_log("Moving Stage in Absolute Coordinates")
-        self.update_log(f"Moved to x:{new_position.x*1000} mm y:{new_position.y*1000} mm z:{new_position.z*1000} mm r:{new_position.r} deg t:{new_position.t} deg")
-    
+        self.update_log(f"Moved to x:{new_position.x*1000} mm y:{new_position.y*1000} mm z:{new_position.z*1000} mm r:{new_position.r*constants.RADIANS_TO_DEGREES} deg t:{new_position.t*constants.RADIANS_TO_DEGREES} deg")
+        self.update_position_ui()
 
 
     def move_microscope_rel(self):
         """Moves the microscope stage relative to the absolute position
         """
 
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            self.dXchange.setValue(0)
-            self.dYchange.setValue(0)
-            self.dZchange.setValue(0)
-            self.dTchange.setValue(0)
-            self.dRchange.setValue(0)
-            
-            return
 
         self.update_log("Moving Stage in Relative Coordinates")
 
@@ -255,23 +208,25 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.microscope.move_stage_relative(
             move
         )
-        self.update_log(f"UI | Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
+        self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
 
         # Get Stage Position and Set UI Display
+        self.update_position_ui()
 
+    def update_position_ui(self):
         position = self.microscope.get_stage_position()
 
-        self.xAbs.setValue(position.x*1000)
-        self.yAbs.setValue(position.y*1000)
-        self.zAbs.setValue(position.z*1000)
-        self.tAbs.setValue(position.t)
-        self.rAbs.setValue(position.r)
+        self.xAbs.setValue(position.x*constants.METRE_TO_MILLIMETRE)
+        self.yAbs.setValue(position.y*constants.METRE_TO_MILLIMETRE)
+        self.zAbs.setValue(position.z*constants.METRE_TO_MILLIMETRE)
+        self.tAbs.setValue(position.t*constants.RADIANS_TO_DEGREES)
+        self.rAbs.setValue(position.r*constants.RADIANS_TO_DEGREES)
 
         self.dXchange.setValue(0)
         self.dYchange.setValue(0)
         self.dZchange.setValue(0)
         self.dTchange.setValue(0)
-        self.dRchange.setValue(0)
+        self.dRchange.setValue(0)    
 
 
 
@@ -375,7 +330,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.CLog8.setText(timestr+ " : " +log)
 
+        
         logging.info(f'UI | {log}')
+        
 
     def connect_to_microscope(self):
 
@@ -390,8 +347,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.save_button.setEnabled(True)
             self.move_rel_button.setEnabled(True)
             self.move_abs_button.setEnabled(True)
+            self.microscope_status.setText("Microscope Connected")
+            self.microscope_status.setStyleSheet("background-color: green")
         except:
             self.update_log('Unable to connect to microscope')
+            self.microscope_status.setText("Microscope Disconnected")
+            self.microscope_status.setStyleSheet("background-color: red")
             self.RefImage.setEnabled(False)
             self.ResetImage.setEnabled(False)
             self.take_image.setEnabled(False)
@@ -407,22 +368,25 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.microscope.disconnect()
         self.microscope = None
+        self.RefImage.setEnabled(False)
+        self.ResetImage.setEnabled(False)
+        self.take_image.setEnabled(False)
+        self.save_button.setEnabled(False)
+        self.move_rel_button.setEnabled(False)
+        self.move_abs_button.setEnabled(False)
         self.update_log('Microscope Disconnected')
+        self.microscope_status.setText("Microscope Disconnected")
+        self.microscope_status.setStyleSheet("background-color: red")
 
     def take_reference_images(self):
         
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
-
-
         # take image with both beams
         eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
         self.FIB_IB = ib_image
         self.FIB_EB = eb_image
 
-        print(eb_image.data.dtype)
+        self.update_log("Reference Images Taken")
         
         self.update_displays()
 
@@ -455,14 +419,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     
     def click_IB_Image(self):
 
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
-
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ION
         ib_image = acquire.new_image(self.microscope, self.image_settings)
-        # print(ib_image.data.dtype)
         self.FIB_IB = ib_image
         self.update_displays()
         self.update_log("IB Image Taken!")
@@ -557,7 +516,7 @@ if __name__ == "__main__":
     window = MainWindow()
     # window.show()
     widget = viewer.window.add_dock_widget(window)
-    widget.setMinimumWidth(400)
+    widget.setMinimumWidth(500)
 
     sys.exit(app.exec())
  

@@ -160,7 +160,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -566,6 +566,9 @@ p, li { white-space: pre-wrap; }
        </item>
        <item row="3" column="5">
         <widget class="QDoubleSpinBox" name="dYchange">
+         <property name="decimals">
+          <number>4</number>
+         </property>
          <property name="minimum">
           <double>-100.000000000000000</double>
          </property>
@@ -706,8 +709,11 @@ p, li { white-space: pre-wrap; }
        </item>
        <item row="4" column="2">
         <widget class="QDoubleSpinBox" name="zAbs">
+         <property name="decimals">
+          <number>4</number>
+         </property>
          <property name="minimum">
-          <double>-5.000000000000000</double>
+          <double>-100.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -747,6 +753,9 @@ p, li { white-space: pre-wrap; }
        </item>
        <item row="2" column="5">
         <widget class="QDoubleSpinBox" name="dXchange">
+         <property name="decimals">
+          <number>4</number>
+         </property>
          <property name="minimum">
           <double>-100.000000000000000</double>
          </property>
@@ -795,8 +804,11 @@ p, li { white-space: pre-wrap; }
        </item>
        <item row="3" column="2">
         <widget class="QDoubleSpinBox" name="yAbs">
+         <property name="decimals">
+          <number>4</number>
+         </property>
          <property name="minimum">
-          <double>0.000000000000000</double>
+          <double>-100.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -828,10 +840,20 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
        <item row="2" column="2">
-        <widget class="QDoubleSpinBox" name="xAbs"/>
+        <widget class="QDoubleSpinBox" name="xAbs">
+         <property name="decimals">
+          <number>4</number>
+         </property>
+         <property name="minimum">
+          <double>-100.000000000000000</double>
+         </property>
+        </widget>
        </item>
        <item row="4" column="5">
         <widget class="QDoubleSpinBox" name="dZchange">
+         <property name="decimals">
+          <number>4</number>
+         </property>
          <property name="minimum">
           <double>-100.000000000000000</double>
          </property>
@@ -870,6 +892,22 @@ p, li { white-space: pre-wrap; }
       </layout>
      </widget>
     </widget>
+   </widget>
+   <widget class="QLabel" name="microscope_status">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>560</y>
+      <width>158</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
