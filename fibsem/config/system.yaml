@@ -1,8 +1,8 @@
 # system
 system:
-  ip_address: "localhost"
+  ip_address: "10.0.0.1"
   application_file: autolamella
-  manufacturer: "Tescan"
+  manufacturer: "Thermo"
   # beams
   ion:
     voltage: 30000

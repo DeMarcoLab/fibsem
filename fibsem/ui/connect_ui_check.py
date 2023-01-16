@@ -57,38 +57,13 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         super(MainWindow,self).__init__(*args,**kwargs)
         self.setupUi(self)
 
-        # Buttons setup
-
-        self.ConnectButton.clicked.connect(self.connect_to_microscope)
-        self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
-        self.RefImage.clicked.connect(self.take_reference_images)
-        self.ResetImage.clicked.connect(self.reset_images)
-        self.EB_Click.clicked.connect(self.click_EB_Image)
-        self.IB_click.clicked.connect(self.click_IB_Image)
-        self.EB_Save.clicked.connect(self.save_EB_Image)
-        self.IB_Save.clicked.connect(self.save_IB_Image)
-        self.open_filepath.clicked.connect(self.save_filepath)
-
-        # image and gamma settings buttons/boxes/ui objects
-
-        self.reset_image_settings.clicked.connect(self.reset_image_and_gammaSettings)
-        self.autocontrast_enable.stateChanged.connect(self.autocontrast_check)
-        self.gamma_enabled.stateChanged.connect(self.gamma_check)
-        self.res_width.valueChanged.connect(self.res_width_change)
-        self.res_height.valueChanged.connect(self.res_height_change)
-        self.dwell_time_setting.valueChanged.connect(self.image_dwell_time_change)
-        self.hfw_box.valueChanged.connect(self.hfw_box_change)
-        self.autosave_enable.stateChanged.connect(self.autosave_toggle)
-
-        # Movement controls setup
-
-        self.move_rel_button.clicked.connect(self.move_microscope_rel)
-        self.move_abs_button.clicked.connect(self.move_microscope_abs)
+        # 
+        self.setup_connections()
 
         # Gamma and Image Settings
 
-        self.FIB_IB = FibsemImage
-        self.FIB_EB = FibsemImage
+        self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
+        self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
 
         self.gamma_settings = GammaSettings(
             enabled=True,
@@ -148,13 +123,42 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         # viewer.add_image(np.zeros((1536,1024),np.uint8),name='EB Image')
         # viewer.add_image(np.zeros((1536,1024),np.uint8),name='IB Image')
 
-        eb_layer = napari.layers.Image(np.zeros((1000,1000)),name='EB Image')
-        ib_layer = napari.layers.Image(np.zeros((1000,1000),np.uint8),name='IB Image')
-        viewer.add_layer(eb_layer)
-        viewer.add_layer(ib_layer)
+        self.update_displays()
+        # eb_layer = napari.layers.Image(np.zeros((1000,1000)),name='EB Image')
+        # ib_layer = napari.layers.Image(np.zeros((1000,1000),np.uint8),name='IB Image')
+        # viewer.add_layer(eb_layer)
+        # viewer.add_layer(ib_layer)
         
         
+    def setup_connections(self):
 
+        # Buttons setup
+
+        self.ConnectButton.clicked.connect(self.connect_to_microscope)
+        self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
+        self.RefImage.clicked.connect(self.take_reference_images)
+        self.ResetImage.clicked.connect(self.reset_images)
+        self.EB_Click.clicked.connect(self.click_EB_Image)
+        self.IB_click.clicked.connect(self.click_IB_Image)
+        self.EB_Save.clicked.connect(self.save_EB_Image)
+        self.IB_Save.clicked.connect(self.save_IB_Image)
+        self.open_filepath.clicked.connect(self.save_filepath)
+
+        # image and gamma settings buttons/boxes/ui objects
+
+        self.reset_image_settings.clicked.connect(self.reset_image_and_gammaSettings)
+        self.autocontrast_enable.stateChanged.connect(self.autocontrast_check)
+        self.gamma_enabled.stateChanged.connect(self.gamma_check)
+        self.res_width.valueChanged.connect(self.res_width_change)
+        self.res_height.valueChanged.connect(self.res_height_change)
+        self.dwell_time_setting.valueChanged.connect(self.image_dwell_time_change)
+        self.hfw_box.valueChanged.connect(self.hfw_box_change)
+        self.autosave_enable.stateChanged.connect(self.autosave_toggle)
+
+        # Movement controls setup
+
+        self.move_rel_button.clicked.connect(self.move_microscope_rel)
+        self.move_abs_button.clicked.connect(self.move_microscope_abs)
 
 
     ### Movement Functionality 
@@ -290,15 +294,19 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # check box returns 2 if checked, 0 if unchecked
 
-        if self.autocontrast_enable.checkState() == 2:
-            self.image_settings.autocontrast = True
-            self.update_log("Autocontrast Enabled")
-            logging.info(f"UI | AutoContrast Enabled")
-        elif self.autocontrast_enable.checkState() == 0:
-            self.image_settings.autocontrast = False
-            self.update_log("Autocontrast Disabled")
-            logging.info(f"UI | AutoContrast Disabled")
-
+        # if self.autocontrast_enable.checkState() == 2:
+        #     self.image_settings.autocontrast = True
+        #     self.update_log("Autocontrast Enabled")
+        #     logging.info(f"UI | AutoContrast Enabled")
+        # elif self.autocontrast_enable.checkState() == 0:
+        #     self.image_settings.autocontrast = False
+        #     self.update_log("Autocontrast Disabled")
+        #     logging.info(f"UI | AutoContrast Disabled")
+        
+        autocontrast_enabled = self.autocontrast_enable.isChecked()
+        self.image_settings.autocontrast = autocontrast_enabled
+        self.update_log(f"Autocontrast Enabled: {autocontrast_enabled}")
+        logging.info(f"UI | AutoContrast Enabled: {autocontrast_enabled}")
     
     def gamma_check(self):
 
@@ -364,15 +372,21 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         print(eb_image.data.dtype)
         
+        self.update_displays()
+
+    def update_displays(self):
 
 
         # self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         # self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
-        print(eb_image.data.shape)
-        Eb_normalise = eb_image.data/np.max(eb_image.data)
+        # print(eb_image.data.shape)
+        Eb_normalise = self.FIB_EB.data/np.max(self.FIB_EB.data)
         
-        viewer.layers['EB Image'].data = Eb_normalise
-        viewer.layers['IB Image'].data = ib_image.data
+        viewer.layers.clear()
+        viewer.add_image(self.FIB_IB.data, name="IB Image")
+        viewer.add_image(Eb_normalise, name="EB Image")
+        # viewer.layers['EB Image'].data = Eb_normalise
+        # viewer.layers['IB Image'].data = ib_image.data
 
         self.reset_ui_settings()
 
@@ -391,10 +405,13 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
         self.FIB_EB = eb_image
-        Eb_normalise = eb_image.data/np.max(eb_image.data)
-        viewer.layers['EB Image'].data = Eb_normalise
-        self.image_settings.beam_type = tmp_beam_type
-        self.reset_ui_settings()
+        # self.FIB_EB.data = eb_image.data/np.max(eb_image.data)
+        
+        self.update_displays()
+        
+        # viewer.layers['EB Image'].data = Eb_normalise
+        # self.image_settings.beam_type = tmp_beam_type
+        # self.reset_ui_settings()
         self.update_log("EB Image Taken!")
     
     def click_IB_Image(self):
@@ -406,11 +423,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ION
         ib_image = acquire.new_image(self.microscope, self.image_settings)
-        print(ib_image.data.dtype)
+        # print(ib_image.data.dtype)
         self.FIB_IB = ib_image
-        viewer.layers['IB Image'].data = ib_image.data
-        self.image_settings.beam_type = tmp_beam_type
-        self.reset_ui_settings()
+        self.update_displays()
+        # viewer.layers['IB Image'].data = ib_image.data
+        # self.image_settings.beam_type = tmp_beam_type
+        # self.reset_ui_settings()
 
         self.update_log("IB Image Taken!")
 

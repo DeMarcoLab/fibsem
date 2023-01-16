@@ -214,6 +214,7 @@ class ThermoMicroscope(FibsemMicroscope):
             CoordinateSystem.RAW
         )
         stage_position = self.connection.specimen.stage.current_position
+        print(stage_position)
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.SPECIMEN
         )

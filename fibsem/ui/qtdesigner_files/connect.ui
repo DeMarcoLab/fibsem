@@ -160,7 +160,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -687,12 +687,15 @@
        <item row="4" column="2">
         <widget class="QDoubleSpinBox" name="zAbs">
          <property name="minimum">
-          <double>-5.000000000000000</double>
+          <double>-100.000000000000000</double>
          </property>
         </widget>
        </item>
        <item row="6" column="2">
         <widget class="QDoubleSpinBox" name="tAbs">
+         <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
          <property name="maximum">
           <double>360.000000000000000</double>
          </property>
@@ -776,7 +779,7 @@
        <item row="3" column="2">
         <widget class="QDoubleSpinBox" name="yAbs">
          <property name="minimum">
-          <double>0.000000000000000</double>
+          <double>-100.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -808,7 +811,11 @@
         </widget>
        </item>
        <item row="2" column="2">
-        <widget class="QDoubleSpinBox" name="xAbs"/>
+        <widget class="QDoubleSpinBox" name="xAbs">
+         <property name="minimum">
+          <double>-100.000000000000000</double>
+         </property>
+        </widget>
        </item>
        <item row="4" column="5">
         <widget class="QDoubleSpinBox" name="dZchange">

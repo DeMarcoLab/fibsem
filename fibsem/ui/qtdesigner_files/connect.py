@@ -303,10 +303,11 @@ class Ui_MainWindow(object):
         self.move_rel_button.setObjectName("move_rel_button")
         self.gridLayout.addWidget(self.move_rel_button, 8, 5, 1, 1)
         self.zAbs = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget)
-        self.zAbs.setMinimum(-5.0)
+        self.zAbs.setMinimum(-100.0)
         self.zAbs.setObjectName("zAbs")
         self.gridLayout.addWidget(self.zAbs, 4, 2, 1, 1)
         self.tAbs = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget)
+        self.tAbs.setMinimum(-360.0)
         self.tAbs.setMaximum(360.0)
         self.tAbs.setObjectName("tAbs")
         self.gridLayout.addWidget(self.tAbs, 6, 2, 1, 1)
@@ -345,7 +346,7 @@ class Ui_MainWindow(object):
         self.label_27.setObjectName("label_27")
         self.gridLayout.addWidget(self.label_27, 6, 4, 1, 1)
         self.yAbs = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget)
-        self.yAbs.setMinimum(0.0)
+        self.yAbs.setMinimum(-100.0)
         self.yAbs.setObjectName("yAbs")
         self.gridLayout.addWidget(self.yAbs, 3, 2, 1, 1)
         self.label_23 = QtWidgets.QLabel(self.gridLayoutWidget)
@@ -360,6 +361,7 @@ class Ui_MainWindow(object):
         self.label_24.setObjectName("label_24")
         self.gridLayout.addWidget(self.label_24, 6, 1, 1, 1)
         self.xAbs = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget)
+        self.xAbs.setMinimum(-100.0)
         self.xAbs.setObjectName("xAbs")
         self.gridLayout.addWidget(self.xAbs, 2, 2, 1, 1)
         self.dZchange = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget)
@@ -386,7 +388,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
