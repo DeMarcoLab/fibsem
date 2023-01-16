@@ -148,8 +148,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         # viewer.add_image(np.zeros((1536,1024),np.uint8),name='EB Image')
         # viewer.add_image(np.zeros((1536,1024),np.uint8),name='IB Image')
 
-        eb_layer = napari.layers.Image(np.zeros((1536,1024)),name='EB Image')
-        ib_layer = napari.layers.Image(np.zeros((1536,1024),np.uint8),name='IB Image')
+        eb_layer = napari.layers.Image(np.zeros((1000,1000)),name='EB Image')
+        ib_layer = napari.layers.Image(np.zeros((1000,1000),np.uint8),name='IB Image')
         viewer.add_layer(eb_layer)
         viewer.add_layer(ib_layer)
         
