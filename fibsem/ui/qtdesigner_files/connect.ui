@@ -828,9 +828,9 @@
    <widget class="QLabel" name="label_26">
     <property name="geometry">
      <rect>
-      <x>870</x>
+      <x>830</x>
       <y>560</y>
-      <width>141</width>
+      <width>181</width>
       <height>31</height>
      </rect>
     </property>
@@ -842,13 +842,13 @@
      </font>
     </property>
     <property name="text">
-     <string>Movement</string>
+     <string>Stage Movement</string>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="dRchange">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>1000</x>
       <y>740</y>
       <width>62</width>
       <height>22</height>
@@ -862,7 +862,7 @@
     <property name="geometry">
      <rect>
       <x>970</x>
-      <y>770</y>
+      <y>780</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -874,7 +874,7 @@
    <widget class="QDoubleSpinBox" name="dTchange">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>1000</x>
       <y>770</y>
       <width>62</width>
       <height>22</height>
@@ -888,7 +888,7 @@
     <property name="geometry">
      <rect>
       <x>970</x>
-      <y>700</y>
+      <y>710</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -900,7 +900,7 @@
    <widget class="QDoubleSpinBox" name="dYchange">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>1000</x>
       <y>670</y>
       <width>62</width>
       <height>22</height>
@@ -913,7 +913,7 @@
    <widget class="QDoubleSpinBox" name="dXchange">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>1000</x>
       <y>640</y>
       <width>62</width>
       <height>22</height>
@@ -927,7 +927,7 @@
     <property name="geometry">
      <rect>
       <x>970</x>
-      <y>640</y>
+      <y>650</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -940,7 +940,7 @@
     <property name="geometry">
      <rect>
       <x>970</x>
-      <y>670</y>
+      <y>680</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -953,7 +953,7 @@
     <property name="geometry">
      <rect>
       <x>970</x>
-      <y>740</y>
+      <y>750</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -965,7 +965,7 @@
    <widget class="QDoubleSpinBox" name="dZchange">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>1000</x>
       <y>700</y>
       <width>62</width>
       <height>22</height>
@@ -995,49 +995,10 @@
      <string>Relative Move</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="eucentric_move">
-    <property name="geometry">
-     <rect>
-      <x>1100</x>
-      <y>600</y>
-      <width>70</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Eucentric</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="ion_rel">
-    <property name="geometry">
-     <rect>
-      <x>1160</x>
-      <y>640</y>
-      <width>82</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>ION</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="electron_rel">
-    <property name="geometry">
-     <rect>
-      <x>1210</x>
-      <y>640</y>
-      <width>82</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>ELECTRON</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="move_abs_button">
     <property name="geometry">
      <rect>
-      <x>770</x>
+      <x>790</x>
       <y>800</y>
       <width>75</width>
       <height>23</height>
@@ -1050,7 +1011,7 @@
    <widget class="QPushButton" name="move_rel_button">
     <property name="geometry">
      <rect>
-      <x>1020</x>
+      <x>990</x>
       <y>800</y>
       <width>75</width>
       <height>23</height>
@@ -1128,8 +1089,8 @@
    <widget class="QLabel" name="label_38">
     <property name="geometry">
      <rect>
-      <x>1100</x>
-      <y>750</y>
+      <x>1070</x>
+      <y>740</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -1141,8 +1102,8 @@
    <widget class="QLabel" name="label_39">
     <property name="geometry">
      <rect>
-      <x>1100</x>
-      <y>670</y>
+      <x>1070</x>
+      <y>680</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -1154,8 +1115,8 @@
    <widget class="QLabel" name="label_40">
     <property name="geometry">
      <rect>
-      <x>1100</x>
-      <y>780</y>
+      <x>1070</x>
+      <y>770</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -1167,8 +1128,8 @@
    <widget class="QLabel" name="label_41">
     <property name="geometry">
      <rect>
-      <x>1100</x>
-      <y>700</y>
+      <x>1070</x>
+      <y>710</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -1180,8 +1141,8 @@
    <widget class="QLabel" name="label_42">
     <property name="geometry">
      <rect>
-      <x>1100</x>
-      <y>640</y>
+      <x>1070</x>
+      <y>650</y>
       <width>47</width>
       <height>13</height>
      </rect>

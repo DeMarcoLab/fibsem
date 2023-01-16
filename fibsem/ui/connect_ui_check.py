@@ -140,9 +140,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.dRchange.setValue(0)
         self.dTchange.setValue(0)
 
-        self.eucentric_move.setCheckState(2)
-
-        self.ion_rel.setChecked(True)
 
 
     ### Movement Functionality 
@@ -191,38 +188,17 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.dRchange.setValue(0)
             
             return
-
-        # Relative to ION or ELECTRON BEAM
-
-        if self.ion_rel.isChecked():
-            beam_type = BeamType.ION
-            beam_name = "ION"
-        else:
-            beam_type = BeamType.ELECTRON
-            beam_name = "ELECTRON"
-
         self.update_log("Moving Stage in Relative Coordinates")
 
-        if self.eucentric_move.checkState() == 2:
-
-            self.microscope.eucentric_move(
-                settings=self.microscope_settings,
-                dx = self.dXchange.value()/1000,
-                dy = self.dYchange.value()/1000,
-                beam_type=beam_type 
-            )
-            self.update_log(f"Eucentric Move relative to {beam_name} Beam")
-            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
-
-        else:
-            self.microscope.move_stage_relative(
-                dx = self.dXchange.value()/1000,
-                dy = self.dYchange.value()/1000,
-                dz = self.dZchange.value()/1000,
-                dr = self.dRchange.value(),
-                dt = self.dTchange.value()
-            )
-            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} deg dt:{self.dTchange.value()} deg")
+        
+        self.microscope.move_stage_relative(
+            dx = self.dXchange.value()/1000,
+            dy = self.dYchange.value()/1000,
+            dz = self.dZchange.value()/1000,
+            dr = self.dRchange.value(),
+            dt = self.dTchange.value()
+        )
+        self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} deg dt:{self.dTchange.value()} deg")
 
         # Get Stage Position and Set UI Display
 
@@ -358,6 +334,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         try:
             self.microscope, self.microscope_settings = utils.setup_session()
             self.update_log('Connected to microscope successfully')
+            position = self.microscope.get_stage_position()
+            self.xAbs.setValue(position.x*1000)
+            self.yAbs.setValue(position.y*1000)
+            self.zAbs.setValue(position.z*1000)
+            self.tAbs.setValue(position.t)
+            self.rAbs.setValue(position.r)
         except:
             self.update_log('Unable to connect to microscope')
 
