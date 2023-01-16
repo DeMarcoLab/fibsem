@@ -20,35 +20,36 @@ import numpy as np
 
 import logging
 import napari
+from napari.settings import get_settings
 
-def set_arr_as_qlabel(
-    arr: np.ndarray,
-    label: QLabel,
-    shape: tuple = (1536//4, 1024//4),
-) -> QLabel:
+# def set_arr_as_qlabel(
+#     arr: np.ndarray,
+#     label: QLabel,
+#     shape: tuple = (1536//4, 1024//4),
+# ) -> QLabel:
 
-    if arr.dtype == 'uint8':
+#     if arr.dtype == 'uint8':
 
-        image = QImage(
-            arr.data,
-            arr.shape[1],
-            arr.shape[0],
-            QImage.Format_Grayscale8,
-        )
-        label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
+#         image = QImage(
+#             arr.data,
+#             arr.shape[1],
+#             arr.shape[0],
+#             QImage.Format_Grayscale8,
+#         )
+#         label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
-        return label
-    else:
+#         return label
+#     else:
 
-        image = QImage(
-            arr.data,
-            arr.shape[1],
-            arr.shape[0],
-            QImage.Format_Grayscale16,
-        )
-        label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
+#         image = QImage(
+#             arr.data,
+#             arr.shape[1],
+#             arr.shape[0],
+#             QImage.Format_Grayscale16,
+#         )
+#         label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
-        return label
+#         return label
 
 
 class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
@@ -73,10 +74,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.reset_image_settings.clicked.connect(self.reset_image_and_gammaSettings)
         self.autocontrast_enable.stateChanged.connect(self.autocontrast_check)
         self.gamma_enabled.stateChanged.connect(self.gamma_check)
-        self.gamma_min.valueChanged.connect(self.gamma_min_change)
-        self.gamma_max.valueChanged.connect(self.gamma_max_change)
-        self.gamma_scalefactor.valueChanged.connect(self.gamma_scalefactor_change)
-        self.gamma_threshold.valueChanged.connect(self.gamma_threshold_change)
         self.res_width.valueChanged.connect(self.res_width_change)
         self.res_height.valueChanged.connect(self.res_height_change)
         self.dwell_time_setting.valueChanged.connect(self.image_dwell_time_change)
@@ -108,7 +105,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 autocontrast=False,
                 beam_type=BeamType.ION,
                 gamma=self.gamma_settings,
-                save=True,
+                save=False,
                 save_path="fibsem\\test_images",
                 label=utils.current_timestamp(),
                 reduced_area=None,
@@ -119,7 +116,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         # Initialise microscope object
         self.microscope = None
         self.microscope_settings = None
-        self.CLog.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+        self.update_log("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
         self.reset_ui_settings()
 
         self.connect_to_microscope()
@@ -139,9 +136,25 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.dRchange.setValue(0)
         self.dTchange.setValue(0)
 
-        self.eucentric_move.setCheckState(2)
 
-        self.ion_rel.setChecked(True)
+        ### NAPARI settings and initialisation
+
+        napari_settings = get_settings()
+        # napari_settings.application.grid_height = 2
+        # napari_settings.application.grid_width = -1
+        # napari_settings.application.grid_stride = -1
+        viewer.grid.enabled = True
+
+        # viewer.add_image(np.zeros((1536,1024),np.uint8),name='EB Image')
+        # viewer.add_image(np.zeros((1536,1024),np.uint8),name='IB Image')
+
+        eb_layer = napari.layers.Image(np.zeros((1536,1024)),name='EB Image')
+        ib_layer = napari.layers.Image(np.zeros((1536,1024),np.uint8),name='IB Image')
+        viewer.add_layer(eb_layer)
+        viewer.add_layer(ib_layer)
+        
+        
+
 
 
     ### Movement Functionality 
@@ -271,9 +284,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         ### field width in microns in UI!!!!!!!!
         self.image_settings.hfw = self.hfw_box.value() / 1.0e6
 
-    def gamma_threshold_change(self):
-
-        self.gamma_settings.threshold = self.gamma_threshold.value()
 
     def res_width_change(self):
 
@@ -295,17 +305,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         ### dwell time in microseconds!!!!! ease of use for UI!!!!
         self.image_settings.dwell_time = self.dwell_time_setting.value()/1.0e6
 
-    def gamma_min_change(self):
 
-        self.gamma_settings.min_gamma = self.gamma_min.value()  
-
-    def gamma_max_change(self):
-
-        self.gamma_settings.max_gamma = self.gamma_max.value()  
-
-    def gamma_scalefactor_change(self):
-
-        self.gamma_settings.scale_factor = self.gamma_scalefactor.value()  
 
     def autocontrast_check(self):
 
@@ -383,14 +383,24 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.FIB_IB = ib_image
         self.FIB_EB = eb_image
 
+        print(eb_image.data.dtype)
+        
+
+
         # self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
         # self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
+        print(eb_image.data.shape)
+        Eb_normalise = eb_image.data/np.max(eb_image.data)
+        
+        viewer.layers['EB Image'].data = Eb_normalise
+        viewer.layers['IB Image'].data = ib_image.data
 
         self.reset_ui_settings()
 
-        viewer.layers.clear()
-        viewer.add_image(eb_image.data, name="EB Image")
-        viewer.add_image(ib_image.data, name="IB Image")
+        self.update_log("Reference Images Taken")
+        # viewer.layers.clear()
+        # viewer.add_image(eb_image.data, name="EB Image")
+        # viewer.add_image(ib_image.data, name="IB Image")
 
     def click_EB_Image(self):
 
@@ -402,7 +412,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
         self.FIB_EB = eb_image
-        self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
+        Eb_normalise = eb_image.data/np.max(eb_image.data)
+        viewer.layers['EB Image'].data = Eb_normalise
         self.image_settings.beam_type = tmp_beam_type
         self.reset_ui_settings()
         self.update_log("EB Image Taken!")
@@ -418,7 +429,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         ib_image = acquire.new_image(self.microscope, self.image_settings)
         print(ib_image.data.dtype)
         self.FIB_IB = ib_image
-        self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
+        viewer.layers['IB Image'].data = ib_image.data
         self.image_settings.beam_type = tmp_beam_type
         self.reset_ui_settings()
 
@@ -438,8 +449,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def reset_images(self):
 
-        self.EB_Image.setText(" ")
-        self.IB_Image.setText(" ")
+        viewer.layers['EB Image'].data = np.zeros((1,1))
+        viewer.layers['IB Image'].data = np.zeros((1,1))
 
     def reset_image_and_gammaSettings(self):
 
@@ -470,9 +481,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def reset_ui_settings(self):
 
-        self.gamma_min.setValue(self.gamma_settings.min_gamma)
-        self.gamma_max.setValue(self.gamma_settings.max_gamma)
-        self.gamma_scalefactor.setValue(self.gamma_settings.scale_factor)
         self.dwell_time_setting.setValue(self.image_settings.dwell_time * 1.0e6)
         self.hfw_box.setValue(int(self.image_settings.hfw * 1e6))
 
@@ -512,7 +520,8 @@ if __name__ == "__main__":
 
     window = MainWindow()
     # window.show()
-    viewer.window.add_dock_widget(window)
-    
+    widget = viewer.window.add_dock_widget(window)
+    widget.setMinimumWidth(300)
+
     sys.exit(app.exec())
  
