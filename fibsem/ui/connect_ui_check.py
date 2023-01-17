@@ -86,11 +86,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.update_displays()
 
-    def showTime(self):
-        time=QDateTime.currentDateTime()
-        timeDisplay=time.toString('yyyy-MM-dd hh:mm:ss dddd')
-        print(timeDisplay)
-
     def setup_connections(self):
 
         # Buttons setup
@@ -277,17 +272,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
 
     def autocontrast_check(self):
-
-        # check box returns 2 if checked, 0 if unchecked
-
-        # if self.autocontrast_enable.checkState() == 2:
-        #     self.image_settings.autocontrast = True
-        #     self.update_log("Autocontrast Enabled")
-        #     logging.info(f"UI | AutoContrast Enabled")
-        # elif self.autocontrast_enable.checkState() == 0:
-        #     self.image_settings.autocontrast = False
-        #     self.update_log("Autocontrast Disabled")
-        #     logging.info(f"UI | AutoContrast Disabled")
         
         autocontrast_enabled = self.autocontrast_enable.isChecked()
         self.image_settings.autocontrast = autocontrast_enabled
@@ -335,15 +319,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 self.CLog7.setText(self.CLog8.text())
 
                 self.CLog8.setText(disp_str)
-
-        
-        # logging.info(f'UI | {log}')
-
-        
+      
 
     def connect_to_microscope(self):
-
-        # self.update_log("Attempting to connect...")
         
         try:
             self.microscope, self.microscope_settings = utils.setup_session()
@@ -369,7 +347,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.move_abs_button.setEnabled(False)
 
     def disconnect_from_microscope(self):
-
 
         self.microscope.disconnect()
         self.microscope = None
@@ -431,7 +408,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def save_EB_Image(self):
         
-
         save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_eb")
         self.FIB_EB.save(save_path=save_path)
 
