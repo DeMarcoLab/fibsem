@@ -376,6 +376,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         viewer.add_image(self.FIB_IB.data, name="IB Image")
         viewer.add_image(self.FIB_EB.data, name="EB Image")
 
+        if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
+            logging.info("Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
+        if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
+            logging.info("Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
+
 
         self.reset_ui_settings()
 
