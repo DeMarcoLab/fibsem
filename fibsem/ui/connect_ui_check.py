@@ -186,7 +186,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.microscope.move_stage_absolute(new_position)
 
         logging.info("Moving Stage in Absolute Coordinates")
-        logging.info(f"Moved to x:{new_position.x*constants.METRE_TO_MILLIMETRE} mm y:{new_position.y*constants.METRE_TO_MILLIMETRE} mm z:{new_position.z*constants.METRE_TO_MILLIMETRE} mm r:{new_position.r*constants.RADIANS_TO_DEGREES} deg t:{new_position.t*constants.RADIANS_TO_DEGREES} deg")
+        logging.info(f"Moved to x:{(new_position.x*constants.METRE_TO_MILLIMETRE):.3f} mm y:{(new_position.y*constants.METRE_TO_MILLIMETRE):.3f} mm z:{(new_position.z*constants.METRE_TO_MILLIMETRE):.3f} mm r:{new_position.r*constants.RADIANS_TO_DEGREES} deg t:{new_position.t*constants.RADIANS_TO_DEGREES} deg")
         self.update_position_ui()
 
 
@@ -201,7 +201,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.microscope.move_stage_relative(
             move
         )
-        logging.info(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
+        logging.info(f"Moved by dx:{self.dXchange.value():.3f} mm dy:{self.dYchange.value():.3f} mm dz:{self.dZchange.value():.3f} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
 
         # Get Stage Position and Set UI Display
         self.update_position_ui()
@@ -348,7 +348,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         try:
             self.microscope, self.microscope_settings = utils.setup_session()
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
-            
+            logging.info("Microscope Connected")
             self.RefImage.setEnabled(True)
             self.ResetImage.setEnabled(True)
             self.take_image.setEnabled(True)

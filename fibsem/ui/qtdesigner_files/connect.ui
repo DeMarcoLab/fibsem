@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>932</width>
-    <height>850</height>
+    <height>884</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,15 +28,15 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>441</width>
-      <height>541</height>
+      <width>531</width>
+      <height>521</height>
      </rect>
     </property>
     <property name="autoFillBackground">
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -47,7 +47,7 @@
        <rect>
         <x>110</x>
         <y>10</y>
-        <width>160</width>
+        <width>171</width>
         <height>80</height>
        </rect>
       </property>
@@ -76,10 +76,10 @@
      <widget class="QWidget" name="gridLayoutWidget_2">
       <property name="geometry">
        <rect>
-        <x>0</x>
+        <x>10</x>
         <y>0</y>
-        <width>421</width>
-        <height>421</height>
+        <width>474</width>
+        <height>481</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -186,7 +186,7 @@
         <widget class="QCheckBox" name="check_EB">
          <property name="font">
           <font>
-           <pointsize>10</pointsize>
+           <pointsize>8</pointsize>
           </font>
          </property>
          <property name="text">
@@ -268,7 +268,7 @@
         <widget class="QCheckBox" name="check_IB">
          <property name="font">
           <font>
-           <pointsize>10</pointsize>
+           <pointsize>8</pointsize>
           </font>
          </property>
          <property name="text">
@@ -401,8 +401,8 @@
           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:7.8pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8.25pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -416,10 +416,10 @@ p, li { white-space: pre-wrap; }
      <widget class="QWidget" name="gridLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>10</y>
-        <width>401</width>
-        <height>261</height>
+        <width>481</width>
+        <height>273</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
@@ -514,7 +514,7 @@ p, li { white-space: pre-wrap; }
           <string>Z:</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -572,7 +572,7 @@ p, li { white-space: pre-wrap; }
           <string>Stage Movement</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -606,7 +606,7 @@ p, li { white-space: pre-wrap; }
           <string>Y:</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -623,7 +623,7 @@ p, li { white-space: pre-wrap; }
           <string>X:</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -694,7 +694,7 @@ p, li { white-space: pre-wrap; }
           <string>Rotation:</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -711,7 +711,7 @@ p, li { white-space: pre-wrap; }
           <string>Tilt:</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -752,7 +752,7 @@ p, li { white-space: pre-wrap; }
          </property>
         </widget>
        </item>
-       <item row="7" column="3">
+       <item row="7" column="1" colspan="6">
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -772,9 +772,9 @@ p, li { white-space: pre-wrap; }
    <widget class="QWidget" name="verticalLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>10</x>
       <y>540</y>
-      <width>441</width>
+      <width>521</width>
       <height>271</height>
      </rect>
     </property>
@@ -868,7 +868,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>932</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
