@@ -379,7 +379,7 @@ class TescanMicroscope(FibsemMicroscope):
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
         detector = self.connection.SEM.Detector.SESuitable()
-        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_16_bit)
+        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_8_bit)
 
         dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
         # resolution
