@@ -371,11 +371,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def update_displays(self):
 
-        Eb_normalise = self.FIB_EB.data/np.max(self.FIB_EB.data)
         
         viewer.layers.clear()
         viewer.add_image(self.FIB_IB.data, name="IB Image")
-        viewer.add_image(Eb_normalise, name="EB Image")
+        viewer.add_image(self.FIB_EB.data, name="EB Image")
 
 
         self.reset_ui_settings()
