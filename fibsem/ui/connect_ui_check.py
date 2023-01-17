@@ -1,6 +1,7 @@
 import sys
-
+import pathlib
 from datetime import datetime
+import re
 
 from fibsem.ui.qtdesigner_files import connect
 
@@ -13,6 +14,7 @@ from tkinter import filedialog
 import fibsem.constants as constants
 
 from qtpy import QtWidgets
+from PyQt5.QtCore import QTimer,QDateTime
 # from qtpy.QtCore import Qt
 # from qtpy.QtGui import QImage, QPixmap
 # from qtpy.QtWidgets import QGridLayout, QLabel
@@ -23,6 +25,7 @@ import napari
 from napari.settings import get_settings
 
 
+
 class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def __init__(self,*args,obj=None,**kwargs) -> None:
         super(MainWindow,self).__init__(*args,**kwargs)
@@ -30,7 +33,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # 
         self.setup_connections()
-
+        self.lines = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_log)
+        self.timer.start(1000)
+        
         # Gamma and Image Settings
 
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
@@ -57,30 +64,19 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 reduced_area=None,
             )
 
-
+        self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
 
         # Initialise microscope object
         self.microscope = None
         self.microscope_settings = None
-        self.update_log("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+        self.connect_to_microscope()
+        
         self.reset_ui_settings()
 
-        self.connect_to_microscope()
+        
 
         if self.microscope is not None:
-            position = self.microscope.get_stage_position()
-
-            self.xAbs.setValue(position.x*1000)
-            self.yAbs.setValue(position.y*1000)
-            self.zAbs.setValue(position.z*1000)
-            self.rAbs.setValue(position.r)
-            self.tAbs.setValue(position.t)
-        
-        self.dXchange.setValue(0)
-        self.dYchange.setValue(0)
-        self.dZchange.setValue(0)
-        self.dRchange.setValue(0)
-        self.dTchange.setValue(0)
+           self.update_position_ui()
 
 
         ### NAPARI settings and initialisation
@@ -88,16 +84,13 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         viewer.grid.enabled = True
 
-        # viewer.add_image(np.zeros((1536,1024),np.uint8),name='EB Image')
-        # viewer.add_image(np.zeros((1536,1024),np.uint8),name='IB Image')
-
         self.update_displays()
-        # eb_layer = napari.layers.Image(np.zeros((1000,1000)),name='EB Image')
-        # ib_layer = napari.layers.Image(np.zeros((1000,1000),np.uint8),name='IB Image')
-        # viewer.add_layer(eb_layer)
-        # viewer.add_layer(ib_layer)
-        
-        
+
+    def showTime(self):
+        time=QDateTime.currentDateTime()
+        timeDisplay=time.toString('yyyy-MM-dd hh:mm:ss dddd')
+        print(timeDisplay)
+
     def setup_connections(self):
 
         # Buttons setup
@@ -192,8 +185,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.microscope.move_stage_absolute(new_position)
 
-        self.update_log("Moving Stage in Absolute Coordinates")
-        self.update_log(f"Moved to x:{new_position.x*1000} mm y:{new_position.y*1000} mm z:{new_position.z*1000} mm r:{new_position.r*constants.RADIANS_TO_DEGREES} deg t:{new_position.t*constants.RADIANS_TO_DEGREES} deg")
+        logging.info("Moving Stage in Absolute Coordinates")
+        logging.info(f"Moved to x:{new_position.x*constants.METRE_TO_MILLIMETRE} mm y:{new_position.y*constants.METRE_TO_MILLIMETRE} mm z:{new_position.z*constants.METRE_TO_MILLIMETRE} mm r:{new_position.r*constants.RADIANS_TO_DEGREES} deg t:{new_position.t*constants.RADIANS_TO_DEGREES} deg")
         self.update_position_ui()
 
 
@@ -202,13 +195,13 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         """
 
 
-        self.update_log("Moving Stage in Relative Coordinates")
+        logging.info("Moving Stage in Relative Coordinates")
 
         move = self.read_relative_move_meters()
         self.microscope.move_stage_relative(
             move
         )
-        self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
+        logging.info(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
 
         # Get Stage Position and Set UI Display
         self.update_position_ui()
@@ -236,11 +229,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         if self.autosave_enable.checkState() == 2:
             self.image_settings.save = True
-            self.update_log("Autosave Enabled")
+            logging.info("UI | Autosave Enabled")
             
         elif self.autosave_enable.checkState() == 0:
             self.image_settings.save = False
-            self.update_log("Autosave Disabled")
+            logging.info("UI | Autosave Disabled")
             
 
         
@@ -298,49 +291,64 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         autocontrast_enabled = self.autocontrast_enable.isChecked()
         self.image_settings.autocontrast = autocontrast_enabled
-        self.update_log(f"Autocontrast Enabled: {autocontrast_enabled}")
+        logging.info(f"UI | Autocontrast Enabled: {autocontrast_enabled}")
         
     
     def gamma_check(self):
 
         if self.gamma_enabled.checkState() == 2:
             self.gamma_settings.enabled = True
-            self.update_log("Gamma Enabled")
+            logging.info("UI | Gamma Enabled")
             
         elif self.gamma_enabled.checkState() == 0:
             self.gamma_settings.enabled = False
-            self.update_log("Gamma Disabled")
+            logging.info("UI | Gamma Disabled")
             
 
     ##################################################################
 
 
-    def update_log(self,log:str):
+    def update_log(self):
+        
+        with open(self.log_path, "r") as f:
+            lines = f.read().splitlines()
+            lin_len = len(lines)
+            
+        if self.lines != lin_len:   
+            for i in reversed(range(lin_len - self.lines)):
+                line_display = lines[-1-i]
+                if re.search("napari.loader — DEBUG", line_display):
+                    self.lines = lin_len
+                    continue
+                line_divided = line_display.split(",")
+                time = line_divided[0]
+                message = line_divided[1].split("—")
+                disp_str = f"{time} | {message[-1]}"
 
-        now = datetime.now()
-        timestr = now.strftime("%d/%m  %H:%M:%S")
+                self.lines = lin_len
+                self.CLog.setText(self.CLog2.text())
+                self.CLog2.setText(self.CLog3.text())
+                self.CLog3.setText(self.CLog4.text())
+                self.CLog4.setText(self.CLog5.text())
+                self.CLog5.setText(self.CLog6.text())
+                self.CLog6.setText(self.CLog7.text())
+                self.CLog7.setText(self.CLog8.text())
 
-        self.CLog.setText(self.CLog2.text())
-        self.CLog2.setText(self.CLog3.text())
-        self.CLog3.setText(self.CLog4.text())
-        self.CLog4.setText(self.CLog5.text())
-        self.CLog5.setText(self.CLog6.text())
-        self.CLog6.setText(self.CLog7.text())
-        self.CLog7.setText(self.CLog8.text())
-
-        self.CLog8.setText(timestr+ " : " +log)
+                self.CLog8.setText(disp_str)
 
         
-        logging.info(f'UI | {log}')
+        # logging.info(f'UI | {log}')
+
         
 
     def connect_to_microscope(self):
 
-        self.update_log("Attempting to connect...")
+        # self.update_log("Attempting to connect...")
         
         try:
             self.microscope, self.microscope_settings = utils.setup_session()
-            self.update_log('Connected to microscope successfully')
+            self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
+            
             self.RefImage.setEnabled(True)
             self.ResetImage.setEnabled(True)
             self.take_image.setEnabled(True)
@@ -350,7 +358,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.microscope_status.setText("Microscope Connected")
             self.microscope_status.setStyleSheet("background-color: green")
         except:
-            self.update_log('Unable to connect to microscope')
+            # logging.('Unable to connect to microscope')
             self.microscope_status.setText("Microscope Disconnected")
             self.microscope_status.setStyleSheet("background-color: red")
             self.RefImage.setEnabled(False)
@@ -362,9 +370,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def disconnect_from_microscope(self):
 
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
 
         self.microscope.disconnect()
         self.microscope = None
@@ -374,7 +379,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.save_button.setEnabled(False)
         self.move_rel_button.setEnabled(False)
         self.move_abs_button.setEnabled(False)
-        self.update_log('Microscope Disconnected')
+        logging.info('Microscope Disconnected')
         self.microscope_status.setText("Microscope Disconnected")
         self.microscope_status.setStyleSheet("background-color: red")
 
@@ -386,7 +391,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.FIB_IB = ib_image
         self.FIB_EB = eb_image
 
-        self.update_log("Reference Images Taken")
+        logging.info("Reference Images Taken")
         
         self.update_displays()
 
@@ -404,9 +409,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def click_EB_Image(self):
 
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
 
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ELECTRON
@@ -415,7 +417,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         self.update_displays()
 
-        self.update_log("EB Image Taken!")
+        logging.info("EB Image Taken!")
+        
     
     def click_IB_Image(self):
 
@@ -424,7 +427,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         ib_image = acquire.new_image(self.microscope, self.image_settings)
         self.FIB_IB = ib_image
         self.update_displays()
-        self.update_log("IB Image Taken!")
+        logging.info("IB Image Taken!")
 
     def save_EB_Image(self):
         
@@ -432,7 +435,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_eb")
         self.FIB_EB.save(save_path=save_path)
 
-        self.update_log(f"EB Image Saved to {save_path}.tif!")
+        logging.info(f"EB Image Saved to {save_path}.tif!")
         self.image_label.clear()
 
     def save_IB_Image(self):
@@ -440,7 +443,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_ib")
         self.FIB_IB.save(save_path)
 
-        self.update_log(f"IB Image Saved to {save_path}.tif!")
+        logging.info(f"IB Image Saved to {save_path}.tif!")
 
     def reset_images(self):
 
@@ -472,7 +475,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         self.reset_ui_settings()
         
-        self.update_log("Gamma and image settings returned to default values")
+        logging.info("UI | Image settings returned to default values")
 
     def reset_ui_settings(self):
 
@@ -509,14 +512,18 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
 
+
     viewer = napari.Viewer()
 
     
 
     window = MainWindow()
+   
     # window.show()
     widget = viewer.window.add_dock_widget(window)
     widget.setMinimumWidth(500)
+
+    
 
     sys.exit(app.exec())
  
