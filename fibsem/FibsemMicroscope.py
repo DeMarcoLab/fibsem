@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import copy
 import logging
+from copy import deepcopy
 import datetime
 import numpy as np
 from fibsem.config import load_microscope_manufacturer
@@ -356,12 +357,15 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address, port)
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
+
         if image_settings.beam_type.value == 1:
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
         if image_settings.beam_type.value == 2:
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
+
+        
 
         return image
 
@@ -375,8 +379,9 @@ class TescanMicroscope(FibsemMicroscope):
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
         detector = self.connection.SEM.Detector.SESuitable()
-        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_16_bit)
+        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_8_bit)
 
+        dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
         # resolution
         numbers = re.findall(r"\d+", image_settings.resolution)
         imageWidth = int(numbers[0])
@@ -385,7 +390,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.SEM.Optics.SetViewfield(image_settings.hfw * 1000)
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, 1000
+            0, imageWidth, imageHeight, dwell_time
         )
 
         microscope_state = MicroscopeState(
@@ -416,8 +421,12 @@ class TescanMicroscope(FibsemMicroscope):
             ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
         fibsem_image = FibsemImage.fromTescanImage(
-            image, image_settings, microscope_state
+            image, deepcopy(image_settings), microscope_state
         )
+
+        res = fibsem_image.data.shape
+
+        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
 
         return fibsem_image
 
@@ -434,6 +443,8 @@ class TescanMicroscope(FibsemMicroscope):
             0, self.ion_detector_active, Bpp.Grayscale_8_bit
         )
 
+        dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
+
         # resolution
         numbers = re.findall(r"\d+", image_settings.resolution)
         imageWidth = int(numbers[0])
@@ -442,7 +453,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(image_settings.hfw * 1000)
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, 1000
+            0, imageWidth, imageHeight, dwell_time
         )
 
         microscope_state = MicroscopeState(
@@ -474,8 +485,12 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         fibsem_image = FibsemImage.fromTescanImage(
-            image, image_settings, microscope_state
+            image, deepcopy(image_settings), microscope_state
         )
+
+        res = fibsem_image.data.shape
+
+        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
 
         return fibsem_image
 

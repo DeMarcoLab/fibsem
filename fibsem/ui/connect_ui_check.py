@@ -15,7 +15,6 @@ import fibsem.constants as constants
 
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer,QDateTime
-
 import numpy as np
 
 import logging
@@ -376,11 +375,15 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def update_displays(self):
 
-        Eb_normalise = self.FIB_EB.data/np.max(self.FIB_EB.data)
         
         viewer.layers.clear()
         viewer.add_image(self.FIB_IB.data, name="IB Image")
-        viewer.add_image(Eb_normalise, name="EB Image")
+        viewer.add_image(self.FIB_EB.data, name="EB Image")
+
+        if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
+            logging.info("Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
+        if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
+            logging.info("Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
 
 
         self.reset_ui_settings()
@@ -392,8 +395,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
+
         self.FIB_EB = eb_image
-        
+
         self.update_displays()
 
         logging.info("EB Image Taken!")
@@ -405,6 +409,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.beam_type = BeamType.ION
         ib_image = acquire.new_image(self.microscope, self.image_settings)
         self.FIB_IB = ib_image
+
+        
         self.update_displays()
         logging.info("IB Image Taken!")
 
