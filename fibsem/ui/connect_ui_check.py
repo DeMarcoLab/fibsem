@@ -387,15 +387,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
-        
-        
-        
 
         self.FIB_EB = eb_image
 
-
-
-        
         self.update_displays()
 
         logging.info("EB Image Taken!")
