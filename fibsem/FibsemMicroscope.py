@@ -356,12 +356,15 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address, port)
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
+
         if image_settings.beam_type.value == 1:
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
         if image_settings.beam_type.value == 2:
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
+
+        
 
         return image
 
@@ -418,6 +421,10 @@ class TescanMicroscope(FibsemMicroscope):
         fibsem_image = FibsemImage.fromTescanImage(
             image, image_settings, microscope_state
         )
+
+        res = fibsem_image.data.shape
+
+        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
 
         return fibsem_image
 
@@ -476,6 +483,10 @@ class TescanMicroscope(FibsemMicroscope):
         fibsem_image = FibsemImage.fromTescanImage(
             image, image_settings, microscope_state
         )
+
+        res = fibsem_image.data.shape
+
+        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
 
         return fibsem_image
 

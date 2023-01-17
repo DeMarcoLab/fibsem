@@ -15,9 +15,6 @@ import fibsem.constants as constants
 
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer,QDateTime
-# from qtpy.QtCore import Qt
-# from qtpy.QtGui import QImage, QPixmap
-# from qtpy.QtWidgets import QGridLayout, QLabel
 import numpy as np
 
 import logging
@@ -86,10 +83,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.update_displays()
 
-    def showTime(self):
-        time=QDateTime.currentDateTime()
-        timeDisplay=time.toString('yyyy-MM-dd hh:mm:ss dddd')
-        print(timeDisplay)
 
     def setup_connections(self):
 
@@ -277,17 +270,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
 
     def autocontrast_check(self):
-
-        # check box returns 2 if checked, 0 if unchecked
-
-        # if self.autocontrast_enable.checkState() == 2:
-        #     self.image_settings.autocontrast = True
-        #     self.update_log("Autocontrast Enabled")
-        #     logging.info(f"UI | AutoContrast Enabled")
-        # elif self.autocontrast_enable.checkState() == 0:
-        #     self.image_settings.autocontrast = False
-        #     self.update_log("Autocontrast Disabled")
-        #     logging.info(f"UI | AutoContrast Disabled")
         
         autocontrast_enabled = self.autocontrast_enable.isChecked()
         self.image_settings.autocontrast = autocontrast_enabled
@@ -413,7 +395,14 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
+        
+        
+        
+
         self.FIB_EB = eb_image
+
+
+
         
         self.update_displays()
 
@@ -426,6 +415,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.beam_type = BeamType.ION
         ib_image = acquire.new_image(self.microscope, self.image_settings)
         self.FIB_IB = ib_image
+
+        
         self.update_displays()
         logging.info("IB Image Taken!")
 
