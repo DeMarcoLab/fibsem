@@ -116,8 +116,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     ### Movement Functionality 
 
     def save_image_beams(self):
-        if self.image_label.toPlainText() != "":
-            self.image_settings.label = self.image_label.toPlainText()
+        if self.image_label.text() != "":
+            self.image_settings.label = self.image_label.text()
 
         if self.check_EB.isChecked():
             self.save_EB_Image()
@@ -459,7 +459,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def reset_ui_settings(self):
 
-        self.dwell_time_setting.setValue(self.image_settings.dwell_time * 1.0e6)
+        self.dwell_time_setting.setValue(self.image_settings.dwell_time * constants.SI_TO_MICRO)
         self.hfw_box.setValue(int(self.image_settings.hfw * 1e6))
 
         res_ful = self.image_settings.resolution.split("x")

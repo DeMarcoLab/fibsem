@@ -21,7 +21,7 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
-        self.tabWidget.setGeometry(QtCore.QRect(0, 0, 441, 541))
+        self.tabWidget.setGeometry(QtCore.QRect(0, 0, 441, 461))
         self.tabWidget.setAutoFillBackground(True)
         self.tabWidget.setObjectName("tabWidget")
         self.Connection = QtWidgets.QWidget()
@@ -42,7 +42,7 @@ class Ui_MainWindow(object):
         self.tab_3 = QtWidgets.QWidget()
         self.tab_3.setObjectName("tab_3")
         self.gridLayoutWidget_2 = QtWidgets.QWidget(self.tab_3)
-        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 421, 455))
+        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 421, 431))
         self.gridLayoutWidget_2.setObjectName("gridLayoutWidget_2")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.gridLayoutWidget_2)
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -175,7 +175,7 @@ class Ui_MainWindow(object):
         self.label = QtWidgets.QLabel(self.gridLayoutWidget_2)
         self.label.setObjectName("label")
         self.gridLayout_2.addWidget(self.label, 6, 0, 1, 1)
-        self.image_label = QtWidgets.QTextEdit(self.gridLayoutWidget_2)
+        self.image_label = QtWidgets.QLineEdit(self.gridLayoutWidget_2)
         self.image_label.setObjectName("image_label")
         self.gridLayout_2.addWidget(self.image_label, 6, 1, 1, 3)
         self.tabWidget.addTab(self.tab_3, "")
@@ -342,7 +342,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addItem(spacerItem4, 7, 3, 1, 1)
         self.tabWidget.addTab(self.tab_2, "")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 540, 441, 271))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 470, 441, 271))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -434,11 +434,6 @@ class Ui_MainWindow(object):
         self.label_12.setText(_translate("MainWindow", "Dwell time"))
         self.RefImage.setText(_translate("MainWindow", "Take Reference Images"))
         self.label.setText(_translate("MainWindow", "Label"))
-        self.image_label.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Imaging"))
         self.label_39.setText(_translate("MainWindow", "mm"))
         self.move_abs_button.setText(_translate("MainWindow", "MOVE"))
