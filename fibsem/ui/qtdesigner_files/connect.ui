@@ -93,7 +93,7 @@
        <item row="5" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>Save Path</string>
+          <string> Save Path</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -103,7 +103,7 @@
        <item row="3" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_13">
          <property name="text">
-          <string>Autocontrast</string>
+          <string> Autocontrast</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -168,17 +168,10 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>Resolution (WxH)</string>
+          <string> Resolution (WxH)</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="2">
-        <widget class="QLabel" name="label_18">
-         <property name="text">
-          <string>microns</string>
          </property>
         </widget>
        </item>
@@ -213,16 +206,6 @@
        </item>
        <item row="2" column="1">
         <widget class="QDoubleSpinBox" name="dwell_time_setting"/>
-       </item>
-       <item row="8" column="0" alignment="Qt::AlignLeft">
-        <widget class="QLabel" name="label_17">
-         <property name="text">
-          <string>Horizontal Field Width</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
        </item>
        <item row="7" column="1">
         <widget class="QCheckBox" name="autosave_enable">
@@ -279,7 +262,7 @@
        <item row="4" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_15">
          <property name="text">
-          <string>Gamma </string>
+          <string> Gamma </string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -312,7 +295,7 @@
        <item row="7" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_19">
          <property name="text">
-          <string>Autosave</string>
+          <string> Autosave</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -323,13 +306,6 @@
         <widget class="QPushButton" name="take_image">
          <property name="text">
           <string>Take Image</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QSpinBox" name="hfw_box">
-         <property name="maximum">
-          <number>5000</number>
          </property>
         </widget>
        </item>
@@ -349,7 +325,7 @@
        <item row="2" column="0" alignment="Qt::AlignLeft">
         <widget class="QLabel" name="label_12">
          <property name="text">
-          <string>Dwell time</string>
+          <string> Dwell time</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -391,12 +367,36 @@
        <item row="6" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Label</string>
+          <string> Label</string>
          </property>
         </widget>
        </item>
        <item row="6" column="1" colspan="3">
         <widget class="QLineEdit" name="image_label"/>
+       </item>
+       <item row="8" column="3">
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>microns</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="2">
+        <widget class="QSpinBox" name="hfw_box">
+         <property name="maximum">
+          <number>5000</number>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0" colspan="2">
+        <widget class="QLabel" name="label_17">
+         <property name="text">
+          <string> Horizontal Field Width</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
