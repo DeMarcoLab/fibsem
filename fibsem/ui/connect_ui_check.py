@@ -40,26 +40,26 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
         self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
 
-        self.gamma_settings = GammaSettings(
-            enabled=True,
-            min_gamma=0.5,
-            max_gamma=1.8,
-            scale_factor=0.01,
-            threshold=46,
-        )
+        # self.gamma_settings = GammaSettings(
+        #     enabled=True,
+        #     min_gamma=0.5,
+        #     max_gamma=1.8,
+        #     scale_factor=0.01,
+        #     threshold=46,
+        # )
 
-        self.image_settings =  ImageSettings(
-                resolution="1536x1024",
-                dwell_time=1.0e-6,
-                hfw=600.0e-6,
-                autocontrast=False,
-                beam_type=BeamType.ION,
-                gamma=self.gamma_settings,
-                save=False,
-                save_path="fibsem\\test_images",
-                label=utils.current_timestamp(),
-                reduced_area=None,
-            )
+        # self.image_settings =  ImageSettings(
+        #         resolution="1536x1024",
+        #         dwell_time=1.0e-6,
+        #         hfw=600.0e-6,
+        #         autocontrast=False,
+        #         beam_type=BeamType.ION,
+        #         gamma=self.gamma_settings,
+        #         save=False,
+        #         save_path="fibsem\\test_images",
+        #         label=utils.current_timestamp(),
+        #         reduced_area=None,
+        #     )
 
         self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
 
@@ -279,11 +279,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def gamma_check(self):
 
         if self.gamma_enabled.checkState() == 2:
-            self.gamma_settings.enabled = True
+            self.image_settings.gamma.enabled = True
             logging.info("UI | Gamma Enabled")
             
         elif self.gamma_enabled.checkState() == 0:
-            self.gamma_settings.enabled = False
+            self.image_settings.gamma.enabled = False
             logging.info("UI | Gamma Disabled")
             
 
@@ -324,6 +324,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         try:
             self.microscope, self.microscope_settings = utils.setup_session()
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
+            self.image_settings = self.microscope_settings.image
             logging.info("Microscope Connected")
             self.RefImage.setEnabled(True)
             self.ResetImage.setEnabled(True)
@@ -348,6 +349,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.microscope.disconnect()
         self.microscope = None
+        self.microscope_settings = None
         self.RefImage.setEnabled(False)
         self.ResetImage.setEnabled(False)
         self.take_image.setEnabled(False)
@@ -436,26 +438,28 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def reset_image_and_gammaSettings(self):
 
-        self.gamma_settings = GammaSettings(
-            enabled=True,
-            min_gamma=0.5,
-            max_gamma=1.8,
-            scale_factor=0.01,
-            threshold=46,
-        )
+        # self.gamma_settings = GammaSettings(
+        #     enabled=True,
+        #     min_gamma=0.5,
+        #     max_gamma=1.8,
+        #     scale_factor=0.01,
+        #     threshold=46,
+        # )
 
-        self.image_settings =  ImageSettings(
-                resolution="1536x1024",
-                dwell_time=1.0e-6,
-                hfw=600.0e-6,
-                autocontrast=False,
-                beam_type=BeamType.ION,
-                gamma=self.gamma_settings,
-                save=True,
-                save_path="fibsem\\test_images",
-                label=utils.current_timestamp(),
-                reduced_area=None,
-            )
+        # self.image_settings =  ImageSettings(
+        #         resolution="1536x1024",
+        #         dwell_time=1.0e-6,
+        #         hfw=600.0e-6,
+        #         autocontrast=False,
+        #         beam_type=BeamType.ION,
+        #         gamma=self.gamma_settings,
+        #         save=True,
+        #         save_path="fibsem\\test_images",
+        #         label=utils.current_timestamp(),
+        #         reduced_area=None,
+        #     )
+        settings = utils.load_settings_from_config()
+        self.image_settings = settings.image
         
         self.reset_ui_settings()
         
@@ -472,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.res_height.setValue(int(res_ful[1]))
 
 
-        if self.gamma_settings.enabled:
+        if self.image_settings.gamma.enabled:
             self.gamma_enabled.setCheckState(2)
         else:
             self.gamma_enabled.setCheckState(0)
