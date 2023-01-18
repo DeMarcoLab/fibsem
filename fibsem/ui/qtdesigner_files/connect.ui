@@ -28,7 +28,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>441</width>
+      <width>451</width>
       <height>461</height>
      </rect>
     </property>
@@ -78,7 +78,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>421</width>
+        <width>431</width>
         <height>431</height>
        </rect>
       </property>
@@ -186,7 +186,7 @@
         <widget class="QCheckBox" name="check_EB">
          <property name="font">
           <font>
-           <pointsize>10</pointsize>
+           <pointsize>8</pointsize>
           </font>
          </property>
          <property name="text">
@@ -268,7 +268,7 @@
         <widget class="QCheckBox" name="check_IB">
          <property name="font">
           <font>
-           <pointsize>10</pointsize>
+           <pointsize>8</pointsize>
           </font>
          </property>
          <property name="text">
