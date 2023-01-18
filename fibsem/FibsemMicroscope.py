@@ -365,8 +365,6 @@ class TescanMicroscope(FibsemMicroscope):
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
 
-        
-
         return image
 
     def _get_eb_image(self, image_settings=ImageSettings) -> FibsemImage:
