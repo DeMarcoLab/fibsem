@@ -1,20 +1,18 @@
 import sys
-import pathlib
-from datetime import datetime
+
 import re
 
 from fibsem.ui.qtdesigner_files import connect
 
 from fibsem import utils, acquire
-from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemImage, FibsemStagePosition
-from pprint import pprint
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 import os
 import tkinter
 from tkinter import filedialog
 import fibsem.constants as constants
 
 from qtpy import QtWidgets
-from PyQt5.QtCore import QTimer,QDateTime
+from PyQt5.QtCore import QTimer
 import numpy as np
 
 import logging
@@ -40,27 +38,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
         self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
 
-        # self.gamma_settings = GammaSettings(
-        #     enabled=True,
-        #     min_gamma=0.5,
-        #     max_gamma=1.8,
-        #     scale_factor=0.01,
-        #     threshold=46,
-        # )
-
-        # self.image_settings =  ImageSettings(
-        #         resolution="1536x1024",
-        #         dwell_time=1.0e-6,
-        #         hfw=600.0e-6,
-        #         autocontrast=False,
-        #         beam_type=BeamType.ION,
-        #         gamma=self.gamma_settings,
-        #         save=False,
-        #         save_path="fibsem\\test_images",
-        #         label=utils.current_timestamp(),
-        #         reduced_area=None,
-        #     )
-
+ 
         self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
 
         # Initialise microscope object
