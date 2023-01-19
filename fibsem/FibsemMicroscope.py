@@ -389,7 +389,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.beam_current.value = imaging_current
         self.connection.patterning.mode = "Serial"
 
-    def draw_rectangle(self, mill_settings: MillingSettings) -> Union['CleaningCrossSectionPattern', 'RectanglePattern']:
+    def draw_rectangle(self, mill_settings: MillingSettings):
+        
         if mill_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
                 center_x=mill_settings.centre_x,
@@ -409,7 +410,6 @@ class ThermoMicroscope(FibsemMicroscope):
 
         pattern.rotation = mill_settings.rotation
         pattern.scan_direction = mill_settings.scan_direction
-        return pattern
 
 class TescanMicroscope(FibsemMicroscope):
     """TESCAN Microscope class, uses FibsemMicroscope as blueprint
