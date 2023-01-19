@@ -44,6 +44,7 @@ def setup_milling(
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
     hfw: float = 150e-6,
+    mill_settings: MillingSettings = MillingSettings(),
 ):
     """Setup Microscope for Ion Beam Milling.
 
@@ -53,7 +54,7 @@ def setup_milling(
         patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
-    microscope.setup_milling(application_file, patterning_mode, hfw)
+    microscope.setup_milling(application_file, patterning_mode, hfw, mill_settings)
     logging.info(f"setup ion beam milling")
     logging.info(
         f"application file:  {application_file}, pattern mode: {patterning_mode}, hfw: {hfw}"
@@ -106,7 +107,7 @@ def milling_protocol(
  ):
     # setup milling
     hfw = image_settings.hfw
-    setup_milling(microscope, application_file, patterning_mode, hfw)
+    setup_milling(microscope, application_file, patterning_mode, hfw, mill_settings)
 
     # draw patterns NOTE: Currently only implementing rectangle pattern
     draw_rectangle(microscope, mill_settings)
