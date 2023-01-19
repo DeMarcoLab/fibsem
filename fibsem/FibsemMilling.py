@@ -91,7 +91,7 @@ def finish_milling(
 
 def draw_rectangle(
     microscope: FibsemMicroscope, mill_settings: MillingSettings
-) -> Union[CleaningCrossSectionPattern, RectanglePattern]: # TODO: Will need to abstract away these return types to have FIBSEM equivalents.
+):
     """Draw a rectangular milling pattern from settings
 
     Args:
@@ -101,8 +101,7 @@ def draw_rectangle(
     Returns:
         Union[CleaningCrossSectionPattern, RectanglePattern]: milling pattern
     """
-    pattern = microscope.draw_rectangle(mill_settings)
-    return pattern
+    microscope.draw_rectangle(mill_settings)
 
 ############################# UTILS #############################
 
