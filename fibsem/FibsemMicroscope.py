@@ -12,6 +12,8 @@ if manufacturer == "Tescan":
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
+    from tescanautomation.DrawBeam import IEtching 
+
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -359,7 +361,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return
 
-    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float):
+    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float,mill_settings: MillingSettings):
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         self.connection.imaging.set_active_device(BeamType.ION.value)
         self.connection.patterning.set_default_beam_type(BeamType.ION.value)  # ion beam default
@@ -725,18 +727,67 @@ class TescanMicroscope(FibsemMicroscope):
 
         return
 
-    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float):
-        pass
+    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float,mill_settings: MillingSettings):
+        
+        fieldsize = 0.00025 #application_file.ajhsd or mill settings
+        beam_current = mill_settings.milling_current
+        spot_size = 5.0e-8 # application_file
+        rate = 3.0e-3 
+        dwell_time = 1.0e-6 # in seconds
+        
+        if patterning_mode == "Serial":
+            parallel_mode = False
+        else:
+            parallel_mode = True
+        
+
+        layer_settings = IEtching(syncWriteField=False,
+        writeFieldSize=fieldsize,
+        beamCurrent=beam_current,
+        spotSize=spot_size,
+        rate=rate,
+        dwellTime=dwell_time,
+        parallel=parallel_mode,
+        )
+
+        self.layer = self.connection.DrawBeam.Layer('Layer',layer_settings)
+
+
 
     def run_milling(self, milling_current: float, asynch: bool = False):
-        pass
+        
+        self.connection.FIB.Beam.On()
+        self.connection.DrawBeam.LoadLayer(self.layer)
+        self.connection.DrawBeam.Start()
 
     def finish_milling(self, imaging_current: float):
-        pass
+        self.connection.DrawBeam.UnloadLayer()
 
     def draw_rectangle(self, mill_settings: MillingSettings):
-        pass
+        
+        centre_x = mill_settings.centre_x
+        centre_y = mill_settings.centre_y
+        depth = mill_settings.depth
+        width = mill_settings.width
+        height = mill_settings.height
+        rotation = mill_settings.rotation # CHECK UNITS (TESCAN Takes Degrees)
+
+
+
+
+        self.layer.addRectangleFilled(CenterX=centre_x,CenterY=centre_y,Depth=depth,Width=width,Height=height,Rotation=rotation)
+
+        
        
+
+
+
+
+
+
+
+
+
 
 def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
     """Check the rotation angles are large
