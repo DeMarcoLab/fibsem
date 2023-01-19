@@ -1,7 +1,7 @@
 from fibsem import constants
 import logging
 import numpy as np
-from fibsem.structures import BeamType, MillingSettings, Point
+from fibsem.structures import BeamType, MillingSettings, Point, ImageSettings
 from typing import Union
 from FibsemMicroscope import FibsemMicroscope
 
@@ -97,11 +97,25 @@ def draw_rectangle(
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
         mill_settings (MillingSettings): milling pattern settings
-
-    Returns:
-        Union[CleaningCrossSectionPattern, RectanglePattern]: milling pattern
     """
     microscope.draw_rectangle(mill_settings)
+
+
+def milling_protocol(
+    microscope: FibsemMicroscope, image_settings: ImageSettings, mill_settings: MillingSettings, application_file: str = "autolamella", patterning_mode: str = "Serial"
+ ):
+    # setup milling
+    hfw = image_settings.hfw
+    setup_milling(microscope, application_file, patterning_mode, hfw)
+
+    # draw patterns NOTE: Currently only implementing rectangle pattern
+    draw_rectangle(microscope, mill_settings)
+
+    # run milling
+    run_milling(microscope, mill_settings.milling_current)
+
+    # finish milling
+    finish_milling(microscope)
 
 ############################# UTILS #############################
 
