@@ -36,11 +36,11 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
-      <string>General</string>
+      <string>Connection</string>
      </attribute>
      <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
@@ -769,7 +769,7 @@
        <rect>
         <x>-1</x>
         <y>-1</y>
-        <width>451</width>
+        <width>441</width>
         <height>441</height>
        </rect>
       </property>
@@ -853,25 +853,6 @@
          </item>
          <item row="3" column="4">
           <widget class="QDoubleSpinBox" name="doubleSpinBox_rotation"/>
-         </item>
-         <item row="5" column="4">
-          <widget class="QComboBox" name="comboBox_scan_direction">
-           <item>
-            <property name="text">
-             <string>TopToBottom</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>BottomToTop</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>ZigZag</string>
-            </property>
-           </item>
-          </widget>
          </item>
          <item row="3" column="2">
           <widget class="QLabel" name="label_47">
@@ -959,7 +940,26 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="4">
+         <item row="5" column="4" colspan="2">
+          <widget class="QComboBox" name="comboBox_scan_direction">
+           <item>
+            <property name="text">
+             <string>TopToBottom</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>BottomToTop</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>ZigZag</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="6" column="4" colspan="2">
           <widget class="QComboBox" name="comboBox_pattern">
            <item>
             <property name="text">

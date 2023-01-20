@@ -787,7 +787,7 @@ class TescanMicroscope(FibsemMicroscope):
 
 
 
-
+######################################## Helper functions ########################################
 
 
 
