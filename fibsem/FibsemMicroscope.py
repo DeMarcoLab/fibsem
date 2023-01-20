@@ -6,13 +6,18 @@ import datetime
 import numpy as np
 from fibsem.config import load_microscope_manufacturer
 import sys
+
+from typing import Union
 import fibsem.constants as constants
+
 
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
+    from tescanautomation.DrawBeam import IEtching 
+
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -31,6 +36,7 @@ if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
     from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
+    from autoscript_sdb_microscope_client._dynamic_object_proxies import RectanglePattern, CleaningCrossSectionPattern
 
 import sys
 
@@ -45,6 +51,7 @@ from fibsem.structures import (
     MicroscopeSettings,
     BeamSettings,
     FibsemStagePosition,
+    MillingSettings,
 )
 
 
@@ -82,6 +89,23 @@ class FibsemMicroscope(ABC):
     @abstractmethod
     def eucentric_move(self):
         pass
+
+    @abstractmethod
+    def setup_milling(self):
+        pass
+
+    @abstractmethod
+    def run_milling(self):
+        pass
+
+    @abstractmethod
+    def finish_milling(self):
+        pass
+
+    @abstractmethod
+    def draw_rectangle(self):
+        pass
+
 
 class ThermoMicroscope(FibsemMicroscope):
     """ThermoFisher Microscope class, uses FibsemMicroscope as blueprint
@@ -334,6 +358,57 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return
 
+    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float,mill_settings: MillingSettings):
+        self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
+        self.connection.imaging.set_active_device(BeamType.ION.value)
+        self.connection.patterning.set_default_beam_type(BeamType.ION.value)  # ion beam default
+        self.connection.patterning.set_default_application_file(application_file)
+        self.connection.patterning.mode = patterning_mode
+        self.connection.patterning.clear_patterns()  # clear any existing patterns
+        self.connection.beams.ion_beam.horizontal_field_width.value = hfw
+
+    def run_milling(self, milling_current: float, asynch: bool = False):
+        # change to milling current
+        self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
+        if self.connection.beams.ion_beam.beam_current.value != milling_current:
+            logging.info(f"changing to milling current: {milling_current:.2e}")
+            self.connection.beams.ion_beam.beam_current.value = milling_current
+
+        # run milling (asynchronously)
+        logging.info(f"running ion beam milling now... asynchronous={asynch}")
+        if asynch:
+            self.connection.patterning.start()
+        else:
+            self.connection.patterning.run()
+            self.connection.patterning.clear_patterns()
+        # NOTE: Make tescan logs the same??
+
+    def finish_milling(self, imaging_current: float):
+        self.connection.patterning.clear_patterns()
+        self.connection.beams.ion_beam.beam_current.value = imaging_current
+        self.connection.patterning.mode = "Serial"
+
+    def draw_rectangle(self, mill_settings: MillingSettings):
+        
+        if mill_settings.cleaning_cross_section:
+            pattern = self.connection.patterning.create_cleaning_cross_section(
+                center_x=mill_settings.centre_x,
+                center_y=mill_settings.centre_y,
+                width=mill_settings.width,
+                height=mill_settings.height,
+                depth=mill_settings.depth,
+            )
+        else:
+            pattern = self.connection.patterning.create_rectangle(
+                center_x=mill_settings.centre_x,
+                center_y=mill_settings.centre_y,
+                width=mill_settings.width,
+                height=mill_settings.height,
+                depth=mill_settings.depth,
+            )
+
+        pattern.rotation = mill_settings.rotation
+        pattern.scan_direction = mill_settings.scan_direction
 
 class TescanMicroscope(FibsemMicroscope):
     """TESCAN Microscope class, uses FibsemMicroscope as blueprint
@@ -656,6 +731,68 @@ class TescanMicroscope(FibsemMicroscope):
         # self.connection.specimen.stage.link() # TODO how to link for TESCAN?
 
         return
+
+    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float,mill_settings: MillingSettings):
+        
+        fieldsize = 0.00025 #application_file.ajhsd or mill settings
+        beam_current = mill_settings.milling_current
+        spot_size = 5.0e-8 # application_file
+        rate = 3.0e-3 ## in application file called Volume per Dose (m3/C)
+        dwell_time = 1.0e-6 # in seconds ## in application file
+        
+        if patterning_mode == "Serial":
+            parallel_mode = False
+        else:
+            parallel_mode = True
+        
+
+        layer_settings = IEtching(syncWriteField=False,
+        writeFieldSize=hfw,
+        beamCurrent=beam_current,
+        spotSize=spot_size,
+        rate=rate,
+        dwellTime=dwell_time,
+        parallel=parallel_mode,
+        )
+
+        self.layer = self.connection.DrawBeam.Layer('Layer',layer_settings)
+
+
+
+    def run_milling(self, milling_current: float, asynch: bool = False):
+        
+        self.connection.FIB.Beam.On()
+        self.connection.DrawBeam.LoadLayer(self.layer)
+        self.connection.DrawBeam.Start()
+
+    def finish_milling(self, imaging_current: float):
+        self.connection.DrawBeam.UnloadLayer()
+
+    def draw_rectangle(self, mill_settings: MillingSettings):
+        
+        centre_x = mill_settings.centre_x
+        centre_y = mill_settings.centre_y
+        depth = mill_settings.depth
+        width = mill_settings.width
+        height = mill_settings.height
+        rotation = mill_settings.rotation # CHECK UNITS (TESCAN Takes Degrees)
+
+
+
+
+        self.layer.addRectangleFilled(CenterX=centre_x,CenterY=centre_y,Depth=depth,Width=width,Height=height,Rotation=rotation)
+
+        
+       
+
+
+
+
+
+
+
+
+
 
 def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
     """Check the rotation angles are large

@@ -123,6 +123,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
             coordinate_system="raw" )
         
+
+
+
         else:
             position = FibsemStagePosition(
                 x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
@@ -148,6 +151,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         return position
 
+
     def move_microscope_abs(self):
         """Moves microscope stage in absolute coordinates
         """
@@ -166,6 +170,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         """
 
 
+
         logging.info("Moving Stage in Relative Coordinates")
 
         move = self.read_relative_move_meters()
@@ -173,6 +178,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             move
         )
         logging.info(f"Moved by dx:{self.dXchange.value():.3f} mm dy:{self.dYchange.value():.3f} mm dz:{self.dZchange.value():.3f} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
+
 
         # Get Stage Position and Set UI Display
         self.update_position_ui()
@@ -312,6 +318,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.move_abs_button.setEnabled(True)
             self.microscope_status.setText("Microscope Connected")
             self.microscope_status.setStyleSheet("background-color: green")
+
         except:
             # logging.('Unable to connect to microscope')
             self.microscope_status.setText("Microscope Disconnected")
