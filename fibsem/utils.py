@@ -157,7 +157,7 @@ def setup_session(
             ip_address=settings.system.ip_address, port=8300
         )
 
-    # image_setttings
+    # image_settings
     settings.image.save_path = session_path
 
     logging.info(f"Finished setup for session: {session}")

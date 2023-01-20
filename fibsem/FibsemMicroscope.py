@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
 import copy
 import logging
+from copy import deepcopy
 import datetime
 import numpy as np
 from fibsem.config import load_microscope_manufacturer
 import sys
+
 from typing import Union
+import fibsem.constants as constants
+
 
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
@@ -26,6 +30,7 @@ if manufacturer == "Tescan":
     sys.modules.pop("tescanautomation.pyside6gui.infobar_utils")
     sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
+    sys.modules.pop("PySide6.QtCore")
 
 if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
@@ -235,6 +240,7 @@ class ThermoMicroscope(FibsemMicroscope):
             CoordinateSystem.RAW
         )
         stage_position = self.connection.specimen.stage.current_position
+        print(stage_position)
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.SPECIMEN
         )
@@ -287,22 +293,13 @@ class ThermoMicroscope(FibsemMicroscope):
             None
         """
         stage = self.connection.specimen.stage
-
-        stage.absolute_move(
-            position.x,
-            position.y,
-            position.z,
-            position.r,
-            position.t,
-        )
+        thermo_position = position.to_autoscript_position()
+        thermo_position.coordinate_system = CoordinateSystem.RAW
+        stage.absolute_move(thermo_position)
 
     def move_stage_relative(
         self,
-        dx: float = None,
-        dy: float = None,
-        dz: float = None,
-        dr: float = None,
-        dt: float = None,
+        position : FibsemStagePosition,
     ):
         """Move the stage by the specified relative move.
 
@@ -316,10 +313,10 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-
         stage = self.connection.specimen.stage
-        new_position = FibsemStagePosition(dx, dy, dz, dr, dt, "raw")
-        stage.relative_move(new_position)
+        thermo_position = position.to_autoscript_position()
+        thermo_position.coordinate_system = CoordinateSystem.RAW
+        stage.relative_move(thermo_position)
 
     def eucentric_move(
         self,
@@ -350,7 +347,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # move stage
         stage_position = FibsemStagePosition(
-            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000
+            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000, r=0, t=0, coordinate_system="raw"
         )
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
@@ -435,6 +432,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address, port)
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
+
         if image_settings.beam_type.value == 1:
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
@@ -454,8 +452,9 @@ class TescanMicroscope(FibsemMicroscope):
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
         detector = self.connection.SEM.Detector.SESuitable()
-        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_16_bit)
+        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_8_bit)
 
+        dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
         # resolution
         numbers = re.findall(r"\d+", image_settings.resolution)
         imageWidth = int(numbers[0])
@@ -464,7 +463,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.SEM.Optics.SetViewfield(image_settings.hfw * 1000)
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, 1000
+            0, imageWidth, imageHeight, dwell_time
         )
 
         microscope_state = MicroscopeState(
@@ -495,8 +494,12 @@ class TescanMicroscope(FibsemMicroscope):
             ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
         fibsem_image = FibsemImage.fromTescanImage(
-            image, image_settings, microscope_state
+            image, deepcopy(image_settings), microscope_state
         )
+
+        res = fibsem_image.data.shape
+
+        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
 
         return fibsem_image
 
@@ -513,6 +516,8 @@ class TescanMicroscope(FibsemMicroscope):
             0, self.ion_detector_active, Bpp.Grayscale_8_bit
         )
 
+        dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
+
         # resolution
         numbers = re.findall(r"\d+", image_settings.resolution)
         imageWidth = int(numbers[0])
@@ -521,7 +526,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(image_settings.hfw * 1000)
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, 1000
+            0, imageWidth, imageHeight, dwell_time
         )
 
         microscope_state = MicroscopeState(
@@ -553,8 +558,12 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         fibsem_image = FibsemImage.fromTescanImage(
-            image, image_settings, microscope_state
+            image, deepcopy(image_settings), microscope_state
         )
+
+        res = fibsem_image.data.shape
+
+        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
 
         return fibsem_image
 
@@ -569,7 +578,7 @@ class TescanMicroscope(FibsemMicroscope):
 
     def get_stage_position(self):
         x, y, z, r, t = self.connection.Stage.GetPosition()
-        stage_position = FibsemStagePosition(x/1000, y/1000, z/1000, r, t, "raw")
+        stage_position = FibsemStagePosition(x/1000, y/1000, z/1000, r*constants.DEGREES_TO_RADIANS, t*constants.DEGREES_TO_RADIANS, "raw")
         return stage_position
 
     def get_current_microscope_state(self) -> MicroscopeState:
@@ -646,20 +655,16 @@ class TescanMicroscope(FibsemMicroscope):
             None
         """
         self.connection.Stage.MoveTo(
-            position.x * 1000,
-            position.y * 1000,
-            position.z * 1000,
-            position.r,
-            position.t,
+            position.x * constants.METRE_TO_MILLIMETRE,
+            position.y * constants.METRE_TO_MILLIMETRE,
+            position.z * constants.METRE_TO_MILLIMETRE,
+            position.r * constants.RADIANS_TO_DEGREES,
+            position.t * constants.RADIANS_TO_DEGREES,
         )
 
     def move_stage_relative(
         self,
-        dx: float = 0.0,
-        dy: float = 0.0,
-        dz: float = 0.0,
-        dr: float = 0.0,
-        dt: float = 0.0,
+        position: FibsemStagePosition,
     ):
         """Move the stage by the specified relative move.
 
@@ -679,11 +684,11 @@ class TescanMicroscope(FibsemMicroscope):
         y_m = current_position.y
         z_m = current_position.z
         new_position = FibsemStagePosition(
-            x_m + dx,
-            y_m + dy,
-            z_m + dz,
-            current_position.r + dr,
-            current_position.t + dt,
+            x_m + position.x,
+            y_m + position.y,
+            z_m + position.z,
+            current_position.r + position.r,
+            current_position.t + position.t,
             "raw",
         )
         self.move_stage_absolute(new_position)
