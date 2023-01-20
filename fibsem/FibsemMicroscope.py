@@ -87,7 +87,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def eucentric_move(self):
+    def stable_move(self):
         pass
 
     @abstractmethod
@@ -318,7 +318,7 @@ class ThermoMicroscope(FibsemMicroscope):
         thermo_position.coordinate_system = CoordinateSystem.RAW
         stage.relative_move(thermo_position)
 
-    def eucentric_move(
+    def stable_move(
         self,
         settings: MicroscopeSettings,
         dx: float,
@@ -693,7 +693,7 @@ class TescanMicroscope(FibsemMicroscope):
         )
         self.move_stage_absolute(new_position)
 
-    def eucentric_move(
+    def stable_move(
         self,
         settings: MicroscopeSettings,
         dx: float,
