@@ -732,8 +732,8 @@ class TescanMicroscope(FibsemMicroscope):
         fieldsize = 0.00025 #application_file.ajhsd or mill settings
         beam_current = mill_settings.milling_current
         spot_size = 5.0e-8 # application_file
-        rate = 3.0e-3 
-        dwell_time = 1.0e-6 # in seconds
+        rate = 3.0e-3 ## in application file called Volume per Dose (m3/C)
+        dwell_time = 1.0e-6 # in seconds ## in application file
         
         if patterning_mode == "Serial":
             parallel_mode = False
@@ -742,7 +742,7 @@ class TescanMicroscope(FibsemMicroscope):
         
 
         layer_settings = IEtching(syncWriteField=False,
-        writeFieldSize=fieldsize,
+        writeFieldSize=hfw,
         beamCurrent=beam_current,
         spotSize=spot_size,
         rate=rate,
