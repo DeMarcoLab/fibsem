@@ -22,7 +22,7 @@ if manufacturer == "Tescan":
     # from tescanautomation.GUI import SEMInfobar
     import re
 
-    # del globals()[tescanautomation.GUI]
+    #del globals()[tescanautomation.GUI]
     sys.modules.pop("tescanautomation.GUI")
     sys.modules.pop("tescanautomation.pyside6gui")
     sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
