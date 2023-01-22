@@ -106,6 +106,10 @@ class FibsemMicroscope(ABC):
     def draw_rectangle(self):
         pass
 
+    @abstractmethod
+    def set_microscope_state(self):
+        pass
+
 
 class ThermoMicroscope(FibsemMicroscope):
     """ThermoFisher Microscope class, uses FibsemMicroscope as blueprint
@@ -409,6 +413,63 @@ class ThermoMicroscope(FibsemMicroscope):
 
         pattern.rotation = mill_settings.rotation
         pattern.scan_direction = mill_settings.scan_direction
+
+
+    def set_microscope_state(
+        self, microscope_state: MicroscopeState
+    ):
+        """Reset the microscope state to the provided state"""
+
+        logging.info(f"restoring microscope state...")
+
+        # move to position
+        self.move_stage_absolute(
+            stage_position=microscope_state.absolute_position
+        )
+
+        # restore electron beam
+        logging.info(f"restoring electron beam settings...")
+        self.connection.beams.electron_beam.working_distance.value = (
+            microscope_state.eb_settings.working_distance
+        )
+        self.connection.beams.electron_beam.beam_current.value = (
+            microscope_state.eb_settings.beam_current
+        )
+        self.connection.beams.electron_beam.horizontal_field_width.value = (
+            microscope_state.eb_settings.hfw
+        )
+        self.connection.beams.electron_beam.scanning.resolution.value = (
+            microscope_state.eb_settings.resolution
+        )
+        self.connection.beams.electron_beam.scanning.dwell_time.value = (
+            microscope_state.eb_settings.dwell_time
+        )
+        # microscope.beams.electron_beam.stigmator.value = (
+        #     microscope_state.eb_settings.stigmation
+        # )
+
+        # restore ion beam
+        logging.info(f"restoring ion beam settings...")
+        self.connection.beams.ion_beam.working_distance.value = (
+            microscope_state.ib_settings.working_distance
+        )
+        self.connection.beams.ion_beam.beam_current.value = (
+            microscope_state.ib_settings.beam_current
+        )
+        self.connection.beams.ion_beam.horizontal_field_width.value = (
+            microscope_state.ib_settings.hfw
+        )
+        self.connection.beams.ion_beam.scanning.resolution.value = (
+            microscope_state.ib_settings.resolution
+        )
+        self.connection.beams.ion_beam.scanning.dwell_time.value = (
+            microscope_state.ib_settings.dwell_time
+        )
+        # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
+
+        self.connection.specimen.stage.link()
+        logging.info(f"microscope state restored")
+        return
 
 class TescanMicroscope(FibsemMicroscope):
     """TESCAN Microscope class, uses FibsemMicroscope as blueprint
@@ -782,7 +843,41 @@ class TescanMicroscope(FibsemMicroscope):
 
         self.layer.addRectangleFilled(CenterX=centre_x,CenterY=centre_y,Depth=depth,Width=width,Height=height,Rotation=rotation)
 
-        
+    def set_microscope_state(
+        self, microscope_state: MicroscopeState
+    ):
+        """Reset the microscope state to the provided state"""
+
+        logging.info(f"restoring microscope state...")
+
+        # move to position
+        self.move_stage_absolute(
+            stage_position=microscope_state.absolute_position
+        )
+
+        # restore electron beam
+        logging.info(f"restoring electron beam settings...")
+        self.connection.SEM.Optics.SetWD(microscope_state.eb_settings.working_distance) 
+
+        self.connection.SEM.Beam.SetCurrent(microscope_state.eb_settings.beam_current)
+
+        self.connection.SEM.Optics.SetViewfield(microscope_state.eb_settings.hfw)
+
+        # microscope.beams.electron_beam.stigmator.value = (
+        #     microscope_state.eb_settings.stigmation
+        # )
+
+        # restore ion beam
+        logging.info(f"restoring ion beam settings...")
+
+        self.connection.FIB.Optics.SetViewfield(
+            microscope_state.ib_settings.hfw
+        )
+
+        # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
+
+        logging.info(f"microscope state restored")
+        return  
        
 
 
