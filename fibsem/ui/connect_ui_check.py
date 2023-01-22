@@ -1,20 +1,15 @@
 import sys
-
 import re
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import connect
-
 from fibsem import utils, acquire
-
 import os
 import tkinter
 from tkinter import filedialog
 import fibsem.constants as constants
-
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer
 import numpy as np
-
 import logging
 import napari
 

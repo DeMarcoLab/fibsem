@@ -15,14 +15,14 @@ manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
     from tescanautomation.Common import Document
     
-    sys.modules.pop("tescanautomation.GUI")
-    sys.modules.pop("tescanautomation.pyside6gui")
-    sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
-    sys.modules.pop("tescanautomation.pyside6gui.infobar_private")
-    sys.modules.pop("tescanautomation.pyside6gui.infobar_utils")
-    sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
-    sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
-    sys.modules.pop("PySide6.QtCore")
+    # sys.modules.pop("tescanautomation.GUI")
+    # sys.modules.pop("tescanautomation.pyside6gui")
+    # sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
+    # sys.modules.pop("tescanautomation.pyside6gui.infobar_private")
+    # sys.modules.pop("tescanautomation.pyside6gui.infobar_utils")
+    # sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
+    # sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
+    # sys.modules.pop("PySide6.QtCore")
 elif manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage,
