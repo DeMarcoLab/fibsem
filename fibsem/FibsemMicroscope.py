@@ -16,8 +16,7 @@ if manufacturer == "Tescan":
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
-    from tescanautomation.DrawBeam import IEtching 
-
+    from tescanautomation.DrawBeam import IEtching
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -36,7 +35,10 @@ if manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
     from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
-    from autoscript_sdb_microscope_client._dynamic_object_proxies import RectanglePattern, CleaningCrossSectionPattern
+    from autoscript_sdb_microscope_client._dynamic_object_proxies import (
+        RectanglePattern,
+        CleaningCrossSectionPattern,
+    )
 
 import sys
 
@@ -299,7 +301,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def move_stage_relative(
         self,
-        position : FibsemStagePosition,
+        position: FibsemStagePosition,
     ):
         """Move the stage by the specified relative move.
 
@@ -347,21 +349,34 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # move stage
         stage_position = FibsemStagePosition(
-            x=x_move.x * 1000, y=yz_move.y * 1000, z=yz_move.z * 1000, r=0, t=0, coordinate_system="raw"
+            x=x_move.x * 1000,
+            y=yz_move.y * 1000,
+            z=yz_move.z * 1000,
+            r=0,
+            t=0,
+            coordinate_system="raw",
         )
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
 
         # adjust working distance to compensate for stage movement
         self.connection.beams.electron_beam.working_distance.value = wd
-        self.connection.specimen.stage.link() 
+        self.connection.specimen.stage.link()
 
         return
 
-    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float,mill_settings: MillingSettings):
+    def setup_milling(
+        self,
+        application_file: str,
+        patterning_mode: str,
+        hfw: float,
+        mill_settings: MillingSettings,
+    ):
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         self.connection.imaging.set_active_device(BeamType.ION.value)
-        self.connection.patterning.set_default_beam_type(BeamType.ION.value)  # ion beam default
+        self.connection.patterning.set_default_beam_type(
+            BeamType.ION.value
+        )  # ion beam default
         self.connection.patterning.set_default_application_file(application_file)
         self.connection.patterning.mode = patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
@@ -389,7 +404,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.mode = "Serial"
 
     def draw_rectangle(self, mill_settings: MillingSettings):
-        
+
         if mill_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
                 center_x=mill_settings.centre_x,
@@ -409,6 +424,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         pattern.rotation = mill_settings.rotation
         pattern.scan_direction = mill_settings.scan_direction
+
 
 class TescanMicroscope(FibsemMicroscope):
     """TESCAN Microscope class, uses FibsemMicroscope as blueprint
@@ -499,7 +515,9 @@ class TescanMicroscope(FibsemMicroscope):
 
         res = fibsem_image.data.shape
 
-        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
+        fibsem_image.metadata.image_settings.resolution = (
+            str(res[1]) + "x" + str(res[0])
+        )
 
         return fibsem_image
 
@@ -563,7 +581,9 @@ class TescanMicroscope(FibsemMicroscope):
 
         res = fibsem_image.data.shape
 
-        fibsem_image.metadata.image_settings.resolution = str(res[1]) + "x" + str(res[0])
+        fibsem_image.metadata.image_settings.resolution = (
+            str(res[1]) + "x" + str(res[0])
+        )
 
         return fibsem_image
 
@@ -578,7 +598,14 @@ class TescanMicroscope(FibsemMicroscope):
 
     def get_stage_position(self):
         x, y, z, r, t = self.connection.Stage.GetPosition()
-        stage_position = FibsemStagePosition(x/1000, y/1000, z/1000, r*constants.DEGREES_TO_RADIANS, t*constants.DEGREES_TO_RADIANS, "raw")
+        stage_position = FibsemStagePosition(
+            x / 1000,
+            y / 1000,
+            z / 1000,
+            r * constants.DEGREES_TO_RADIANS,
+            t * constants.DEGREES_TO_RADIANS,
+            "raw",
+        )
         return stage_position
 
     def get_current_microscope_state(self) -> MicroscopeState:
@@ -720,9 +747,7 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         # move stage
-        stage_position = FibsemStagePosition(
-            x=x_move.x, y=yz_move.y, z=yz_move.z
-        )
+        stage_position = FibsemStagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position.x, stage_position.y, 0, 0, 0)
 
@@ -732,35 +757,38 @@ class TescanMicroscope(FibsemMicroscope):
 
         return
 
-    def setup_milling(self, application_file: str, patterning_mode: str, hfw: float,mill_settings: MillingSettings):
-        
-        fieldsize = 0.00025 #application_file.ajhsd or mill settings
+    def setup_milling(
+        self,
+        application_file: str,
+        patterning_mode: str,
+        hfw: float,
+        mill_settings: MillingSettings,
+    ):
+
+        fieldsize = 0.00025  # application_file.ajhsd or mill settings
         beam_current = mill_settings.milling_current
-        spot_size = 5.0e-8 # application_file
-        rate = 3.0e-3 ## in application file called Volume per Dose (m3/C)
-        dwell_time = 1.0e-6 # in seconds ## in application file
-        
+        spot_size = 5.0e-8  # application_file
+        rate = 3.0e-3  ## in application file called Volume per Dose (m3/C)
+        dwell_time = 1.0e-6  # in seconds ## in application file
+
         if patterning_mode == "Serial":
             parallel_mode = False
         else:
             parallel_mode = True
-        
 
-        layer_settings = IEtching(syncWriteField=False,
-        writeFieldSize=hfw,
-        beamCurrent=beam_current,
-        spotSize=spot_size,
-        rate=rate,
-        dwellTime=dwell_time,
-        parallel=parallel_mode,
+        layer_settings = IEtching(
+            syncWriteField=False,
+            writeFieldSize=hfw,
+            beamCurrent=beam_current,
+            spotSize=spot_size,
+            rate=rate,
+            dwellTime=dwell_time,
+            parallel=parallel_mode,
         )
-
-        self.layer = self.connection.DrawBeam.Layer('Layer',layer_settings)
-
 
 
     def run_milling(self, milling_current: float, asynch: bool = False):
-        
+
         self.connection.FIB.Beam.On()
         self.connection.DrawBeam.LoadLayer(self.layer)
         self.connection.DrawBeam.Start()
@@ -769,29 +797,22 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.DrawBeam.UnloadLayer()
 
     def draw_rectangle(self, mill_settings: MillingSettings):
-        
+
         centre_x = mill_settings.centre_x
         centre_y = mill_settings.centre_y
         depth = mill_settings.depth
         width = mill_settings.width
         height = mill_settings.height
-        rotation = mill_settings.rotation # CHECK UNITS (TESCAN Takes Degrees)
+        rotation = mill_settings.rotation  # CHECK UNITS (TESCAN Takes Degrees)
 
-
-
-
-        self.layer.addRectangleFilled(CenterX=centre_x,CenterY=centre_y,Depth=depth,Width=width,Height=height,Rotation=rotation)
-
-        
-       
-
-
-
-
-
-
-
-
+        self.layer.addRectangleFilled(
+            CenterX=centre_x,
+            CenterY=centre_y,
+            Depth=depth,
+            Width=width,
+            Height=height,
+            Rotation=rotation,
+        )
 
 
 def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
@@ -841,6 +862,7 @@ def angle_difference(angle1: float, angle2: float) -> float:
     small_angle = np.min([angle1, angle2])
 
     return min((large_angle - small_angle), ((2 * np.pi + small_angle - large_angle)))
+
 
 def x_corrected_stage_movement(
     expected_x: float,
