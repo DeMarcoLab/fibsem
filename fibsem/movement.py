@@ -166,7 +166,7 @@ def move_needle_relative_with_corrected_movement(
         dy (float): distance along the y-axis (image corodinates)
         beam_type (BeamType, optional): the beam type to move in. Defaults to BeamType.ELECTRON.
     """
-
+    
     needle = microscope.specimen.manipulator
     stage_tilt = microscope.specimen.stage.current_position.t
 
