@@ -6,7 +6,8 @@ from typing import Union
 from FibsemMicroscope import FibsemMicroscope
 
 #  TODO: Abstract away hardware calls so these imports can be removed
-from fibsem.config import load_microscope_manufacturer 
+from fibsem.config import load_microscope_manufacturer
+
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
     from tescanautomation import Automation
@@ -60,6 +61,7 @@ def setup_milling(
         f"application file:  {application_file}, pattern mode: {patterning_mode}, hfw: {hfw}"
     )
 
+
 def run_milling(
     microscope: FibsemMicroscope,
     milling_current: float,
@@ -90,9 +92,8 @@ def finish_milling(
     microscope.finish_milling(imaging_current)
     logging.info("finished ion beam milling.")
 
-def draw_rectangle(
-    microscope: FibsemMicroscope, mill_settings: MillingSettings
-):
+
+def draw_rectangle(microscope: FibsemMicroscope, mill_settings: MillingSettings):
     """Draw a rectangular milling pattern from settings
 
     Args:
@@ -103,8 +104,12 @@ def draw_rectangle(
 
 
 def milling_protocol(
-    microscope: FibsemMicroscope, image_settings: ImageSettings, mill_settings: MillingSettings, application_file: str = "autolamella", patterning_mode: str = "Serial"
- ):
+    microscope: FibsemMicroscope,
+    image_settings: ImageSettings,
+    mill_settings: MillingSettings,
+    application_file: str = "autolamella",
+    patterning_mode: str = "Serial",
+):
     # setup milling
     hfw = image_settings.hfw
     setup_milling(microscope, application_file, patterning_mode, hfw, mill_settings)
@@ -117,6 +122,7 @@ def milling_protocol(
 
     # finish milling
     finish_milling(microscope)
+
 
 ############################# UTILS #############################
 
