@@ -1,20 +1,18 @@
 import sys
-
 import re
-
-from fibsem.ui.qtdesigner_files import connect
-
-from fibsem import utils, acquire
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, MillingSettings
+from fibsem.ui.qtdesigner_files import connect
+from fibsem import utils, acquire
+
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, MillingSettings
+
 import os
 import tkinter
 from tkinter import filedialog
 import fibsem.constants as constants
-
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer
 import numpy as np
-
 import logging
 import napari
 
@@ -110,7 +108,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         if self.check_IB.isChecked():
             self.click_IB_Image()
 
-    
     def milling_protocol(self):
         from FibsemMilling import milling_protocol
 
@@ -387,10 +384,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         viewer.add_image(self.FIB_IB.data, name="IB Image")
         viewer.add_image(self.FIB_EB.data, name="EB Image")
 
-        if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
-            logging.info("IB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
-        if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
-            logging.info("EB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
+        # if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
+        #     logging.info("IB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
+        # if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
+        #     logging.info("EB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
 
         #viewer.camera.zoom = 0.4
 

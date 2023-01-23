@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
-# Form implementation generated from reading ui file 'qtdesigner_files/connect.ui'
-
+# Form implementation generated from reading ui file 'connect.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
