@@ -32,7 +32,7 @@ if manufacturer == "Tescan":
     sys.modules.pop("PySide6.QtCore")
 
 if manufacturer == "Thermo":
-    from autoscript_sdb_microscope_client.structures import GrabFrameSettings
+    from autoscript_sdb_microscope_client.structures import GrabFrameSettings, MoveSettings
     from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
@@ -369,7 +369,40 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return
 
-    def x_corrected_stage_movement(
+    def eucentric_move(
+        self,
+        settings: MicroscopeSettings,
+        dy: float,
+        static_wd: bool = True,
+    ) -> None:
+        """Move the stage vertically to correct eucentric point
+
+        Args:
+            microscope (SdbMicroscopeClient): autoscript microscope instance
+            dy (float): distance in y-axis (image coordinates)
+        """
+        wd = self.connection.beams.electron_beam.working_distance.value
+
+        z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
+
+        move_settings = MoveSettings(link_z_y=True)
+        z_move = FibsemStagePosition(z=z_move, coordinate_system="Specimen").to_autoscript_position()
+        self.connection.specimen.stage.relative_move(z_move, move_settings)
+        logging.info(f"eucentric movement: {z_move}")
+
+        if static_wd:
+            self.connection.beams.electron_beam.working_distance.value = (
+                settings.system.electron.eucentric_height
+            )
+            self.connection.beams.ion_beam.working_distance.value = (
+                settings.system.ion.eucentric_height
+            )
+        else:
+            self.connection.beams.electron_beam.working_distance.value = wd
+        self.connection.specimen.stage.link()
+
+
+    def x_corrected_stage_movement(self, 
         expected_x: float,
     ) -> FibsemStagePosition:
         """Calculate the x corrected stage movement.
@@ -384,7 +417,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
 
     def y_corrected_stage_movement(
-        microscope: FibsemMicroscope,
+        self,
         settings: MicroscopeSettings,
         expected_y: float,
         beam_type: BeamType = BeamType.ELECTRON,
@@ -418,7 +451,7 @@ class ThermoMicroscope(FibsemMicroscope):
         ) % (2 * np.pi)
 
         # current stage position
-        current_stage_position = microscope.get_stage_position()
+        current_stage_position = self.get_stage_position()
         stage_rotation = current_stage_position.r % (2 * np.pi)
         stage_tilt = current_stage_position.t
 
