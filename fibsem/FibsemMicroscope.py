@@ -715,38 +715,7 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        limits = self.connection.Stage.GetLimits()
-        if position.x < limits[0]:
-            position.x = limits[0]
-            raise Exception("Lower x limit reached")
-        elif position.x > limits[1]:
-            position.x = limits[1]
-            raise Exception("Upper x limit reached")
-        if position.y < limits[2]:
-            position.y = limits[2]
-            raise Exception("Lower y limit reached")
-        elif position.y > limits[3]:
-            position.y = limits[3]
-            raise Exception("Upper y limit reached")
-        if position.z < limits[4]:
-            position.z = limits[4]
-            raise Exception("Lower z limit reached")
-        elif position.z > limits[5]:
-            position.z = limits[5]
-            raise Exception("Upper z limit reached")
-        if position.r < limits[6]:
-            position.r = limits[6]
-            raise Exception("Lower r limit reached")
-        elif position.r > limits[7]:
-            position.r = limits[7]
-            raise Exception("Upper r limit reached")
-        if position.t < limits[8]:
-            position.t = limits[8]
-            raise Exception("Lower t limit reached")
-        elif position.t > limits[9]:
-            position.t = limits[9]
-            raise Exception("Upper t limit reached")
-
+        
         self.connection.Stage.MoveTo(
             position.x * constants.METRE_TO_MILLIMETRE,
             position.y * constants.METRE_TO_MILLIMETRE,
