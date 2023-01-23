@@ -268,7 +268,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
-            self.microscope.move_stage_eucentric_correction(
+            self.microscope.eucentric_move(
                 microscope=self.microscope, 
                 settings=self.settings,
                 dy=-point.y

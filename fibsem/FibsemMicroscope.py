@@ -93,6 +93,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def eucentric_move(self):
+        pass
+
+    @abstractmethod
     def setup_milling(self):
         pass
 
