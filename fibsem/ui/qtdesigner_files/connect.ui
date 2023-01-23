@@ -36,7 +36,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -791,7 +791,7 @@
           </widget>
          </item>
          <item row="5" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
+          <widget class="QDoubleSpinBox" name="milling_current"/>
          </item>
          <item row="3" column="3">
           <widget class="QLabel" name="label_43">
@@ -803,12 +803,12 @@
          <item row="2" column="5">
           <widget class="QLabel" name="label_50">
            <property name="text">
-            <string>mm</string>
+            <string>µm</string>
            </property>
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_center_x"/>
+          <widget class="QDoubleSpinBox" name="center_x_milling"/>
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_4">
@@ -825,10 +825,10 @@
           </widget>
          </item>
          <item row="4" column="4">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_center_y"/>
+          <widget class="QDoubleSpinBox" name="center_y_milling"/>
          </item>
          <item row="2" column="4">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_height"/>
+          <widget class="QDoubleSpinBox" name="height_milling"/>
          </item>
          <item row="4" column="2">
           <widget class="QLabel" name="label_48">
@@ -852,12 +852,12 @@
           </widget>
          </item>
          <item row="3" column="4">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_rotation"/>
+          <widget class="QDoubleSpinBox" name="rotation_milling"/>
          </item>
          <item row="3" column="2">
           <widget class="QLabel" name="label_47">
            <property name="text">
-            <string>mm</string>
+            <string>µm</string>
            </property>
           </widget>
          </item>
@@ -869,10 +869,10 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_width_2"/>
+          <widget class="QDoubleSpinBox" name="depth_milling"/>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_width"/>
+          <widget class="QDoubleSpinBox" name="width_milling"/>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_7">
@@ -891,14 +891,14 @@
          <item row="2" column="2">
           <widget class="QLabel" name="label_46">
            <property name="text">
-            <string>mm</string>
+            <string>µm</string>
            </property>
           </widget>
          </item>
          <item row="5" column="2">
           <widget class="QLabel" name="label_49">
            <property name="text">
-            <string>mA</string>
+            <string>nA</string>
            </property>
           </widget>
          </item>
@@ -941,7 +941,7 @@
           </widget>
          </item>
          <item row="5" column="4" colspan="2">
-          <widget class="QComboBox" name="comboBox_scan_direction">
+          <widget class="QComboBox" name="scan_direction">
            <item>
             <property name="text">
              <string>TopToBottom</string>
@@ -960,7 +960,7 @@
           </widget>
          </item>
          <item row="6" column="4" colspan="2">
-          <widget class="QComboBox" name="comboBox_pattern">
+          <widget class="QComboBox" name="milling_pattern">
            <item>
             <property name="text">
              <string>Rectangle</string>

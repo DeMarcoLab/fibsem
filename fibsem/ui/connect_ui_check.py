@@ -1,6 +1,6 @@
 import sys
 import re
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, MillingSettings
 from fibsem.ui.qtdesigner_files import connect
 from fibsem import utils, acquire
 import os
@@ -85,6 +85,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.move_rel_button.clicked.connect(self.move_microscope_rel)
         self.move_abs_button.clicked.connect(self.move_microscope_abs)
 
+        # Milling settings set up
+        self.pushButton_milling.clicked.connect(self.milling_protocol)
+
 
 
     def save_image_beams(self):
@@ -102,6 +105,24 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.click_EB_Image()
         if self.check_IB.isChecked():
             self.click_IB_Image()
+
+
+    def milling_protocol(self):
+        from FibsemMilling import milling_protocol
+
+        mill_settings = MillingSettings(
+            width = self.width_milling.value()*constants.MICRO_TO_SI,
+            height = self.height_milling.value()*constants.MICRO_TO_SI,
+            depth= self.depth_milling.value()*constants.MICRO_TO_SI,
+            rotation= self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
+            centre_x= self.center_x_milling.value()*constants.MILLIMETRE_TO_METRE,
+            centre_y= self.center_y_milling.value()*constants.MILLIMETRE_TO_METRE,
+            milling_current= self.milling_current.value()*constants.NANO_TO_SI,
+            scan_direction= self.scan_direction.currentText(),
+            cleaning_cross_section= self.checkBox_cross_section.isChecked(),
+        )
+
+        milling_protocol(self.microscope, self.image_settings, mill_settings, application_file="autolamella", patterning_mode="Serial")
 
 ########################### Movement Functionality ##########################################
 
