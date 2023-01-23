@@ -25,7 +25,7 @@ def setup_milling(
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
     hfw: float = 150e-6,
-    mill_settings: MillingSettings = MillingSettings(),
+    mill_settings: MillingSettings = None,
 ):
     """Setup Microscope for Ion Beam Milling.
 
