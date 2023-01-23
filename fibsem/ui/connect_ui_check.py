@@ -3,6 +3,9 @@ import re
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, MillingSettings
 from fibsem.ui.qtdesigner_files import connect
 from fibsem import utils, acquire
+
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, MillingSettings
+
 import os
 import tkinter
 from tkinter import filedialog
@@ -33,7 +36,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
         self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
 
- 
         self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
 
         # Initialise microscope object
@@ -105,7 +107,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.click_EB_Image()
         if self.check_IB.isChecked():
             self.click_IB_Image()
-
 
     def milling_protocol(self):
         from FibsemMilling import milling_protocol

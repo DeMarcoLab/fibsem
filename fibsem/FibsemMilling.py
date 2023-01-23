@@ -6,33 +6,14 @@ from typing import Union
 from FibsemMicroscope import FibsemMicroscope
 
 #  TODO: Abstract away hardware calls so these imports can be removed
-from fibsem.config import load_microscope_manufacturer 
+from fibsem.config import load_microscope_manufacturer
+
 manufacturer = load_microscope_manufacturer()
-if manufacturer == "Tescan":
-    from tescanautomation import Automation
-    from tescanautomation.DrawBeam import IEtching
-    from tescanautomation.DrawBeam import Layer
-    from tescanautomation.DrawBeam import DepthUnit as DBDepthUnit
-    from tescanautomation.DrawBeam import Error as DBError
-    from tescanautomation.DrawBeam import Status as DBStatus
-    from tescanautomation.DrawBeam import ScanningPath
-    from tescanautomation.DrawBeam import ExpositionMeshAccuracy as DBAccuracy
-    from tescanautomation.FIB import HVBeamStatus as FIBStatus
 
 if manufacturer == "Thermo":
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-    from autoscript_sdb_microscope_client.structures import (
-        BitmapPatternDefinition,
-        StreamPatternDefinition,
-    )
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CleaningCrossSectionPattern,
         RectanglePattern,
-        BitmapPattern,
-        StreamPattern,
-        CirclePattern,
-        LinePattern,
     )
 
 
@@ -44,7 +25,7 @@ def setup_milling(
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
     hfw: float = 150e-6,
-    mill_settings: MillingSettings = MillingSettings(),
+    mill_settings: MillingSettings = None,
 ):
     """Setup Microscope for Ion Beam Milling.
 
@@ -59,6 +40,7 @@ def setup_milling(
     logging.info(
         f"application file:  {application_file}, pattern mode: {patterning_mode}, hfw: {hfw}"
     )
+
 
 def run_milling(
     microscope: FibsemMicroscope,
@@ -90,9 +72,8 @@ def finish_milling(
     microscope.finish_milling(imaging_current)
     logging.info("finished ion beam milling.")
 
-def draw_rectangle(
-    microscope: FibsemMicroscope, mill_settings: MillingSettings
-):
+
+def draw_rectangle(microscope: FibsemMicroscope, mill_settings: MillingSettings):
     """Draw a rectangular milling pattern from settings
 
     Args:
@@ -103,8 +84,12 @@ def draw_rectangle(
 
 
 def milling_protocol(
-    microscope: FibsemMicroscope, image_settings: ImageSettings, mill_settings: MillingSettings, application_file: str = "autolamella", patterning_mode: str = "Serial"
- ):
+    microscope: FibsemMicroscope,
+    image_settings: ImageSettings,
+    mill_settings: MillingSettings,
+    application_file: str = "autolamella",
+    patterning_mode: str = "Serial",
+):
     # setup milling
     hfw = image_settings.hfw
     setup_milling(microscope, application_file, patterning_mode, hfw, mill_settings)
@@ -117,6 +102,7 @@ def milling_protocol(
 
     # finish milling
     finish_milling(microscope)
+
 
 ############################# UTILS #############################
 
@@ -206,208 +192,208 @@ def estimate_milling_time_in_seconds(
 # TODO: circle, bitmap, line, stream
 
 
-def _draw_bitmap_pattern(
-    microscope: SdbMicroscopeClient,
-    mill_settings: MillingSettings,
-    bitmap_pattern: BitmapPatternDefinition,
-) -> BitmapPattern:
+# def _draw_bitmap_pattern(
+#     microscope: SdbMicroscopeClient,
+#     mill_settings: MillingSettings,
+#     bitmap_pattern: BitmapPatternDefinition,
+# ) -> BitmapPattern:
 
-    pattern = microscope.patterning.create_bitmap(
-        center_x=mill_settings.centre_x,
-        center_y=mill_settings.centre_y,
-        width=mill_settings.width,
-        height=mill_settings.height,
-        depth=mill_settings.depth,
-        bitmap_pattern_definition=bitmap_pattern,
-    )
+#     pattern = microscope.patterning.create_bitmap(
+#         center_x=mill_settings.centre_x,
+#         center_y=mill_settings.centre_y,
+#         width=mill_settings.width,
+#         height=mill_settings.height,
+#         depth=mill_settings.depth,
+#         bitmap_pattern_definition=bitmap_pattern,
+#     )
 
-    return pattern
-
-
-def _draw_circle_pattern(
-    microscope: SdbMicroscopeClient, mill_settings: MillingSettings
-):
-
-    return NotImplemented
-
-    pattern = microscope.patterning.create_circle(
-        center_x=mill_settings.centre_x,
-        center_y=mill_settings.centre_y,
-        outer_diameter=mill_settings.outer_diameter,
-        inner_diameter=mill_settings.inner_diameter,
-        depth=mill_settings.depth,
-    )
-
-    return pattern
+#     return pattern
 
 
-def _draw_line_pattern(microscope: SdbMicroscopeClient, mill_settings: MillingSettings):
+# def _draw_circle_pattern(
+#     microscope: SdbMicroscopeClient, mill_settings: MillingSettings
+# ):
 
-    return NotImplemented
+#     return NotImplemented
 
-    pattern = microscope.patterning.create_line(
-        start_x=mill_settings.start_x,
-        start_y=mill_settings.start_y,
-        end_x=mill_settings.end_x,
-        end_y=mill_settings.end_y,
-        depth=mill_settings.depth,
-    )
+#     pattern = microscope.patterning.create_circle(
+#         center_x=mill_settings.centre_x,
+#         center_y=mill_settings.centre_y,
+#         outer_diameter=mill_settings.outer_diameter,
+#         inner_diameter=mill_settings.inner_diameter,
+#         depth=mill_settings.depth,
+#     )
 
-    return pattern
-
-
-def _draw_stream_pattern(
-    microscope: SdbMicroscopeClient,
-    mill_settings: MillingSettings,
-    stream_pattern: StreamPatternDefinition,
-) -> StreamPattern:
-
-    # 2d array
-    # shape[0] is list of coordinates
-    # shape[1] is 4d: x, y, dwell_time_in_sec, blank
-
-    # TODO: investigate the following
-    # assume x, y in image coordinates
-    # what does blank mean / do?
-    # how to convert to / from this for lower level control
-
-    return NotImplemented
-
-    pattern = microscope.patterning.create_stream(
-        center_x=mill_settings.centre_x,
-        center_y=mill_settings.centre_y,
-        stream_pattern_definition=stream_pattern,
-    )
-
-    return pattern
+#     return pattern
 
 
-def _draw_rectangle_pattern(
-    microscope: SdbMicroscopeClient, protocol: dict, x: float = 0.0, y: float = 0.0
-):
+# def _draw_line_pattern(microscope: SdbMicroscopeClient, mill_settings: MillingSettings):
 
-    logging.warning(f"Depreceated: please use _draw_rectangle_pattern_v2")
+#     return NotImplemented
 
-    if protocol["cleaning_cross_section"]:
-        pattern = microscope.patterning.create_cleaning_cross_section(
-            center_x=x,
-            center_y=y,
-            width=protocol["width"],
-            height=protocol["height"],
-            depth=protocol["depth"],
-        )
-    else:
-        pattern = microscope.patterning.create_rectangle(
-            center_x=x,
-            center_y=y,
-            width=protocol["width"],
-            height=protocol["height"],
-            depth=protocol["depth"],
-        )
+#     pattern = microscope.patterning.create_line(
+#         start_x=mill_settings.start_x,
+#         start_y=mill_settings.start_y,
+#         end_x=mill_settings.end_x,
+#         end_y=mill_settings.end_y,
+#         depth=mill_settings.depth,
+#     )
 
-    # need to make each protocol setting have these....which means validation
-    pattern.rotation = np.deg2rad(protocol["rotation"])
-    pattern.scan_direction = protocol["scan_direction"]
-
-    return pattern
+#     return pattern
 
 
-def _draw_rectangle_pattern_v2(
-    microscope: SdbMicroscopeClient, mill_settings: MillingSettings
-) -> Union[CleaningCrossSectionPattern, RectanglePattern]:
-    """Draw a rectangular milling pattern from settings
+# def _draw_stream_pattern(
+#     microscope: SdbMicroscopeClient,
+#     mill_settings: MillingSettings,
+#     stream_pattern: StreamPatternDefinition,
+# ) -> StreamPattern:
 
-    Args:
-        microscope (SdbMicroscopeClient): AutoScript microscope instance
-        mill_settings (MillingSettings): milling pattern settings
+#     # 2d array
+#     # shape[0] is list of coordinates
+#     # shape[1] is 4d: x, y, dwell_time_in_sec, blank
 
-    Returns:
-        Union[CleaningCrossSectionPattern, RectanglePattern]: milling pattern
-    """
-    if mill_settings.cleaning_cross_section:
-        pattern = microscope.patterning.create_cleaning_cross_section(
-            center_x=mill_settings.centre_x,
-            center_y=mill_settings.centre_y,
-            width=mill_settings.width,
-            height=mill_settings.height,
-            depth=mill_settings.depth,
-        )
-    else:
-        pattern = microscope.patterning.create_rectangle(
-            center_x=mill_settings.centre_x,
-            center_y=mill_settings.centre_y,
-            width=mill_settings.width,
-            height=mill_settings.height,
-            depth=mill_settings.depth,
-        )
+#     # TODO: investigate the following
+#     # assume x, y in image coordinates
+#     # what does blank mean / do?
+#     # how to convert to / from this for lower level control
 
-    pattern.rotation = mill_settings.rotation
-    pattern.scan_direction = mill_settings.scan_direction
+#     return NotImplemented
 
-    return pattern
+#     pattern = microscope.patterning.create_stream(
+#         center_x=mill_settings.centre_x,
+#         center_y=mill_settings.centre_y,
+#         stream_pattern_definition=stream_pattern,
+#     )
+
+#     return pattern
 
 
-def _draw_trench_patterns(
-    microscope: SdbMicroscopeClient, protocol: dict, point: Point = Point()
-):
-    """Calculate the trench milling patterns"""
+# def _draw_rectangle_pattern(
+#     microscope: SdbMicroscopeClient, protocol: dict, x: float = 0.0, y: float = 0.0
+# ):
 
-    lamella_width = protocol["lamella_width"]
-    lamella_height = protocol["lamella_height"]
-    trench_height = protocol["trench_height"]
-    upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
-    offset = protocol["offset"]
-    milling_depth = protocol["milling_depth"]
+#     logging.warning(f"Depreceated: please use _draw_rectangle_pattern_v2")
 
-    centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
-    centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
+#     if protocol["cleaning_cross_section"]:
+#         pattern = microscope.patterning.create_cleaning_cross_section(
+#             center_x=x,
+#             center_y=y,
+#             width=protocol["width"],
+#             height=protocol["height"],
+#             depth=protocol["depth"],
+#         )
+#     else:
+#         pattern = microscope.patterning.create_rectangle(
+#             center_x=x,
+#             center_y=y,
+#             width=protocol["width"],
+#             height=protocol["height"],
+#             depth=protocol["depth"],
+#         )
 
-    # mill settings
-    lower_settings = MillingSettings(
-        width=lamella_width,
-        height=trench_height,
-        depth=milling_depth,
-        centre_x=point.x,
-        centre_y=centre_lower_y,
-        scan_direction="BottomToTop",
-        cleaning_cross_section=True,
-    )
+#     # need to make each protocol setting have these....which means validation
+#     pattern.rotation = np.deg2rad(protocol["rotation"])
+#     pattern.scan_direction = protocol["scan_direction"]
 
-    upper_settings = MillingSettings(
-        width=lamella_width,
-        height=upper_trench_height,
-        depth=milling_depth,
-        centre_x=point.x,
-        centre_y=centre_upper_y,
-        scan_direction="TopToBottom",
-        cleaning_cross_section=True,
-    )
+#     return pattern
 
-    # draw patterns
-    lower_pattern = _draw_rectangle_pattern_v2(microscope, lower_settings)
-    upper_pattern = _draw_rectangle_pattern_v2(microscope, upper_settings)
+# # DEPRECATED # 
+# def _draw_rectangle_pattern_v2(
+#     microscope: SdbMicroscopeClient, mill_settings: MillingSettings
+# ) -> Union[CleaningCrossSectionPattern, RectanglePattern]:
+#     """Draw a rectangular milling pattern from settings
 
-    return [lower_pattern, upper_pattern]
+#     Args:
+#         microscope (SdbMicroscopeClient): AutoScript microscope instance
+#         mill_settings (MillingSettings): milling pattern settings
+
+#     Returns:
+#         Union[CleaningCrossSectionPattern, RectanglePattern]: milling pattern
+#     """
+#     if mill_settings.cleaning_cross_section:
+#         pattern = microscope.patterning.create_cleaning_cross_section(
+#             center_x=mill_settings.centre_x,
+#             center_y=mill_settings.centre_y,
+#             width=mill_settings.width,
+#             height=mill_settings.height,
+#             depth=mill_settings.depth,
+#         )
+#     else:
+#         pattern = microscope.patterning.create_rectangle(
+#             center_x=mill_settings.centre_x,
+#             center_y=mill_settings.centre_y,
+#             width=mill_settings.width,
+#             height=mill_settings.height,
+#             depth=mill_settings.depth,
+#         )
+
+#     pattern.rotation = mill_settings.rotation
+#     pattern.scan_direction = mill_settings.scan_direction
+
+#     return pattern
 
 
-def _draw_fiducial_patterns(
-    microscope: SdbMicroscopeClient,
-    mill_settings: MillingSettings,
-):
-    """draw the fiducial milling patterns
+# def _draw_trench_patterns(
+#     microscope: SdbMicroscopeClient, protocol: dict, point: Point = Point()
+# ):
+#     """Calculate the trench milling patterns"""
 
-    Args:
-        microscope (SdbMicroscopeClient): AutoScript microscope connection
-        mill_settings (dict): fiducial milling settings
-        point (Point): centre x, y coordinate
-    Returns
-    -------
-        patterns : list
-            List of rectangular patterns used to create the fiducial marker.
-    """
+#     lamella_width = protocol["lamella_width"]
+#     lamella_height = protocol["lamella_height"]
+#     trench_height = protocol["trench_height"]
+#     upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
+#     offset = protocol["offset"]
+#     milling_depth = protocol["milling_depth"]
 
-    pattern_1 = _draw_rectangle_pattern_v2(microscope, mill_settings)
-    pattern_2 = _draw_rectangle_pattern_v2(microscope, mill_settings)
-    pattern_2.rotation = mill_settings.rotation + np.deg2rad(90)
+#     centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
+#     centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
 
-    return [pattern_1, pattern_2]
+#     # mill settings
+#     lower_settings = MillingSettings(
+#         width=lamella_width,
+#         height=trench_height,
+#         depth=milling_depth,
+#         centre_x=point.x,
+#         centre_y=centre_lower_y,
+#         scan_direction="BottomToTop",
+#         cleaning_cross_section=True,
+#     )
+
+#     upper_settings = MillingSettings(
+#         width=lamella_width,
+#         height=upper_trench_height,
+#         depth=milling_depth,
+#         centre_x=point.x,
+#         centre_y=centre_upper_y,
+#         scan_direction="TopToBottom",
+#         cleaning_cross_section=True,
+#     )
+
+#     # draw patterns
+#     lower_pattern = _draw_rectangle_pattern_v2(microscope, lower_settings)
+#     upper_pattern = _draw_rectangle_pattern_v2(microscope, upper_settings)
+
+#     return [lower_pattern, upper_pattern]
+
+
+# def _draw_fiducial_patterns(
+#     microscope: SdbMicroscopeClient,
+#     mill_settings: MillingSettings,
+# ):
+#     """draw the fiducial milling patterns
+
+#     Args:
+#         microscope (SdbMicroscopeClient): AutoScript microscope connection
+#         mill_settings (dict): fiducial milling settings
+#         point (Point): centre x, y coordinate
+#     Returns
+#     -------
+#         patterns : list
+#             List of rectangular patterns used to create the fiducial marker.
+#     """
+
+#     pattern_1 = _draw_rectangle_pattern_v2(microscope, mill_settings)
+#     pattern_2 = _draw_rectangle_pattern_v2(microscope, mill_settings)
+#     pattern_2.rotation = mill_settings.rotation + np.deg2rad(90)
+
+#     return [pattern_1, pattern_2]
