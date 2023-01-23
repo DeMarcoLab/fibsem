@@ -38,10 +38,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
         self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
 
-        # Milling settings set up
-        self.pushButton_milling.clicked.connect(self.milling_protocol)
-
- 
         self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
 
         # Initialise microscope object
@@ -92,6 +88,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.move_rel_button.clicked.connect(self.move_microscope_rel)
         self.move_abs_button.clicked.connect(self.move_microscope_abs)
+
+        # Milling settings set up
+        self.pushButton_milling.clicked.connect(self.milling_protocol)
 
 
 

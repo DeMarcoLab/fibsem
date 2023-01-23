@@ -29,18 +29,18 @@
       <x>0</x>
       <y>0</y>
       <width>451</width>
-      <height>461</height>
+      <height>471</height>
      </rect>
     </property>
     <property name="autoFillBackground">
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
-      <string>General</string>
+      <string>Connection</string>
      </attribute>
      <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
@@ -753,6 +753,254 @@
           <size>
            <width>40</width>
            <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab">
+     <attribute name="title">
+      <string>Milling</string>
+     </attribute>
+     <widget class="QWidget" name="verticalLayoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>-1</x>
+        <y>-1</y>
+        <width>441</width>
+        <height>441</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="4" column="3">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Center Y:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Height:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QDoubleSpinBox" name="milling_current"/>
+         </item>
+         <item row="3" column="3">
+          <widget class="QLabel" name="label_43">
+           <property name="text">
+            <string>Rotation:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="5">
+          <widget class="QLabel" name="label_50">
+           <property name="text">
+            <string>µm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QDoubleSpinBox" name="center_x_milling"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Center X:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="5">
+          <widget class="QLabel" name="label_51">
+           <property name="text">
+            <string>degrees</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="4">
+          <widget class="QDoubleSpinBox" name="center_y_milling"/>
+         </item>
+         <item row="2" column="4">
+          <widget class="QDoubleSpinBox" name="height_milling"/>
+         </item>
+         <item row="4" column="2">
+          <widget class="QLabel" name="label_48">
+           <property name="text">
+            <string>mm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="3">
+          <widget class="QLabel" name="label_45">
+           <property name="text">
+            <string>Scan Direction:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>Depth:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="4">
+          <widget class="QDoubleSpinBox" name="rotation_milling"/>
+         </item>
+         <item row="3" column="2">
+          <widget class="QLabel" name="label_47">
+           <property name="text">
+            <string>µm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_44">
+           <property name="text">
+            <string>Milling Current:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QDoubleSpinBox" name="depth_milling"/>
+         </item>
+         <item row="2" column="1">
+          <widget class="QDoubleSpinBox" name="width_milling"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>Width:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="5">
+          <widget class="QLabel" name="label_52">
+           <property name="text">
+            <string>mm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLabel" name="label_46">
+           <property name="text">
+            <string>µm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="2">
+          <widget class="QLabel" name="label_49">
+           <property name="text">
+            <string>nA</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0" colspan="2">
+          <widget class="QLabel" name="label_53">
+           <property name="text">
+            <string>Clean cross section:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="2">
+          <widget class="QCheckBox" name="checkBox_cross_section">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="6">
+          <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Milling Settings</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="3">
+          <widget class="QLabel" name="label_54">
+           <property name="text">
+            <string>Pattern:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="4" colspan="2">
+          <widget class="QComboBox" name="scan_direction">
+           <item>
+            <property name="text">
+             <string>TopToBottom</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>BottomToTop</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>ZigZag</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="6" column="4" colspan="2">
+          <widget class="QComboBox" name="milling_pattern">
+           <item>
+            <property name="text">
+             <string>Rectangle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Also Rectangle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Another Rectangle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>One Rectangle Please</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_milling">
+         <property name="text">
+          <string>Start Milling</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
           </size>
          </property>
         </spacer>
