@@ -1008,11 +1008,11 @@ class TescanMicroscope(FibsemMicroscope):
         stage_tilt_flat_to_electron = np.deg2rad(
             settings.system.stage.tilt_flat_to_electron
         )
-        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+        # stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
 
-        stage_rotation_flat_to_eb = np.deg2rad(
-            settings.system.stage.rotation_flat_to_electron
-        ) % (2 * np.pi)
+        # stage_rotation_flat_to_eb = np.deg2rad(
+        #     settings.system.stage.rotation_flat_to_electron
+        # ) % (2 * np.pi)
         stage_rotation_flat_to_ion = np.deg2rad(
             settings.system.stage.rotation_flat_to_ion
         ) % (2 * np.pi)
@@ -1024,8 +1024,8 @@ class TescanMicroscope(FibsemMicroscope):
 
         PRETILT_SIGN = 1.0
         # pretilt angle depends on rotation
-        if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
-            PRETILT_SIGN = 1.0
+        # if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
+        #     PRETILT_SIGN = 1.0
         if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_ion, atol=5):
             PRETILT_SIGN = -1.0
 
@@ -1049,8 +1049,8 @@ class TescanMicroscope(FibsemMicroscope):
         # z_move = y_sample_move * np.sin(corrected_pretilt_angle)
 
 
-        y_move = expected_y/np.cos((stage_rotation + corrected_pretilt_angle)) 
-        z_move = y_move*np.sin((stage_rotation + corrected_pretilt_angle)) 
+        y_move = expected_y/np.cos((stage_tilt + corrected_pretilt_angle)) 
+        z_move = y_move*np.sin((stage_tilt + corrected_pretilt_angle)) 
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
