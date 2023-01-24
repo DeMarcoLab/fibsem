@@ -927,16 +927,15 @@ class TescanMicroscope(FibsemMicroscope):
         # calculate stage movement
         x_move = self.x_corrected_stage_movement(dx)
         yz_move = self.y_corrected_stage_movement(
-            self,
             settings=settings,
             expected_y=dy,
             beam_type=beam_type,
         )
 
         # move stage
-        stage_position = FibsemStagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
+        stage_position = FibsemStagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z, r=0, t=0)
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
-        self.move_stage_relative(stage_position.x, stage_position.y, 0, 0, 0)
+        self.move_stage_relative(stage_position)
 
         # adjust working distance to compensate for stage movement
         self.connection.SEM.Optics.SetWD(wd)
@@ -958,10 +957,10 @@ class TescanMicroscope(FibsemMicroscope):
         """
         wd = self.connection.SEM.Optics.GetWD()
 
-        z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy / np.cos(np.deg2rad(35))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         #move_settings = MoveSettings(link_z_y=True)
-        z_move = FibsemStagePosition(z=z_move)
+        z_move = FibsemStagePosition(x =0, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
         logging.info(f"eucentric movement: {z_move}")
 
@@ -1032,22 +1031,26 @@ class TescanMicroscope(FibsemMicroscope):
 
         corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
 
-        # perspective tilt adjustment (difference between perspective view and sample coordinate system)
-        if beam_type == BeamType.ELECTRON:
-            perspective_tilt_adjustment = -corrected_pretilt_angle
-            SCALE_FACTOR = 1.0  # 0.78342  # patented technology
-        elif beam_type == BeamType.ION:
-            perspective_tilt_adjustment = -corrected_pretilt_angle - stage_tilt_flat_to_ion
-            SCALE_FACTOR = 1.0
+        # # perspective tilt adjustment (difference between perspective view and sample coordinate system)
+        # if beam_type == BeamType.ELECTRON:
+        #     perspective_tilt_adjustment = -corrected_pretilt_angle
+        #     SCALE_FACTOR = 1.0  # 0.78342  # patented technology
+        # elif beam_type == BeamType.ION:
+        #     perspective_tilt_adjustment = -corrected_pretilt_angle - stage_tilt_flat_to_ion
+        #     SCALE_FACTOR = 1.0
 
-        # the amount the sample has to move in the y-axis
-        y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
-            stage_tilt + perspective_tilt_adjustment
-        )
+        # # the amount the sample has to move in the y-axis
+        # y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
+        #     stage_tilt + perspective_tilt_adjustment
+        # )
 
-        # the amount the stage has to move in each axis
-        y_move = y_sample_move * np.cos(corrected_pretilt_angle)
-        z_move = y_sample_move * np.sin(corrected_pretilt_angle)
+        # # the amount the stage has to move in each axis
+        # y_move = y_sample_move * np.cos(corrected_pretilt_angle)
+        # z_move = y_sample_move * np.sin(corrected_pretilt_angle)
+
+
+        y_move = expected_y/np.cos((stage_rotation + corrected_pretilt_angle)) 
+        z_move = y_move*np.sin((stage_rotation + corrected_pretilt_angle)) 
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>932</width>
+    <width>931</width>
     <height>850</height>
    </rect>
   </property>
@@ -36,7 +36,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -418,34 +418,20 @@
        <property name="sizeConstraint">
         <enum>QLayout::SetNoConstraint</enum>
        </property>
-       <item row="3" column="6">
-        <widget class="QLabel" name="label_39">
+       <item row="4" column="1">
+        <widget class="QLabel" name="label_22">
          <property name="text">
-          <string>mm</string>
+          <string>Z:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="8" column="2">
-        <widget class="QPushButton" name="move_abs_button">
+       <item row="5" column="1">
+        <widget class="QLabel" name="label_23">
          <property name="text">
-          <string>MOVE</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="5">
-        <widget class="QDoubleSpinBox" name="dYchange">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="4">
-        <widget class="QLabel" name="label_28">
-         <property name="text">
-          <string>dZ:</string>
+          <string>Rotation:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -459,33 +445,6 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1" colspan="3">
-        <widget class="QLabel" name="label_25">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Absolute Position</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="4">
-        <widget class="QLabel" name="label_29">
-         <property name="text">
-          <string>dX:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
        <item row="4" column="6">
         <widget class="QLabel" name="label_41">
          <property name="text">
@@ -493,58 +452,10 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="3">
-        <widget class="QLabel" name="label_37">
-         <property name="text">
-          <string>degrees</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLabel" name="label_22">
-         <property name="text">
-          <string>Z:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="3">
-        <widget class="QLabel" name="label_36">
-         <property name="text">
-          <string>degrees</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QLabel" name="label_34">
+       <item row="2" column="6">
+        <widget class="QLabel" name="label_42">
          <property name="text">
           <string>mm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="5">
-        <widget class="QDoubleSpinBox" name="dTchange">
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4" colspan="3">
-        <widget class="QLabel" name="label_32">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Relative Move</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -568,10 +479,37 @@
          </property>
         </widget>
        </item>
+       <item row="5" column="3">
+        <widget class="QLabel" name="label_36">
+         <property name="text">
+          <string>degrees</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="4">
+        <widget class="QLabel" name="label_27">
+         <property name="text">
+          <string>dT:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
        <item row="8" column="5">
         <widget class="QPushButton" name="move_rel_button">
          <property name="text">
           <string>MOVE</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="4">
+        <widget class="QLabel" name="label_29">
+         <property name="text">
+          <string>dX:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -585,6 +523,53 @@
          </property>
         </widget>
        </item>
+       <item row="4" column="5">
+        <widget class="QDoubleSpinBox" name="dZchange">
+         <property name="decimals">
+          <number>4</number>
+         </property>
+         <property name="minimum">
+          <double>-100.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="4" colspan="3">
+        <widget class="QLabel" name="label_32">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Relative Move</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="3">
+        <widget class="QLabel" name="label_35">
+         <property name="text">
+          <string>mm</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item row="6" column="2">
         <widget class="QDoubleSpinBox" name="tAbs">
          <property name="maximum">
@@ -592,20 +577,27 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QLabel" name="label_21">
+       <item row="8" column="2">
+        <widget class="QPushButton" name="move_abs_button">
          <property name="text">
-          <string>Y:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>MOVE</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="6">
-        <widget class="QLabel" name="label_42">
+       <item row="1" column="1" colspan="3">
+        <widget class="QLabel" name="label_25">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
-          <string>mm</string>
+          <string>Absolute Position</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -629,44 +621,10 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="4">
-        <widget class="QLabel" name="label_31">
-         <property name="text">
-          <string>dR:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="5">
-        <widget class="QDoubleSpinBox" name="dRchange">
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="3">
-        <widget class="QLabel" name="label_35">
-         <property name="text">
-          <string>mm</string>
-         </property>
-        </widget>
-       </item>
        <item row="5" column="2">
         <widget class="QDoubleSpinBox" name="rAbs">
          <property name="maximum">
           <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="4">
-        <widget class="QLabel" name="label_27">
-         <property name="text">
-          <string>dT:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -680,20 +638,47 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
-        <widget class="QLabel" name="label_23">
+       <item row="3" column="4">
+        <widget class="QLabel" name="label_30">
          <property name="text">
-          <string>Rotation:</string>
+          <string>dY:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="2" column="3">
-        <widget class="QLabel" name="label_33">
+       <item row="3" column="1">
+        <widget class="QLabel" name="label_21">
          <property name="text">
-          <string>mm</string>
+          <string>Y:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="4">
+        <widget class="QLabel" name="label_28">
+         <property name="text">
+          <string>dZ:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="3">
+        <widget class="QLabel" name="label_37">
+         <property name="text">
+          <string>degrees</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="5">
+        <widget class="QDoubleSpinBox" name="dRchange">
+         <property name="maximum">
+          <double>360.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -707,8 +692,8 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="2">
-        <widget class="QDoubleSpinBox" name="xAbs">
+       <item row="3" column="5">
+        <widget class="QDoubleSpinBox" name="dYchange">
          <property name="decimals">
           <number>4</number>
          </property>
@@ -717,13 +702,10 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="5">
-        <widget class="QDoubleSpinBox" name="dZchange">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
+       <item row="6" column="5">
+        <widget class="QDoubleSpinBox" name="dTchange">
+         <property name="maximum">
+          <double>360.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -734,28 +716,60 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="4">
-        <widget class="QLabel" name="label_30">
+       <item row="3" column="3">
+        <widget class="QLabel" name="label_34">
          <property name="text">
-          <string>dY:</string>
+          <string>mm</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QDoubleSpinBox" name="xAbs">
+         <property name="decimals">
+          <number>4</number>
+         </property>
+         <property name="minimum">
+          <double>-100.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="6">
+        <widget class="QLabel" name="label_39">
+         <property name="text">
+          <string>mm</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="4">
+        <widget class="QLabel" name="label_31">
+         <property name="text">
+          <string>dR:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="7" column="3">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+       <item row="2" column="3">
+        <widget class="QLabel" name="label_33">
+         <property name="text">
+          <string>mm</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
+       </item>
+       <item row="9" column="3">
+        <widget class="QComboBox" name="comboBox">
+         <item>
+          <property name="text">
+           <string>Eucentric</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Stable</string>
+          </property>
+         </item>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -1127,7 +1141,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>932</width>
+     <width>931</width>
      <height>21</height>
     </rect>
    </property>

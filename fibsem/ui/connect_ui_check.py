@@ -228,7 +228,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def get_data_from_coord(self, coords: tuple) -> tuple:
 
         # check inside image dimensions, (y, x)
-        eb_shape = self.FIB_EB.data.shape[0], self.FIB_EB.data.shape[1] // 2
+        eb_shape = self.FIB_EB.data.shape[0], self.FIB_EB.data.shape[1]
         ib_shape = self.FIB_IB.data.shape[0], self.FIB_IB.data.shape[1]
 
         if (coords[0] > 0 and coords[0] < eb_shape[0]) and (coords[1] > 0 and coords[1] < eb_shape[1]):
@@ -260,16 +260,16 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
                 image.data, image.metadata.pixel_size.x)  
+     
+        
+        # move
+        self.movement_mode = MovementMode[self.comboBox.currentText()]
 
         logging.debug(f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}")
-
-        # move
-        self.movement_mode = MovementMode[self.comboBox_movement_mode.currentText()]
 
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
             self.microscope.eucentric_move(
-                microscope=self.microscope, 
                 settings=self.microscope_settings,
                 dy=-point.y
             )
@@ -277,7 +277,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         else:
             # corrected stage movement
             self.microscope.stable_move(
-                microscope=self.microscope,
                 settings=self.microscope_settings,
                 dx=point.x,
                 dy=point.y,
@@ -451,15 +450,16 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         
         viewer.layers.clear()
-        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
         self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
+        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
+        
 
         # if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
         #     logging.info("IB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
         # if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
         #     logging.info("EB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
 
-        #viewer.camera.zoom = 0.4
+        viewer.camera.zoom = 0.4
 
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
