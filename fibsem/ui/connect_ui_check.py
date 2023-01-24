@@ -270,7 +270,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
             self.microscope.eucentric_move(
                 microscope=self.microscope, 
-                settings=self.settings,
+                settings=self.microscope_settings,
                 dy=-point.y
             )
 
@@ -278,7 +278,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             # corrected stage movement
             self.microscope.stable_move(
                 microscope=self.microscope,
-                settings=self.settings,
+                settings=self.microscope_settings,
                 dx=point.x,
                 dy=point.y,
                 beam_type=beam_type,

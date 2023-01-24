@@ -919,8 +919,8 @@ class TescanMicroscope(FibsemMicroscope):
         wd = self.connection.SEM.Optics.GetWD()
 
         # calculate stage movement
-        x_move = x_corrected_stage_movement(dx)
-        yz_move = y_corrected_stage_movement(
+        x_move = self.x_corrected_stage_movement(dx)
+        yz_move = self.y_corrected_stage_movement(
             self,
             settings=settings,
             expected_y=dy,
@@ -937,6 +937,114 @@ class TescanMicroscope(FibsemMicroscope):
         # self.connection.specimen.stage.link() # TODO how to link for TESCAN?
 
         return
+
+    def eucentric_move(
+        self,
+        settings: MicroscopeSettings,
+        dy: float,
+        static_wd: bool = True,
+    ) -> None:
+        """Move the stage vertically to correct eucentric point
+
+        Args:
+            microscope (SdbMicroscopeClient): autoscript microscope instance
+            dy (float): distance in y-axis (image coordinates)
+        """
+        wd = self.connection.SEM.Optics.GetWD()
+
+        z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
+
+        #move_settings = MoveSettings(link_z_y=True)
+        z_move = FibsemStagePosition(z=z_move)
+        self.move_stage_relative(z_move)
+        logging.info(f"eucentric movement: {z_move}")
+
+
+        self.connection.SEM.Optics.SetWD(wd)
+        
+
+
+    def x_corrected_stage_movement(self, 
+        expected_x: float,
+    ) -> FibsemStagePosition:
+        """Calculate the x corrected stage movement.
+
+        Args:
+            expected_x (float): distance along x-axis
+
+        Returns:
+            StagePosition: x corrected stage movement (relative position)
+        """
+        return FibsemStagePosition(x=expected_x, y=0, z=0)
+
+
+    def y_corrected_stage_movement(
+        self,
+        settings: MicroscopeSettings,
+        expected_y: float,
+        beam_type: BeamType = BeamType.ELECTRON,
+    ) -> FibsemStagePosition:
+        """Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
+
+        Args:
+            microscope (SdbMicroscopeClient, optional): autoscript microscope instance
+            settings (MicroscopeSettings): microscope settings
+            expected_y (float, optional): distance along y-axis.
+            beam_type (BeamType, optional): beam_type to move in. Defaults to BeamType.ELECTRON.
+
+        Returns:
+            StagePosition: y corrected stage movement (relative position)
+        """
+
+        # TODO: replace with camera matrix * inverse kinematics
+        # TODO: replace stage_tilt_flat_to_electron with pre-tilt
+
+        # all angles in radians
+        stage_tilt_flat_to_electron = np.deg2rad(
+            settings.system.stage.tilt_flat_to_electron
+        )
+        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+
+        stage_rotation_flat_to_eb = np.deg2rad(
+            settings.system.stage.rotation_flat_to_electron
+        ) % (2 * np.pi)
+        stage_rotation_flat_to_ion = np.deg2rad(
+            settings.system.stage.rotation_flat_to_ion
+        ) % (2 * np.pi)
+
+        # current stage position
+        current_stage_position = self.get_stage_position()
+        stage_rotation = current_stage_position.r % (2 * np.pi)
+        stage_tilt = current_stage_position.t
+
+        PRETILT_SIGN = 1.0
+        # pretilt angle depends on rotation
+        if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
+            PRETILT_SIGN = 1.0
+        if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_ion, atol=5):
+            PRETILT_SIGN = -1.0
+
+        corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
+
+        # perspective tilt adjustment (difference between perspective view and sample coordinate system)
+        if beam_type == BeamType.ELECTRON:
+            perspective_tilt_adjustment = -corrected_pretilt_angle
+            SCALE_FACTOR = 1.0  # 0.78342  # patented technology
+        elif beam_type == BeamType.ION:
+            perspective_tilt_adjustment = -corrected_pretilt_angle - stage_tilt_flat_to_ion
+            SCALE_FACTOR = 1.0
+
+        # the amount the sample has to move in the y-axis
+        y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
+            stage_tilt + perspective_tilt_adjustment
+        )
+
+        # the amount the stage has to move in each axis
+        y_move = y_sample_move * np.cos(corrected_pretilt_angle)
+        z_move = y_sample_move * np.sin(corrected_pretilt_angle)
+
+        return FibsemStagePosition(x=0, y=y_move, z=z_move)
+
 
     def setup_milling(
         self,
