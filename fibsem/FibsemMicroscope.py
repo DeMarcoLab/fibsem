@@ -1074,7 +1074,7 @@ class TescanMicroscope(FibsemMicroscope):
             dwellTime=dwell_time,
             parallel=parallel_mode,
         )
-
+        self.layer = self.connection.DrawBeam.Layer('Layer1', layer_settings)
 
     def run_milling(self, milling_current: float, asynch: bool = False):
 
