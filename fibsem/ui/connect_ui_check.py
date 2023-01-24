@@ -229,16 +229,18 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # check inside image dimensions, (y, x)
         eb_shape = self.FIB_EB.data.shape[0], self.FIB_EB.data.shape[1]
-        ib_shape = self.FIB_IB.data.shape[0], self.FIB_IB.data.shape[1]
+        ib_shape = self.FIB_IB.data.shape[0], self.FIB_IB.data.shape[1] *2
 
         if (coords[0] > 0 and coords[0] < eb_shape[0]) and (coords[1] > 0 and coords[1] < eb_shape[1]):
             image = self.FIB_EB
             beam_type = BeamType.ELECTRON
+            print("electron")
 
         elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (coords[1] > eb_shape[0] and coords[1] < ib_shape[1]):
             image = self.FIB_IB
             coords = (coords[0], coords[1] - ib_shape[1] // 2)
             beam_type = BeamType.ION
+            print("ion")
         else:
             beam_type, image = None, None
         
@@ -463,6 +465,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
+        viewer.layers.selection.active = self.eb_layer
+        viewer.window.qt_viewer.dockLayerList.hide()
 
         self.reset_ui_settings()
 

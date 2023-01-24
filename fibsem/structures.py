@@ -394,6 +394,72 @@ class MillingSettings:
         return milling_settings
 
 
+@dataclass
+class FibsemMillingSettings:
+    width: float
+    height: float
+    depth: float
+    rotation: float = 0.0  # deg
+    centre_x: float = 0.0  # TODO: change to Point?
+    centre_y: float = 0.0
+    milling_current: float = 20.0e-12
+    scan_direction: str = "TopToBottom"
+    cleaning_cross_section: bool = False
+    spot_size: float = 5.0e-8
+    rate: float = 3.0e-3 # m3/A/s
+    dwell_time: float = 1.0e-6 # s
+
+    def __to_dict__(self) -> dict:
+
+        settings_dict = {
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "rotation": np.rad2deg(self.rotation),
+            "centre_x": self.centre_x,
+            "centre_y": self.centre_y,
+            "milling_current": self.milling_current,
+            "scan_direction": self.scan_direction,
+            "cleaning_cross_section": self.cleaning_cross_section,
+            "spot_size": self.spot_size,
+            "rate": self.rate,
+            "dwell_time": self.dwell_time,
+        }
+
+        return settings_dict
+
+    @staticmethod
+    def __from_dict__(settings: dict) -> "MillingSettings":
+
+        if "centre_x" not in settings:
+            settings["centre_x"] = 0
+        if "centre_y" not in settings:
+            settings["centre_y"] = 0
+        if "rotation" not in settings:
+            settings["rotation"] = 0
+        if "scan_direction" not in settings:
+            settings["scan_direction"] = "TopToBottom"
+        if "cleaning_cross_section" not in settings:
+            settings["cleaning_cross_section"] = False
+
+        milling_settings = MillingSettings(
+            width=settings["width"],
+            height=settings["height"],
+            depth=settings["depth"],
+            rotation=np.deg2rad(settings["rotation"]),
+            centre_x=settings["centre_x"],
+            centre_y=settings["centre_y"],
+            milling_current=settings["milling_current"],
+            scan_direction=settings["scan_direction"],
+            cleaning_cross_section=settings["cleaning_cross_section"],
+            spot_size=settings["spot_size"],
+            rate=settings["rate"],
+            dwell_time=settings["dwell_time"],
+        )
+
+        return milling_settings
+
+
 if manufacturer == "Thermo":
 
     def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:

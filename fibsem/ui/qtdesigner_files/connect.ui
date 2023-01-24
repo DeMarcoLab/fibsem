@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>931</width>
+    <width>938</width>
     <height>850</height>
    </rect>
   </property>
@@ -36,7 +36,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -243,7 +243,7 @@
        <item row="2" column="2">
         <widget class="QLabel" name="label_16">
          <property name="text">
-          <string>microseconds</string>
+          <string>µs</string>
          </property>
         </widget>
        </item>
@@ -790,79 +790,10 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <layout class="QGridLayout" name="gridLayout_3">
-         <item row="4" column="3">
-          <widget class="QLabel" name="label_6">
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_7">
            <property name="text">
-            <string>Center Y:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="3">
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Height:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QDoubleSpinBox" name="milling_current"/>
-         </item>
-         <item row="3" column="3">
-          <widget class="QLabel" name="label_43">
-           <property name="text">
-            <string>Rotation:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="5">
-          <widget class="QLabel" name="label_50">
-           <property name="text">
-            <string>µm</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QDoubleSpinBox" name="center_x_milling">
-           <property name="maximum">
-            <double>1000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Center X:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="5">
-          <widget class="QLabel" name="label_51">
-           <property name="text">
-            <string>degrees</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="4">
-          <widget class="QDoubleSpinBox" name="center_y_milling"/>
-         </item>
-         <item row="2" column="4">
-          <widget class="QDoubleSpinBox" name="height_milling">
-           <property name="maximum">
-            <double>1000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="2">
-          <widget class="QLabel" name="label_48">
-           <property name="text">
-            <string>mm</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="3">
-          <widget class="QLabel" name="label_45">
-           <property name="text">
-            <string>Scan Direction:</string>
+            <string>Width:</string>
            </property>
           </widget>
          </item>
@@ -873,45 +804,27 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="4">
-          <widget class="QDoubleSpinBox" name="rotation_milling">
-           <property name="maximum">
-            <double>360.000000000000000</double>
+         <item row="4" column="3">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Center Y:</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="2">
-          <widget class="QLabel" name="label_47">
+         <item row="7" column="3">
+          <widget class="QLabel" name="label_56">
            <property name="text">
-            <string>µm</string>
+            <string>Rate</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="label_44">
-           <property name="text">
-            <string>Milling Current:</string>
-           </property>
-          </widget>
+         <item row="5" column="1">
+          <widget class="QDoubleSpinBox" name="milling_current"/>
          </item>
          <item row="3" column="1">
           <widget class="QDoubleSpinBox" name="depth_milling">
            <property name="maximum">
             <double>1000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="width_milling">
-           <property name="maximum">
-            <double>1000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>Width:</string>
            </property>
           </widget>
          </item>
@@ -922,19 +835,22 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="2">
-          <widget class="QLabel" name="label_46">
+         <item row="3" column="5">
+          <widget class="QLabel" name="label_51">
+           <property name="text">
+            <string>degrees</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="2">
+          <widget class="QLabel" name="label_47">
            <property name="text">
             <string>µm</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="2">
-          <widget class="QLabel" name="label_49">
-           <property name="text">
-            <string>nA</string>
-           </property>
-          </widget>
+         <item row="4" column="4">
+          <widget class="QDoubleSpinBox" name="center_y_milling"/>
          </item>
          <item row="6" column="0" colspan="2">
           <widget class="QLabel" name="label_53">
@@ -943,10 +859,17 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="2">
-          <widget class="QCheckBox" name="checkBox_cross_section">
+         <item row="2" column="3">
+          <widget class="QLabel" name="label_8">
            <property name="text">
-            <string/>
+            <string>Height:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QDoubleSpinBox" name="center_x_milling">
+           <property name="maximum">
+            <double>1000.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -964,6 +887,27 @@
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="2">
+          <widget class="QLabel" name="label_49">
+           <property name="text">
+            <string>nA</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_44">
+           <property name="text">
+            <string>Milling Current:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_55">
+           <property name="text">
+            <string>Spot size</string>
            </property>
           </widget>
          </item>
@@ -993,6 +937,34 @@
            </item>
           </widget>
          </item>
+         <item row="2" column="1">
+          <widget class="QDoubleSpinBox" name="width_milling">
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="4">
+          <widget class="QDoubleSpinBox" name="rotation_milling">
+           <property name="maximum">
+            <double>360.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="5">
+          <widget class="QLabel" name="label_50">
+           <property name="text">
+            <string>µm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLabel" name="label_46">
+           <property name="text">
+            <string>µm</string>
+           </property>
+          </widget>
+         </item>
          <item row="6" column="4" colspan="2">
           <widget class="QComboBox" name="milling_pattern">
            <item>
@@ -1016,6 +988,85 @@
             </property>
            </item>
           </widget>
+         </item>
+         <item row="4" column="2">
+          <widget class="QLabel" name="label_48">
+           <property name="text">
+            <string>mm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="2">
+          <widget class="QCheckBox" name="checkBox_cross_section">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Center X:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
+          <widget class="QLabel" name="label_43">
+           <property name="text">
+            <string>Rotation:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="4">
+          <widget class="QDoubleSpinBox" name="height_milling">
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="3">
+          <widget class="QLabel" name="label_45">
+           <property name="text">
+            <string>Scan Direction:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="label_57">
+           <property name="text">
+            <string>Dwell time</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="2">
+          <widget class="QLabel" name="label_58">
+           <property name="text">
+            <string>µm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="2">
+          <widget class="QLabel" name="label_59">
+           <property name="text">
+            <string>µs</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="5">
+          <widget class="QLabel" name="label_60">
+           <property name="text">
+            <string>m3/A/s</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QDoubleSpinBox" name="spot_size_um"/>
+         </item>
+         <item row="8" column="1">
+          <widget class="QDoubleSpinBox" name="dwell_time_us"/>
+         </item>
+         <item row="7" column="4">
+          <widget class="QDoubleSpinBox" name="rate_milling"/>
          </item>
         </layout>
        </item>
@@ -1141,7 +1192,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>931</width>
+     <width>938</width>
      <height>21</height>
     </rect>
    </property>
