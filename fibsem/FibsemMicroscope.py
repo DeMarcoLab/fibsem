@@ -6,6 +6,10 @@ import datetime
 import numpy as np
 from fibsem.config import load_microscope_manufacturer
 import sys
+import time
+
+
+# for easier usage
 
 from typing import Union
 import fibsem.constants as constants
@@ -17,6 +21,8 @@ if manufacturer == "Tescan":
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
     from tescanautomation.DrawBeam import IEtching
+    from tescanautomation.DrawBeam import IEtching
+    from tescanautomation.DrawBeam import Status as DBStatus
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -1081,6 +1087,24 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Beam.On()
         self.connection.DrawBeam.LoadLayer(self.layer)
         self.connection.DrawBeam.Start()
+        self.connection.Progress.Show("DrawBeam", "Layer 1 in progress", False, False, 0, 100)
+        while True:
+            status = self.connection.DrawBeam.GetStatus()
+            running = status[0] == DBStatus.ProjectLoadedExpositionInProgress
+            if running:
+                progress = 0
+                if status[1] > 0:
+                    progress = min(100, status[2]/status[1]*100)
+                printProgressBar(progress, 100)
+                self.connection.Progress.SetPercents(progress)
+                time.sleep(1)
+            else:
+                if status[0] == DBStatus.ProjectLoadedExpositionIdle:
+                    printProgressBar(100, 100, suffix='Finished')
+                break
+
+        print()  # new line on complete
+        self.connection.Progress.Hide()
 
     def finish_milling(self, imaging_current: float):
         self.connection.DrawBeam.UnloadLayer()
