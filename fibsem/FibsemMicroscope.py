@@ -1060,7 +1060,7 @@ class TescanMicroscope(FibsemMicroscope):
         mill_settings: MillingSettings,
     ):
 
-        fieldsize = 0.00025  # application_file.ajhsd or mill settings
+        fieldsize = self.connection.SEM.Optics.GetViewfield()  # application_file.ajhsd or mill settings
         beam_current = mill_settings.milling_current
         spot_size = 5.0e-8  # application_file
         rate = 3.0e-3  ## in application file called Volume per Dose (m3/C)
@@ -1081,6 +1081,8 @@ class TescanMicroscope(FibsemMicroscope):
             parallel=parallel_mode,
         )
         self.layer = self.connection.DrawBeam.Layer('Layer1', layer_settings)
+
+
 
     def run_milling(self, milling_current: float, asynch: bool = False):
 
@@ -1221,3 +1223,11 @@ def angle_difference(angle1: float, angle2: float) -> float:
 
 
 
+def printProgressBar(value, total, prefix='', suffix='', decimals=0, length=100, fill='█'):
+    """
+    terminal progress bar
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (value / float(total)))
+    filled_length = int(length * value // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end="")

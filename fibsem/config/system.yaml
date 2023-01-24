@@ -1,6 +1,6 @@
 # system
 system:
-  ip_address: "localhost"
+  ip_address: "192.168.137.226"
   application_file: autolamella
   manufacturer: "Tescan"
   # beams
