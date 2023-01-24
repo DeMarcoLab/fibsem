@@ -131,60 +131,60 @@ def read_protocol_dictionary(protocol: dict, stage_name: str) -> list[dict]:
     return protocol_stages
 
 
-def calculate_milling_time(patterns: list, milling_current: float) -> float:
+# def calculate_milling_time(patterns: list, milling_current: float) -> float:
 
-    # TODO: replace with estimate_milling_time_in_seconds
-    # TODO: interpolate between levels?
-    from fibsem import config
+#     # TODO: replace with estimate_milling_time_in_seconds
+#     # TODO: interpolate between levels?
+#     from fibsem import config
 
-    # volume (width * height * depth) / total_volume_sputter_rate
+#     # volume (width * height * depth) / total_volume_sputter_rate
 
-    # calculate sputter rate
-    if milling_current in config.MILLING_SPUTTER_RATE:
-        total_volume_sputter_rate = config.MILLING_SPUTTER_RATE[milling_current]
-    else:
-        total_volume_sputter_rate = 3.920e-1
+#     # calculate sputter rate
+#     if milling_current in config.MILLING_SPUTTER_RATE:
+#         total_volume_sputter_rate = config.MILLING_SPUTTER_RATE[milling_current]
+#     else:
+#         total_volume_sputter_rate = 3.920e-1
 
-    # calculate total milling volume
-    volume = 0
-    for stage in patterns:
-        for pattern in stage:
-            width = pattern.width * constants.METRE_TO_MICRON
-            height = pattern.height * constants.METRE_TO_MICRON
-            depth = pattern.depth * constants.METRE_TO_MICRON
-            volume += width * height * depth
+#     # calculate total milling volume
+#     volume = 0
+#     for stage in patterns:
+#         for pattern in stage:
+#             width = pattern.width * constants.METRE_TO_MICRON
+#             height = pattern.height * constants.METRE_TO_MICRON
+#             depth = pattern.depth * constants.METRE_TO_MICRON
+#             volume += width * height * depth
 
-    # estimate time
-    milling_time_seconds = (
-        volume / total_volume_sputter_rate
-    )  # um3 * 1/ (um3 / s) = seconds
+#     # estimate time
+#     milling_time_seconds = (
+#         volume / total_volume_sputter_rate
+#     )  # um3 * 1/ (um3 / s) = seconds
 
-    logging.info(f"WHDV: {width:.2f}um, {height:.2f}um, {depth:.2f}um, {volume:.2f}um3")
-    logging.info(f"Volume: {volume:.2e}, Rate: {total_volume_sputter_rate:.2e} um3/s")
-    logging.info(f"Milling Estimated Time: {milling_time_seconds / 60:.2f}m")
+#     logging.info(f"WHDV: {width:.2f}um, {height:.2f}um, {depth:.2f}um, {volume:.2f}um3")
+#     logging.info(f"Volume: {volume:.2e}, Rate: {total_volume_sputter_rate:.2e} um3/s")
+#     logging.info(f"Milling Estimated Time: {milling_time_seconds / 60:.2f}m")
 
-    return milling_time_seconds
+#     return milling_time_seconds
 
 
-def estimate_milling_time_in_seconds(
-    milling_stage_patterns: list[
-        list[Union[CleaningCrossSectionPattern, RectanglePattern]]
-    ]
-) -> float:
-    """Calculate the estimated milling time for all milling patterns in a milling stage.
+# def estimate_milling_time_in_seconds(
+#     milling_stage_patterns: list[
+#         list[Union[CleaningCrossSectionPattern, RectanglePattern]]
+#     ]
+# ) -> float:
+#     """Calculate the estimated milling time for all milling patterns in a milling stage.
 
-    Args:
-        milling_stage_patterns (list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]): milling patterns for each stage
+#     Args:
+#         milling_stage_patterns (list[list[Union[CleaningCrossSectionPattern, RectanglePattern]]]): milling patterns for each stage
 
-    Returns:
-        float: estimated milling time (seconds)
-    """
-    total_time_seconds = 0
-    for patterns in milling_stage_patterns:
-        for pattern in patterns:
-            total_time_seconds += pattern.time
+#     Returns:
+#         float: estimated milling time (seconds)
+#     """
+#     total_time_seconds = 0
+#     for patterns in milling_stage_patterns:
+#         for pattern in patterns:
+#             total_time_seconds += pattern.time
 
-    return total_time_seconds
+#     return total_time_seconds
 
 
 ### PATTERNING
