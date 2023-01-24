@@ -808,7 +808,11 @@
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QDoubleSpinBox" name="center_x_milling"/>
+          <widget class="QDoubleSpinBox" name="center_x_milling">
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+          </widget>
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_4">
@@ -828,7 +832,11 @@
           <widget class="QDoubleSpinBox" name="center_y_milling"/>
          </item>
          <item row="2" column="4">
-          <widget class="QDoubleSpinBox" name="height_milling"/>
+          <widget class="QDoubleSpinBox" name="height_milling">
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+          </widget>
          </item>
          <item row="4" column="2">
           <widget class="QLabel" name="label_48">
@@ -852,7 +860,11 @@
           </widget>
          </item>
          <item row="3" column="4">
-          <widget class="QDoubleSpinBox" name="rotation_milling"/>
+          <widget class="QDoubleSpinBox" name="rotation_milling">
+           <property name="maximum">
+            <double>360.000000000000000</double>
+           </property>
+          </widget>
          </item>
          <item row="3" column="2">
           <widget class="QLabel" name="label_47">
@@ -869,10 +881,18 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QDoubleSpinBox" name="depth_milling"/>
+          <widget class="QDoubleSpinBox" name="depth_milling">
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+          </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="width_milling"/>
+          <widget class="QDoubleSpinBox" name="width_milling">
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+          </widget>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_7">

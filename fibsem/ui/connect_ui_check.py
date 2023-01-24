@@ -119,7 +119,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.click_IB_Image()
 
     def milling_protocol(self):
-        from FibsemMilling import milling_protocol
+        from fibsem.FibsemMilling import milling_protocol
 
         mill_settings = MillingSettings(
             width = self.width_milling.value()*constants.MICRO_TO_SI,
