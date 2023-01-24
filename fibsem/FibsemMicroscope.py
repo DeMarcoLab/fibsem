@@ -1049,8 +1049,8 @@ class TescanMicroscope(FibsemMicroscope):
         # z_move = y_sample_move * np.sin(corrected_pretilt_angle)
 
 
-        y_move = expected_y/np.cos((stage_rotation + corrected_pretilt_angle)) 
-        z_move = y_move*np.sin((stage_rotation + corrected_pretilt_angle)) 
+        y_move = expected_y/np.cos((stage_tilt + corrected_pretilt_angle)) 
+        z_move = y_move*np.sin((stage_tilt + corrected_pretilt_angle)) 
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
