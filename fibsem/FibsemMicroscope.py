@@ -933,7 +933,7 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         # move stage
-        stage_position = FibsemStagePosition(x=x_move.x*constants.METRE_TO_MILLIMETRE, y=yz_move.y*constants.METRE_TO_MILLIMETRE, z=yz_move.z*constants.METRE_TO_MILLIMETRE, r=0, t=0)
+        stage_position = FibsemStagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z, r=0, t=0)
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
 
@@ -960,7 +960,7 @@ class TescanMicroscope(FibsemMicroscope):
         z_move = dy / np.cos(np.deg2rad(35))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         #move_settings = MoveSettings(link_z_y=True)
-        z_move = FibsemStagePosition(x =0, y=0, z=z_move*constants.METRE_TO_MILLIMETRE, r=0, t=0)
+        z_move = FibsemStagePosition(x =0, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
         logging.info(f"eucentric movement: {z_move}")
 
@@ -1049,8 +1049,10 @@ class TescanMicroscope(FibsemMicroscope):
         # z_move = y_sample_move * np.sin(corrected_pretilt_angle)
 
 
-        y_move = expected_y/np.cos((stage_tilt + corrected_pretilt_angle)) 
+        y_move = expected_y/np.cos((stage_tilt + corrected_pretilt_angle))
+         
         z_move = y_move*np.sin((stage_tilt + corrected_pretilt_angle)) 
+        print(f'Stage tilt: {stage_tilt}, corrected pretilt: {corrected_pretilt_angle}, y_move: {y_move} z_move: {z_move}')
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
