@@ -36,7 +36,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -757,20 +757,6 @@
          </property>
         </widget>
        </item>
-       <item row="9" column="3">
-        <widget class="QComboBox" name="comboBox">
-         <item>
-          <property name="text">
-           <string>Eucentric</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Stable</string>
-          </property>
-         </item>
-        </widget>
-       </item>
       </layout>
      </widget>
     </widget>
@@ -1112,6 +1098,20 @@
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBox">
+       <item>
+        <property name="text">
+         <string>Stable</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Eucentric</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item>
