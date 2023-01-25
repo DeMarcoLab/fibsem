@@ -59,7 +59,7 @@ from fibsem.structures import (
     MicroscopeSettings,
     BeamSettings,
     FibsemStagePosition,
-    MillingSettings,
+    FibsemMillingSettings,
 )
 
 
@@ -499,7 +499,7 @@ class ThermoMicroscope(FibsemMicroscope):
         application_file: str,
         patterning_mode: str,
         hfw: float,
-        mill_settings: MillingSettings,
+        mill_settings: FibsemMillingSettings,
     ):
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         self.connection.imaging.set_active_device(BeamType.ION.value)
@@ -532,7 +532,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.beam_current.value = imaging_current
         self.connection.patterning.mode = "Serial"
 
-    def draw_rectangle(self, mill_settings: MillingSettings):
+    def draw_rectangle(self, mill_settings: FibsemMillingSettings):
 
         if mill_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
@@ -1062,14 +1062,14 @@ class TescanMicroscope(FibsemMicroscope):
         application_file: str,
         patterning_mode: str,
         hfw: float,
-        mill_settings: MillingSettings,
+        mill_settings: FibsemMillingSettings,
     ):
 
         fieldsize = self.connection.SEM.Optics.GetViewfield()  # application_file.ajhsd or mill settings
         beam_current = mill_settings.milling_current
-        spot_size = 5.0e-8  # application_file
-        rate = 3.0e-3  ## in application file called Volume per Dose (m3/C)
-        dwell_time = 1.0e-6  # in seconds ## in application file
+        spot_size = mill_settings.spot_size  # application_file
+        rate = mill_settings.rate  ## in application file called Volume per Dose (m3/C)
+        dwell_time = mill_settings.dwell_time  # in seconds ## in application file
 
         if patterning_mode == "Serial":
             parallel_mode = False
@@ -1116,7 +1116,7 @@ class TescanMicroscope(FibsemMicroscope):
     def finish_milling(self, imaging_current: float):
         self.connection.DrawBeam.UnloadLayer()
 
-    def draw_rectangle(self, mill_settings: MillingSettings):
+    def draw_rectangle(self, mill_settings: FibsemMillingSettings):
 
         centre_x = mill_settings.centre_x
         centre_y = mill_settings.centre_y

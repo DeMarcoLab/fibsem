@@ -4,7 +4,7 @@ from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Millin
 from fibsem.ui.qtdesigner_files import connect
 from fibsem import utils, acquire
 import fibsem.movement as movement
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, MillingSettings, Point
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, Point
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -121,7 +121,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def milling_protocol(self):
         from fibsem.FibsemMilling import milling_protocol
 
-        mill_settings = MillingSettings(
+        mill_settings = FibsemMillingSettings(
             width = self.width_milling.value()*constants.MICRO_TO_SI,
             height = self.height_milling.value()*constants.MICRO_TO_SI,
             depth= self.depth_milling.value()*constants.MICRO_TO_SI,
@@ -131,6 +131,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             milling_current= self.milling_current.value()*constants.NANO_TO_SI,
             scan_direction= self.scan_direction.currentText(),
             cleaning_cross_section= self.checkBox_cross_section.isChecked(),
+            rate= self.rate_milling.value(),
+            dwell_time= self.dwell_time_us.value()*constants.MICRO_TO_SI,
+            spot_size= self.spot_size_um.value()*constants.MICRO_TO_SI,
         )
 
         milling_protocol(self.microscope, self.image_settings, mill_settings, application_file="autolamella", patterning_mode="Serial")
