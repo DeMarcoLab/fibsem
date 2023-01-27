@@ -1066,8 +1066,20 @@ class TescanMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
-    def move_flat_to_beam(self):
-        pass
+    def move_flat_to_beam(self,beam_type: BeamType = BeamType.ELECTRON):
+        
+        # BUG if I set or pass BeamType.ION it still sees beam_type as BeamType.ELECTRON
+        if beam_type is BeamType.ION:
+            self.connection.Stage.MoveTo(
+                tiltx=55
+            )
+        elif beam_type is BeamType.ELECTRON:
+            self.connection.Stage.MoveTo(
+                tiltx=0
+            )
+        
+        logging.info(f'Moving Stage Flat to {beam_type.name} Beam')
+
 
     def setup_milling(
         self,
