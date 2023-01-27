@@ -343,77 +343,77 @@ def safe_absolute_stage_movement(
     return
 
 
-def move_stage_relative_with_corrected_movement(
-    microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings,
-    dx: float,
-    dy: float,
-    beam_type: BeamType,
-) -> None:
-    """Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
+# def move_stage_relative_with_corrected_movement(
+#     microscope: SdbMicroscopeClient,
+#     settings: MicroscopeSettings,
+#     dx: float,
+#     dy: float,
+#     beam_type: BeamType,
+# ) -> None:
+#     """Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-    Args:
-        microscope (SdbMicroscopeClient): autoscript microscope instance
-        settings (MicroscopeSettings): microscope settings
-        dx (float): distance along the x-axis (image coordinates)
-        dy (float): distance along the y-axis (image coordinates)
-        beam_type (BeamType): beam type to move in
-    """
-    stage = microscope.specimen.stage
-    wd = microscope.beams.electron_beam.working_distance.value
+#     Args:
+#         microscope (SdbMicroscopeClient): autoscript microscope instance
+#         settings (MicroscopeSettings): microscope settings
+#         dx (float): distance along the x-axis (image coordinates)
+#         dy (float): distance along the y-axis (image coordinates)
+#         beam_type (BeamType): beam type to move in
+#     """
+#     stage = microscope.specimen.stage
+#     wd = microscope.beams.electron_beam.working_distance.value
 
-    # calculate stage movement
-    x_move = x_corrected_stage_movement(dx)
-    yz_move = y_corrected_stage_movement(
-        microscope=microscope,
-        settings=settings,
-        expected_y=dy,
-        beam_type=beam_type,
-    )
+#     # calculate stage movement
+#     x_move = x_corrected_stage_movement(dx)
+#     yz_move = y_corrected_stage_movement(
+#         microscope=microscope,
+#         settings=settings,
+#         expected_y=dy,
+#         beam_type=beam_type,
+#     )
 
-    # move stage
-    stage_position = StagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
-    logging.info(f"moving stage ({beam_type.name}): {stage_position}")
-    stage.relative_move(stage_position)
+#     # move stage
+#     stage_position = StagePosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
+#     logging.info(f"moving stage ({beam_type.name}): {stage_position}")
+#     stage.relative_move(stage_position)
 
-    # adjust working distance to compensate for stage movement
-    microscope.beams.electron_beam.working_distance.value = wd
-    microscope.specimen.stage.link()
+#     # adjust working distance to compensate for stage movement
+#     microscope.beams.electron_beam.working_distance.value = wd
+#     microscope.specimen.stage.link()
 
-    return
+#     return
 
 
-def move_stage_eucentric_correction(
-    microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings,
-    dy: float,
-    static_wd: bool = True,
-) -> None:
-    """Move the stage vertically to correct eucentric point
+# def move_stage_eucentric_correction(
+#     microscope: SdbMicroscopeClient,
+#     settings: MicroscopeSettings,
+#     dy: float,
+#     static_wd: bool = True,
+# ) -> None:
+#     """Move the stage vertically to correct eucentric point
 
-    Args:
-        microscope (SdbMicroscopeClient): autoscript microscope instance
-        dy (float): distance in y-axis (image coordinates)
-    """
-    wd = microscope.beams.electron_beam.working_distance.value
+#     Args:
+#         microscope (SdbMicroscopeClient): autoscript microscope instance
+#         dy (float): distance in y-axis (image coordinates)
+#     """
+#     wd = microscope.beams.electron_beam.working_distance.value
 
-    z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
+#     z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
-    move_settings = MoveSettings(link_z_y=True)
-    z_move = StagePosition(z=z_move, coordinate_system="Specimen")
-    microscope.specimen.stage.relative_move(z_move, move_settings)
-    logging.info(f"eucentric movement: {z_move}")
+#     move_settings = MoveSettings(link_z_y=True)
+#     z_move = StagePosition(z=z_move, coordinate_system="Specimen")
+#     microscope.specimen.stage.relative_move(z_move, move_settings)
+#     logging.info(f"eucentric movement: {z_move}")
 
-    if static_wd:
-        microscope.beams.electron_beam.working_distance.value = (
-            settings.system.electron.eucentric_height
-        )
-        microscope.beams.ion_beam.working_distance.value = (
-            settings.system.ion.eucentric_height
-        )
-    else:
-        microscope.beams.electron_beam.working_distance.value = wd
-    microscope.specimen.stage.link()
+#     if static_wd:
+#         microscope.beams.electron_beam.working_distance.value = (
+#             settings.system.electron.eucentric_height
+#         )
+#         microscope.beams.ion_beam.working_distance.value = (
+#             settings.system.ion.eucentric_height
+#         )
+#     else:
+#         microscope.beams.electron_beam.working_distance.value = wd
+#     microscope.specimen.stage.link()
 
-    # FLAG_TEST
-    # do we need to do the working distance adjustment here?
+#     # FLAG_TEST
+#     # do we need to do the working distance adjustment here?
