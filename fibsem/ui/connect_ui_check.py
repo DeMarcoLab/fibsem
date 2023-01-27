@@ -294,15 +294,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def autosave_toggle(self):
         """Toggles on Autosave which saves image everytime an image is acquired
         """
-
-        if self.autosave_enable.isChecked(): 
-            self.image_settings.save = True
-            logging.info("UI | Autosave Enabled")
-            
-        else:
-            self.image_settings.save = False
-            logging.info("UI | Autosave Disabled")
-            
+        autosave = self.autosave_enable.isChecked()
+        self.image_settings.save = autosave
+        logging.info(f"UI | Autosave Enabled: {autosave}  ")
 
         
 
@@ -352,14 +346,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
     
     def gamma_check(self):
-
-        if self.gamma_enabled.checkState() == 2:
-            self.image_settings.gamma.enabled = True
-            logging.info("UI | Gamma Enabled")
-            
-        elif self.gamma_enabled.checkState() == 0:
-            self.image_settings.gamma.enabled = False
-            logging.info("UI | Gamma Disabled")
+        
+        gamma = self.gamma_enabled.isChecked()
+        self.image_settings.gamma.enabled = gamma
+        logging.info(f"UI | Gamma Enabled: {gamma}")
             
 
     ##################################################################
