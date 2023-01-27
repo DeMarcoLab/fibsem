@@ -295,11 +295,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         """Toggles on Autosave which saves image everytime an image is acquired
         """
 
-        if self.autosave_enable.checkState() == 2:
+        if self.autosave_enable.isChecked(): 
             self.image_settings.save = True
             logging.info("UI | Autosave Enabled")
             
-        elif self.autosave_enable.checkState() == 0:
+        else:
             self.image_settings.save = False
             logging.info("UI | Autosave Disabled")
             
