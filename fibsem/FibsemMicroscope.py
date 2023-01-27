@@ -103,6 +103,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def move_flat_to_beam(self):
+        pass
+
+    @abstractmethod
     def setup_milling(self):
         pass
 
@@ -493,6 +497,10 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
+    def move_flat_to_beam(self):
+
+        pass
+
 
     def setup_milling(
         self,
@@ -557,8 +565,6 @@ class ThermoMicroscope(FibsemMicroscope):
     def draw_line(self, mill_settings: FibsemMillingSettings):
 
         pass
-
-
 
     def set_microscope_state(
         self, microscope_state: MicroscopeState
@@ -1060,6 +1066,8 @@ class TescanMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
+    def move_flat_to_beam(self):
+        pass
 
     def setup_milling(
         self,
@@ -1137,7 +1145,8 @@ class TescanMicroscope(FibsemMicroscope):
             Height=height,
         )
 
-        
+    def draw_line(self, mill_settings: FibsemMillingSettings):
+        pass
 
     def set_microscope_state(
         self, microscope_state: MicroscopeState
