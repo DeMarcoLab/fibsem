@@ -1157,7 +1157,23 @@ class TescanMicroscope(FibsemMicroscope):
             Height=height,
         )
 
-    def draw_line(self, mill_settings: FibsemMillingSettings):
+    def draw_line(self, pattern_settings: FibsemPatternSettings):
+
+        ## potenial template for line 
+
+        #TODO FibsemPatternSettings
+
+        start_x = pattern_settings.line.start_x
+        start_y = pattern_settings.line.start_y
+        end_x = pattern_settings.line.end_x
+        end_y = pattern_settings.line.end_y
+
+        self.layer.addLine(BeginX=start_x,
+            BeginY=start_y,
+            EndX=end_x,
+            EndY=end_y,
+            Depth=1)
+
         pass
 
     def set_microscope_state(
