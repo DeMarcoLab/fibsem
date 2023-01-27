@@ -363,9 +363,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # move stage
         stage_position = FibsemStagePosition(
-            x=x_move.x * 1000,
-            y=yz_move.y * 1000,
-            z=yz_move.z * 1000,
+            x=x_move.x * constants.METRE_TO_MILLIMETRE,
+            y=yz_move.y * constants.METRE_TO_MILLIMETRE,
+            z=yz_move.z * constants.METRE_TO_MILLIMETRE,
             r=0,
             t=0,
             coordinate_system="raw",
@@ -554,6 +554,10 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.rotation = mill_settings.rotation
         pattern.scan_direction = mill_settings.scan_direction
 
+    def draw_line(self, mill_settings: FibsemMillingSettings):
+
+        pass
+
 
 
     def set_microscope_state(
@@ -635,10 +639,10 @@ class TescanMicroscope(FibsemMicroscope):
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
 
-        if image_settings.beam_type.value == 1:
+        if image_settings.beam_type.name == "ELECTRON":
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
-        if image_settings.beam_type.value == 2:
+        if image_settings.beam_type.name == "ION":
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
 
@@ -662,7 +666,7 @@ class TescanMicroscope(FibsemMicroscope):
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
 
-        self.connection.SEM.Optics.SetViewfield(image_settings.hfw * 1000)
+        self.connection.SEM.Optics.SetViewfield(image_settings.hfw * 1000)  #TODO MAGIC NUMBER ## mm to m?? why x1000?
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
             0, imageWidth, imageHeight, dwell_time
@@ -727,7 +731,7 @@ class TescanMicroscope(FibsemMicroscope):
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
 
-        self.connection.FIB.Optics.SetViewfield(image_settings.hfw * 1000)
+        self.connection.FIB.Optics.SetViewfield(image_settings.hfw * 1000)  #TODO MAGIC NUMBER ## mm to m?? why x1000?
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(
             0, imageWidth, imageHeight, dwell_time
@@ -785,9 +789,9 @@ class TescanMicroscope(FibsemMicroscope):
     def get_stage_position(self):
         x, y, z, r, t = self.connection.Stage.GetPosition()
         stage_position = FibsemStagePosition(
-            x / 1000,
-            y / 1000,
-            z / 1000,
+            x * constants.MILLIMETRE_TO_METRE,
+            y * constants.MILLIMETRE_TO_METRE,
+            z * constants.MILLIMETRE_TO_METRE,
             r * constants.DEGREES_TO_RADIANS,
             t * constants.DEGREES_TO_RADIANS,
             "raw",
@@ -808,8 +812,8 @@ class TescanMicroscope(FibsemMicroscope):
                 BeamSettings(
                     beam_type=BeamType.ION,
                     working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance,
-                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent() / (10e12),
-                    hfw=self.connection.FIB.Optics.GetViewfield() / 1000,
+                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent() *constants.PICO_TO_SI,
+                    hfw=self.connection.FIB.Optics.GetViewfield() *constants.MILLIMETRE_TO_METRE,
                     resolution=image_ib.metadata.image_settings.resolution,
                     dwell_time=image_ib.metadata.image_settings.dwell_time,
                     stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
@@ -822,9 +826,9 @@ class TescanMicroscope(FibsemMicroscope):
         if image_eb is not None:
             eb_settings = BeamSettings(
                 beam_type=BeamType.ELECTRON,
-                working_distance=self.connection.SEM.Optics.GetWD() / 1000,
-                beam_current=self.connection.SEM.Beam.GetCurrent() / (10e6),
-                hfw=self.connection.SEM.Optics.GetViewfield() / 1000,
+                working_distance=self.connection.SEM.Optics.GetWD() *constants.MILLIMETRE_TO_METRE,
+                beam_current=self.connection.SEM.Beam.GetCurrent() *constants.MICRO_TO_SI,
+                hfw=self.connection.SEM.Optics.GetViewfield() *constants.MILLIMETRE_TO_METRE,
                 resolution=image_eb.metadata.image_settings.resolution,  # TODO fix these empty parameters
                 dwell_time=image_eb.metadata.image_settings.dwell_time,
                 stigmation=image_eb.metadata.microscope_state.eb_settings.stigmation,
