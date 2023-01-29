@@ -497,9 +497,33 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
-    def move_flat_to_beam(self):
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
 
-        pass
+        """Make the sample surface flat to the electron or ion beam.
+
+        Args:
+            microscope (SdbMicroscopeClient): autoscript microscope instance
+            settings (MicroscopeSettings): microscope settings
+            beam_type (BeamType, optional): beam type to move flat to. Defaults to BeamType.ELECTRON.
+        """
+        stage_settings = settings.system.stage
+
+        if beam_type is BeamType.ELECTRON:
+            rotation = np.deg2rad(stage_settings.rotation_flat_to_electron)
+            tilt = np.deg2rad(stage_settings.tilt_flat_to_electron)
+
+        if beam_type is BeamType.ION:
+            rotation = np.deg2rad(stage_settings.rotation_flat_to_ion)
+            tilt = np.deg2rad(
+                stage_settings.tilt_flat_to_ion - stage_settings.tilt_flat_to_electron
+            )
+
+        # updated safe rotation move
+        logging.info(f"moving flat to {beam_type.name}")
+        stage_position = FibsemStagePosition(r=rotation, t=tilt, coordinate_system="Raw")
+        self.move_stage_relative(stage_position)
+
+        
 
 
     def setup_milling(
@@ -1066,19 +1090,18 @@ class TescanMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
-    def move_flat_to_beam(self,beam_type: BeamType = BeamType.ELECTRON):
+    def move_flat_to_beam(self,settings = MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
         
         # BUG if I set or pass BeamType.ION it still sees beam_type as BeamType.ELECTRON
+        stage_settings = settings.system.stage
         if beam_type is BeamType.ION:
-            self.connection.Stage.MoveTo(
-                tiltx=55
-            )
+            tilt = stage_settings.tilt_flat_to_ion
         elif beam_type is BeamType.ELECTRON:
-            self.connection.Stage.MoveTo(
-                tiltx=0
-            )
+            tilt = stage_settings.tilt_flat_to_electron
         
         logging.info(f'Moving Stage Flat to {beam_type.name} Beam')
+        position = FibsemStagePosition(t=tilt)
+        self.move_stage_relative(position)
 
 
     def setup_milling(
