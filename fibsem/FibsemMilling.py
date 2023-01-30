@@ -25,7 +25,7 @@ def setup_milling(
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
     hfw: float = 150e-6,
-    mill_settings: MillingSettings = None,
+    mill_settings: FibsemMillingSettings = None,
 ):
     """Setup Microscope for Ion Beam Milling.
 
@@ -87,7 +87,7 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
     elif pattern == FibsemPattern.Line:
         draw_line(microscope, pattern_settings)
 
-def draw_rectangle(microscope: FibsemMicroscope, pattern_settings, mill_settings: FibsemMillingSettings):
+def draw_rectangle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
     """Draw a rectangular milling pattern from settings
 
     Args:
