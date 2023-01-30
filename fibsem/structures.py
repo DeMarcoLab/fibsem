@@ -155,24 +155,24 @@ class FibsemRectangle:
             return cls(rect.left, rect.top, rect.width, rect.height)
 
 
-@dataclass
-class GammaSettings:
-    enabled: bool = False
-    min_gamma: float = 0.0
-    max_gamma: float = 2.0
-    scale_factor: float = 0.1
-    threshold: int = 45  # px
+# @dataclass
+# class GammaSettings:
+#     enabled: bool = False
+#     min_gamma: float = 0.0
+#     max_gamma: float = 2.0
+#     scale_factor: float = 0.1
+#     threshold: int = 45  # px
 
-    @staticmethod
-    def __from_dict__(settings: dict) -> "GammaSettings":
-        gamma_settings = GammaSettings(
-            enabled=settings["enabled"],
-            min_gamma=settings["min_gamma"],
-            max_gamma=settings["max_gamma"],
-            scale_factor=settings["scale_factor"],
-            threshold=settings["threshold"],
-        )
-        return gamma_settings
+#     @staticmethod
+#     def __from_dict__(settings: dict) -> "GammaSettings":
+#         gamma_settings = GammaSettings(
+#             enabled=settings["enabled"],
+#             min_gamma=settings["min_gamma"],
+#             max_gamma=settings["max_gamma"],
+#             scale_factor=settings["scale_factor"],s
+#             threshold=settings["threshold"],
+#         )
+#         return gamma_settings
 
 
 @dataclass
@@ -184,7 +184,11 @@ class ImageSettings:
     beam_type: BeamType = None
     save: bool = None
     label: str = None
-    gamma: GammaSettings = None
+    gamma_enabled: bool = None
+    min_gamma: float = None
+    max_gamma: float = None
+    scale_factor: float = None
+    gamma_threshold: int = None
     save_path: Path = None
     reduced_area: FibsemRectangle = None
 
@@ -199,14 +203,17 @@ class ImageSettings:
             settings["save_path"] = os.getcwd()
         if "label" not in settings:
             settings["label"] = "default_image"
-        if "gamma" not in settings:
-            settings["gamma"] = {
-                "enabled": False,
-                "min_gamma": 0.0,
-                "max_gamma": 2.0,
-                "scale_factor": 0.1,
-                "threshold": 45,
-            }
+        if "gamma_enabled" not in settings:
+            settings["gamma_enabled"] = True
+        if "min_gamma" not in settings:
+            settings["min_gamma"] = 0.0
+        if "max_gamma" not in settings:
+            settings["max_gamma"] = 2.0
+        if "scale_factor" not in settings:
+            settings["scale_factor"] = 0.1
+        if "gamma_threshold" not in settings:
+            settings["gamma_threshold"] = 45
+
         if "reduced_area" in settings and settings["reduced_area"] is not None:
             reduced_area = (FibsemRectangle.__from_dict__(settings["reduced_area"]),)
         else:
@@ -220,9 +227,11 @@ class ImageSettings:
             beam_type=BeamType[settings["beam_type"].upper()]
             if settings["beam_type"] is not None
             else None,
-            gamma=GammaSettings.__from_dict__(settings["gamma"])
-            if settings["gamma"] is not None
-            else None,
+            gamma_enabled=settings["gamma_enabled"],
+            min_gamma=settings["min_gamma"],
+            max_gamma=settings["max_gamma"],
+            gamma_threshold=settings["gamma_threshold"],
+            scale_factor=settings["scale_factor"],
             save=settings["save"],
             save_path=settings["save_path"],
             label=settings["label"],
@@ -241,15 +250,11 @@ class ImageSettings:
             "autocontrast": self.autocontrast
             if self.autocontrast is not None
             else None,
-            "gamma": {
-                "enabled": self.gamma.enabled,
-                "min_gamma": self.gamma.min_gamma,
-                "max_gamma": self.gamma.max_gamma,
-                "scale_factor": self.gamma.scale_factor,
-                "threshold": self.gamma.threshold,
-            }
-            if self.gamma is not None
-            else None,
+            "gamma_enabled": self.gamma_enabled if self.gamma_enabled is not None else None,
+            "min_gamma": self.min_gamma if self.min_gamma is not None else None,
+            "max_gamma": self.max_gamma if self.max_gamma is not None else None,
+            "scale_factor": self.scale_factor if self.scale_factor is not None else None,
+            "gamma_threshold": self.gamma_threshold if self.gamma_threshold is not None else None,
             "save": self.save if self.save is not None else None,
             "save_path": self.save_path if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
@@ -803,7 +808,11 @@ class FibsemImageMetadata:
                 hfw=image.width * image.metadata.binary_result.pixel_size.x,
                 autocontrast=True,
                 beam_type=beam_type,
-                gamma=GammaSettings(),
+                gamma_enabled=True,
+                gamma_threshold=45,
+                min_gamma=0.0,
+                max_gamma=2.0,
+                scale_factor=0.1,
                 save=False,
                 save_path="path",
                 label=current_timestamp(),
