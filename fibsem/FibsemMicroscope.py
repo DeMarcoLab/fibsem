@@ -311,8 +311,8 @@ class ThermoMicroscope(FibsemMicroscope):
             x (float): The x-coordinate to move to (in meters).
             y (float): The y-coordinate to move to (in meters).
             z (float): The z-coordinate to move to (in meters).
-            r (float): The rotation to apply (in degrees).
-            tx (float): The x-axis tilt to apply (in degrees).
+            r (float): The rotation to apply (in radians).
+            tx (float): The x-axis tilt to apply (in radians).
 
         Returns:
             None
@@ -332,8 +332,8 @@ class ThermoMicroscope(FibsemMicroscope):
             x (float): The x-coordinate to move to (in meters).
             y (float): The y-coordinate to move to (in meters).
             z (float): The z-coordinate to move to (in meters).
-            r (float): The rotation to apply (in degrees).
-            tx (float): The x-axis tilt to apply (in degrees).
+            r (float): The rotation to apply (in radians).
+            tx (float): The x-axis tilt to apply (in radians).
 
         Returns:
             None
@@ -372,9 +372,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # move stage
         stage_position = FibsemStagePosition(
-            x=x_move.x * constants.METRE_TO_MILLIMETRE,
-            y=yz_move.y * constants.METRE_TO_MILLIMETRE,
-            z=yz_move.z * constants.METRE_TO_MILLIMETRE,
+            x=x_move.x,
+            y=yz_move.y,
+            z=yz_move.z,
             r=0,
             t=0,
             coordinate_system="raw",
@@ -502,9 +502,33 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
-    def move_flat_to_beam(self):
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
 
-        pass
+        """Make the sample surface flat to the electron or ion beam.
+
+        Args:
+            microscope (SdbMicroscopeClient): autoscript microscope instance
+            settings (MicroscopeSettings): microscope settings
+            beam_type (BeamType, optional): beam type to move flat to. Defaults to BeamType.ELECTRON.
+        """
+        stage_settings = settings.system.stage
+
+        if beam_type is BeamType.ELECTRON:
+            rotation = np.deg2rad(stage_settings.rotation_flat_to_electron)
+            tilt = np.deg2rad(stage_settings.tilt_flat_to_electron)
+
+        if beam_type is BeamType.ION:
+            rotation = np.deg2rad(stage_settings.rotation_flat_to_ion)
+            tilt = np.deg2rad(
+                stage_settings.tilt_flat_to_ion - stage_settings.tilt_flat_to_electron
+            )
+
+        # updated safe rotation move
+        logging.info(f"moving flat to {beam_type.name}")
+        stage_position = FibsemStagePosition(r=rotation, t=tilt)
+        self.move_stage_relative(stage_position)
+
+        
 
 
     def setup_milling(
@@ -684,7 +708,7 @@ class TescanMicroscope(FibsemMicroscope):
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
 
-        self.connection.SEM.Optics.SetViewfield(image_settings.hfw * 1000)  #TODO MAGIC NUMBER ## mm to m?? why x1000?
+        self.connection.SEM.Optics.SetViewfield(image_settings.hfw * constants.METRE_TO_MILLIMETRE) 
 
         image = self.connection.SEM.Scan.AcquireImageFromChannel(
             0, imageWidth, imageHeight, dwell_time
@@ -749,7 +773,7 @@ class TescanMicroscope(FibsemMicroscope):
         imageWidth = int(numbers[0])
         imageHeight = int(numbers[1])
 
-        self.connection.FIB.Optics.SetViewfield(image_settings.hfw * 1000)  #TODO MAGIC NUMBER ## mm to m?? why x1000?
+        self.connection.FIB.Optics.SetViewfield(image_settings.hfw * constants.METRE_TO_MILLIMETRE) 
 
         image = self.connection.FIB.Scan.AcquireImageFromChannel(
             0, imageWidth, imageHeight, dwell_time
@@ -979,7 +1003,7 @@ class TescanMicroscope(FibsemMicroscope):
         """
         wd = self.connection.SEM.Optics.GetWD()
 
-        z_move = dy / np.cos(np.deg2rad(35))  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         #move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(x =0, y=0, z=z_move, r=0, t=0)
@@ -1078,19 +1102,18 @@ class TescanMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
-    def move_flat_to_beam(self,beam_type: BeamType = BeamType.ELECTRON):
+    def move_flat_to_beam(self,settings = MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
         
         # BUG if I set or pass BeamType.ION it still sees beam_type as BeamType.ELECTRON
+        stage_settings = settings.system.stage
+
         if beam_type is BeamType.ION:
-            self.connection.Stage.MoveTo(
-                tiltx=55
-            )
+            tilt = stage_settings.tilt_flat_to_ion
         elif beam_type is BeamType.ELECTRON:
-            self.connection.Stage.MoveTo(
-                tiltx=0
-            )
+            tilt = stage_settings.tilt_flat_to_electron
         
         logging.info(f'Moving Stage Flat to {beam_type.name} Beam')
+        self.connection.Stage.MoveTo(tiltx = tilt)
 
 
     def setup_milling(
@@ -1198,11 +1221,11 @@ class TescanMicroscope(FibsemMicroscope):
 
         # restore electron beam
         logging.info(f"restoring electron beam settings...")
-        self.connection.SEM.Optics.SetWD(microscope_state.eb_settings.working_distance) 
+        self.connection.SEM.Optics.SetWD(microscope_state.eb_settings.working_distance*constants.METRE_TO_MILLIMETRE) 
 
-        self.connection.SEM.Beam.SetCurrent(microscope_state.eb_settings.beam_current)
+        self.connection.SEM.Beam.SetCurrent(microscope_state.eb_settings.beam_current*constants.SI_TO_PICO)
 
-        self.connection.SEM.Optics.SetViewfield(microscope_state.eb_settings.hfw)
+        self.connection.SEM.Optics.SetViewfield(microscope_state.eb_settings.hfw*constants.METRE_TO_MILLIMETRE)
 
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
@@ -1212,7 +1235,7 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"restoring ion beam settings...")
 
         self.connection.FIB.Optics.SetViewfield(
-            microscope_state.ib_settings.hfw
+            microscope_state.ib_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
 
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation

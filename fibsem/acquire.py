@@ -65,15 +65,15 @@ def take_set_of_reference_images(
     return reference_images
 
 
-def auto_gamma(image: FibsemImage, settings: GammaSettings) -> FibsemImage:
+def auto_gamma(image: FibsemImage, min_gamma: float = 0.0,max_gamma: float = 2.0, scale_factor: float = 0.1,gamma_threshold: int = 45 ) -> FibsemImage:
     """Automatic gamma correction"""
     std = np.std(image.data)  # unused variable?
     mean = np.mean(image.data)
     diff = mean - 255 / 2.0
     gam = np.clip(
-        settings.min_gamma, 1 + diff * settings.scale_factor, settings.max_gamma
+        min_gamma, 1 + diff * scale_factor, max_gamma
     )
-    if abs(diff) < settings.threshold:
+    if abs(diff) < gamma_threshold:
         gam = 1.0
     logging.debug(
         f"AUTO_GAMMA | {image.metadata.image_settings.beam_type} | {diff:.3f} | {gam:.3f}"
@@ -116,9 +116,8 @@ def new_image(
         image_settings=settings,
     )
 
-    # apply gamma correction
-    if settings.gamma.enabled:
-        image = auto_gamma(image, settings.gamma)
+    if settings.gamma_enabled:
+        image = auto_gamma(image)
 
     # save image
     if settings.save:

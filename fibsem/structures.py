@@ -67,11 +67,11 @@ class BeamType(Enum):
 
 @dataclass
 class FibsemStagePosition:
-    x: float = None
-    y: float = None
-    z: float = None
-    r: float = None
-    t: float = None
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    r: float = 0.0
+    t: float = 0.0
     coordinate_system: str = None
 
     def __to_dict__(self) -> dict:
@@ -156,26 +156,6 @@ class FibsemRectangle:
 
 
 @dataclass
-class GammaSettings:
-    enabled: bool = False
-    min_gamma: float = 0.0
-    max_gamma: float = 2.0
-    scale_factor: float = 0.1
-    threshold: int = 45  # px
-
-    @staticmethod
-    def __from_dict__(settings: dict) -> "GammaSettings":
-        gamma_settings = GammaSettings(
-            enabled=settings["enabled"],
-            min_gamma=settings["min_gamma"],
-            max_gamma=settings["max_gamma"],
-            scale_factor=settings["scale_factor"],
-            threshold=settings["threshold"],
-        )
-        return gamma_settings
-
-
-@dataclass
 class ImageSettings:
     resolution: str = None
     dwell_time: float = None
@@ -184,7 +164,7 @@ class ImageSettings:
     beam_type: BeamType = None
     save: bool = None
     label: str = None
-    gamma: GammaSettings = None
+    gamma_enabled: bool = None
     save_path: Path = None
     reduced_area: FibsemRectangle = None
 
@@ -199,14 +179,8 @@ class ImageSettings:
             settings["save_path"] = os.getcwd()
         if "label" not in settings:
             settings["label"] = "default_image"
-        if "gamma" not in settings:
-            settings["gamma"] = {
-                "enabled": False,
-                "min_gamma": 0.0,
-                "max_gamma": 2.0,
-                "scale_factor": 0.1,
-                "threshold": 45,
-            }
+        if "gamma_enabled" not in settings:
+            settings["gamma_enabled"] = True
         if "reduced_area" in settings and settings["reduced_area"] is not None:
             reduced_area = (FibsemRectangle.__from_dict__(settings["reduced_area"]),)
         else:
@@ -220,9 +194,7 @@ class ImageSettings:
             beam_type=BeamType[settings["beam_type"].upper()]
             if settings["beam_type"] is not None
             else None,
-            gamma=GammaSettings.__from_dict__(settings["gamma"])
-            if settings["gamma"] is not None
-            else None,
+            gamma_enabled=settings["gamma_enabled"],
             save=settings["save"],
             save_path=settings["save_path"],
             label=settings["label"],
@@ -241,15 +213,7 @@ class ImageSettings:
             "autocontrast": self.autocontrast
             if self.autocontrast is not None
             else None,
-            "gamma": {
-                "enabled": self.gamma.enabled,
-                "min_gamma": self.gamma.min_gamma,
-                "max_gamma": self.gamma.max_gamma,
-                "scale_factor": self.gamma.scale_factor,
-                "threshold": self.gamma.threshold,
-            }
-            if self.gamma is not None
-            else None,
+            "gamma_enabled": self.gamma_enabled if self.gamma_enabled is not None else None,
             "save": self.save if self.save is not None else None,
             "save_path": self.save_path if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
@@ -760,7 +724,7 @@ class FibsemImageMetadata:
                 hfw=image.width * image.metadata.binary_result.pixel_size.x,
                 autocontrast=True,
                 beam_type=beam_type,
-                gamma=GammaSettings(),
+                gamma_enabled=True,
                 save=False,
                 save_path="path",
                 label=current_timestamp(),
@@ -793,8 +757,8 @@ class FibsemImageMetadata:
             self.image_settings.beam_type.value == image_settings.beam_type.value
         ), f"beam_type: {self.image_settings.beam_type.value} != {image_settings.beam_type.value}"
         assert (
-            self.image_settings.gamma.enabled == image_settings.gamma.enabled
-        ), f"gamma: {self.image_settings.gamma} != {image_settings.gamma}"
+            self.image_settings.gamma_enabled== image_settings.gamma_enabled
+        ), f"gamma: {self.image_settings.gamma_enabled} != {image_settings.gamma_enabled}"
         assert (
             self.image_settings.save == image_settings.save
         ), f"save: {self.image_settings.save} != {image_settings.save}"
