@@ -334,7 +334,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
     def image_dwell_time_change(self):
         ### dwell time in microseconds!!!!! ease of use for UI!!!!
-        self.image_settings.dwell_time = self.dwell_time_setting.value()/1.0e6
+        self.image_settings.dwell_time = self.dwell_time_setting.value()*constants.MICRO_TO_SI
 
 
 
@@ -524,7 +524,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def reset_ui_settings(self):
 
         self.dwell_time_setting.setValue(self.image_settings.dwell_time * constants.SI_TO_MICRO)
-        self.hfw_box.setValue(int(self.image_settings.hfw * 1e6))
+        self.hfw_box.setValue(int(self.image_settings.hfw*constants.SI_TO_MICRO))
 
         res_ful = self.image_settings.resolution.split("x")
 
