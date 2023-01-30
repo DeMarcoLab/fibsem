@@ -21,7 +21,6 @@ from fibsem.structures import (
     ImageSettings,
     MicroscopeSettings,
     BeamSystemSettings,
-    GammaSettings,
 )
 
 from pathlib import Path
