@@ -731,6 +731,6 @@ class Ui_MainWindow(object):
         self.pushButton_line.setText(_translate("MainWindow", "Add"))
         self.pushButton_milling.setText(_translate("MainWindow", "Start Milling"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Milling"))
-        self.comboBox.setItemText(0, _translate("MainWindow", "Stable"))
-        self.comboBox.setItemText(1, _translate("MainWindow", "Eucentric"))
+        self.comboBox.setItemText(0, _translate("MainWindow", "Stable Movement"))
+        self.comboBox.setItemText(1, _translate("MainWindow", "Eucentric Movement"))
         self.label_3.setText(_translate("MainWindow", "Console Log"))

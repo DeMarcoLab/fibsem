@@ -298,7 +298,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
      
         
         # move
-        self.movement_mode = MovementMode[self.comboBox.currentText()]
+        if self.comboBox.currentText() == "Stable Movement":
+            self.movement_mode = MovementMode["Stable"]
+        elif self.comboBox.currentText() == "Eucentric Movement":
+            self.movement_mode = MovementMode["Eucentric"]
 
         logging.debug(f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}")
 

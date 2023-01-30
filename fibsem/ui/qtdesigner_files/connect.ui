@@ -1280,12 +1280,12 @@
       <widget class="QComboBox" name="comboBox">
        <item>
         <property name="text">
-         <string>Stable</string>
+         <string>Stable Movement</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Eucentric</string>
+         <string>Eucentric Movement</string>
         </property>
        </item>
       </widget>
