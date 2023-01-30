@@ -73,7 +73,7 @@ def finish_milling(
     logging.info("finished ion beam milling.")
 
 
-def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings, pattern: FibsemPattern = FibsemPattern.Rectangle):
+def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
     """Draw a milling pattern from settings
 
     Args:
@@ -81,11 +81,11 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
         pattern_settings (FibsemPatternSettings): pattern settings
         mill_settings (FibsemMillingSettings): milling settings
     """
-    if pattern == FibsemPattern.Rectangle:
-        draw_rectangle(microscope, pattern_settings, mill_settings)
+    if pattern_settings.pattern is FibsemPattern.Rectangle:
+        microscope.draw_rectangle(pattern_settings, mill_settings)
 
-    elif pattern == FibsemPattern.Line:
-        draw_line(microscope, pattern_settings)
+    elif pattern_settings.pattern is FibsemPattern.Line:
+        microscope.draw_line(pattern_settings)
 
 def draw_rectangle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
     """Draw a rectangular milling pattern from settings
@@ -113,16 +113,15 @@ def milling_protocol(
     mill_settings: FibsemMillingSettings,
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
-    **patterns: FibsemPatternSettings,
+    pattern_settings : list = [],
 ):
     # setup milling
     hfw = image_settings.hfw
     setup_milling(microscope, application_file, patterning_mode, hfw, mill_settings)
 
     # draw patterns 
-    for pattern in patterns:
-        pattern_settings = patterns[pattern]
-        draw_pattern(microscope, pattern_settings, mill_settings, pattern)
+    for pattern in pattern_settings:
+        draw_pattern(microscope, pattern, mill_settings)
 
     # run milling
     run_milling(microscope, mill_settings.milling_current)

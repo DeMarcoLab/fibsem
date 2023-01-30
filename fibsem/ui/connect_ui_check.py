@@ -41,7 +41,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
         
-        self.patterns = []
+        self.pattern_settings = []
 
         # Gamma and Image Settings
 
@@ -104,27 +104,31 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.pushButton_line.clicked.connect(self.add_line)
         self.pushButton_rec.clicked.connect(self.add_rectangle)
 
-    def add_line(self, FibsemPatternSettings):
-        self.patterns.append(FibsemPatternSettings(
+    def add_line(self):
+        line = FibsemPatternSettings(
             pattern = FibsemPattern.Line,
-            start_x = self.milling_start_x.value()*constants.MILLIMETRE_TO_METRE,
-            start_y = self.milling_start_y.value()*constants.MILLIMETRE_TO_METRE,
-            end_x = self.milling_end_x.value()*constants.MILLIMETRE_TO_METRE,
-            end_y = self.milling_end_y.value()*constants.MILLIMETRE_TO_METRE,
+            start_x = self.milling_start_x.value()*constants.MICRO_TO_SI,
+            start_y = self.milling_start_y.value()*constants.MICRO_TO_SI,
+            end_x = self.milling_end_x.value()*constants.MICRO_TO_SI,
+            end_y = self.milling_end_y.value()*constants.MICRO_TO_SI,
             depth = self.depth_milling.value()*constants.MICRO_TO_SI,
             rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
-        ))
+        )
+        self.pattern_settings.append(line)
+        logging.info("UI | Line pattern added with start point: ({},{}), end point: ({},{}), depth: {} and rotation: {}".format(self.milling_start_x.value(),self.milling_start_y.value(),self.milling_end_x.value(),self.milling_end_y.value(),self.depth_milling.value(),self.rotation_milling.value()))
 
-    def add_rectangle(self, FibsemPatternSettings):
-        self.patterns.append(FibsemPatternSettings(
+    def add_rectangle(self):
+        rectangle = FibsemPatternSettings(
             pattern = FibsemPattern.Rectangle,
             width = self.width_milling.value()*constants.MICRO_TO_SI,
             height = self.height_milling.value()*constants.MICRO_TO_SI,
             depth= self.depth_milling.value()*constants.MICRO_TO_SI,
-            centre_x= self.center_x_milling.value()*constants.MILLIMETRE_TO_METRE,
-            centre_y= self.center_y_milling.value()*constants.MILLIMETRE_TO_METRE,
+            centre_x= self.center_x_milling.value()*constants.MICRO_TO_SI,
+            centre_y= self.center_y_milling.value()*constants.MICRO_TO_SI,
             rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
-        ))
+        )
+        self.pattern_settings.append(rectangle)
+        logging.info("UI | Rectangle pattern added with width: {}, height: {}, depth: {}, centre: ({},{}), and rotation: {}".format(self.width_milling.value(),self.height_milling.value(),self.depth_milling.value(),self.center_x_milling.value(),self.center_y_milling.value(),self.rotation_milling.value()))
 
     def save_image_beams(self):
         if self.image_label.text() != "":
@@ -162,7 +166,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             mill_settings = mill_settings, 
             application_file="autolamella", 
             patterning_mode="Serial", 
-            patterns=self.patterns)
+            pattern_settings= self.pattern_settings)
 
 ########################### Movement Functionality ##########################################
 
@@ -416,6 +420,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.microscope, self.microscope_settings = utils.setup_session()
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
             self.image_settings = self.microscope_settings.image
+            self.milling_settings = self.microscope_settings.milling
             logging.info("Microscope Connected")
             self.RefImage.setEnabled(True)
             self.ResetImage.setEnabled(True)
@@ -575,6 +580,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.autocontrast_enable.setCheckState(0)
         
         self.savepath_text.setText(self.image_settings.save_path)
+
+        self.milling_current.setValue(self.milling_settings.milling_current*constants.SI_TO_NANO)
+        self.dwell_time_us.setValue(self.milling_settings.dwell_time*constants.SI_TO_MICRO)
+        self.spot_size_um.setValue(self.milling_settings.spot_size*constants.SI_TO_MICRO)
+        self.rate_milling.setValue(self.milling_settings.rate)
+        self.scan_direction.setCurrentText(self.milling_settings.scan_direction)
 
 
 

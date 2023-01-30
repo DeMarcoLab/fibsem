@@ -595,6 +595,7 @@ class MicroscopeSettings:
     # default: DefaultSettings
     image: ImageSettings
     protocol: dict = None
+    milling: FibsemMillingSettings = None
 
     def __to_dict__(self) -> dict:
 
