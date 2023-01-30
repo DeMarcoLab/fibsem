@@ -1,5 +1,6 @@
 import sys
 import re
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import connect
 from fibsem import utils, acquire
 import fibsem.movement as movement
