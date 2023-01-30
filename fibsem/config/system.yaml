@@ -27,18 +27,26 @@ system:
     needle_stage_height_limit: 3.7e-3
 # user config settings
 user:
-  imaging_current: 20.e-12
-  milling_current: 2.e-9
-  resolution: "1536x1024"
-  hfw: 150.e-6  
-  beam_type: "Electron"
-  autocontrast: True
-  dwell_time: 1.e-6
-  save: False
-  gamma: # gamma correction parameters
-    enabled: True
-    min_gamma: 0.15
-    max_gamma: 1.8
-    scale_factor: 0.01
-    threshold: 46 # px
+  milling: 
+    milling_current: 2.e-9
+    spot_size: 5.0e-8
+    cleaning_cross_section: False
+    rate: 3.0e-3
+    scan_direction: "TopToBottom"
+    dwell_time: 1.e-6
+  
+  imaging: 
+    imaging_current: 20.e-12
+    resolution: "1536x1024"
+    hfw: 150.e-6  
+    beam_type: "Electron"
+    autocontrast: True
+    dwell_time: 1.e-6
+    save: False
+    gamma: # gamma correction parameters
+      enabled: True
+      min_gamma: 0.15
+      max_gamma: 1.8
+      scale_factor: 0.01
+      threshold: 46 # px
 

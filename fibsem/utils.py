@@ -17,7 +17,7 @@ from fibsem.structures import (
     ImageSettings,
     SystemSettings,
     FibsemImage,
-    FibsemStagePosition
+    FibsemMillingSettings
 )
 from fibsem.FibsemMicroscope import FibsemMicroscope
 
@@ -190,7 +190,9 @@ def load_settings_from_config(
 
     # user settings
     # default_settings = DefaultSettings.__from_dict__(settings["user"])
-    image_settings = ImageSettings.__from_dict__(settings["user"])
+    image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
+
+    milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
 
     # protocol settings
     protocol = load_protocol(protocol_path)
@@ -200,6 +202,7 @@ def load_settings_from_config(
         # default=default_settings,
         image=image_settings,
         protocol=protocol,
+        milling = milling_settings,
     )
 
     return settings
