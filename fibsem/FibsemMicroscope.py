@@ -60,6 +60,7 @@ from fibsem.structures import (
     BeamSettings,
     FibsemStagePosition,
     FibsemMillingSettings,
+    FibsemPatternSettings,
 )
 
 
@@ -120,6 +121,10 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def draw_rectangle(self):
+        pass
+
+    @abstractmethod
+    def draw_line(self):
         pass
 
     @abstractmethod
@@ -540,31 +545,38 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.beam_current.value = imaging_current
         self.connection.patterning.mode = "Serial"
 
-    def draw_rectangle(self, mill_settings: FibsemMillingSettings):
+    def draw_rectangle(self, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
 
         if mill_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
-                center_x=mill_settings.centre_x,
-                center_y=mill_settings.centre_y,
-                width=mill_settings.width,
-                height=mill_settings.height,
-                depth=mill_settings.depth,
+                center_x=pattern_settings.centre_x,
+                center_y=pattern_settings.centre_y,
+                width=pattern_settings.width,
+                height=pattern_settings.height,
+                depth=pattern_settings.depth,
             )
         else:
             pattern = self.connection.patterning.create_rectangle(
-                center_x=mill_settings.centre_x,
-                center_y=mill_settings.centre_y,
-                width=mill_settings.width,
-                height=mill_settings.height,
-                depth=mill_settings.depth,
+                center_x=pattern_settings.centre_x,
+                center_y=pattern_settings.centre_y,
+                width=pattern_settings.width,
+                height=pattern_settings.height,
+                depth=pattern_settings.depth,
             )
 
-        pattern.rotation = mill_settings.rotation
+        pattern.rotation = pattern_settings.rotation
         pattern.scan_direction = mill_settings.scan_direction
 
-    def draw_line(self, mill_settings: FibsemMillingSettings):
+    def draw_line(self, pattern_settings: FibsemPatternSettings):
+        pattern = self.connection.patterning.create_line(
+            start_x=pattern_settings.start_x,
+            start_y=pattern_settings.start_y,
+            end_x=pattern_settings.end_x,
+            end_y=pattern_settings.end_y,
+            depth=pattern_settings.depth,
+            )
 
-        pass
+        # return pattern
 
     def set_microscope_state(
         self, microscope_state: MicroscopeState
@@ -1140,14 +1152,14 @@ class TescanMicroscope(FibsemMicroscope):
     def finish_milling(self, imaging_current: float):
         self.connection.DrawBeam.UnloadLayer()
 
-    def draw_rectangle(self, mill_settings: FibsemMillingSettings):
+    def draw_rectangle(self, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
 
-        centre_x = mill_settings.centre_x
-        centre_y = mill_settings.centre_y
-        depth = mill_settings.depth
-        width = mill_settings.width
-        height = mill_settings.height
-        rotation = mill_settings.rotation  # CHECK UNITS (TESCAN Takes Degrees)
+        centre_x = pattern_settings.centre_x
+        centre_y = pattern_settings.centre_y
+        depth = pattern_settings.depth
+        width = pattern_settings.width
+        height = pattern_settings.height
+        rotation = pattern_settings.rotation  # CHECK UNITS (TESCAN Takes Degrees)
 
         self.layer.addRectangleFilled(
             CenterX=centre_x,
@@ -1159,22 +1171,18 @@ class TescanMicroscope(FibsemMicroscope):
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
 
-        ## potenial template for line 
+        start_x = pattern_settings.start_x
+        start_y = pattern_settings.start_y
+        end_x = pattern_settings.end_x
+        end_y = pattern_settings.end_y
+        depth = pattern_settings.depth
 
-        #TODO FibsemPatternSettings
-
-        start_x = pattern_settings.line.start_x
-        start_y = pattern_settings.line.start_y
-        end_x = pattern_settings.line.end_x
-        end_y = pattern_settings.line.end_y
-
-        self.layer.addLine(BeginX=start_x,
+        self.layer.addLine(
+            BeginX=start_x,
             BeginY=start_y,
             EndX=end_x,
             EndY=end_y,
-            Depth=1)
-
-        pass
+            Depth=depth)
 
     def set_microscope_state(
         self, microscope_state: MicroscopeState

@@ -335,73 +335,49 @@ class MicroscopeState:
 
         return microscope_state
 
+class FibsemPattern(Enum):
+    Rectangle = 1
+    Line = 2
 
-@dataclass
-class MillingSettings:
-    # NOTE: Change to FibsemMillingSettings??
-    width: float
-    height: float
-    depth: float
-    rotation: float = 0.0  # deg
-    centre_x: float = 0.0  # TODO: change to Point?
-    centre_y: float = 0.0
-    milling_current: float = 20.0e-12
-    scan_direction: str = "TopToBottom"
-    cleaning_cross_section: bool = False
+class FibsemPatternSettings:
+    '''
+    FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
+    
+    Args:
+        pattern (FibsemPattern): Used to indicate which pattern is utilised. Currently either Rectangle or Line.
+        **kwargs: If FibsemPattern.Rectangle
+                    width: float (m),
+                    height: float (m), 
+                    depth: float (m),
+                    rotation: float = 0.0 (m), 
+                    centre_x: float = 0.0 (m), 
+                    centre_y: float = 0.0 (m),
 
-    def __to_dict__(self) -> dict:
-
-        settings_dict = {
-            "width": self.width,
-            "height": self.height,
-            "depth": self.depth,
-            "rotation": np.rad2deg(self.rotation),
-            "centre_x": self.centre_x,
-            "centre_y": self.centre_y,
-            "milling_current": self.milling_current,
-            "scan_direction": self.scan_direction,
-            "cleaning_cross_section": self.cleaning_cross_section,
-        }
-
-        return settings_dict
-
-    @staticmethod
-    def __from_dict__(settings: dict) -> "MillingSettings":
-
-        if "centre_x" not in settings:
-            settings["centre_x"] = 0
-        if "centre_y" not in settings:
-            settings["centre_y"] = 0
-        if "rotation" not in settings:
-            settings["rotation"] = 0
-        if "scan_direction" not in settings:
-            settings["scan_direction"] = "TopToBottom"
-        if "cleaning_cross_section" not in settings:
-            settings["cleaning_cross_section"] = False
-
-        milling_settings = MillingSettings(
-            width=settings["width"],
-            height=settings["height"],
-            depth=settings["depth"],
-            rotation=np.deg2rad(settings["rotation"]),
-            centre_x=settings["centre_x"],
-            centre_y=settings["centre_y"],
-            milling_current=settings["milling_current"],
-            scan_direction=settings["scan_direction"],
-            cleaning_cross_section=settings["cleaning_cross_section"],
-        )
-
-        return milling_settings
-
+                If FibsemPattern.Line
+                    start_x: float (m), 
+                    start_y: float (m), 
+                    end_x: float (m), 
+                    end_y: float (m), 
+                    depth: float (m),
+    '''
+    def __init__(self, pattern: FibsemPattern = FibsemPattern.Rectangle, **kwargs):
+        self.pattern = pattern
+        if pattern == FibsemPattern.Rectangle:
+            self.width = kwargs["width"]
+            self.height = kwargs["height"]
+            self.depth = kwargs["depth"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.centre_x = kwargs["centre_x"] if "centre_x" in kwargs else 0.0
+            self.centre_y = kwargs["centre_y"] if "centre_y" in kwargs else 0.0
+        elif pattern == FibsemPattern.Line:
+            self.start_x = kwargs["start_x"]
+            self.start_y = kwargs["start_y"]
+            self.end_x = kwargs["end_x"]
+            self.end_y = kwargs["end_y"]
+            self.depth = kwargs["depth"]
 
 @dataclass
 class FibsemMillingSettings:
-    width: float
-    height: float
-    depth: float
-    rotation: float = 0.0  # deg
-    centre_x: float = 0.0  # TODO: change to Point?
-    centre_y: float = 0.0
     milling_current: float = 20.0e-12
     scan_direction: str = "TopToBottom"
     cleaning_cross_section: bool = False
@@ -412,12 +388,6 @@ class FibsemMillingSettings:
     def __to_dict__(self) -> dict:
 
         settings_dict = {
-            "width": self.width,
-            "height": self.height,
-            "depth": self.depth,
-            "rotation": np.rad2deg(self.rotation),
-            "centre_x": self.centre_x,
-            "centre_y": self.centre_y,
             "milling_current": self.milling_current,
             "scan_direction": self.scan_direction,
             "cleaning_cross_section": self.cleaning_cross_section,
@@ -429,26 +399,13 @@ class FibsemMillingSettings:
         return settings_dict
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "MillingSettings":
-
-        if "centre_x" not in settings:
-            settings["centre_x"] = 0
-        if "centre_y" not in settings:
-            settings["centre_y"] = 0
-        if "rotation" not in settings:
-            settings["rotation"] = 0
+    def __from_dict__(settings: dict) -> "FibsemMillingSettings":
         if "scan_direction" not in settings:
             settings["scan_direction"] = "TopToBottom"
         if "cleaning_cross_section" not in settings:
             settings["cleaning_cross_section"] = False
 
-        milling_settings = MillingSettings(
-            width=settings["width"],
-            height=settings["height"],
-            depth=settings["depth"],
-            rotation=np.deg2rad(settings["rotation"]),
-            centre_x=settings["centre_x"],
-            centre_y=settings["centre_y"],
+        milling_settings = FibsemMillingSettings(
             milling_current=settings["milling_current"],
             scan_direction=settings["scan_direction"],
             cleaning_cross_section=settings["cleaning_cross_section"],

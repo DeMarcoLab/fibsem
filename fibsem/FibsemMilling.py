@@ -1,7 +1,7 @@
 from fibsem import constants
 import logging
 import numpy as np
-from fibsem.structures import BeamType, MillingSettings, Point, ImageSettings
+from fibsem.structures import BeamType, FibsemPattern, FibsemPatternSettings, FibsemMillingSettings, Point, ImageSettings
 from typing import Union
 from fibsem.FibsemMicroscope import FibsemMicroscope
 
@@ -73,20 +73,46 @@ def finish_milling(
     logging.info("finished ion beam milling.")
 
 
-def draw_rectangle(microscope: FibsemMicroscope, mill_settings: MillingSettings):
+def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings, pattern: FibsemPattern = FibsemPattern.Rectangle):
+    """Draw a milling pattern from settings
+
+    Args:
+        microscope (FibsemMicroscope): Fibsem microscope instance
+        pattern_settings (FibsemPatternSettings): pattern settings
+        mill_settings (FibsemMillingSettings): milling settings
+    """
+    if pattern == FibsemPattern.Rectangle:
+        draw_rectangle(microscope, pattern_settings, mill_settings)
+
+    elif pattern == FibsemPattern.Line:
+        draw_line(microscope, pattern_settings)
+
+def draw_rectangle(microscope: FibsemMicroscope, pattern_settings, mill_settings: FibsemMillingSettings):
     """Draw a rectangular milling pattern from settings
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
+        pattern_settings (FibsemPatternSettings): pattern settings
+        mill_settings (FibsemMillingSettings): milling settings
+    """
+    microscope.draw_rectangle(pattern_settings, mill_settings)
+
+def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
+    """Draw a line milling pattern from settings
+    
+    Args:
+        microscope (FibsemMicroscope): Fibsem microscope instance
         mill_settings (MillingSettings): milling pattern settings
     """
-    microscope.draw_rectangle(mill_settings)
+    microscope.draw_line(pattern_settings)
 
 
 def milling_protocol(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
-    mill_settings: MillingSettings,
+    pattern_settings: FibsemPatternSettings,
+    mill_settings: FibsemMillingSettings,
+    pattern: FibsemPattern = FibsemPattern.Rectangle,
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
 ):
@@ -94,8 +120,8 @@ def milling_protocol(
     hfw = image_settings.hfw
     setup_milling(microscope, application_file, patterning_mode, hfw, mill_settings)
 
-    # draw patterns NOTE: Currently only implementing rectangle pattern
-    draw_rectangle(microscope, mill_settings)
+    # draw patterns 
+    draw_pattern(microscope, pattern_settings, mill_settings, pattern)
 
     # run milling
     run_milling(microscope, mill_settings.milling_current)
