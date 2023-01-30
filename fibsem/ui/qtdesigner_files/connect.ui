@@ -36,7 +36,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -205,7 +205,11 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="dwell_time_setting"/>
+        <widget class="QDoubleSpinBox" name="dwell_time_setting">
+         <property name="decimals">
+          <number>4</number>
+         </property>
+        </widget>
        </item>
        <item row="7" column="1">
         <widget class="QCheckBox" name="autosave_enable">
@@ -791,7 +795,11 @@
           </widget>
          </item>
          <item row="9" column="1">
-          <widget class="QDoubleSpinBox" name="milling_end_x"/>
+          <widget class="QDoubleSpinBox" name="milling_end_x">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="8" column="5">
           <widget class="QLabel" name="label_66">
@@ -821,7 +829,11 @@
           </widget>
          </item>
          <item row="5" column="4">
-          <widget class="QDoubleSpinBox" name="center_y_milling"/>
+          <widget class="QDoubleSpinBox" name="center_y_milling">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="10" column="0" colspan="6">
           <spacer name="horizontalSpacer_6">
@@ -915,19 +927,34 @@
          </item>
          <item row="4" column="1">
           <widget class="QDoubleSpinBox" name="width_milling">
+           <property name="decimals">
+            <number>4</number>
+           </property>
            <property name="maximum">
             <double>1000.000000000000000</double>
            </property>
           </widget>
          </item>
          <item row="14" column="1">
-          <widget class="QDoubleSpinBox" name="spot_size_um"/>
+          <widget class="QDoubleSpinBox" name="spot_size_um">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="8" column="4">
-          <widget class="QDoubleSpinBox" name="milling_start_y"/>
+          <widget class="QDoubleSpinBox" name="milling_start_y">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="12" column="1">
-          <widget class="QDoubleSpinBox" name="milling_current"/>
+          <widget class="QDoubleSpinBox" name="milling_current">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="12" column="2">
           <widget class="QLabel" name="label_49">
@@ -945,6 +972,9 @@
          </item>
          <item row="5" column="1">
           <widget class="QDoubleSpinBox" name="depth_milling">
+           <property name="decimals">
+            <number>4</number>
+           </property>
            <property name="maximum">
             <double>1000.000000000000000</double>
            </property>
@@ -976,6 +1006,9 @@
          </item>
          <item row="4" column="4">
           <widget class="QDoubleSpinBox" name="height_milling">
+           <property name="decimals">
+            <number>4</number>
+           </property>
            <property name="maximum">
             <double>1000.000000000000000</double>
            </property>
@@ -989,7 +1022,11 @@
           </widget>
          </item>
          <item row="12" column="4">
-          <widget class="QDoubleSpinBox" name="dwell_time_us"/>
+          <widget class="QDoubleSpinBox" name="dwell_time_us">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="9" column="3">
           <widget class="QLabel" name="label_69">
@@ -1056,6 +1093,9 @@
          </item>
          <item row="6" column="1">
           <widget class="QDoubleSpinBox" name="center_x_milling">
+           <property name="decimals">
+            <number>4</number>
+           </property>
            <property name="maximum">
             <double>1000.000000000000000</double>
            </property>
@@ -1096,7 +1136,11 @@
           </widget>
          </item>
          <item row="9" column="4">
-          <widget class="QDoubleSpinBox" name="milling_end_y"/>
+          <widget class="QDoubleSpinBox" name="milling_end_y">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="16" column="4" colspan="2">
           <widget class="QComboBox" name="milling_pattern">
@@ -1124,13 +1168,20 @@
          </item>
          <item row="11" column="1">
           <widget class="QDoubleSpinBox" name="rotation_milling">
+           <property name="decimals">
+            <number>4</number>
+           </property>
            <property name="maximum">
             <double>360.000000000000000</double>
            </property>
           </widget>
          </item>
          <item row="8" column="1">
-          <widget class="QDoubleSpinBox" name="milling_start_x"/>
+          <widget class="QDoubleSpinBox" name="milling_start_x">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="4" column="5">
           <widget class="QLabel" name="label_50">
@@ -1140,7 +1191,11 @@
           </widget>
          </item>
          <item row="14" column="4">
-          <widget class="QDoubleSpinBox" name="rate_milling"/>
+          <widget class="QDoubleSpinBox" name="rate_milling">
+           <property name="decimals">
+            <number>4</number>
+           </property>
+          </widget>
          </item>
          <item row="16" column="1" colspan="2">
           <widget class="QComboBox" name="scan_direction">
