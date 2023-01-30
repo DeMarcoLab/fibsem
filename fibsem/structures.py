@@ -809,10 +809,6 @@ class FibsemImageMetadata:
                 autocontrast=True,
                 beam_type=beam_type,
                 gamma_enabled=True,
-                gamma_threshold=45,
-                min_gamma=0.0,
-                max_gamma=2.0,
-                scale_factor=0.1,
                 save=False,
                 save_path="path",
                 label=current_timestamp(),
@@ -845,8 +841,8 @@ class FibsemImageMetadata:
             self.image_settings.beam_type.value == image_settings.beam_type.value
         ), f"beam_type: {self.image_settings.beam_type.value} != {image_settings.beam_type.value}"
         assert (
-            self.image_settings.gamma.enabled == image_settings.gamma.enabled
-        ), f"gamma: {self.image_settings.gamma} != {image_settings.gamma}"
+            self.image_settings.gamma_enabled== image_settings.gamma_enabled
+        ), f"gamma: {self.image_settings.gamma_enabled} != {image_settings.gamma_enabled}"
         assert (
             self.image_settings.save == image_settings.save
         ), f"save: {self.image_settings.save} != {image_settings.save}"
