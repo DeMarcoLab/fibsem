@@ -4,7 +4,7 @@ from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import connect
 from fibsem import utils, acquire
 import fibsem.movement as movement
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, FibsemPatternSettings ,Point
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, FibsemPatternSettings ,Point, FibsemPattern
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -41,6 +41,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
         
+        self.patterns = []
+
         # Gamma and Image Settings
 
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
@@ -99,8 +101,30 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # Milling settings set up
         self.pushButton_milling.clicked.connect(self.milling_protocol)
+        self.pushButton_line.clicked.connect(self.add_line)
+        self.pushButton_rec.clicked.connect(self.add_rectangle)
 
+    def add_line(self, FibsemPatternSettings):
+        self.patterns.append(FibsemPatternSettings(
+            pattern = FibsemPattern.Line,
+            start_x = self.milling_start_x.value()*constants.MILLIMETRE_TO_METRE,
+            start_y = self.milling_start_y.value()*constants.MILLIMETRE_TO_METRE,
+            end_x = self.milling_end_x.value()*constants.MILLIMETRE_TO_METRE,
+            end_y = self.milling_end_y.value()*constants.MILLIMETRE_TO_METRE,
+            depth = self.depth_milling.value()*constants.MICRO_TO_SI,
+            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
+        ))
 
+    def add_rectangle(self, FibsemPatternSettings):
+        self.patterns.append(FibsemPatternSettings(
+            pattern = FibsemPattern.Rectangle,
+            width = self.width_milling.value()*constants.MICRO_TO_SI,
+            height = self.height_milling.value()*constants.MICRO_TO_SI,
+            depth= self.depth_milling.value()*constants.MICRO_TO_SI,
+            centre_x= self.center_x_milling.value()*constants.MILLIMETRE_TO_METRE,
+            centre_y= self.center_y_milling.value()*constants.MILLIMETRE_TO_METRE,
+            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
+        ))
 
     def save_image_beams(self):
         if self.image_label.text() != "":
@@ -131,15 +155,14 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             spot_size= self.spot_size_um.value()*constants.MICRO_TO_SI,
         )
         
-        pattern = FibsemPatternSettings(
-            width = self.width_milling.value()*constants.MICRO_TO_SI,
-            height = self.height_milling.value()*constants.MICRO_TO_SI,
-            depth= self.depth_milling.value()*constants.MICRO_TO_SI,
-            rotation= self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
-            centre_x= self.center_x_milling.value()*constants.MILLIMETRE_TO_METRE,
-            centre_y= self.center_y_milling.value()*constants.MILLIMETRE_TO_METRE)
+        
 
-        milling_protocol(self.microscope, self.image_settings, pattern, mill_settings, application_file="autolamella", patterning_mode="Serial")
+        milling_protocol(microscope = self.microscope, 
+            image_settings = self.image_settings, 
+            mill_settings = mill_settings, 
+            application_file="autolamella", 
+            patterning_mode="Serial", 
+            patterns=self.patterns)
 
 ########################### Movement Functionality ##########################################
 

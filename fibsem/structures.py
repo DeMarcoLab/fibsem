@@ -339,6 +339,7 @@ class FibsemPatternSettings:
             self.end_x = kwargs["end_x"]
             self.end_y = kwargs["end_y"]
             self.depth = kwargs["depth"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
 
 @dataclass
 class FibsemMillingSettings:

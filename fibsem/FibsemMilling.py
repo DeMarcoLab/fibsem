@@ -110,18 +110,19 @@ def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSetti
 def milling_protocol(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
-    pattern_settings: FibsemPatternSettings,
     mill_settings: FibsemMillingSettings,
-    pattern: FibsemPattern = FibsemPattern.Rectangle,
     application_file: str = "autolamella",
     patterning_mode: str = "Serial",
+    **patterns: FibsemPatternSettings,
 ):
     # setup milling
     hfw = image_settings.hfw
     setup_milling(microscope, application_file, patterning_mode, hfw, mill_settings)
 
     # draw patterns 
-    draw_pattern(microscope, pattern_settings, mill_settings, pattern)
+    for pattern in patterns:
+        pattern_settings = patterns[pattern]
+        draw_pattern(microscope, pattern_settings, mill_settings, pattern)
 
     # run milling
     run_milling(microscope, mill_settings.milling_current)
