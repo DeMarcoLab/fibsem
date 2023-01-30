@@ -67,11 +67,11 @@ class BeamType(Enum):
 
 @dataclass
 class FibsemStagePosition:
-    x: float = None
-    y: float = None
-    z: float = None
-    r: float = None
-    t: float = None
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    r: float = 0.0
+    t: float = 0.0
     coordinate_system: str = None
 
     def __to_dict__(self) -> dict:
