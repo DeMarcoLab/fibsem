@@ -1,6 +1,6 @@
 import sys
 import re
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, MillingSettings
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings
 from fibsem.ui.qtdesigner_files import connect
 from fibsem import utils, acquire
 import fibsem.movement as movement
@@ -348,7 +348,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def gamma_check(self):
         
         gamma = self.gamma_enabled.isChecked()
-        self.image_settings.gamma.enabled = gamma
+        self.image_settings.gamma_enabled = gamma
         logging.info(f"UI | Gamma Enabled: {gamma}")
             
 
@@ -532,7 +532,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.res_height.setValue(int(res_ful[1]))
 
 
-        if self.image_settings.gamma.enabled:
+        if self.image_settings.gamma_enabled:
             self.gamma_enabled.setCheckState(2)
         else:
             self.gamma_enabled.setCheckState(0)

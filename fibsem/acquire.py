@@ -7,7 +7,6 @@ from skimage import exposure
 
 from fibsem.structures import (
     BeamType,
-    GammaSettings,
     ImageSettings,
     ReferenceImages,
     FibsemImage,

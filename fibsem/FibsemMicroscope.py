@@ -1175,7 +1175,7 @@ class TescanMicroscope(FibsemMicroscope):
     def finish_milling(self, imaging_current: float):
         self.connection.DrawBeam.UnloadLayer()
 
-    def draw_rectangle(self, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
+    def draw_rectangle(self, pattern_settings: FibsemPatternSettings):
 
         centre_x = pattern_settings.centre_x
         centre_y = pattern_settings.centre_y
