@@ -560,10 +560,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.dwell_time_setting.setValue(self.image_settings.dwell_time * constants.SI_TO_MICRO)
         self.hfw_box.setValue(int(self.image_settings.hfw*constants.SI_TO_MICRO))
 
-        res_ful = self.image_settings.resolution.split("x")
+        res_ful = self.image_settings.resolution
 
-        self.res_width.setValue(int(res_ful[0]))
-        self.res_height.setValue(int(res_ful[1]))
+        self.res_width.setValue(res_ful[0])
+        self.res_height.setValue(res_ful[1])
 
 
         if self.image_settings.gamma_enabled:
