@@ -10,7 +10,7 @@ from autoscript_sdb_microscope_client.structures import (
 )
 from scipy import fftpack
 
-from fibsem import acquire, calibration, movement, utils, validation
+from fibsem import acquire, calibration, utils, validation
 from fibsem.imaging import masks
 from fibsem.imaging import utils as image_utils
 from fibsem.structures import (
@@ -35,7 +35,7 @@ def auto_eucentric_correction(
     image_settings.save = False
     image_settings.beam_type = BeamType.ELECTRON
     calibration.auto_charge_neutralisation(
-        microscope, image_settings
+        microscope.connection, image_settings
     )  # TODO: need to change this function
 
     for hfw in [400e-6, 150e-6, 80e-6, 80e-6]:
@@ -87,9 +87,9 @@ def correct_stage_eucentric_alignment(
     )
 
     # move vertically to correct eucentric position
-    movement.move_stage_eucentric_correction(
-        microscope, settings, dy
-    )  # TODO: This function does not exist in this repo.
+    microscope.eucentric_move(
+        settings, dy
+    ) 
 
 
 def coarse_eucentric_alignment(
@@ -130,7 +130,7 @@ def beam_shift_alignment(
         reduced_area (FibseRectangle): The reduced area to image with.
     """
 
-    # # align using cross correlation TODO: acquire.new_image() accepts reduced_area as an input argument but does not utilise it anywhere in the function.
+    # # align using cross correlation TODO: acquire.new_image() accepts reduced_area as an input argument but does not utilise it anywhere in the function. Automatically done in thermo, need to implement for TESCAN.
     new_image = acquire.new_image(
         microscope, settings=image_settings, reduced_area=reduced_area
     )
@@ -138,7 +138,7 @@ def beam_shift_alignment(
         ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
     )
 
-    # adjust beamshift TODO: Abstract away to FibsemMicroscope
+    # adjust beamshift TODO: Abstract away to FibsemMicroscope, how to set beam shift within TESCAN?
     microscope.connection.beams.ion_beam.beam_shift.value += (-dx, dy)
 
 
@@ -254,14 +254,13 @@ def align_using_reference_images(
 
         # vertical constraint = eucentric movement
         if constrain_vertical:
-            movement.move_stage_eucentric_correction(  # TODO: This function does not exist within the repo.
-                microscope, settings=settings, dy=-dy
+            microscope.eucentric_move(
+                settings=settings, dy=-dy
             )  # FLAG_TEST
         else:
             # move the stage
-            movement.move_stage_relative_with_corrected_movement(  # TODO: This function does not exist within the repo.
-                microscope,
-                settings,
+            microscope.stable_move(
+                settings=settings,
                 dx=dx,
                 dy=-dy,
                 beam_type=new_beam_type,

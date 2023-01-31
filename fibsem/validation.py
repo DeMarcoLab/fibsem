@@ -278,10 +278,9 @@ def check_shift_within_tolerance(
 ) -> bool:
     """Check if required shift is wihtin safety limit"""
     # check if the cross correlation movement is within the safety limit
-
+    
     pixelsize_x = ref_image.metadata.pixel_size.x
-    height, width = ref_image.metadata.image_settings.resolution.split("x")
-    height, width = int(height), int(width)
+    width, height = ref_image.metadata.image_settings.resolution
     X_THRESHOLD = limit * pixelsize_x * width
     Y_THRESHOLD = limit * pixelsize_x * height
 

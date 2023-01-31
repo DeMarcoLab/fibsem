@@ -44,8 +44,7 @@ def get_lamella_size_in_pixels(
 
     # convert to m
     pixelsize = img.metadata.pixel_size.x
-    height, width = img.metadata.image_settings.resolution.split("x")
-    height, width = int(height), int(width)
+    height, width = img.metadata.image_settings.resolution
     vfw = convert_pixels_to_metres(height, pixelsize)
     hfw = convert_pixels_to_metres(width, pixelsize)
 

@@ -263,9 +263,9 @@ def match_image_settings(
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> ImageSettings:
     """Generate matching image settings from an image."""
-    image_settings.resolution = f"{ref_image.width}x{ref_image.height}"
+    image_settings.resolution = (ref_image.data.shape[1], ref_image.data.shape[0])
     # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
-    image_settings.hfw = ref_image.width * ref_image.metadata.binary_result.pixel_size.x
+    image_settings.hfw = ref_image.data.shape[1] * ref_image.metadata.pixel_size.x
     image_settings.beam_type = beam_type
     image_settings.save = True
     image_settings.label = current_timestamp()
