@@ -45,7 +45,7 @@ system:
 user:
   imaging_current: 20.e-12
   milling_current: 2.e-9
-  resolution: "1536x1024"
+  resolution: !!python/tuple [1536,1024]
   hfw: 150.e-6  
   beam_type: "Electron"
   autocontrast: True

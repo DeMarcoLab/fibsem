@@ -87,7 +87,7 @@ def gamma_settings():
 def image_settings():
 
     image_settings =  ImageSettings(
-    resolution="1536x1024",
+    resolution=(1536,1024),
     dwell_time=1.0e-6,
     hfw=150.0e-6,
     autocontrast=True,
