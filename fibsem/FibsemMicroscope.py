@@ -1026,7 +1026,6 @@ class TescanMicroscope(FibsemMicroscope):
             np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion)
         )  # TODO: MAGIC NUMBER, 90 - fib tilt
 
-        # move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
         logging.info(f"eucentric movement: {z_move}")
