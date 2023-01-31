@@ -1,7 +1,5 @@
-
 import numpy as np
-from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem.structures import Point
+from fibsem.structures import Point, FibsemImage
 from PIL import Image
 
 
@@ -14,22 +12,26 @@ def create_distance_map_px(w: int, h: int) -> np.ndarray:
 
     return distance
 
-def measure_brightness(img: AdornedImage) -> float:
-    
+
+def measure_brightness(img: FibsemImage) -> float:
+
     return np.mean(img.data)
 
-def rotate_image(image: AdornedImage):
+
+def rotate_image(image: FibsemImage):
     """Rotate the AdornedImage 180 degrees."""
     data = np.rot90(np.rot90(np.copy(image.data)))
-    reference = AdornedImage(data=data, metadata=image.metadata)
+    reference = FibsemImage(data=data, metadata=image.metadata)
     return reference
 
-def normalise_image(img: AdornedImage) -> np.ndarray:
+
+def normalise_image(img: FibsemImage) -> np.ndarray:
     """Normalise the image"""
     return (img.data - np.mean(img.data)) / np.std(img.data)
 
-def cosine_stretch(img: AdornedImage, tilt_degrees: float):
-    """Apply a cosine stretch to an image based on the relative tilt. 
+
+def cosine_stretch(img: FibsemImage, tilt_degrees: float):
+    """Apply a cosine stretch to an image based on the relative tilt.
 
     This is required when aligning images with different tilts to ensure features are the same size.
 
@@ -48,18 +50,18 @@ def cosine_stretch(img: AdornedImage, tilt_degrees: float):
 
     # cosine stretch
     # larger
-    resized_img = np.asarray(Image.fromarray(img.data).resize(size=(shape[1], shape[0])))
-    
+    resized_img = np.asarray(
+        Image.fromarray(img.data).resize(size=(shape[1], shape[0]))
+    )
+
     # crop centre out?
-    c = Point(resized_img.shape[1]//2, resized_img.shape[0]//2)
-    dy, dx = img.data.shape[0]//2, img.data.shape[1]//2
-    scaled_img = resized_img[c.y-dy:c.y+dy, c.x-dx:c.x+dx]
+    c = Point(resized_img.shape[1] // 2, resized_img.shape[0] // 2)
+    dy, dx = img.data.shape[0] // 2, img.data.shape[1] // 2
+    scaled_img = resized_img[c.y - dy : c.y + dy, c.x - dx : c.x + dx]
+
+    return FibsemImage(data=scaled_img, metadata=img.metadata)
 
 
-    return AdornedImage(data=scaled_img, metadata=img.metadata)
-
-
-
-def apply_image_mask(img: AdornedImage, mask: np.ndarray) -> np.ndarray:
+def apply_image_mask(img: FibsemImage, mask: np.ndarray) -> np.ndarray:
 
     return normalise_image(img) * mask

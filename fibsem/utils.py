@@ -17,10 +17,9 @@ from fibsem.structures import (
     ImageSettings,
     SystemSettings,
     FibsemImage,
-    FibsemMillingSettings
+    FibsemMillingSettings,
 )
 from fibsem.FibsemMicroscope import FibsemMicroscope
-
 
 
 def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
@@ -202,7 +201,7 @@ def load_settings_from_config(
         # default=default_settings,
         image=image_settings,
         protocol=protocol,
-        milling = milling_settings,
+        milling=milling_settings,
     )
 
     return settings
@@ -299,4 +298,3 @@ def get_params(main_str: str) -> list:
 
         i += 1
     return cats
-
