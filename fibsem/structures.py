@@ -157,7 +157,7 @@ class FibsemRectangle:
 
 @dataclass
 class ImageSettings:
-    resolution: str = None
+    resolution: tuple = None
     dwell_time: float = None
     hfw: float = None
     autocontrast: bool = None
@@ -236,7 +236,7 @@ class BeamSettings:
     working_distance: float = None
     beam_current: float = None
     hfw: float = None
-    resolution: str = None
+    resolution: tuple = None
     dwell_time: float = None
     stigmation: Point = None
     shift: Point = None
@@ -721,7 +721,7 @@ class FibsemImageMetadata:
             from fibsem.utils import current_timestamp
 
             image_settings = ImageSettings(
-                resolution=f"{image.width}x{image.height}",
+                resolution=(image.width, image.height),
                 dwell_time=image.metadata.scan_settings.dwell_time,
                 hfw=image.width * image.metadata.binary_result.pixel_size.x,
                 autocontrast=True,
@@ -745,7 +745,7 @@ class FibsemImageMetadata:
         """
         assert (
             self.image_settings.resolution == image_settings.resolution
-        ), f"hfw: {self.image_settings.resolution} != {image_settings.resolution}"
+        ), f"resolution: {self.image_settings.resolution} != {image_settings.resolution}"
         assert (
             self.image_settings.dwell_time == image_settings.dwell_time
         ), f"dwell_time: {self.image_settings.dwell_time} != {image_settings.dwell_time}"

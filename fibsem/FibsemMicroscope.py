@@ -176,9 +176,9 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         # set frame settings
         frame_settings = GrabFrameSettings(
-            resolution=image_settings.resolution,
+            resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
             dwell_time=image_settings.dwell_time,
-            reduced_area=image_settings.reduced_area,
+            reduced_area=image_settings.reduced_area.__to_FEI__(),
         )
 
         if image_settings.beam_type == BeamType.ELECTRON:
@@ -712,9 +712,8 @@ class TescanMicroscope(FibsemMicroscope):
 
         dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
         # resolution
-        numbers = re.findall(r"\d+", image_settings.resolution)
-        imageWidth = int(numbers[0])
-        imageHeight = int(numbers[1])
+        imageWidth = image_settings.resolution[0]
+        imageHeight = image_settings.resolution[1]
 
         self.connection.SEM.Optics.SetViewfield(
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
@@ -738,7 +737,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ELECTRON,
                 working_distance=float(image.Header["SEM"]["WD"]),
                 beam_current=float(image.Header["SEM"]["BeamCurrent"]),
-                resolution="{}x{}".format(imageWidth, imageHeight),
+                resolution=(imageWidth, imageHeight), #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["SEM"]["DwellTime"]),
                 stigmation=Point(
                     float(image.Header["SEM"]["StigmatorX"]),
@@ -755,11 +754,7 @@ class TescanMicroscope(FibsemMicroscope):
             image, deepcopy(image_settings), microscope_state
         )
 
-        res = fibsem_image.data.shape
-
-        fibsem_image.metadata.image_settings.resolution = (
-            str(res[1]) + "x" + str(res[0])
-        )
+        fibsem_image.metadata.image_settings.resolution = (imageWidth, imageHeight)
 
         return fibsem_image
 
@@ -779,9 +774,8 @@ class TescanMicroscope(FibsemMicroscope):
         dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
 
         # resolution
-        numbers = re.findall(r"\d+", image_settings.resolution)
-        imageWidth = int(numbers[0])
-        imageHeight = int(numbers[1])
+        imageWidth = image_settings.resolution[0]
+        imageHeight = image_settings.resolution[1]
 
         self.connection.FIB.Optics.SetViewfield(
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
@@ -806,7 +800,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ION,
                 working_distance=float(image.Header["FIB"]["WD"]),
                 beam_current=float(image.Header["FIB"]["BeamCurrent"]),
-                resolution="{}x{}".format(imageWidth, imageHeight),
+                resolution=(imageWidth, imageHeight), #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["FIB"]["DwellTime"]),
                 stigmation=Point(
                     float(image.Header["FIB"]["StigmatorX"]),
@@ -823,11 +817,7 @@ class TescanMicroscope(FibsemMicroscope):
             image, deepcopy(image_settings), microscope_state
         )
 
-        res = fibsem_image.data.shape
-
-        fibsem_image.metadata.image_settings.resolution = (
-            str(res[1]) + "x" + str(res[0])
-        )
+        fibsem_image.metadata.image_settings.resolution = (imageWidth, imageHeight)
 
         return fibsem_image
 
