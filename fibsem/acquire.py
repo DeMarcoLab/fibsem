@@ -85,7 +85,6 @@ def auto_gamma(image: FibsemImage, min_gamma: float = 0.0,max_gamma: float = 2.0
 def new_image(
     microscope: FibsemMicroscope,
     settings: ImageSettings,
-    reduced_area: FibsemRectangle = None,
 ) -> FibsemImage:
     """Apply the image settings and take a new image
 
