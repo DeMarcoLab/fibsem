@@ -1096,30 +1096,11 @@ class TescanMicroscope(FibsemMicroscope):
             PRETILT_SIGN = -1.0
 
         corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
-
-        # # perspective tilt adjustment (difference between perspective view and sample coordinate system)
-        # if beam_type == BeamType.ELECTRON:
-        #     perspective_tilt_adjustment = -corrected_pretilt_angle
-        #     SCALE_FACTOR = 1.0  # 0.78342  # patented technology
-        # elif beam_type == BeamType.ION:
-        #     perspective_tilt_adjustment = -corrected_pretilt_angle - stage_tilt_flat_to_ion
-        #     SCALE_FACTOR = 1.0
-
-        # # the amount the sample has to move in the y-axis
-        # y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
-        #     stage_tilt + perspective_tilt_adjustment
-        # )
-
-        # # the amount the stage has to move in each axis
-        # y_move = y_sample_move * np.cos(corrected_pretilt_angle)
-        # z_move = y_sample_move * np.sin(corrected_pretilt_angle)
-
-        y_move = expected_y / np.cos((stage_tilt + corrected_pretilt_angle))
-
-        z_move = y_move * np.sin((stage_tilt + corrected_pretilt_angle))
-        print(
-            f"Stage tilt: {stage_tilt}, corrected pretilt: {corrected_pretilt_angle}, y_move: {y_move} z_move: {z_move}"
-        )
+        
+        y_move = expected_y/np.cos((stage_tilt + corrected_pretilt_angle))
+         
+        z_move = y_move*np.sin((stage_tilt + corrected_pretilt_angle)) 
+        print(f'Stage tilt: {stage_tilt}, corrected pretilt: {corrected_pretilt_angle}, y_move: {y_move} z_move: {z_move}')
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
