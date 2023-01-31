@@ -91,6 +91,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def reset_beam_shifts(self):
+        pass
+
+    @abstractmethod
     def move_stage_absolute(self):
         pass
 
@@ -719,9 +723,21 @@ class TescanMicroscope(FibsemMicroscope):
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
 
-        image = self.connection.SEM.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, dwell_time
-        )
+        if image_settings.reduced_area is not None:
+            image = self.connection.SEM.Scan.AcquireROIFromChannel(
+                Channel= 0,
+                Width= image_settings.reduced_area.width,
+                Height= image_settings.reduced_area.height,
+                Left= image_settings.reduced_area.left,
+                Top= image_settings.reduced_area.top,
+                Right= image_settings.reduced_area.left - image_settings.reduced_area.width - 1,
+                Bottom= image_settings.reduced_area.top - image_settings.reduced_area.height - 1,
+                DwellTime= dwell_time
+            )
+        else:
+            image = self.connection.SEM.Scan.AcquireImageFromChannel(
+                0, imageWidth, imageHeight, dwell_time
+            )
 
         microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
@@ -781,9 +797,21 @@ class TescanMicroscope(FibsemMicroscope):
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
 
-        image = self.connection.FIB.Scan.AcquireImageFromChannel(
-            0, imageWidth, imageHeight, dwell_time
-        )
+        if image_settings.reduced_area is not None:
+            image = self.connection.FIB.Scan.AcquireROIFromChannel(
+                Channel= 0,
+                Width= image_settings.reduced_area.width,
+                Height= image_settings.reduced_area.height,
+                Left= image_settings.reduced_area.left,
+                Top= image_settings.reduced_area.top,
+                Right= image_settings.reduced_area.left - image_settings.reduced_area.width - 1,
+                Bottom= image_settings.reduced_area.top - image_settings.reduced_area.height - 1,
+                DwellTime= dwell_time
+            )
+        else:
+            image = self.connection.FIB.Scan.AcquireImageFromChannel(
+                0, imageWidth, imageHeight, dwell_time
+            )
 
         microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
@@ -905,7 +933,10 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.FIB.Detector.AutoSignal(0)
 
     def reset_beam_shifts(self):
-        pass
+
+        self.connection.FIB.Optics.SetImageShift(0, 0)
+        self.connection.SEM.Optics.SetImageShift(0, 0)
+        
 
     def move_stage_absolute(self, position: FibsemStagePosition):
         """Move the stage to the specified coordinates.
