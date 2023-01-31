@@ -915,7 +915,10 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.FIB.Detector.AutoSignal(0)
 
     def reset_beam_shifts(self):
-        pass
+        
+        self.connection.FIB.Optics.SetImageShift(0, 0)
+        self.connection.SEM.Optics.SetImageShift(0, 0)
+        
 
     def move_stage_absolute(self, position: FibsemStagePosition):
         """Move the stage to the specified coordinates.
