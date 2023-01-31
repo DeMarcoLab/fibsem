@@ -88,8 +88,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.reset_image_settings.clicked.connect(self.reset_image_and_gammaSettings)
         self.autocontrast_enable.stateChanged.connect(self.autocontrast_check)
         self.gamma_enabled.stateChanged.connect(self.gamma_check)
-        self.res_width.valueChanged.connect(self.res_width_change)
-        self.res_height.valueChanged.connect(self.res_height_change)
+        self.res_width.valueChanged.connect(self.resolution_change)
+        self.res_height.valueChanged.connect(self.resolution_change)
         self.dwell_time_setting.valueChanged.connect(self.image_dwell_time_change)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.autosave_enable.stateChanged.connect(self.autosave_toggle)
@@ -349,21 +349,28 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.image_settings.hfw = self.hfw_box.value() / 1.0e6
 
 
-    def res_width_change(self):
+    def resolution_change(self):
 
-        res = self.image_settings.resolution.split("x")
+        new_resolution = (self.res_width.value(),self.res_height.value())
 
-        res[0] = str(self.res_width.value())
+        self.image_settings.resolution = new_resolution
 
-        self.image_settings.resolution = "x".join(res)
 
-    def res_height_change(self):
+    # def res_width_change(self):
 
-        resh = self.image_settings.resolution.split("x")
+    #     res = self.image_settings.resolution
 
-        resh[1] = str(self.res_height.value())
+    #     res[0] = self.res_width.value()
 
-        self.image_settings.resolution = "x".join(resh)
+    #     self.image_settings.resolution = 
+
+    # def res_height_change(self):
+
+    #     resh = self.image_settings.resolution.split("x")
+
+    #     resh[1] = str(self.res_height.value())
+
+    #     self.image_settings.resolution = "x".join(resh)
 
     def image_dwell_time_change(self):
         ### dwell time in microseconds!!!!! ease of use for UI!!!!
