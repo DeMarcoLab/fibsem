@@ -101,8 +101,8 @@ class FibsemStagePosition:
         def to_autoscript_position(self, stage_tilt: float = 0.0) -> StagePosition:
             return StagePosition(
                 x=self.x,
-                y=self.y / np.cos(stage_tilt),
-                z=self.z / np.cos(stage_tilt),
+                y=self.y, #/ np.cos(stage_tilt),
+                z=self.z, #/ np.cos(stage_tilt),
                 r=self.r,
                 t=self.t,
                 coordinate_system=self.coordinate_system,
@@ -112,8 +112,8 @@ class FibsemStagePosition:
         def from_autoscript_position(cls, position: StagePosition, stage_tilt: float = 0.0) -> None:
             return cls(
                 x=position.x,
-                y=position.y * np.cos(stage_tilt),
-                z=position.z * np.cos(stage_tilt),
+                y=position.y, # * np.cos(stage_tilt),
+                z=position.z, # * np.cos(stage_tilt),
                 r=position.r,
                 t=position.t,
                 coordinate_system=position.coordinate_system,
