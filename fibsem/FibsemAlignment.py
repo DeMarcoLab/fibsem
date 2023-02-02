@@ -131,7 +131,6 @@ def beam_shift_alignment(
         reduced_area (FibseRectangle): The reduced area to image with.
     """
 
-    # # align using cross correlation TODO: acquire.new_image() accepts reduced_area as an input argument but does not utilise it anywhere in the function. Automatically done in thermo, need to implement for TESCAN.
     image_settings.reduced_area = reduced_area
     new_image = acquire.new_image(
         microscope, settings=image_settings
