@@ -106,6 +106,72 @@ def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSetti
     """
     microscope.draw_line(pattern_settings)
 
+def draw_trench( 
+    # NOTE: Add pattern or milling settings? Currently using a lot of default values. Add more customisability? Different values may be needed for TESCAN and Thermo?
+    microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
+):
+    """Calculate the trench milling patterns"""
+
+    lamella_width = protocol["lamella_width"]
+    lamella_height = protocol["lamella_height"]
+    trench_height = protocol["trench_height"]
+    upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
+    offset = protocol["offset"]
+    milling_depth = protocol["milling_depth"]
+
+    centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
+    centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
+
+    # mill settings
+    lower_pattern_settings = FibsemPatternSettings(
+        width=lamella_width,
+        height=trench_height,
+        depth=milling_depth,
+        centre_x=point.x,
+        centre_y=centre_lower_y,
+    )
+    lower_milling_settings = FibsemMillingSettings(scan_direction="BottomToTop", cleaning_cross_section=True)
+
+    upper_pattern_settings = FibsemPatternSettings(
+        width=lamella_width,
+        height=upper_trench_height,
+        depth=milling_depth,
+        centre_x=point.x,
+        centre_y=centre_upper_y,
+    )
+    upper_milling_settings = FibsemMillingSettings(
+        scan_direction="TopToBottom",
+        cleaning_cross_section=True,
+    )
+
+    # draw patterns
+    lower_pattern = draw_rectangle(microscope, lower_pattern_settings, lower_milling_settings)
+    upper_pattern = draw_rectangle(microscope, upper_pattern_settings, upper_milling_settings)
+
+    return [lower_pattern, upper_pattern]
+
+def draw_fiducial(
+    microscope: FibsemMicroscope,
+    pattern_settings: FibsemPatternSettings,
+    mill_settings: FibsemMillingSettings,
+):
+    """draw the fiducial milling patterns
+
+    Args:
+        microscope (SdbMicroscopeClient): AutoScript microscope connection
+        mill_settings (dict): fiducial milling settings
+        point (Point): centre x, y coordinate
+    Returns
+    -------
+        patterns : list
+            List of rectangular patterns used to create the fiducial marker.
+    """
+
+    pattern_1 = draw_rectangle(microscope, pattern_settings, mill_settings)
+    pattern_settings.rotation = pattern_settings.rotation + np.deg2rad(90)
+    pattern_2 = draw_rectangle(microscope, pattern_settings, mill_settings)
+
+    return [pattern_1, pattern_2]
 
 def milling_protocol(
     microscope: FibsemMicroscope,
