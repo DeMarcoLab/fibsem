@@ -52,7 +52,7 @@ def image_settings(
 ) -> fs.ImageSettings:
 
     # image_settings = ImageSettings(
-    #     resolution="32x32",
+    #     resolution=(32,32),
     #     dwell_time=1.0e-6,
     #     hfw=150.0e-6,
     #     autocontrast=True,

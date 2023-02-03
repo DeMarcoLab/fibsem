@@ -10,13 +10,13 @@ eb_settings:
     beam_type: ELECTRON
     dwell_time: 5.0e-07
     hfw: 0.0004
-    resolution: 1536x1024
+    resolution: !!python/tuple [1536,1024]
     working_distance: 0.014370575043736882
 ib_settings:
     beam_current: 2.0e-11
     beam_type: ION
     dwell_time: 2.0e-07
     hfw: 0.0004
-    resolution: 1536x1024
+    resolution: !!python/tuple [1536,1024]
     working_distance: 0.016544666950390034
 timestamp: 1666335913.457053

@@ -37,7 +37,7 @@ def beam_settings() -> BeamSettings:
         working_distance=4.0e-3,
         beam_current=60.0e-12,
         hfw=150e-6,
-        resolution="1536x1024",
+        resolution=(1536,1024),
         dwell_time=1.0e-6,
         # stigmation=1.0e-6,
     )
@@ -74,7 +74,7 @@ def image_settings(gamma_settings: GammaSettings) -> ImageSettings:
 
 
     image_settings = ImageSettings(
-        resolution="1536x1024",
+        resolution=(1536,1024),
         dwell_time=1.e-6,
         hfw=150.e-6, 
         save=False, 
@@ -185,7 +185,7 @@ def test_beam_settings_from_dict():
         "working_distance": 4.0e-3,
         "beam_current": 60.0e-12,
         "hfw": 150.0e-6,
-        "resolution": "1560x1240",
+        "resolution": (1560,1240),
         "dwell_time": 1.0e-6,
         "stigmation": 1.0e-6,
     }
@@ -239,7 +239,7 @@ def test_microscope_state_from_dict():
         "working_distance": 4.0e-3,
         "beam_current": 60.0e-12,
         "hfw": 150.0e-6,
-        "resolution": "1560x1240",
+        "resolution": (1560,1240),
         "dwell_time": 1.0e-6,
         "stigmation": 1.0e-6,
     }
@@ -249,7 +249,7 @@ def test_microscope_state_from_dict():
         "working_distance": 4.0e-3,
         "beam_current": 60.0e-12,
         "hfw": 150.0e-6,
-        "resolution": "1560x1240",
+        "resolution": (1560,1240),
         "dwell_time": 1.0e-6,
         "stigmation": 1.0e-6,
     }
@@ -326,7 +326,7 @@ def test_image_settings_from_dict():
     }
 
     image_settings_dict = {
-        "resolution": "1536x1024",
+        "resolution": (1536,1024),
         "dwell_time": 1.e-6,
         "hfw": 150.e-6,
         "autocontrast": True,

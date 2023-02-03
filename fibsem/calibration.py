@@ -72,7 +72,7 @@ def auto_focus_beam(
 
         if focus_image_settings is None:
             focus_image_settings = ImageSettings(
-                resolution="768x512",
+                resolution=(768, 512), 
                 dwell_time=200e-9,
                 hfw=50e-6,
                 beam_type=BeamType.ELECTRON,
@@ -148,7 +148,7 @@ def auto_charge_neutralisation(
     # use preset settings if not defined
     if discharge_settings is None:
         discharge_settings = ImageSettings(
-            resolution="768x512",
+            resolution=(768,512),
             dwell_time=200e-9,
             hfw=image_settings.hfw,
             beam_type=BeamType.ELECTRON,

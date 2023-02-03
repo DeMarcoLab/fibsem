@@ -98,26 +98,36 @@ class FibsemStagePosition:
 
     if manufacturer == "Thermo":
 
-        def to_autoscript_position(self) -> StagePosition:
+        def to_autoscript_position(self, stage_tilt: float = 0.0) -> StagePosition:
             return StagePosition(
                 x=self.x,
-                y=self.y,
-                z=self.z,
+                y=self.y, #/ np.cos(stage_tilt),
+                z=self.z, #/ np.cos(stage_tilt),
                 r=self.r,
                 t=self.t,
                 coordinate_system=self.coordinate_system,
             )
 
         @classmethod
-        def from_autoscript_position(cls, position: StagePosition) -> None:
+        def from_autoscript_position(cls, position: StagePosition, stage_tilt: float = 0.0) -> None:
             return cls(
                 x=position.x,
-                y=position.y,
-                z=position.z,
+                y=position.y, # * np.cos(stage_tilt),
+                z=position.z, # * np.cos(stage_tilt),
                 r=position.r,
                 t=position.t,
                 coordinate_system=position.coordinate_system,
             )
+
+    if manufacturer == "Tescan":
+
+        def to_tescan_position(self, stage_tilt: float = 0.0) -> StagePosition:
+            self.y=self.y / np.cos(stage_tilt),
+
+        @classmethod
+        def from_tescan_position(self, stage_tilt: float = 0.0) -> None:
+            self.y = self.y * np.cos(stage_tilt)
+            
 
 
 @dataclass
