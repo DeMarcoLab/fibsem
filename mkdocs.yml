@@ -9,3 +9,4 @@ plugins:
 nav:
   - index.md
   - reference.md
+  - started.md
