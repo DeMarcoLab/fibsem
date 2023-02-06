@@ -19,7 +19,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemMillingSettings,
 )
-from fibsem.FibsemMicroscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope
 
 
 def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
@@ -142,7 +142,7 @@ def setup_session(
         configure_logging(session_path)
 
     # connect to microscope
-    import fibsem.FibsemMicroscope as FibSem
+    import fibsem.microscope as FibSem
 
     if settings.system.manufacturer == "Thermo":
         microscope = FibSem.ThermoMicroscope()

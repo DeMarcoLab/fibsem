@@ -125,7 +125,7 @@ class FibsemStagePosition:
             self.y=self.y / np.cos(stage_tilt),
 
         @classmethod
-        def from_tescan_position(self, stage_tilt: float = 0.0) -> None:
+        def from_tescan_position(self, stage_tilt: float = 0.0):
             self.y = self.y * np.cos(stage_tilt)
             
 
@@ -343,6 +343,8 @@ class FibsemPatternSettings:
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.centre_x = kwargs["centre_x"] if "centre_x" in kwargs else 0.0
             self.centre_y = kwargs["centre_y"] if "centre_y" in kwargs else 0.0
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
         elif pattern == FibsemPattern.Line:
             self.start_x = kwargs["start_x"]
             self.start_y = kwargs["start_y"]
@@ -350,12 +352,12 @@ class FibsemPatternSettings:
             self.end_y = kwargs["end_y"]
             self.depth = kwargs["depth"]
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
 
 @dataclass
 class FibsemMillingSettings:
     milling_current: float = 20.0e-12
-    scan_direction: str = "TopToBottom"
-    cleaning_cross_section: bool = False
     spot_size: float = 5.0e-8
     rate: float = 3.0e-3 # m3/A/s
     dwell_time: float = 1.0e-6 # s
@@ -375,15 +377,9 @@ class FibsemMillingSettings:
 
     @staticmethod
     def __from_dict__(settings: dict) -> "FibsemMillingSettings":
-        if "scan_direction" not in settings:
-            settings["scan_direction"] = "TopToBottom"
-        if "cleaning_cross_section" not in settings:
-            settings["cleaning_cross_section"] = False
 
         milling_settings = FibsemMillingSettings(
             milling_current=settings["milling_current"],
-            scan_direction=settings["scan_direction"],
-            cleaning_cross_section=settings["cleaning_cross_section"],
             spot_size=settings["spot_size"],
             rate=settings["rate"],
             dwell_time=settings["dwell_time"],
