@@ -139,7 +139,7 @@ def beam_shift_alignment(
         ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
     )
 
-    # adjust beamshift TODO: Abstract away to FibsemMicroscope, how to set beam shift within TESCAN?
+    # adjust beamshift TODO: Abstract away to FibsemMicroscope, how to set beam shift within TESCAN? --> image shift
     microscope.connection.beams.ion_beam.beam_shift.value += (-dx, dy)
 
 

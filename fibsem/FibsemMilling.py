@@ -87,24 +87,24 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
     elif pattern_settings.pattern is FibsemPattern.Line:
         microscope.draw_line(pattern_settings)
 
-def draw_rectangle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
-    """Draw a rectangular milling pattern from settings
+# def draw_rectangle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
+#     """Draw a rectangular milling pattern from settings
 
-    Args:
-        microscope (FibsemMicroscope): Fibsem microscope instance
-        pattern_settings (FibsemPatternSettings): pattern settings
-        mill_settings (FibsemMillingSettings): milling settings
-    """
-    microscope.draw_rectangle(pattern_settings, mill_settings)
+#     Args:
+#         microscope (FibsemMicroscope): Fibsem microscope instance
+#         pattern_settings (FibsemPatternSettings): pattern settings
+#         mill_settings (FibsemMillingSettings): milling settings
+#     """
+#     microscope.draw_rectangle(pattern_settings, mill_settings)
 
-def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
-    """Draw a line milling pattern from settings
+# def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
+#     """Draw a line milling pattern from settings
     
-    Args:
-        microscope (FibsemMicroscope): Fibsem microscope instance
-        mill_settings (MillingSettings): milling pattern settings
-    """
-    microscope.draw_line(pattern_settings)
+#     Args:
+#         microscope (FibsemMicroscope): Fibsem microscope instance
+#         mill_settings (MillingSettings): milling pattern settings
+#     """
+#     microscope.draw_line(pattern_settings)
 
 
 def milling_protocol(
