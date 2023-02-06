@@ -423,3 +423,4 @@ def read_protocol_dictionary(protocol: dict, stage_name: str) -> list[dict]:
 #     pattern_2.rotation = mill_settings.rotation + np.deg2rad(90)
 
 #     return [pattern_1, pattern_2]
+
