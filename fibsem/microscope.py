@@ -960,7 +960,8 @@ class TescanMicroscope(FibsemMicroscope):
         Relative shift of ION Beam. The inputs dx and dy are in metres as that is the OpenFIBSEM standard, however TESCAN uses mm so conversions must be made. 
         """
         x, y = self.connection.FIB.Optics.GetImageShift()
-        dx, dy *= 1000, 1000 # Convert to mm from m.
+        dx *=  constants.METRE_TO_MILLIMETRE # Convert to mm from m.
+        dy *=  constants.METRE_TO_MILLIMETRE
         x, y += dx, dy
         self.connection.FIB.Optics.SetImageShift(-dx, dy) # NOTE: Not sure why the dx is -dx, this may be thermo specific and doesn't apply to TESCAN?
         
