@@ -17,10 +17,9 @@ from fibsem.structures import (
     ImageSettings,
     SystemSettings,
     FibsemImage,
-    FibsemStagePosition
+    FibsemMillingSettings,
 )
-from fibsem.FibsemMicroscope import FibsemMicroscope
-
+from fibsem.microscope import FibsemMicroscope
 
 
 def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
@@ -143,7 +142,7 @@ def setup_session(
         configure_logging(session_path)
 
     # connect to microscope
-    import fibsem.FibsemMicroscope as FibSem
+    import fibsem.microscope as FibSem
 
     if settings.system.manufacturer == "Thermo":
         microscope = FibSem.ThermoMicroscope()
@@ -157,7 +156,7 @@ def setup_session(
             ip_address=settings.system.ip_address, port=8300
         )
 
-    # image_setttings
+    # image_settings
     settings.image.save_path = session_path
 
     logging.info(f"Finished setup for session: {session}")
@@ -190,7 +189,9 @@ def load_settings_from_config(
 
     # user settings
     # default_settings = DefaultSettings.__from_dict__(settings["user"])
-    image_settings = ImageSettings.__from_dict__(settings["user"])
+    image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
+
+    milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
 
     # protocol settings
     protocol = load_protocol(protocol_path)
@@ -200,6 +201,7 @@ def load_settings_from_config(
         # default=default_settings,
         image=image_settings,
         protocol=protocol,
+        milling=milling_settings,
     )
 
     return settings
@@ -261,9 +263,9 @@ def match_image_settings(
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> ImageSettings:
     """Generate matching image settings from an image."""
-    image_settings.resolution = f"{ref_image.width}x{ref_image.height}"
+    image_settings.resolution = (ref_image.data.shape[1], ref_image.data.shape[0])
     # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
-    image_settings.hfw = ref_image.width * ref_image.metadata.binary_result.pixel_size.x
+    image_settings.hfw = ref_image.data.shape[1] * ref_image.metadata.pixel_size.x
     image_settings.beam_type = beam_type
     image_settings.save = True
     image_settings.label = current_timestamp()
@@ -296,4 +298,3 @@ def get_params(main_str: str) -> list:
 
         i += 1
     return cats
-

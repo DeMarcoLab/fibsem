@@ -1,11 +1,11 @@
 import pytest
 
 
-from fibsem import utils, acquire
+from fibsem import microscope, utils, acquire
 import fibsem.alignment as fa
 from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemRectangle, FibsemImage, check_data_format
 import matplotlib.pyplot as plt
-from fibsem import FibsemMicroscope, calibration
+from fibsem import calibration
 import os
 import logging
 from fibsem.utils import current_timestamp, configure_logging
@@ -58,7 +58,7 @@ def general_setup(settings):
 
 @pytest.fixture
 def microscope_thermo():
-    microscope = FibsemMicroscope.ThermoMicroscope()
+    microscope = microscope.ThermoMicroscope()
     return microscope
 
 @pytest.fixture
@@ -87,7 +87,7 @@ def gamma_settings():
 def image_settings():
 
     image_settings =  ImageSettings(
-    resolution="1536x1024",
+    resolution=(1536,1024),
     dwell_time=1.0e-6,
     hfw=150.0e-6,
     autocontrast=True,

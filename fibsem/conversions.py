@@ -1,6 +1,5 @@
 import numpy as np
-from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem.structures import Point
+from fibsem.structures import Point, FibsemImage
 
 
 def image_to_microscope_image_coordinates(
@@ -22,7 +21,7 @@ def image_to_microscope_image_coordinates(
 
 
 def get_lamella_size_in_pixels(
-    img: AdornedImage, protocol: dict, use_trench_height: bool = False
+    img: FibsemImage, protocol: dict, use_trench_height: bool = False
 ) -> tuple[int]:
     """Get the relative size of the lamella in pixels based on the hfw of the image.
 
@@ -44,13 +43,14 @@ def get_lamella_size_in_pixels(
         total_height += 2 * trench_height
 
     # convert to m
-    pixelsize = img.metadata.binary_result.pixel_size.x
-    vfw = convert_pixels_to_metres(img.height, pixelsize)
-    hfw = convert_pixels_to_metres(img.width, pixelsize)
+    pixelsize = img.metadata.pixel_size.x
+    width, height = img.metadata.image_settings.resolution
+    vfw = convert_pixels_to_metres(height, pixelsize)
+    hfw = convert_pixels_to_metres(width, pixelsize)
 
     # lamella size in px (% of image)
-    lamella_height_px = int((total_height / vfw) * img.height)
-    lamella_width_px = int((lamella_width / hfw) * img.width)
+    lamella_height_px = int((total_height / vfw) * height)
+    lamella_width_px = int((lamella_width / hfw) * width)
 
     return (lamella_height_px, lamella_width_px)
 

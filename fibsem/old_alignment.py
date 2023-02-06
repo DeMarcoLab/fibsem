@@ -1,10 +1,16 @@
 import logging
 
 import numpy as np
-
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from autoscript_sdb_microscope_client.structures import (
+    AdornedImage,
+    MoveSettings,
+    Rectangle,
+    StagePosition,
+)
 from scipy import fftpack
 
-from fibsem import acquire, calibration, utils, validation
+from fibsem import acquire, calibration, movement, utils, validation
 from fibsem.imaging import masks
 from fibsem.imaging import utils as image_utils
 from fibsem.structures import (
@@ -13,26 +19,20 @@ from fibsem.structures import (
     MicroscopeSettings,
     ReferenceImages,
     FibsemImage,
-    FibsemRectangle,
 )
-from fibsem.microscope import FibsemMicroscope
 
 
 def auto_eucentric_correction(
-    microscope: FibsemMicroscope,
+    microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
     image_settings: ImageSettings,
     tilt_degrees: int = 25,
     xcorr_limit: int = 250,
 ) -> None:
 
-    raise NotImplementedError
-
     image_settings.save = False
     image_settings.beam_type = BeamType.ELECTRON
-    calibration.auto_charge_neutralisation(
-        microscope.connection, image_settings
-    )  # TODO: need to change this function
+    calibration.auto_charge_neutralisation(microscope, image_settings)
 
     for hfw in [400e-6, 150e-6, 80e-6, 80e-6]:
         image_settings.hfw = hfw
@@ -47,23 +47,20 @@ def auto_eucentric_correction(
 
 
 def correct_stage_eucentric_alignment(
-    microscope: FibsemMicroscope,
+    microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
     image_settings: ImageSettings,
     tilt_degrees: float = 52,
     xcorr_limit: int = 250,
 ) -> None:
 
-    raise NotImplementedError
     # TODO: does the direction of tilt change this?
 
     # take images
     eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
 
     # tilt stretch to match feature sizes
-    ib_image = image_utils.cosine_stretch(
-        ib_image, tilt_degrees
-    )  # NOTE: Changed to use FibsemImage
+    ib_image = image_utils.cosine_stretch(ib_image, tilt_degrees)
 
     # cross correlate
     lp_px = 128  # int(max(ib_image.data.shape) / 12)
@@ -84,63 +81,56 @@ def correct_stage_eucentric_alignment(
     )
 
     # move vertically to correct eucentric position
-    microscope.eucentric_move(
-        settings, dy
-    ) 
+    movement.move_stage_eucentric_correction(microscope, settings, dy)
 
 
-# NOTE: This function needs looking at
 def coarse_eucentric_alignment(
-    microscope: FibsemMicroscope,
+    microscope: SdbMicroscopeClient,
     hfw: float = 30e-6,
     eucentric_height: float = 3.91e-3,
 ) -> None:
-    raise NotImplementedError
+
     # focus and link stage
-    calibration.auto_link_stage(
-        microscope.connection, hfw=hfw
-    )  # TODO: Change this function. Changed to use the FibsemMicroscope's connection,
-    # this will maintain functionality for Thermo. Not touching this until M2.
+    calibration.auto_link_stage(microscope, hfw=hfw)
 
-    # move to eucentric height TODO: Abstract this away into FibsemMicroscope as a move_to_eucentric_height function.
-    # stage = microscope.connection.specimen.stage
-    # move_settings = MoveSettings(link_z_y=True)
-    # z_move = StagePosition(z=eucentric_height, coordinate_system="Specimen")
-    # stage.absolute_move(z_move, move_settings)
-
-    microscope.eucentric_move()  # TODO: Utilise this function, having problems with the coarse_eucentric_alighment arguments and the microscope.eucentric_move() arguments.
+    # move to eucentric height
+    stage = microscope.specimen.stage
+    move_settings = MoveSettings(link_z_y=True)
+    z_move = StagePosition(z=eucentric_height, coordinate_system="Specimen")
+    stage.absolute_move(z_move, move_settings)
 
 
 def beam_shift_alignment(
-    microscope: FibsemMicroscope,
+    microscope: SdbMicroscopeClient,
     image_settings: ImageSettings,
     ref_image: FibsemImage,
-    reduced_area: FibsemRectangle,
+    reduced_area: Rectangle,
 ):
     """Align the images by adjusting the beam shift, instead of moving the stage
             (increased precision, lower range)
         NOTE: only shift the ion beam, never electron
 
     Args:
-        microscope (FibsemMicroscope): OpenFIBSEM microscope client
+        microscope (SdbMicroscopeClient): autoscript microscope client
         image_settings (acquire.ImageSettings): settings for taking image
-        ref_image (FibsemImage): reference image to align to
-        reduced_area (FibseRectangle): The reduced area to image with.
+        ref_image (AdornedImage): reference image to align to
+        reduced_area (Rectangle): The reduced area to image with.
     """
-    image_settings.reduced_area = reduced_area
+
+    # # align using cross correlation
     new_image = acquire.new_image(
-        microscope, settings=image_settings
+        microscope, settings=image_settings, reduced_area=reduced_area
     )
     dx, dy, _ = shift_from_crosscorrelation(
         ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
     )
 
-    # adjust beamshift 
-    microscope.beam_shift(dx, dy)
+    # adjust beamshift
+    microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
 
 
 def correct_stage_drift(
-    microscope: FibsemMicroscope,
+    microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
     reference_images: ReferenceImages,
     alignment: tuple(BeamType) = (BeamType.ELECTRON, BeamType.ELECTRON),
@@ -210,7 +200,7 @@ def correct_stage_drift(
 
 
 def align_using_reference_images(
-    microscope: FibsemMicroscope,
+    microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
     ref_image: FibsemImage,
     new_image: FibsemImage,
@@ -241,23 +231,22 @@ def align_using_reference_images(
         xcorr_limit=xcorr_limit,
     )
 
-    shift_within_tolerance = (
-        validation.check_shift_within_tolerance(  # TODO: Abstract validation.py
-            dx=dx, dy=dy, ref_image=ref_image, limit=0.5
-        )
+    shift_within_tolerance = validation.check_shift_within_tolerance(
+        dx=dx, dy=dy, ref_image=ref_image, limit=0.5
     )
 
     if shift_within_tolerance:
 
         # vertical constraint = eucentric movement
         if constrain_vertical:
-            microscope.eucentric_move(
-                settings=settings, dy=-dy
+            movement.move_stage_eucentric_correction(
+                microscope, settings=settings, dy=-dy
             )  # FLAG_TEST
         else:
             # move the stage
-            microscope.stable_move(
-                settings=settings,
+            movement.move_stage_relative_with_corrected_movement(
+                microscope,
+                settings,
                 dx=dx,
                 dy=-dy,
                 beam_type=new_beam_type,

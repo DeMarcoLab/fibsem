@@ -1,6 +1,7 @@
 # fibsem structures
 
 import os
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -13,6 +14,15 @@ from fibsem.config import load_microscope_manufacturer, load_yaml
 manufacturer = load_microscope_manufacturer()
 if manufacturer == "Tescan":
     from tescanautomation.Common import Document
+    
+    # sys.modules.pop("tescanautomation.GUI")
+    # sys.modules.pop("tescanautomation.pyside6gui")
+    # sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
+    # sys.modules.pop("tescanautomation.pyside6gui.infobar_private")
+    # sys.modules.pop("tescanautomation.pyside6gui.infobar_utils")
+    # sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
+    # sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
+    # sys.modules.pop("PySide6.QtCore")
 elif manufacturer == "Thermo":
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage,
@@ -57,11 +67,11 @@ class BeamType(Enum):
 
 @dataclass
 class FibsemStagePosition:
-    x: float = None
-    y: float = None
-    z: float = None
-    r: float = None
-    t: float = None
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    r: float = 0.0
+    t: float = 0.0
     coordinate_system: str = None
 
     def __to_dict__(self) -> dict:
@@ -88,26 +98,36 @@ class FibsemStagePosition:
 
     if manufacturer == "Thermo":
 
-        def to_autoscript_position(self) -> StagePosition:
+        def to_autoscript_position(self, stage_tilt: float = 0.0) -> StagePosition:
             return StagePosition(
                 x=self.x,
-                y=self.y,
-                z=self.z,
+                y=self.y, #/ np.cos(stage_tilt),
+                z=self.z, #/ np.cos(stage_tilt),
                 r=self.r,
                 t=self.t,
                 coordinate_system=self.coordinate_system,
             )
 
         @classmethod
-        def from_autoscript_position(cls, position: StagePosition) -> None:
+        def from_autoscript_position(cls, position: StagePosition, stage_tilt: float = 0.0) -> None:
             return cls(
                 x=position.x,
-                y=position.y,
-                z=position.z,
+                y=position.y, # * np.cos(stage_tilt),
+                z=position.z, # * np.cos(stage_tilt),
                 r=position.r,
                 t=position.t,
                 coordinate_system=position.coordinate_system,
             )
+
+    if manufacturer == "Tescan":
+
+        def to_tescan_position(self, stage_tilt: float = 0.0):
+            self.y=self.y / np.cos(stage_tilt),
+
+        @classmethod
+        def from_tescan_position(self, stage_tilt: float = 0.0):
+            self.y = self.y * np.cos(stage_tilt)
+            
 
 
 @dataclass
@@ -146,35 +166,15 @@ class FibsemRectangle:
 
 
 @dataclass
-class GammaSettings:
-    enabled: bool = False
-    min_gamma: float = 0.0
-    max_gamma: float = 2.0
-    scale_factor: float = 0.1
-    threshold: int = 45  # px
-
-    @staticmethod
-    def __from_dict__(settings: dict) -> "GammaSettings":
-        gamma_settings = GammaSettings(
-            enabled=settings["enabled"],
-            min_gamma=settings["min_gamma"],
-            max_gamma=settings["max_gamma"],
-            scale_factor=settings["scale_factor"],
-            threshold=settings["threshold"],
-        )
-        return gamma_settings
-
-
-@dataclass
 class ImageSettings:
-    resolution: str = None
+    resolution: tuple = None
     dwell_time: float = None
     hfw: float = None
     autocontrast: bool = None
     beam_type: BeamType = None
     save: bool = None
     label: str = None
-    gamma: GammaSettings = None
+    gamma_enabled: bool = None
     save_path: Path = None
     reduced_area: FibsemRectangle = None
 
@@ -189,14 +189,8 @@ class ImageSettings:
             settings["save_path"] = os.getcwd()
         if "label" not in settings:
             settings["label"] = "default_image"
-        if "gamma" not in settings:
-            settings["gamma"] = {
-                "enabled": False,
-                "min_gamma": 0.0,
-                "max_gamma": 2.0,
-                "scale_factor": 0.1,
-                "threshold": 45,
-            }
+        if "gamma_enabled" not in settings:
+            settings["gamma_enabled"] = True
         if "reduced_area" in settings and settings["reduced_area"] is not None:
             reduced_area = (FibsemRectangle.__from_dict__(settings["reduced_area"]),)
         else:
@@ -210,9 +204,7 @@ class ImageSettings:
             beam_type=BeamType[settings["beam_type"].upper()]
             if settings["beam_type"] is not None
             else None,
-            gamma=GammaSettings.__from_dict__(settings["gamma"])
-            if settings["gamma"] is not None
-            else None,
+            gamma_enabled=settings["gamma_enabled"],
             save=settings["save"],
             save_path=settings["save_path"],
             label=settings["label"],
@@ -231,15 +223,7 @@ class ImageSettings:
             "autocontrast": self.autocontrast
             if self.autocontrast is not None
             else None,
-            "gamma": {
-                "enabled": self.gamma.enabled,
-                "min_gamma": self.gamma.min_gamma,
-                "max_gamma": self.gamma.max_gamma,
-                "scale_factor": self.gamma.scale_factor,
-                "threshold": self.gamma.threshold,
-            }
-            if self.gamma is not None
-            else None,
+            "gamma_enabled": self.gamma_enabled if self.gamma_enabled is not None else None,
             "save": self.save if self.save is not None else None,
             "save_path": self.save_path if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
@@ -262,7 +246,7 @@ class BeamSettings:
     working_distance: float = None
     beam_current: float = None
     hfw: float = None
-    resolution: str = None
+    resolution: tuple = None
     dwell_time: float = None
     stigmation: Point = None
     shift: Point = None
@@ -325,59 +309,80 @@ class MicroscopeState:
 
         return microscope_state
 
+class FibsemPattern(Enum):
+    Rectangle = 1
+    Line = 2
+
+class FibsemPatternSettings:
+    '''
+    FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
+    
+    Args:
+        pattern (FibsemPattern): Used to indicate which pattern is utilised. Currently either Rectangle or Line.
+        **kwargs: If FibsemPattern.Rectangle
+                    width: float (m),
+                    height: float (m), 
+                    depth: float (m),
+                    rotation: float = 0.0 (m), 
+                    centre_x: float = 0.0 (m), 
+                    centre_y: float = 0.0 (m),
+
+                If FibsemPattern.Line
+                    start_x: float (m), 
+                    start_y: float (m), 
+                    end_x: float (m), 
+                    end_y: float (m), 
+                    depth: float (m),
+    '''
+    def __init__(self, pattern: FibsemPattern = FibsemPattern.Rectangle, **kwargs):
+        self.pattern = pattern
+        if pattern == FibsemPattern.Rectangle:
+            self.width = kwargs["width"]
+            self.height = kwargs["height"]
+            self.depth = kwargs["depth"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.centre_x = kwargs["centre_x"] if "centre_x" in kwargs else 0.0
+            self.centre_y = kwargs["centre_y"] if "centre_y" in kwargs else 0.0
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+        elif pattern == FibsemPattern.Line:
+            self.start_x = kwargs["start_x"]
+            self.start_y = kwargs["start_y"]
+            self.end_x = kwargs["end_x"]
+            self.end_y = kwargs["end_y"]
+            self.depth = kwargs["depth"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
 
 @dataclass
-class MillingSettings:
-    width: float
-    height: float
-    depth: float
-    rotation: float = 0.0  # deg
-    centre_x: float = 0.0  # TODO: change to Point?
-    centre_y: float = 0.0
+class FibsemMillingSettings:
     milling_current: float = 20.0e-12
-    scan_direction: str = "TopToBottom"
-    cleaning_cross_section: bool = False
+    spot_size: float = 5.0e-8
+    rate: float = 3.0e-3 # m3/A/s
+    dwell_time: float = 1.0e-6 # s
 
     def __to_dict__(self) -> dict:
 
         settings_dict = {
-            "width": self.width,
-            "height": self.height,
-            "depth": self.depth,
-            "rotation": np.rad2deg(self.rotation),
-            "centre_x": self.centre_x,
-            "centre_y": self.centre_y,
             "milling_current": self.milling_current,
             "scan_direction": self.scan_direction,
             "cleaning_cross_section": self.cleaning_cross_section,
+            "spot_size": self.spot_size,
+            "rate": self.rate,
+            "dwell_time": self.dwell_time,
         }
 
         return settings_dict
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "MillingSettings":
+    def __from_dict__(settings: dict) -> "FibsemMillingSettings":
 
-        if "centre_x" not in settings:
-            settings["centre_x"] = 0
-        if "centre_y" not in settings:
-            settings["centre_y"] = 0
-        if "rotation" not in settings:
-            settings["rotation"] = 0
-        if "scan_direction" not in settings:
-            settings["scan_direction"] = "TopToBottom"
-        if "cleaning_cross_section" not in settings:
-            settings["cleaning_cross_section"] = False
-
-        milling_settings = MillingSettings(
-            width=settings["width"],
-            height=settings["height"],
-            depth=settings["depth"],
-            rotation=np.deg2rad(settings["rotation"]),
-            centre_x=settings["centre_x"],
-            centre_y=settings["centre_y"],
+        milling_settings = FibsemMillingSettings(
             milling_current=settings["milling_current"],
-            scan_direction=settings["scan_direction"],
-            cleaning_cross_section=settings["cleaning_cross_section"],
+            spot_size=settings["spot_size"],
+            rate=settings["rate"],
+            dwell_time=settings["dwell_time"],
         )
 
         return milling_settings
@@ -596,6 +601,7 @@ class MicroscopeSettings:
     # default: DefaultSettings
     image: ImageSettings
     protocol: dict = None
+    milling: FibsemMillingSettings = None
 
     def __to_dict__(self) -> dict:
 
@@ -721,12 +727,12 @@ class FibsemImageMetadata:
             from fibsem.utils import current_timestamp
 
             image_settings = ImageSettings(
-                resolution=f"{image.width}x{image.height}",
+                resolution=(image.width, image.height),
                 dwell_time=image.metadata.scan_settings.dwell_time,
                 hfw=image.width * image.metadata.binary_result.pixel_size.x,
                 autocontrast=True,
                 beam_type=beam_type,
-                gamma=GammaSettings(),
+                gamma_enabled=True,
                 save=False,
                 save_path="path",
                 label=current_timestamp(),
@@ -745,7 +751,7 @@ class FibsemImageMetadata:
         """
         assert (
             self.image_settings.resolution == image_settings.resolution
-        ), f"hfw: {self.image_settings.resolution} != {image_settings.resolution}"
+        ), f"resolution: {self.image_settings.resolution} != {image_settings.resolution}"
         assert (
             self.image_settings.dwell_time == image_settings.dwell_time
         ), f"dwell_time: {self.image_settings.dwell_time} != {image_settings.dwell_time}"
@@ -759,8 +765,8 @@ class FibsemImageMetadata:
             self.image_settings.beam_type.value == image_settings.beam_type.value
         ), f"beam_type: {self.image_settings.beam_type.value} != {image_settings.beam_type.value}"
         assert (
-            self.image_settings.gamma.enabled == image_settings.gamma.enabled
-        ), f"gamma: {self.image_settings.gamma} != {image_settings.gamma}"
+            self.image_settings.gamma_enabled== image_settings.gamma_enabled
+        ), f"gamma: {self.image_settings.gamma_enabled} != {image_settings.gamma_enabled}"
         assert (
             self.image_settings.save == image_settings.save
         ), f"save: {self.image_settings.save} != {image_settings.save}"

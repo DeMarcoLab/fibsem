@@ -1,55 +1,32 @@
 import sys
-import napari
-from datetime import datetime
-
+import re
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import connect
-from PyQt5 import QtWidgets
-
 from fibsem import utils, acquire
-from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemImage, FibsemStagePosition
-from pprint import pprint
+import fibsem.movement as movement
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, FibsemPatternSettings ,Point, FibsemPattern
+import fibsem.conversions as conversions
+from enum import Enum
 import os
 import tkinter
 from tkinter import filedialog
-
-
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QGridLayout, QLabel
+import fibsem.constants as constants
+from qtpy import QtWidgets
+from PyQt5.QtCore import QTimer
 import numpy as np
-
 import logging
+import napari
 
+class MovementMode(Enum):
+    Stable = 1
+    Eucentric = 2
+    # Needle = 3
 
-def set_arr_as_qlabel(
-    arr: np.ndarray,
-    label: QLabel,
-    shape: tuple = (1536//4, 1024//4),
-) -> QLabel:
+class MovementType(Enum):
+    StableEnabled = 0 
+    EucentricEnabled = 1
+    TiltEnabled = 2
 
-    if arr.dtype == 'uint8':
-
-        image = QImage(
-            arr.data,
-            arr.shape[1],
-            arr.shape[0],
-            QImage.Format_Grayscale8,
-        )
-        label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
-
-        return label
-    else:
-
-        image = QImage(
-            arr.data,
-            arr.shape[1],
-            arr.shape[0],
-            QImage.Format_Grayscale16,
-        )
-        label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
-
-        return label
 
 
 class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
@@ -57,29 +34,62 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         super(MainWindow,self).__init__(*args,**kwargs)
         self.setupUi(self)
 
+        # setting up ui 
+        self.setup_connections()
+        self.lines = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_log)
+        self.timer.start(1000)
+        
+        self.pattern_settings = []
+
+        # Gamma and Image Settings
+
+        self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
+        self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
+
+        self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+
+        # Initialise microscope object
+        self.microscope = None
+        self.microscope_settings = None
+        self.connect_to_microscope()
+        
+        self.reset_ui_settings()
+
+        
+
+        if self.microscope is not None:
+           self.update_position_ui()
+
+
+        ### NAPARI settings and initialisation
+
+        
+        viewer.grid.enabled = True
+
+        self.update_displays()
+
+    def setup_connections(self):
+
         # Buttons setup
 
         self.ConnectButton.clicked.connect(self.connect_to_microscope)
         self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
         self.RefImage.clicked.connect(self.take_reference_images)
         self.ResetImage.clicked.connect(self.reset_images)
-        self.EB_Click.clicked.connect(self.click_EB_Image)
-        self.IB_click.clicked.connect(self.click_IB_Image)
-        self.EB_Save.clicked.connect(self.save_EB_Image)
-        self.IB_Save.clicked.connect(self.save_IB_Image)
+        self.take_image.clicked.connect(self.take_image_beams)
+        self.save_button.clicked.connect(self.save_image_beams)
         self.open_filepath.clicked.connect(self.save_filepath)
+        
 
         # image and gamma settings buttons/boxes/ui objects
 
         self.reset_image_settings.clicked.connect(self.reset_image_and_gammaSettings)
         self.autocontrast_enable.stateChanged.connect(self.autocontrast_check)
         self.gamma_enabled.stateChanged.connect(self.gamma_check)
-        self.gamma_min.valueChanged.connect(self.gamma_min_change)
-        self.gamma_max.valueChanged.connect(self.gamma_max_change)
-        self.gamma_scalefactor.valueChanged.connect(self.gamma_scalefactor_change)
-        self.gamma_threshold.valueChanged.connect(self.gamma_threshold_change)
-        self.res_width.valueChanged.connect(self.res_width_change)
-        self.res_height.valueChanged.connect(self.res_height_change)
+        self.res_width.valueChanged.connect(self.resolution_change)
+        self.res_height.valueChanged.connect(self.resolution_change)
         self.dwell_time_setting.valueChanged.connect(self.image_dwell_time_change)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.autosave_enable.stateChanged.connect(self.autosave_toggle)
@@ -89,171 +99,236 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.move_rel_button.clicked.connect(self.move_microscope_rel)
         self.move_abs_button.clicked.connect(self.move_microscope_abs)
 
-        # Gamma and Image Settings
+        # Milling settings set up
+        self.pushButton_milling.clicked.connect(self.milling_protocol)
+        self.pushButton_line.clicked.connect(self.add_line)
+        self.pushButton_rec.clicked.connect(self.add_rectangle)
 
-        self.FIB_IB = FibsemImage
-        self.FIB_EB = FibsemImage
-
-        self.gamma_settings = GammaSettings(
-            enabled=True,
-            min_gamma=0.5,
-            max_gamma=1.8,
-            scale_factor=0.01,
-            threshold=46,
+    def add_line(self):
+        line = FibsemPatternSettings(
+            pattern = FibsemPattern.Line,
+            start_x = self.milling_start_x.value()*constants.MICRO_TO_SI,
+            start_y = self.milling_start_y.value()*constants.MICRO_TO_SI,
+            end_x = self.milling_end_x.value()*constants.MICRO_TO_SI,
+            end_y = self.milling_end_y.value()*constants.MICRO_TO_SI,
+            depth = self.depth_milling.value()*constants.MICRO_TO_SI,
+            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
         )
+        self.pattern_settings.append(line)
+        logging.info("UI | Line pattern added with start point: ({},{}), end point: ({},{}), depth: {} and rotation: {}".format(self.milling_start_x.value(),self.milling_start_y.value(),self.milling_end_x.value(),self.milling_end_y.value(),self.depth_milling.value(),self.rotation_milling.value()))
 
-        self.image_settings =  ImageSettings(
-                resolution="1536x1024",
-                dwell_time=1.0e-6,
-                hfw=600.0e-6,
-                autocontrast=False,
-                beam_type=BeamType.ION,
-                gamma=self.gamma_settings,
-                save=True,
-                save_path="fibsem\\test_images",
-                label=utils.current_timestamp(),
-                reduced_area=None,
-            )
+    def add_rectangle(self):
+        rectangle = FibsemPatternSettings(
+            pattern = FibsemPattern.Rectangle,
+            width = self.width_milling.value()*constants.MICRO_TO_SI,
+            height = self.height_milling.value()*constants.MICRO_TO_SI,
+            depth= self.depth_milling.value()*constants.MICRO_TO_SI,
+            centre_x= self.center_x_milling.value()*constants.MICRO_TO_SI,
+            centre_y= self.center_y_milling.value()*constants.MICRO_TO_SI,
+            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
+        )
+        self.pattern_settings.append(rectangle)
+        logging.info("UI | Rectangle pattern added with width: {}, height: {}, depth: {}, centre: ({},{}), and rotation: {}".format(self.width_milling.value(),self.height_milling.value(),self.depth_milling.value(),self.center_x_milling.value(),self.center_y_milling.value(),self.rotation_milling.value()))
 
+    def save_image_beams(self):
+        if self.image_label.text() != "":
+            self.image_settings.label = self.image_label.text()
 
+        if self.check_EB.isChecked():
+            self.save_EB_Image()
+        if self.check_IB.isChecked():
+            self.save_IB_Image()
 
-        # Initialise microscope object
-        self.microscope = None
-        self.microscope_settings = None
-        self.CLog.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
-        self.reset_ui_settings()
+    def take_image_beams(self):
+        self.image_settings.label = utils.current_timestamp()
+        if self.check_EB.isChecked():
+            self.click_EB_Image()
+        if self.check_IB.isChecked():
+            self.click_IB_Image()
 
-        self.connect_to_microscope()
+    def milling_protocol(self):
+        from fibsem.FibsemMilling import milling_protocol
 
-        if self.microscope is not None:
-            position = self.microscope.get_stage_position()
-
-            self.xAbs.setValue(position.x*1000)
-            self.yAbs.setValue(position.y*1000)
-            self.zAbs.setValue(position.z*1000)
-            self.rAbs.setValue(position.r)
-            self.tAbs.setValue(position.t)
+        mill_settings = FibsemMillingSettings(
+            
+            milling_current= self.milling_current.value()*constants.NANO_TO_SI,
+            rate= self.rate_milling.value(),
+            dwell_time= self.dwell_time_us.value()*constants.MICRO_TO_SI,
+            spot_size= self.spot_size_um.value()*constants.MICRO_TO_SI,
+        )
         
-        self.dXchange.setValue(0)
-        self.dYchange.setValue(0)
-        self.dZchange.setValue(0)
-        self.dRchange.setValue(0)
-        self.dTchange.setValue(0)
+        
 
-        self.eucentric_move.setCheckState(2)
+        milling_protocol(microscope = self.microscope, 
+            image_settings = self.image_settings, 
+            mill_settings = mill_settings, 
+            application_file="autolamella", 
+            patterning_mode="Serial", 
+            pattern_settings= self.pattern_settings)
 
-        self.ion_rel.setChecked(True)
+########################### Movement Functionality ##########################################
+
+    def read_abs_positions_meters(self):
+        """Reads the current position of the microscope stage
+        """
+        if self.microscope_settings.system.manufacturer == "Thermo":
+            position = FibsemStagePosition(
+            x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
+            y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
+            z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
+            
+            t = self.tAbs.value()*constants.DEGREES_TO_RADIANS,
+            r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
+            coordinate_system="raw" )
+        
 
 
-    ### Movement Functionality 
+
+        else:
+            position = FibsemStagePosition(
+                x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
+                y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
+                z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
+                
+                t = self.tAbs.value()*constants.DEGREES_TO_RADIANS,
+                r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
+                coordinate_system="raw" )
+        return position
+
+
+    def read_relative_move_meters(self):
+        """Reads the current position of the microscope stage
+        """
+        position = FibsemStagePosition(
+        x = self.dXchange.value()*constants.MILLIMETRE_TO_METRE,
+        y = self.dYchange.value()*constants.MILLIMETRE_TO_METRE,
+        z = self.dZchange.value()*constants.MILLIMETRE_TO_METRE,
+        t = self.dTchange.value()*constants.DEGREES_TO_RADIANS,
+        r = self.dRchange.value()*constants.DEGREES_TO_RADIANS, 
+        coordinate_system="raw" )
+        
+        return position
 
 
     def move_microscope_abs(self):
         """Moves microscope stage in absolute coordinates
         """
-
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            logging.info(f'UI | No Microscope Connected')
-            self.xAbs.setValue(0)
-            self.xAbs.setValue(0)
-            self.zAbs.setValue(0)
-            self.tAbs.setValue(0)
-            self.rAbs.setValue(0)
-            return
-        
-        new_position = FibsemStagePosition(
-            x = self.xAbs.value()/1000,
-            y = self.yAbs.value()/1000,
-            z = self.zAbs.value()/1000,
-            
-            t = self.tAbs.value(),
-            r = self.rAbs.value() )
+              
+        new_position = self.read_abs_positions_meters()
 
         self.microscope.move_stage_absolute(new_position)
 
-        self.update_log("Moving Stage in Absolute Coordinates")
-        self.update_log(f"Moved to x:{new_position.x*1000} mm y:{new_position.y*1000} mm z:{new_position.z*1000} mm r:{new_position.r} deg t:{new_position.t} deg")
-    
+        logging.info("Moving Stage in Absolute Coordinates")
+        logging.info(f"Moved to x:{(new_position.x*constants.METRE_TO_MILLIMETRE):.3f} mm y:{(new_position.y*constants.METRE_TO_MILLIMETRE):.3f} mm z:{(new_position.z*constants.METRE_TO_MILLIMETRE):.3f} mm r:{new_position.r*constants.RADIANS_TO_DEGREES} deg t:{new_position.t*constants.RADIANS_TO_DEGREES} deg")
+        self.update_position_ui()
 
 
     def move_microscope_rel(self):
         """Moves the microscope stage relative to the absolute position
         """
 
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            logging.info(f'UI | No Microscope Connected')
-            self.dXchange.setValue(0)
-            self.dYchange.setValue(0)
-            self.dZchange.setValue(0)
-            self.dTchange.setValue(0)
-            self.dRchange.setValue(0)
-            
-            return
 
-        # Relative to ION or ELECTRON BEAM
 
-        if self.ion_rel.isChecked():
-            beam_type = BeamType.ION
-            beam_name = "ION"
-        else:
-            beam_type = BeamType.ELECTRON
-            beam_name = "ELECTRON"
+        logging.info("Moving Stage in Relative Coordinates")
 
-        self.update_log("Moving Stage in Relative Coordinates")
+        move = self.read_relative_move_meters()
+        self.microscope.move_stage_relative(
+            move
+        )
+        logging.info(f"Moved by dx:{self.dXchange.value():.3f} mm dy:{self.dYchange.value():.3f} mm dz:{self.dZchange.value():.3f} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
 
-        if self.eucentric_move.checkState() == 2:
 
-            self.microscope.eucentric_move(
-                settings=self.microscope_settings,
-                dx = self.dXchange.value()/1000,
-                dy = self.dYchange.value()/1000,
-                beam_type=beam_type 
-            )
-            self.update_log(f"Eucentric Move relative to {beam_name} Beam")
-            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm")
-
-        else:
-            self.microscope.move_stage_relative(
-                dx = self.dXchange.value()/1000,
-                dy = self.dYchange.value()/1000,
-                dz = self.dZchange.value()/1000,
-                dr = self.dRchange.value(),
-                dt = self.dTchange.value()
-            )
-            self.update_log(f"Moved by dx:{self.dXchange.value()} mm dy:{self.dYchange.value()} mm dz:{self.dZchange.value()} mm dr:{self.dRchange.value()} deg dt:{self.dTchange.value()} deg")
 
         # Get Stage Position and Set UI Display
+        self.update_position_ui()
 
+    def update_position_ui(self):
         position = self.microscope.get_stage_position()
 
-        self.xAbs.setValue(position.x*1000)
-        self.yAbs.setValue(position.y*1000)
-        self.zAbs.setValue(position.z*1000)
-        self.tAbs.setValue(position.t)
-        self.rAbs.setValue(position.r)
+        self.xAbs.setValue(position.x*constants.METRE_TO_MILLIMETRE)
+        self.yAbs.setValue(position.y*constants.METRE_TO_MILLIMETRE)
+        self.zAbs.setValue(position.z*constants.METRE_TO_MILLIMETRE)
+        self.tAbs.setValue(position.t*constants.RADIANS_TO_DEGREES)
+        self.rAbs.setValue(position.r*constants.RADIANS_TO_DEGREES)
 
         self.dXchange.setValue(0)
         self.dYchange.setValue(0)
         self.dZchange.setValue(0)
         self.dTchange.setValue(0)
-        self.dRchange.setValue(0)
+        self.dRchange.setValue(0)    
 
+    def get_data_from_coord(self, coords: tuple) -> tuple:
+
+        # check inside image dimensions, (y, x)
+        eb_shape = self.FIB_EB.data.shape[0], self.FIB_EB.data.shape[1]
+        ib_shape = self.FIB_IB.data.shape[0], self.FIB_IB.data.shape[1] *2
+
+        if (coords[0] > 0 and coords[0] < eb_shape[0]) and (coords[1] > 0 and coords[1] < eb_shape[1]):
+            image = self.FIB_EB
+            beam_type = BeamType.ELECTRON
+            print("electron")
+
+        elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (coords[1] > eb_shape[0] and coords[1] < ib_shape[1]):
+            image = self.FIB_IB
+            coords = (coords[0], coords[1] - ib_shape[1] // 2)
+            beam_type = BeamType.ION
+            print("ion")
+        else:
+            beam_type, image = None, None
+        
+        return coords, beam_type, image
+
+
+    def _double_click(self, layer, event):
+
+        # get coords
+        coords = layer.world_to_data(event.position)
+
+        # TODO: dimensions are mixed which makes this confusing to interpret... resolve
+        
+        coords, beam_type, image = self.get_data_from_coord(coords)
+
+        if beam_type is None:
+            napari.utils.notifications.show_info(f"Clicked outside image dimensions. Please click inside the image to move.")
+            return
+
+        point = conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
+                image.data, image.metadata.pixel_size.x)  
+     
+        
+        # move
+        if self.comboBox.currentText() == "Stable Movement":
+            self.movement_mode = MovementMode["Stable"]
+        elif self.comboBox.currentText() == "Eucentric Movement":
+            self.movement_mode = MovementMode["Eucentric"]
+
+        logging.debug(f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}")
+
+        # eucentric is only supported for ION beam
+        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
+            self.microscope.eucentric_move(
+                settings=self.microscope_settings,
+                dy=-point.y
+            )
+
+        else:
+            # corrected stage movement
+            self.microscope.stable_move(
+                settings=self.microscope_settings,
+                dx=point.x,
+                dy=point.y,
+                beam_type=beam_type,
+            )
+
+        self.take_reference_images()
 
 
     def autosave_toggle(self):
         """Toggles on Autosave which saves image everytime an image is acquired
         """
-
-        if self.autosave_enable.checkState() == 2:
-            self.image_settings.save = True
-            self.update_log("Autosave Enabled")
-            logging.info(f"UI | Autosave Enabled")
-        elif self.autosave_enable.checkState() == 0:
-            self.image_settings.save = False
-            self.update_log("Autosave Disabled")
-            logging.info(f"UI | Autosave Disabled")
+        autosave = self.autosave_enable.isChecked()
+        self.image_settings.save = autosave
+        logging.info(f"UI | Autosave Enabled: {autosave}  ")
 
         
 
@@ -272,218 +347,231 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         ### field width in microns in UI!!!!!!!!
         self.image_settings.hfw = self.hfw_box.value() / 1.0e6
 
-    def gamma_threshold_change(self):
 
-        self.gamma_settings.threshold = self.gamma_threshold.value()
+    def resolution_change(self):
 
-    def res_width_change(self):
+        new_resolution = (self.res_width.value(),self.res_height.value())
 
-        res = self.image_settings.resolution.split("x")
+        self.image_settings.resolution = new_resolution
 
-        res[0] = str(self.res_width.value())
 
-        self.image_settings.resolution = "x".join(res)
+    # def res_width_change(self):
 
-    def res_height_change(self):
+    #     res = self.image_settings.resolution
 
-        resh = self.image_settings.resolution.split("x")
+    #     res[0] = self.res_width.value()
 
-        resh[1] = str(self.res_height.value())
+    #     self.image_settings.resolution = 
 
-        self.image_settings.resolution = "x".join(resh)
+    # def res_height_change(self):
+
+    #     resh = self.image_settings.resolution.split("x")
+
+    #     resh[1] = str(self.res_height.value())
+
+    #     self.image_settings.resolution = "x".join(resh)
 
     def image_dwell_time_change(self):
         ### dwell time in microseconds!!!!! ease of use for UI!!!!
-        self.image_settings.dwell_time = self.dwell_time_setting.value()/1.0e6
+        self.image_settings.dwell_time = self.dwell_time_setting.value()*constants.MICRO_TO_SI
 
-    def gamma_min_change(self):
 
-        self.gamma_settings.min_gamma = self.gamma_min.value()  
-
-    def gamma_max_change(self):
-
-        self.gamma_settings.max_gamma = self.gamma_max.value()  
-
-    def gamma_scalefactor_change(self):
-
-        self.gamma_settings.scale_factor = self.gamma_scalefactor.value()  
 
     def autocontrast_check(self):
-
-        # check box returns 2 if checked, 0 if unchecked
-
-        if self.autocontrast_enable.checkState() == 2:
-            self.image_settings.autocontrast = True
-            self.update_log("Autocontrast Enabled")
-            logging.info(f"UI | AutoContrast Enabled")
-        elif self.autocontrast_enable.checkState() == 0:
-            self.image_settings.autocontrast = False
-            self.update_log("Autocontrast Disabled")
-            logging.info(f"UI | AutoContrast Disabled")
-
+        
+        autocontrast_enabled = self.autocontrast_enable.isChecked()
+        self.image_settings.autocontrast = autocontrast_enabled
+        logging.info(f"UI | Autocontrast Enabled: {autocontrast_enabled}")
+        
     
     def gamma_check(self):
-
-        if self.gamma_enabled.checkState() == 2:
-            self.gamma_settings.enabled = True
-            self.update_log("Gamma Enabled")
-            logging.info(f"UI | Gamma Enabled")
-        elif self.gamma_enabled.checkState() == 0:
-            self.gamma_settings.enabled = False
-            self.update_log("Gamma Disabled")
-            logging.info(f"UI | Gamma Disabled")
+        
+        gamma = self.gamma_enabled.isChecked()
+        self.image_settings.gamma_enabled = gamma
+        logging.info(f"UI | Gamma Enabled: {gamma}")
+            
 
     ##################################################################
 
 
-    def update_log(self,log:str):
+    def update_log(self):
+        
+        with open(self.log_path, "r") as f:
+            lines = f.read().splitlines()
+            lin_len = len(lines)
+            
+        if self.lines != lin_len:   
+            for i in reversed(range(lin_len - self.lines)):
+                line_display = lines[-1-i]
+                if re.search("napari.loader — DEBUG", line_display):
+                    self.lines = lin_len
+                    continue
+                line_divided = line_display.split(",")
+                time = line_divided[0]
+                message = line_divided[1].split("—")
+                disp_str = f"{time} | {message[-1]}"
 
-        now = datetime.now()
-        timestr = now.strftime("%d/%m  %H:%M:%S")
+                self.lines = lin_len
+                self.CLog.setText(self.CLog2.text())
+                self.CLog2.setText(self.CLog3.text())
+                self.CLog3.setText(self.CLog4.text())
+                self.CLog4.setText(self.CLog5.text())
+                self.CLog5.setText(self.CLog6.text())
+                self.CLog6.setText(self.CLog7.text())
+                self.CLog7.setText(self.CLog8.text())
 
-        self.CLog.setText(self.CLog2.text())
-        self.CLog2.setText(self.CLog3.text())
-        self.CLog3.setText(self.CLog4.text())
-        self.CLog4.setText(self.CLog5.text())
-        self.CLog5.setText(self.CLog6.text())
-        self.CLog6.setText(self.CLog7.text())
-        self.CLog7.setText(self.CLog8.text())
-
-        self.CLog8.setText(timestr+ " : " +log)
+                self.CLog8.setText(disp_str)
+      
 
     def connect_to_microscope(self):
-
-        self.update_log("Attempting to connect...")
         
         try:
             self.microscope, self.microscope_settings = utils.setup_session()
-            self.update_log('Connected to microscope successfully')
+            self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
+            self.image_settings = self.microscope_settings.image
+            self.milling_settings = self.microscope_settings.milling
+            logging.info("Microscope Connected")
+            self.RefImage.setEnabled(True)
+            self.ResetImage.setEnabled(True)
+            self.take_image.setEnabled(True)
+            self.save_button.setEnabled(True)
+            self.move_rel_button.setEnabled(True)
+            self.move_abs_button.setEnabled(True)
+            self.microscope_status.setText("Microscope Connected")
+            self.microscope_status.setStyleSheet("background-color: green")
+
         except:
-            self.update_log('Unable to connect to microscope')
+            # logging.('Unable to connect to microscope')
+            self.microscope_status.setText("Microscope Disconnected")
+            self.microscope_status.setStyleSheet("background-color: red")
+            self.RefImage.setEnabled(False)
+            self.ResetImage.setEnabled(False)
+            self.take_image.setEnabled(False)
+            self.save_button.setEnabled(False)
+            self.move_rel_button.setEnabled(False)
+            self.move_abs_button.setEnabled(False)
 
     def disconnect_from_microscope(self):
 
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
-
         self.microscope.disconnect()
         self.microscope = None
-        self.update_log('Microscope Disconnected')
+        self.microscope_settings = None
+        self.RefImage.setEnabled(False)
+        self.ResetImage.setEnabled(False)
+        self.take_image.setEnabled(False)
+        self.save_button.setEnabled(False)
+        self.move_rel_button.setEnabled(False)
+        self.move_abs_button.setEnabled(False)
+        logging.info('Microscope Disconnected')
+        self.microscope_status.setText("Microscope Disconnected")
+        self.microscope_status.setStyleSheet("background-color: red")
+
+
+###################################### Imaging ##########################################
 
     def take_reference_images(self):
         
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
-
-
         # take image with both beams
         eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
         self.FIB_IB = ib_image
         self.FIB_EB = eb_image
 
-        self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
-        self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
+        logging.info("Reference Images Taken")
+        
+        self.update_displays()
+
+    def update_displays(self):
+       
+        viewer.layers.clear()
+        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
+        self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
+        
+
+        # if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
+        #     logging.info("IB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
+        # if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
+        #     logging.info("EB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
+
+        viewer.camera.zoom = 0.4
+
+        self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
+        self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
+        viewer.layers.selection.active = self.eb_layer
+        viewer.window.qt_viewer.dockLayerList.hide()
 
         self.reset_ui_settings()
 
-        # viewer.layers.clear()
-        # viewer.add_image(eb_image.data, name="EB Image")
-        # viewer.add_image(ib_image.data, name="IB Image")
+
 
     def click_EB_Image(self):
 
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
 
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(self.microscope, self.image_settings)
+
         self.FIB_EB = eb_image
-        self.EB_Image = set_arr_as_qlabel(eb_image.data, self.EB_Image, shape=(400, 400))
-        self.image_settings.beam_type = tmp_beam_type
-        self.reset_ui_settings()
-        self.update_log("EB Image Taken!")
+
+        self.update_displays()
+
+        logging.info("EB Image Taken!")
+        
     
     def click_IB_Image(self):
-
-        if self.microscope is None:
-            self.update_log("No Microscope Connected")
-            return
 
         tmp_beam_type = self.image_settings.beam_type
         self.image_settings.beam_type = BeamType.ION
         ib_image = acquire.new_image(self.microscope, self.image_settings)
-        print(ib_image.data.dtype)
         self.FIB_IB = ib_image
-        self.IB_Image = set_arr_as_qlabel(ib_image.data, self.IB_Image, shape=(400, 400))
-        self.image_settings.beam_type = tmp_beam_type
-        self.reset_ui_settings()
 
-        self.update_log("IB Image Taken!")
+        
+        self.update_displays()
+        logging.info("IB Image Taken!")
 
     def save_EB_Image(self):
+        
         save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_eb")
         self.FIB_EB.save(save_path=save_path)
 
-        self.update_log(f"EB Image Saved to {save_path}.tif!")
+        logging.info(f"EB Image Saved to {save_path}.tif!")
+        self.image_label.clear()
 
     def save_IB_Image(self):
+        
         save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_ib")
         self.FIB_IB.save(save_path)
 
-        self.update_log(f"IB Image Saved to {save_path}.tif!")
+        logging.info(f"IB Image Saved to {save_path}.tif!")
 
     def reset_images(self):
 
-        self.EB_Image.setText(" ")
-        self.IB_Image.setText(" ")
+        viewer.layers['EB Image'].data = np.zeros((1,1))
+        viewer.layers['IB Image'].data = np.zeros((1,1))
+        self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
+        self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
 
     def reset_image_and_gammaSettings(self):
 
-        self.gamma_settings = GammaSettings(
-            enabled=True,
-            min_gamma=0.5,
-            max_gamma=1.8,
-            scale_factor=0.01,
-            threshold=46,
-        )
-
-        self.image_settings =  ImageSettings(
-                resolution="1536x1024",
-                dwell_time=1.0e-6,
-                hfw=600.0e-6,
-                autocontrast=False,
-                beam_type=BeamType.ION,
-                gamma=self.gamma_settings,
-                save=True,
-                save_path="fibsem\\test_images",
-                label=utils.current_timestamp(),
-                reduced_area=None,
-            )
+        settings = utils.load_settings_from_config()
+        self.image_settings = settings.image
         
         self.reset_ui_settings()
         
-        self.update_log("Gamma and image settings returned to default values")
+        logging.info("UI | Image settings returned to default values")
 
     def reset_ui_settings(self):
 
-        self.gamma_min.setValue(self.gamma_settings.min_gamma)
-        self.gamma_max.setValue(self.gamma_settings.max_gamma)
-        self.gamma_scalefactor.setValue(self.gamma_settings.scale_factor)
-        self.dwell_time_setting.setValue(self.image_settings.dwell_time * 1.0e6)
-        self.hfw_box.setValue(int(self.image_settings.hfw * 1e6))
+        self.dwell_time_setting.setValue(self.image_settings.dwell_time * constants.SI_TO_MICRO)
+        self.hfw_box.setValue(int(self.image_settings.hfw*constants.SI_TO_MICRO))
 
-        res_ful = self.image_settings.resolution.split("x")
+        res_ful = self.image_settings.resolution
 
-        self.res_width.setValue(int(res_ful[0]))
-        self.res_height.setValue(int(res_ful[1]))
+        self.res_width.setValue(res_ful[0])
+        self.res_height.setValue(res_ful[1])
 
 
-        if self.gamma_settings.enabled:
+        if self.image_settings.gamma_enabled:
             self.gamma_enabled.setCheckState(2)
         else:
             self.gamma_enabled.setCheckState(0)
@@ -501,13 +589,31 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
         self.savepath_text.setText(self.image_settings.save_path)
 
+        self.milling_current.setValue(self.milling_settings.milling_current*constants.SI_TO_NANO)
+        self.dwell_time_us.setValue(self.milling_settings.dwell_time*constants.SI_TO_MICRO)
+        self.spot_size_um.setValue(self.milling_settings.spot_size*constants.SI_TO_MICRO)
+        self.rate_milling.setValue(self.milling_settings.rate)
+        # self.scan_direction.setCurrentText(self.milling_settings.scan_direction)
+
 
 
 if __name__ == "__main__":    
 
     app = QtWidgets.QApplication(sys.argv)
 
-    window = MainWindow()
-    window.show()
+
+    viewer = napari.Viewer()
+
+
     
-    app.exec()
+
+    window = MainWindow()
+   
+    # window.show()
+    widget = viewer.window.add_dock_widget(window)
+    widget.setMinimumWidth(500)
+
+    
+
+    sys.exit(app.exec())
+ 

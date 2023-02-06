@@ -2,12 +2,20 @@ import logging
 
 import numpy as np
 from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.enumerations import (CoordinateSystem,
-                                                           ManipulatorState)
+from autoscript_sdb_microscope_client.enumerations import (
+    CoordinateSystem,
+    ManipulatorState,
+)
 from autoscript_sdb_microscope_client.structures import AdornedImage
 from fibsem import calibration
-from fibsem.structures import (BeamSystemSettings, BeamType, ImageSettings,
-                               MicroscopeSettings, MicroscopeState)
+from fibsem.structures import (
+    BeamSystemSettings,
+    BeamType,
+    ImageSettings,
+    MicroscopeSettings,
+    MicroscopeState,
+    FibsemImage,
+)
 
 
 # TODO: change return type to list of warnings rather than reading the log...
@@ -85,7 +93,9 @@ def _validate_needle_calibration(microscope: SdbMicroscopeClient) -> None:
 
     return
 
+
 # TODO: use _set_type_mode for setting the detector type and mode not directly setting the values
+
 
 def _validate_beam_system_state(
     microscope: SdbMicroscopeClient, settings: BeamSystemSettings
@@ -231,6 +241,7 @@ def validate_stage_height_for_needle_insertion(
     # Unable to insert the needle if the stage height is below this limit (3.7e-3)
     return bool(stage.current_position.z > needle_stage_height_limit)
 
+
 def validate_focus(
     microscope: SdbMicroscopeClient,
     settings: BeamSystemSettings,
@@ -242,6 +253,7 @@ def validate_focus(
         calibration.auto_link_stage(microscope)
 
     return check_working_distance_is_within_tolerance(microscope, settings=settings)
+
 
 def check_working_distance_is_within_tolerance(
     microscope: SdbMicroscopeClient, settings: BeamSystemSettings, atol=0.5e-3
@@ -262,26 +274,23 @@ def check_working_distance_is_within_tolerance(
 
 
 def check_shift_within_tolerance(
-    dx: float, dy: float, ref_image: AdornedImage, limit: float = 0.25
+    dx: float, dy: float, ref_image: FibsemImage, limit: float = 0.25
 ) -> bool:
     """Check if required shift is wihtin safety limit"""
     # check if the cross correlation movement is within the safety limit
-
-    pixelsize_x = ref_image.metadata.binary_result.pixel_size.x
-    X_THRESHOLD = limit * pixelsize_x * ref_image.width
-    Y_THRESHOLD = limit * pixelsize_x * ref_image.height
+    
+    pixelsize_x = ref_image.metadata.pixel_size.x
+    width, height = ref_image.metadata.image_settings.resolution
+    X_THRESHOLD = limit * pixelsize_x * width
+    Y_THRESHOLD = limit * pixelsize_x * height
 
     return abs(dx) < X_THRESHOLD and abs(dy) < Y_THRESHOLD
 
 
+def _validate_milling_protocol(
+    stage_protocol: dict, settings: MicroscopeSettings
+) -> dict:
 
-
-
-
-
-def _validate_milling_protocol(stage_protocol: dict, settings: MicroscopeSettings) -> dict:
-    
-    
     if "milling_current" not in stage_protocol:
         stage_protocol["milling_current"] = settings.default.milling_current
     if "cleaning_cross_section" not in stage_protocol:

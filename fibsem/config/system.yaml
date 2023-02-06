@@ -2,7 +2,7 @@
 system:
   ip_address: "localhost"
   application_file: autolamella
-  manufacturer: "Tescan"
+  manufacturer: "Thermo"
   # beams
   ion:
     voltage: 30000
@@ -21,24 +21,30 @@ system:
   stage:
     rotation_flat_to_electron: 49 # degrees
     rotation_flat_to_ion: 229 # degrees
-    tilt_flat_to_electron: 35 # degrees (pre-tilt)
+    tilt_flat_to_electron: 0 # degrees (pre-tilt)
     tilt_flat_to_ion: 52 # degrees
-    pre_tilt: 35
+    pre_tilt: 0
     needle_stage_height_limit: 3.7e-3
 # user config settings
 user:
-  imaging_current: 20.e-12
-  milling_current: 2.e-9
-  resolution: "1536x1024"
-  hfw: 150.e-6  
-  beam_type: "Electron"
-  autocontrast: True
-  dwell_time: 1.e-6
-  save: False
-  gamma: # gamma correction parameters
-    enabled: True
-    min_gamma: 0.15
-    max_gamma: 1.8
-    scale_factor: 0.01
-    threshold: 46 # px
+  milling: 
+    milling_current: 2.e-9
+    spot_size: 5.0e-8
+    rate: 3.0e-3
+    dwell_time: 1.e-6
+  
+  imaging: 
+    imaging_current: 20.e-12
+    resolution: [1536, 1024]
+    hfw: 150.e-6  
+    beam_type: "Electron"
+    autocontrast: True
+    dwell_time: 1.e-6
+    save: False
+    gamma: # gamma correction parameters
+      enabled: True
+      min_gamma: 0.15
+      max_gamma: 1.8
+      scale_factor: 0.01
+      threshold: 46 # px
 
