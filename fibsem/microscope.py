@@ -425,7 +425,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         wd = self.connection.beams.electron_beam.working_distance.value
 
-        z_move = dy / np.cos(np.deg2rad(38))  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(
