@@ -152,8 +152,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         mill_settings = FibsemMillingSettings(
             
             milling_current= self.milling_current.value()*constants.NANO_TO_SI,
-            scan_direction= self.scan_direction.currentText(),
-            cleaning_cross_section= self.checkBox_cross_section.isChecked(),
             rate= self.rate_milling.value(),
             dwell_time= self.dwell_time_us.value()*constants.MICRO_TO_SI,
             spot_size= self.spot_size_um.value()*constants.MICRO_TO_SI,
@@ -321,7 +319,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
                 beam_type=beam_type,
             )
 
-        self.update_displays()
+        self.take_reference_images()
 
 
     def autosave_toggle(self):
@@ -483,11 +481,10 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.update_displays()
 
     def update_displays(self):
-
-        
+       
         viewer.layers.clear()
-        self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
         self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
+        self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
         
 
         # if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
@@ -595,7 +592,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.dwell_time_us.setValue(self.milling_settings.dwell_time*constants.SI_TO_MICRO)
         self.spot_size_um.setValue(self.milling_settings.spot_size*constants.SI_TO_MICRO)
         self.rate_milling.setValue(self.milling_settings.rate)
-        self.scan_direction.setCurrentText(self.milling_settings.scan_direction)
+        # self.scan_direction.setCurrentText(self.milling_settings.scan_direction)
 
 
 

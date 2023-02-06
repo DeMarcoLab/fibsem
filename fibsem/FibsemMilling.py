@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from fibsem.structures import BeamType, FibsemPattern, FibsemPatternSettings, FibsemMillingSettings, Point, ImageSettings
 from typing import Union
-from fibsem.FibsemMicroscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope
 
 #  TODO: Abstract away hardware calls so these imports can be removed
 from fibsem.config import load_microscope_manufacturer

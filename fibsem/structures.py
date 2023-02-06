@@ -377,15 +377,9 @@ class FibsemMillingSettings:
 
     @staticmethod
     def __from_dict__(settings: dict) -> "FibsemMillingSettings":
-        if "scan_direction" not in settings:
-            settings["scan_direction"] = "TopToBottom"
-        if "cleaning_cross_section" not in settings:
-            settings["cleaning_cross_section"] = False
 
         milling_settings = FibsemMillingSettings(
             milling_current=settings["milling_current"],
-            scan_direction=settings["scan_direction"],
-            cleaning_cross_section=settings["cleaning_cross_section"],
             spot_size=settings["spot_size"],
             rate=settings["rate"],
             dwell_time=settings["dwell_time"],

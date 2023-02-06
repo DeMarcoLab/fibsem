@@ -172,7 +172,7 @@ class ThermoMicroscope(FibsemMicroscope):
         except Exception as e:
             logging.error(f"Unable to connect to the microscope: {e}")
 
-    def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
+    def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """Acquire a new image.
 
         Args:
@@ -183,10 +183,13 @@ class ThermoMicroscope(FibsemMicroscope):
             AdornedImage: new image
         """
         # set frame settings
+        if image_settings.reduced_area is not None:
+            image_settings.reduced_area = image_settings.reduced_area.__to_FEI__()
+        
         frame_settings = GrabFrameSettings(
             resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
             dwell_time=image_settings.dwell_time,
-            reduced_area=image_settings.reduced_area.__to_FEI__(),
+            reduced_area=image_settings.reduced_area,
         )
 
         if image_settings.beam_type == BeamType.ELECTRON:
@@ -385,7 +388,6 @@ class ThermoMicroscope(FibsemMicroscope):
         # calculate stage movement
         x_move = self.x_corrected_stage_movement(dx)
         yz_move = self.y_corrected_stage_movement(
-            microscope=self.connection,
             settings=settings,
             expected_y=dy,
             beam_type=beam_type,
@@ -551,10 +553,12 @@ class ThermoMicroscope(FibsemMicroscope):
                 stage_settings.tilt_flat_to_ion - stage_settings.tilt_flat_to_electron
             )
 
+        position = self.get_stage_position()
+
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
-        stage_position = FibsemStagePosition(r=rotation, t=tilt)
-        self.move_stage_relative(stage_position)
+        stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
+        self.move_stage_absolute(stage_position)
 
     def setup_milling(
         self,
@@ -618,7 +622,7 @@ class ThermoMicroscope(FibsemMicroscope):
             )
 
         pattern.rotation = pattern_settings.rotation
-        pattern.scan_direction = mill_settings.scan_direction
+        pattern.scan_direction = pattern_settings.scan_direction
 
         return pattern
 
