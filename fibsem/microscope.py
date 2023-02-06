@@ -600,7 +600,7 @@ class ThermoMicroscope(FibsemMicroscope):
         mill_settings: FibsemMillingSettings,
     ):
 
-        if mill_settings.cleaning_cross_section:
+        if pattern_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
                 center_x=pattern_settings.centre_x,
                 center_y=pattern_settings.centre_y,
@@ -1242,13 +1242,24 @@ class TescanMicroscope(FibsemMicroscope):
         height = pattern_settings.height
         rotation = pattern_settings.rotation  # CHECK UNITS (TESCAN Takes Degrees)
 
-        self.layer.addRectangleFilled(
-            CenterX=centre_x,
-            CenterY=centre_y,
-            Depth=depth,
-            Width=width,
-            Height=height,
-        )
+        if pattern_settings.cleaning_cross_section:
+            self.layer.addRectanglePolish(
+                CenterX=centre_x,
+                CenterY=centre_y,
+                Depth=depth,
+                Width=width,
+                Height=height,
+                Angle=rotation,
+            )
+        else:
+            self.layer.addRectangleFilled(
+                CenterX=centre_x,
+                CenterY=centre_y,
+                Depth=depth,
+                Width=width,
+                Height=height,
+                Angle=rotation,
+            )
 
         pattern = self.layer
         return pattern
