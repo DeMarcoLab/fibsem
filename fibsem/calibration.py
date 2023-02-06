@@ -22,6 +22,7 @@ from fibsem.structures import (
     MicroscopeSettings,
     BeamSystemSettings,
 )
+from fibsem.microscope import FibsemMicroscope
 
 from pathlib import Path
 import skimage
@@ -29,7 +30,7 @@ from skimage.morphology import disk
 from skimage.filters.rank import gradient
 
 
-def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> None:
+def auto_link_stage(microscope: FibsemMicroscope, hfw: float = 150e-6) -> None:
     """Automatically focus and link sample stage z-height.
 
     Notes:
@@ -40,15 +41,15 @@ def auto_link_stage(microscope: SdbMicroscopeClient, hfw: float = 150e-6) -> Non
           to the instruments.
     """
 
-    microscope.imaging.set_active_view(BeamType.ELECTRON.value)
-    original_hfw = microscope.beams.electron_beam.horizontal_field_width.value
-    microscope.beams.electron_beam.horizontal_field_width.value = hfw
-    acquire.autocontrast(microscope, beam_type=BeamType.ELECTRON)
-    microscope.auto_functions.run_auto_focus()
-    microscope.specimen.stage.link()
+    microscope.connection.imaging.set_active_view(BeamType.ELECTRON.value)
+    original_hfw = microscope.connection.beams.electron_beam.horizontal_field_width.value
+    microscope.connection.beams.electron_beam.horizontal_field_width.value = hfw
+    microscope.autocontrast(beam_type=BeamType.ELECTRON)
+    microscope.connection.auto_functions.run_auto_focus()
+    microscope.connection.specimen.stage.link()
     # NOTE: replace with auto_focus_and_link if performance of focus is poor
     # # Restore original settings
-    microscope.beams.electron_beam.horizontal_field_width.value = original_hfw
+    microscope.connection.beams.electron_beam.horizontal_field_width.value = original_hfw
 
 
 def auto_focus_beam(
@@ -137,7 +138,7 @@ def auto_focus_beam(
 
 
 def auto_charge_neutralisation(
-    microscope: SdbMicroscopeClient,
+    microscope: FibsemMicroscope,
     image_settings: ImageSettings,
     discharge_settings: ImageSettings = None,
     n_iterations: int = 10,
