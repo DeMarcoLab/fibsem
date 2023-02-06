@@ -78,7 +78,7 @@ def auto_focus_beam(
                 beam_type=BeamType.ELECTRON,
                 save=False,
                 autocontrast=True,
-                gamma=GammaSettings(enabled=False),
+                gamma_enabled=False,
                 label=None,
             )
 
@@ -154,7 +154,7 @@ def auto_charge_neutralisation(
             beam_type=BeamType.ELECTRON,
             save=False,
             autocontrast=False,
-            gamma=GammaSettings(enabled=False),
+            gamma_enabled=False,
             label=None,
         )
 
