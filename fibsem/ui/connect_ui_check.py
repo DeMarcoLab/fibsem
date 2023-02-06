@@ -238,6 +238,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         logging.info(f"Moved by dx:{self.dXchange.value():.3f} mm dy:{self.dYchange.value():.3f} mm dz:{self.dZchange.value():.3f} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
 
 
+
         # Get Stage Position and Set UI Display
         self.update_position_ui()
 
