@@ -22,7 +22,7 @@ if manufacturer == "Tescan":
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import Status as DBStatus
-    from tescanautomation.DrawBeam import ObjectLine, ObjectRectangleFilled, ObjectRectanglePolish
+
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -598,7 +598,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self,
         pattern_settings: FibsemPatternSettings,
         mill_settings: FibsemMillingSettings,
-    ) -> Union[RectanglePattern, CleaningCrossSectionPattern]:
+    ):
 
         if mill_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
@@ -960,9 +960,11 @@ class TescanMicroscope(FibsemMicroscope):
         Relative shift of ION Beam. The inputs dx and dy are in metres as that is the OpenFIBSEM standard, however TESCAN uses mm so conversions must be made. 
         """
         x, y = self.connection.FIB.Optics.GetImageShift()
-        dx, dy *= 1000, 1000 # Convert to mm from m.
-        x, y += dx, dy
-        self.connection.FIB.Optics.SetImageShift(-dx, dy) # NOTE: Not sure why the dx is -dx, this may be thermo specific and doesn't apply to TESCAN?
+        dx *=  constants.METRE_TO_MILLIMETRE # Convert to mm from m.
+        dy *=  constants.METRE_TO_MILLIMETRE
+        x -= dx # NOTE: Not sure why the dx is -dx, this may be thermo specific and doesn't apply to TESCAN?
+        y += dy
+        self.connection.FIB.Optics.SetImageShift(x,y) 
         
 
     def move_stage_absolute(self, position: FibsemStagePosition):
@@ -1231,7 +1233,7 @@ class TescanMicroscope(FibsemMicroscope):
         self,
         pattern_settings: FibsemPatternSettings,
         mill_settings: FibsemMillingSettings,
-    ) -> Union[ObjectRectangleFilled, ObjectRectanglePolish]:
+    ):
 
         centre_x = pattern_settings.centre_x
         centre_y = pattern_settings.centre_y
@@ -1251,7 +1253,7 @@ class TescanMicroscope(FibsemMicroscope):
         pattern = self.layer
         return pattern
 
-    def draw_line(self, pattern_settings: FibsemPatternSettings) -> ObjectLine:
+    def draw_line(self, pattern_settings: FibsemPatternSettings):
 
         start_x = pattern_settings.start_x
         start_y = pattern_settings.start_y
