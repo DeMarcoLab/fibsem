@@ -121,7 +121,7 @@ class FibsemStagePosition:
 
     if manufacturer == "Tescan":
 
-        def to_tescan_position(self, stage_tilt: float = 0.0) -> StagePosition:
+        def to_tescan_position(self, stage_tilt: float = 0.0):
             self.y=self.y / np.cos(stage_tilt),
 
         @classmethod

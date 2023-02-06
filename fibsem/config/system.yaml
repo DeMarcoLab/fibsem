@@ -1,6 +1,6 @@
 # system
 system:
-  ip_address: "192.168.137.141"
+  ip_address: "localhost"
   application_file: autolamella
   manufacturer: "Tescan"
   # beams
@@ -30,14 +30,12 @@ user:
   milling: 
     milling_current: 2.e-9
     spot_size: 5.0e-8
-    cleaning_cross_section: False
     rate: 3.0e-3
-    scan_direction: "TopToBottom"
     dwell_time: 1.e-6
   
   imaging: 
     imaging_current: 20.e-12
-    resolution: "1536x1024"
+    resolution: [1536, 1024]
     hfw: 150.e-6  
     beam_type: "Electron"
     autocontrast: True
