@@ -10,9 +10,8 @@ import time
 
 
 # for easier usage
-
-from typing import Union
 import fibsem.constants as constants
+from typing import Union
 
 
 manufacturer = load_microscope_manufacturer()
@@ -23,6 +22,7 @@ if manufacturer == "Tescan":
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import Status as DBStatus
+    from tescanautomation.DrawBeam import ObjectLine, ObjectRectangleFilled, ObjectRectanglePolish
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -92,6 +92,10 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def reset_beam_shifts(self):
+        pass
+
+    @abstractmethod
+    def beam_shift(self):
         pass
 
     @abstractmethod
@@ -252,7 +256,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """Set the beam shift to zero for the electron and ion beams
 
         Args:
-            microscope (SdbMicroscopeClient): Autoscript microscope object
+            self (FibsemMicroscope): Fibsem microscope object
         """
         from autoscript_sdb_microscope_client.structures import Point
 
@@ -266,6 +270,16 @@ class ThermoMicroscope(FibsemMicroscope):
         )
         self.connection.beams.ion_beam.beam_shift.value = Point(0, 0)
         logging.debug(f"reset beam shifts to zero complete")
+
+    def beam_shift(self, dx: float, dy: float):
+        '''Adjusts the beam shift based on relative values that are provided.
+        
+        Args:
+            self (FibsemMicroscope): Fibsem microscope object
+            dx (float): the relative x term
+            dy (float): the relative y term
+        '''
+        self.connection.beams.ion_beam.beam_shift.value += (-dx, dy)
 
     def get_stage_position(self):
         self.connection.specimen.stage.set_default_coordinate_system(
@@ -584,7 +598,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self,
         pattern_settings: FibsemPatternSettings,
         mill_settings: FibsemMillingSettings,
-    ):
+    ) -> Union[RectanglePattern, CleaningCrossSectionPattern]:
 
         if mill_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
@@ -606,6 +620,8 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.rotation = pattern_settings.rotation
         pattern.scan_direction = mill_settings.scan_direction
 
+        return pattern
+
     def draw_line(self, pattern_settings: FibsemPatternSettings):
         pattern = self.connection.patterning.create_line(
             start_x=pattern_settings.start_x,
@@ -615,7 +631,7 @@ class ThermoMicroscope(FibsemMicroscope):
             depth=pattern_settings.depth,
         )
 
-        # return pattern
+        return pattern
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state"""
@@ -933,9 +949,20 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.FIB.Detector.AutoSignal(0)
 
     def reset_beam_shifts(self):
-
+        """
+        Resets the beam shifts back to default.
+        """
         self.connection.FIB.Optics.SetImageShift(0, 0)
         self.connection.SEM.Optics.SetImageShift(0, 0)
+
+    def beam_shift(self, dx: float, dy: float):
+        """
+        Relative shift of ION Beam. The inputs dx and dy are in metres as that is the OpenFIBSEM standard, however TESCAN uses mm so conversions must be made. 
+        """
+        x, y = self.connection.FIB.Optics.GetImageShift()
+        dx, dy *= 1000, 1000 # Convert to mm from m.
+        x, y += dx, dy
+        self.connection.FIB.Optics.SetImageShift(-dx, dy) # NOTE: Not sure why the dx is -dx, this may be thermo specific and doesn't apply to TESCAN?
         
 
     def move_stage_absolute(self, position: FibsemStagePosition):
@@ -1204,7 +1231,7 @@ class TescanMicroscope(FibsemMicroscope):
         self,
         pattern_settings: FibsemPatternSettings,
         mill_settings: FibsemMillingSettings,
-    ):
+    ) -> Union[ObjectRectangleFilled, ObjectRectanglePolish]:
 
         centre_x = pattern_settings.centre_x
         centre_y = pattern_settings.centre_y
@@ -1221,7 +1248,10 @@ class TescanMicroscope(FibsemMicroscope):
             Height=height,
         )
 
-    def draw_line(self, pattern_settings: FibsemPatternSettings):
+        pattern = self.layer
+        return pattern
+
+    def draw_line(self, pattern_settings: FibsemPatternSettings) -> ObjectLine:
 
         start_x = pattern_settings.start_x
         start_y = pattern_settings.start_y
@@ -1232,6 +1262,9 @@ class TescanMicroscope(FibsemMicroscope):
         self.layer.addLine(
             BeginX=start_x, BeginY=start_y, EndX=end_x, EndY=end_y, Depth=depth
         )
+
+        pattern = self.layer
+        return pattern
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state"""

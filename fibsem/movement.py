@@ -13,7 +13,7 @@ from autoscript_sdb_microscope_client.structures import (
     StagePosition,
 )
 from fibsem.structures import BeamType, MicroscopeSettings
-from fibsem.FibsemMicroscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope
 
 # from fibsem.detection.detection import DetectionResult, FeatureType
 

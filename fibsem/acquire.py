@@ -12,7 +12,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemRectangle,
 )
-from fibsem.FibsemMicroscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope
 
 
 def take_reference_images(
