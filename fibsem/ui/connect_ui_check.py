@@ -484,19 +484,19 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
     def update_displays(self):
        
         viewer.layers.clear()
-        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
-        self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
-        
+        self.eb_layer = viewer.add_image(self.FIB_EB.data, name="IB Image")
+        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="EB Image")
+        viewer.camera.center = [0.0,self.image_settings.resolution[1]/2,self.image_settings.resolution[0]]
 
         # if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
         #     logging.info("IB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
         # if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
         #     logging.info("EB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
 
-        viewer.camera.zoom = 0.4
+        viewer.camera.zoom = 0.35
 
-        self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
+        self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         viewer.layers.selection.active = self.eb_layer
         viewer.window.qt_viewer.dockLayerList.hide()
 
