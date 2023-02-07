@@ -64,6 +64,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     FibsemMillingSettings,
     FibsemPatternSettings,
+    FibsemPattern
 )
 
 
@@ -136,6 +137,22 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def draw_line(self):
+        pass
+
+    @abstractmethod
+    def setup_sputter(self):
+        pass
+
+    @abstractmethod
+    def draw_sputter_pattern(self):
+        pass
+
+    @abstractmethod
+    def run_sputter(self):
+        pass
+
+    @abstractmethod
+    def finish_sputter(self):
         pass
 
     @abstractmethod
@@ -636,6 +653,60 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         return pattern
+
+    def setup_sputter(self, protocol: dict):
+        self.original_active_view = self.connection.imaging.get_active_view()
+        self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
+        self.connection.patterning.clear_patterns()
+        self.connection.patterning.set_default_application_file(protocol["application_file"])
+        self.connection.patterning.set_default_beam_type(BeamType.ELECTRON.value)
+        self.multichem = self.connection.gas.get_multichem()
+        self.multichem.insert(protocol["position"])
+        self.multichem.turn_heater_on(protocol["gas"])  # "Pt cryo")
+        time.sleep(3)
+
+    def draw_sputter_pattern(self, hfw: float, line_pattern_length: float, sputter_time: float):
+        self.connection.beams.electron_beam.horizontal_field_width.value = hfw
+        pattern = self.connection.patterning.create_line(
+            -line_pattern_length / 2,  # x_start
+            +line_pattern_length,  # y_start
+            +line_pattern_length / 2,  # x_end
+            +line_pattern_length,  # y_end
+            2e-6,
+        )  # milling depth
+        pattern.time = sputter_time + 0.1
+
+    def run_sputter(self, **kwargs):
+        """
+        Runs the GIS Platinum Sputter.
+
+        Args:
+            The TESCAN version of the function requires:
+            sputter_time (int) as a keyword argument.
+        """
+        sputter_time = kwargs["sputter_time"]
+
+        self.connection.beams.electron_beam.blank()
+        if self.connection.patterning.state == "Idle":
+            logging.info("Sputtering with platinum for {} seconds...".format(sputter_time))
+            self.connection.patterning.start()  # asynchronous patterning
+            time.sleep(sputter_time + 5)
+        else:
+            raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
+        if self.connection.patterning.state == "Running":
+            self.connection.patterning.stop()
+        else:
+            logging.warning("Patterning state is {}".format(self.connection.patterning.state))
+            logging.warning("Consider adjusting the patterning line depth.")
+
+    def finish_sputter(self, application_file: str):
+        self.connection.patterning.clear_patterns()
+        self.connection.beams.electron_beam.unblank()
+        self.connection.patterning.set_default_application_file(application_file)
+        self.connection.imaging.set_active_view(self.original_active_view)
+        self.connection.patterning.set_default_beam_type(BeamType.ION.value)  # set ion beam
+        self.multichem.retract()
+        logging.info("sputtering platinum finished.")
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state"""
@@ -1282,6 +1353,82 @@ class TescanMicroscope(FibsemMicroscope):
 
         pattern = self.layer
         return pattern
+
+    def setup_sputter(self, *args):
+        self.connection.FIB.Beam.On()
+        lines = self.connection.GIS.Enum()
+        for line in lines:
+            if line.name == "Platinum":
+                self.line = line
+
+                # Start GIS heating
+                self.connection.GIS.PrepareTemperature(line, True)
+
+                # Insert GIS into working position
+                self.connection.GIS.MoveTo(line, Automation.GIS.Position.Working)
+
+                # Wait for GIS heated
+                self.connection.GIS.WaitForTemperatureReady(line)
+
+    def draw_sputter_pattern(self, hfw, line_pattern_length, *args):
+        self.connection.FIB.Optics.SetViewfield(
+            hfw * constants.METRE_TO_MILLIMETRE
+        )
+
+        pattern_settings = FibsemPatternSettings(pattern=FibsemPattern.Line, 
+            start_x=-line_pattern_length/2, 
+            start_y=+line_pattern_length,
+            end_x=+line_pattern_length/2,
+            end_y=+line_pattern_length,
+            depth=2e-6
+        )
+
+        pattern = self.draw_line(pattern_settings=pattern_settings)
+        
+        # pattern.time = sputter_time + 0.1 # NOTE: You cannot choose the time it takes to draw the pattern.
+        return pattern
+
+    def run_sputter(self, **kwargs):
+        """
+        Runs the GIS Platinum Sputter.
+
+        Args:
+            The TESCAN version of the function requires:
+            sputter_pattern (DrawBeam.Layer) as a keyword argument.
+        """
+        pattern = kwargs["sputter_pattern"]
+
+        # Open GIS valve to let the gas flow onto the sample
+        self.connection.GIS.OpenValve(self.line)
+
+        try:
+            # Run predefined deposition process
+            self.connection.DrawBeam.LoadLayer(pattern)
+            self.connection.DrawBeam.Start()
+            self.connection.Progress.Show("DrawBeam", "Layer 1 in progress", False, False, 0, 100)
+            while True:
+                status = self.connection.DrawBeam.GetStatus()
+                running = status[0] == self.connection.DrawBeam.Status.ProjectLoadedExpositionInProgress
+                if running:
+                    progress = 0
+                    if status[1] > 0:
+                        progress = min(100, status[2] / status[1] * 100)
+                    printProgressBar(progress, 100)
+                    self.connection.Progress.SetPercents(progress)
+                    time.sleep(1)
+                else:
+                    if status[0] == self.connection.DrawBeam.Status.ProjectLoadedExpositionIdle:
+                        printProgressBar(100, 100, suffix='Finished')
+                        print('')
+                    break
+        finally:
+            # Close GIS Valve in both - success and failure
+            self.connection.GIS.CloseValve(self.line)
+        
+    def finish_sputter(self, *args):
+        # Move GIS out from chamber and turn off heating
+        self.connection.GIS.MoveTo(self.line, Automation.GIS.Position.Home)
+        self.connection.GIS.PrepareTemperature(self.line, False)
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state"""

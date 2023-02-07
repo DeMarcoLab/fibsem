@@ -1,10 +1,10 @@
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from fibsem.microscope import FibsemMicroscope
 import logging
 import time
 from fibsem.structures import BeamType
 
 def sputter_platinum(
-    microscope: SdbMicroscopeClient,
+    microscope: FibsemMicroscope,
     protocol: dict,
     whole_grid: bool = False,
     default_application_file: str = "autolamella",
@@ -35,46 +35,14 @@ def sputter_platinum(
         logging.info("sputtering platinum to weld.")
 
     # Setup
-    original_active_view = microscope.imaging.get_active_view()
-    microscope.imaging.set_active_view(BeamType.ELECTRON.value)
-    microscope.patterning.clear_patterns()
-    microscope.patterning.set_default_application_file(protocol["application_file"])
-    microscope.patterning.set_default_beam_type(BeamType.ELECTRON.value)
-    multichem = microscope.gas.get_multichem()
-    multichem.insert(protocol["position"])
-    multichem.turn_heater_on(protocol["gas"])  # "Pt cryo")
-    time.sleep(3)
+    microscope.setup_sputter(protocol=protocol)
 
     # Create sputtering pattern
-    microscope.beams.electron_beam.horizontal_field_width.value = hfw
-    pattern = microscope.patterning.create_line(
-        -line_pattern_length / 2,  # x_start
-        +line_pattern_length,  # y_start
-        +line_pattern_length / 2,  # x_end
-        +line_pattern_length,  # y_end
-        2e-6,
-    )  # milling depth
-    pattern.time = sputter_time + 0.1
+    sputter_pattern = microscope.draw_sputter_pattern(hfw=hfw, line_pattern_length=line_pattern_length, sputter_time=sputter_time)
 
     # Run sputtering
-    microscope.beams.electron_beam.blank()
-    if microscope.patterning.state == "Idle":
-        logging.info("Sputtering with platinum for {} seconds...".format(sputter_time))
-        microscope.patterning.start()  # asynchronous patterning
-        time.sleep(sputter_time + 5)
-    else:
-        raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
-    if microscope.patterning.state == "Running":
-        microscope.patterning.stop()
-    else:
-        logging.warning("Patterning state is {}".format(microscope.patterning.state))
-        logging.warning("Consider adjusting the patterning line depth.")
+    microscope.run_sputter(sputter_time=sputter_time, sputter_pattern=sputter_pattern)
 
     # Cleanup
-    microscope.patterning.clear_patterns()
-    microscope.beams.electron_beam.unblank()
-    microscope.patterning.set_default_application_file(default_application_file)
-    microscope.imaging.set_active_view(original_active_view)
-    microscope.patterning.set_default_beam_type(BeamType.ION.value)  # set ion beam
-    multichem.retract()
-    logging.info("sputtering platinum finished.")
+    microscope.finish_sputter(application_file=default_application_file)
+    
