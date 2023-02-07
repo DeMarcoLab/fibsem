@@ -23,7 +23,6 @@ def sputter_platinum(
     # protcol = settings.protocol["platinum"] in old system
     # protocol = settings.protocol["platinum"] in new
     if whole_grid:
-
         sputter_time = protocol["whole_grid"]["time"]  # 20
         hfw = protocol["whole_grid"]["hfw"]  # 30e-6
         line_pattern_length = protocol["whole_grid"]["length"]  # 7e-6
