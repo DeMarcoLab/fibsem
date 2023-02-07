@@ -1295,7 +1295,7 @@ class TescanMicroscope(FibsemMicroscope):
         depth = pattern_settings.depth
         width = pattern_settings.width
         height = pattern_settings.height
-        rotation = pattern_settings.rotation  # CHECK UNITS (TESCAN Takes Degrees)
+        rotation = pattern_settings.rotation * constants.RADIANS_TO_DEGREES # CHECK UNITS (TESCAN Takes Degrees)
 
         if pattern_settings.cleaning_cross_section:
             self.layer.addRectanglePolish(
