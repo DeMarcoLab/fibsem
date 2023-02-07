@@ -394,7 +394,7 @@ class ThermoMicroscope(FibsemMicroscope):
         wd = self.connection.beams.electron_beam.working_distance.value
 
         # calculate stage movement
-        x_move = self._x_corrected_stage_movement(dx)
+        x_move = FibsemStagePosition(x=dx, y=0, z=0)
         yz_move = self._y_corrected_stage_movement(
             settings=settings,
             expected_y=dy,
@@ -452,20 +452,6 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             self.connection.beams.electron_beam.working_distance.value = wd
         self.connection.specimen.stage.link()
-
-    def _x_corrected_stage_movement(
-        self,
-        expected_x: float,
-    ) -> FibsemStagePosition:
-        """Calculate the x corrected stage movement.
-
-        Args:
-            expected_x (float): distance along x-axis
-
-        Returns:
-            StagePosition: x corrected stage movement (relative position)
-        """
-        return FibsemStagePosition(x=expected_x, y=0, z=0)
 
     def _y_corrected_stage_movement(
         self,
@@ -1050,7 +1036,7 @@ class TescanMicroscope(FibsemMicroscope):
         wd = self.connection.SEM.Optics.GetWD()
 
         # calculate stage movement
-        x_move = self._x_corrected_stage_movement(dx)
+        x_move = FibsemStagePosition(x=dx, y=0, z=0) 
         yz_move = self._y_corrected_stage_movement(
             settings=settings,
             expected_y=dy,
@@ -1093,20 +1079,6 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"eucentric movement: {z_move}")
 
         self.connection.SEM.Optics.SetWD(wd)
-
-    def _x_corrected_stage_movement(
-        self,
-        expected_x: float,
-    ) -> FibsemStagePosition:
-        """Calculate the x corrected stage movement.
-
-        Args:
-            expected_x (float): distance along x-axis
-
-        Returns:
-            StagePosition: x corrected stage movement (relative position)
-        """
-        return FibsemStagePosition(x=expected_x, y=0, z=0)
 
     def _y_corrected_stage_movement(
         self,
