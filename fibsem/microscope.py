@@ -99,6 +99,14 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def get_stage_position(self):
+        pass
+
+    @abstractmethod
+    def get_current_microscope_state(self):
+        pass
+
+    @abstractmethod
     def move_stage_absolute(self):
         pass
 
@@ -386,8 +394,8 @@ class ThermoMicroscope(FibsemMicroscope):
         wd = self.connection.beams.electron_beam.working_distance.value
 
         # calculate stage movement
-        x_move = self.x_corrected_stage_movement(dx)
-        yz_move = self.y_corrected_stage_movement(
+        x_move = self._x_corrected_stage_movement(dx)
+        yz_move = self._y_corrected_stage_movement(
             settings=settings,
             expected_y=dy,
             beam_type=beam_type,
@@ -445,7 +453,7 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.electron_beam.working_distance.value = wd
         self.connection.specimen.stage.link()
 
-    def x_corrected_stage_movement(
+    def _x_corrected_stage_movement(
         self,
         expected_x: float,
     ) -> FibsemStagePosition:
@@ -459,7 +467,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         return FibsemStagePosition(x=expected_x, y=0, z=0)
 
-    def y_corrected_stage_movement(
+    def _y_corrected_stage_movement(
         self,
         settings: MicroscopeSettings,
         expected_y: float,
@@ -1042,8 +1050,8 @@ class TescanMicroscope(FibsemMicroscope):
         wd = self.connection.SEM.Optics.GetWD()
 
         # calculate stage movement
-        x_move = self.x_corrected_stage_movement(dx)
-        yz_move = self.y_corrected_stage_movement(
+        x_move = self._x_corrected_stage_movement(dx)
+        yz_move = self._y_corrected_stage_movement(
             settings=settings,
             expected_y=dy,
             beam_type=beam_type,
@@ -1086,7 +1094,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         self.connection.SEM.Optics.SetWD(wd)
 
-    def x_corrected_stage_movement(
+    def _x_corrected_stage_movement(
         self,
         expected_x: float,
     ) -> FibsemStagePosition:
@@ -1100,7 +1108,7 @@ class TescanMicroscope(FibsemMicroscope):
         """
         return FibsemStagePosition(x=expected_x, y=0, z=0)
 
-    def y_corrected_stage_movement(
+    def _y_corrected_stage_movement(
         self,
         settings: MicroscopeSettings,
         expected_y: float,
