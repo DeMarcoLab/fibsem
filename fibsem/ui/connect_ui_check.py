@@ -611,6 +611,7 @@ if __name__ == "__main__":
    
     # window.show()
     widget = viewer.window.add_dock_widget(window)
+    viewer.window.qt_viewer.view.camera.interactive = False
     widget.setMinimumWidth(500)
 
     
