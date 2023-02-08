@@ -153,7 +153,7 @@ def draw_fiducial(
         patterns : list
             List of rectangular patterns used to create the fiducial marker.
     """
-
+    pattern_settings.rotation += np.deg2rad(45)
     pattern_1 = draw_rectangle(microscope, pattern_settings, mill_settings)
     pattern_settings.rotation = pattern_settings.rotation + np.deg2rad(90)
     pattern_2 = draw_rectangle(microscope, pattern_settings, mill_settings)

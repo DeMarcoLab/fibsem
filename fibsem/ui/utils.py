@@ -8,11 +8,12 @@ import numpy as np
 from autoscript_sdb_microscope_client._dynamic_object_proxies import (
     CleaningCrossSectionPattern, RectanglePattern)
 from autoscript_sdb_microscope_client.structures import AdornedImage
-from fibsem.structures import Point
+from fibsem.structures import Point, FibsemImage, FibsemPatternSettings
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
+import napari
 
 # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 class _WidgetPlot(QWidget):
@@ -249,3 +250,89 @@ def set_arr_as_qlabel_8(
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
     return label
+
+
+def convert_pattern_to_napari_rect(
+    pattern_settings: FibsemPatternSettings, image: FibsemImage
+) -> np.ndarray:
+
+    # image centre
+    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+
+    # pixel size
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
+    # extract pattern information from settings
+    pattern_width = pattern_settings.width
+    pattern_height = pattern_settings.height
+    pattern_centre_x = pattern_settings.centre_x
+    pattern_centre_y = pattern_settings.centre_y
+    pattern_rotation = pattern_settings.rotation
+
+    # pattern to pixel coords
+    w = int(pattern_width / pixelsize_x)
+    h = int(pattern_height / pixelsize_y)
+    cx = int(icx + (pattern_centre_x / pixelsize_y))
+    cy = int(icy - (pattern_centre_y / pixelsize_y))
+
+    r = -pattern_rotation  #
+
+    xmin, xmax = -w / 2, w / 2
+    ymin, ymax = -h / 2, h / 2
+
+    px0 = cx + (xmin * np.cos(r) - ymin * np.sin(r))
+    py0 = cy + (xmin * np.sin(r) + ymin * np.cos(r))
+
+    px1 = cx + (xmax * np.cos(r) - ymin * np.sin(r))
+    py1 = cy + (xmax * np.sin(r) + ymin * np.cos(r))
+
+    px2 = cx + (xmax * np.cos(r) - ymax * np.sin(r))
+    py2 = cy + (xmax * np.sin(r) + ymax * np.cos(r))
+
+    px3 = cx + (xmin * np.cos(r) - ymax * np.sin(r))
+    py3 = cy + (xmin * np.sin(r) + ymax * np.cos(r))
+
+    # napari shape format
+    shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
+
+    return shape
+
+def _draw_patterns_in_napari(
+    viewer: napari.Viewer,
+    ib_image: FibsemImage,
+    eb_image: FibsemImage,
+    all_patterns: list[FibsemPatternSettings],
+):
+
+    # remove all shapes layers
+    layers_to_remove = []
+    for layer in viewer.layers:
+        if isinstance(layer, napari.layers.shapes.shapes.Shapes):
+            layers_to_remove.append(layer)
+
+    for layer in layers_to_remove:
+        viewer.layers.remove(layer)  # Not removing the second layer?
+
+    # convert fibsem patterns to napari shapes
+    for i, stage in enumerate(all_patterns, 1):
+        shape_patterns = []
+        for pattern_settings in stage:
+            shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+
+            # offset the x coord by image width
+            if eb_image is not None:
+                for c in shape:
+                    c[1] += eb_image.data.shape[1]
+
+            shape_patterns.append(shape)
+
+        colour = "yellow" if i == 1 else "cyan"
+        viewer.add_shapes(
+            shape_patterns,
+            name=f"Stage {i}",
+            shape_type="rectangle",
+            edge_width=0.5,
+            edge_color=colour,
+            face_color=colour,
+            opacity=0.5,
+        )
