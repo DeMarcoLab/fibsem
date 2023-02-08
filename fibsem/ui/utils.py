@@ -338,3 +338,20 @@ def _draw_patterns_in_napari(
             face_color=colour[i % 4],
             opacity=0.5,
         )
+
+def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
+
+    msg = QMessageBox()
+    msg.setWindowTitle(title)
+    msg.setText(text)
+    msg.setStandardButtons(buttons)
+    msg.exec_()
+
+    response = (
+        True
+        if (msg.clickedButton() == msg.button(QMessageBox.Yes))
+        or (msg.clickedButton() == msg.button(QMessageBox.Ok))
+        else False
+    )
+
+    return response
