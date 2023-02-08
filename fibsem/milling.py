@@ -116,8 +116,9 @@ def draw_trench(
         depth=milling_depth,
         centre_x=point.x,
         centre_y=centre_lower_y,
+        cleaning_cross_section=True,
     )
-    lower_milling_settings = FibsemMillingSettings(scan_direction="BottomToTop", cleaning_cross_section=True)
+    lower_milling_settings = FibsemMillingSettings(scan_direction="BottomToTop")
 
     upper_pattern_settings = FibsemPatternSettings(
         width=lamella_width,
@@ -125,10 +126,10 @@ def draw_trench(
         depth=milling_depth,
         centre_x=point.x,
         centre_y=centre_upper_y,
+        cleaning_cross_section=True,
     )
     upper_milling_settings = FibsemMillingSettings(
         scan_direction="TopToBottom",
-        cleaning_cross_section=True,
     )
 
     # draw patterns
