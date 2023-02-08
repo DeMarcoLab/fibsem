@@ -19,6 +19,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemMillingSettings,
 )
+from fibsem.config import BASE_PATH
 from fibsem.microscope import FibsemMicroscope
 
 
@@ -36,6 +37,13 @@ def _format_time_seconds(seconds: float) -> str:
     """Format a time delta in seconds to proper string format."""
     return str(datetime.timedelta(seconds=seconds)).split(".")[0]
 
+
+def make_logging_directory(path: Path = None, name="run"):
+    if path is None:
+        path = os.path.join(BASE_PATH, "log")
+    directory = os.path.join(path, name)
+    os.makedirs(directory, exist_ok=True)
+    return directory
 
 # TODO: better logs: https://www.toptal.com/python/in-depth-python-logging
 # https://stackoverflow.com/questions/61483056/save-logging-debug-and-show-only-logging-info-python
