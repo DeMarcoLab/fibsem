@@ -380,6 +380,7 @@ def move_based_on_detection(
     beam_type: BeamType,
     move_x: bool = True,
     move_y: bool = True,
+    eucentric_move: bool = False
 ):
 
     from fibsem import movement
@@ -412,8 +413,15 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.type is FeatureType.LamellaCentre:
-        if f2.type is FeatureType.ImageCentre:
+    if f1.type is FeatureType.LamellaCentre and f2.type is FeatureType.LamellaCentre:                
+        if eucentric_move:
+            # perform eucentric correction
+            movement.move_stage_eucentric_correction(
+                microscope=microscope,
+                settings=settings,
+                dy=-det.distance.y,
+            )
+        else:
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             movement.move_stage_relative_with_corrected_movement(
@@ -424,7 +432,7 @@ def move_based_on_detection(
                 beam_type=beam_type,
             )
 
-            # TODO: support other movements?
+        # TODO: support other movements?
     return
 
 
