@@ -317,7 +317,7 @@ def _draw_patterns_in_napari(
     colour = ["yellow", "cyan", "magenta", "white"]
 
     # convert fibsem patterns to napari shapes
-    for i, stage in enumerate(all_patterns, 1):
+    for i, stage in enumerate(all_patterns):
         shape_patterns = []
         for pattern_settings in stage:
             shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
@@ -331,10 +331,10 @@ def _draw_patterns_in_napari(
 
         viewer.add_shapes(
             shape_patterns,
-            name=f"Stage {i}",
+            name=f"Stage {i+1}",
             shape_type="rectangle",
             edge_width=0.5,
-            edge_color=colour[i],
-            face_color=colour[i],
+            edge_color=colour[i % 4],
+            face_color=colour[i % 4],
             opacity=0.5,
         )
