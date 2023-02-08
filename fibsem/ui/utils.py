@@ -314,7 +314,7 @@ def _draw_patterns_in_napari(
         viewer.layers.remove(layer)  # Not removing the second layer?
 
     # colour wheel
-    colour = ["yellow", "cyan", "magenta", "white"]
+    colour = ["yellow", "cyan", "magenta", "purple"]
 
     # convert fibsem patterns to napari shapes
     for i, stage in enumerate(all_patterns):
