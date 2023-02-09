@@ -965,8 +965,7 @@ class TescanMicroscope(FibsemMicroscope):
         image_ib = self.last_image(BeamType.ION)
 
         if image_ib is not None:
-            ib_settings = (
-                BeamSettings(
+            ib_settings = BeamSettings(
                     beam_type=BeamType.ION,
                     working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance,
                     beam_current=self.connection.FIB.Beam.ReadProbeCurrent()
@@ -977,8 +976,7 @@ class TescanMicroscope(FibsemMicroscope):
                     dwell_time=image_ib.metadata.image_settings.dwell_time,
                     stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
                     shift=image_ib.metadata.microscope_state.ib_settings.shift,
-                ),
-            )
+                )
         else:
             ib_settings = BeamSettings(BeamType.ION)
 
