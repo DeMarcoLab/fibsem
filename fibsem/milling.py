@@ -69,12 +69,12 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
         mill_settings (FibsemMillingSettings): milling settings
     """
     if pattern_settings.pattern is FibsemPattern.Rectangle:
-        microscope.draw_rectangle(pattern_settings, mill_settings)
+        microscope.draw_rectangle(pattern_settings)
 
     elif pattern_settings.pattern is FibsemPattern.Line:
         microscope.draw_line(pattern_settings)
 
-def draw_rectangle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
+def draw_rectangle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
     """Draw a rectangular milling pattern from settings
 
     Args:
@@ -82,7 +82,7 @@ def draw_rectangle(microscope: FibsemMicroscope, pattern_settings: FibsemPattern
         pattern_settings (FibsemPatternSettings): pattern settings
         mill_settings (FibsemMillingSettings): milling settings
     """
-    microscope.draw_rectangle(pattern_settings, mill_settings)
+    microscope.draw_rectangle(pattern_settings)
 
 def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
     """Draw a line milling pattern from settings
@@ -117,8 +117,9 @@ def draw_trench(
         centre_x=point.x,
         centre_y=centre_lower_y,
         cleaning_cross_section=True,
+        scan_direction="BottomToTop"
     )
-    lower_milling_settings = FibsemMillingSettings(scan_direction="BottomToTop")
+    
 
     upper_pattern_settings = FibsemPatternSettings(
         width=lamella_width,
@@ -127,21 +128,18 @@ def draw_trench(
         centre_x=point.x,
         centre_y=centre_upper_y,
         cleaning_cross_section=True,
+        scan_direction="TopToBottom"
     )
-    upper_milling_settings = FibsemMillingSettings(
-        scan_direction="TopToBottom",
-    )
-
+    
     # draw patterns
-    lower_pattern = draw_rectangle(microscope, lower_pattern_settings, lower_milling_settings)
-    upper_pattern = draw_rectangle(microscope, upper_pattern_settings, upper_milling_settings)
+    lower_pattern = draw_rectangle(microscope, lower_pattern_settings)
+    upper_pattern = draw_rectangle(microscope, upper_pattern_settings)
 
     return [lower_pattern, upper_pattern]
 
 def draw_fiducial(
     microscope: FibsemMicroscope,
     pattern_settings: FibsemPatternSettings,
-    mill_settings: FibsemMillingSettings,
 ):
     """draw the fiducial milling patterns
 
@@ -155,9 +153,9 @@ def draw_fiducial(
             List of rectangular patterns used to create the fiducial marker.
     """
     pattern_settings.rotation += np.deg2rad(45)
-    pattern_1 = draw_rectangle(microscope, pattern_settings, mill_settings)
+    pattern_1 = draw_rectangle(microscope, pattern_settings)
     pattern_settings.rotation = pattern_settings.rotation + np.deg2rad(90)
-    pattern_2 = draw_rectangle(microscope, pattern_settings, mill_settings)
+    pattern_2 = draw_rectangle(microscope, pattern_settings)
 
     return [pattern_1, pattern_2]
 

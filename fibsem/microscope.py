@@ -612,7 +612,6 @@ class ThermoMicroscope(FibsemMicroscope):
     def draw_rectangle(
         self,
         pattern_settings: FibsemPatternSettings,
-        mill_settings: FibsemMillingSettings,
     ):
 
         if pattern_settings.cleaning_cross_section:
@@ -807,16 +806,18 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.SEM.Optics.SetViewfield(
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-        pixel_size = image_settings.hfw / image_settings.resolution[0]
+
         if image_settings.reduced_area is not None:
+            left =  imageWidth - int(image_settings.reduced_area.left * imageWidth)
+            top = imageHeight - int(image_settings.reduced_area.top * imageHeight)
             image = self.connection.SEM.Scan.AcquireROIFromChannel(
                 Channel= 0,
-                Width= image_settings.reduced_area.width/pixel_size,
-                Height= image_settings.reduced_area.height/pixel_size,
-                Left= image_settings.reduced_area.left/pixel_size,
-                Top= image_settings.reduced_area.top/pixel_size,
-                Right= image_settings.reduced_area.left/pixel_size - image_settings.reduced_area.width/pixel_size - 1,
-                Bottom= image_settings.reduced_area.top/pixel_size - image_settings.reduced_area.height/pixel_size - 1,
+                Width= imageWidth,
+                Height= imageHeight,
+                Left= left,
+                Top= top,
+                Right= left - imageWidth -1 ,
+                Bottom= top - imageHeight - 1,
                 DwellTime= dwell_time
             )
         else:
@@ -882,17 +883,18 @@ class TescanMicroscope(FibsemMicroscope):
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
         
-        pixel_size = image_settings.hfw / imageWidth
-        print("pixel size: ", pixel_size)
+        
         if image_settings.reduced_area is not None:
+            left =  imageWidth - int(image_settings.reduced_area.left * imageWidth)
+            top = imageHeight - int(image_settings.reduced_area.top * imageHeight)
             image = self.connection.FIB.Scan.AcquireROIFromChannel(
                 Channel= 0,
-                Width= int(image_settings.reduced_area.width * imageWidth),
-                Height= int(image_settings.reduced_area.height * imageHeight),
-                Left= imageWidth - int(image_settings.reduced_area.left * imageWidth),
-                Top= imageHeight - int(image_settings.reduced_area.top * imageHeight),
-                Right= int(imageWidth - image_settings.reduced_area.left * imageWidth - image_settings.reduced_area.width * imageWidth) - 1,
-                Bottom= int(imageHeight - image_settings.reduced_area.top * imageHeight - image_settings.reduced_area.height * imageHeight) - 1,
+                Width= imageWidth,
+                Height= imageHeight,
+                Left= left,
+                Top= top,
+                Right= left - imageWidth -1 ,
+                Bottom= top - imageHeight - 1,
                 DwellTime= dwell_time
             )
         else:
@@ -1287,7 +1289,6 @@ class TescanMicroscope(FibsemMicroscope):
     def draw_rectangle(
         self,
         pattern_settings: FibsemPatternSettings,
-        mill_settings: FibsemMillingSettings,
     ):
 
         centre_x = pattern_settings.centre_x
