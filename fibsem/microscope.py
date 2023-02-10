@@ -807,16 +807,16 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.SEM.Optics.SetViewfield(
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-
+        pixel_size = image_settings.hfw / image_settings.resolution[0]
         if image_settings.reduced_area is not None:
             image = self.connection.SEM.Scan.AcquireROIFromChannel(
                 Channel= 0,
-                Width= image_settings.reduced_area.width,
-                Height= image_settings.reduced_area.height,
-                Left= image_settings.reduced_area.left,
-                Top= image_settings.reduced_area.top,
-                Right= image_settings.reduced_area.left - image_settings.reduced_area.width - 1,
-                Bottom= image_settings.reduced_area.top - image_settings.reduced_area.height - 1,
+                Width= image_settings.reduced_area.width/pixel_size,
+                Height= image_settings.reduced_area.height/pixel_size,
+                Left= image_settings.reduced_area.left/pixel_size,
+                Top= image_settings.reduced_area.top/pixel_size,
+                Right= image_settings.reduced_area.left/pixel_size - image_settings.reduced_area.width/pixel_size - 1,
+                Bottom= image_settings.reduced_area.top/pixel_size - image_settings.reduced_area.height/pixel_size - 1,
                 DwellTime= dwell_time
             )
         else:
@@ -881,16 +881,18 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-
+        
+        pixel_size = image_settings.hfw / imageWidth
+        print("pixel size: ", pixel_size)
         if image_settings.reduced_area is not None:
             image = self.connection.FIB.Scan.AcquireROIFromChannel(
                 Channel= 0,
-                Width= image_settings.reduced_area.width,
-                Height= image_settings.reduced_area.height,
-                Left= image_settings.reduced_area.left,
-                Top= image_settings.reduced_area.top,
-                Right= image_settings.reduced_area.left - image_settings.reduced_area.width - 1,
-                Bottom= image_settings.reduced_area.top - image_settings.reduced_area.height - 1,
+                Width= int(image_settings.reduced_area.width * imageWidth),
+                Height= int(image_settings.reduced_area.height * imageHeight),
+                Left= imageWidth - int(image_settings.reduced_area.left * imageWidth),
+                Top= imageHeight - int(image_settings.reduced_area.top * imageHeight),
+                Right= int(imageWidth - image_settings.reduced_area.left * imageWidth - image_settings.reduced_area.width * imageWidth) - 1,
+                Bottom= int(imageHeight - image_settings.reduced_area.top * imageHeight - image_settings.reduced_area.height * imageHeight) - 1,
                 DwellTime= dwell_time
             )
         else:

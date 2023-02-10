@@ -1,0 +1,48 @@
+log_path: C:\Users\lnae0002\Desktop\fibsem\log\default\logfile.log
+name: default
+path: C:\Users\lnae0002\Desktop\fibsem\log\default
+positions:
+-   fiducial_area:
+        height: 4.254517622670593e-06
+        left: 3.6186695027955675e-05
+        top: 2.1272588113352964e-06
+        width: 2.626609944088649e-06
+    fiducial_centre:
+        x: 3.75e-05
+        y: 0
+    history: []
+    lamella_centre:
+        x: 0
+        y: 0
+    lamella_number: 1
+    path: C:\Users\lnae0002\Desktop\fibsem\log\default
+    reference_image: C:\Users\lnae0002\Desktop\autolamella\autolamella_demo_2023-02-10-12-13-34PM
+    state:
+        end_timestamp: null
+        microscope_state:
+            absolute_position:
+                coordinate_system: raw
+                r: 4.014257279586958
+                t: 0.9075712110370514
+                x: -8.106399575000001e-05
+                y: 7.462697369e-05
+                z: 0.08105880686000001
+            eb_settings:
+                beam_current: null
+                beam_type: ELECTRON
+                dwell_time: null
+                hfw: null
+                resolution: null
+                working_distance: null
+            ib_settings:
+                beam_current: 3.940474817e-09
+                beam_type: ION
+                dwell_time: 1.0e-06
+                hfw: 0.00015
+                resolution:
+                - 1536
+                - 1024
+                working_distance: 0.012
+            timestamp: 1675991620.288044
+        stage: Setup
+        start_timestamp: 1675990726.332795
