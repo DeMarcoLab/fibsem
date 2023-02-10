@@ -64,7 +64,9 @@ def take_set_of_reference_images(
     return reference_images
 
 
-def auto_gamma(image: FibsemImage, min_gamma: float = 0.0,max_gamma: float = 2.0, scale_factor: float = 0.1,gamma_threshold: int = 45 ) -> FibsemImage:
+def auto_gamma(image: FibsemImage, min_gamma: float = 0.15,
+    max_gamma: float = 1.8, scale_factor: float = 0.01,
+    gamma_threshold: int = 45 ) -> FibsemImage:
     """Automatic gamma correction"""
     std = np.std(image.data)  # unused variable?
     mean = np.mean(image.data)

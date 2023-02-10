@@ -209,12 +209,14 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         # set frame settings
         if image_settings.reduced_area is not None:
-            image_settings.reduced_area = image_settings.reduced_area.__to_FEI__()
+            reduced_area = image_settings.reduced_area.__to_FEI__()
+        else:
+            reduced_area = None
         
         frame_settings = GrabFrameSettings(
             resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
             dwell_time=image_settings.dwell_time,
-            reduced_area=image_settings.reduced_area,
+            reduced_area=reduced_area,
         )
 
         if image_settings.beam_type == BeamType.ELECTRON:
@@ -309,7 +311,7 @@ class ThermoMicroscope(FibsemMicroscope):
         '''
         self.connection.beams.ion_beam.beam_shift.value += (-dx, dy)
 
-    def get_stage_position(self):
+    def get_stage_position(self) -> FibsemStagePosition:
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.RAW
         )
@@ -318,7 +320,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.SPECIMEN
         )
-        return stage_position
+        return FibsemStagePosition.from_autoscript_position(stage_position)
 
     def get_current_microscope_state(self) -> MicroscopeState:
         """Get the current microscope state
