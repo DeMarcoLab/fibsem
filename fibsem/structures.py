@@ -134,9 +134,9 @@ class FibsemStagePosition:
 class FibsemRectangle:
     """Universal Rectangle class used for ReducedArea"""
 
-    left: float = (0.0,)
-    top: float = (0.0,)
-    width: float = (0.0,)
+    left: float = 0.0
+    top: float = 0.0
+    width: float = 0.0
     height: float = 0.0
 
     def __from_dict__(settings: dict) -> "FibsemRectangle":
@@ -149,10 +149,10 @@ class FibsemRectangle:
 
     def __to_dict__(self) -> dict:
         return {
-            "left": self.left,
-            "top": self.top,
-            "width": self.width,
-            "height": self.height,
+            "left": float(self.left),
+            "top": float(self.top),
+            "width": float(self.width),
+            "height": float(self.height),
         }
 
     if manufacturer == "Thermo":
