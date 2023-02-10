@@ -26,6 +26,8 @@ from fibsem.structures import (
     ImageSettings,
     MicroscopeSettings,
     BeamSystemSettings,
+    FibsemRectangle,
+    FibsemStagePosition
 )
 from fibsem.microscope import FibsemMicroscope
 
@@ -65,7 +67,7 @@ def auto_focus_beam(
     mode: str = "default",
     wd_delta: float = 0.05e-3,
     steps: int = 5,
-    reduced_area: Rectangle = Rectangle(0.3, 0.3, 0.4, 0.4),
+    reduced_area: FibsemRectangle = FibsemRectangle(0.3, 0.3, 0.4, 0.4),
     focus_image_settings: ImageSettings = None,
 ) -> None:
 
@@ -77,7 +79,7 @@ def auto_focus_beam(
         microscope.connection.imaging.set_active_device(BeamType.ELECTRON.value)
         microscope.connection.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
 
-        focus_settings = RunAutoFocusSettings()
+        #focus_settings = RunAutoFocusSettings()
         microscope.connection.auto_functions.run_auto_focus()
 
     if mode == "sharpness":
@@ -330,7 +332,7 @@ def auto_home_and_link_v2(
 # STATE MANAGEMENT
 
 
-def get_raw_stage_position(microscope: FibsemMicroscope) -> StagePosition:
+def get_raw_stage_position(microscope: FibsemMicroscope) -> FibsemStagePosition:
     """Get the current stage position in raw coordinate system, and switch back to specimen"""
 
     if manufacturer == "Tescan":

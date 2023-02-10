@@ -291,9 +291,9 @@ class MicroscopeState:
 
         state_dict = {
             "timestamp": self.timestamp,
-            "absolute_position": stage_position_to_dict(self.absolute_position),
-            "eb_settings": self.eb_settings.__to_dict__(),
-            "ib_settings": self.ib_settings.__to_dict__(),
+            "absolute_position": stage_position_to_dict(self.absolute_position) if self.absolute_position is not None else "Not defined",
+            "eb_settings": self.eb_settings.__to_dict__() if self.eb_settings is not None else "Not defined",
+            "ib_settings": self.ib_settings.__to_dict__() if self.ib_settings is not None else "Not defined",
         }
 
         return state_dict
