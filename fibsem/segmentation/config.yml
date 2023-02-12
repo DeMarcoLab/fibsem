@@ -1,6 +1,3 @@
-labelling:
-  raw_dir: /home/patrick/github/fibsem/example/data/
-  data_dir: /home/patrick/github/fibsem/example/data/data2
 train:
   data_dir: /home/patrick/github/data/liftout/training/train
   save_dir: /home/patrick/github/fibsem/fibsem/segmentation/models/d/34
@@ -14,14 +11,5 @@ train:
   learning_rate: 0.0001
   wandb_project: "fibsem_pipeline"
   wandb_entity: "demarcolab"
-inference:
-  data_dir: "/home/rohit_k/Documents/RFP_edited"
-  model_dir: "fibsem/segmentation/models/10_10_2022_12_56_57_n10_model.pt"
-  output_dir: "/home/rohit_k/Documents/RFP_output"
-  wandb: true
-  cuda: true
-  encoder: "resnet18"
-  num_classes: 2
-  wandb_project: "fibsem_pipeline"
-  wandb_entity: "demarcolab"
+
 

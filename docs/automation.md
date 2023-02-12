@@ -5,9 +5,14 @@ OpenFIBSEM provides a number of modules to support automation.
 
 ## Alignment
 
-### Cross correlation
+The alignment module contains functions are aligning reference images, and tools and parameters for adjusting these alignments.
 
-``` python
+WIP: images
+### Cross Correlation
+
+The primary alignment method is fourier cross-correlation to a reference image. The following helper function provides the the methods for alignment, and the required movements, as well as parameters for tuning.
+
+```python
 def align_using_reference_images(
     microscope: SdbMicroscopeClient,
     settings: MicroscopeSettings,
@@ -38,9 +43,8 @@ def align_using_reference_images(
     Returns:
         bool: True if alignment was successful, False otherwise
     """
-    ...
-
 ```
+In order to tune the alignment the user can adjust the following:
 
 #### Filtering
 The cross correlation alignment can be tuned by adjusting the bandpass filters; lowpass, highpass; and sigma. These filters are applied in fourier space.
@@ -52,10 +56,6 @@ The effect of these filters on the bandpass mask is shown below:
 
 
 The following figure shows the effect of changing these parameters on the cross-correlation:
-
-
-
-
 
 #### Masking
 We provide a number of masking utilities: 
@@ -85,16 +85,15 @@ We also provide a number of utility functions that can help with crosscorrelatio
  These utilities are available in `fibsem.imaging.utils`.
 
 ### Helper Functions
-The `fibsem.alignment` module contains a number of helper functions for performing alignment workflows:
+The `fibsem.alignment` module contains more helper functions for performing alignment workflows:
 
-    - correct_stage_drift: multi-step alignment
-    - eucentric_correct_stage_drift: multi-step alignment + eucentric alignment
+- `correct_stage_drift`: multi-step alignment
+- `eucentric_correct_stage_drift`: multi-step alignment + eucentric alignment
 
 ## Feature Detection
-Provide some feature detection functions
-- primarily centred around liftout workflow
-- customisable, and extendable
+We provide some feature detection functions and workflows primarly centred around the liftout workflow. These are customisable to the user's needs.
 
+The primary detection workflow uses the following to run the feature detection, transform coordinate systems, and optionally allows the user to validate the result. For more information on the user validation please see [ml.md](ml.md).
 
 ```python
 def detect_features_v2(
@@ -121,10 +120,16 @@ def detect_features_v2(
 
 ```
 
+The supported Feature Types are as follows:
+
+::: fibsem.detection.utils.Feature
+
+::: fibsem.detection.utils.FeatureType
 
 
 ## Machine Learning
+We provide a basic machine learning pipeline and workflow. Currently only segmentation models are supported, but more will be added in the future.
 
-- segmentation model support, many tools available. See [Machine Learning](ml.md)
+For detailed information on the machine learning tools, please see [Machine Learning](ml.md).
 
 

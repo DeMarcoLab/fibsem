@@ -437,7 +437,7 @@ def crosscorrelation_v2(
     Args:
         img1 (np.ndarray): reference_image
         img2 (np.ndarray): new image
-        bandpass (np.ndarray)
+        bandpass (np.ndarray): bandpass filter
 
     Returns:
         np.ndarray: crosscorrelation map

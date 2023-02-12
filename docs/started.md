@@ -13,6 +13,7 @@ You will need to change the ip_address to connect to your microscope.
 
 The default file can be found in fibsem/config/system.yaml. When you call utils.setup_session() with no arguments, the default file is used. You can either edit the default file, or provide the config_path to your own system.yaml file in setup_session.
 
+WIP: update for v2
 
 ```yaml
 # system
