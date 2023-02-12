@@ -60,6 +60,19 @@ def detect_features_v2(
     mask_radius: int = 256,
 ) -> DetectedFeatures:
 
+    """Detect features in microscope image.
+    
+    Args:
+        microscope (SdbMicroscopeClient): microscope client
+        settings (MicroscopeSettings): microscope settings
+        features (tuple[Feature]): features to detect
+        validate (bool, optional): whether to validate features. Defaults to True.
+        mask_radius (int, optional): radius of mask to apply to image. Defaults to 256.
+
+    Returns:
+        DetectedFeatures: detected features
+    """
+
     # take new image
     image = acquire.new_image(microscope, settings.image)
 

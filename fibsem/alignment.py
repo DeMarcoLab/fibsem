@@ -267,10 +267,28 @@ def align_using_reference_images(
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
     constrain_vertical: bool = False,
+    beam_shift: bool = False,
     lp_px: int  = 128,  # MAGIC_NUMBER
     hp_px: int = 8,  
     sigma: int = 6,
 ) -> bool:
+    """Align new image to reference image using crosscorrelation
+    
+    Args:
+        microscope (SdbMicroscopeClient): microscope client
+        settings (MicroscopeSettings): microscope settings
+        ref_image (AdornedImage): reference image
+        new_image (AdornedImage): new image
+        ref_mask (np.ndarray, optional): reference mask. Defaults to None.
+        xcorr_limit (int, optional): crosscorrelation limit. Defaults to None.
+        constrain_vertical (bool, optional): constrain vertical movement. Defaults to False.
+        beam_shift (bool, optional): use beam shift. Defaults to False.
+        lp_px (int, optional): lowpass filter size. Defaults to 128.
+        hp_px (int, optional): highpass filter size. Defaults to 8.
+        sigma (int, optional): gaussian filter sigma. Defaults to 6.
+    Returns:
+        bool: True if alignment was successful, False otherwise
+    """
 
     # get beam type
     ref_beam_type = BeamType[ref_image.metadata.acquisition.beam_type.upper()]
@@ -303,13 +321,16 @@ def align_using_reference_images(
         else:
             # TODO: does rotating the reference need to be taken into account? i believe so
             # move the stage
-            movement.move_stage_relative_with_corrected_movement(
-                microscope,
-                settings,
-                dx=dx,
-                dy=-dy,
-                beam_type=new_beam_type,
-            )
+            if beam_shift:
+                microscope.beams.ion_beam.beam_shift.value += (-dx, dy)
+            else:
+                movement.move_stage_relative_with_corrected_movement(
+                    microscope,
+                    settings,
+                    dx=dx,
+                    dy=-dy,
+                    beam_type=new_beam_type,
+                )
 
     return shift_within_tolerance
 

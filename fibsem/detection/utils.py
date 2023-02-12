@@ -27,6 +27,7 @@ class FeatureType(Enum):
     ImageCentre = 6
 
 
+# TODO: convert to ABC?
 @dataclass
 class Feature:
     type: FeatureType # rename from type to type
