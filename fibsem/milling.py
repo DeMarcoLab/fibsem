@@ -25,13 +25,15 @@ def setup_milling(
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
 
-    logging.warning(f"""If you receive the error: There is no patterning application with name: '{application_file}'. 
-    Please see the INSTALLATION.md file for instructions on how to install the autolamella application file.""")
 
     microscope.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
     microscope.imaging.set_active_device(BeamType.ION.value) 
     microscope.patterning.set_default_beam_type(BeamType.ION.value)  # ion beam default
-    microscope.patterning.set_default_application_file(application_file)
+    try:
+        microscope.patterning.set_default_application_file(application_file)
+    except:
+        raise Exception(f"""There is no patterning application with name: '{application_file}'. 
+        Please see the INSTALLATION.md file for instructions on how to install the {application_file} application file.""")
     microscope.patterning.mode = patterning_mode
     microscope.patterning.clear_patterns()  # clear any existing patterns
     microscope.beams.ion_beam.horizontal_field_width.value = hfw
