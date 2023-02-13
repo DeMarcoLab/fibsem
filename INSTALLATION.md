@@ -88,3 +88,10 @@ environment containing the dependencies listed above
 * Try cloning the repository and running the unit tests,
 you may want to try installing from the source code.
 
+## Application Files
+In order to use the examples, you will also need to install the application files on your microscope server. 
+
+1. Copy the application files (.xml) from: fibsem/external/thermo/application_files to the patterning application files directory on the microscope server computer (It will be something like, C://Program Files/FEI/Data/patterning application files).
+2. Restart the microscope server (not just XtUI).
+3. Check that the application files autolamella, and cryo_Pt_dep are available in the Milling tab. (If this doesnt work consult the manufacturer handbook)
+Thanks @sroet for picking this up.
