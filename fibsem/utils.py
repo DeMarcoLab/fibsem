@@ -378,15 +378,19 @@ def log_current_figure(fig, name: str):
     import matplotlib.pyplot as plt
     import datetime
     import os
-    from liftout.config import config
+    try:
+        from liftout.config import config
+        log_data_path = config.LOG_DATA_PATH
+    except ModuleNotFoundError:
+        log_data_path = './'
 
     now = datetime.datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
     day = now.strftime("%Y-%m-%d")
-    os.makedirs(os.path.join(config.LOG_DATA_PATH, day), exist_ok=True)
+    os.makedirs(os.path.join(log_data_path, day), exist_ok=True)
 
     try:
-        plt.savefig(os.path.join(config.LOG_DATA_PATH, day, f"{name}_{timestamp}.png"))
+        plt.savefig(os.path.join(log_data_path, day, f"{name}_{timestamp}.png"))
         plt.close(fig)
     except Exception as e:
         print(f"Error: {e}")

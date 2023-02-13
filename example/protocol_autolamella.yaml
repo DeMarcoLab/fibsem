@@ -17,6 +17,7 @@ lamella:
     offset: 5.e-6
     size_ratio: 1.0
     milling_current: 2.e-9
+    cleaning_cross_section: False
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
     trench_height: 2.e-6
@@ -24,3 +25,4 @@ lamella:
     offset: 0.e-6
     size_ratio: 1.0
     milling_current: 2.e-9
+    cleaning_cross_section: False
