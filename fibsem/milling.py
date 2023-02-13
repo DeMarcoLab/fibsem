@@ -60,7 +60,7 @@ def finish_milling(
     logging.info("finished ion beam milling.")
 
 
-def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, mill_settings: FibsemMillingSettings):
+def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
     """Draw a milling pattern from settings
 
     Args:
@@ -94,7 +94,6 @@ def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSetti
     microscope.draw_line(pattern_settings)
 
 def draw_trench( 
-    # NOTE: Add pattern or milling settings? Currently using a lot of default values. Add more customisability? Different values may be needed for TESCAN and Thermo?
     microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
 ):
     """Calculate the trench milling patterns"""
@@ -137,6 +136,51 @@ def draw_trench(
 
     return [lower_pattern, upper_pattern]
 
+def draw_stress_relief(
+    microscope: FibsemMicroscope,
+    microexpansion_protocol: dict,
+    lamella_protocol: dict,
+    centre_point: Point = Point(0,0)
+):
+    """
+    Draw the microexpansion joints for stress relief of lamella.
+
+    Args:
+        microscope (FibsemMicroscope): OpenFIBSEM microscope instance
+        microexpansion_protocol (dict): Contains a dictionary of the necessary values for drawing the joints.
+        lamella_protocol (dict): Lamella protocol
+
+    Returns:
+        patterns: list
+    """
+    width = microexpansion_protocol["width"]
+    height = microexpansion_protocol["height"]
+    depth = lamella_protocol["milling_depth"]
+
+    left_pattern_settings = FibsemPatternSettings(
+        width=width,
+        height=height,
+        depth=depth,
+        centre_x=centre_point.x - lamella_protocol["lamella_width"]/2 - microexpansion_protocol["distance"],
+        centre_y=centre_point.y,
+        cleaning_cross_section=True,
+        scan_direction="LeftToRight"
+    )
+
+    right_pattern_settings = FibsemPatternSettings(
+        width=width,
+        height=height,
+        depth=depth,
+        centre_x=centre_point.x + lamella_protocol["lamella_width"]/2 + microexpansion_protocol["distance"],
+        centre_y=centre_point.y,
+        cleaning_cross_section=True,
+        scan_direction="RightToLeft"
+    )
+    left_pattern = draw_rectangle(microscope=microscope, pattern_settings=left_pattern_settings)
+    right_pattern = draw_rectangle(microscope=microscope, pattern_settings=right_pattern_settings)
+    
+    return [left_pattern, right_pattern]
+
 def draw_fiducial(
     microscope: FibsemMicroscope,
     pattern_settings: FibsemPatternSettings,
@@ -144,7 +188,7 @@ def draw_fiducial(
     """draw the fiducial milling patterns
 
     Args:
-        microscope (SdbMicroscopeClient): AutoScript microscope connection
+        microscope (FibsemMicroscope): OpenFIBSEM microscope instance
         mill_settings (dict): fiducial milling settings
         point (Point): centre x, y coordinate
     Returns
@@ -158,6 +202,7 @@ def draw_fiducial(
     pattern_2 = draw_rectangle(microscope, pattern_settings)
 
     return [pattern_1, pattern_2]
+
 
 def milling_protocol(
     microscope: FibsemMicroscope,
