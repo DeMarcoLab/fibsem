@@ -18,7 +18,7 @@ if manufacturer == "Thermo":
         RunAutoFocusSettings,
     )
 
-from fibsem import acquire, movement
+from fibsem import acquire
 from fibsem.structures import (
     BeamSettings,
     MicroscopeState,

@@ -2,16 +2,20 @@ import time
 import logging
 
 import numpy as np
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.enumerations import (
-    ManipulatorCoordinateSystem,
-    ManipulatorSavedPosition,
-)
-from autoscript_sdb_microscope_client.structures import (
-    ManipulatorPosition,
-    MoveSettings,
-    StagePosition,
-)
+from fibsem.config import load_microscope_manufacturer
+
+manufacturer = load_microscope_manufacturer()
+if manufacturer == "Thermo":
+    from autoscript_sdb_microscope_client import SdbMicroscopeClient
+    from autoscript_sdb_microscope_client.enumerations import (
+        ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition,
+    )
+    from autoscript_sdb_microscope_client.structures import (
+        ManipulatorPosition,
+        MoveSettings,
+        StagePosition,
+    )
 from fibsem.structures import BeamType, MicroscopeSettings
 from fibsem.microscope import FibsemMicroscope
 
@@ -20,7 +24,7 @@ from fibsem.microscope import FibsemMicroscope
 
 ############################## NEEDLE ##############################
 
-
+if manufacturer == "Thermo":
 def insert_needle(
     microscope: SdbMicroscopeClient,
     insert_position: ManipulatorSavedPosition = ManipulatorSavedPosition.PARK,
