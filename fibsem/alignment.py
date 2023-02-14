@@ -135,6 +135,7 @@ def correct_stage_drift(
     rotate: bool = False,
     xcorr_limit: tuple = None,
     constrain_vertical: bool = False,
+    beam_shift: bool = False
 ) -> bool:
     """Correct the stage drift by crosscorrelating low-res and high-res reference images"""
 
@@ -189,6 +190,7 @@ def correct_stage_drift(
             ref_mask=ref_mask,
             xcorr_limit=xcorr_limit[i],
             constrain_vertical=constrain_vertical,
+            beam_shift=beam_shift
         )
 
         if ret is False:
