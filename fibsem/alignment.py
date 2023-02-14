@@ -102,7 +102,7 @@ def beam_shift_alignment(
     microscope: SdbMicroscopeClient,
     image_settings: ImageSettings,
     ref_image: AdornedImage,
-    reduced_area: Rectangle,
+    reduced_area: Rectangle = None,
 ):
     """Align the images by adjusting the beam shift, instead of moving the stage
             (increased precision, lower range)

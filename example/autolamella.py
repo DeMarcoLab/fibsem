@@ -53,7 +53,7 @@ def main():
             # milling._draw_fiducial_patterns(microscope, MillingSettings.__from_dict__(settings.protocol["fiducial"]))
 
             # set filepaths
-            path = os.path.join(settings.image.save_path, lamella_no)
+            path = os.path.join(settings.image.save_path, str(lamella_no))
             settings.image.save_path = path
             
             lamella = Lamella(
@@ -79,7 +79,7 @@ def main():
         logging.info(f"Starting milling stage {stage_no}")
 
         lamella: Lamella
-        for lamella_no, lamella in sample:
+        for lamella_no, lamella in enumerate(sample):
 
             logging.info(f"Starting lamella {lamella_no}")
 
