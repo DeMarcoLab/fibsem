@@ -192,7 +192,7 @@ class ImageSettings:
         if "gamma_enabled" not in settings:
             settings["gamma_enabled"] = True
         if "reduced_area" in settings and settings["reduced_area"] is not None:
-            reduced_area = (FibsemRectangle.__from_dict__(settings["reduced_area"]),)
+            reduced_area = FibsemRectangle.__from_dict__(settings["reduced_area"])
         else:
             reduced_area = None
 
