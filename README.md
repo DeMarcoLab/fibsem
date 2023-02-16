@@ -163,6 +163,7 @@ https://demarcolab.github.io/fibsem/
 
 
 ## Citation
+```
 @article {Cleeve2022.11.01.514681,
 	author = {Cleeve, Patrick and Dierickx, David and Buckley, Genevieve and Gorelick, Sergey and Naegele, Lucile and Burne, Lachlan and Whisstock, James C and de Marco, Alex},
 	title = {OpenFIBSEM: an application programming interface for easy FIB/SEM automation},
@@ -175,6 +176,7 @@ https://demarcolab.github.io/fibsem/
 	eprint = {https://www.biorxiv.org/content/early/2022/11/06/2022.11.01.514681.full.pdf},
 	journal = {bioRxiv}
 }
+```
 
 
 
