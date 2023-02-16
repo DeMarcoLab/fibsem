@@ -250,3 +250,7 @@ def show_values(ten):
     """Show tensor statistics for debugging"""
     unq = np.unique(ten.detach().cpu().numpy())
     print(ten.shape, ten.min(), ten.max(), ten.mean(), ten.std(), unq)
+
+
+def image_blend(img: np.ndarray[np.uint8], label: np.ndarray[np.uint8], alpha:float=0.3) -> np.ndarray[np.uint8]:
+    return (img* (1.0 - alpha) + label* alpha).astype('uint8')
