@@ -24,12 +24,29 @@ from fibsem.microscope import FibsemMicroscope
 
 
 def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
+    """
+    Save the given FibsemImage object as a TIFF file with the specified label at the specified file path.
+
+        Args:
+        image (FibsemImage): The FibsemImage object to save.
+        save_path (Path): The file path to save the image at.
+        label (str, optional): The label to use for the saved image file. Default is "image".
+
+        Returns:
+        None
+   
+    """
     os.makedirs(save_path, exist_ok=True)
     path = os.path.join(save_path, f"{label}.tif")
     image.save(path)
 
 
 def current_timestamp():
+    """Returns current time in a specific string format
+
+    Returns:
+        String: Current time
+    """
     return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%I-%M-%S%p")
 
 
@@ -39,6 +56,18 @@ def _format_time_seconds(seconds: float) -> str:
 
 
 def make_logging_directory(path: Path = None, name="run"):
+    """
+    Create a logging directory with the specified name at the specified file path. 
+    If no path is given, it creates the directory at the default base path.
+
+    Args:
+        path (Path, optional): The file path to create the logging directory at. If None, default base path is used. 
+        name (str, optional): The name of the logging directory to create. Default is "run".
+
+    Returns:
+        str: The file path to the created logging directory.
+        """
+    
     if path is None:
         path = os.path.join(BASE_PATH, "log")
     directory = os.path.join(path, name)
@@ -68,7 +97,14 @@ def configure_logging(path: Path = "", log_filename="logfile", log_level=logging
 
 
 def load_yaml(fname: Path) -> dict:
+    """load yaml file
 
+    Args:
+        fname (Path): yaml file path
+
+    Returns:
+        dict: Items in yaml
+    """
     with open(fname, "r") as f:
         config = yaml.safe_load(f)
 
@@ -76,7 +112,12 @@ def load_yaml(fname: Path) -> dict:
 
 
 def save_yaml(path: Path, data: dict) -> None:
+    """Saves a python dictionary object to a yaml file
 
+    Args:
+        path (Path): path location to save yaml file
+        data (dict): dictionary object
+    """
     with open(path, "w") as f:
         yaml.dump(data, f, indent=4)
 
@@ -85,23 +126,26 @@ from fibsem.structures import MicroscopeState
 
 
 def save_state_yaml(path: Path, state: MicroscopeState) -> None:
+    """Saves microscope state as a yaml file
 
+    Args:
+        path (Path): path location to save file
+        state (MicroscopeState): MicroscopeState
+    """
     state_dict = state.__to_dict__()
 
     save_yaml(path, state_dict)
 
 
-def save_metadata(settings: MicroscopeSettings, path: Path):
-    # TODO: finish this
-    pass
-    # settings_dict = settings.__to_dict__()
-
-    # fname = os.path.join(path, "metadata.json")
-    # with open(fname, "w") as fp:
-    #     json.dump(settings_dict, fp, sort_keys=True, indent=4)
-
-
 def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
+    """Creates a GIF from a set of images. Images must be in same folder
+
+    Args:
+        path (Path): Path to images folder
+        search (str): search name
+        gif_fname (str): name to save gif file
+        loop (int, optional): _description_. Defaults to 0.
+    """
     filenames = glob.glob(os.path.join(path, search))
 
     imgs = [Image.fromarray(FibsemImage.load(fname).data) for fname in filenames]
@@ -270,7 +314,11 @@ def match_image_settings(
     image_settings: ImageSettings,
     beam_type: BeamType = BeamType.ELECTRON,
 ) -> ImageSettings:
+    
+    
     """Generate matching image settings from an image."""
+
+
     image_settings.resolution = (ref_image.data.shape[1], ref_image.data.shape[0])
     # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
     image_settings.hfw = ref_image.data.shape[1] * ref_image.metadata.pixel_size.x
