@@ -59,6 +59,11 @@ class Point:
 
 # TODO: convert these to match autoscript...
 class BeamType(Enum):
+    """Enumerator Class for Beam Type
+        1: Electron Beam
+        2: Ion Beam
+
+    """
     ELECTRON = 1  # Electron
     ION = 2  # Ion
     # CCD_CAM = 3
@@ -67,6 +72,24 @@ class BeamType(Enum):
 
 @dataclass
 class FibsemStagePosition:
+    """Data class for storing stage position data.
+
+Attributes:
+    x (float): The X position of the stage in meters.
+    y (float): The Y position of the stage in meters.
+    z (float): The Z position of the stage in meters.
+    r (float): The Rotation of the stage in radians.
+    t (float): The Tilt of the stage in radians.
+    coordinate_system (str): The coordinate system used for the stage position.
+
+Methods:
+    __to_dict__(): Convert the stage position object to a dictionary.
+    __from_dict__(data: dict): Create a new stage position object from a dictionary.
+    to_autoscript_position(stage_tilt: float = 0.0) -> StagePosition: Convert the stage position to a StagePosition object that is compatible with Autoscript.
+    from_autoscript_position(position: StagePosition, stage_tilt: float = 0.0) -> None: Create a new FibsemStagePosition object from a StagePosition object that is compatible with Autoscript.
+    to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
+    from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
+"""
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
@@ -167,6 +190,27 @@ class FibsemRectangle:
 
 @dataclass
 class ImageSettings:
+    """A data class representing the settings for an image acquisition.
+
+    Attributes:
+        resolution (list of int): The resolution of the acquired image in pixels, [x, y].
+        dwell_time (float): The time spent per pixel during image acquisition, in seconds.
+        hfw (float): The horizontal field width of the acquired image, in microns.
+        autocontrast (bool): Whether or not to apply automatic contrast enhancement to the acquired image.
+        beam_type (BeamType): The type of beam to use for image acquisition.
+        save (bool): Whether or not to save the acquired image to disk.
+        label (str): The label to use when saving the acquired image.
+        gamma_enabled (bool): Whether or not to apply gamma correction to the acquired image.
+        save_path (Path): The path to the directory where the acquired image should be saved.
+        reduced_area (FibsemRectangle): The rectangular region of interest within the acquired image, if any.
+
+    Methods:
+        __from_dict__(settings: dict) -> ImageSettings:
+            Converts a dictionary of image settings to an ImageSettings object.
+        __to_dict__() -> dict:
+            Converts the ImageSettings object to a dictionary of image settings.
+    """
+
     resolution: list = None
     dwell_time: float = None
     hfw: float = None
@@ -242,6 +286,24 @@ class ImageSettings:
 
 @dataclass
 class BeamSettings:
+    """
+    Dataclass representing the beam settings for an imaging session.
+
+    Attributes:
+        beam_type (BeamType): The type of beam to use for imaging.
+        working_distance (float): The working distance for the microscope, in meters.
+        beam_current (float): The beam current for the microscope, in amps.
+        hfw (float): The horizontal field width for the microscope, in meters.
+        resolution (list): The desired resolution for the image.
+        dwell_time (float): The dwell time for the microscope.
+        stigmation (Point): The point for stigmation correction.
+        shift (Point): The point for shift correction.
+
+    Methods:
+        __to_dict__(): Returns a dictionary representation of the object.
+        __from_dict__(state_dict: dict) -> BeamSettings: Returns a new BeamSettings object created from a dictionary.
+
+    """
     beam_type: BeamType
     working_distance: float = None
     beam_current: float = None
@@ -282,6 +344,22 @@ class BeamSettings:
 
 @dataclass
 class MicroscopeState:
+
+    """Data Class representing the state of a microscope with various parameters.
+
+    Attributes:
+
+        timestamp (float): A float representing the timestamp at which the state of the microscope was recorded. Defaults to the timestamp of the current datetime.
+        absolute_position (FibsemStagePosition): An instance of FibsemStagePosition representing the current absolute position of the stage. Defaults to an empty instance of FibsemStagePosition.
+        eb_settings (BeamSettings): An instance of BeamSettings representing the electron beam settings. Defaults to an instance of BeamSettings with beam_type set to BeamType.ELECTRON.
+        ib_settings (BeamSettings): An instance of BeamSettings representing the ion beam settings. Defaults to an instance of BeamSettings with beam_type set to BeamType.ION.
+
+    Methods:
+
+        to_dict(self) -> dict: Converts the current state of the Microscope to a dictionary and returns it.
+        from_dict(state_dict: dict) -> "MicroscopeState": Returns a new instance of MicroscopeState with attributes created from the passed dictionary.
+    """
+
     timestamp: float = datetime.timestamp(datetime.now())
     absolute_position: FibsemStagePosition = FibsemStagePosition()
     eb_settings: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
@@ -357,6 +435,20 @@ class FibsemPatternSettings:
 
 @dataclass
 class FibsemMillingSettings:
+    """
+    This class is used to store and retrieve settings for FIBSEM milling.
+
+    Attributes:
+    milling_current (float): The current used in the FIBSEM milling process. Default value is 20.0e-12 A.
+    spot_size (float): The size of the beam spot used in the FIBSEM milling process. Default value is 5.0e-8 m.
+    rate (float): The milling rate of the FIBSEM process. Default value is 3.0e-3 m^3/A/s.
+    dwell_time (float): The dwell time of the beam at each point during the FIBSEM milling process. Default value is 1.0e-6 s.
+
+    Methods:
+    to_dict(): Converts the object attributes into a dictionary.
+    from_dict(settings: dict) -> "FibsemMillingSettings": Creates a FibsemMillingSettings object from a dictionary of settings.
+    """
+
     milling_current: float = 20.0e-12
     spot_size: float = 5.0e-8
     rate: float = 3.0e-3 # m3/A/s
@@ -408,6 +500,7 @@ if manufacturer == "Thermo":
 
 
 def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
+    """Converts the FibsemStagePosition Object into a dictionary"""
 
     stage_position_dict = {
         "x": stage_position.x,
@@ -422,6 +515,8 @@ def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
 
 
 def stage_position_from_dict(state_dict: dict) -> FibsemStagePosition:
+    """Converts a dictionary object to a fibsem stage position,
+        dictionary must have correct keys"""
 
     stage_position = FibsemStagePosition(
         x=state_dict["x"],
@@ -464,6 +559,25 @@ if manufacturer == "Thermo":
 
 @dataclass
 class BeamSystemSettings:
+    """
+    A data class that represents the settings of a beam system.
+
+    Attributes:
+        beam_type (BeamType): The type of beam used in the system (Electron or Ion).
+        voltage (float): The voltage used in the system.
+        current (float): The current used in the system.
+        detector_type (str): The type of detector used in the system.
+        detector_mode (str): The mode of the detector used in the system.
+        eucentric_height (float): The eucentric height of the system.
+        plasma_gas (str, optional): The type of plasma gas used in the system.
+
+    Methods:
+        __to_dict__(self) -> dict:
+            Converts the instance variables to a dictionary.
+        __from_dict__(settings: dict, beam_type: BeamType) -> BeamSystemSettings:
+            Creates an instance of the class from a dictionary and a beam type.
+    """
+
     beam_type: BeamType
     voltage: float
     current: float
@@ -507,6 +621,21 @@ class BeamSystemSettings:
 # TODO: change this to use pretilt_angle, flat_to_electron, and flat_to_ion tilts, for better separation
 @dataclass
 class StageSettings:
+    """
+    A data class representing the settings for the stage.
+
+    Attributes:
+    rotation_flat_to_electron (float): The rotation from flat to electron in degrees.
+    rotation_flat_to_ion (float): The rotation from flat to ion in degrees.
+    tilt_flat_to_electron (float): The tilt from flat to electron in degrees.
+    tilt_flat_to_ion (float): The tilt from flat to ion in degrees.
+    pre_tilt (float): The pre-tilt in degrees.
+    needle_stage_height_limit (float): The height limit of the needle stage in meters.
+
+    Methods:
+    __to_dict__() -> dict: Returns the settings as a dictionary.
+    __from_dict__(settings: dict) -> "StageSettings": Returns an instance of StageSettings from a dictionary of its settings.
+    """
     rotation_flat_to_electron: float = 50  # degrees
     rotation_flat_to_ion: float = 230  # degrees
     tilt_flat_to_electron: float = 27  # degrees (pre_tilt)
@@ -543,6 +672,20 @@ class StageSettings:
 
 @dataclass
 class SystemSettings:
+
+    """
+    Dataclass representing the system settings for the FIB-SEM instrument.
+
+    :param ip_address: IP address of the instrument.
+    :param application_file: name of the application file used by the instrument.
+    :param stage: settings for the stage.
+    :param ion: settings for the ion beam.
+    :param electron: settings for the electron beam.
+    :param manufacturer: name of the instrument manufacturer.
+
+    :return: a new instance of `SystemSettings`.
+    """
+
     ip_address: str = "10.0.0.1"
     application_file: str = "autolamella"
     stage: StageSettings = None
@@ -582,6 +725,9 @@ class SystemSettings:
 
 @dataclass
 class DefaultSettings:
+    """
+    Default settings for the imaging and milling current 
+    """
     imaging_current: float = 20.0e-12
     milling_current: float = 2.0e-9
 
@@ -597,6 +743,21 @@ class DefaultSettings:
 
 @dataclass
 class MicroscopeSettings:
+
+    """
+    A data class representing the settings for a microscope system.
+
+    Attributes:
+        system (SystemSettings): An instance of the `SystemSettings` class that holds the system settings.
+        image (ImageSettings): An instance of the `ImageSettings` class that holds the image settings.
+        protocol (dict, optional): A dictionary representing the protocol settings. Defaults to None.
+        milling (FibsemMillingSettings, optional): An instance of the `FibsemMillingSettings` class that holds the fibsem milling settings. Defaults to None.
+
+    Methods:
+        __to_dict__(): Returns a dictionary representation of the `MicroscopeSettings` object.
+        __from_dict__(settings: dict, protocol: dict = None) -> "MicroscopeSettings": Returns an instance of the `MicroscopeSettings` class from a dictionary.
+    """
+
     system: SystemSettings
     # default: DefaultSettings
     image: ImageSettings
@@ -633,6 +794,21 @@ class FibsemStage(Enum):
 
 @dataclass
 class FibsemState:
+    """
+    FibsemState data class that represents the current state of FIBSEM system 
+
+    Attributes:
+    stage (FibsemStage): The current stage of the autoliftout workflow, as a `FibsemStage` enum member.
+    microscope_state (MicroscopeState): The current state of the microscope, as a `MicroscopeState` object.
+    start_timestamp (float): The timestamp when the autoliftout workflow began, as a Unix timestamp.
+    end_timestamp (float): The timestamp when the autoliftout workflow ended, as a Unix timestamp.
+
+    Methods:
+    __to_dict__(): Serializes the `FibsemState` object to a dictionary.
+    __from_dict__(state_dict: dict) -> FibsemState: Deserializes a dictionary to a `FibsemState` object.
+
+    """
+
     stage: FibsemStage = FibsemStage.Base
     microscope_state: MicroscopeState = MicroscopeState()
     start_timestamp: float = None
@@ -784,6 +960,32 @@ class FibsemImageMetadata:
 
 
 class FibsemImage:
+    
+    """
+    Class representing a FibsemImage and its associated metadata. 
+    Has in built methods to deal with image types of TESCAN and ThermoFisher API 
+
+    Args:
+        data (np.ndarray): The image data stored in a numpy array.
+        metadata (FibsemImageMetadata, optional): The metadata associated with the image. Defaults to None.
+
+    Methods:
+        load(cls, tiff_path: str) -> "FibsemImage":
+            Loads a FibsemImage from a tiff file.
+
+            Args:
+                tiff_path (path): path to the tif* file
+
+            Returns:
+                FibsemImage: instance of FibsemImage
+
+        save(self, save_path: Path) -> None:
+            Saves a FibsemImage to a tiff file.
+
+            Inputs:
+                save_path (path): path to save directory and filename
+    """
+
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
 
         if check_data_format(data):

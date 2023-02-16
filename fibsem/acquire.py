@@ -18,14 +18,24 @@ from fibsem.microscope import FibsemMicroscope
 def take_reference_images(
     microscope: FibsemMicroscope, image_settings: ImageSettings
 ) -> list[FibsemImage]:
-    """Take a reference image using both beams
+    """
+    Acquires a pair of electron and ion reference images using the specified imaging settings and
+    a FibsemMicroscope instance.
 
     Args:
-        microscope (FibsemMicroscope): fibsem microscope instance
-        image_settings (ImageSettings): imaging settings
+        microscope (FibsemMicroscope): A FibsemMicroscope instance for imaging.
+        image_settings (ImageSettings): An ImageSettings object with the desired imaging parameters.
 
     Returns:
-        list[AdornedImage]: electron and ion reference image pair
+        A list containing a pair of FibsemImage objects, representing the electron and ion reference
+        images acquired using the specified microscope and image settings.
+
+    Notes:
+        - This function temporarily changes the `image_settings.beam_type` to `BeamType.ELECTRON`
+          and then `BeamType.ION` to acquire the electron and ion reference images, respectively.
+          It resets the `image_settings.beam_type` to the original value after acquiring the images.
+        - The `FibsemImage` objects in the returned list contain the image data as numpy arrays,
+          as well as other image metadata.
     """
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
@@ -37,7 +47,7 @@ def take_reference_images(
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
 
     return eb_image, ib_image
-    # return FibsemImage.fromAdornedImage(eb_image, image_settings, state_eb), FibsemImage.fromAdornedImage(ib_image, image_settings, state_ib)
+   
 
 
 def take_set_of_reference_images(
@@ -46,8 +56,26 @@ def take_set_of_reference_images(
     hfws: tuple[float],
     label: str = "ref_image",
 ) -> ReferenceImages:
-    """Take a set of reference images at low and high magnification"""
+    """
+    Takes a set of reference images at low and high magnification using a FibsemMicroscope.
+    The image settings and half-field widths for the low- and high-resolution images are
+    specified using an ImageSettings object and a tuple of two floats, respectively.
+    The optional label parameter can be used to customize the image labels.
 
+    Args:
+        microscope (FibsemMicroscope): A FibsemMicroscope object to acquire the images from.
+        image_settings (ImageSettings): An ImageSettings object with the desired imaging parameters.
+        hfws (Tuple[float, float]): A tuple of two floats specifying the half-field widths (in microns)
+            for the low- and high-resolution images, respectively.
+        label (str, optional): A label to be included in the image filenames. Defaults to "ref_image".
+
+    Returns:
+        A ReferenceImages object containing the low- and high-resolution electron and ion beam images.
+
+    Notes:
+        This function sets image_settings.save to True before taking the images.
+        The returned ReferenceImages object contains the electron and ion beam images as FibsemImage objects.
+    """
     # force save
     image_settings.save = True
 
@@ -64,10 +92,38 @@ def take_set_of_reference_images(
     return reference_images
 
 
-def auto_gamma(image: FibsemImage, min_gamma: float = 0.15,
-    max_gamma: float = 1.8, scale_factor: float = 0.01,
-    gamma_threshold: int = 45 ) -> FibsemImage:
-    """Automatic gamma correction"""
+def auto_gamma(
+    image: FibsemImage,
+    min_gamma: float = 0.15,
+    max_gamma: float = 1.8,
+    scale_factor: float = 0.01,
+    gamma_threshold: int = 45
+) -> FibsemImage:
+    """
+    Applies automatic gamma correction to the input `FibsemImage`.
+
+    Args:
+        image (FibsemImage): The input `FibsemImage` to apply gamma correction to.
+        min_gamma (float): The minimum gamma value allowed in the correction. Defaults to 0.15.
+        max_gamma (float): The maximum gamma value allowed in the correction. Defaults to 1.8.
+        scale_factor (float): A scaling factor to adjust the gamma correction range based on the image
+            brightness. Defaults to 0.01.
+        gamma_threshold (int): The maximum threshold of brightness difference from the mid-gray value
+            (i.e., 128) before the gamma value is forced to 1.0. Defaults to 45.
+
+    Returns:
+        A new `FibsemImage` object containing the gamma-corrected image data, with the same metadata
+        as the input image.
+
+    Notes:
+        - This function applies gamma correction to the input image using the `skimage.exposure.adjust_gamma`
+          function, with the gamma value computed based on the mean intensity of the image.
+        - If the difference between the mean image intensity and the mid-gray value (i.e., 128) is greater
+          than the specified `gamma_threshold`, the gamma value is forced to 1.0 to avoid over-correction.
+        - The `FibsemImage` object in the returned list contains the gamma-corrected image data as a
+          numpy array, as well as other image metadata.
+    """
+
     std = np.std(image.data)  # unused variable?
     mean = np.mean(image.data)
     diff = mean - 255 / 2.0
@@ -88,16 +144,14 @@ def new_image(
     microscope: FibsemMicroscope,
     settings: ImageSettings,
 ) -> FibsemImage:
-    """Apply the image settings and take a new image
+    """Apply the given image settings and acquire a new image.
 
     Args:
-        microscope (FibsemMicroscope): fibsem microscope client connection
-        settings (ImageSettings): image settings to take the image with
-        reduced_area (FibsemRectangle, optional): image with the reduced area . Defaults to None.
+        microscope (FibsemMicroscope): The FibsemMicroscope instance used to acquire the image.
+        settings (ImageSettings): The image settings used to acquire the image.
 
     Returns:
-            FibsemImage: new image
-            String: filename of saved FibsemImage
+        FibsemImage: The acquired image.
     """
 
     # set label

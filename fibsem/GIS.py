@@ -16,6 +16,9 @@ def sputter_platinum(
         protocol (dict): platinum protcol dictionary
         whole_grid (bool, optional): sputtering protocol. Defaults to False.
 
+    Returns:
+        None
+
     Raises:
         RuntimeError: Error Sputtering
     """

@@ -169,10 +169,87 @@ class FibsemMicroscope(ABC):
 
 
 class ThermoMicroscope(FibsemMicroscope):
-    """ThermoFisher Microscope class, uses FibsemMicroscope as blueprint
+    """
+    A class representing a Thermo Fisher FIB-SEM microscope.
 
-    Args:
-        FibsemMicroscope (ABC): abstract implementation
+    This class inherits from the abstract base class `FibsemMicroscope`, which defines the core functionality of a
+    microscope. In addition to the methods defined in the base class, this class provides additional methods specific
+    to the Thermo Fisher FIB-SEM microscope.
+
+    Attributes:
+        connection (SdbMicroscopeClient): The microscope client connection.
+
+    Inherited Methods:
+        __init__(self): Initializes a new instance of the class.
+
+        connect_to_microscope(self, ip_address: str, port: int = 7520) -> None: 
+            Connect to a Thermo Fisher microscope at the specified IP address and port.
+
+        disconnect(self) -> None: Disconnects the microscope client connection.
+
+        acquire_image(self, image_settings: ImageSettings) -> FibsemImage: 
+            Acquire a new image with the specified settings.
+
+        last_image(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemImage: 
+            Get the last previously acquired image.
+
+        autocontrast(self, beam_type=BeamType.ELECTRON) -> None: 
+            Automatically adjust the microscope image contrast for the specified beam type.
+
+        reset_beam_shifts(self) -> None:
+            Set the beam shift to zero for the electron and ion beams.
+        
+        beam_shift(self, dx: float, dy: float) -> None:
+            Adjusts the beam shift based on relative values that are provided.
+
+        get_stage_position(self) -> FibsemStagePosition:
+            Get the current stage position.
+
+        get_current_microscope_state(self) -> MicroscopeState:
+            Get the current microscope state
+
+        move_stage_absolute(self, position: FibsemStagePosition):
+            Move the stage to the specified coordinates.
+
+        move_stage_relative(self, position: FibsemStagePosition):
+            Move the stage by the specified relative move.
+
+        stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
+            Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
+
+        eucentric_move(self, settings: MicroscopeSettings, dy: float, static_wd: bool = True) -> None:
+            Move the stage vertically to correct eucentric point
+        
+        move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
+            Make the sample surface flat to the electron or ion beam.
+
+        setup_milling(self, application_file: str, patterning_mode: str, hfw: float, mill_settings: FibsemMillingSettings):
+            Configure the microscope for milling using the ion beam.
+
+        run_milling(self, milling_current: float, asynch: bool = False):
+            Run ion beam milling using the specified milling current.
+
+        finish_milling(self, imaging_current: float):
+            Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
+
+        draw_rectangle(self, pattern_settings: FibsemPatternSettings):
+            Draws a rectangle pattern using the current ion beam.
+
+        draw_line(self, pattern_settings: FibsemPatternSettings):
+            Draws a line pattern on the current imaging view of the microscope.
+
+        setup_sputter(self, protocol: dict):
+            Set up the sputter coating process on the microscope.
+
+        
+
+    New methods:
+        _y_corrected_stage_movement(self, settings: MicroscopeSettings, expected_y: float, beam_type: BeamType = BeamType.ELECTRON) -> FibsemStagePosition:
+            Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
+        
+
+    Example usage:
+        [Provide an example usage of this class here]
     """
 
     def __init__(self):
@@ -183,12 +260,25 @@ class ThermoMicroscope(FibsemMicroscope):
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 7520) -> None:
-        """Connect to a Thermo Fisher microscope at a specified I.P. Address and Port
+        """Connect to a Thermo Fisher microscope at the specified IP address and port.
 
-        Args:
-            ip_address (str): I.P. Address of microscope
-            port (int): port of microscope (default: 7520)
-        """
+    Args:
+        ip_address (str): The IP address of the microscope to connect to.
+        port (int): The port number of the microscope (default: 7520).
+
+    Returns:
+        None: This function doesn't return anything.
+
+    Raises:
+        Exception: If there's an error while connecting to the microscope.
+
+    Example:
+        To connect to a microscope with IP address 192.168.0.10 and port 7520:
+
+        >>> microscope = ThermoMicroscope()
+        >>> microscope.connect_to_microscope("192.168.0.10", 7520)
+
+    """
         try:
             # TODO: get the port
             logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
@@ -198,14 +288,13 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.error(f"Unable to connect to the microscope: {e}")
 
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
-        """Acquire a new image.
+        """Acquire a new image with the specified settings.
 
         Args:
-            settings (GrabFrameSettings, optional): frame grab settings. Defaults to None.
-            beam_type (BeamType, optional): imaging beam type. Defaults to BeamType.ELECTRON.
+            image_settings (ImageSettings): The settings for the new image.
 
         Returns:
-            AdornedImage: new image
+            FibsemImage: A new FibsemImage object representing the acquired image.
         """
         # set frame settings
         if image_settings.reduced_area is not None:
@@ -256,11 +345,14 @@ class ThermoMicroscope(FibsemMicroscope):
         """Get the last previously acquired image.
 
         Args:
-            microscope (SdbMicroscopeClient):  autoscript microscope instance
-            beam_type (BeamType, optional): imaging beam type. Defaults to BeamType.ELECTRON.
+            beam_type (BeamType, optional): The imaging beam type of the last image.
+                Defaults to BeamType.ELECTRON.
 
         Returns:
-            AdornedImage: last image
+            FibsemImage: A new FibsemImage object representing the last acquired image.
+
+        Raises:
+            Exception: If there's an error while getting the last image.
         """
 
         self.connection.imaging.set_active_view(beam_type.value)
@@ -278,15 +370,33 @@ class ThermoMicroscope(FibsemMicroscope):
         return fibsem_image
 
     def autocontrast(self, beam_type=BeamType.ELECTRON) -> None:
-        """Automatically adjust the microscope image contrast."""
+        """Automatically adjust the microscope image contrast for the specified beam type.
+
+        Args:
+            beam_type (BeamType, optional): The imaging beam type for which to adjust the contrast.
+                Defaults to BeamType.ELECTRON.
+
+        Returns:
+            None
+
+        Example:
+            To automatically adjust the image contrast for an ion beam type:
+
+            >>> microscope = ThermoMicroscope()
+            >>> microscope.connect_to_microscope()
+            >>> microscope.autocontrast(beam_type=BeamType.ION)
+
+        """
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.auto_functions.run_auto_cb()
 
-    def reset_beam_shifts(self):
-        """Set the beam shift to zero for the electron and ion beams
+    def reset_beam_shifts(self) -> None:
+        """Set the beam shift to zero for the electron and ion beams.
+
+        Resets the beam shift for both the electron and ion beams to (0,0), effectively centering the beams on the sample.
 
         Args:
-            self (FibsemMicroscope): Fibsem microscope object
+            self (FibsemMicroscope): instance of the FibsemMicroscope object
         """
         from autoscript_sdb_microscope_client.structures import Point
 
@@ -301,7 +411,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.beam_shift.value = Point(0, 0)
         logging.debug(f"reset beam shifts to zero complete")
 
-    def beam_shift(self, dx: float, dy: float):
+    def beam_shift(self, dx: float, dy: float) -> None:
         '''Adjusts the beam shift based on relative values that are provided.
         
         Args:
@@ -312,6 +422,14 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.beam_shift.value += (-dx, dy)
 
     def get_stage_position(self) -> FibsemStagePosition:
+        """Get the current stage position.
+
+        This method retrieves the current stage position from the microscope and returns it as
+        a FibsemStagePosition object.
+
+        Returns:
+            FibsemStagePosition: The current stage position.
+        """
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.RAW
         )
@@ -324,6 +442,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def get_current_microscope_state(self) -> MicroscopeState:
         """Get the current microscope state
+
+        This method retrieves the current microscope state from the microscope and returns it as
+        a MicroscopeState object.
 
         Returns:
             MicroscopeState: current microscope state
@@ -404,7 +525,6 @@ class ThermoMicroscope(FibsemMicroscope):
         """Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
         Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
             settings (MicroscopeSettings): microscope settings
             dx (float): distance along the x-axis (image coordinates)
             dy (float): distance along the y-axis (image coordinates)
@@ -447,7 +567,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """Move the stage vertically to correct eucentric point
 
         Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
+            settings (MicroscopeSettings): microscope settings
             dy (float): distance in y-axis (image coordinates)
         """
         wd = self.connection.beams.electron_beam.working_distance.value
@@ -481,7 +601,6 @@ class ThermoMicroscope(FibsemMicroscope):
         """Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
 
         Args:
-            microscope (SdbMicroscopeClient, optional): autoscript microscope instance
             settings (MicroscopeSettings): microscope settings
             expected_y (float, optional): distance along y-axis.
             beam_type (BeamType, optional): beam_type to move in. Defaults to BeamType.ELECTRON.
@@ -545,12 +664,10 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def move_flat_to_beam(
         self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON
-    ):
-
+    ) -> None:
         """Make the sample surface flat to the electron or ion beam.
 
         Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
             settings (MicroscopeSettings): microscope settings
             beam_type (BeamType, optional): beam type to move flat to. Defaults to BeamType.ELECTRON.
         """
@@ -580,6 +697,27 @@ class ThermoMicroscope(FibsemMicroscope):
         hfw: float,
         mill_settings: FibsemMillingSettings,
     ):
+        """Configure the microscope for milling using the ion beam.
+
+        Args:
+            application_file (str): Path to the milling application file.
+            patterning_mode (str): Patterning mode to use.
+            hfw (float): Desired horizontal field width in meters.
+            mill_settings (FibsemMillingSettings): Milling settings.
+
+        Returns:
+            None.
+
+        Raises:
+            NotImplementedError: If the specified patterning mode is not supported.
+
+        Note:
+            This method sets up the microscope imaging and patterning for milling using the ion beam.
+            It sets the active view and device to the ion beam, the default beam type to the ion beam,
+            the specified application file, and the specified patterning mode.
+            It also clears any existing patterns and sets the horizontal field width to the desired value.
+            The method does not start the milling process.
+        """
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         self.connection.imaging.set_active_device(BeamType.ION.value)
         self.connection.patterning.set_default_beam_type(
@@ -591,6 +729,19 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.horizontal_field_width.value = hfw
 
     def run_milling(self, milling_current: float, asynch: bool = False):
+        """Run ion beam milling using the specified milling current.
+
+        Args:
+            milling_current (float): The current to use for milling in amps.
+            asynch (bool, optional): If True, the milling will be run asynchronously. 
+                                     Defaults to False, in which case it will run synchronously.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         # change to milling current
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         if self.connection.beams.ion_beam.beam_current.value != milling_current:
@@ -607,6 +758,11 @@ class ThermoMicroscope(FibsemMicroscope):
         # NOTE: Make tescan logs the same??
 
     def finish_milling(self, imaging_current: float):
+        """Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
+
+        Args:
+            imaging_current (float): The current to use for imaging in amps.
+        """
         self.connection.patterning.clear_patterns()
         self.connection.beams.ion_beam.beam_current.value = imaging_current
         self.connection.patterning.mode = "Serial"
@@ -615,7 +771,30 @@ class ThermoMicroscope(FibsemMicroscope):
         self,
         pattern_settings: FibsemPatternSettings,
     ):
+        """
+        Draws a rectangle pattern using the current ion beam.
 
+        Args:
+            pattern_settings (FibsemPatternSettings): the settings for the pattern to draw.
+
+        Returns:
+            Pattern: the created pattern.
+
+        Raises:
+            AutoscriptError: if an error occurs while creating the pattern.
+
+        Notes:
+            The rectangle pattern will be centered at the specified coordinates (centre_x, centre_y) with the specified
+            width, height and depth (in nm). If the cleaning_cross_section attribute of pattern_settings is True, a
+            cleaning cross section pattern will be created instead of a rectangle pattern.
+
+            The pattern will be rotated by the angle specified in the rotation attribute of pattern_settings (in degrees)
+            and scanned in the direction specified in the scan_direction attribute of pattern_settings ('horizontal' or
+            'vertical').
+
+            The created pattern can be added to the patterning queue and executed using the methods in the PatterningQueue
+            class of the autoscript_sdb_microscope_client package.
+        """
         if pattern_settings.cleaning_cross_section:
             pattern = self.connection.patterning.create_cleaning_cross_section(
                 center_x=pattern_settings.centre_x,
@@ -639,6 +818,20 @@ class ThermoMicroscope(FibsemMicroscope):
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
+        """
+        Draws a line pattern on the current imaging view of the microscope.
+
+        Args:
+            pattern_settings (FibsemPatternSettings): A data class object specifying the pattern parameters,
+                including the start and end points, and the depth of the pattern.
+
+        Returns:
+            LinePattern: A line pattern object, which can be used to configure further properties or to add the
+                pattern to the milling list.
+
+        Raises:
+            autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
+        """
         pattern = self.connection.patterning.create_line(
             start_x=pattern_settings.start_x,
             start_y=pattern_settings.start_y,
@@ -650,6 +843,23 @@ class ThermoMicroscope(FibsemMicroscope):
         return pattern
 
     def setup_sputter(self, protocol: dict):
+        """Set up the sputter coating process on the microscope.
+
+        Args:
+            protocol (dict): Dictionary containing the protocol details for sputter coating.
+
+        Returns:
+            None
+
+        Raises:
+            None
+
+        Notes:
+            This function sets up the sputter coating process on the microscope. 
+            It sets the active view to the electron beam, clears any existing patterns, and sets the default beam type to the electron beam. 
+            It then inserts the multichem and turns on the heater for the specified gas according to the given protocol. 
+            This function also waits for 3 seconds to allow the heater to warm up.
+        """
         self.original_active_view = self.connection.imaging.get_active_view()
         self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
         self.connection.patterning.clear_patterns()
@@ -661,6 +871,7 @@ class ThermoMicroscope(FibsemMicroscope):
         time.sleep(3)
 
     def draw_sputter_pattern(self, hfw: float, line_pattern_length: float, sputter_time: float):
+        """ Draws a line pattern for sputtering. """
         self.connection.beams.electron_beam.horizontal_field_width.value = hfw
         pattern = self.connection.patterning.create_line(
             -line_pattern_length / 2,  # x_start
@@ -695,6 +906,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.warning("Consider adjusting the patterning line depth.")
 
     def finish_sputter(self, application_file: str):
+        """ Finishes the sputter process by clearing any remaining patterns and setting the beam current back to imaging current. """
         self.connection.patterning.clear_patterns()
         self.connection.beams.electron_beam.unblank()
         self.connection.patterning.set_default_application_file(application_file)
@@ -704,7 +916,13 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info("sputtering platinum finished.")
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
-        """Reset the microscope state to the provided state"""
+        """Reset the microscope state to the provided state
+        Args:
+        microscope_state: A `MicroscopeState` object that contains the desired state of the microscope.
+
+        Returns:
+            None.
+        """
 
         logging.info(f"restoring microscope state...")
 
@@ -775,10 +993,28 @@ class TescanMicroscope(FibsemMicroscope):
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 8300) -> None:
+        """
+            Connects to a microscope with the specified IP address and port.
+
+            Args:
+                ip_address: A string that represents the IP address of the microscope.
+                port: An integer that represents the port number to use (default 8300).
+
+            Returns:
+                None.
+        """
         self.connection = Automation(ip_address, port)
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
+        """
+            Acquires an image using the specified image settings.
 
+            Args:
+                image_settings: An instance of the `ImageSettings` class that represents the image settings to use (default `ImageSettings`).
+
+            Returns:
+                A `FibsemImage` object that represents the acquired image.
+        """
         if image_settings.beam_type.name == "ELECTRON":
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
@@ -789,6 +1025,15 @@ class TescanMicroscope(FibsemMicroscope):
         return image
 
     def _get_eb_image(self, image_settings=ImageSettings) -> FibsemImage:
+        """
+        Acquires an electron beam (EB) image with the given settings and returns a FibsemImage object.
+
+        Args:
+            image_settings (ImageSettings): The settings for the acquired image.
+
+        Returns:
+            FibsemImage: The acquired image as a FibsemImage object.
+        """
         # At first make sure the beam is ON
         self.connection.SEM.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
@@ -863,6 +1108,16 @@ class TescanMicroscope(FibsemMicroscope):
         return fibsem_image
 
     def _get_ib_image(self, image_settings=ImageSettings):
+        """
+        Acquires an ion beam (IB) image with the given settings and returns a FibsemImage object.
+
+        Args:
+            image_settings (ImageSettings): The settings for the acquired image.
+
+        Returns:
+            FibsemImage: The acquired image as a FibsemImage object.
+        """
+
         # At first make sure the beam is ON
         self.connection.FIB.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
@@ -941,6 +1196,15 @@ class TescanMicroscope(FibsemMicroscope):
         return fibsem_image
 
     def last_image(self, beam_type: BeamType.ELECTRON) -> FibsemImage:
+        """    Returns the last acquired image for the specified beam type.
+
+        Args:
+            beam_type (BeamType.ELECTRON or BeamType.ION): The type of beam used to acquire the image.
+
+        Returns:
+            FibsemImage: The last acquired image of the specified beam type.
+
+        """
         if beam_type == BeamType.ELECTRON:
             image = self.last_image_eb
         elif beam_type == BeamType.ION:
@@ -950,6 +1214,11 @@ class TescanMicroscope(FibsemMicroscope):
         return image
 
     def get_stage_position(self):
+        """Returns the current stage position.
+
+        Returns:
+            FibsemStagePosition: A `FibsemStagePosition` object representing the stage position.
+        """
         x, y, z, r, t = self.connection.Stage.GetPosition()
         stage_position = FibsemStagePosition(
             x * constants.MILLIMETRE_TO_METRE,
@@ -1016,6 +1285,11 @@ class TescanMicroscope(FibsemMicroscope):
         return current_microscope_state
 
     def autocontrast(self, beam_type: BeamType) -> None:
+        """Automatically adjusts the image contrast and brightness based on the current signal.
+
+        Args:
+            beam_type (BeamType): The type of beam used for the image.
+        """
         if beam_type.name == BeamType.ELECTRON:
             self.connection.SEM.Detector.StartAutoSignal(0)
         if beam_type.name == BeamType.ION:
@@ -1103,7 +1377,6 @@ class TescanMicroscope(FibsemMicroscope):
         """Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
         Args:
-            microscope (Tescan Automation): Tescan microscope instance
             settings (MicroscopeSettings): microscope settings
             dx (float): distance along the x-axis (image coordinates)
             dy (float): distance along the y-axis (image coordinates)
@@ -1140,7 +1413,6 @@ class TescanMicroscope(FibsemMicroscope):
         """Move the stage vertically to correct eucentric point
 
         Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
             dy (float): distance in y-axis (image coordinates)
         """
         wd = self.connection.SEM.Optics.GetWD()
@@ -1164,7 +1436,6 @@ class TescanMicroscope(FibsemMicroscope):
         """Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
 
         Args:
-            microscope (SdbMicroscopeClient, optional): autoscript microscope instance
             settings (MicroscopeSettings): microscope settings
             expected_y (float, optional): distance along y-axis.
             beam_type (BeamType, optional): beam_type to move in. Defaults to BeamType.ELECTRON.
@@ -1215,7 +1486,18 @@ class TescanMicroscope(FibsemMicroscope):
     def move_flat_to_beam(
         self, settings=MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON
     ):
+        """
+            Moves the microscope stage to the tilt angle corresponding to the given beam type,
+            so that the stage is flat with respect to the beam.
 
+            Args:
+                settings (MicroscopeSettings): The current microscope settings.
+                beam_type (BeamType): The type of beam to which the stage should be made flat.
+                    Must be one of BeamType.ELECTRON or BeamType.ION.
+
+            Returns:
+                None.
+            """
         # BUG if I set or pass BeamType.ION it still sees beam_type as BeamType.ELECTRON
         stage_settings = settings.system.stage
 
@@ -1234,7 +1516,18 @@ class TescanMicroscope(FibsemMicroscope):
         hfw: float,
         mill_settings: FibsemMillingSettings,
     ):
+        """
+        The setup_milling function initializes the milling process by setting the microscope's beam type, patterning mode, and ion beam horizontal field width. It also sets the application file and clears any existing patterns.
 
+        Args:
+        - application_file (str): the name of the application file to use
+        - patterning_mode (str): the patterning mode to use, such as "Serial" or "Simultaneous"
+        - hfw (float): the ion beam horizontal field width to use
+        - mill_settings (FibsemMillingSettings): a FibsemMillingSettings object containing milling settings to use
+
+        Returns:
+        None
+        """
         fieldsize = (
             self.connection.SEM.Optics.GetViewfield()
         )  # application_file.ajhsd or mill settings
@@ -1260,7 +1553,16 @@ class TescanMicroscope(FibsemMicroscope):
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
 
     def run_milling(self, milling_current: float, asynch: bool = False):
+        """
+        Runs the ion beam milling process using the specified milling current.
 
+        Args:
+            milling_current (float): The milling current to use, in amps.
+            asynch (bool, optional): Whether to run the milling asynchronously. Defaults to False.
+
+        Returns:
+            None
+        """
         self.connection.FIB.Beam.On()
         self.connection.DrawBeam.LoadLayer(self.layer)
         self.connection.DrawBeam.Start()
@@ -1286,13 +1588,31 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.Progress.Hide()
 
     def finish_milling(self, imaging_current: float):
+        """
+        Finish the milling process by clearing any remaining patterns and setting the beam current back to imaging current.
+
+        Inputs:
+        imaging_current: float
+            The imaging current to be set after milling process is completed.
+
+        Returns:
+        None
+        """
         self.connection.DrawBeam.UnloadLayer()
 
     def draw_rectangle(
         self,
         pattern_settings: FibsemPatternSettings,
     ):
+        """
+        Draws a rectangle using the specified `pattern_settings` and returns a `PatterningItem` object that represents the pattern.
 
+        Args:
+            pattern_settings: A `FibsemPatternSettings` object that contains the settings for the rectangle pattern.
+
+        Returns:
+            A `PatterningItem` object that represents the pattern.
+        """
         centre_x = pattern_settings.centre_x
         centre_y = pattern_settings.centre_y
         depth = pattern_settings.depth
@@ -1323,7 +1643,7 @@ class TescanMicroscope(FibsemMicroscope):
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
-
+        """ Draws a line using the specified `pattern_settings` and returns a `PatterningItem` object that represents the pattern."""
         start_x = pattern_settings.start_x
         start_y = pattern_settings.start_y
         end_x = pattern_settings.end_x
@@ -1338,6 +1658,7 @@ class TescanMicroscope(FibsemMicroscope):
         return pattern
 
     def setup_sputter(self, *args):
+        """ Sets up the sputter process by turning on the beam, heating the GIS and moving it into the working position."""
         self.connection.FIB.Beam.On()
         lines = self.connection.GIS.Enum()
         for line in lines:
@@ -1354,6 +1675,7 @@ class TescanMicroscope(FibsemMicroscope):
                 self.connection.GIS.WaitForTemperatureReady(line)
 
     def draw_sputter_pattern(self, hfw, line_pattern_length, *args):
+        """ Draws the sputter pattern using the specified `pattern_settings` and returns a `PatterningItem` object that represents the pattern."""
         self.connection.FIB.Optics.SetViewfield(
             hfw * constants.METRE_TO_MILLIMETRE
         )
@@ -1409,6 +1731,7 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.GIS.CloseValve(self.line)
         
     def finish_sputter(self, *args):
+        """ Finishes the sputter process by turning off the beam, turning off the GIS heating and moving it into the home position."""
         # Move GIS out from chamber and turn off heating
         self.connection.GIS.MoveTo(self.line, Automation.GIS.Position.Home)
         self.connection.GIS.PrepareTemperature(self.line, False)
