@@ -621,6 +621,21 @@ class BeamSystemSettings:
 # TODO: change this to use pretilt_angle, flat_to_electron, and flat_to_ion tilts, for better separation
 @dataclass
 class StageSettings:
+    """
+    A data class representing the settings for the stage.
+
+    Attributes:
+    rotation_flat_to_electron (float): The rotation from flat to electron in degrees.
+    rotation_flat_to_ion (float): The rotation from flat to ion in degrees.
+    tilt_flat_to_electron (float): The tilt from flat to electron in degrees.
+    tilt_flat_to_ion (float): The tilt from flat to ion in degrees.
+    pre_tilt (float): The pre-tilt in degrees.
+    needle_stage_height_limit (float): The height limit of the needle stage in meters.
+
+    Methods:
+    __to_dict__() -> dict: Returns the settings as a dictionary.
+    __from_dict__(settings: dict) -> "StageSettings": Returns an instance of StageSettings from a dictionary of its settings.
+    """
     rotation_flat_to_electron: float = 50  # degrees
     rotation_flat_to_ion: float = 230  # degrees
     tilt_flat_to_electron: float = 27  # degrees (pre_tilt)
@@ -657,6 +672,20 @@ class StageSettings:
 
 @dataclass
 class SystemSettings:
+
+    """
+    Dataclass representing the system settings for the FIB-SEM instrument.
+
+    :param ip_address: IP address of the instrument.
+    :param application_file: name of the application file used by the instrument.
+    :param stage: settings for the stage.
+    :param ion: settings for the ion beam.
+    :param electron: settings for the electron beam.
+    :param manufacturer: name of the instrument manufacturer.
+
+    :return: a new instance of `SystemSettings`.
+    """
+
     ip_address: str = "10.0.0.1"
     application_file: str = "autolamella"
     stage: StageSettings = None
@@ -696,6 +725,9 @@ class SystemSettings:
 
 @dataclass
 class DefaultSettings:
+    """
+    Default settings for the imaging and milling current 
+    """
     imaging_current: float = 20.0e-12
     milling_current: float = 2.0e-9
 
@@ -711,6 +743,21 @@ class DefaultSettings:
 
 @dataclass
 class MicroscopeSettings:
+
+    """
+    A data class representing the settings for a microscope system.
+
+    Attributes:
+        system (SystemSettings): An instance of the `SystemSettings` class that holds the system settings.
+        image (ImageSettings): An instance of the `ImageSettings` class that holds the image settings.
+        protocol (dict, optional): A dictionary representing the protocol settings. Defaults to None.
+        milling (FibsemMillingSettings, optional): An instance of the `FibsemMillingSettings` class that holds the fibsem milling settings. Defaults to None.
+
+    Methods:
+        __to_dict__(): Returns a dictionary representation of the `MicroscopeSettings` object.
+        __from_dict__(settings: dict, protocol: dict = None) -> "MicroscopeSettings": Returns an instance of the `MicroscopeSettings` class from a dictionary.
+    """
+
     system: SystemSettings
     # default: DefaultSettings
     image: ImageSettings
@@ -747,6 +794,21 @@ class FibsemStage(Enum):
 
 @dataclass
 class FibsemState:
+    """
+    FibsemState data class that represents the current state of FIBSEM system 
+
+    Attributes:
+    stage (FibsemStage): The current stage of the autoliftout workflow, as a `FibsemStage` enum member.
+    microscope_state (MicroscopeState): The current state of the microscope, as a `MicroscopeState` object.
+    start_timestamp (float): The timestamp when the autoliftout workflow began, as a Unix timestamp.
+    end_timestamp (float): The timestamp when the autoliftout workflow ended, as a Unix timestamp.
+
+    Methods:
+    __to_dict__(): Serializes the `FibsemState` object to a dictionary.
+    __from_dict__(state_dict: dict) -> FibsemState: Deserializes a dictionary to a `FibsemState` object.
+
+    """
+
     stage: FibsemStage = FibsemStage.Base
     microscope_state: MicroscopeState = MicroscopeState()
     start_timestamp: float = None
@@ -898,6 +960,32 @@ class FibsemImageMetadata:
 
 
 class FibsemImage:
+    
+    """
+    Class representing a FibsemImage and its associated metadata. 
+    Has in built methods to deal with image types of TESCAN and ThermoFisher API 
+
+    Args:
+        data (np.ndarray): The image data stored in a numpy array.
+        metadata (FibsemImageMetadata, optional): The metadata associated with the image. Defaults to None.
+
+    Methods:
+        load(cls, tiff_path: str) -> "FibsemImage":
+            Loads a FibsemImage from a tiff file.
+
+            Args:
+                tiff_path (path): path to the tif* file
+
+            Returns:
+                FibsemImage: instance of FibsemImage
+
+        save(self, save_path: Path) -> None:
+            Saves a FibsemImage to a tiff file.
+
+            Inputs:
+                save_path (path): path to save directory and filename
+    """
+
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
 
         if check_data_format(data):
