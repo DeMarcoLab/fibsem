@@ -25,7 +25,7 @@ def take_reference_images(
         image_settings (ImageSettings): imaging settings
 
     Returns:
-        list[AdornedImage]: electron and ion reference image pair
+        list[FibsemImage]: electron and ion reference image pair
     """
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
@@ -37,7 +37,7 @@ def take_reference_images(
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
 
     return eb_image, ib_image
-    # return FibsemImage.fromAdornedImage(eb_image, image_settings, state_eb), FibsemImage.fromAdornedImage(ib_image, image_settings, state_ib)
+   
 
 
 def take_set_of_reference_images(
@@ -46,8 +46,26 @@ def take_set_of_reference_images(
     hfws: tuple[float],
     label: str = "ref_image",
 ) -> ReferenceImages:
-    """Take a set of reference images at low and high magnification"""
+    """
+    Takes a set of reference images at low and high magnification using a FibsemMicroscope.
+    The image settings and half-field widths for the low- and high-resolution images are
+    specified using an ImageSettings object and a tuple of two floats, respectively.
+    The optional label parameter can be used to customize the image labels.
 
+    Args:
+        microscope (FibsemMicroscope): A FibsemMicroscope object to acquire the images from.
+        image_settings (ImageSettings): An ImageSettings object with the desired imaging parameters.
+        hfws (Tuple[float, float]): A tuple of two floats specifying the half-field widths (in microns)
+            for the low- and high-resolution images, respectively.
+        label (str, optional): A label to be included in the image filenames. Defaults to "ref_image".
+
+    Returns:
+        A ReferenceImages object containing the low- and high-resolution electron and ion beam images.
+
+    Notes:
+        This function sets image_settings.save to True before taking the images.
+        The returned ReferenceImages object contains the electron and ion beam images as FibsemImage objects.
+    """
     # force save
     image_settings.save = True
 
