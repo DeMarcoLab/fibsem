@@ -23,6 +23,19 @@ import yaml
 
 
 def load_yaml(fname):
+    """
+    Load a YAML file and return its contents as a dictionary.
+
+    Args:
+        fname (str): The path to the YAML file to be loaded.
+
+    Returns:
+        dict: A dictionary containing the contents of the YAML file.
+
+    Raises:
+        IOError: If the file cannot be opened or read.
+        yaml.YAMLError: If the file is not valid YAML.
+    """
     with open(fname, "r") as f:
         config = yaml.safe_load(f)
 
@@ -30,6 +43,23 @@ def load_yaml(fname):
 
 
 def load_microscope_manufacturer(config_path=None) -> str:
+    """
+    Load the microscope manufacturer from the configuration file.
+
+    Args:
+        config_path (str, optional): The path to the configuration file. If not provided, the default path is used.
+
+    Returns:
+        str: The name of the microscope manufacturer.
+
+    Raises:
+        IOError: If the configuration file cannot be loaded.
+        KeyError: If the "manufacturer" key is not found in the configuration file.
+
+    Example:
+        >>> load_microscope_manufacturer(config_path="/path/to/config/")
+        "Thermo"
+    """
     if config_path is None:
         config_path = CONFIG_PATH
 

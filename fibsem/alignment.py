@@ -16,6 +16,7 @@ from fibsem.structures import (
     FibsemRectangle,
 )
 from fibsem.microscope import FibsemMicroscope
+from typing import Union
 
 
 def auto_eucentric_correction(
@@ -117,15 +118,23 @@ def beam_shift_alignment(
     ref_image: FibsemImage,
     reduced_area: FibsemRectangle,
 ):
-    """Align the images by adjusting the beam shift, instead of moving the stage
-            (increased precision, lower range)
-        NOTE: only shift the ion beam, never electron
+    """Aligns the images by adjusting the beam shift instead of moving the stage.
+
+    This method uses cross-correlation between the reference image and a new image to calculate the
+    optimal beam shift for alignment. This approach offers increased precision, but a lower range
+    compared to stage movement.
+
+    NOTE: Only shift the ion beam, never the electron beam.
 
     Args:
-        microscope (FibsemMicroscope): OpenFIBSEM microscope client
-        image_settings (acquire.ImageSettings): settings for taking image
-        ref_image (FibsemImage): reference image to align to
+        microscope (FibsemMicroscope): An OpenFIBSEM microscope client.
+        image_settings (acquire.ImageSettings): Settings for taking the image.
+        ref_image (FibsemImage): The reference image to align to.
         reduced_area (FibseRectangle): The reduced area to image with.
+
+    Raises:
+        ValueError: If `image_settings.beam_type` is not set to `BeamType.ION`.
+
     """
     image_settings.reduced_area = reduced_area
     new_image = acquire.new_image(
@@ -143,14 +152,41 @@ def correct_stage_drift(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     reference_images: ReferenceImages,
-    alignment: tuple(BeamType) = (BeamType.ELECTRON, BeamType.ELECTRON),
+    alignment: tuple[BeamType, BeamType] = (BeamType.ELECTRON, BeamType.ELECTRON),
     rotate: bool = False,
     use_ref_mask: bool = False,
     mask_scale: int = 4,
-    xcorr_limit: tuple = None,
+    xcorr_limit: Union[tuple[int, int], None] = None,
     constrain_vertical: bool = False,
 ) -> bool:
-    """Correct the stage drift by crosscorrelating low-res and high-res reference images"""
+    """Corrects the stage drift by aligning low- and high-resolution reference images
+    using cross-correlation.
+
+    Args:
+        microscope (FibsemMicroscope): The microscope used for image acquisition.
+        settings (MicroscopeSettings): The settings used for image acquisition.
+        reference_images (ReferenceImages): A container of low- and high-resolution
+            reference images.
+        alignment (tuple[BeamType, BeamType], optional): A tuple of two `BeamType`
+            objects, specifying the beam types used for the alignment of low- and
+            high-resolution images, respectively. Defaults to (BeamType.ELECTRON,
+            BeamType.ELECTRON).
+        rotate (bool, optional): Whether to rotate the reference images before
+            alignment. Defaults to False.
+        use_ref_mask (bool, optional): Whether to apply a mask to the reference images
+            before alignment. Defaults to False.
+        mask_scale (int, optional): The scale factor used for creating the mask. Defaults
+            to 4.
+        xcorr_limit (tuple[int, int] | None, optional): A tuple of two integers that
+            represent the minimum and maximum cross-correlation values allowed for the
+            alignment. If not specified, the values are set to (None, None), which means
+            there are no limits. Defaults to None.
+        constrain_vertical (bool, optional): Whether to constrain the alignment to the
+            vertical axis. Defaults to False.
+
+    Returns:
+        bool: True if the stage drift correction was successful, False otherwise.
+    """
 
     # set reference images
     if alignment[0] is BeamType.ELECTRON:
@@ -218,7 +254,24 @@ def align_using_reference_images(
     xcorr_limit: int = None,
     constrain_vertical: bool = False,
 ) -> bool:
+    """
+    Uses cross-correlation to align a new image to a reference image.
 
+    Args:
+        microscope: A FibsemMicroscope instance representing the microscope being used.
+        settings: A MicroscopeSettings instance representing the settings for the imaging session.
+        ref_image: A FibsemImage instance representing the reference image to which the new image will be aligned.
+        new_image: A FibsemImage instance representing the new image that will be aligned to the reference image.
+        ref_mask: A numpy array representing a mask to apply to the reference image during alignment. Default is None.
+        xcorr_limit: An integer representing the limit for the cross-correlation coefficient. If the coefficient is below
+            this limit, alignment will fail. Default is None.
+        constrain_vertical: A boolean indicating whether to constrain movement to the vertical axis. If True, movement
+            will be restricted to the vertical axis, which is useful for eucentric movement. If False, movement will be
+            allowed on both the X and Y axes. Default is False.
+
+    Returns:
+        A boolean indicating whether the alignment was successful. True if the alignment was successful, False otherwise.
+    """
     # get beam type
     ref_beam_type = BeamType[ref_image.metadata.image_settings.beam_type.upper()]
     new_beam_type = BeamType[new_image.metadata.image_settings.beam_type.upper()]
@@ -276,7 +329,31 @@ def shift_from_crosscorrelation(
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
 ) -> tuple[float, float, np.ndarray]:
+    """Calculates the shift between two images by cross-correlating them and finding the position of maximum correlation.
 
+    Args:
+        ref_image (FibsemImage): The reference image.
+        new_image (FibsemImage): The new image to align to the reference.
+        lowpass (int, optional): The low-pass filter frequency (in pixels) for the bandpass filter used to
+            enhance the correlation signal. Defaults to 128.
+        highpass (int, optional): The high-pass filter frequency (in pixels) for the bandpass filter used to
+            enhance the correlation signal. Defaults to 6.
+        sigma (int, optional): The standard deviation (in pixels) of the Gaussian filter used to create the bandpass
+            mask. Defaults to 6.
+        use_rect_mask (bool, optional): Whether to use a rectangular mask for the correlation. If True, the correlation
+            is performed only inside a rectangle that covers most of the image, to reduce the effect of noise at the
+            edges. Defaults to False.
+        ref_mask (np.ndarray, optional): A mask to apply to the reference image before correlation. If not None,
+            it should be a binary array with the same shape as the images. Pixels with value 0 will be ignored in the
+            correlation. Defaults to None.
+        xcorr_limit (int, optional): If not None, the correlation map will be circularly masked to a square
+            with sides of length 2 * xcorr_limit + 1, centred on the maximum correlation peak. This can be used to
+            limit the search range and improve the accuracy of the shift. Defaults to None.
+
+    Returns:
+        A tuple (x_shift, y_shift, xcorr), where x_shift and y_shift are the shifts along x and y (in meters),
+        and xcorr is the cross-correlation map between the images.
+    """
     # get pixel_size
     pixelsize_x = new_image.metadata.pixel_size.x
     pixelsize_y = new_image.metadata.pixel_size.y
@@ -328,15 +405,16 @@ def shift_from_crosscorrelation(
 def crosscorrelation_v2(
     img1: np.ndarray, img2: np.ndarray, bandpass: np.ndarray = None
 ) -> np.ndarray:
-    """Cross-correlate images (fourier convolution matching)
+    """
+    Cross-correlate two images using Fourier convolution matching.
 
     Args:
-        img1 (np.ndarray): reference_image
-        img2 (np.ndarray): new image
-        bandpass (np.ndarray)
+        img1 (np.ndarray): The reference image.
+        img2 (np.ndarray): The new image to be cross-correlated with the reference.
+        bandpass (np.ndarray, optional): A bandpass mask to apply to both images before cross-correlation. Defaults to None.
 
     Returns:
-        np.ndarray: crosscorrelation map
+        np.ndarray: The cross-correlation map between the two images.
     """
     if img1.shape != img2.shape:
         err = (
