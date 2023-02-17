@@ -8,6 +8,24 @@ OpenFIBSEM provides a number of modules to support automation.
 The alignment module contains functions are aligning reference images, and tools and parameters for adjusting these alignments.
 
 WIP: images
+
+### Image Processing
+
+We provide a number of image processing functions to support alignment. These are available in `fibsem.imaging`.
+
+
+#### AutoGamma:
+
+Adjusting the gamma of the image can improve the contrast of the image. This is useful for aligning images, and can be used to improve the contrast of the image for feature detection. The following figure shows the effect of adjusting the gamma of the image. When the `autogamma` flag is enabled in `ImageSettings` the gamma of the images taken will be automatically adjusted with this method. 
+
+#### AutoCLAHE:
+
+Contrast Limited Adaptive Histogram Equalization (CLAHE) is a method for improving the contrast of an image. When the `autoclahe` flag is enabled in `ImageSettings` the gamma of the images taken will be automatically adjusted with this method. AutoCLAHE has many parameters that can be tuned. The following figures shows the difference between the different autogamma methods. 
+
+![AutoCLAHE](img/gamma/gamma_comparison.png)
+
+
+
 ### Cross Correlation
 
 The primary alignment method is fourier cross-correlation to a reference image. The following helper function provides the the methods for alignment, and the required movements, as well as parameters for tuning.
