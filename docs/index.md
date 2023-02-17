@@ -20,7 +20,7 @@ Currently, OpenFIBSEM supports two FIBSEM manufacturers: ThermoFisher and Tescan
 For more information on future plans, please see [Roadmap](/docs/roadmap.md).
 
 ## Getting Started
-For information on installation and getting started, please see [Getting Started](GettingStarted.md).
+For information on installation and getting started, please see [Getting Started](/docs/started.md).
 
 ## Examples
 For examples on how to use OpenFIBSEM, please see [Examples](/docs/examples.md).
