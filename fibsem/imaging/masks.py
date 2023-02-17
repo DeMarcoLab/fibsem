@@ -7,42 +7,6 @@ from PIL import Image, ImageDraw
 
 
 ### MASKING
-def bandpass_mask(size=(128, 128), lp=32, hp=2, sigma=3):
-    x = size[0]
-    y = size[1]
-    lowpass = circ_mask(size=(x, y), radius=lp, sigma=0)
-    hpass_tmp = circ_mask(size=(x, y), radius=hp, sigma=0)
-    highpass = -1 * (hpass_tmp - 1)
-    tmp = lowpass * highpass
-    print(tmp.dtype, type(tmp))
-    if sigma > 0:
-        bandpass = ndi.filters.gaussian_filter(tmp, sigma=sigma)
-    else:
-        bandpass = tmp
-    return bandpass
-
-
-def circ_mask(size=(128, 128), radius=32, sigma=3):
-    x = size[0]
-    y = size[1]
-    img = Image.new("I", size)
-    draw = ImageDraw.Draw(img)
-    draw.ellipse(
-        (x / 2 - radius, y / 2 - radius, x / 2 + radius, y / 2 + radius),
-        fill="white",
-        outline="white",
-    )
-    tmp = np.array(img, float) / 255
-    if sigma > 0:
-        mask = ndi.filters.gaussian_filter(tmp, sigma=sigma)
-    else:
-        mask = tmp
-    return mask
-
-
-# new masks below
-
-
 def create_circle_mask(
     shape: tuple = (128, 128), radius: int = 32, sigma: int = 3
 ) -> np.ndarray:

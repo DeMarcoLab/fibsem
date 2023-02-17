@@ -1,8 +1,8 @@
-name: ci 
+name: docs
 on:
   push:
     branches:
-      - main
+      - microscope_v2_working
 jobs:
   deploy:
     runs-on: ubuntu-latest

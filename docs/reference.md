@@ -1,5 +1,5 @@
 
-# FIBSEM
+# API Reference
 
 
 ## Acquire
@@ -32,6 +32,8 @@
 
 ## Detection
 ::: fibsem.detection.detection
+
+::: fibsem.detection.utils
 
 ## User Interface
 ::: fibsem.ui

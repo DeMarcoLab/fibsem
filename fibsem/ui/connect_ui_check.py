@@ -3,7 +3,7 @@ import re
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import connect
 from fibsem import utils, acquire
-import fibsem.movement as movement
+
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, FibsemPatternSettings ,Point, FibsemPattern
 import fibsem.conversions as conversions
 from enum import Enum
