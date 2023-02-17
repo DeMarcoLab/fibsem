@@ -21,6 +21,9 @@ Contrast Limited Adaptive Histogram Equalization (CLAHE) is a method for improvi
 ![AutoCLAHE](img/gamma/gamma_comparison.png)
 AutoGamma Functions
 
+![AutoCLAHE](img/gamma/gamma_comparison2.png)
+AutoGamma Functions
+
 ## Alignment
 
 The alignment module contains functions are aligning reference images, and tools and parameters for adjusting these alignments.
