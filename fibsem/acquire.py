@@ -98,7 +98,8 @@ def auto_gamma(
     min_gamma: float = 0.15,
     max_gamma: float = 1.8,
     scale_factor: float = 0.01,
-    gamma_threshold: int = 45
+    gamma_threshold: int = 45,
+    method: str = "autogamma",
 ) -> FibsemImage:
     """
     Applies automatic gamma correction to the input `FibsemImage`.
@@ -125,21 +126,27 @@ def auto_gamma(
           numpy array, as well as other image metadata.
     """
 
-    std = np.std(image.data)  # unused variable?
-    mean = np.mean(image.data)
-    diff = mean - 255 / 2.0
-    gam = np.clip(
-        min_gamma, 1 + diff * scale_factor, max_gamma
-    )
-    if abs(diff) < gamma_threshold:
-        gam = 1.0
-    if image.metadata is not None:
-        logging.debug(
-            f"AUTO_GAMMA | {image.metadata.image_settings.beam_type} | {diff:.3f} | {gam:.3f}"
+    if method == "autogamma":
+        std = np.std(image.data)  # unused variable?
+        mean = np.mean(image.data)
+        diff = mean - 255 / 2.0
+        gam = np.clip(
+            min_gamma, 1 + diff * scale_factor, max_gamma
         )
-    image_data = exposure.adjust_gamma(image.data, gam)
+        if abs(diff) < gamma_threshold:
+            gam = 1.0
+        if image.metadata is not None:
+            logging.debug(
+                f"AUTO_GAMMA | {image.metadata.image_settings.beam_type} | {diff:.3f} | {gam:.3f}"
+            )
+        image_data = exposure.adjust_gamma(image.data, gam)
 
-    return FibsemImage(data=image_data, metadata=image.metadata)
+        image = FibsemImage(data=image_data, metadata=image.metadata)
+    
+    if method == "autoclahe":
+        image = apply_clahe(image)
+
+    return image
 
 
 

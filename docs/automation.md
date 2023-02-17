@@ -3,15 +3,9 @@
 
 OpenFIBSEM provides a number of modules to support automation.
 
-## Alignment
+## Image Processing
 
-The alignment module contains functions are aligning reference images, and tools and parameters for adjusting these alignments.
-
-WIP: images
-
-### Image Processing
-
-We provide a number of image processing functions to support alignment. These are available in `fibsem.imaging`.
+We provide a number of image processing functions to support automation. These are available in `fibsem.imaging`  or `fibsem.acquire`.
 
 #### AutoGamma:
 
@@ -26,6 +20,12 @@ Contrast Limited Adaptive Histogram Equalization (CLAHE) is a method for improvi
 
 ![AutoCLAHE](img/gamma/gamma_comparison.png)
 AutoGamma Functions
+
+## Alignment
+
+The alignment module contains functions are aligning reference images, and tools and parameters for adjusting these alignments.
+
+WIP: images
 
 
 ### Cross Correlation
