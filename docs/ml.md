@@ -2,8 +2,6 @@
 
 OpenFIBSEM contains a number of tools designed to support machine learning workflows.
 
-WIP: images
-
 ## Segmentation
 The Segmentation Model Training Pipeline is a user-friendly tool for training models for semantic segmentation. This pipeline makes use of off-the-shelf UNet models, which are known for their simplicity and efficacy. However, for those who wish to use their own custom models, the pipeline also allows for such customization.
 
@@ -31,14 +29,18 @@ train:
   wandb_entity: "demarcolab"                        # [Optional] wandb entity
 ```
 
+![Segmentation Model](img/ml/ui_redeploy_model.png)
+
 ## Data Labelling
 The Segmentation Labelling User Interface is a tool that has been developed using the Napari library. The interface has been developed to work seamlessly with OpenFIBSEM images. 
 
 The Labelling UI has been developed to work natively with the segmentaion model training pipeline. This integration makes it incredibly easy for users to quickly label images and feed the data into the training pipeline. The user interface provides an intuitive and user-friendly interface for annotating images, allowing users to quickly and accurately label images for training their segmentation models. This integration greatly streamlines the process of preparing data for training and speeds up the overall development process.
+
+![Data Labelling UI](img/ml/ui_label_step.png)
 
 ## Active Learning
 The generation of microscopy data is a time-consuming and expensive process. To address this challenge, an active learning pipeline has been integrated into the Fibsem framework. This pipeline allows for more efficient training data collection and model improvement, making the best use of the limited data available.
 
 The active learning pipeline is activated when the user uses the "validate" flag in the detect_features_v2 function. When this flag is enabled, the user will be prompted to validate the features detected by the model. If the user finds any errors in the detection, they can correct it, and a copy of the image will be saved along with the flags for labelling. These error cases can then be labelled using the labelling tools provided, and the model can be re-trained and deployed, improving its performance over time. This process has been used internally to achieve significant improvements in the performance of the segmentation models for Fibsem workflows.
 
-TODO: images
+![Active Learning Pipeline](img/ml/ui_supervision_det.gif)
