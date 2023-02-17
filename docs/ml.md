@@ -21,7 +21,7 @@ train:
   encoder: "resnet34"                               # Specify model architecture. List of available encoders in readme.
   epochs: 20                                        # Number of epochs to train for
   cuda: true                                        # Enable/Disable CUDA training
-  batch_size: 4                                     # Number of batches per epoch
+  batch_size: 4                                     # Number of samples per batch
   num_classes: 3                                    # Number of classes in segmentation labels. Includes background as class 0.
   learning_rate: 0.0001                             # Training Learning Rate
   wandb: true                                       # Logs information and plots to wandb
