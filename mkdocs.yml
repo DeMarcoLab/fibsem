@@ -9,3 +9,6 @@ plugins:
 nav:
   - index.md
   - reference.md
+  - automation.md
+  - ml.md
+  - roadmap.md
