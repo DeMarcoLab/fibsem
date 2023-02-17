@@ -2063,7 +2063,7 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"restoring microscope state...")
 
         # move to position
-        self.move_stage_absolute(stage_position=microscope_state.absolute_position)
+        self.move_stage_absolute(position=microscope_state.absolute_position)
 
         # restore electron beam
         logging.info(f"restoring electron beam settings...")

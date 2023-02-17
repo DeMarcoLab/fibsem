@@ -8,7 +8,7 @@ from pprint import pprint
 
 import numpy as np
 from fibsem import acquire, alignment, calibration, milling, movement, utils
-from fibsem.structures import BeamType, MicroscopeState, MillingSettings, FibsemImage, FibsemStagePosition
+from fibsem.structures import BeamType, MicroscopeState,  FibsemImage, FibsemStagePosition
 
 
 @dataclass
@@ -27,7 +27,7 @@ def main():
         r=np.deg2rad(settings.protocol["stage_rotation"]),
         t=np.deg2rad(settings.protocol["stage_tilt"])
     )
-    movement.safe_absolute_stage_movement(microscope, stage_position)
+    microscope.move_stage_absolute(stage_position) # do need a safe version?
 
     # take a reference image    
     settings.image.label = "grid_reference"
@@ -66,7 +66,11 @@ def main():
         return
 
     # setup milling
-    milling.setup_milling(microscope, settings.system.application_file)
+    milling.setup_milling(microscope = microscope,
+        application_file = settings.system.application_file,
+        patterning_mode  = "Serial",
+        hfw = settings.image.hfw,
+        mill_settings = settings.milling)
 
     # mill (fiducial, trench, thin, polish)
     for stage_no, milling_dict in enumerate(settings.protocol["lamella"]["protocol_stages"], 1):
