@@ -142,7 +142,6 @@ def auto_gamma(
 
 
 
-
 def apply_clahe(
     image: FibsemImage,
     which_package: str = "skimage",
