@@ -7,16 +7,14 @@ from pathlib import Path
 from pprint import pprint
 
 import numpy as np
-from autoscript_sdb_microscope_client.structures import (AdornedImage,
-                                                         StagePosition)
 from fibsem import acquire, alignment, calibration, milling, movement, utils
-from fibsem.structures import BeamType, MicroscopeState, MillingSettings
+from fibsem.structures import BeamType, MicroscopeState, MillingSettings, FibsemImage, FibsemStagePosition
 
 
 @dataclass
 class Lamella:
     state: MicroscopeState
-    reference_image: AdornedImage
+    reference_image: FibsemImage
     path: Path
 
 def main():
@@ -25,7 +23,7 @@ def main():
     microscope, settings = utils.setup_session(protocol_path=PROTOCOL_PATH)
     
     # move to the milling angle
-    stage_position = StagePosition(
+    stage_position = FibsemStagePosition(
         r=np.deg2rad(settings.protocol["stage_rotation"]),
         t=np.deg2rad(settings.protocol["stage_tilt"])
     )
@@ -49,15 +47,12 @@ def main():
         # store lamella information
         if response.lower() in ["", "y", "yes"]:
             
-            # TODO: fiducial selection
-            # milling._draw_fiducial_patterns(microscope, MillingSettings.__from_dict__(settings.protocol["fiducial"]))
-
             # set filepaths
-            path = os.path.join(settings.image.save_path, lamella_no)
+            path = os.path.join(settings.image.save_path, str(lamella_no))
             settings.image.save_path = path
             
             lamella = Lamella(
-                state=calibration.get_current_microscope_state(microscope),
+                state=microscope.get_current_microscope_state(),
                 reference_image=acquire.new_image(microscope, settings.image),
                 path = path
             )
@@ -79,12 +74,12 @@ def main():
         logging.info(f"Starting milling stage {stage_no}")
 
         lamella: Lamella
-        for lamella_no, lamella in sample:
+        for lamella_no, lamella in enumerate(sample):
 
             logging.info(f"Starting lamella {lamella_no}")
 
             # return to lamella
-            calibration.set_microscope_state(microscope, lamella.state)
+            microscope.set_microscope_state(lamella.state)
 
             # realign
             alignment.beam_shift_alignment(microscope, settings.image, lamella.reference_image)
@@ -93,9 +88,9 @@ def main():
                 print("add microexpansion joints here")
 
             # mill trenches
-            milling._draw_trench_patterns(microscope, milling_dict)
+            milling.draw_trench(microscope, milling_dict)
             milling.run_milling(microscope, milling_dict["milling_current"])
-            milling.finish_milling(microscope, settings.default.imaging_current)
+            milling.finish_milling(microscope)
 
             # retake reference image
             settings.image.save_path = lamella.path
