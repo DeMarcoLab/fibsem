@@ -206,6 +206,8 @@ def apply_clahe(
         image_data = exposure.equalize_adapthist(temp,
                                                  kernel_size=kernel_size,
                                                  clip_limit=clip_limit_skimage, nbins=256)
+        import skimage
+        image_data = skimage.img_as_ubyte(image_data)
 
     return FibsemImage(data=image_data, metadata=image.metadata)
 
