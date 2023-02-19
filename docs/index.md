@@ -17,14 +17,14 @@ In conclusion, OpenFIBSEM provides a universal API for controlling FIBSEM system
 ### Supported Manufacturers
 Currently, OpenFIBSEM supports two FIBSEM manufacturers: ThermoFisher and Tescan. Support for additional manufacturers will be added in the future. 
 
-For more information on future plans, please see [Roadmap](/docs/roadmap.md).
+For more information on future plans, please see [Roadmap](https://demarcolab.github.io/fibsem/roadmap).
 
 ## Getting Started
-For information on installation and getting started, please see [Getting Started](/docs/started.md).
+For information on installation and getting started, please see [Getting Started](https://demarcolab.github.io/fibsem/started).
 
 ## Examples
-For examples on how to use OpenFIBSEM, please see [Examples](/docs/examples.md).
+For examples on how to use OpenFIBSEM, please see [Examples](https://demarcolab.github.io/fibsem/exampls).
 
 ## API Reference
 
-For a breakdown of the API please see:[API Reference](/docs/reference.md).
+For a breakdown of the API please see [API Reference](https://demarcolab.github.io/fibsem/reference).
