@@ -13,12 +13,14 @@ You will need to change the ip_address to connect to your microscope.
 
 The default file can be found in fibsem/config/system.yaml. When you call utils.setup_session() with no arguments, the default file is used. You can either edit the default file, or provide the config_path to your own system.yaml file in setup_session.
 
+WIP: update for v2
 
 ```yaml
 # system
 system:
   ip_address: 10.0.0.1
   application_file: autolamella
+  manufacturer: Thermo # Thermo or Tescan
   # beams
   ion:
     voltage: 30000
@@ -45,7 +47,7 @@ system:
 user:
   imaging_current: 20.e-12
   milling_current: 2.e-9
-  resolution: !!python/tuple [1536,1024]
+  resolution: "1536x1024"
   hfw: 150.e-6  
   beam_type: "Electron"
   autocontrast: True

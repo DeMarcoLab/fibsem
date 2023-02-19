@@ -116,7 +116,7 @@ def beam_shift_alignment(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
     ref_image: FibsemImage,
-    reduced_area: FibsemRectangle,
+    reduced_area: FibsemRectangle = None,
 ):
     """Aligns the images by adjusting the beam shift instead of moving the stage.
 
