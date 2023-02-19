@@ -1,0 +1,91 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'FibsemMillingWidgetui.ui'
+#
+# Created by: PyQt5 UI code generator 5.9.2
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_Form(object):
+    def setupUi(self, Form):
+        Form.setObjectName("Form")
+        Form.resize(328, 311)
+        self.gridLayout = QtWidgets.QGridLayout(Form)
+        self.gridLayout.setObjectName("gridLayout")
+        self.label_centre_x = QtWidgets.QLabel(Form)
+        self.label_centre_x.setObjectName("label_centre_x")
+        self.gridLayout.addWidget(self.label_centre_x, 2, 0, 1, 1)
+        self.label_title = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_title.setFont(font)
+        self.label_title.setObjectName("label_title")
+        self.gridLayout.addWidget(self.label_title, 0, 0, 1, 2)
+        self.label_centre_y = QtWidgets.QLabel(Form)
+        self.label_centre_y.setObjectName("label_centre_y")
+        self.gridLayout.addWidget(self.label_centre_y, 3, 0, 1, 1)
+        self.label_milling_current = QtWidgets.QLabel(Form)
+        self.label_milling_current.setObjectName("label_milling_current")
+        self.gridLayout.addWidget(self.label_milling_current, 7, 0, 1, 1)
+        self.label_pattern = QtWidgets.QLabel(Form)
+        self.label_pattern.setObjectName("label_pattern")
+        self.gridLayout.addWidget(self.label_pattern, 1, 0, 1, 1)
+        self.comboBox_milling_current = QtWidgets.QComboBox(Form)
+        self.comboBox_milling_current.setObjectName("comboBox_milling_current")
+        self.gridLayout.addWidget(self.comboBox_milling_current, 7, 1, 1, 1)
+        self.doubleSpinBox_centre_y = QtWidgets.QDoubleSpinBox(Form)
+        self.doubleSpinBox_centre_y.setObjectName("doubleSpinBox_centre_y")
+        self.gridLayout.addWidget(self.doubleSpinBox_centre_y, 3, 1, 1, 1)
+        self.doubleSpinBox_height = QtWidgets.QDoubleSpinBox(Form)
+        self.doubleSpinBox_height.setProperty("value", 5.0)
+        self.doubleSpinBox_height.setObjectName("doubleSpinBox_height")
+        self.gridLayout.addWidget(self.doubleSpinBox_height, 5, 1, 1, 1)
+        self.comboBox_pattern = QtWidgets.QComboBox(Form)
+        self.comboBox_pattern.setObjectName("comboBox_pattern")
+        self.gridLayout.addWidget(self.comboBox_pattern, 1, 1, 1, 1)
+        self.doubleSpinBox_centre_x = QtWidgets.QDoubleSpinBox(Form)
+        self.doubleSpinBox_centre_x.setObjectName("doubleSpinBox_centre_x")
+        self.gridLayout.addWidget(self.doubleSpinBox_centre_x, 2, 1, 1, 1)
+        self.doubleSpinBox_depth = QtWidgets.QDoubleSpinBox(Form)
+        self.doubleSpinBox_depth.setProperty("value", 2.0)
+        self.doubleSpinBox_depth.setObjectName("doubleSpinBox_depth")
+        self.gridLayout.addWidget(self.doubleSpinBox_depth, 6, 1, 1, 1)
+        self.label_height = QtWidgets.QLabel(Form)
+        self.label_height.setObjectName("label_height")
+        self.gridLayout.addWidget(self.label_height, 5, 0, 1, 1)
+        self.label_depth = QtWidgets.QLabel(Form)
+        self.label_depth.setObjectName("label_depth")
+        self.gridLayout.addWidget(self.label_depth, 6, 0, 1, 1)
+        self.pushButton = QtWidgets.QPushButton(Form)
+        self.pushButton.setObjectName("pushButton")
+        self.gridLayout.addWidget(self.pushButton, 8, 0, 1, 2)
+        self.doubleSpinBox_width = QtWidgets.QDoubleSpinBox(Form)
+        self.doubleSpinBox_width.setProperty("value", 10.0)
+        self.doubleSpinBox_width.setObjectName("doubleSpinBox_width")
+        self.gridLayout.addWidget(self.doubleSpinBox_width, 4, 1, 1, 1)
+        self.label_width = QtWidgets.QLabel(Form)
+        self.label_width.setObjectName("label_width")
+        self.gridLayout.addWidget(self.label_width, 4, 0, 1, 1)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem, 9, 0, 1, 2)
+
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
+
+    def retranslateUi(self, Form):
+        _translate = QtCore.QCoreApplication.translate
+        Form.setWindowTitle(_translate("Form", "Form"))
+        self.label_centre_x.setText(_translate("Form", "Centre X"))
+        self.label_title.setText(_translate("Form", "Milling"))
+        self.label_centre_y.setText(_translate("Form", "Centre Y"))
+        self.label_milling_current.setText(_translate("Form", "Current"))
+        self.label_pattern.setText(_translate("Form", "Pattern"))
+        self.label_height.setText(_translate("Form", "Height"))
+        self.label_depth.setText(_translate("Form", "Depth"))
+        self.pushButton.setText(_translate("Form", "PushButton"))
+        self.label_width.setText(_translate("Form", "Width"))
+
