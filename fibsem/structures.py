@@ -69,6 +69,10 @@ class BeamType(Enum):
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
+class MovementMode(Enum):
+    Stable = 1
+    Eucentric = 2
+    # Needle = 3
 
 @dataclass
 class FibsemStagePosition:
@@ -391,6 +395,7 @@ class FibsemPattern(Enum):
     Rectangle = 1
     Line = 2
 
+# TODO: convert this to a dataclass
 class FibsemPatternSettings:
     '''
     FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
@@ -432,6 +437,12 @@ class FibsemPatternSettings:
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+
+    def __repr__(self) -> str:
+        if self.pattern == FibsemPattern.Rectangle:
+            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+        elif self.pattern == FibsemPattern.Line:
+            return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
 
 @dataclass
 class FibsemMillingSettings:

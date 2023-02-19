@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>256</width>
+    <height>268</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_hfw">
+     <property name="text">
+      <string>HFW (um)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_gas">
+     <property name="text">
+      <string>Gas</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label_title">
+     <property name="text">
+      <string>MultiChem</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="comboBox_beam_type"/>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_run_sputtering">
+     <property name="text">
+      <string>Run Sputtering</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_position">
+     <property name="text">
+      <string>Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_application_file">
+     <property name="text">
+      <string>Application File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_beam_type">
+     <property name="text">
+      <string>Beam Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
+     <property name="maximum">
+      <double>2700.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>150.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_length"/>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_length">
+     <property name="text">
+      <string>Length (um)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QComboBox" name="comboBox_position"/>
+   </item>
+   <item row="2" column="1">
+    <widget class="QComboBox" name="comboBox_application_file"/>
+   </item>
+   <item row="4" column="1">
+    <widget class="QComboBox" name="comboBox_gas"/>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="label_time">
+     <property name="text">
+      <string>Time (sec)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_time">
+     <property name="value">
+      <double>30.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
