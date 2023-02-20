@@ -46,8 +46,13 @@ def get_lamella_size_in_pixels(
         tuple[int]: A tuple containing the height and width of the lamella in pixels.
     """
     # get real size from protocol
-    lamella_width = protocol["lamella_width"]
-    lamella_height = protocol["lamella_height"]
+    lamella_width = 0
+    lamella_height = 0
+    for i, protocol in enumerate(
+            protocol["lamella"]["protocol_stages"]
+        ):
+        lamella_width = lamella_width + protocol["lamella_width"]
+        lamella_height = lamella_height + protocol["lamella_height"]
 
     total_height = lamella_height
     if use_trench_height:
