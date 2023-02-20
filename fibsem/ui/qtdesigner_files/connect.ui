@@ -36,7 +36,7 @@
      <bool>true</bool>
     </property>
     <property name="currentIndex">
-     <number>4</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="Connection">
      <attribute name="title">
@@ -1320,37 +1320,122 @@
         <x>9</x>
         <y>9</y>
         <width>451</width>
-        <height>178</height>
+        <height>341</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="3" column="2">
+       <item row="17" column="0">
+        <widget class="QLabel" name="label_84">
+         <property name="text">
+          <string>Dwell Time:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="1">
+        <widget class="QDoubleSpinBox" name="dwellTimeBox">
+         <property name="maximum">
+          <double>100000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QDoubleSpinBox" name="sputterTimeBox">
+         <property name="maximum">
+          <double>10000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>20.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="lineLengthBox">
+         <property name="maximum">
+          <double>10000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>15.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="4">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="16" column="1">
+        <widget class="QDoubleSpinBox" name="spotSizeBox">
+         <property name="maximum">
+          <double>1000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>50.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="0">
+        <widget class="QLabel" name="label_82">
+         <property name="text">
+          <string>Spot Size:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="2">
+        <widget class="QLabel" name="label_83">
+         <property name="text">
+          <string>µs</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_74">
+         <property name="text">
+          <string>Sputter Line Length:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0" colspan="4">
+        <widget class="QLabel" name="label_80">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;TESCAN Layer Settings&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="2">
+        <widget class="QLabel" name="label_85">
+         <property name="text">
+          <string>nA</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
         <widget class="QLabel" name="label_75">
          <property name="text">
-          <string>microns</string>
+          <string>µm</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QComboBox" name="comboBox_2">
-         <item>
-          <property name="text">
-           <string>Pt cryo</string>
-          </property>
-         </item>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_72">
-         <property name="text">
-          <string>Horizontal Field Width:</string>
+       <item row="15" column="1">
+        <widget class="QDoubleSpinBox" name="beamCurrentBox">
+         <property name="maximum">
+          <double>1000000.000000000000000</double>
          </property>
-        </widget>
-       </item>
-       <item row="4" column="2">
-        <widget class="QLabel" name="label_76">
-         <property name="text">
-          <string>seconds</string>
+         <property name="value">
+          <double>0.500000000000000</double>
          </property>
         </widget>
        </item>
@@ -1371,64 +1456,115 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="18" column="0" colspan="3">
+        <widget class="QPushButton" name="sputterButton">
+         <property name="text">
+          <string>Sputter Platinum</string>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="2">
+        <widget class="QLabel" name="label_86">
+         <property name="text">
+          <string>nm</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0" colspan="4">
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_72">
+         <property name="text">
+          <string>Horizontal Field Width:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
         <widget class="QLabel" name="label_73">
          <property name="text">
           <string>Sputter Time:</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="label_79">
-         <property name="text">
-          <string>Application File:</string>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="hfwGISBox">
+         <property name="maximum">
+          <double>1000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>100.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="5" column="2">
+       <item row="4" column="2">
         <widget class="QLabel" name="label_77">
          <property name="text">
-          <string>microns</string>
+          <string>µm</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
-        <widget class="QComboBox" name="comboBox_3">
-         <item>
-          <property name="text">
-           <string>autolamella</string>
-          </property>
-         </item>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="lineEdit_2"/>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEdit"/>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_74">
+       <item row="9" column="2">
+        <widget class="QLabel" name="label_76">
          <property name="text">
-          <string>Sputter Line Length:</string>
+          <string>s</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="8" column="0" colspan="2">
+        <widget class="QLabel" name="label_87">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;ThermoFisher Layer Settings&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="0">
+        <widget class="QLabel" name="label_81">
+         <property name="text">
+          <string>Beam Current:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
         <widget class="QLabel" name="label_78">
          <property name="text">
           <string>Gas:</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
-        <widget class="QLineEdit" name="lineEdit_3"/>
+       <item row="10" column="1">
+        <widget class="QComboBox" name="gasComboBox">
+         <item>
+          <property name="text">
+           <string>Pt cryo</string>
+          </property>
+         </item>
+        </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QCheckBox" name="checkBox">
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_79">
          <property name="text">
-          <string>Whole Grid</string>
+          <string>Application File:</string>
          </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QComboBox" name="applicationFileComboBox">
+         <item>
+          <property name="text">
+           <string>autolamella</string>
+          </property>
+         </item>
         </widget>
        </item>
       </layout>
