@@ -104,6 +104,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.pushButton_line.clicked.connect(self.add_line)
         self.pushButton_rec.clicked.connect(self.add_rectangle)
 
+        # GIS
+        self.sputterButton.clicked.connect(self.sputter_protocol)
+
     def add_line(self):
         line = FibsemPatternSettings(
             pattern = FibsemPattern.Line,
@@ -147,7 +150,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             self.click_IB_Image()
 
     def milling_protocol(self):
-        from fibsem.FibsemMilling import milling_protocol
+        from fibsem.milling import milling_protocol
 
         mill_settings = FibsemMillingSettings(
             
@@ -155,9 +158,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             rate= self.rate_milling.value(),
             dwell_time= self.dwell_time_us.value()*constants.MICRO_TO_SI,
             spot_size= self.spot_size_um.value()*constants.MICRO_TO_SI,
-        )
-        
-        
+        )        
 
         milling_protocol(microscope = self.microscope, 
             image_settings = self.image_settings, 
@@ -181,9 +182,6 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
             r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
             coordinate_system="raw" )
         
-
-
-
         else:
             position = FibsemStagePosition(
                 x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
@@ -595,7 +593,39 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.rate_milling.setValue(self.milling_settings.rate)
         # self.scan_direction.setCurrentText(self.milling_settings.scan_direction)
 
+    ### GIS ###
+    def sputter_protocol(self):
+        # if self.gridCheckBox.isChecked():
+        #     protocol = {
+        #         "whole_grid": {
+        #             "time": self.sputterTimeBox.value(),
+        #             "hfw": self.hfwGISBox.value() * constants.MICRO_TO_SI,
+        #             "length": self.lineLengthBox.value() * constants.MICRO_TO_SI,
+        #         } 
+        #     }
 
+        # else:
+        protocol = {
+            "weld": {
+                "time": self.sputterTimeBox.value(),
+                "hfw": self.hfwGISBox.value() * constants.MICRO_TO_SI,
+                "length": self.lineLengthBox.value() * constants.MICRO_TO_SI,
+            } 
+        }
+        
+        protocol["position"] = self.microscope.get_stage_position()
+        protocol["application_file"] = self.applicationFileComboBox.currentText()
+        protocol["gas"] = self.gasComboBox.currentText()
+        protocol["beam_current"] = self.beamCurrentBox.value() * constants.NANO_TO_SI
+        protocol["spot_size"] = self.spotSizeBox.value() * constants.NANO_TO_SI
+        protocol["dwell_time"] = self.dwellTimeBox.value() * constants.MICRO_TO_SI
+
+        logging.info("Beginning platinum sputtering.")
+
+        import fibsem.GIS as GIS
+        GIS.sputter_platinum(self.microscope, protocol, False, self.applicationFileComboBox.currentText())
+
+        logging.info("Finished platinum sputtering.")
 
 if __name__ == "__main__":    
 
