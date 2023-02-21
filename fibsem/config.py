@@ -17,7 +17,7 @@ import os
 import fibsem
 
 BASE_PATH = os.path.dirname(fibsem.__path__[0])
-CONFIG_PATH = os.path.join(BASE_PATH, "config")
+CONFIG_PATH = os.path.join(BASE_PATH, "fibsem", "config")
 
 import yaml
 
