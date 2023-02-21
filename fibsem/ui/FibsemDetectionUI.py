@@ -201,21 +201,42 @@ def main():
 
     microscope, settings = utils.setup_session(protocol_path=r"C:\Users\Admin\Github\autoliftout\liftout\protocol\protocol.yaml")
     
+
+
     app = QtWidgets.QApplication([])
 
     import random
-    from liftout.autoliftout import AutoLiftoutMode
+    from liftout.autoliftout import AutoLiftoutMode, mill_lamella_edge
     from liftout.structures import ReferenceHFW
     from fibsem.detection import detection
+    from fibsem import calibration
     mode = AutoLiftoutMode.Manual
+    from liftout.structures import Lamella
+
+    # charge neutralisation  to charge lamella
+    settings.image.beam_type = BeamType.ION
+    n_iter = int(settings.protocol["options"].get("liftout_charge_neutralisation_iterations", 35))
+    calibration.auto_charge_neutralisation(microscope, settings.image, n_iterations=n_iter)
+    
+    # calibration.auto_charge_neutralisation(microscope, settings.image, n_iterations=20, save_images=True)
+
+    # lamella = Lamella("")
+    # lamella = mill_lamella_edge(microscope, settings,  lamella=lamella, validate=True,)
+
+    # above_brightness_threshold = False
+    
+    # response = fibsem_ui_windows.ask_user_interaction(
+    #     msg=f"Above Threshold: {above_brightness_threshold} \nHas the needle landed on the lamella? \nPress Yes to continue, or No to redo the final movement.",
+    #     image = acquire.last_image(microscope, settings.image.beam_type).data
+    # )
 
 
-    # def eucentric_alignment_ml
+    return
 
     beam_types = [BeamType.ELECTRON, BeamType.ELECTRON, BeamType.ION, BeamType.ION]
     euc_move = [False, False, True, True]
     hfws = [ReferenceHFW.Medium.value, ReferenceHFW.High.value, ReferenceHFW.Medium.value, ReferenceHFW.High.value]
-    mask_radii = [1024, 256, 512, 256]
+    mask_radii = [512, 256, 512, 256]
 
     for beam_type, eucentric_move, hfw, m_radius in zip(beam_types, euc_move, hfws, mask_radii):
 

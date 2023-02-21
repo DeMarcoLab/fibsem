@@ -28,7 +28,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         milling_pattern: MillingPattern = MillingPattern.Trench,
         point: Point = None,
         change_pattern: bool = False,
-        auto_continue: bool = False,
+        validate: bool = True,
     ):
         super(FibsemMillingUI, self).__init__()
 
@@ -44,7 +44,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.milling_pattern = milling_pattern
         self.point = point
-        self.auto_continue = auto_continue
+        self.auto_continue = bool(not validate) # dont ask
         self.USER_UPDATED_PROTOCOL = False
         self.CHANGE_PATTERN_ENABLED = change_pattern
 

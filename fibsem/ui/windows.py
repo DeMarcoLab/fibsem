@@ -185,7 +185,7 @@ def milling_ui(
     milling_pattern: patterning.MillingPattern,
     point: Point = None,
     change_pattern: bool = False,
-    auto_continue: bool = False,
+    validate: bool = False,
 ):
 
     viewer = napari.Viewer()
@@ -196,14 +196,14 @@ def milling_ui(
         milling_pattern=milling_pattern,
         point=point,
         change_pattern=change_pattern,
-        auto_continue=auto_continue,
+        validate=validate,
     )
 
     viewer.window.add_dock_widget(milling_ui, area="right", add_vertical_stretch=False)
 
-    if auto_continue:
-        milling_ui.run_milling()
-    else:
+    if validate:
         milling_ui.exec_()
+    else:
+        milling_ui.run_milling()
 
     # napari.run(max_loop_level=2)

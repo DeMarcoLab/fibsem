@@ -244,7 +244,7 @@ def set_arr_as_qlabel(
     arr: np.ndarray, label: QLabel, shape: tuple = (1536 // 4, 1024 // 4),
 ) -> QLabel:
 
-    image = QImage(arr.data, arr.shape[1], arr.shape[0], QImage.Format_Grayscale8,)
+    image = QImage(arr, arr.shape[1], arr.shape[0], QImage.Format_Grayscale8,)
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
     return label

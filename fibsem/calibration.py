@@ -154,11 +154,8 @@ def auto_charge_neutralisation(
         )
 
     for i in range(n_iterations):
-        if i % 5 == 0:
-            discharge_settings.save = save_images 
-            discharge_settings.label = f"{ts}_charge_neutralisation_{i}"
-        else:
-            discharge_settings.save = False
+        discharge_settings.label = f"{ts}_charge_neutralisation_{i}"
+        discharge_settings.save = bool(save_images and i % 5 == 0) # save every 5th image
         acquire.new_image(microscope, discharge_settings)
 
     # take image
