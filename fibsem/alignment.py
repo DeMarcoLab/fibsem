@@ -209,31 +209,32 @@ def eucentric_correct_stage_drift(
     """Eucentric correction of the stage drift by crosscorrelating low-res and high-res reference images"""
 
     if xcorr_limit is None:
-        xcorr_limit = (None, None, None, None)
+        xcorr_limit = (None, None, None)#, None)
 
     # target images
-    targets = (BeamType.ELECTRON, BeamType.ION, BeamType.ELECTRON, BeamType.ION)
-    eucentric_move = (False, True, False, True) 
+    targets = (BeamType.ELECTRON, BeamType.ELECTRON, BeamType.ION)#, BeamType.ELECTRON, BeamType.ION)
+    eucentric_move = (False, False, True) 
 
     # lp, hp, sigma
     params = [
         (256, 12, 6),
-        (256, 12, 6),
+        (128, 12, 6),
         (128, 8, 6),
-        (128, 8, 6),
+        # (128, 8, 6),
     ]
 
     if rotate:
         # rotate references
         # align ref ib -> new eb
         # eucentric align ref eb -> new ib
-        ref_order = (reference_images.low_res_ib, reference_images.low_res_eb, reference_images.high_res_ib, reference_images.high_res_eb)
+        ref_order = (reference_images.low_res_ib, reference_images.high_res_ib, reference_images.high_res_eb)#, , reference_images.high_res_eb)
         ref_order = [image_utils.rotate_image(ref) for ref in ref_order]
     else:
         # not rotated
         # align ref eb -> new eb
         # eucentric align ref ib -> new ib
         ref_order = (reference_images.low_res_eb, reference_images.low_res_ib, reference_images.high_res_eb, reference_images.high_res_ib)
+        # TODO: this is wrong now
 
     # align lowres, then highres
     for i, (ref_image, target, euc_move) in enumerate(zip(ref_order, targets, eucentric_move)):
@@ -319,7 +320,7 @@ def align_using_reference_images(
 
         # vertical constraint = eucentric movement
         if constrain_vertical:
-            movement.move_stage_eucentric_correction(microscope, settings=settings, dy=-dy) # FLAG_TEST
+            movement.move_stage_eucentric_correction(microscope, settings=settings, dy=dy) # FLAG_TEST
         else:
             # TODO: does rotating the reference need to be taken into account? i believe so
             # move the stage
@@ -389,6 +390,7 @@ def shift_from_crosscorrelation(
     ########################################
 
     # plot ref, new and xcorr with matplotlib with titles and midpoint
+    # TODO: add the filtering to the image
     import matplotlib.pyplot as plt
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 5))
     ax1.imshow(ref_data_norm, cmap="gray")
@@ -404,21 +406,6 @@ def shift_from_crosscorrelation(
     from fibsem import utils as f_utils
     f_utils.log_current_figure(fig, "crosscorrelation")
 
-    # # save with timestamp
-    # import datetime
-    # from liftout.config import config
-    # import os
-    # now = datetime.datetime.now()
-    # timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
-    # day = now.strftime("%Y-%m-%d")
-    # os.makedirs(os.path.join(config.LOG_DATA_PATH, day), exist_ok=True)
-
-    # try:
-    #     plt.savefig(os.path.join(config.LOG_DATA_PATH, day, f"crosscorrelation_{timestamp}.png"))
-    #     # plt.show()
-    #     plt.close(fig)
-    # except:
-    #     pass
     ###############
 
     logging.debug(f"cross-correlation:")

@@ -204,6 +204,47 @@ def main():
     app = QtWidgets.QApplication([])
 
     import random
+    from liftout.autoliftout import AutoLiftoutMode
+    from liftout.structures import ReferenceHFW
+    from fibsem.detection import detection
+    mode = AutoLiftoutMode.Manual
+
+
+    # def eucentric_alignment_ml
+
+    beam_types = [BeamType.ELECTRON, BeamType.ELECTRON, BeamType.ION, BeamType.ION]
+    euc_move = [False, False, True, True]
+    hfws = [ReferenceHFW.Medium.value, ReferenceHFW.High.value, ReferenceHFW.Medium.value, ReferenceHFW.High.value]
+    mask_radii = [1024, 256, 512, 256]
+
+    for beam_type, eucentric_move, hfw, m_radius in zip(beam_types, euc_move, hfws, mask_radii):
+
+        settings.image.beam_type = beam_type
+        settings.image.hfw = hfw
+
+        det = fibsem_ui_windows.detect_features_v2(
+            microscope=microscope,
+            settings=settings,
+            features=[
+                Feature(FeatureType.LamellaCentre),
+                Feature(FeatureType.ImageCentre),
+            ],
+            validate=bool(mode is AutoLiftoutMode.Manual),
+            mask_radius=m_radius
+        )
+
+        detection.move_based_on_detection(
+            microscope, 
+            settings, 
+            det, 
+            beam_type=settings.image.beam_type, 
+            eucentric_move=eucentric_move
+        )
+
+    settings.image.hfw = ReferenceHFW.Medium.value
+    acquire.take_reference_images(microscope, settings.image)
+
+    return
 
     # beam_type = BeamType.ELECTRON
     features = [Feature(FeatureType.NeedleTip), 

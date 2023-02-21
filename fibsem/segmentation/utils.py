@@ -252,5 +252,8 @@ def show_values(ten):
     print(ten.shape, ten.min(), ten.max(), ten.mean(), ten.std(), unq)
 
 
-def image_blend(img: np.ndarray[np.uint8], label: np.ndarray[np.uint8], alpha:float=0.3) -> np.ndarray[np.uint8]:
+def image_blend(img: np.ndarray, label: np.ndarray, alpha:float=0.3) -> np.ndarray:
+
+    if img.ndim == 2:
+        img = np.stack((img,)*3, axis=-1)
     return (img* (1.0 - alpha) + label* alpha).astype('uint8')

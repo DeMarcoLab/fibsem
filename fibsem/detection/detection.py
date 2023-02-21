@@ -330,23 +330,33 @@ def locate_shift_between_features_v2(
         pixelsize=pixelsize,
     )
 
-    plot_det_result_v2(det)
+    plot_det_result_v2(det, mask_radius)
 
     return det
 
 
-def plot_det_result_v2(det: DetectedFeatures, save:bool=True):
+def plot_det_result_v2(det: DetectedFeatures, mask_radius: int = 256, save:bool=True):
     import matplotlib.pyplot as plt
+
+    from fibsem.segmentation.utils import image_blend
+
+    blend = image_blend(det.image, det.mask)
+    blend = masks.apply_circular_mask(blend, radius=mask_radius)
+
+    if det.features[0].type == FeatureType.NeedleTip:
+        c1 = "g+"
+    else:
+        c1 = "r+"
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
-    ax[1].imshow(det.mask)
+    ax[1].imshow(blend)
     ax[1].set_title("Prediction")
     ax[1].plot(
         det.features[0].feature_px.x,
         det.features[0].feature_px.y,
-        "g+",
+        c1,
         ms=20,
         label=det.features[0].type.name,
     )
@@ -413,7 +423,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.type is FeatureType.LamellaCentre and f2.type is FeatureType.LamellaCentre:                
+    if f1.type is FeatureType.LamellaCentre and f2.type is FeatureType.ImageCentre:                
         if eucentric_move:
             # perform eucentric correction
             movement.move_stage_eucentric_correction(
@@ -427,8 +437,8 @@ def move_based_on_detection(
             movement.move_stage_relative_with_corrected_movement(
                 microscope=microscope,
                 settings=settings,
-                dx=-det.distance_metres.x,
-                dy=-det.distance_metres.y,
+                dx=-det.distance.x,
+                dy=det.distance.y,
                 beam_type=beam_type,
             )
 
