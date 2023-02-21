@@ -244,6 +244,7 @@ class ImageSettings:
         else:
             reduced_area = None
 
+        
         image_settings = ImageSettings(
             resolution=settings["resolution"],
             dwell_time=settings["dwell_time"],
