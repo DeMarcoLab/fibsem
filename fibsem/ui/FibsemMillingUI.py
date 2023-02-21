@@ -420,7 +420,7 @@ def main():
     milling_pattern = MillingPattern.Trench
     point = None
     change_pattern = True
-    auto_continue = False
+    validate = True
 
     settings.image.hfw = 150e-6
 
@@ -430,7 +430,7 @@ def main():
         milling_pattern,
         point=point,
         change_pattern=change_pattern,
-        auto_continue=auto_continue,
+        validate=validate,
     )
 
 
