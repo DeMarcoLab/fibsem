@@ -20,6 +20,7 @@ WIP: update for v2
 system:
   ip_address: 10.0.0.1
   application_file: autolamella
+  manufacturer: Thermo # Thermo or Tescan
   # beams
   ion:
     voltage: 30000

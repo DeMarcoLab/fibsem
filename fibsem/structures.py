@@ -9,27 +9,25 @@ from pathlib import Path
 import tifffile as tff
 import json
 import numpy as np
-from fibsem.config import load_microscope_manufacturer, load_yaml
+from fibsem.config import load_yaml
 
-manufacturer = load_microscope_manufacturer()
-if manufacturer == "Tescan":
+try:
     from tescanautomation.Common import Document
-    
-    # sys.modules.pop("tescanautomation.GUI")
-    # sys.modules.pop("tescanautomation.pyside6gui")
-    # sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
-    # sys.modules.pop("tescanautomation.pyside6gui.infobar_private")
-    # sys.modules.pop("tescanautomation.pyside6gui.infobar_utils")
-    # sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
-    # sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
-    # sys.modules.pop("PySide6.QtCore")
-elif manufacturer == "Thermo":
+    TESCAN = True
+except:
+    TESCAN = False
+
+try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage,
         StagePosition,
         ManipulatorPosition,
         Rectangle,
     )
+    THERMO = True
+except:
+    THERMO = False
+
 import yaml
 from fibsem.config import METADATA_VERSION
 
@@ -69,6 +67,10 @@ class BeamType(Enum):
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
+class MovementMode(Enum):
+    Stable = 1
+    Eucentric = 2
+    # Needle = 3
 
 @dataclass
 class FibsemStagePosition:
@@ -119,7 +121,7 @@ Methods:
             coordinate_system=data["coordinate_system"],
         )
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         def to_autoscript_position(self, stage_tilt: float = 0.0) -> StagePosition:
             return StagePosition(
@@ -142,7 +144,7 @@ Methods:
                 coordinate_system=position.coordinate_system,
             )
 
-    if manufacturer == "Tescan":
+    if TESCAN:
 
         def to_tescan_position(self, stage_tilt: float = 0.0):
             self.y=self.y / np.cos(stage_tilt),
@@ -178,7 +180,7 @@ class FibsemRectangle:
             "height": float(self.height),
         }
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         def __to_FEI__(self) -> Rectangle:
             return Rectangle(self.left, self.top, self.width, self.height)
@@ -240,6 +242,7 @@ class ImageSettings:
         else:
             reduced_area = None
 
+        
         image_settings = ImageSettings(
             resolution=settings["resolution"],
             dwell_time=settings["dwell_time"],
@@ -391,6 +394,7 @@ class FibsemPattern(Enum):
     Rectangle = 1
     Line = 2
 
+# TODO: convert this to a dataclass
 class FibsemPatternSettings:
     '''
     FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
@@ -432,6 +436,12 @@ class FibsemPatternSettings:
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+
+    def __repr__(self) -> str:
+        if self.pattern == FibsemPattern.Rectangle:
+            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+        elif self.pattern == FibsemPattern.Line:
+            return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
 
 @dataclass
 class FibsemMillingSettings:
@@ -480,7 +490,7 @@ class FibsemMillingSettings:
         return milling_settings
 
 
-if manufacturer == "Thermo":
+if THERMO:
 
     def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
         """Save the manipulator position from disk"""
@@ -530,7 +540,7 @@ def stage_position_from_dict(state_dict: dict) -> FibsemStagePosition:
     return stage_position
 
 
-if manufacturer == "Thermo":
+if THERMO:
 
     def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
 
@@ -894,7 +904,7 @@ class FibsemImageMetadata:
         )
         return metadata
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         def image_settings_from_adorned(
             image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
@@ -1038,7 +1048,7 @@ class FibsemImage:
             metadata=metadata_dict,
         )
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         @classmethod
         def fromAdornedImage(
@@ -1084,7 +1094,7 @@ class FibsemImage:
             )
             return cls(data=adorned.data, metadata=metadata)
 
-    if manufacturer == "Tescan":
+    if TESCAN:
 
         @classmethod
         def fromTescanImage(

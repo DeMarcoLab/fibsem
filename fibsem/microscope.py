@@ -4,7 +4,6 @@ import logging
 from copy import deepcopy
 import datetime
 import numpy as np
-from fibsem.config import load_microscope_manufacturer
 import sys
 import time
 
@@ -14,15 +13,13 @@ import fibsem.constants as constants
 from typing import Union
 
 
-manufacturer = load_microscope_manufacturer()
-if manufacturer == "Tescan":
+try:
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import Status as DBStatus
-
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -36,8 +33,10 @@ if manufacturer == "Tescan":
     sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
     sys.modules.pop("PySide6.QtCore")
+except:
+    print("Automation (TESCAN) not installed.")
 
-if manufacturer == "Thermo":
+try:
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings,
         MoveSettings,
@@ -48,6 +47,8 @@ if manufacturer == "Thermo":
         RectanglePattern,
         CleaningCrossSectionPattern,
     )
+except:
+    print("Autoscript (ThermoFisher) not installed.")
 
 import sys
 
@@ -1916,12 +1917,18 @@ class TescanMicroscope(FibsemMicroscope):
         pattern = self.layer
         return pattern
 
-    def setup_sputter(self, *args):
+    def setup_sputter(self, protocol: dict):
         """
         Set up the sputter coating process on the microscope.
 
         Args:
-            protocol (dict): Dictionary containing the protocol details for sputter coating.
+            protocol (dict): Contains all of the necessary values to setup up platinum sputtering.
+                For TESCAN:
+                    - hfw: Horizontal field width (m).
+                    - beam_current: Ion beam current in [A].
+                    - spot_size: Ion beam spot size in [m].
+                    - rate: Ion/electron etching rate (deposition rate) in [m3/A/s]. E.g. for silicone 4.7e-10 m3/A/s.
+                    - dwell time: Pixel dwell time in [s].
 
         Returns:
             None
@@ -1950,14 +1957,28 @@ class TescanMicroscope(FibsemMicroscope):
                 # Wait for GIS heated
                 self.connection.GIS.WaitForTemperatureReady(line)
 
-    def draw_sputter_pattern(self, hfw, line_pattern_length, *args):
+        try:
+            layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
+                syncWriteField=True,
+                writeFieldSize=protocol["weld"]["hfw"],
+                beamCurrent=protocol["beam_current"],
+                spotSize=protocol["spot_size"],
+                rate=3e-10, # Value for platinum
+                dwellTime=protocol["dwell_time"],
+            )
+            self.layer = self.connection.DrawBeam.LoadLayer(layerSettings)
+        except:
+            defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
+            self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+
+    def draw_sputter_pattern(self, hfw, line_pattern_length, *args, **kwargs):
         """
         Draws a line pattern for sputtering with the given parameters.
 
         Args:
             hfw (float): The horizontal field width of the electron beam.
             line_pattern_length (float): The length of the line pattern to draw.
-            *args: This represents the arguments used by ThermoMicroscope that are not required for the TescanMicroscope.
+            *args, **kwargs: This represents the arguments used by ThermoMicroscope that are not required for the TescanMicroscope.
 
         Returns:
             None
@@ -1972,39 +1993,35 @@ class TescanMicroscope(FibsemMicroscope):
             hfw * constants.METRE_TO_MILLIMETRE
         )
 
-        pattern_settings = FibsemPatternSettings(pattern=FibsemPattern.Line, 
-            start_x=-line_pattern_length/2, 
-            start_y=+line_pattern_length,
-            end_x=+line_pattern_length/2,
-            end_y=+line_pattern_length,
-            depth=2e-6
-        )
-
-        pattern = self.draw_line(pattern_settings=pattern_settings)
+        start_x=-line_pattern_length/2, 
+        start_y=+line_pattern_length,
+        end_x=+line_pattern_length/2,
+        end_y=+line_pattern_length,
+        depth=2e-6
         
-        # pattern.time = sputter_time + 0.1 # NOTE: You cannot choose the time it takes to draw the pattern.
+        pattern = self.layer.addLine(
+            BeginX=start_x, BeginY=start_y, EndX=end_x, EndY=end_y, Depth=depth
+        )
+        
         return pattern
 
-    def run_sputter(self, **kwargs):
+    def run_sputter(self, *args, **kwargs):
         """
         Runs the GIS Platinum Sputter.
 
         Args:
-            The TESCAN version of the function requires:
-            sputter_pattern (DrawBeam.Layer) as a keyword argument.
+            *args, **kwargs: Used to maintain functionality and compatability between microscopes. No arguments required.
+            
         Runs the GIS Platinum Sputter.
 
         Returns:
             None
         """
-        pattern = kwargs["sputter_pattern"]
-
         # Open GIS valve to let the gas flow onto the sample
         self.connection.GIS.OpenValve(self.line)
 
         try:
             # Run predefined deposition process
-            self.connection.DrawBeam.LoadLayer(pattern)
             self.connection.DrawBeam.Start()
             self.connection.Progress.Show("DrawBeam", "Layer 1 in progress", False, False, 0, 100)
             while True:
@@ -2026,12 +2043,12 @@ class TescanMicroscope(FibsemMicroscope):
             # Close GIS Valve in both - success and failure
             self.connection.GIS.CloseValve(self.line)
         
-    def finish_sputter(self, *args):
+    def finish_sputter(self, *args, **kwargs):
         """
         Finish the sputter process by retracting the GIS chamber and turning off the heating.
 
         Args:
-            *args: This represents the arguments used by ThermoMicroscope that are not required for the TescanMicroscope.
+            *args, **kwargs: This represents the arguments used by ThermoMicroscope that are not required for the TescanMicroscope.
 
         Returns:
             None
