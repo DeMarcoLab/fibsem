@@ -9,27 +9,25 @@ from pathlib import Path
 import tifffile as tff
 import json
 import numpy as np
-from fibsem.config import load_microscope_manufacturer, load_yaml
+from fibsem.config import load_yaml
 
-manufacturer = load_microscope_manufacturer()
-if manufacturer == "Tescan":
+try:
     from tescanautomation.Common import Document
-    
-    # sys.modules.pop("tescanautomation.GUI")
-    # sys.modules.pop("tescanautomation.pyside6gui")
-    # sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
-    # sys.modules.pop("tescanautomation.pyside6gui.infobar_private")
-    # sys.modules.pop("tescanautomation.pyside6gui.infobar_utils")
-    # sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
-    # sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
-    # sys.modules.pop("PySide6.QtCore")
-elif manufacturer == "Thermo":
+    TESCAN = True
+except:
+    TESCAN = False
+
+try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage,
         StagePosition,
         ManipulatorPosition,
         Rectangle,
     )
+    THERMO = True
+except:
+    THERMO = False
+
 import yaml
 from fibsem.config import METADATA_VERSION
 
@@ -123,7 +121,7 @@ Methods:
             coordinate_system=data["coordinate_system"],
         )
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         def to_autoscript_position(self, stage_tilt: float = 0.0) -> StagePosition:
             return StagePosition(
@@ -146,7 +144,7 @@ Methods:
                 coordinate_system=position.coordinate_system,
             )
 
-    if manufacturer == "Tescan":
+    if TESCAN:
 
         def to_tescan_position(self, stage_tilt: float = 0.0):
             self.y=self.y / np.cos(stage_tilt),
@@ -182,7 +180,7 @@ class FibsemRectangle:
             "height": float(self.height),
         }
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         def __to_FEI__(self) -> Rectangle:
             return Rectangle(self.left, self.top, self.width, self.height)
@@ -492,7 +490,7 @@ class FibsemMillingSettings:
         return milling_settings
 
 
-if manufacturer == "Thermo":
+if THERMO:
 
     def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
         """Save the manipulator position from disk"""
@@ -542,7 +540,7 @@ def stage_position_from_dict(state_dict: dict) -> FibsemStagePosition:
     return stage_position
 
 
-if manufacturer == "Thermo":
+if THERMO:
 
     def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
 
@@ -906,7 +904,7 @@ class FibsemImageMetadata:
         )
         return metadata
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         def image_settings_from_adorned(
             image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
@@ -1050,7 +1048,7 @@ class FibsemImage:
             metadata=metadata_dict,
         )
 
-    if manufacturer == "Thermo":
+    if THERMO:
 
         @classmethod
         def fromAdornedImage(
@@ -1096,7 +1094,7 @@ class FibsemImage:
             )
             return cls(data=adorned.data, metadata=metadata)
 
-    if manufacturer == "Tescan":
+    if TESCAN:
 
         @classmethod
         def fromTescanImage(

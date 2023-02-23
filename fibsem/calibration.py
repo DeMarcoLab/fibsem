@@ -3,10 +3,7 @@ from datetime import datetime
 
 import numpy as np
 
-from fibsem.config import load_microscope_manufacturer
-manufacturer = load_microscope_manufacturer()
-
-if manufacturer == "Thermo":
+try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem,
@@ -17,6 +14,14 @@ if manufacturer == "Thermo":
         Rectangle,
         RunAutoFocusSettings,
     )
+    THERMO = True
+except:
+    THERMO = False
+try:
+    import tescanautomation
+    TESCAN = True
+except:
+    TESCAN = False
 
 from fibsem import acquire
 from fibsem.structures import (
@@ -47,7 +52,7 @@ def auto_link_stage(microscope: FibsemMicroscope, hfw: float = 150e-6) -> None:
         - Linking determines the specimen coordinate system, as it is defined as the relative dimensions of the top of stage
           to the instruments.
     """
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
 
     microscope.connection.imaging.set_active_view(BeamType.ELECTRON.value)
@@ -71,7 +76,7 @@ def auto_focus_beam(
     focus_image_settings: ImageSettings = None,
 ) -> None:
 
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
 
 
@@ -186,7 +191,7 @@ def auto_needle_calibration(
     microscope: FibsemMicroscope, settings: MicroscopeSettings, validate: bool = True
 ):
 
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
 
     # set coordinate system
@@ -231,7 +236,7 @@ def align_needle_to_eucentric_position(
         validate (bool, optional): validate the alignment. Defaults to False.
     """
 
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
 
     from fibsem.ui import windows as fibsem_ui_windows
@@ -282,7 +287,7 @@ def auto_home_and_link(
     microscope: FibsemMicroscope, state: MicroscopeState = None
 ) -> None:
 
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
 
     import os
@@ -311,7 +316,7 @@ def auto_home_and_link_v2(
     microscope: FibsemMicroscope, state: MicroscopeState = None
 ) -> None:
 
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
     # home the stage and return the linked state
 
@@ -335,7 +340,7 @@ def auto_home_and_link_v2(
 def get_raw_stage_position(microscope: FibsemMicroscope) -> FibsemStagePosition:
     """Get the current stage position in raw coordinate system, and switch back to specimen"""
 
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
 
     microscope.connection.specimen.stage.set_default_coordinate_system(CoordinateSystem.RAW)
@@ -346,7 +351,7 @@ def get_raw_stage_position(microscope: FibsemMicroscope) -> FibsemStagePosition:
 
 def get_current_beam_system_state(microscope: FibsemMicroscope, beam_type: BeamType):
 
-    if manufacturer == "Tescan":
+    if TESCAN:
         raise NotImplementedError
 
     if beam_type is BeamType.ELECTRON:

@@ -2,15 +2,16 @@ import logging
 
 import numpy as np
 
-from fibsem.config import load_microscope_manufacturer
-manufacturer = load_microscope_manufacturer()
-if manufacturer == "Thermo":
+try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem,
         ManipulatorState,
     )
     from autoscript_sdb_microscope_client.structures import AdornedImage
+    THERMO = True
+except:
+    THERMO = False
 from fibsem import calibration
 from fibsem.structures import (
     BeamSystemSettings,
@@ -21,7 +22,7 @@ from fibsem.structures import (
     FibsemImage,
 )
 
-if manufacturer == "Thermo":
+if THERMO:
 
     # TODO: change return type to list of warnings rather than reading the log...
     def validate_initial_microscope_state(

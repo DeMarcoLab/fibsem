@@ -4,7 +4,6 @@ import logging
 from copy import deepcopy
 import datetime
 import numpy as np
-from fibsem.config import load_microscope_manufacturer
 import sys
 import time
 
@@ -14,15 +13,13 @@ import fibsem.constants as constants
 from typing import Union
 
 
-manufacturer = load_microscope_manufacturer()
-if manufacturer == "Tescan":
+try:
     from tescanautomation import Automation
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
     from tescanautomation.Common import Bpp
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import Status as DBStatus
-
 
     # from tescanautomation.GUI import SEMInfobar
     import re
@@ -36,8 +33,10 @@ if manufacturer == "Tescan":
     sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
     sys.modules.pop("PySide6.QtCore")
+except:
+    print("Automation (TESCAN) not installed.")
 
-if manufacturer == "Thermo":
+try:
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings,
         MoveSettings,
@@ -48,6 +47,8 @@ if manufacturer == "Thermo":
         RectanglePattern,
         CleaningCrossSectionPattern,
     )
+except:
+    print("Autoscript (ThermoFisher) not installed.")
 
 import sys
 
