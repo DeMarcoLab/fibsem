@@ -364,3 +364,32 @@ def _draw_patterns_in_napari(
             face_color=colour,
             opacity=0.5,
         )
+
+
+def get_nearby_lamellas(microscope, pixelsize, sample, cx_ib, cy):
+    from fibsem import calibration
+    cp = calibration.get_raw_stage_position(microscope)
+
+
+
+    shape_points = []
+    for lamella in sample.positions.values():
+        # print(f"{lamella._petname}: {lamella.lamella_state.absolute_position}")
+        # distance from current position in x and y
+        lp = lamella.lamella_state.absolute_position
+        dx = int((lp.x - cp.x) / pixelsize)
+        dy = int((lp.y - cp.y) / pixelsize)
+
+        print(f"dx: {dx}, dy: {dy}")
+        
+        # plot positions
+        # plt.scatter(lp.x, lp.y, label=lamella._petname)
+
+        shape_points.append((cx_ib + dx, cy + dy))
+
+    print(shape_points)
+    # plt.scatter(cp.x, cp.y, label="current position")
+    # plt.legend()
+    # plt.show()
+
+    return shape_points

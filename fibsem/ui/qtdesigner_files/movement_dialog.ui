@@ -32,6 +32,131 @@
       <property name="verticalSpacing">
        <number>6</number>
       </property>
+      <item row="21" column="1" colspan="2">
+       <widget class="QLabel" name="label_header_movement">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Movement Settings</string>
+        </property>
+       </widget>
+      </item>
+      <item row="26" column="1" colspan="2">
+       <widget class="QLabel" name="label_header_tilt">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Tilt Settings</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1" colspan="2">
+       <widget class="QPushButton" name="pushButton_take_image">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Take New Image</string>
+        </property>
+       </widget>
+      </item>
+      <item row="24" column="2">
+       <widget class="QComboBox" name="comboBox_needle_coordinate"/>
+      </item>
+      <item row="23" column="2">
+       <widget class="QComboBox" name="comboBox_movement_mode"/>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="checkBox_show_milling_pattern">
+        <property name="text">
+         <string>Show Milling Pattern</string>
+        </property>
+       </widget>
+      </item>
+      <item row="27" column="1">
+       <widget class="QLabel" name="label_tilt">
+        <property name="text">
+         <string>Stage Tilt (Degrees)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="25" column="1" colspan="2">
+       <widget class="QPushButton" name="pushButton_auto_eucentric">
+        <property name="text">
+         <string>Automatic Eucentric Correction</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="label_imaging_hfw">
+        <property name="text">
+         <string>Horizontal Field Width</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2">
+       <widget class="QLabel" name="label_header">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Image Settings</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
+        <property name="minimum">
+         <double>30.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>900.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>5.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>150.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="29" column="1" colspan="2">
+       <widget class="QPushButton" name="pushButton_tilt_stage">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Tilt Stage</string>
+        </property>
+       </widget>
+      </item>
+      <item row="24" column="1">
+       <widget class="QLabel" name="label_needle_coordinate">
+        <property name="text">
+         <string>Needle Coordinate</string>
+        </property>
+       </widget>
+      </item>
       <item row="27" column="2">
        <widget class="QDoubleSpinBox" name="doubleSpinBox_tilt_degrees">
         <property name="decimals">
@@ -51,26 +176,6 @@
         </property>
        </widget>
       </item>
-      <item row="24" column="1">
-       <widget class="QLabel" name="label_needle_coordinate">
-        <property name="text">
-         <string>Needle Coordinate</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1" colspan="2">
-       <widget class="QPushButton" name="pushButton_take_image">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Take New Image</string>
-        </property>
-       </widget>
-      </item>
       <item row="23" column="1">
        <widget class="QLabel" name="label_movement_mode">
         <property name="text">
@@ -78,23 +183,16 @@
         </property>
        </widget>
       </item>
-      <item row="25" column="1" colspan="2">
-       <widget class="QPushButton" name="pushButton_auto_eucentric">
-        <property name="text">
-         <string>Automatic Eucentric Correction</string>
-        </property>
-       </widget>
-      </item>
-      <item row="29" column="1" colspan="2">
-       <widget class="QPushButton" name="pushButton_tilt_stage">
+      <item row="37" column="1" colspan="2">
+       <widget class="QPushButton" name="pushButton_continue">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>0</height>
+          <height>40</height>
          </size>
         </property>
         <property name="text">
-         <string>Tilt Stage</string>
+         <string>Continue</string>
         </property>
        </widget>
       </item>
@@ -118,97 +216,6 @@ Press continue when complete.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="27" column="1">
-       <widget class="QLabel" name="label_tilt">
-        <property name="text">
-         <string>Stage Tilt (Degrees)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
-        <property name="minimum">
-         <double>30.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>900.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>5.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>150.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="24" column="2">
-       <widget class="QComboBox" name="comboBox_needle_coordinate"/>
-      </item>
-      <item row="21" column="1" colspan="2">
-       <widget class="QLabel" name="label_header_movement">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Movement Settings</string>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="2">
-       <widget class="QComboBox" name="comboBox_movement_mode"/>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="label_imaging_hfw">
-        <property name="text">
-         <string>Horizontal Field Width</string>
-        </property>
-       </widget>
-      </item>
-      <item row="37" column="1" colspan="2">
-       <widget class="QPushButton" name="pushButton_continue">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Continue</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1" colspan="2">
-       <widget class="QLabel" name="label_header">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Image Settings</string>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="1" colspan="2">
-       <widget class="QLabel" name="label_header_tilt">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Tilt Settings</string>
         </property>
        </widget>
       </item>
@@ -248,10 +255,36 @@ Press continue when complete.</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QCheckBox" name="checkBox_show_milling_pattern">
+      <item row="38" column="1" colspan="2">
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="4" column="2">
+       <widget class="QCheckBox" name="checkBox_show_keep_out">
         <property name="text">
-         <string>Show Milling Pattern</string>
+         <string>Show Keep Out</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="checkBox_show_crosshair">
+        <property name="text">
+         <string>Show Crosshair</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

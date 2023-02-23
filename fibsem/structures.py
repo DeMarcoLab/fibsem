@@ -10,6 +10,12 @@ import numpy as np
 from autoscript_sdb_microscope_client.structures import (AdornedImage, StagePosition, ManipulatorPosition)
 import yaml
 
+
+class MovementMode(Enum):
+    Stable = 1
+    Eucentric = 2
+    # Needle = 3
+
 #@patrickcleeve: dataclasses.asdict -> :(
 
 # TODO: overload constructors instead of from_dict...

@@ -12,21 +12,13 @@ from PyQt5 import QtCore, QtWidgets
 from fibsem import (acquire, alignment, constants, conversions, movement,
                     patterning)
 from fibsem.patterning import MillingPattern
-from fibsem.structures import BeamType, MicroscopeSettings, Point
+from fibsem.structures import BeamType, MicroscopeSettings, Point, MovementMode
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.qtdesigner_files import movement_dialog
 import napari
 
-class MovementMode(Enum):
-    Stable = 1
-    Eucentric = 2
-    # Needle = 3
-
 # TODO: save state...?
 # TODO: focus and link?
-
-
-
 
 class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
@@ -35,6 +27,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         settings: MicroscopeSettings,
         msg: str = None,
         pattern: MillingPattern = None,
+        keep_out: float = 50, #um
         parent = None,
         viewer: napari.Viewer = None
     ):
@@ -58,6 +51,9 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         if self.milling_pattern is not None:
             self._update_milling_pattern()
 
+        # keep out region
+        self.keep_out = keep_out
+
         # msg
         self.msg = msg
         self.movement_mode = MovementMode.Stable
@@ -69,39 +65,80 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.set_message()
         self.update_displays()
 
-    def update_displays(self):
+    def update_displays(self, take_new_images: bool = True):
         """Update the displays for both Electron and Ion Beam views"""
 
         try:
-            # update settings, take image
-            self.settings.image.hfw = self.doubleSpinBox_hfw.value() * constants.MICRON_TO_METRE
-            self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.settings.image)
-            self.image = np.concatenate([self.eb_image.data, self.ib_image.data], axis=1) # stack both images together
+            if take_new_images:
+                # TODO: convert form the stack to translate to the image
+                # update settings, take image
+                self.settings.image.hfw = self.doubleSpinBox_hfw.value() * constants.MICRON_TO_METRE
+                self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.settings.image)
+                self.image = np.concatenate([self.eb_image.data, self.ib_image.data], axis=1) # stack both images together
 
-            # median filter
-            self.image = ndi.median_filter(self.image, size=3)
+                # median filter
+                self.image = ndi.median_filter(self.image, size=3)
+                from copy import deepcopy
+                self.imgd = deepcopy(self.image)
+            else:
+                self.image = self.imgd
 
-            # TODO: convert this to use grid layout instead of concat images (see salami)
+            # show the keep out region for liftout
+            if self.checkBox_show_keep_out.isChecked():
+                from fibsem.imaging import masks
+                from fibsem.segmentation.utils import image_blend, decode_segmap
+                kp = self.keep_out
+                kp_px = int(kp*constants.MICRO_TO_SI / self.ib_image.metadata.binary_result.pixel_size.x)
+                keep_out_image = np.ones_like(self.ib_image.data)
+                keep_out_image = masks.apply_circular_mask(keep_out_image, radius=kp_px)
+                keep_out_image = np.hstack([np.zeros_like(keep_out_image), keep_out_image])
+                keep_out_image = decode_segmap(keep_out_image, nc=2)
+                self.image = image_blend(self.image, keep_out_image, alpha=0.1)
 
-            # crosshair
-            cy, cx_eb = self.image.shape[0] // 2, self.image.shape[1] // 4 
-            cx_ib = cx_eb + self.image.shape[1] // 2 
+            if self.checkBox_show_crosshair.isChecked():
+                # crosshair
+                cy, cx_eb = self.image.shape[0] // 2, self.image.shape[1] // 4 
+                cx_ib = cx_eb + self.image.shape[1] // 2 
+                
+                from PIL import Image, ImageDraw
+                im = Image.fromarray(self.image).convert("RGB")
+                draw = ImageDraw.Draw(im)
+                # 10% of img width in pixels
+                length = int(im.size[0] * 0.025)
+                draw.line((cx_eb, cy-length) + (cx_eb, cy+length), fill="yellow", width=3)
+                draw.line((cx_eb-length, cy) + (cx_eb+length, cy), fill="yellow", width=3)
+                draw.line((cx_ib, cy-length) + (cx_ib, cy+length), fill="yellow", width=3)
+                draw.line((cx_ib-length, cy) + (cx_ib+length, cy), fill="yellow", width=3)
+                
+                self.image = np.array(im)
+
+
+            # TODO show relative position of lamellas
+            # from liftout.structures import load_experiment, Sample, Lamella
+            # path = r"C:\Users\Admin\Github\autoliftout\liftout\log\dm-E2-21Oct22-04-2022-12-14.10-17-57AM"
+            # sample = load_experiment(path)
+
+            # from fibsem.ui.utils import get_nearby_lamellas
+
+            # shape_points = get_nearby_lamellas(self.microscope, 
+            #                                    pixelsize=self.ib_image.metadata.binary_result.pixel_size.x, 
+            #                                    sample=sample, cx_ib=cx_ib, cy=cy)
+
+
+
+
             
             # # refresh viewer
             self.viewer.layers.clear()
             self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9, blending="additive")
-            self.points_layer = self.viewer.add_points(
-                data=[[cy, cx_eb], [cy, cx_ib]], 
-                symbol="cross", size=50,
-                edge_color="yellow", face_color="yellow",
-            )
-            self.points_layer.editable = False
-
             self.image_layer.mouse_double_click_callbacks.append(self._double_click) # append callback
             
+            self.viewer.add_points(shape_points, size=10, face_color="red")
+
+
             if self.checkBox_show_milling_pattern.isChecked():
                 fibsem_ui._draw_patterns_in_napari(self.viewer, self.ib_image, self.eb_image, self.all_patterns)
-
+                
             # set active layer, must be done last
             self.viewer.layers.selection.active = self.image_layer
 
@@ -126,6 +163,9 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             beam_type, adorned_image = None, None
         
         return coords, beam_type, adorned_image
+
+    def _toggle_overlay_visibility(self):
+        self.update_displays(take_new_images=False)
 
     def _toggle_milling_pattern_visibility(self):
         
@@ -162,8 +202,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
                 all_patterns.append(patterns)  # 2D
 
             self.all_patterns = all_patterns
-        
-
+    
     def _double_click(self, layer, event):
 
         # get coords
@@ -235,6 +274,8 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
         self.checkBox_show_milling_pattern.setChecked(SHOW_MILLING)
 
         self.checkBox_show_milling_pattern.stateChanged.connect(self._toggle_milling_pattern_visibility)
+        self.checkBox_show_crosshair.stateChanged.connect(self._toggle_overlay_visibility)
+        self.checkBox_show_keep_out.stateChanged.connect(self._toggle_overlay_visibility)
 
         # tilt functionality
         self.doubleSpinBox_tilt_degrees.setMinimum(0)
