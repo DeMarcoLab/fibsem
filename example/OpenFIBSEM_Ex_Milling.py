@@ -1,6 +1,6 @@
 from fibsem import utils, acquire
 from fibsem.structures import BeamType, FibsemStagePosition, FibsemPatternSettings, FibsemPattern
-from fibsem.FibsemMilling import milling_protocol
+from fibsem.milling import milling_protocol
 import matplotlib.pyplot as plt
 
 def connect_to_microscope():
@@ -55,7 +55,9 @@ def milling_example(microscope,settings):
 
 def main():
 
-    milling_example()
+    microscope, settings = connect_to_microscope()
+
+    milling_example(microscope, settings)
 
 
 if __name__ == "__main__":

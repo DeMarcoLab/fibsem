@@ -239,7 +239,7 @@ def milling_protocol(
 
     # draw patterns
     for pattern in pattern_settings:
-        draw_pattern(microscope, pattern, mill_settings)
+        draw_pattern(microscope, pattern)
 
     # run milling
     run_milling(microscope, mill_settings.milling_current)

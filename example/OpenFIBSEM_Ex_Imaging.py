@@ -1,6 +1,9 @@
 from fibsem import utils, acquire
 from fibsem.structures import BeamType, FibsemStagePosition, FibsemPatternSettings, FibsemPattern
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg', force=True) # Activate 'agg' backend for off-screen plotting.
+
 
 def connect_to_microscope():
 
@@ -29,14 +32,14 @@ def imaging_1(microscope,settings):
     # show images
 
     fig, ax = plt.subplots(2, 2, figsize=(7, 5))
-    ax[0].set_title("Reference Electron Beam Image")
-    ax[1].set_title("Reference Ion Beam Image")
-    ax[0].imshow(ref_eb_image.data, cmap="gray")
-    ax[1].imshow(ref_ib_image.data, cmap="gray")
-    ax[2].set_title("Individual Electron Beam Image")
-    ax[3].set_title("Individual Ion Beam Image")
-    ax[2].imshow(eb_image.data, cmap="gray")
-    ax[3].imshow(ib_image.data, cmap="gray")
+    ax[0][0].set_title("Reference Electron Beam Image")
+    ax[1][0].set_title("Reference Ion Beam Image")
+    ax[0][0].imshow(ref_eb_image.data, cmap="gray")
+    ax[1][0].imshow(ref_ib_image.data, cmap="gray")
+    ax[0][1].set_title("Individual Electron Beam Image")
+    ax[1][1].set_title("Individual Ion Beam Image")
+    ax[0][1].imshow(eb_image.data, cmap="gray")
+    ax[1][1].imshow(ib_image.data, cmap="gray")
     plt.show()
 
 
@@ -52,21 +55,21 @@ def imaging_2(microscope,settings):
 
     #double the old HFW
 
-    new_hfw = int(2*old_hfw)
+    new_hfw = 2*old_hfw
 
     image_settings.hfw = new_hfw
 
     new_eb, new_ib = acquire.take_reference_images(microscope=microscope,image_settings=image_settings)
 
     fig, ax = plt.subplots(2, 2, figsize=(7, 5))
-    ax[0].set_title("Reference Electron Beam Image")
-    ax[1].set_title("Reference Ion Beam Image")
-    ax[0].imshow(ref_eb.data, cmap="gray")
-    ax[1].imshow(ref_ib.data, cmap="gray")
-    ax[2].set_title("Electron Beam Image New HFW")
-    ax[3].set_title("Ion Beam Image New HFW")
-    ax[2].imshow(new_eb.data, cmap="gray")
-    ax[3].imshow(new_ib.data, cmap="gray")
+    ax[0][0].set_title("Reference Electron Beam Image")
+    ax[1][0].set_title("Reference Ion Beam Image")
+    ax[0][0].imshow(ref_eb.data, cmap="gray")
+    ax[1][0].imshow(ref_ib.data, cmap="gray")
+    ax[0][1].set_title("Electron Beam Image New HFW")
+    ax[1][1].set_title("Ion Beam Image New HFW")
+    ax[0][1].imshow(new_eb.data, cmap="gray")
+    ax[1][1].imshow(new_ib.data, cmap="gray")
     plt.show()
 
 ## Parameters that can be changed in image settings

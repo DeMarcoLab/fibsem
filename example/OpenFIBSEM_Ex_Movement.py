@@ -56,6 +56,8 @@ def main():
     absolute_move(microscope=microscope)
 
     input("Press enter to move stage (Relative) ")
+
+    relative_move(microscope=microscope)
     
 
    
