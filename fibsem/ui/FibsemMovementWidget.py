@@ -1,22 +1,22 @@
+import logging
 import os
 from enum import Enum
 
 import napari
 import napari.utils.notifications
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from PyQt5 import QtWidgets
 
-from fibsem.ui import utils as ui_utils
-from fibsem.structures import MicroscopeSettings, BeamType, MovementMode, Point
-from fibsem.ui.qtdesigner_files import FibsemMovementWidget
-from fibsem import conversions, movement
+from fibsem import constants, movement, conversions
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import BeamType, MicroscopeSettings, MovementMode, Point, FibsemStagePosition
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-import logging
+from fibsem.ui.qtdesigner_files import FibsemMovementWidget
+
 
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
         self,
-        microscope: SdbMicroscopeClient = None,
+        microscope: FibsemMicroscope = None,
         settings: MicroscopeSettings = None,
         viewer: napari.Viewer = None,
         image_widget: FibsemImageSettingsWidget = None, 
@@ -59,7 +59,22 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         print("save position pressed")
 
     def move_to_position(self):
-        print("move_to position pressed")
+        stage_position = self.get_position_from_ui()
+        self.microscope.move_stage_absolute(stage_position)
+    
+    def get_position_from_ui(self):
+
+        stage_position = FibsemStagePosition(
+            x=self.doubleSpinBox_movement_stage_x.value(),
+            y=self.doubleSpinBox_movement_stage_y.value(),
+            z=self.doubleSpinBox_movement_stage_z.value(),
+            r=self.doubleSpinBox_movement_stage_rotation.value(),
+            t=self.doubleSpinBox_movement_stage_tilt.value(),
+            coordinate_system=self.comboBox_movement_stage_coordinate_system.currentText(),
+
+        )
+
+        return stage_position
 
     def _double_click(self, layer, event):
 
@@ -87,31 +102,21 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         # eucentric is only supported for ION beam
-        # if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
-        #     self.microscope.eucentric_move(
-        #         settings=self.settings, dy=-point.y
-        #     )
+        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
+            self.microscope.eucentric_move(
+                settings=self.settings, dy=-point.y
+            )
 
-        # else:
-        #     # corrected stage movement
-        #     self.microscope.stable_move(
-        #         settings=self.settings,
-        #         dx=point.x,
-        #         dy=point.y,
-        #         beam_type=beam_type,
-        #     )
+        else:
+            # corrected stage movement
+            self.microscope.stable_move(
+                settings=self.settings,
+                dx=point.x,
+                dy=point.y,
+                beam_type=beam_type,
+            )
 
         self.image_widget.take_reference_images()
-
-
-
-
-
-
-
-
-
-
 
 
 def main():

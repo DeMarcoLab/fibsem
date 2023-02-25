@@ -197,11 +197,21 @@ def convert_pattern_to_napari_rect(
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
     # extract pattern information from settings
-    pattern_width = pattern_settings.width
-    pattern_height = pattern_settings.height
-    pattern_centre_x = pattern_settings.centre_x
-    pattern_centre_y = pattern_settings.centre_y
-    pattern_rotation = pattern_settings.rotation
+
+    from fibsem.structures import FibsemPattern
+    if pattern_settings.pattern is FibsemPattern.Line:
+        pattern_width = pattern_settings.end_x - pattern_settings.start_x
+        pattern_height = max(pattern_settings.end_y - pattern_settings.start_y, 0.5e-6)
+        pattern_rotation = np.arctan2(pattern_height, pattern_width) # TODO: line rotation doesnt work correctly, fix
+        pattern_centre_x = (pattern_settings.end_x + pattern_settings.start_x) / 2
+        pattern_centre_y = (pattern_settings.end_y + pattern_settings.start_y) / 2
+    
+    else:
+        pattern_width = pattern_settings.width
+        pattern_height = pattern_settings.height
+        pattern_centre_x = pattern_settings.centre_x
+        pattern_centre_y = pattern_settings.centre_y
+        pattern_rotation = pattern_settings.rotation
 
     # pattern to pixel coords
     w = int(pattern_width / pixelsize_x)
@@ -289,3 +299,17 @@ def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.
     )
 
     return response
+        
+def _draw_crosshair(arr: np.ndarray, width: float = 0.1) -> np.ndarray:
+    # add crosshair
+    cy, cx = arr.shape[0] // 2, arr.shape[1] // 2
+    from PIL import Image, ImageDraw
+    im = Image.fromarray(arr).convert("RGB")
+    draw = ImageDraw.Draw(im)
+    # 10% of img width in pixels
+    length = int(im.size[0] * width / 2)
+    draw.line((cx, cy-length) + (cx, cy+length), fill="yellow", width=3)
+    draw.line((cx-length, cy) + (cx+length, cy), fill="yellow", width=3)
+
+    arr = np.array(im)
+    return arr

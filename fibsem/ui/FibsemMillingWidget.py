@@ -4,8 +4,8 @@ import napari.utils.notifications
 from PyQt5 import QtWidgets
 
 from fibsem import constants
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (FibsemPattern, FibsemPatternSettings,
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, TescanMicroscope, DemoMicroscope
+from fibsem.structures import (FibsemPattern, FibsemPatternSettings, FibsemMillingSettings, BeamType,
                                MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
@@ -33,15 +33,36 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def setup_connections(self):
 
-        print("setup_connections")
-
         self.pushButton.clicked.connect(self.update_ui)
 
+        # milling
+        available_currents = self.microscope.get_available("current", BeamType.ION)
+        self.comboBox_milling_current.addItems([str(current) for current in available_currents])
+
+        _THERMO = isinstance(self.microscope, ThermoMicroscope)
+        _TESCAN = isinstance(self.microscope, TescanMicroscope)
+
+        if isinstance(self.microscope, DemoMicroscope):
+            _THERMO, _TESCAN = True, True
+        
+        # THERMO 
+        self.label_application_file.setVisible(_THERMO)
+        self.comboBox_application_file.setVisible(_THERMO)
+        available_application_files = self.microscope.get_available("application_file")
+        self.comboBox_application_file.addItems(available_application_files)
+        
+        # TESCAN
+        self.label_rate.setVisible(_TESCAN)
+        self.label_spot_size.setVisible(_TESCAN)
+        self.label_dwell_time.setVisible(_TESCAN)
+        self.doubleSpinBox_rate.setVisible(_TESCAN)
+        self.doubleSpinBox_spot_size.setVisible(_TESCAN)
+        self.doubleSpinBox_dwell_time.setVisible(_TESCAN)
+
+        # patterns
         self.comboBox_pattern.addItems([pattern.name for pattern in FibsemPattern])
-        self.comboBox_milling_current.addItems([current for current in ["2.0e-9", "7.4e-9" ]]) # TODO: fix
 
     def get_pattern_settings_from_ui(self):
-        print("get pattern settings")
         
         pattern_settings = FibsemPatternSettings(
             pattern=FibsemPattern[self.comboBox_pattern.currentText()],
@@ -57,10 +78,23 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         )
     
         return pattern_settings
+    
+
+    def get_milling_settings_from_ui(self):
+
+        milling_settings = FibsemMillingSettings(
+            milling_current=float(self.comboBox_milling_current.currentText()),
+            application_file=self.comboBox_application_file.currentText(),
+            rate=self.doubleSpinBox_rate.value(),
+            dwell_time = self.doubleSpinBox_dwell_time.value() * constants.MICRO_TO_SI,
+            spot_size=self.doubleSpinBox_spot_size.value() * constants.MICRO_TO_SI,
+            hfw=self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI,
+
+        )
+
+        return milling_settings
 
     def update_ui(self):
-
-        print("update ui")
 
         pattern_settings = self.get_pattern_settings_from_ui()
 
