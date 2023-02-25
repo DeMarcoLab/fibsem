@@ -67,7 +67,7 @@ def main():
 
     # setup milling
     milling.setup_milling(microscope = microscope,
-        application_file = settings.system.application_file,
+        application_file = "autolamella",
         patterning_mode  = "Serial",
         hfw = settings.image.hfw,
         mill_settings = settings.milling)

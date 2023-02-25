@@ -97,7 +97,7 @@ class FibsemSettings(FibsemSettings.Ui_Dialog, QtWidgets.QDialog):
         # system
         self.lineEdit_system_ip_address.setText(settings.system.ip_address)
         self.comboBox_system_application_file.setCurrentText(
-            settings.system.application_file
+            "Si"
         )
 
         # stage

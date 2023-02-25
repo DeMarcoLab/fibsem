@@ -1,7 +1,6 @@
 # system
 system:
   ip_address: "localhost"
-  application_file: autolamella
   manufacturer: "Demo"
   # beams
   ion:

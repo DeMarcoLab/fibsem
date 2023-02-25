@@ -683,7 +683,6 @@ class SystemSettings:
     Dataclass representing the system settings for the FIB-SEM instrument.
 
     :param ip_address: IP address of the instrument.
-    :param application_file: name of the application file used by the instrument.
     :param stage: settings for the stage.
     :param ion: settings for the ion beam.
     :param electron: settings for the electron beam.
@@ -693,7 +692,6 @@ class SystemSettings:
     """
 
     ip_address: str = "10.0.0.1"
-    application_file: str = "autolamella"
     stage: StageSettings = None
     ion: BeamSystemSettings = None
     electron: BeamSystemSettings = None
@@ -703,7 +701,6 @@ class SystemSettings:
 
         settings_dict = {
             "ip_address": self.ip_address,
-            "application_file": self.application_file,
             "stage": self.stage.__to_dict__(),
             "ion": self.ion.__to_dict__(),
             "electron": self.electron.__to_dict__(),
@@ -717,7 +714,6 @@ class SystemSettings:
 
         system_settings = SystemSettings(
             ip_address=settings["ip_address"],
-            application_file=settings["application_file"],
             stage=StageSettings.__from_dict__(settings["stage"]),
             ion=BeamSystemSettings.__from_dict__(settings["ion"], BeamType.ION),
             electron=BeamSystemSettings.__from_dict__(

@@ -16,7 +16,7 @@ def main():
 
     # setup for milling
     milling.setup_milling(microscope = microscope,
-        application_file = settings.system.application_file,
+        application_file = "Si",
         patterning_mode  = "Serial",
         hfw = settings.image.hfw,
         mill_settings = settings.milling)

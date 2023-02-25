@@ -74,7 +74,7 @@ def main():
         microscope = microscope, 
         image_settings = image_settings, 
         mill_settings = mill_settings, 
-        application_file = settings.system.application_file,
+        application_file = "Si",
         patterning_mode = "Serial",
         pattern_settings = pattern_list
         )
