@@ -4,9 +4,10 @@ import napari.utils.notifications
 from PyQt5 import QtWidgets
 
 from fibsem import constants
-from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, TescanMicroscope, DemoMicroscope
-from fibsem.structures import (FibsemPattern, FibsemPatternSettings, FibsemMillingSettings, BeamType,
-                               MicroscopeSettings)
+from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
+                               TescanMicroscope, ThermoMicroscope)
+from fibsem.structures import (BeamType, FibsemMillingSettings, FibsemPattern,
+                               FibsemPatternSettings, MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari
@@ -94,9 +95,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         return milling_settings
 
-    def update_ui(self):
-
-        pattern_settings = self.get_pattern_settings_from_ui()
+    def update_ui(self, pattern_settings: FibsemPatternSettings = None):
+        
+        if self.sender() == self.pushButton:
+            pattern_settings = self.get_pattern_settings_from_ui()
 
         # clear patterns then draw new ones
         _draw_patterns_in_napari(self.viewer, 

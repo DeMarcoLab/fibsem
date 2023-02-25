@@ -1,14 +1,14 @@
 import logging
-import os
-from enum import Enum
 
 import napari
 import napari.utils.notifications
+import numpy as np
 from PyQt5 import QtWidgets
 
-from fibsem import constants, movement, conversions
+from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import BeamType, MicroscopeSettings, MovementMode, Point, FibsemStagePosition
+from fibsem.structures import (BeamType, FibsemStagePosition,
+                               MicroscopeSettings, MovementMode, Point)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
 
@@ -31,6 +31,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget = image_widget
 
         self.setup_connections()
+
+        self.update_ui()
 
     def setup_connections(self):
 
@@ -61,15 +63,27 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def move_to_position(self):
         stage_position = self.get_position_from_ui()
         self.microscope.move_stage_absolute(stage_position)
+
+        self.update_ui()
+    
+    def update_ui(self):
+
+        stage_position: FibsemStagePosition = self.microscope.get_stage_position()
+
+        self.doubleSpinBox_movement_stage_x.setValue(stage_position.x * constants.SI_TO_MILLI)
+        self.doubleSpinBox_movement_stage_y.setValue(stage_position.y * constants.SI_TO_MILLI)
+        self.doubleSpinBox_movement_stage_z.setValue(stage_position.z * constants.SI_TO_MILLI)
+        self.doubleSpinBox_movement_stage_rotation.setValue(np.rad2deg(stage_position.r))
+        self.doubleSpinBox_movement_stage_tilt.setValue(np.rad2deg(stage_position.t))
     
     def get_position_from_ui(self):
 
         stage_position = FibsemStagePosition(
-            x=self.doubleSpinBox_movement_stage_x.value(),
-            y=self.doubleSpinBox_movement_stage_y.value(),
-            z=self.doubleSpinBox_movement_stage_z.value(),
-            r=self.doubleSpinBox_movement_stage_rotation.value(),
-            t=self.doubleSpinBox_movement_stage_tilt.value(),
+            x=self.doubleSpinBox_movement_stage_x.value() * constants.MILLI_TO_SI,
+            y=self.doubleSpinBox_movement_stage_y.value() * constants.MILLI_TO_SI,
+            z=self.doubleSpinBox_movement_stage_z.value() * constants.MILLI_TO_SI,
+            r=np.deg2rad(self.doubleSpinBox_movement_stage_rotation.value()),
+            t=np.deg2rad(self.doubleSpinBox_movement_stage_tilt.value()),
             coordinate_system=self.comboBox_movement_stage_coordinate_system.currentText(),
 
         )
@@ -117,6 +131,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             )
 
         self.image_widget.take_reference_images()
+        self.update_ui()
 
 
 def main():

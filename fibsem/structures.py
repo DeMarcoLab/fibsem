@@ -1,14 +1,16 @@
 # fibsem structures
 
+import json
 import os
 import sys
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-import tifffile as tff
-import json
+
 import numpy as np
+import tifffile as tff
+
 from fibsem.config import load_yaml
 
 try:
@@ -19,18 +21,14 @@ except:
 
 try:
     from autoscript_sdb_microscope_client.structures import (
-        AdornedImage,
-        StagePosition,
-        ManipulatorPosition,
-        Rectangle,
-    )
+        AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
     THERMO = True
 except:
     THERMO = False
 
 import yaml
-from fibsem.config import METADATA_VERSION
 
+from fibsem.config import METADATA_VERSION
 
 # @patrickcleeve: dataclasses.asdict -> :(
 
@@ -53,6 +51,9 @@ class Point:
     @staticmethod
     def __from_list__(l: list) -> "Point":
         return Point(l[0], l[1])
+    
+    def __add__(self, other) -> 'Point':
+        return Point(self.x + other.x, self.y + other.y)
 
 
 # TODO: convert these to match autoscript...
@@ -152,7 +153,17 @@ Methods:
         @classmethod
         def from_tescan_position(self, stage_tilt: float = 0.0):
             self.y = self.y * np.cos(stage_tilt)
-            
+
+
+    def __add__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
+        return FibsemStagePosition(
+            self.x + other.x,
+            self.y + other.y,
+            self.z + other.z,
+            self.r + other.r,
+            self.t + other.t,
+            self.coordinate_system,
+        )
 
 
 @dataclass
@@ -332,6 +343,7 @@ class BeamSettings:
         )
 
         return beam_settings
+    
 
 
 @dataclass
@@ -432,7 +444,6 @@ class FibsemPatternSettings:
         elif self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
 
-# TODO: move all application_file hfw stuff into the milling settings, to consolidate this.
 @dataclass
 class FibsemMillingSettings:
     """
@@ -761,7 +772,6 @@ class MicroscopeSettings:
     """
 
     system: SystemSettings
-    # default: DefaultSettings
     image: ImageSettings
     protocol: dict = None
     milling: FibsemMillingSettings = None
@@ -781,7 +791,6 @@ class MicroscopeSettings:
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
-            # default=DefaultSettings.__from_dict__(settings["user"]),
             protocol=protocol,
         )
 
@@ -789,7 +798,7 @@ class MicroscopeSettings:
 # state
 from abc import ABC, abstractmethod, abstractstaticmethod
 
-
+# TODO: convert to ABC
 class FibsemStage(Enum):
     Base = 1
 

@@ -65,7 +65,8 @@ from fibsem.structures import (
     FibsemStagePosition,
     FibsemMillingSettings,
     FibsemPatternSettings,
-    FibsemPattern
+    FibsemPattern,
+    BeamSystemSettings
 )
 
 
@@ -101,7 +102,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def get_stage_position(self):
+    def get_stage_position(self) -> FibsemStagePosition:
         pass
 
     @abstractmethod
@@ -2127,11 +2128,14 @@ class TescanMicroscope(FibsemMicroscope):
 
         return []
 
+########################
 class DemoMicroscope(FibsemMicroscope):
 
-
-    def __init(self):            
-        self.connection = None 
+    def __init__(self):            
+        self.connection = None
+        self.stage_position = FibsemStagePosition()
+        self.electron_beam = self.get_beam_settings(BeamType.ELECTRON)
+        self.ion_beam = self.get_beam_settings(BeamType.ION)
 
     def connect_to_microscope(self):
         logging.info(f"Connected to Demo Microscope")
@@ -2145,8 +2149,7 @@ class DemoMicroscope(FibsemMicroscope):
         vfw = image_settings.hfw * image_settings.resolution[1] / image_settings.resolution[0]
         pixelsize = Point(image_settings.hfw / image_settings.resolution[0], 
                           vfw / image_settings.resolution[1])
-
-
+        
         image = FibsemImage(
             data=np.random.randint(low=0, high=256, 
                 size=(image_settings.resolution[1],image_settings.resolution[0]), 
@@ -2165,32 +2168,56 @@ class DemoMicroscope(FibsemMicroscope):
 
     def reset_beam_shifts(self) -> None:
         logging.info(f"Resetting beam shifts")
+        self.electron_beam.shift = Point(0,0)
+        self.ion_beam.shift = Point(0,0)
 
     def beam_shift(self, dx: float, dy: float) -> None:
-        logging.info(f"Beam shift: dx={dx}, dy={dy}")
+        beam_type = BeamType.ION # TODO: add beam_type to params for ABC
+        logging.info(f"Beam shift: dx={dx}, dy={dy} ({beam_type})")
+        if beam_type == BeamType.ELECTRON:
+            self.electron_beam.shift += Point(dx, dy)
+        elif beam_type == BeamType.ION:
+            self.ion_beam.shift += Point(dx, dy)
 
     def get_stage_position(self) -> FibsemStagePosition:
-        logging.info(f"Getting stage position")
-        return FibsemStagePosition()
+        logging.info(f"Getting stage position: {self.stage_position}")
+        return self.stage_position
     
     def get_current_microscope_state(self) -> MicroscopeState:
         logging.info(f"Getting microscope state")
-        return MicroscopeState()
+        return MicroscopeState(absolute_position=self.stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         logging.info(f"Moving stage: {position} (Absolute)")
+        self.stage_position = position
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
         logging.info(f"Moving stage: {position} (Relative)")
+        self.stage_position += position
 
     def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType) -> None:
         logging.info(f"Moving stage: dx={dx}, dy={dy}, beam_type = {beam_type.name} (Stable)")
+        self.stage_position.x += dx
+        self.stage_position.y += dy
 
     def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
         logging.info(f"Moving stage: dy={dy} (Eucentric)")
+        self.stage_position.z += dy / np.cos(np.deg2rad(90-settings.system.stage.tilt_flat_to_ion))
 
     def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
         logging.info(f"Moving stage: Flat to {beam_type.name} beam")
+
+        if beam_type is BeamType.ELECTRON:
+            r = settings.system.stage.tilt_flat_to_electron
+            t = settings.system.stage.tilt_flat_to_electron
+        if beam_type is BeamType.ION:
+            r = settings.system.stage.tilt_flat_to_ion
+            t = settings.system.stage.tilt_flat_to_ion
+
+        # TODO: pre-tilt shuttle
+
+        self.stage_position.r = np.deg2rad(r)
+        self.stage_position.t = np.deg2rad(t)
 
     def setup_milling(self, application_file: str, patterning_mode:str, hfw: float, mill_settings: FibsemMillingSettings):
         pass
@@ -2239,6 +2266,45 @@ class DemoMicroscope(FibsemMicroscope):
         return values
 
 
+    def get_beam_system_state(self, beam_type: BeamType) -> BeamSystemSettings:
+
+        # get current beam settings
+        voltage = 30000
+        current = 20e-12 
+        detector_type = "ETD"
+        detector_mode = "SecondaryElectrons"
+        shift = Point(0, 0)
+
+        if beam_type is BeamType.ION:
+            eucentric_height = 16.5e-3
+            plasma_gas = "Argon"
+        else:
+            eucentric_height = 4.0e-3
+            plasma_gas = None
+
+        return BeamSystemSettings(
+            beam_type=beam_type,
+            voltage=voltage,
+            current=current,
+            detector_type=detector_type,
+            detector_mode=detector_mode,
+            eucentric_height=eucentric_height,
+            plasma_gas=plasma_gas,
+        )
+
+
+    def get_beam_settings(self, beam_type: BeamType) -> BeamSettings:
+
+        return BeamSettings(
+            beam_type=beam_type,
+            beam_current=20e-12,
+            working_distance=16.5e-3,
+            resolution=[1526, 1024],
+            dwell_time=1e-6,
+            hfw=150e-6,
+            stigmation=Point(0, 0),
+            shift=Point(0, 0),
+        )
 
 
 

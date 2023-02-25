@@ -15,7 +15,14 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_x"/>
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_x">
+     <property name="minimum">
+      <double>-10000000000.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>100000000000000000.000000000000000</double>
+     </property>
+    </widget>
    </item>
    <item row="6" column="1">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_rotation"/>
@@ -24,12 +31,19 @@
     <widget class="QComboBox" name="comboBox_movement_stage_coordinate_system"/>
    </item>
    <item row="5" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z"/>
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z">
+     <property name="minimum">
+      <double>-100000000000000000.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>99999999999999991611392.000000000000000</double>
+     </property>
+    </widget>
    </item>
    <item row="5" column="0">
     <widget class="QLabel" name="label_movement_stage_z">
      <property name="text">
-      <string>Z Coordinate (m)</string>
+      <string>Z Coordinate (mm)</string>
      </property>
     </widget>
    </item>
@@ -46,7 +60,7 @@
    <item row="4" column="0">
     <widget class="QLabel" name="label_movement_stage_y">
      <property name="text">
-      <string>Y Coordinate (m)</string>
+      <string>Y Coordinate (mm)</string>
      </property>
     </widget>
    </item>
@@ -58,7 +72,14 @@
     </widget>
    </item>
    <item row="4" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_y"/>
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_y">
+     <property name="minimum">
+      <double>-100000000000000000000.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>10000000000000000905969664.000000000000000</double>
+     </property>
+    </widget>
    </item>
    <item row="10" column="0">
     <widget class="QPushButton" name="pushButton_save_position">
@@ -84,7 +105,7 @@
    <item row="3" column="0">
     <widget class="QLabel" name="label_movement_stage_x">
      <property name="text">
-      <string>X Coordinate (m)</string>
+      <string>X Coordinate (mm)</string>
      </property>
     </widget>
    </item>
