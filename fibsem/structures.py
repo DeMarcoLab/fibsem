@@ -227,16 +227,16 @@ class ImageSettings:
     @staticmethod
     def __from_dict__(settings: dict) -> "ImageSettings":
 
-        if "autocontrast" not in settings:
-            settings["autocontrast"] = False
-        if "save" not in settings:
-            settings["save"] = False
-        if "save_path" not in settings:
-            settings["save_path"] = os.getcwd()
-        if "label" not in settings:
-            settings["label"] = "default_image"
-        if "gamma_enabled" not in settings:
-            settings["gamma_enabled"] = True
+        # if "autocontrast" not in settings:
+        #     settings["autocontrast"] = False
+        # if "save" not in settings:
+        #     settings["save"] = False
+        # if "save_path" not in settings:
+        #     settings["save_path"] = os.getcwd()
+        # if "label" not in settings:
+        #     settings["label"] = "default_image"
+        # if "gamma_enabled" not in settings:
+        #     settings["gamma_enabled"] = True
         if "reduced_area" in settings and settings["reduced_area"] is not None:
             reduced_area = FibsemRectangle.__from_dict__(settings["reduced_area"])
         else:
@@ -244,17 +244,15 @@ class ImageSettings:
 
         
         image_settings = ImageSettings(
-            resolution=settings["resolution"],
-            dwell_time=settings["dwell_time"],
-            hfw=settings["hfw"],
-            autocontrast=settings["autocontrast"],
-            beam_type=BeamType[settings["beam_type"].upper()]
-            if settings["beam_type"] is not None
-            else None,
-            gamma_enabled=settings["gamma_enabled"],
-            save=settings["save"],
-            save_path=settings["save_path"],
-            label=settings["label"],
+            resolution=settings.get("resolution", [1536, 1024]),
+            dwell_time=settings.get("dwell_time", 1.0e-6),
+            hfw=settings.get("hfw", 150e-6),
+            autocontrast=settings.get("autocontrast", False),
+            beam_type=BeamType[settings.get("beam_type", "Electron").upper()],
+            gamma_enabled=settings.get("gamma_enabled", False),
+            save=settings.get("save", False),
+            save_path=settings.get("save_path", os.getcwd()),
+            label=settings.get("label", "default_image"),
             reduced_area=reduced_area,
         )
 

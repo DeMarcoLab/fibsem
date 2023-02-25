@@ -47,7 +47,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def set_ui_from_settings(self, image_settings: ImageSettings):
 
-        # self.comboBox_image_resolution.setCurrentText(image_settings.resolution)
         self.spinBox_resolution_x.setValue(image_settings.resolution[0])
         self.spinBox_resolution_y.setValue(image_settings.resolution[1])
         self.doubleSpinBox_image_dwell_time.setValue(image_settings.dwell_time * constants.SI_TO_MICRO)
