@@ -227,16 +227,7 @@ class ImageSettings:
     @staticmethod
     def __from_dict__(settings: dict) -> "ImageSettings":
 
-        # if "autocontrast" not in settings:
-        #     settings["autocontrast"] = False
-        # if "save" not in settings:
-        #     settings["save"] = False
-        # if "save_path" not in settings:
-        #     settings["save_path"] = os.getcwd()
-        # if "label" not in settings:
-        #     settings["label"] = "default_image"
-        # if "gamma_enabled" not in settings:
-        #     settings["gamma_enabled"] = True
+
         if "reduced_area" in settings and settings["reduced_area"] is not None:
             reduced_area = FibsemRectangle.__from_dict__(settings["reduced_area"])
         else:
