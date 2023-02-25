@@ -31,11 +31,6 @@ def setup_milling(
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
     microscope.setup_milling(application_file, patterning_mode, hfw, mill_settings)
-    logging.info(f"setup ion beam milling")
-    logging.info(
-        f"application file:  {application_file}, pattern mode: {patterning_mode}, hfw: {hfw}"
-    )
-
 
 def run_milling(
     microscope: FibsemMicroscope,

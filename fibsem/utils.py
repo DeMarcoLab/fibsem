@@ -207,6 +207,10 @@ def setup_session(
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=8300
         )
+    
+    elif settings.system.manufacturer == "Demo":
+        microscope = FibSem.DemoMicroscope()
+        microscope.connect_to_microscope()
 
     # image_settings
     settings.image.save_path = session_path

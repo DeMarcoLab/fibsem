@@ -443,6 +443,7 @@ class FibsemPatternSettings:
         elif self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
 
+# TODO: move all application_file hfw stuff into the milling settings, to consolidate this.
 @dataclass
 class FibsemMillingSettings:
     """
@@ -453,6 +454,8 @@ class FibsemMillingSettings:
     spot_size (float): The size of the beam spot used in the FIBSEM milling process. Default value is 5.0e-8 m.
     rate (float): The milling rate of the FIBSEM process. Default value is 3.0e-3 m^3/A/s.
     dwell_time (float): The dwell time of the beam at each point during the FIBSEM milling process. Default value is 1.0e-6 s.
+    application_file (str): The name of the application file used in the FIBSEM milling process. Default value is "Si". (ThermoFisher)
+    hfw (float): The high voltage field width used in the FIBSEM milling process. Default value is 150e-6 m.
 
     Methods:
     to_dict(): Converts the object attributes into a dictionary.
@@ -463,16 +466,18 @@ class FibsemMillingSettings:
     spot_size: float = 5.0e-8
     rate: float = 3.0e-3 # m3/A/s
     dwell_time: float = 1.0e-6 # s
+    application_file: str = "Si"
+    hfw: float = 150e-6
 
     def __to_dict__(self) -> dict:
 
         settings_dict = {
             "milling_current": self.milling_current,
-            "scan_direction": self.scan_direction,
-            "cleaning_cross_section": self.cleaning_cross_section,
             "spot_size": self.spot_size,
             "rate": self.rate,
             "dwell_time": self.dwell_time,
+            "hfw": self.hfw,
+            "application_file": self.application_file,
         }
 
         return settings_dict
@@ -481,10 +486,12 @@ class FibsemMillingSettings:
     def __from_dict__(settings: dict) -> "FibsemMillingSettings":
 
         milling_settings = FibsemMillingSettings(
-            milling_current=settings["milling_current"],
-            spot_size=settings["spot_size"],
-            rate=settings["rate"],
-            dwell_time=settings["dwell_time"],
+            milling_current=settings.get("milling_current", 20.0e-12),
+            spot_size=settings.get("spot_size", 5.0e-8),
+            rate=settings.get("rate", 3.0e-3),
+            dwell_time=settings.get("dwell_time", 1.0e-6),
+            application_file=settings.get("application_file", "Si"),
+            hfw=settings.get("hfw", 150e-6),
         )
 
         return milling_settings

@@ -167,6 +167,10 @@ class FibsemMicroscope(ABC):
     @abstractmethod
     def set_microscope_state(self):
         pass
+    
+    @abstractmethod
+    def get_available(self):
+        pass
 
 
 class ThermoMicroscope(FibsemMicroscope):
@@ -1056,7 +1060,13 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
+    
+    def get_available(self, key: str, beam_type: BeamType = None)-> list:
+        values = []
+        if key == "application_file":
+            values = self.connection.patterning.list_all_application_files()
 
+        return values
 
 class TescanMicroscope(FibsemMicroscope):
     """
@@ -2112,6 +2122,127 @@ class TescanMicroscope(FibsemMicroscope):
 
         logging.info(f"microscope state restored")
         return
+
+    def get_available(self, key: str, beam_type: BeamType = None)-> list:
+
+        return []
+
+class DemoMicroscope(FibsemMicroscope):
+
+
+    def __init(self):            
+        self.connection = None 
+
+    def connect_to_microscope(self):
+        logging.info(f"Connected to Demo Microscope")
+        return
+
+    def disconnect(self):
+        logging.info(f"Disconnected from Demo Microscope")
+
+    def acquire_image(self, image_settings: ImageSettings) -> FibsemImage:
+
+        vfw = image_settings.hfw * image_settings.resolution[1] / image_settings.resolution[0]
+        pixelsize = Point(image_settings.hfw / image_settings.resolution[0], 
+                          vfw / image_settings.resolution[1])
+
+
+        image = FibsemImage(
+            data=np.random.randint(low=0, high=256, 
+                size=(image_settings.resolution[1],image_settings.resolution[0]), 
+                dtype=np.uint8),
+            metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
+                                         microscope_state=MicroscopeState()))
+                                 
+        return image
+
+    def last_image(self, beam_type: BeamType) -> FibsemImage:
+        logging.info(f"Getting last image: {beam_type}")
+        return NotImplemented
+    
+    def autocontrast(self, beam_type: BeamType) -> None:
+        logging.info(f"Autocontrast: {beam_type}")
+
+    def reset_beam_shifts(self) -> None:
+        logging.info(f"Resetting beam shifts")
+
+    def beam_shift(self, dx: float, dy: float) -> None:
+        logging.info(f"Beam shift: dx={dx}, dy={dy}")
+
+    def get_stage_position(self) -> FibsemStagePosition:
+        logging.info(f"Getting stage position")
+        return FibsemStagePosition()
+    
+    def get_current_microscope_state(self) -> MicroscopeState:
+        logging.info(f"Getting microscope state")
+        return MicroscopeState()
+
+    def move_stage_absolute(self, position: FibsemStagePosition) -> None:
+        logging.info(f"Moving stage: {position} (Absolute)")
+
+    def move_stage_relative(self, position: FibsemStagePosition) -> None:
+        logging.info(f"Moving stage: {position} (Relative)")
+
+    def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType) -> None:
+        logging.info(f"Moving stage: dx={dx}, dy={dy}, beam_type = {beam_type.name} (Stable)")
+
+    def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
+        logging.info(f"Moving stage: dy={dy} (Eucentric)")
+
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
+        logging.info(f"Moving stage: Flat to {beam_type.name} beam")
+
+    def setup_milling(self, application_file: str, patterning_mode:str, hfw: float, mill_settings: FibsemMillingSettings):
+        pass
+
+    def run_milling(self, milling_current: float, asynch: bool = False) -> None:
+        pass
+
+    def finish_milling(self, imaging_current: float) -> None:
+        pass
+
+    def draw_rectangle(self, pattern_settings: FibsemPatternSettings) -> None:
+        pass
+
+    def draw_line(self, pattern_settings: FibsemPatternSettings) -> None:
+        pass
+
+    def setup_sputter(self):
+        pass
+
+    def draw_sputter_pattern(self):
+        pass
+
+    def run_sputter(self):
+        pass
+
+    def finish_sputter(self):
+        pass
+
+    def set_microscope_state(self, state: MicroscopeState):
+        logging.info(f"Setting microscope state")
+
+    def get_available(self, key: str, beam_type: BeamType = None) -> list[float]:
+        
+        values = []
+        if key == "current":
+            if beam_type == BeamType.ELECTRON:
+                values = [1.0e-12]
+            if beam_type == BeamType.ION:
+                values = [20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.6e-9, 28.0e-9, 120e-9]
+        
+
+        if key == "application_file":
+            values = ["Si", "autolamella", "cryo_Pt_dep"]
+
+
+        return values
+
+
+
+
+
+
 
 
 ######################################## Helper functions ########################################
