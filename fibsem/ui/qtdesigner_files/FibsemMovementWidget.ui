@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="1">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_x">
+     <property name="decimals">
+      <number>5</number>
+     </property>
      <property name="minimum">
       <double>-10000000000.000000000000000</double>
      </property>
@@ -32,6 +35,9 @@
    </item>
    <item row="5" column="1">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z">
+     <property name="decimals">
+      <number>5</number>
+     </property>
      <property name="minimum">
       <double>-100000000000000000.000000000000000</double>
      </property>
@@ -73,6 +79,9 @@
    </item>
    <item row="4" column="1">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_y">
+     <property name="decimals">
+      <number>5</number>
+     </property>
      <property name="minimum">
       <double>-100000000000000000000.000000000000000</double>
      </property>
