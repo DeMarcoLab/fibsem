@@ -77,8 +77,7 @@ The cross correlation alignment can be tuned by adjusting the bandpass filters; 
 
 The effect of these filters on the bandpass mask is shown below:
 
-
-The following figure shows the effect of changing these parameters on the cross-correlation:
+![Filters](img/alignment/filters.png)
 
 #### Masking
 We provide a number of masking utilities: 

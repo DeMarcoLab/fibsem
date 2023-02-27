@@ -34,3 +34,5 @@ fibsem/tests/None.tif
 fibsem/test_images/*.tif
 
 build/*
+fibsem/segmentation/training/*
+scratch/training/*
