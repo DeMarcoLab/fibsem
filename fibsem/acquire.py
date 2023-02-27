@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 from skimage import exposure
-import cv2
+
 
 from fibsem.structures import (
     BeamType,
@@ -204,6 +204,7 @@ def apply_clahe(
     temp = (temp * 2**8).astype(np.uint8)
 
     if which_package=='OpenCV':
+        import cv2
         tile_grid_size = int(tile_grid_size)
         clahe = cv2.createCLAHE(clipLimit=clip_limit_cv2,
                                 tileGridSize=(tile_grid_size,tile_grid_size))
