@@ -310,6 +310,7 @@ class BeamSettings:
     beam_type: BeamType
     working_distance: float = None
     beam_current: float = None
+    voltage: float = None
     hfw: float = None
     resolution: list = None
     dwell_time: float = None

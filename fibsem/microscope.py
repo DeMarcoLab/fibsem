@@ -2261,6 +2261,44 @@ class DemoMicroscope(FibsemMicroscope):
 
         return values
 
+    def get(self, key, beam_type: BeamType = None) -> float:
+        logging.info(f"Getting {key} ({beam_type})")
+
+        # voltage
+        if key == "voltage":
+            if beam_type == BeamType.ELECTRON:
+                return self.electron_beam.voltage
+            if beam_type == BeamType.ION:
+                return self.ion_beam.voltage
+            
+        # current
+        if key == "current":
+            if beam_type == BeamType.ELECTRON:
+                return self.electron_beam.beam_current
+            if beam_type == BeamType.ION:
+                return self.ion_beam.beam_current
+
+        return NotImplemented
+
+    def set(self, key, value, beam_type: BeamType = None) -> None:
+        logging.info(f"Setting {key} to {value} ({beam_type})")
+        
+        # voltage
+        if key == "voltage":
+            if beam_type == BeamType.ELECTRON:
+                self.electron_beam.voltage = value
+            if beam_type == BeamType.ION:
+                self.ion_beam.voltage = value
+            return
+        # current
+        if key == "current":
+            if beam_type == BeamType.ELECTRON:
+                self.electron_beam.beam_current = value
+            if beam_type == BeamType.ION:
+                self.ion_beam.beam_current = value
+            return        
+        
+        return NotImplemented
 
     def get_beam_system_state(self, beam_type: BeamType) -> BeamSystemSettings:
 
@@ -2290,7 +2328,7 @@ class DemoMicroscope(FibsemMicroscope):
 
 
     def get_beam_settings(self, beam_type: BeamType) -> BeamSettings:
-
+        # TODO: implement for both beams
         return BeamSettings(
             beam_type=beam_type,
             beam_current=20e-12,
@@ -2300,6 +2338,7 @@ class DemoMicroscope(FibsemMicroscope):
             hfw=150e-6,
             stigmation=Point(0, 0),
             shift=Point(0, 0),
+            voltage=30000
         )
 
 
