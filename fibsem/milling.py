@@ -98,10 +98,8 @@ def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSetti
     """
     microscope.draw_line(pattern_settings)
 
-
-def draw_trench(microscope: FibsemMicroscope, protocol: dict, point: Point = Point()):
-    """Calculate the trench milling patterns"""
-
+def extract_trench_parameters(protocol: dict, point: Point = Point()):
+    
     lamella_width = protocol["lamella_width"]
     lamella_height = protocol["lamella_height"]
     trench_height = protocol["trench_height"]
@@ -132,6 +130,13 @@ def draw_trench(microscope: FibsemMicroscope, protocol: dict, point: Point = Poi
         cleaning_cross_section=True,
         scan_direction="TopToBottom",
     )
+
+    return  lower_pattern_settings, upper_pattern_settings
+
+def draw_trench(microscope: FibsemMicroscope, protocol: dict, point: Point = Point()):
+    """Calculate the trench milling patterns"""
+
+    lower_pattern_settings, upper_pattern_settings = extract_trench_parameters(protocol, point)
 
     # draw patterns
     lower_pattern = draw_rectangle(microscope, lower_pattern_settings)
