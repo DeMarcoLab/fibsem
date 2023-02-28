@@ -42,7 +42,8 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         self.logged_detection_types = []
 
         # images
-        self.image = self.detected_features.image
+        from fibsem.segmentation.utils import image_blend
+        self.image = image_blend(self.detected_features.image, self.detected_features.mask)
         self._USER_CORRECTED = False
 
         # pattern drawing
@@ -213,10 +214,10 @@ def main():
     mode = AutoLiftoutMode.Manual
     from liftout.structures import Lamella
 
-    # charge neutralisation  to charge lamella
-    settings.image.beam_type = BeamType.ION
-    n_iter = int(settings.protocol["options"].get("liftout_charge_neutralisation_iterations", 35))
-    calibration.auto_charge_neutralisation(microscope, settings.image, n_iterations=n_iter)
+    # # charge neutralisation  to charge lamella
+    # settings.image.beam_type = BeamType.ION
+    # n_iter = int(settings.protocol["options"].get("liftout_charge_neutralisation_iterations", 35))
+    # calibration.auto_charge_neutralisation(microscope, settings.image, n_iterations=n_iter)
     
     # calibration.auto_charge_neutralisation(microscope, settings.image, n_iterations=20, save_images=True)
 
@@ -231,12 +232,12 @@ def main():
     # )
 
 
-    return
+    # return
 
     beam_types = [BeamType.ELECTRON, BeamType.ELECTRON, BeamType.ION, BeamType.ION]
     euc_move = [False, False, True, True]
     hfws = [ReferenceHFW.Medium.value, ReferenceHFW.High.value, ReferenceHFW.Medium.value, ReferenceHFW.High.value]
-    mask_radii = [512, 256, 512, 256]
+    mask_radii = [400, 256, 512, 256]
 
     for beam_type, eucentric_move, hfw, m_radius in zip(beam_types, euc_move, hfws, mask_radii):
 
@@ -247,8 +248,8 @@ def main():
             microscope=microscope,
             settings=settings,
             features=[
-                Feature(FeatureType.LamellaCentre),
-                Feature(FeatureType.ImageCentre),
+                Feature(FeatureType.NeedleTip),
+                Feature(FeatureType.LamellaLeftEdge),
             ],
             validate=bool(mode is AutoLiftoutMode.Manual),
             mask_radius=m_radius

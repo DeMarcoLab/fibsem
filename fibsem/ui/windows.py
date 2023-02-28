@@ -42,7 +42,8 @@ def ask_user_movement(
         settings=settings, 
         msg=msg, 
         pattern=pattern,
-        parent=parent, viewer=viewer
+        parent=parent, 
+        viewer=viewer
     )
 
     viewer.window.add_dock_widget(movement_ui, area="right", add_vertical_stretch=False)
@@ -57,7 +58,7 @@ def detect_features_v2(
     settings: MicroscopeSettings,
     features: tuple[Feature],
     validate: bool = True,
-    mask_radius: int = 256,
+    mask_radius: int = 400,
 ) -> DetectedFeatures:
 
     """Detect features in microscope image.
@@ -75,6 +76,8 @@ def detect_features_v2(
 
     # take new image
     image = acquire.new_image(microscope, settings.image)
+    # from fibsem.structures import AdornedImage
+    # image = AdornedImage.load(r"C:\Users\Admin\Github\autoliftout\liftout\log\dm-E2-21Oct22-04-2022-12-14.10-17-57AM\01-subtle-bear\needle_liftout_start_position_eb.tif")
 
     # load model
     checkpoint = settings.protocol["ml"]["weights"]
@@ -185,7 +188,7 @@ def milling_ui(
     milling_pattern: patterning.MillingPattern,
     point: Point = None,
     change_pattern: bool = False,
-    validate: bool = False,
+    validate: bool = True,
 ):
 
     viewer = napari.Viewer()

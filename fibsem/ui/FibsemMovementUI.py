@@ -53,6 +53,7 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
 
         # keep out region
         self.keep_out = keep_out
+        self.checkBox_show_keep_out.setChecked(False)
 
         # msg
         self.msg = msg
@@ -119,21 +120,16 @@ class FibsemMovementUI(movement_dialog.Ui_Dialog, QtWidgets.QDialog):
             # sample = load_experiment(path)
 
             # from fibsem.ui.utils import get_nearby_lamellas
-
             # shape_points = get_nearby_lamellas(self.microscope, 
             #                                    pixelsize=self.ib_image.metadata.binary_result.pixel_size.x, 
             #                                    sample=sample, cx_ib=cx_ib, cy=cy)
 
-
-
-
-            
             # # refresh viewer
             self.viewer.layers.clear()
             self.image_layer = self.viewer.add_image(self.image, name="Images", opacity=0.9, blending="additive")
             self.image_layer.mouse_double_click_callbacks.append(self._double_click) # append callback
             
-            self.viewer.add_points(shape_points, size=10, face_color="red")
+            # self.viewer.add_points(shape_points, size=10, face_color="red")
 
 
             if self.checkBox_show_milling_pattern.isChecked():
