@@ -1236,7 +1236,9 @@ class TescanMicroscope(FibsemMicroscope):
             data and metadata on the microscope state and the image settings.
         """
         # At first make sure the beam is ON
-        self.connection.SEM.Beam.On()
+        status = self.connection.SEM.Beam.GetStatus()
+        if status != Automation.SEM.Beam.Status.On:
+                self.connection.SEM.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
         # even before we configure the detectors
         self.connection.SEM.Scan.Stop()
@@ -1324,7 +1326,9 @@ class TescanMicroscope(FibsemMicroscope):
             - The function also captures the microscope state at the time of acquisition and includes this information in the metadata of the acquired image.
         """
         # At first make sure the beam is ON
-        self.connection.FIB.Beam.On()
+        status = self.connection.FIB.Beam.GetStatus()
+        if status != Automation.FIB.Beam.Status.On:
+                self.connection.FIB.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
         # even before we configure the detectors
         self.connection.FIB.Scan.Stop()
