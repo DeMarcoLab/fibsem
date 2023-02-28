@@ -17,9 +17,7 @@ from fibsem.microscope import FibsemMicroscope
 
 def setup_milling(
     microscope: FibsemMicroscope,
-    application_file: str = "autolamella",
     patterning_mode: str = "Serial",
-    hfw: float = 150e-6,
     mill_settings: FibsemMillingSettings = None,
 ):
     """Setup Microscope for Ion Beam Milling.
@@ -30,7 +28,7 @@ def setup_milling(
         patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
-    microscope.setup_milling(application_file, patterning_mode, hfw, mill_settings)
+    microscope.setup_milling(patterning_mode, mill_settings)
 
 def run_milling(
     microscope: FibsemMicroscope,
@@ -222,15 +220,12 @@ def draw_fiducial(
 
 def milling_protocol(
     microscope: FibsemMicroscope,
-    image_settings: ImageSettings,
     mill_settings: FibsemMillingSettings,
-    application_file: str = "autolamella",
     patterning_mode: str = "Serial",
     pattern_settings: list = [],
 ):
     # setup milling
-    hfw = image_settings.hfw
-    setup_milling(microscope, application_file, patterning_mode, hfw, mill_settings)
+    setup_milling(microscope, patterning_mode, mill_settings)
 
     # draw patterns
     for pattern in pattern_settings:

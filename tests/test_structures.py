@@ -395,7 +395,7 @@ def test_system_settings_from_dict():
 
     settings_dict = {
         "ip_address": "10.0.0.1",
-        "application_file": "autolamella",
+        "application_file": "Si",
         "manufacturer": "Thermo",
         "stage": stage_dict,
         "ion": ion_settings_dict,

@@ -1,7 +1,7 @@
 # system
 system:
   ip_address: "localhost"
-  manufacturer: "Demo"
+  manufacturer: "Tescan"
   # beams
   ion:
     voltage: 30000

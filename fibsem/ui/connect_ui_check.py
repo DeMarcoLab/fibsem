@@ -163,7 +163,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         milling_protocol(microscope = self.microscope, 
             image_settings = self.image_settings, 
             mill_settings = mill_settings, 
-            application_file="autolamella", 
+            application_file="Si", 
             patterning_mode="Serial", 
             pattern_settings= self.pattern_settings)
 

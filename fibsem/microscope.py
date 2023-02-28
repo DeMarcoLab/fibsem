@@ -721,9 +721,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def setup_milling(
         self,
-        application_file: str,
         patterning_mode: str,
-        hfw: float,
         mill_settings: FibsemMillingSettings,
     ):
         """
@@ -753,10 +751,10 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.set_default_beam_type(
             BeamType.ION.value
         )  # ion beam default
-        self.connection.patterning.set_default_application_file(application_file)
+        self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self.connection.patterning.mode = patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
-        self.connection.beams.ion_beam.horizontal_field_width.value = hfw
+        self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
 
     def run_milling(self, milling_current: float, asynch: bool = False):
         """
@@ -1752,9 +1750,7 @@ class TescanMicroscope(FibsemMicroscope):
 
     def setup_milling(
         self,
-        application_file: str,
         patterning_mode: str,
-        hfw: float,
         mill_settings: FibsemMillingSettings,
     ):
         """
@@ -1794,7 +1790,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         layer_settings = IEtching(
             syncWriteField=False,
-            writeFieldSize=hfw,
+            writeFieldSize=mill_settings.hfw,
             beamCurrent=beam_current,
             spotSize=spot_size,
             rate=rate,
@@ -2219,7 +2215,7 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position.r = np.deg2rad(r)
         self.stage_position.t = np.deg2rad(t)
 
-    def setup_milling(self, application_file: str, patterning_mode:str, hfw: float, mill_settings: FibsemMillingSettings):
+    def setup_milling(self, patterning_mode:str, mill_settings: FibsemMillingSettings):
         pass
 
     def run_milling(self, milling_current: float, asynch: bool = False) -> None:

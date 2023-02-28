@@ -7,7 +7,7 @@ def sputter_platinum(
     microscope: FibsemMicroscope,
     protocol: dict,
     whole_grid: bool = False,
-    default_application_file: str = "autolamella",
+    default_application_file: str = "Si",
 ):
     """Sputter platinum over the sample.
 
