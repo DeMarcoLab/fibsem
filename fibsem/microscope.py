@@ -1382,7 +1382,7 @@ class TescanMicroscope(FibsemMicroscope):
             ib_settings=BeamSettings(
                 beam_type=BeamType.ION,
                 working_distance=float(image.Header["FIB"]["WD"]),
-                beam_current=float(image.Header["FIB"]["BeamCurrent"]),
+                beam_current=float(self.connection.FIB.Beam.ReadProbeCurrent()),
                 resolution=(imageWidth, imageHeight), #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["FIB"]["DwellTime"]),
                 stigmation=Point(
