@@ -36,3 +36,4 @@ fibsem/test_images/*.tif
 build/*
 fibsem/segmentation/training/*
 scratch/training/*
+fibsem/testing.ipynb

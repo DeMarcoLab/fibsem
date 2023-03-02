@@ -47,8 +47,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
         self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
-
-        self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+        
+        self.plainTextEdit.setPlainText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+    
 
         # Initialise microscope object
         self.microscope = None
@@ -406,32 +407,29 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
 
     def update_log(self):
-        
+       
         with open(self.log_path, "r") as f:
             lines = f.read().splitlines()
             lin_len = len(lines)
-            
-        if self.lines != lin_len:   
+
+        if self.lines != lin_len:
             for i in reversed(range(lin_len - self.lines)):
-                line_display = lines[-1-i]
-                if re.search("napari.loader — DEBUG", line_display):
+                line_display = lines[-1 - i]
+                if re.search("DEBUG", line_display):
+                    self.lines = lin_len
+                    continue
+                if re.search("vispy", line_display):
                     self.lines = lin_len
                     continue
                 line_divided = line_display.split(",")
                 time = line_divided[0]
-                message = line_divided[1].split("—")
+                message = line_display.split("—")
                 disp_str = f"{time} | {message[-1]}"
 
-                self.lines = lin_len
-                self.CLog.setText(self.CLog2.text())
-                self.CLog2.setText(self.CLog3.text())
-                self.CLog3.setText(self.CLog4.text())
-                self.CLog4.setText(self.CLog5.text())
-                self.CLog5.setText(self.CLog6.text())
-                self.CLog6.setText(self.CLog7.text())
-                self.CLog7.setText(self.CLog8.text())
+                disp_paragraph = self.plainTextEdit.toPlainText() + disp_str + "\n"
 
-                self.CLog8.setText(disp_str)
+                self.lines = lin_len
+                self.plainTextEdit.setPlainText(disp_paragraph)
       
 
     def connect_to_microscope(self):
