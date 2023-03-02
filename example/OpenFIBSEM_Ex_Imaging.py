@@ -87,6 +87,6 @@ if __name__ == "__main__":
 
     microscope,settings = connect_to_microscope()
 
-    imaging_1(microscope=microscope,settings=settings)
+    #imaging_1(microscope=microscope,settings=settings)
 
     imaging_2(microscope=microscope,settings=settings)

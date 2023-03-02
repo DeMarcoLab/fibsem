@@ -46,9 +46,7 @@ def milling_example(microscope,settings):
     # run the milling protocol to mill patterns created
     milling_protocol(
         microscope = microscope, 
-        image_settings = image_settings, 
         mill_settings = mill_settings, 
-        application_file = "Si",
         patterning_mode = "Serial",
         pattern_settings = pattern_list
         )
