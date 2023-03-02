@@ -75,6 +75,10 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
     elif pattern_settings.pattern is FibsemPattern.Line:
         microscope.draw_line(pattern_settings)
 
+    elif pattern_settings.pattern is FibsemPattern.Circle:
+        microscope.draw_circle(pattern_settings)
+        
+
 
 def draw_rectangle(
     microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings

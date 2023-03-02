@@ -103,6 +103,7 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.pushButton_milling.clicked.connect(self.milling_protocol)
         self.pushButton_line.clicked.connect(self.add_line)
         self.pushButton_rec.clicked.connect(self.add_rectangle)
+        self.button_circle.clicked.connect(self.add_circle)
 
         # GIS
         self.sputterButton.clicked.connect(self.sputter_protocol)
@@ -119,6 +120,18 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         )
         self.pattern_settings.append(line)
         logging.info("UI | Line pattern added with start point: ({},{}), end point: ({},{}), depth: {} and rotation: {}".format(self.milling_start_x.value(),self.milling_start_y.value(),self.milling_end_x.value(),self.milling_end_y.value(),self.depth_milling.value(),self.rotation_milling.value()))
+
+    def add_circle(self):
+        circle = FibsemPatternSettings(
+            pattern = FibsemPattern.Circle,
+            radius = self.circle_radius.value()*constants.MICRO_TO_SI,
+            centre_x = self.circle_x.value()*constants.MICRO_TO_SI,
+            centre_y = self.circle_y.value()*constants.MICRO_TO_SI,
+            depth = self.circle_depth.value()*constants.MICRO_TO_SI,
+            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
+        )
+        self.pattern_settings.append(circle)
+        logging.info("UI | Circle pattern added with radius: {}, centre: ({},{}), depth: {} and rotation: {}".format(self.circle_radius.value(),self.circle_x.value(),self.circle_y.value(),self.circle_depth.value(),self.rotation_milling.value()))
 
     def add_rectangle(self):
         rectangle = FibsemPatternSettings(
