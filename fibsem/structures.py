@@ -1146,3 +1146,18 @@ def check_data_format(data: np.ndarray) -> bool:
     # if data.ndim == 3 and data.shape[2] == 1:
     #     data = data[:, :, 0]
     return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]
+
+
+@dataclass
+class FibsemDetectorSettings:
+    type: str
+    mode: str 
+    brightness: float
+    contrast: float
+
+    if TESCAN:
+        def to_tescan(self):
+            """Converts to tescan format."""
+            tescan_brightness = self.brightness * 100
+            tescan_contrast = self.contrast * 100
+            return tescan_brightness, tescan_contrast
