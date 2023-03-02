@@ -21,7 +21,7 @@ class SegmentationModel:
         super().__init__()
 
         self.mode = mode
-        self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
 
         self.load_model(checkpoint=checkpoint, encoder=encoder)
@@ -52,6 +52,7 @@ class SegmentationModel:
     def pre_process(self, img: np.ndarray) -> torch.Tensor:
         """Pre-process the image for inference"""
 
+        # TODO: this is a hack, fix it
         img_t = torch.Tensor(img).float().to(self.device)
         if img_t.ndim == 2:
             img_t = img_t.unsqueeze(0).unsqueeze(0)  # add batch dim and channel dim
@@ -63,7 +64,7 @@ class SegmentationModel:
 
         return img_t
 
-    def inference(self, img: np.ndarray) -> np.ndarray:
+    def inference(self, img: np.ndarray, rgb: bool = True) -> np.ndarray:
         """Run model inference on the input image"""
         with torch.no_grad():
             img_t = self.pre_process(img)
@@ -71,19 +72,22 @@ class SegmentationModel:
             outputs = self.model(img_t)
             outputs = F.softmax(outputs, dim=1)
             masks = torch.argmax(outputs, dim=1).detach().cpu().numpy()
+        
+        # decode to rgb
+        if rgb:
+            masks = self.postprocess(masks, nc=self.num_classes)
 
-        output_masks = self.postprocess(masks, nc=self.num_classes)
-
-        return output_masks
+        return masks
 
     def postprocess(self, masks, nc):
+        # TODO: vectorise this properly
         output_masks = []
         for i in range(len(masks)):
             output_masks.append(decode_segmap(masks[i], nc=nc))
 
         if len(output_masks) == 1:
             output_masks = output_masks[0]
-        return output_masks
+        return np.array(output_masks)
 
 
 def load_model(

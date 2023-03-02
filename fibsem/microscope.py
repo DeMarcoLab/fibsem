@@ -2230,7 +2230,7 @@ class DemoMicroscope(FibsemMicroscope):
 
     def beam_shift(self, dx: float, dy: float) -> None:
         beam_type = BeamType.ION # TODO: add beam_type to params for ABC
-        logging.info(f"Beam shift: dx={dx}, dy={dy} ({beam_type})")
+        logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
         if beam_type == BeamType.ELECTRON:
             self.electron_beam.shift += Point(dx, dy)
         elif beam_type == BeamType.ION:
@@ -2253,12 +2253,12 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position += position
 
     def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType) -> None:
-        logging.info(f"Moving stage: dx={dx}, dy={dy}, beam_type = {beam_type.name} (Stable)")
+        logging.info(f"Moving stage: dx={dx:.2e}, dy={dy:.2e}, beam_type = {beam_type.name} (Stable)")
         self.stage_position.x += dx
         self.stage_position.y += dy
 
     def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
-        logging.info(f"Moving stage: dy={dy} (Eucentric)")
+        logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
         self.stage_position.z += dy / np.cos(np.deg2rad(90-settings.system.stage.tilt_flat_to_ion))
 
     def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
@@ -2289,6 +2289,9 @@ class DemoMicroscope(FibsemMicroscope):
         pass
 
     def draw_line(self, pattern_settings: FibsemPatternSettings) -> None:
+        pass
+
+    def draw_circle(self, pattern_settings: FibsemPatternSettings) -> None:
         pass
 
     def setup_sputter(self):
