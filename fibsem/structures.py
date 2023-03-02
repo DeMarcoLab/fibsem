@@ -395,6 +395,7 @@ class MicroscopeState:
 class FibsemPattern(Enum):
     Rectangle = 1
     Line = 2
+    Circle = 3
 
 # TODO: convert this to a dataclass
 class FibsemPatternSettings:
@@ -438,7 +439,16 @@ class FibsemPatternSettings:
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
-
+        elif pattern == FibsemPattern.Circle:
+            self.centre_x = kwargs["centre_x"]
+            self.centre_y = kwargs["centre_y"]
+            self.radius = kwargs["radius"]
+            self.depth = kwargs["depth"]
+            self.start_angle = kwargs["start_angle"] if "start_angle" in kwargs else 0.0
+            self.end_angle = kwargs["end_angle"] if "end_angle" in kwargs else 360.0
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
             return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"

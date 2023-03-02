@@ -871,6 +871,31 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         return pattern
+    
+    def draw_circle(self, pattern_settings: FibsemPatternSettings):
+        """
+        Draws a circle pattern on the current imaging view of the microscope.
+
+        Args:
+            pattern_settings (FibsemPatternSettings): A data class object specifying the pattern parameters,
+                including the centre point, radius and depth of the pattern.
+
+        Returns:
+            CirclePattern: A circle pattern object, which can be used to configure further properties or to add the
+                pattern to the milling list.
+
+        Raises:
+            autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
+        """
+        pattern = self.connection.patterning.create_circle(
+            center_x=pattern_settings.centre_x,
+            center_y=pattern_settings.centre_y,
+            outer_diameter=2*pattern_settings.radius,
+            inner_diameter = 0,
+            depth=pattern_settings.depth,
+        )
+
+        return pattern
 
     def setup_sputter(self, protocol: dict):
         """
@@ -1924,6 +1949,30 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         pattern = self.layer
+        return pattern
+
+    def draw_circle(self, pattern_settings: FibsemPatternSettings):
+        """
+        Draws a circle pattern on the current imaging view of the microscope.
+
+        Args:
+            pattern_settings (FibsemPatternSettings): A data class object specifying the pattern parameters,
+                including the centre point, radius and depth of the pattern.
+
+        Returns:
+            CirclePattern: A circle pattern object, which can be used to configure further properties or to add the
+                pattern to the milling list.
+
+        Raises:
+            autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
+        """
+        pattern = self.connection.DrawBeam.Layer.addArcOutline(
+            center_x=pattern_settings.centre_x,
+            center_y=pattern_settings.centre_y,
+            radius=pattern_settings.radius,
+            depth=pattern_settings.depth,
+        )
+
         return pattern
 
     def setup_sputter(self, protocol: dict):

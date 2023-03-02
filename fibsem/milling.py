@@ -222,6 +222,12 @@ def draw_fiducial(
 
     return [pattern_1, pattern_2]
 
+def draw_circle_pattern(
+    microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings
+):
+    pattern = microscope.draw_circle(pattern_settings)
+    
+    return pattern
 
 def milling_protocol(
     microscope: FibsemMicroscope,
