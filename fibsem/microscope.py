@@ -1976,11 +1976,11 @@ class TescanMicroscope(FibsemMicroscope):
         Raises:
             autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
         """
-        pattern = self.connection.DrawBeam.Layer.addArcOutline(
-            center_x=pattern_settings.centre_x,
-            center_y=pattern_settings.centre_y,
-            radius=pattern_settings.radius,
-            depth=pattern_settings.depth,
+        pattern = self.layer.addArcOutline(
+            CenterX=pattern_settings.centre_x,
+            CenterY=pattern_settings.centre_y,
+            Radius=pattern_settings.radius,
+            Depth=pattern_settings.depth,
         )
 
         return pattern
