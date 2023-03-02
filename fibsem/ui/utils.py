@@ -185,25 +185,7 @@ import napari
 
 #     return label
 
-def convert_pattern_to_napari_circle(pattern_settings: FibsemPatternSettings, image: FibsemImage) -> np.ndarray: 
-    # image centre
-    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
 
-    # pixel size
-    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
-
-    from fibsem.structures import FibsemPattern
-    pattern_centre_x = pattern_settings.centre_x
-    pattern_centre_y = pattern_settings.centre_y
-    pattern_radius = pattern_settings.radius
-
-    cx = int(icx + (pattern_centre_x / pixelsize_y))
-    cy = int(icy - (pattern_centre_y / pixelsize_y))
-    radius = int(pattern_radius / pixelsize_x)
-
-    shape = [[cx, cy], [radius, radius]]
-
-    return np.ndarray(shape)
 
 def convert_pattern_to_napari_rect(
     pattern_settings: FibsemPatternSettings, image: FibsemImage
@@ -279,15 +261,14 @@ def _draw_patterns_in_napari(
     # colour wheel
     colour = ["yellow", "cyan", "magenta", "purple"]
 
-    # convert fibsem patterns to napari shapes
     from fibsem.structures import FibsemPattern
+   
+    # convert fibsem patterns to napari shapes
+    
     for i, stage in enumerate(all_patterns):
         shape_patterns = []
         for pattern_settings in stage:
-            if pattern_settings.pattern is FibsemPattern.Circle:
-                shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
-            else:
-                shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+            shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
 
             # offset the x coord by image width
             if eb_image is not None:
