@@ -150,6 +150,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def draw_circle(self):
+        pass
+
+    @abstractmethod
     def setup_sputter(self):
         pass
 
@@ -242,6 +246,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         draw_line(self, pattern_settings: FibsemPatternSettings):
             Draws a line pattern on the current imaging view of the microscope.
+
+        draw_circle(self, pattern_settings: FibsemPatternSettings):
+            Draws a circular pattern on the current imaging view of the microscope.
 
         setup_sputter(self, protocol: dict):
             Set up the sputter coating process on the microscope.
@@ -1163,6 +1170,9 @@ class TescanMicroscope(FibsemMicroscope):
 
         draw_line(self, pattern_settings: FibsemPatternSettings):
             Draws a line pattern on the current imaging view of the microscope.
+        
+        draw_circle(self, pattern_settings: FibsemPatternSettings):
+            Draws a circular pattern on the current imaging view of the microscope.
 
         setup_sputter(self, protocol: dict):
             Set up the sputter coating process on the microscope.
