@@ -167,6 +167,103 @@ Methods:
 
 
 @dataclass
+class FibsemManipulatorPosition:
+    """Data class for storing manipulator position data.
+
+Attributes:
+    x (float): The X position of the manipulator in meters.
+    y (float): The Y position of the manipulator in meters.
+    z (float): The Z position of the manipulator in meters.
+    r (float): The Rotation of the manipulator in radians.
+    t (float): The Tilt of the manipulator in radians.
+    coordinate_system (str): The coordinate system used for the manipulator position.
+
+Methods:
+    __to_dict__(): Convert the manipulator position object to a dictionary.
+    __from_dict__(data: dict): Create a new manipulator position object from a dictionary.
+    to_autoscript_position() -> ManipulatorPosition: Convert the manipulator position to a ManipulatorPosition object that is compatible with Autoscript.
+    from_autoscript_position(position: ManipulatorPosition) -> None: Create a new FibsemManipulatorPosition object from a ManipulatorPosition object that is compatible with Autoscript.
+    to_tescan_position(): Convert the manipulator position to a format that is compatible with Tescan.
+    from_tescan_position(): Create a new FibsemManipulatorPosition object from a Tescan-compatible manipulator position.
+
+"""
+
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    r: float = 0.0
+    t: float = 0.0
+    coordinate_system: str = None
+
+    def __to_dict__(self) -> dict:
+        position_dict = {}
+        position_dict["x"] = self.x
+        position_dict["y"] = self.y
+        position_dict["z"] = self.z
+        position_dict["r"] = self.r
+        position_dict["t"] = self.t
+        position_dict["coordinate_system"] = self.coordinate_system
+
+        return position_dict
+    
+    @classmethod
+    def __from_dict__(cls, data: dict) -> "FibsemManipulatorPosition":
+        return cls(
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            r=data["r"],
+            t=data["t"],
+            coordinate_system=data["coordinate_system"],
+        )
+    
+    if THERMO:
+            
+            def to_autoscript_position(self) -> ManipulatorPosition:
+                return ManipulatorPosition(
+                    x=self.x,
+                    y=self.y,
+                    z=self.z,
+                    r=self.r,
+                    t=self.t,
+                    coordinate_system=self.coordinate_system,
+                )
+    
+            @classmethod
+            def from_autoscript_position(cls, position: ManipulatorPosition) -> None:
+                return cls(
+                    x=position.x,
+                    y=position.y,
+                    z=position.z,
+                    r=position.r,
+                    t=position.t,
+                    coordinate_system=position.coordinate_system,
+                )
+            
+
+    if TESCAN:
+            
+            def to_tescan_position(self):
+                pass
+    
+            @classmethod
+            def from_tescan_position(self):
+                pass
+
+    def __add__(self, other:'FibsemManipulatorPosition') -> 'FibsemManipulatorPosition':
+
+        return FibsemManipulatorPosition(
+            self.x + other.x,
+            self.y + other.y,
+            self.z + other.z,
+            self.r + other.r,
+            self.t + other.t,
+            self.coordinate_system,
+        )
+
+
+
+@dataclass
 class FibsemRectangle:
     """Universal Rectangle class used for ReducedArea"""
 

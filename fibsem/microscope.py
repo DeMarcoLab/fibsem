@@ -66,7 +66,8 @@ from fibsem.structures import (
     FibsemMillingSettings,
     FibsemPatternSettings,
     FibsemPattern,
-    BeamSystemSettings
+    BeamSystemSettings,
+    FibsemManipulatorPosition
 )
 
 
@@ -118,7 +119,12 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def stable_move(self):
+    def stable_move(self,
+        settings: MicroscopeSettings,
+        dx: float,
+        dy: float,
+        beam_type: BeamType,
+    ) -> None:
         pass
 
     @abstractmethod
@@ -127,6 +133,38 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def move_flat_to_beam(self):
+        pass
+
+    @abstractmethod
+    def get_manipulator_position(self):
+        pass
+
+    @abstractmethod
+    def insert_manipulator(self):
+        pass
+
+    @abstractmethod
+    def retract_manipulator(self):
+        pass
+
+    @abstractmethod
+    def move_manipulator_relative(self):
+        pass
+
+    @abstractmethod
+    def move_manipulator_absolute(self):
+        pass
+    
+    @abstractmethod
+    def move_manipulator_corrected(self):
+        pass
+
+    @abstractmethod
+    def move_manipulator_to_position_offset(self):
+        pass
+
+    @abstractmethod
+    def get_saved_manipulator_position(self):
         pass
 
     @abstractmethod
@@ -521,7 +559,7 @@ class ThermoMicroscope(FibsemMicroscope):
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
-        stage.absolute_move(thermo_position)
+        stage.absolute_move(thermo_position) # TODO: This needs at least an optional safe move to prevent collision?
 
     def move_stage_relative(self, position: FibsemStagePosition):
         """
@@ -725,6 +763,27 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"moving flat to {beam_type.name}")
         stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
         self.move_stage_absolute(stage_position)
+
+        
+    def insert_manipulator(self):
+        pass
+
+    
+    def retract_manipulator(self):
+        pass
+
+    
+    def move_manipulator_relative(self):
+        pass
+
+    
+    def move_manipulator_absolute(self):
+        pass
+    
+    
+    def move_manipulator_corrected(self):
+        pass
+
 
     def setup_milling(
         self,
@@ -1271,7 +1330,9 @@ class TescanMicroscope(FibsemMicroscope):
             data and metadata on the microscope state and the image settings.
         """
         # At first make sure the beam is ON
-        self.connection.SEM.Beam.On()
+        status = self.connection.SEM.Beam.GetStatus()
+        if status != Automation.SEM.Beam.Status.BeamOn:
+            self.connection.SEM.Beam.On()
         # important: stop the scanning before we start scanning or before automatic procedures,
         # even before we configure the detectors
         self.connection.SEM.Scan.Stop()
@@ -1321,7 +1382,7 @@ class TescanMicroscope(FibsemMicroscope):
             eb_settings=BeamSettings(
                 beam_type=BeamType.ELECTRON,
                 working_distance=float(image.Header["SEM"]["WD"]),
-                beam_current=float(image.Header["SEM"]["BeamCurrent"]),
+                beam_current=float(image.Header["SEM"]["PredictedBeamCurrent"]),
                 resolution=(imageWidth, imageHeight), #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["SEM"]["DwellTime"]),
                 stigmation=Point(
@@ -1785,6 +1846,26 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"Moving Stage Flat to {beam_type.name} Beam")
         self.connection.Stage.MoveTo(tiltx=tilt)
 
+    def insert_manipulator(self):
+        pass
+
+    
+    def retract_manipulator(self):
+        pass
+
+    
+    def move_manipulator_relative(self):
+        pass
+
+    
+    def move_manipulator_absolute(self):
+        pass
+    
+    
+    def move_manipulator_corrected(self):
+        pass
+
+
     def setup_milling(
         self,
         patterning_mode: str,
@@ -2191,6 +2272,7 @@ class DemoMicroscope(FibsemMicroscope):
     def __init__(self):            
         self.connection = None
         self.stage_position = FibsemStagePosition()
+        self.manipulator_position = FibsemManipulatorPosition()
         self.electron_beam = self.get_beam_settings(BeamType.ELECTRON)
         self.ion_beam = self.get_beam_settings(BeamType.ION)
 
@@ -2213,12 +2295,17 @@ class DemoMicroscope(FibsemMicroscope):
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
                                          microscope_state=MicroscopeState()))
-                                 
+
+        if image_settings.beam_type is BeamType.ELECTRON:
+            self._eb_image = image
+        else:
+            self._ib_image = image
+
         return image
 
     def last_image(self, beam_type: BeamType) -> FibsemImage:
         logging.info(f"Getting last image: {beam_type}")
-        return NotImplemented
+        return self._eb_image if beam_type is BeamType.ELECTRON else self._ib_image
     
     def autocontrast(self, beam_type: BeamType) -> None:
         logging.info(f"Autocontrast: {beam_type}")
@@ -2275,6 +2362,46 @@ class DemoMicroscope(FibsemMicroscope):
 
         self.stage_position.r = np.deg2rad(r)
         self.stage_position.t = np.deg2rad(t)
+    
+    def get_manipulator_position(self) -> FibsemManipulatorPosition:
+        logging.info(f"Getting manipulator position: {self.manipulator_position}")
+        return self.manipulator_position
+
+    def insert_manipulator(self):
+        logging.info(f"Inserting manipulator")
+    
+    def retract_manipulator(self):
+        logging.info(f"Retracting manipulator")
+    
+    def move_manipulator_relative(self, position: FibsemManipulatorPosition):
+        logging.info(f"Moving manipulator: {position} (Relative)")
+        self.manipulator_position += position
+    
+    def move_manipulator_absolute(self, position: FibsemManipulatorPosition):
+        logging.info(f"Moving manipulator: {position} (Absolute)")
+        self.manipulator_position = position
+              
+    def move_manipulator_corrected(self, position: FibsemManipulatorPosition, beam_type: BeamType):
+        logging.info(f"Moving manipulator: {position} (Corrected)")
+        self.manipulator_position = position
+
+    def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
+        if name is None:
+            name = "EUCENTRIC"
+
+        position = self.get_saved_manipulator_position(name)
+        
+        logging.info(f"Moving manipulator: {offset} to {name}")
+        self.manipulator_position = position + offset
+
+    def get_saved_manipulator_position(self, name: str = "PARK") -> FibsemManipulatorPosition:
+
+        if name not in ["PARK", "EUCENTRIC"]:
+            raise ValueError(f"Unknown manipulator position: {name}")
+        if name == "PARK":
+            return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
+        if name == "EUCENTRIC":
+            return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
     def setup_milling(self, patterning_mode:str, mill_settings: FibsemMillingSettings):
         pass
