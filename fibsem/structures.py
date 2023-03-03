@@ -392,13 +392,13 @@ class MicroscopeState:
 
         return microscope_state
 
-class FibsemPattern(Enum):
+class FibsemPattern(Enum): # TODO: reanme to FibsemPatternType
     Rectangle = 1
     Line = 2
     Circle = 3
 
-# TODO: convert this to a dataclass
-class FibsemPatternSettings:
+# TODO: convert this to a dataclass, rename to FibsemPattern
+class FibsemPatternSettings: 
     '''
     FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
     
@@ -454,6 +454,54 @@ class FibsemPatternSettings:
             return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
         elif self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+
+
+    @staticmethod
+    def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
+
+        if state_dict["pattern"] == "Rectangle":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Rectangle,
+                width=state_dict["width"],
+                height=state_dict["height"],
+                depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
+                scan_direction=state_dict["scan_direction"],
+                cleaning_cross_section=state_dict["cleaning_cross_section"],
+            )
+        elif state_dict["pattern"] == "Line":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Line,
+                start_x=state_dict["start_x"],
+                start_y=state_dict["start_y"],
+                end_x=state_dict["end_x"],
+                end_y=state_dict["end_y"],
+                depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
+                scan_direction=state_dict["scan_direction"],
+                cleaning_cross_section=state_dict["cleaning_cross_section"],
+            )
+        elif state_dict["pattern"] == "Circle":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Circle,
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
+                radius=state_dict["radius"],
+                depth=state_dict["depth"],
+                start_angle=state_dict["start_angle"],
+                end_angle=state_dict["end_angle"],
+                rotation=state_dict["rotation"],
+                scan_direction=state_dict["scan_direction"],
+                cleaning_cross_section=state_dict["cleaning_cross_section"],
+            )
+
+
+
+
+
+
 
 @dataclass
 class FibsemMillingSettings:
