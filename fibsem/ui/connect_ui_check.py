@@ -633,8 +633,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         logging.info("Beginning platinum sputtering.")
 
-        import fibsem.GIS as GIS
-        GIS.sputter_platinum(self.microscope, protocol, False, self.applicationFileComboBox.currentText())
+        import fibsem.gis as gis
+        gis.sputter_platinum(self.microscope, protocol, False, self.applicationFileComboBox.currentText())
 
         logging.info("Finished platinum sputtering.")
 

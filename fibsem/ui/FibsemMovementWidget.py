@@ -50,6 +50,10 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.eb_layer.mouse_double_click_callbacks.append(self._double_click)
         self.image_widget.ib_layer.mouse_double_click_callbacks.append(self._double_click)
 
+        # disable ui elements
+        self.pushButton_save_position.setVisible(False)
+        self.pushButton_auto_eucentric.setVisible(False)
+
     def auto_eucentric_correction(self):
 
         print("auto eucentric")

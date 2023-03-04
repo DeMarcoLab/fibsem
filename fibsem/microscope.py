@@ -201,15 +201,15 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def setup_sputter(self):
+    def setup_sputter(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def draw_sputter_pattern(self):
+    def draw_sputter_pattern(self, *args, **kwargs) -> None:
         pass
 
     @abstractmethod
-    def run_sputter(self):
+    def run_sputter(self, *args, **kwargs):
         pass
 
     @abstractmethod
@@ -2432,8 +2432,26 @@ class DemoMicroscope(FibsemMicroscope):
         self.connection = None
         self.stage_position = FibsemStagePosition()
         self.manipulator_position = FibsemManipulatorPosition()
-        self.electron_beam = self.get_beam_settings(BeamType.ELECTRON)
-        self.ion_beam = self.get_beam_settings(BeamType.ION)
+        self.electron_beam = BeamSettings(
+            beam_type=BeamType.ELECTRON,
+            working_distance=4.0e-3,
+            beam_current=2000,
+            hfw=150e-6,
+            resolution=[1536, 1024],
+            dwell_time=1e-6,
+            stigmation=Point(0, 0),
+            shift=Point(0, 0),
+        )
+        self.ion_beam = BeamSettings(
+            beam_type=BeamType.ION,
+            working_distance=16.5e-3,
+            beam_current=30000,
+            hfw=150e-6,
+            resolution=[1536, 1024],
+            dwell_time=1e-6,
+            stigmation=Point(0, 0),
+            shift=Point(0, 0),
+        )
 
     def connect_to_microscope(self):
         logging.info(f"Connected to Demo Microscope")
@@ -2580,17 +2598,17 @@ class DemoMicroscope(FibsemMicroscope):
     def draw_circle(self, pattern_settings: FibsemPatternSettings) -> None:
         pass
 
-    def setup_sputter(self):
-        pass
+    def setup_sputter(self, protocol: dict) -> None:
+        logging.info(f"Setting up sputter: {protocol}")
 
-    def draw_sputter_pattern(self):
-        pass
+    def draw_sputter_pattern(self, hfw: float, line_pattern_length: float, sputter_time: float):
+        logging.info(f"Drawing sputter pattern: hfw={hfw:.2e}, line_pattern_length={line_pattern_length:.2e}, sputter_time={sputter_time:.2e}")
 
-    def run_sputter(self):
-        pass
+    def run_sputter(self, **kwargs):
+        logging.info(f"Running sputter: {kwargs}")
 
-    def finish_sputter(self):
-        pass
+    def finish_sputter(self, **kwargs):
+        logging.info(f"Finishing sputter: {kwargs}")
 
     def set_microscope_state(self, state: MicroscopeState):
         logging.info(f"Setting microscope state")
@@ -2607,7 +2625,6 @@ class DemoMicroscope(FibsemMicroscope):
 
         if key == "application_file":
             values = ["Si", "autolamella", "cryo_Pt_dep"]
-
 
         return values
 
@@ -2652,6 +2669,9 @@ class DemoMicroscope(FibsemMicroscope):
             beam.working_distance = value
             return
 
+        if key == "beam":
+            return beam
+
         return NotImplemented
 
     def get_beam_system_state(self, beam_type: BeamType) -> BeamSystemSettings:
@@ -2679,19 +2699,6 @@ class DemoMicroscope(FibsemMicroscope):
             eucentric_height=eucentric_height,
             plasma_gas=plasma_gas,
         )
-
-
-    def get_beam_settings(self, beam_type: BeamType) -> BeamSettings:
-        
-        if beam_type is BeamType.ELECTRON:
-            return self.electron_beam
-        if beam_type is BeamType.ION:
-            return self.ion_beam
-        
-        raise ValueError(f"Unknown beam type: {beam_type}")
-
-
-
 
 ######################################## Helper functions ########################################
 
