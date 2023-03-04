@@ -1,7 +1,7 @@
 import logging
 
 import numpy as np
-
+from fibsem.microscope import FibsemMicroscope
 try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.enumerations import (
@@ -228,9 +228,8 @@ if THERMO:
 
         logging.info(f"Vacuum Chamber State Validation finished.")
 
-
     def validate_stage_height_for_needle_insertion(
-        microscope: SdbMicroscopeClient, needle_stage_height_limit: float = 3.7e-3
+        microscope: FibsemMicroscope, needle_stage_height_limit: float = 3.7e-3
     ) -> bool:
         """Check if the needle can be inserted, based on the current stage height.
 
@@ -242,14 +241,14 @@ if THERMO:
             bool: needle is insertable
         """
 
-        stage = microscope.specimen.stage
+        stage_position = microscope.get_stage_position()
 
         # Unable to insert the needle if the stage height is below this limit (3.7e-3)
-        return bool(stage.current_position.z > needle_stage_height_limit)
+        return bool(stage_position.z > needle_stage_height_limit)
 
 
     def validate_focus(
-        microscope: SdbMicroscopeClient,
+        microscope: FibsemMicroscope,
         settings: BeamSystemSettings,
         link: bool = True,
     ) -> bool:
@@ -262,15 +261,10 @@ if THERMO:
 
 
     def check_working_distance_is_within_tolerance(
-        microscope: SdbMicroscopeClient, settings: BeamSystemSettings, atol=0.5e-3
+        microscope: FibsemMicroscope, settings: BeamSystemSettings, atol=0.5e-3
     ) -> bool:
 
-        if settings.beam_type is BeamType.ELECTRON:
-            microscope_beam = microscope.beams.electron_beam
-        if settings.beam_type is BeamType.ION:
-            microscope_beam = microscope.beams.ion_beam
-
-        working_distance = microscope_beam.working_distance.value
+        working_distance = microscope.get("working_distance", settings.beam_type)
         eucentric_height = settings.eucentric_height
 
         logging.info(
