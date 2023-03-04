@@ -47,6 +47,15 @@ try:
         RectanglePattern,
         CleaningCrossSectionPattern,
     )
+    from autoscript_sdb_microscope_client.enumerations import (
+        ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition,
+    )
+    from autoscript_sdb_microscope_client.structures import (
+        ManipulatorPosition,
+        MoveSettings,
+        StagePosition,
+    )
 except:
     print("Autoscript (ThermoFisher) not installed.")
 
@@ -164,7 +173,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def get_saved_manipulator_position(self):
+    def _get_saved_manipulator_position(self):
         pass
 
     @abstractmethod
@@ -215,6 +224,13 @@ class FibsemMicroscope(ABC):
     def get_available(self):
         pass
 
+    @abstractmethod
+    def get(self):
+        pass
+
+    @abstractmethod
+    def set(self):
+        pass
 
 class ThermoMicroscope(FibsemMicroscope):
     """
@@ -765,25 +781,163 @@ class ThermoMicroscope(FibsemMicroscope):
         self.move_stage_absolute(stage_position)
 
         
-    def insert_manipulator(self):
-        pass
+    def insert_manipulator(self, name: str = "PARK"):
+
+         
+        if name not in ["PARK", "EUCENTRIC"]:
+            raise ValueError(f"insert position {name} not supported.")
+
+        insert_position = ManipulatorSavedPosition[name]
+        needle = self.connection.specimen.manipulator
+        insert_position = needle.get_saved_position(
+            insert_position, ManipulatorCoordinateSystem.RAW
+        )
+        needle.insert(insert_position)
+        logging.info(f"inserted needle to {insert_position}.")
 
     
     def retract_manipulator(self):
-        pass
+        
+        # retract multichem
+        # retract_multichem(microscope) # TODO:?
 
+        # Retract the needle, preserving the correct parking postiion
+        needle = self.connection.specimen.manipulator
+        park_position = needle.get_saved_position(
+            ManipulatorSavedPosition.PARK, ManipulatorCoordinateSystem.RAW
+        )
+
+        logging.info(f"retracting needle to {park_position}")
+        needle.absolute_move(park_position)
+        time.sleep(1)  # AutoScript sometimes throws errors if you retract too quick?
+        logging.info(f"retracting needle...")
+        needle.retract()
+        logging.info(f"retract needle complete")
     
-    def move_manipulator_relative(self):
-        pass
-
+    def move_manipulator_relative(self, position: FibsemManipulatorPosition):
+    
+        needle = self.connection.specimen.manipulator
+        position = position.to_autoscript_position()
+        logging.info(f"moving manipulator by {position}")
+        needle.relative_move(position)
     
     def move_manipulator_absolute(self):
-        pass
-    
-    
-    def move_manipulator_corrected(self):
-        pass
+        needle = self.connection.specimen.manipulator
+        position = position.to_autoscript_position()
+        logging.info(f"moving manipulator to {position}")
+        needle.absolute_move(position)
+        
 
+    def _x_corrected_needle_movement(self, expected_x: float) -> ManipulatorPosition:
+        """Calculate the corrected needle movement to move in the x-axis.
+
+        Args:
+            expected_x (float): distance along the x-axis (image coordinates)
+        Returns:
+            ManipulatorPosition: x-corrected needle movement (relative position)
+        """
+        return ManipulatorPosition(x=expected_x, y=0, z=0)  # no adjustment needed
+
+
+    def _y_corrected_needle_movement(self, 
+        expected_y: float, stage_tilt: float
+    ) -> ManipulatorPosition:
+        """Calculate the corrected needle movement to move in the y-axis.
+
+        Args:
+            expected_y (float): distance along the y-axis (image coordinates)
+            stage_tilt (float, optional): stage tilt.
+
+        Returns:
+            ManipulatorPosition: y-corrected needle movement (relative position)
+        """
+        y_move = +np.cos(stage_tilt) * expected_y
+        z_move = +np.sin(stage_tilt) * expected_y
+        return ManipulatorPosition(x=0, y=y_move, z=z_move)
+
+
+    def _z_corrected_needle_movement(self, 
+        expected_z: float, stage_tilt: float
+    ) -> ManipulatorPosition:
+        """Calculate the corrected needle movement to move in the z-axis.
+
+        Args:
+            expected_z (float): distance along the z-axis (image coordinates)
+            stage_tilt (float, optional): stage tilt.
+
+        Returns:
+            ManipulatorPosition: z-corrected needle movement (relative position)
+        """
+        y_move = -np.sin(stage_tilt) * expected_z
+        z_move = +np.cos(stage_tilt) * expected_z
+        return ManipulatorPosition(x=0, y=y_move, z=z_move)
+
+    def move_manipulator_corrected(self, 
+        dx: float,
+        dy: float,
+        beam_type: BeamType = BeamType.ELECTRON,
+    ) -> None:
+        """Calculate the required corrected needle movements based on the BeamType to move in the desired image coordinates.
+        Then move the needle relatively.
+
+        BeamType.ELECTRON:  move in x, y (raw coordinates)
+        BeamType.ION:       move in x, z (raw coordinates)
+
+        Args:
+            microscope (SdbMicroscopeClient): autoScript microscope instance
+            dx (float): distance along the x-axis (image coordinates)
+            dy (float): distance along the y-axis (image corodinates)
+            beam_type (BeamType, optional): the beam type to move in. Defaults to BeamType.ELECTRON.
+        """
+        
+        needle = self.connection.specimen.manipulator
+        stage_tilt = self.connection.specimen.stage.current_position.t
+
+        # xy
+        if beam_type is BeamType.ELECTRON:
+            x_move = self._x_corrected_needle_movement(expected_x=dx)
+            yz_move = self._y_corrected_needle_movement(dy, stage_tilt=stage_tilt)
+
+        # xz,
+        if beam_type is BeamType.ION:
+
+            x_move = self._x_corrected_needle_movement(expected_x=dx)
+            yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
+
+        # move needle (relative)
+        needle_position = ManipulatorPosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
+        logging.info(f"Moving manipulator: {needle_position}.")
+        needle.relative_move(needle_position)
+
+        return
+    
+    def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
+
+        # TODO: resolve Fibsem Positions and Thermo Positions
+
+        position = self._get_saved_manipulator_position(name)
+
+        # move to relative to the eucentric point
+        yz_move = self._z_corrected_needle_movement(
+            offset.z, self.connection.specimen.stage.current_position.t
+        )
+        position.x += offset.x
+        position.y += yz_move.y + offset.y
+        position.z += yz_move.z  # RAW, up = negative, STAGE: down = negative
+        position.r = None  # rotation is not supported
+        self.connection.specimen.manipulator.absolute_move(position)
+
+    def _get_saved_manipulator_position(self, name: str = "PARK"):
+        
+        if name not in ["PARK", "EUCENTRIC"]:
+            raise ValueError(f"insert position {name} not supported.")
+        
+        named_position = ManipulatorSavedPosition[name]
+        position = self.connection.specimen.manipulator.get_saved_position(
+                named_position, ManipulatorCoordinateSystem.STAGE
+            )
+                
+        return position
 
     def setup_milling(
         self,
@@ -1846,7 +2000,7 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"Moving Stage Flat to {beam_type.name} Beam")
         self.connection.Stage.MoveTo(tiltx=tilt)
 
-    def insert_manipulator(self):
+    def insert_manipulator(self, name: str = "PARK"):
         pass
 
     
@@ -1864,7 +2018,12 @@ class TescanMicroscope(FibsemMicroscope):
     
     def move_manipulator_corrected(self):
         pass
+    
+    def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
+        pass
 
+    def _get_saved_manipulator_position(self):
+        pass
 
     def setup_milling(
         self,
@@ -2367,8 +2526,8 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Getting manipulator position: {self.manipulator_position}")
         return self.manipulator_position
 
-    def insert_manipulator(self):
-        logging.info(f"Inserting manipulator")
+    def insert_manipulator(self, name: str = "PARK"):
+        logging.info(f"Inserting manipulator to {name}")
     
     def retract_manipulator(self):
         logging.info(f"Retracting manipulator")
@@ -2389,12 +2548,12 @@ class DemoMicroscope(FibsemMicroscope):
         if name is None:
             name = "EUCENTRIC"
 
-        position = self.get_saved_manipulator_position(name)
+        position = self._get_saved_manipulator_position(name)
         
         logging.info(f"Moving manipulator: {offset} to {name}")
         self.manipulator_position = position + offset
 
-    def get_saved_manipulator_position(self, name: str = "PARK") -> FibsemManipulatorPosition:
+    def _get_saved_manipulator_position(self, name: str = "PARK") -> FibsemManipulatorPosition:
 
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"Unknown manipulator position: {name}")
@@ -2455,40 +2614,44 @@ class DemoMicroscope(FibsemMicroscope):
     def get(self, key, beam_type: BeamType = None) -> float:
         logging.info(f"Getting {key} ({beam_type})")
 
+        # get beam
+        if beam is not None:
+            beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
+
         # voltage
         if key == "voltage":
-            if beam_type == BeamType.ELECTRON:
-                return self.electron_beam.voltage
-            if beam_type == BeamType.ION:
-                return self.ion_beam.voltage
+            return beam.voltage
             
         # current
         if key == "current":
-            if beam_type == BeamType.ELECTRON:
-                return self.electron_beam.beam_current
-            if beam_type == BeamType.ION:
-                return self.ion_beam.beam_current
+            return beam.beam_current
+
+        # working distance
+        if key == "working_distance":
+            return beam.working_distance
 
         return NotImplemented
 
     def set(self, key, value, beam_type: BeamType = None) -> None:
         logging.info(f"Setting {key} to {value} ({beam_type})")
         
+        # get beam
+        if beam is not None:
+            beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
+
         # voltage
         if key == "voltage":
-            if beam_type == BeamType.ELECTRON:
-                self.electron_beam.voltage = value
-            if beam_type == BeamType.ION:
-                self.ion_beam.voltage = value
+            beam.voltage = value
             return
         # current
         if key == "current":
-            if beam_type == BeamType.ELECTRON:
-                self.electron_beam.beam_current = value
-            if beam_type == BeamType.ION:
-                self.ion_beam.beam_current = value
+            beam.beam_current = value
             return        
         
+        if key == "working_distance":
+            beam.working_distance = value
+            return
+
         return NotImplemented
 
     def get_beam_system_state(self, beam_type: BeamType) -> BeamSystemSettings:
@@ -2519,20 +2682,13 @@ class DemoMicroscope(FibsemMicroscope):
 
 
     def get_beam_settings(self, beam_type: BeamType) -> BeamSettings:
-        # TODO: implement for both beams
-        return BeamSettings(
-            beam_type=beam_type,
-            beam_current=20e-12,
-            working_distance=16.5e-3,
-            resolution=[1526, 1024],
-            dwell_time=1e-6,
-            hfw=150e-6,
-            stigmation=Point(0, 0),
-            shift=Point(0, 0),
-            voltage=30000
-        )
-
-
+        
+        if beam_type is BeamType.ELECTRON:
+            return self.electron_beam
+        if beam_type is BeamType.ION:
+            return self.ion_beam
+        
+        raise ValueError(f"Unknown beam type: {beam_type}")
 
 
 
