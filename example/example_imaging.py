@@ -35,7 +35,8 @@ def main():
     settings.image.beam_type = BeamType.ION
     ib_image = acquire.new_image(microscope, settings.image)
 
-    # take an image with both beams
+    # take an image with both beams with increased hfw
+    settings.image.hfw = 400e-6       
     ref_eb_image, ref_ib_image = acquire.take_reference_images(microscope, settings.image)
 
     # show images
