@@ -164,6 +164,8 @@ def setup_session(
     config_path: Path = None,
     protocol_path: Path = None,
     setup_logging: bool = True,
+    ip_address: str = None,
+    manufacturer: str = None
 ) -> tuple[FibsemMicroscope, MicroscopeSettings]:
     """Setup microscope session
 
@@ -195,6 +197,13 @@ def setup_session(
 
     # connect to microscope
     import fibsem.microscope as FibSem
+
+    # cheap overloading
+    if ip_address:
+        settings.system.ip_address = ip_address
+    
+    if manufacturer:
+        settings.system.manufacturer = manufacturer
 
     if settings.system.manufacturer == "Thermo":
         microscope = FibSem.ThermoMicroscope()

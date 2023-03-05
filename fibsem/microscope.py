@@ -770,7 +770,9 @@ class ThermoMicroscope(FibsemMicroscope):
         stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
         self.move_stage_absolute(stage_position)
 
-        
+    def get_manipulator_position(self) -> FibsemManipulatorPosition:
+        return self.connection.specimen.manipulator.current_position
+    
     def insert_manipulator(self, name: str = "PARK"):
 
          
@@ -1731,6 +1733,9 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.SEM.Detector.StartAutoSignal(0)
         if beam_type.name == BeamType.ION:
             self.connection.FIB.Detector.AutoSignal(0)
+    
+    def auto_focus(self):
+        return 
 
     def reset_beam_shifts(self):
         """
@@ -2037,6 +2042,9 @@ class TescanMicroscope(FibsemMicroscope):
 
         logging.info(f"Moving Stage Flat to {beam_type.name} Beam")
         self.connection.Stage.MoveTo(tiltx=tilt)
+
+    def get_manipulator_position(self) -> FibsemManipulatorPosition:
+        pass
 
     def insert_manipulator(self, name: str = "PARK"):
         pass
@@ -2462,6 +2470,14 @@ class TescanMicroscope(FibsemMicroscope):
     def get_available(self, key: str, beam_type: BeamType = None)-> list:
 
         return []
+    
+    def get(self, key: str, beam_type: BeamType = None)-> object:
+
+        return None
+    
+    def set(self, key: str, value: object, beam_type: BeamType = None)-> None:
+            
+        return None
 
 ########################
 class DemoMicroscope(FibsemMicroscope):
