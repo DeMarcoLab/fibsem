@@ -33,12 +33,14 @@ def main():
     settings.image.label = "grid_reference"
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = 900e-6
+    settings.image.save = True
     acquire.take_reference_images(microscope, settings.image)
 
     # select positions
     sample: list[Lamella] = []
     lamella_no = 1
     settings.image.hfw = 80e-6
+    base_path = settings.image.save_path
 
     while True:
         response = input(f"""Move to the desired position. 
@@ -48,7 +50,7 @@ def main():
         if response.lower() in ["", "y", "yes"]:
             
             # set filepaths
-            path = os.path.join(settings.image.save_path, str(lamella_no))
+            path = os.path.join(base_path, f"{lamella_no:02d}")
             settings.image.save_path = path
             
             lamella = Lamella(
@@ -57,6 +59,7 @@ def main():
                 path = path
             )
             sample.append(lamella)
+            lamella_no += 1
         else:
             break
 
@@ -66,10 +69,9 @@ def main():
         return
 
     # setup milling
+    settings.milling.application_file = settings.protocol.get("application_file", "autolamella")
     milling.setup_milling(microscope = microscope,
-        application_file = "Si",
         patterning_mode  = "Serial",
-        hfw = settings.image.hfw,
         mill_settings = settings.milling)
 
     # mill (fiducial, trench, thin, polish)
@@ -80,7 +82,7 @@ def main():
         lamella: Lamella
         for lamella_no, lamella in enumerate(sample):
 
-            logging.info(f"Starting lamella {lamella_no}")
+            logging.info(f"Starting lamella {lamella_no:02d}")
 
             # return to lamella
             microscope.set_microscope_state(lamella.state)
@@ -89,7 +91,7 @@ def main():
             alignment.beam_shift_alignment(microscope, settings.image, lamella.reference_image)
                        
             if stage_no == 0:
-                print("add microexpansion joints here")
+                logging.info("add microexpansion joints here")
 
             # mill trenches
             milling.draw_trench(microscope, milling_dict)
@@ -98,8 +100,13 @@ def main():
 
             # retake reference image
             settings.image.save_path = lamella.path
-            settings.image.label = f"ref_mill_stage_{stage_no}"
+            settings.image.label = f"ref_mill_stage_{stage_no:02d}"
             lamella.reference_image = acquire.new_image(microscope, settings.image)
+
+            if stage_no == 3:
+                # take final reference images
+                settings.image.label = f"ref_final"
+                acquire.take_reference_images(microscope, settings.image)
    
     logging.info(f"Finished autolamella: {settings.protocol['name']}")
 

@@ -237,13 +237,13 @@ def milling_protocol(
     microscope: FibsemMicroscope,
     mill_settings: FibsemMillingSettings,
     patterning_mode: str = "Serial",
-    pattern_settings: list = [],
+    patterns: list = [FibsemPatternSettings],
 ):
     # setup milling
     setup_milling(microscope, patterning_mode, mill_settings)
 
     # draw patterns
-    for pattern in pattern_settings:
+    for pattern in patterns:
         draw_pattern(microscope, pattern)
 
     # run milling
