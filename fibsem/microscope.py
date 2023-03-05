@@ -334,13 +334,10 @@ class ThermoMicroscope(FibsemMicroscope):
             >>> microscope.connect_to_microscope("192.168.0.10", 7520)
 
         """
-        try:
-            # TODO: get the port
-            logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
-            self.connection.connect(host=ip_address, port=port)
-            logging.info(f"Microscope client connected to [{ip_address}:{port}]")
-        except Exception as e:
-            logging.error(f"Unable to connect to the microscope: {e}")
+        # TODO: get the port
+        logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
+        self.connection.connect(host=ip_address, port=port)
+        logging.info(f"Microscope client connected to [{ip_address}:{port}]")
 
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """

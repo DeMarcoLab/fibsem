@@ -45,6 +45,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if _microscope_connected:
             self.pushButton.setStyleSheet("background-color: green")
             self.pushButton.setText("Microscope Connected")
+            self.pushButton.setEnabled(False)
         else:
             self.pushButton.setStyleSheet("background-color: gray")
             self.pushButton.setText("Connect to Microscope")
@@ -54,9 +55,15 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         ip_address = self.lineEdit_ip_address.text()
         manufacturer = self.comboBox_manufacturer.currentText()
 
-        self.microscope, self.settings = utils.setup_session(ip_address=ip_address, 
-                                                             manufacturer=manufacturer)  # type: ignore
-
+        try:
+            self.microscope, self.settings = utils.setup_session(ip_address=ip_address, 
+                                                                 manufacturer=manufacturer)  # type: ignore
+        except Exception as e:
+            msg = f"Could not connect to microscope: {e}"
+            logging.exception(msg)
+            napari.utils.notifications.show_info(msg)
+            return
+        
         self.update_microscope_ui()
         self.update_ui()
 
