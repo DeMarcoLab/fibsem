@@ -4,43 +4,31 @@ from datetime import datetime
 import numpy as np
 
 try:
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem,
-        ManipulatorCoordinateSystem,
-    )
+        CoordinateSystem, ManipulatorCoordinateSystem)
     from autoscript_sdb_microscope_client.structures import (
-        StagePosition,
-        Rectangle,
-        RunAutoFocusSettings,
-    )
+        Rectangle, RunAutoFocusSettings, StagePosition)
+
     THERMO = True
 except:
     THERMO = False
 try:
     import tescanautomation
+
     TESCAN = True
 except:
     TESCAN = False
 
-from fibsem import acquire
-from fibsem.structures import (
-    BeamSettings,
-    MicroscopeState,
-    BeamType,
-    ImageSettings,
-    MicroscopeSettings,
-    BeamSystemSettings,
-    FibsemRectangle,
-    FibsemStagePosition
-)
-from fibsem.microscope import FibsemMicroscope
-
 from pathlib import Path
-import skimage
-from skimage.morphology import disk
-from skimage.filters.rank import gradient
 
+import skimage
+
+from fibsem import acquire
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
+                               FibsemRectangle, FibsemStagePosition,
+                               ImageSettings, MicroscopeSettings,
+                               MicroscopeState)
 
 # def auto_link_stage(microscope: FibsemMicroscope, hfw: float = 150e-6) -> None:
 #     """Automatically focus and link sample stage z-height.
@@ -66,94 +54,81 @@ from skimage.filters.rank import gradient
 #     microscope.connection.beams.electron_beam.horizontal_field_width.value = original_hfw
 
 
-# def auto_focus_beam(
-#     microscope: FibsemMicroscope,
-#     image_settings: ImageSettings, # NOTE: This isn't used and is a mandatory argument
-#     mode: str = "default",
-#     wd_delta: float = 0.05e-3,
-#     steps: int = 5,
-#     reduced_area: FibsemRectangle = FibsemRectangle(0.3, 0.3, 0.4, 0.4),
-#     focus_image_settings: ImageSettings = None,
-# ) -> None:
+def auto_focus_beam(
+    microscope: FibsemMicroscope,
+    beam_type: BeamType,
+    mode: str = "default",
+    focus_image_settings: ImageSettings = None,
+    step_size: float = 0.05e-3,
+    num_steps: int = 5,
+) -> None:
 
-#     if TESCAN:
-#         raise NotImplementedError
+    if mode == "default":
+        microscope.auto_focus(beam_type=beam_type)
 
+    if mode == "sharpness":
+        
+        from skimage.filters.rank import gradient
+        from skimage.morphology import disk
 
-#     if mode == "default":
-#         microscope.connection.imaging.set_active_device(BeamType.ELECTRON.value)
-#         microscope.connection.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
+        if focus_image_settings is None:
+            focus_image_settings = ImageSettings(
+                resolution=(768, 512),
+                dwell_time=200e-9,
+                hfw=50e-6,
+                beam_type=beam_type,
+                save=False,
+                autocontrast=True,
+                gamma_enabled=False,
+                label=None,
+                reduced_area=FibsemRectangle(0.3, 0.3, 0.4, 0.4),
+            )
 
-#         #focus_settings = RunAutoFocusSettings()
-#         microscope.connection.auto_functions.run_auto_focus()
+        # get current working distance
+        current_wd = microscope.get("working_distance", beam_type)
 
-#     if mode == "sharpness":
+        logging.info(f"sharpness (accutance) based auto-focus routine")
+        logging.info(f"initial working distance: {current_wd:.2e}")
 
-#         if focus_image_settings is None:
-#             focus_image_settings = ImageSettings(
-#                 resolution=(768, 512), 
-#                 dwell_time=200e-9,
-#                 hfw=50e-6,
-#                 beam_type=BeamType.ELECTRON,
-#                 save=False,
-#                 autocontrast=True,
-#                 gamma_enabled=False,
-#                 label=None,
-#             )
+        # define working distance range
+        min_wd = current_wd - (num_steps * step_size / 2)
+        max_wd = current_wd + (num_steps * step_size / 2)
+        wds = np.linspace(min_wd, max_wd, num_steps + 1)
 
-#         current_wd = microscope.connection.beams.electron_beam.working_distance.value
-#         logging.info(f"sharpness (accutance) based auto-focus routine")
+        # loop through working distances and calculate the sharpness (acutance)
+        # highest acutance is best focus
+        sharpeness_metric = []
+        for i, wd in enumerate(wds):
 
-#         logging.info(f"initial working distance: {current_wd:.2e}")
+            logging.info(f"image {i}: {wd:.2e}")
+            microscope.set("working_distance", wd, beam_type)
 
-#         min_wd = current_wd - (steps * wd_delta / 2)
-#         max_wd = current_wd + (steps * wd_delta / 2)
+            img = acquire.new_image(microscope, focus_image_settings)
 
-#         working_distances = np.linspace(min_wd, max_wd, steps + 1)
+            # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance)
+            sharpness = np.mean(gradient(skimage.filters.median(np.copy(img.data)), disk(5)))
+            sharpeness_metric.append(sharpness)
 
-#         # loop through working distances and calculate the sharpness (acutance)
-#         # highest acutance is best focus
-#         sharpeness_metric = []
-#         for i, wd in enumerate(working_distances):
+        # select working distance with max acutance
+        idx = np.argmax(sharpeness_metric)
 
-#             logging.info(f"Img {i}: {wd:.2e}")
-#             microscope.connection.beams.electron_beam.working_distance.value = wd
+        pairs = list(zip(wds, sharpeness_metric))
+        logging.info([f"{wd:.2e}: {metric:.4f}" for wd, metric in pairs])
+        logging.info(f"{idx}, {wds[idx]:.2e}, {sharpeness_metric[idx]:.4f}")
 
-#             img = acquire.new_image(
-#                 microscope, focus_image_settings, reduced_area=reduced_area
-#             )
+        # set working distance
+        microscope.set(
+            key="working_distance",
+            value=wds[idx],
+            beam_type=beam_type,
+        )
 
-#             # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance
-#             out = gradient(skimage.filters.median(np.copy(img.data)), disk(5))
+    if mode == "dog":
+        # TODO: implement difference of gaussian based auto-focus
 
-#             sharpness = np.mean(out)
-#             sharpeness_metric.append(sharpness)
+        pass
 
-#         # select working distance with max acutance
-#         idx = np.argmax(sharpeness_metric)
-
-#         pairs = list(zip(working_distances, sharpeness_metric))
-#         logging.info([f"{wd:.2e}: {metric:.4f}" for wd, metric in pairs])
-#         logging.info(
-#             f"{idx}, {working_distances[idx]:.2e}, {sharpeness_metric[idx]:.4f}"
-#         )
-
-#         # reset working distance
-#         microscope.connection.beams.electron_beam.working_distance.value = working_distances[idx]
-
-#         # NOTE: Why is this commented out?
-#         # run fine auto focus and link
-#         # microscope.imaging.set_active_device(BeamType.ELECTRON.value)
-#         # microscope.imaging.set_active_view(BeamType.ELECTRON.value)  # set to Ebeam
-#         # microscope.auto_functions.run_auto_focus()
-#         # microscope.specimen.stage.link()
-
-#     if mode == "dog": # NOTE: Why
-#         # TODO: implement difference of gaussian based auto-focus
-
-#         pass
-
-#     return
+    return
 
 
 def auto_charge_neutralisation(
@@ -168,7 +143,7 @@ def auto_charge_neutralisation(
     # use preset settings if not defined
     if discharge_settings is None:
         discharge_settings = ImageSettings(
-            resolution=(768,512),
+            resolution=(768, 512),
             dwell_time=200e-9,
             hfw=image_settings.hfw,
             beam_type=BeamType.ELECTRON,

@@ -1,30 +1,26 @@
-from abc import ABC, abstractmethod
 import copy
-import logging
-from copy import deepcopy
 import datetime
-import numpy as np
+import logging
 import sys
 import time
+from abc import ABC, abstractmethod
+from copy import deepcopy
+from typing import Union
 
+import numpy as np
 
 # for easier usage
 import fibsem.constants as constants
-from typing import Union
-
 
 try:
-    from tescanautomation import Automation
-    from tescanautomation.SEM import HVBeamStatus as SEMStatus
-    from tescanautomation.Common import Bpp
-    from tescanautomation.DrawBeam import IEtching
-    from tescanautomation.DrawBeam import IEtching
-    from tescanautomation.DrawBeam import Status as DBStatus
-
-    # from tescanautomation.GUI import SEMInfobar
     import re
 
-    # del globals()[tescanautomation.GUI]
+    from tescanautomation import Automation
+    from tescanautomation.Common import Bpp
+    from tescanautomation.DrawBeam import IEtching
+    from tescanautomation.DrawBeam import Status as DBStatus
+    from tescanautomation.SEM import HVBeamStatus as SEMStatus
+
     sys.modules.pop("tescanautomation.GUI")
     sys.modules.pop("tescanautomation.pyside6gui")
     sys.modules.pop("tescanautomation.pyside6gui.imageViewer_private")
@@ -37,47 +33,26 @@ except:
     print("Automation (TESCAN) not installed.")
 
 try:
-    from autoscript_sdb_microscope_client.structures import (
-        GrabFrameSettings,
-        MoveSettings,
-    )
-    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-        RectanglePattern,
-        CleaningCrossSectionPattern,
-    )
+        CleaningCrossSectionPattern, RectanglePattern)
     from autoscript_sdb_microscope_client.enumerations import (
-        ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition,
-    )
+        CoordinateSystem, ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition)
     from autoscript_sdb_microscope_client.structures import (
-        ManipulatorPosition,
-        MoveSettings,
-        StagePosition,
-    )
+        GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 except:
     print("Autoscript (ThermoFisher) not installed.")
 
 import sys
 
-
-from fibsem.structures import (
-    BeamType,
-    ImageSettings,
-    Point,
-    FibsemImage,
-    FibsemImageMetadata,
-    MicroscopeState,
-    MicroscopeSettings,
-    BeamSettings,
-    FibsemStagePosition,
-    FibsemMillingSettings,
-    FibsemPatternSettings,
-    FibsemPattern,
-    BeamSystemSettings,
-    FibsemManipulatorPosition
-)
+from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
+                               FibsemImage, FibsemImageMetadata,
+                               FibsemManipulatorPosition,
+                               FibsemMillingSettings, FibsemPattern,
+                               FibsemPatternSettings, FibsemStagePosition,
+                               ImageSettings, MicroscopeSettings,
+                               MicroscopeState, Point)
 
 
 class FibsemMicroscope(ABC):
@@ -101,6 +76,10 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def autocontrast(self):
+        pass
+
+    @abstractmethod
+    def auto_focus(self, beam_type: BeamType) -> None:
         pass
 
     @abstractmethod
@@ -217,7 +196,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def set_microscope_state(self):
+    def set_microscope_state(self, state: MicroscopeState) -> None:
         pass
     
     @abstractmethod
@@ -225,11 +204,11 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def get(self):
+    def get(self, key:str, beam_type: BeamType):
         pass
 
     @abstractmethod
-    def set(self):
+    def set(self, key: str, value, beam_type: BeamType) -> None:
         pass
 
 class ThermoMicroscope(FibsemMicroscope):
@@ -466,8 +445,19 @@ class ThermoMicroscope(FibsemMicroscope):
             >>> microscope.autocontrast(beam_type=BeamType.ION)
 
         """
+        self.connection.imaging.set_active_device(beam_type.value)
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.auto_functions.run_auto_cb()
+
+    def auto_focus(self, beam_type: BeamType) -> None:
+        """Automatically focus the specified beam type.
+
+        Args:
+            beam_type (BeamType): The imaging beam type for which to focus.
+        """
+        self.connection.imaging.set_active_device(beam_type.value)
+        self.connection.imaging.set_active_view(beam_type.value)  
+        self.connection.auto_functions.run_auto_focus()
 
     def reset_beam_shifts(self) -> None:
         """
@@ -1312,6 +1302,54 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return values
 
+    def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
+
+        beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
+
+        if key == "working_distance":
+            return beam.working_distance.value
+        if key == "current":
+            return beam.beam_current.value
+        if key == "voltage":
+            return beam.high_voltage.value
+        if key == "hfw":
+            return beam.horizontal_field_width.value
+        if key == "resolution":
+            return beam.scanning.resolution.value
+        if key == "dwell_time":
+            return beam.scanning.dwell_time.value
+        
+        if key == "angular_correction_angle":
+            return beam.angular_correction.angle.value
+
+        return None    
+
+    def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
+
+        beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
+
+        if key == "working_distance":
+            beam.working_distance.value = value
+            self.connection.specimen.stage.link() # Link the specimen stage
+        if key == "current":
+            beam.beam_current.value = value
+        if key == "voltage":
+            beam.high_voltage.value = value
+        if key == "hfw":
+            beam.horizontal_field_width.value = value
+        if key == "resolution":
+            beam.scanning.resolution.value = value
+        if key == "dwell_time":
+            beam.scanning.dwell_time.value = value
+        
+        # only supported for Electron
+        if beam_type is BeamType.ELECTRON:
+            if key == "angular_correction_angle":
+                beam.angular_correction.angle.value = value
+
+            if key == "angular_correction_tilt_correction":
+                beam.angular_correction.tilt_correction.turn_on() if value else beam.angular_correction.tilt_correction.turn_off()
+        
 class TescanMicroscope(FibsemMicroscope):
     """
     A class representing a TESCAN FIB-SEM microscope.
@@ -2487,6 +2525,10 @@ class DemoMicroscope(FibsemMicroscope):
     def autocontrast(self, beam_type: BeamType) -> None:
         logging.info(f"Autocontrast: {beam_type}")
 
+    def auto_focus(self, beam_type: BeamType) -> None:
+        logging.info(f"Auto focus: {beam_type}")
+        logging.info(f"I'm focusing my laser...")
+
     def reset_beam_shifts(self) -> None:
         logging.info(f"Resetting beam shifts")
         self.electron_beam.shift = Point(0,0)
@@ -2649,11 +2691,11 @@ class DemoMicroscope(FibsemMicroscope):
 
         return NotImplemented
 
-    def set(self, key, value, beam_type: BeamType = None) -> None:
+    def set(self, key: str, value, beam_type: BeamType = None) -> None:
         logging.info(f"Setting {key} to {value} ({beam_type})")
         
         # get beam
-        if beam is not None:
+        if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
 
         # voltage
