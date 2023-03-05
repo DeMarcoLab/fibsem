@@ -30,7 +30,7 @@ try:
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
     sys.modules.pop("PySide6.QtCore")
 except:
-    print("Automation (TESCAN) not installed.")
+    logging.debug("Automation (TESCAN) not installed.")
 
 try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
@@ -42,7 +42,7 @@ try:
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 except:
-    print("Autoscript (ThermoFisher) not installed.")
+    logging.debug("Autoscript (ThermoFisher) not installed.")
 
 import sys
 
@@ -2623,22 +2623,22 @@ class DemoMicroscope(FibsemMicroscope):
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
     def setup_milling(self, patterning_mode:str, mill_settings: FibsemMillingSettings):
-        pass
+        logging.info(f"Setting up milling: {patterning_mode}, {mill_settings}")
 
     def run_milling(self, milling_current: float, asynch: bool = False) -> None:
-        pass
+        logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
 
     def finish_milling(self, imaging_current: float) -> None:
-        pass
+        logging.info(f"Finishing milling: {imaging_current:.2e}")
 
     def draw_rectangle(self, pattern_settings: FibsemPatternSettings) -> None:
-        pass
+        logging.info(f"Drawing rectangle: {pattern_settings}")
 
     def draw_line(self, pattern_settings: FibsemPatternSettings) -> None:
-        pass
+        logging.info(f"Drawing line: {pattern_settings}")
 
     def draw_circle(self, pattern_settings: FibsemPatternSettings) -> None:
-        pass
+        logging.info(f"Drawing circle: {pattern_settings}")
 
     def setup_sputter(self, protocol: dict) -> None:
         logging.info(f"Setting up sputter: {protocol}")
