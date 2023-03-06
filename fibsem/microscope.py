@@ -1075,7 +1075,7 @@ class ThermoMicroscope(FibsemMicroscope):
             pattern.scan_direction = pattern_settings.scan_direction
         else:
             pattern.scan_direction = "TopToBottom"
-            logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using Flyback instead.")
+            logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
 
         return pattern

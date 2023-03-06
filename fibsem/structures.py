@@ -625,6 +625,7 @@ class FibsemMillingSettings:
     dwell_time: float = 1.0e-6 # s
     hfw: float = 150e-6
     patterning_mode: str = "Serial" 
+    application_file: str = "Si"
 
     def __to_dict__(self) -> dict:
 
@@ -635,6 +636,7 @@ class FibsemMillingSettings:
             "dwell_time": self.dwell_time,
             "hfw": self.hfw,
             "patterning_mode": self.patterning_mode,
+            "application_file": self.application_file,
         }
 
         return settings_dict
@@ -649,6 +651,7 @@ class FibsemMillingSettings:
             dwell_time=settings.get("dwell_time", 1.0e-6),
             hfw=settings.get("hfw", 150e-6),
             patterning_mode=settings.get("patterning_mode", "Serial"),
+            application_file=settings.get("application_file", "Si"),
         )
 
         return milling_settings
@@ -932,14 +935,14 @@ class MicroscopeSettings:
     image: ImageSettings
     protocol: dict = None
     milling: FibsemMillingSettings = None
-    application_file: str = "Si"
+    
 
     def __to_dict__(self) -> dict:
 
         settings_dict = {
             "system": self.system.__to_dict__(),
             "user": self.image.__to_dict__(),
-            "application_file": self.application_file,
+
         }
 
         return settings_dict
@@ -951,7 +954,7 @@ class MicroscopeSettings:
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
             protocol=protocol,
-            application_file=settings.get("application_file", "Si"),
+
         )
 
 
