@@ -219,6 +219,10 @@ class FibsemMicroscope(ABC):
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
+    @abstractmethod
+    def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
+        pass
+
 class ThermoMicroscope(FibsemMicroscope):
     """
     A class representing a Thermo Fisher FIB-SEM microscope.
@@ -1371,7 +1375,8 @@ class ThermoMicroscope(FibsemMicroscope):
             return beam.scanning.resolution.value
         if key == "dwell_time":
             return beam.scanning.dwell_time.value
-
+        if key == "scan_rotation":
+            return beam.scanning.rotation.value
         if key == "voltage_limits":
             return beam.high_voltage.limits
         if key == "voltage_controllable":
@@ -1449,7 +1454,10 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "dwell_time":
             beam.scanning.dwell_time.value = value
             logging.info(f"{beam_type.name} dwell time set to {value} s.")
-        
+        if key == "scan_rotation":
+            beam.scanning.rotation.value = value
+            logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
+
         # beam control
         if key == "on":
             beam.turn_on() if value else beam.turn_off()
@@ -1513,6 +1521,23 @@ class ThermoMicroscope(FibsemMicroscope):
         
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
+    
+    def check_available_values(self, key:str, values: list, beam_type: BeamType = None) -> bool:
+
+        available_values = self.get_available_values(key, beam_type)
+
+        if available_values is None:
+            return False
+        
+        for value in values:
+            if value not in available_values:
+                return False
+
+            if isinstance(value, float):
+                if value < min(available_values) or value > max(available_values):
+                    return False
+        return True
+
 
 class TescanMicroscope(FibsemMicroscope):
     """
@@ -3004,54 +3029,6 @@ class DemoMicroscope(FibsemMicroscope):
 
 ######################################## Helper functions ########################################
 
-
-def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
-    """Check the rotation angles are large
-
-    Args:
-        angle1 (float): angle1 (radians)
-        angle2 (float): angle2 (radians)
-        atol : tolerance (degrees)
-
-    Returns:
-        bool: rotation angle is larger than atol
-    """
-
-    return angle_difference(angle1, angle2) > (np.deg2rad(atol))
-
-
-def rotation_angle_is_smaller(angle1: float, angle2: float, atol: float = 5) -> bool:
-    """Check the rotation angles are large
-
-    Args:
-        angle1 (float): angle1 (radians)
-        angle2 (float): angle2 (radians)
-        atol : tolerance (degrees)
-
-    Returns:
-        bool: rotation angle is smaller than atol
-    """
-
-    return angle_difference(angle1, angle2) < (np.deg2rad(atol))
-
-
-def angle_difference(angle1: float, angle2: float) -> float:
-    """Return the difference between two angles, accounting for greater than 360, less than 0 angles
-
-    Args:
-        angle1 (float): angle1 (radians)
-        angle2 (float): angle2 (radians)
-
-    Returns:
-        float: _description_
-    """
-    angle1 %= 2 * np.pi
-    angle2 %= 2 * np.pi
-
-    large_angle = np.max([angle1, angle2])
-    small_angle = np.min([angle1, angle2])
-
-    return min((large_angle - small_angle), ((2 * np.pi + small_angle - large_angle)))
 
 
 def printProgressBar(
