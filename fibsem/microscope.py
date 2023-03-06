@@ -446,6 +446,7 @@ class ThermoMicroscope(FibsemMicroscope):
             >>> microscope.autocontrast(beam_type=BeamType.ION)
 
         """
+        logging.info(f"Running autocontrast on {beam_type.name}.")
         self.connection.imaging.set_active_device(beam_type.value)
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.auto_functions.run_auto_cb()
@@ -456,6 +457,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             beam_type (BeamType): The imaging beam type for which to focus.
         """
+        logging.info(f"Running auto-focus on {beam_type.name}.")
         self.connection.imaging.set_active_device(beam_type.value)
         self.connection.imaging.set_active_view(beam_type.value)  
         self.connection.auto_functions.run_auto_focus()
@@ -482,7 +484,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.beam_shift.value = Point(0, 0)
         logging.debug(f"reset beam shifts to zero complete")
 
-    def beam_shift(self, dx: float, dy: float) -> None:
+    def beam_shift(self, dx: float, dy: float, beam_type: BeamType = BeamType.ION) -> None:
         """
         Adjusts the beam shift based on relative values that are provided.
         
@@ -491,7 +493,11 @@ class ThermoMicroscope(FibsemMicroscope):
             dx (float): the relative x term
             dy (float): the relative y term
         """
-        self.connection.beams.ion_beam.beam_shift.value += (-dx, dy)
+        logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
+        if beam_type == BeamType.ELECTRON:
+            self.connection.beams.electron_beam.beam_shift.value += (-dx, dy)
+        else:
+            self.connection.beams.ion_beam.beam_shift.value += (-dx, dy)
 
     def get_stage_position(self) -> FibsemStagePosition:
         """
@@ -563,6 +569,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        logging.info(f"Moving stage to {position}.")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
@@ -582,6 +589,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        logging.info(f"Moving stage by {position}.")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
@@ -1334,21 +1342,28 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "working_distance":
             beam.working_distance.value = value
             self.connection.specimen.stage.link() # Link the specimen stage
+            logging.info(f"{beam_type.name} working distance set to {value} m.")
         if key == "current":
             beam.beam_current.value = value
+            logging.info(f"{beam_type.name} current set to {value} A.")
         if key == "voltage":
             beam.high_voltage.value = value
+            logging.info(f"{beam_type.name} voltage set to {value} V.")
         if key == "hfw":
             beam.horizontal_field_width.value = value
+            logging.info(f"{beam_type.name} HFW set to {value} m.")
         if key == "resolution":
             beam.scanning.resolution.value = value
+            logging.info(f"{beam_type.name} resolution set to {value} m.")
         if key == "dwell_time":
             beam.scanning.dwell_time.value = value
+            logging.info(f"{beam_type.name} dwell time set to {value} s.")
         
         # only supported for Electron
         if beam_type is BeamType.ELECTRON:
             if key == "angular_correction_angle":
                 beam.angular_correction.angle.value = value
+                logging.info(f"Angular correction angle set to {value} radians.")
 
             if key == "angular_correction_tilt_correction":
                 beam.angular_correction.tilt_correction.turn_on() if value else beam.angular_correction.tilt_correction.turn_off()
@@ -1479,7 +1494,9 @@ class TescanMicroscope(FibsemMicroscope):
             Returns:
                 None.
         """
+        logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
         self.connection = Automation(ip_address, port)
+        logging.info(f"Microscope client connected to [{ip_address}:{port}]")
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
         """
@@ -1491,6 +1508,7 @@ class TescanMicroscope(FibsemMicroscope):
             Returns:
                 A `FibsemImage` object that represents the acquired image.
         """
+        logging.info(f"acquiring new {image_settings.beam_type.name} image.")
         if image_settings.beam_type.name == "ELECTRON":
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
@@ -1730,6 +1748,7 @@ class TescanMicroscope(FibsemMicroscope):
             >>> microscope.autocontrast(beam_type=BeamType.ION)
 
         """
+        logging.info(f"Running autocontrast on {beam_type.name}.")
         if beam_type.name == BeamType.ELECTRON:
             self.connection.SEM.Detector.StartAutoSignal(0)
         if beam_type.name == BeamType.ION:
@@ -1747,10 +1766,17 @@ class TescanMicroscope(FibsemMicroscope):
         Args:
             self (FibsemMicroscope): instance of the FibsemMicroscope object
         """
+        logging.debug(
+            f"reseting ebeam shift to (0, 0) from: {self.connection.FIB.Optics.GetImageShift()} (mm)"
+        )
         self.connection.FIB.Optics.SetImageShift(0, 0)
+        logging.debug(
+            f"reseting ebeam shift to (0, 0) from: {self.connection.SEM.Optics.GetImageShift()} (mm)"
+        )
         self.connection.SEM.Optics.SetImageShift(0, 0)
 
-    def beam_shift(self, dx: float, dy: float):
+
+    def beam_shift(self, dx: float, dy: float, beam_type: BeamType = BeamType.ION):
         """Adjusts the beam shift based on relative values that are provided.
         
         Args:
@@ -1758,12 +1784,17 @@ class TescanMicroscope(FibsemMicroscope):
             dx (float): the relative x term
             dy (float): the relative y term
         """
-        x, y = self.connection.FIB.Optics.GetImageShift()
+        if beam_type == BeamType.ION:
+            beam = self.connection.FIB.Optics
+        elif beam_type == BeamType.ELECTRON:
+            beam = self.connection.SEM.Optics
+        logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
+        x, y = beam.GetImageShift()
         dx *=  constants.METRE_TO_MILLIMETRE # Convert to mm from m.
         dy *=  constants.METRE_TO_MILLIMETRE
         x -= dx # NOTE: Not sure why the dx is -dx, this may be thermo specific and doesn't apply to TESCAN?
         y += dy
-        self.connection.FIB.Optics.SetImageShift(x,y) 
+        beam.SetImageShift(x,y) 
         
     def get_stage_position(self):
         """
@@ -1858,6 +1889,7 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        logging.info(f"Moving stage to {position}.")
         self.connection.Stage.MoveTo(
             position.x * constants.METRE_TO_MILLIMETRE,
             position.y * constants.METRE_TO_MILLIMETRE,
@@ -1883,7 +1915,7 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-
+        logging.info(f"Moving stage by {position}.")
         current_position = self.get_stage_position()
         x_m = current_position.x
         y_m = current_position.y
@@ -1954,7 +1986,7 @@ class TescanMicroscope(FibsemMicroscope):
         z_move = dy / np.cos(
             np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion)
         )  # TODO: MAGIC NUMBER, 90 - fib tilt
-
+        logging.info(f"eucentric movement: {z_move}")
         z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
         logging.info(f"eucentric movement: {z_move}")
@@ -2136,6 +2168,7 @@ class TescanMicroscope(FibsemMicroscope):
         """
         self.connection.FIB.Beam.On()
         self.connection.DrawBeam.LoadLayer(self.layer)
+        logging.info(f"running ion beam milling now...")
         self.connection.DrawBeam.Start()
         self.connection.Progress.Show(
             "DrawBeam", "Layer 1 in progress", False, False, 0, 100
@@ -2379,6 +2412,7 @@ class TescanMicroscope(FibsemMicroscope):
             # Run predefined deposition process
             self.connection.DrawBeam.Start()
             self.connection.Progress.Show("DrawBeam", "Layer 1 in progress", False, False, 0, 100)
+            logging.info("Sputtering with platinum started.")
             while True:
                 status = self.connection.DrawBeam.GetStatus()
                 running = status[0] == self.connection.DrawBeam.Status.ProjectLoadedExpositionInProgress
@@ -2414,6 +2448,7 @@ class TescanMicroscope(FibsemMicroscope):
         # Move GIS out from chamber and turn off heating
         self.connection.GIS.MoveTo(self.line, Automation.GIS.Position.Home)
         self.connection.GIS.PrepareTemperature(self.line, False)
+        logging.info("Platinum sputtering process completed.")
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state.
@@ -2507,11 +2542,13 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "working_distance":
             if beam_type == BeamType.ELECTRON:
                 beam.Optics.SetWD(value * constants.METRE_TO_MILLIMETRE)
+                logging.info(f"Electron beam working distance set to {value} m.")
             else: 
                 logging.info(f"Setting working distance for ion beam is not supported by Tescan API.")
         if key == "current":
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetCurrent(value * constants.SI_TO_PICO)
+                logging.info(f"Electron beam current set to {value} A.")
             else: 
                 logging.info(f"Setting current for ion beam is not supported by Tescan API, please use the native microscope interface.")
         if key == "voltage":
@@ -2521,6 +2558,7 @@ class TescanMicroscope(FibsemMicroscope):
                 logging.info(f"Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
         if key == "hfw":
             beam.Optics.SetViewfield(value * constants.METRE_TO_MILLIMETRE)
+            logging.info(f"{beam_type.name} HFW set to {value} m.")
 
 
 ########################
