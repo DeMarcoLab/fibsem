@@ -9,6 +9,7 @@ from fibsem.ui import utils as ui_utils
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
 import numpy as np
+from pathlib import Path
 
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
@@ -75,7 +76,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             autocontrast=self.checkBox_image_use_autocontrast.isChecked(),
             gamma_enabled=self.checkBox_image_use_autogamma.isChecked(),
             save=self.checkBox_image_save_image.isChecked(),
-            save_path=self.lineEdit_image_path.text(),
+            save_path=Path(self.lineEdit_image_path.text()),
             label=self.lineEdit_image_label.text()
             
         )

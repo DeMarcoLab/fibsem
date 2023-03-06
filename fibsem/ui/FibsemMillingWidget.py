@@ -11,6 +11,7 @@ from fibsem.structures import (BeamType, FibsemMillingSettings, FibsemPattern,
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari
+from fibsem import milling
 
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
@@ -35,6 +36,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def setup_connections(self):
 
         self.pushButton.clicked.connect(self.update_ui)
+        self.pushButton_run_milling.clicked.connect(self.run_milling)
 
         # milling
         available_currents = self.microscope.get_available("current", BeamType.ION)
@@ -107,6 +109,29 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             all_patterns=[[pattern_settings]])
 
         self.viewer.layers.selection.active = self.image_widget.eb_layer
+
+    def run_milling(self):
+        
+        # TODO: thread this
+        pattern_settings = self.get_pattern_settings_from_ui()
+        milling_settings = self.get_milling_settings_from_ui()
+
+        milling.setup_milling(None, mill_settings=milling_settings)
+        milling.draw_pattern(pattern_settings, self.microscope)
+
+        milling.run_milling(self.microscope, milling_settings)
+        milling.finish_milling(self.microscope, self.settings.system.ion.current)
+
+        napari.utils.notifications.show_info("Milling complete.")
+
+        self.run_milling_finished()
+
+    def run_milling_finished(self):
+
+        # take new images and update ui
+        self.image_widget.take_reference_images()
+        self.update_ui()
+
 
 def main():
 
