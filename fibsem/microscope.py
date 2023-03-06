@@ -215,6 +215,10 @@ class FibsemMicroscope(ABC):
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
+    @abstractmethod
+    def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
+        pass
+
 class ThermoMicroscope(FibsemMicroscope):
     """
     A class representing a Thermo Fisher FIB-SEM microscope.
@@ -1352,7 +1356,8 @@ class ThermoMicroscope(FibsemMicroscope):
             return beam.scanning.resolution.value
         if key == "dwell_time":
             return beam.scanning.dwell_time.value
-
+        if key == "scan_rotation":
+            return beam.scanning.rotation.value
         if key == "voltage_limits":
             return beam.high_voltage.limits
         if key == "voltage_controllable":
@@ -1430,7 +1435,10 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "dwell_time":
             beam.scanning.dwell_time.value = value
             logging.info(f"{beam_type.name} dwell time set to {value} s.")
-        
+        if key == "scan_rotation":
+            beam.scanning.rotation.value = value
+            logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
+
         # beam control
         if key == "on":
             beam.turn_on() if value else beam.turn_off()
@@ -1494,6 +1502,23 @@ class ThermoMicroscope(FibsemMicroscope):
         
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
+    
+    def check_available_values(self, key:str, values: list, beam_type: BeamType = None) -> bool:
+
+        available_values = self.get_available_values(key, beam_type)
+
+        if available_values is None:
+            return False
+        
+        for value in values:
+            if value not in available_values:
+                return False
+
+            if isinstance(value, float):
+                if value < min(available_values) or value > max(available_values):
+                    return False
+        return True
+
 
 class TescanMicroscope(FibsemMicroscope):
     """
