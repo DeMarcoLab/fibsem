@@ -3,7 +3,7 @@
 ## Dependencies
 * Python 3.9+
 * FIB/SEM microscope (a commercial product by ThermoFisher FEI or TESACN)
-* Autoscript software (a commercial product by ThermoFisher FEI)
+* Autoscript software (a commercial product by ThermoFisher FEI) OR
 * tescanautomation software (a commercial product by TESCAN)
 
 ### Python

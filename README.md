@@ -1,21 +1,88 @@
 # OpenFIBSEM
-Python API for advanced FIBSEM control
 
-## Design
-- Designed to act as lego blocks, users can mix and match
-- Focus on the microscopy, not learning the API
-- Script together a workflow in a few hours. 
-- Abstract common functionality, and automate manual tasks.
+A univseral API for FIBSEM Control, Development and Automation
 
-End goal is to make developing workflows for FIBSEM faster, easier, cheaper, and more accessible. 
+## Overview
 
-## Example:
+OpenFIBSEM is a Python package for controlling and automating FIB/SEM microscopes. It is designed to be a universal API for FIBSEM control, development and automation. OpenFIBSEM is designed to abstract away the details of the microscope and provide a simple, intuitive interface for controlling the microscope, as well as reuseable modules for common workflows and operations. OpenFIBSEM is designed to be extensible and can be easily adapted to support new microscopes.
+
+We currently support the [TESCAN Automation SDK](https://www.tescan.com/en/products/automation-sdk/) and [ThermoFisher AutoScript](https://www.tescan.com/en/products/autoscript/). Support for other FIBSEM systems is planned.
+
+
+## Install
+
+### Install OpenFIBSEM
+
+Clone this repository, and checkout v0.2-stable: 
+
+```
+$ git clone https://github.com/DeMarcoLab/fibsem.git
+$ git checkout origin/v0.2-stable
+```
+
+Install dependencies and package
+```bash
+$ cd fibsem
+$ conda env create -f environment.yml
+$ conda activate fibsem
+$ pip install -e .
+
+```
+
+For detailed instructions on installation, and installing the commercial microscope APIs, see [Installation Guide](INSTALLATION.md).
+
+## Getting Started
+
+To get started, see the example/example.py:
+
+Recommended: You can start an offline demo microscope by speciying manufacturer: "Demo" in the system.yaml file (fibsem/config/system.yaml). This will start a demo microscope that you can use to test the API without connecting to a real microscope. To connect to a real microscope, set the ip_address and manufacturer of your microscope in the system.yaml or alternatively, you can pass these arguments to utils.setup_session() directly. 
+
+This example shows you how to connect to the microscope, take an image with both beams, and then plot.
+
+```python
+from fibsem import utils, acquire
+import matplotlib.pyplot as plt
+
+def main():
+
+    # connect to microscope
+    microscope, settings = utils.setup_session(ip_address="localhost", manufacturer="Demo")
+
+    # take image with both beams
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+
+    # show images
+    fig, ax = plt.subplots(1, 2, figsize=(7, 5))
+    ax[0].imshow(eb_image.data, cmap="gray")
+    ax[1].imshow(ib_image.data, cmap="gray")
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
+
+```
+
+This example is available as a script in example/example.py.
+For more detailed examples, see the Examples sections below.
+
+## Examples
+
+### Core Functionality
+
+For examples of core functionality please see:
+
+- example/example_imaging.py: image acqusition
+- example/example_movement.py: stage movement
+- example/example_milling.py: drawing patterns and beam milling
+
+### Comparison to AutoScript
+
 - Take an Electron Beam image with autocontrast...
 
 AutoScript
 
 ```python
-
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings, RunAutoCbSettings
 
@@ -48,7 +115,6 @@ AutoScript
 
 ```
 
-
 OpenFIBSEM
 
 ```python
@@ -57,7 +123,7 @@ from fibsem import utils, acquire
 from fibsem.structures import BeamType, ImageSettings
 
 # connect to microscope
-microscope = utils.connect_to_microscope(ip_address="10.0.0.1")
+microscope, settings = utils.setup_session(ip_address="localhost", manufacturer="Thermo")
 
 # set imaging settings
 image_settings = ImageSettings(
@@ -71,113 +137,55 @@ image_settings = ImageSettings(
 eb_image = acquire.new_image(microscope, image_settings)
 
 ```
-## Install
 
-### Install OpenFIBSEM
-Clone this repository: 
+## Application Demonstrations
 
-```
-$ git clone https://github.com/DeMarcoLab/fibsem.git
-```
+The example directory contains the following applications:
 
-Install dependencies and package
-```bash
-$ cd fibsem
-$ conda env create -f environment.yml
-$ conda activate fibsem
-$ pip install -e .
+**Autolamella (autolamella.py)**
 
-```
+Recreation of [AutoLamella](https://github.com/DeMarcoLab/autolamella) (automated cryo-lamella preparation) in ~150 lines of code.
 
-### Install AutoScript
-You will also need to install AutoScript 4.6+. 
+**Volume Microscopy (slice_and_view.py)**
 
-Please see the [Installation Guide](INSTALLATION.md) for detailed instructions.
+Recreation of a volume microscopy workflow (slice and view) in ~50 lines of code.
 
-Copy AutoScript /into home/user/miniconda3/envs/fibsem/lib/python3.9/site-packages/
+**Lithography (lithography.py)**
 
-### Install TESCAN Automation SDK
+Milling of a grayscale lithography profile using a bitmap pattern.
 
-Ideally, please install and set up the conda environment first before proceeding to install this SDK
+## Projects using OpenFIBSEM
 
-Run the Tescan-Automation-SDK-Installer-3.x.x.exe file
+We are currently working on a number of projects using OpenFIBSEM. If you are using OpenFIBSEM in your research, please let us know!
 
-When asked for the python interpretor, select the existing conda environment for FIBSEM, if this python interpretor is not available, see detailed installation guide for a work around
+- [AutoLamella v2: Automated cryo-lamella preparation](www.github.com/DeMarcoLab/autolamella)
+- [AutoLiftout: Automated cryo-liftout](www.github.com/DeMarcoLab/autoliftout)
+- [Salami: Volume Electron Microscopy](www.github.com/DeMarcoLab/salami)
+- [Vulcan: Grayscale FIB Lithography](www.github.com/DeMarcoLab/vulcan)
 
-See [Installation Guide](INSTALLATION.md) for full details
+## Contributing
 
-## Getting Started
-
-To get started, see the example/example.py:
-
-(Note: You might need to edit fibsem/config/system.yaml to change the IP address of your microscope.)
-
-This example shows you how to connect to the microscope, take an image with both beams, and then plot.
-
-```python
-from fibsem import utils, acquire
-import matplotlib.pyplot as plt
-
-
-def main():
-
-    # connect to microscope
-    microscope, settings = utils.setup_session()
-
-    # take image with both beams
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-
-    # show images
-    fig, ax = plt.subplots(1, 2, figsize=(7, 5))
-    ax[0].imshow(eb_image.data, cmap="gray")
-    ax[1].imshow(ib_image.data, cmap="gray")
-    plt.show()
-
-
-if __name__ == "__main__":
-    main()
-
-
-```
-
-For more detailed examples, see the Examples sections below.
-
-
-## Examples
-
-The example directory contains 
-
-Autolamella
-- Recreation of https://github.com/DeMarcoLab/autolamella, in ~150 lines of code.
-
-Slice and View
-- Recreation of a slice and view program in ~50 lines of code.
-
-Lithography
-- Milling of a lithography profile using a bitmap pattern.
-
+Contributions are welcome! Please open a pull request or issue.
 
 ## Docs
 
-https://demarcolab.github.io/fibsem/
-
+OpenFIBSEM is a large package with many features. For more detailed documentation, please see the [Documentation Website](https://demarcolab.github.io/fibsem/).
 
 ## Citation
+
 ```
 @article {Cleeve2022.11.01.514681,
-	author = {Cleeve, Patrick and Dierickx, David and Buckley, Genevieve and Gorelick, Sergey and Naegele, Lucile and Burne, Lachlan and Whisstock, James C and de Marco, Alex},
-	title = {OpenFIBSEM: an application programming interface for easy FIB/SEM automation},
-	elocation-id = {2022.11.01.514681},
-	year = {2022},
-	doi = {10.1101/2022.11.01.514681},
-	publisher = {Cold Spring Harbor Laboratory},
-	abstract = {Automation in microscopy is the key to success in long and complex experiments. Most microscopy manufacturers provide Application Programming Interfaces (API) to enable communication between a user-defined program and the hardware. Although APIs effectively allow the development of complex routines involving hardware control, the developers need to build the applications from basic commands. Here we present a Software Development Kit (SDK) for easy control of Focussed Ion Beam Scanning Electron Microscopes (FIB/SEM) microscopes. The SDK, which we named OpenFIBSEM consists of a suite of building blocks for easy control that simplify the development of complex automated workflows.Competing Interest StatementThe authors have declared no competing interest.},
-	URL = {https://www.biorxiv.org/content/early/2022/11/06/2022.11.01.514681},
-	eprint = {https://www.biorxiv.org/content/early/2022/11/06/2022.11.01.514681.full.pdf},
-	journal = {bioRxiv}
+ author = {Cleeve, Patrick and Dierickx, David and Buckley, Genevieve and Gorelick, Sergey and Naegele, Lucile and Burne, Lachlan and Whisstock, James C and de Marco, Alex},
+ title = {OpenFIBSEM: an application programming interface for easy FIB/SEM automation},
+ elocation-id = {2022.11.01.514681},
+ year = {2022},
+ doi = {10.1101/2022.11.01.514681},
+ publisher = {Cold Spring Harbor Laboratory},
+ abstract = {Automation in microscopy is the key to success in long and complex experiments. Most microscopy manufacturers provide Application Programming Interfaces (API) to enable communication between a user-defined program and the hardware. Although APIs effectively allow the development of complex routines involving hardware control, the developers need to build the applications from basic commands. Here we present a Software Development Kit (SDK) for easy control of Focussed Ion Beam Scanning Electron Microscopes (FIB/SEM) microscopes. The SDK, which we named OpenFIBSEM consists of a suite of building blocks for easy control that simplify the development of complex automated workflows.Competing Interest StatementThe authors have declared no competing interest.},
+ URL = {https://www.biorxiv.org/content/early/2022/11/06/2022.11.01.514681},
+ eprint = {https://www.biorxiv.org/content/early/2022/11/06/2022.11.01.514681.full.pdf},
+ journal = {bioRxiv}
 }
 ```
 
-
-
-enjoy :) 
+enjoy :)
