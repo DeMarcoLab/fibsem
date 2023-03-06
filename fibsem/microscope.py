@@ -1062,7 +1062,16 @@ class ThermoMicroscope(FibsemMicroscope):
             )
 
         pattern.rotation = pattern_settings.rotation
-        if pattern_settings.scan_direction in ["BottomToTop", "DynamicAllDirections", "DynamicInnerToOuter", "DynamicLeftToRight", "DynamicTopToBottom", "InnerToOuter", 	"LeftToRight", 	"OuterToInner", "RightToLeft", 	"TopToBottom"]:
+        if pattern_settings.scan_direction in ["BottomToTop", 
+                                               "DynamicAllDirections", 
+                                               "DynamicInnerToOuter", 
+                                               "DynamicLeftToRight", 
+                                               "DynamicTopToBottom", 
+                                               "InnerToOuter", 	
+                                               "LeftToRight", 	
+                                               "OuterToInner", 
+                                               "RightToLeft", 	
+                                               "TopToBottom"]:
             pattern.scan_direction = pattern_settings.scan_direction
         else:
             pattern.scan_direction = "TopToBottom"
