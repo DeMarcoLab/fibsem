@@ -612,7 +612,6 @@ class FibsemMillingSettings:
     spot_size (float): The size of the beam spot used in the FIBSEM milling process. Default value is 5.0e-8 m.
     rate (float): The milling rate of the FIBSEM process. Default value is 3.0e-3 m^3/A/s.
     dwell_time (float): The dwell time of the beam at each point during the FIBSEM milling process. Default value is 1.0e-6 s.
-    application_file (str): The name of the application file used in the FIBSEM milling process. Default value is "Si". (ThermoFisher)
     hfw (float): The high voltage field width used in the FIBSEM milling process. Default value is 150e-6 m.
 
     Methods:
@@ -624,7 +623,6 @@ class FibsemMillingSettings:
     spot_size: float = 5.0e-8
     rate: float = 3.0e-3 # m3/A/s
     dwell_time: float = 1.0e-6 # s
-    application_file: str = "Si"
     hfw: float = 150e-6
     patterning_mode: str = "Serial" 
 
@@ -636,7 +634,6 @@ class FibsemMillingSettings:
             "rate": self.rate,
             "dwell_time": self.dwell_time,
             "hfw": self.hfw,
-            "application_file": self.application_file,
             "patterning_mode": self.patterning_mode,
         }
 
@@ -650,7 +647,6 @@ class FibsemMillingSettings:
             spot_size=settings.get("spot_size", 5.0e-8),
             rate=settings.get("rate", 3.0e-3),
             dwell_time=settings.get("dwell_time", 1.0e-6),
-            application_file=settings.get("application_file", "Si"),
             hfw=settings.get("hfw", 150e-6),
             patterning_mode=settings.get("patterning_mode", "Serial"),
         )
@@ -936,12 +932,14 @@ class MicroscopeSettings:
     image: ImageSettings
     protocol: dict = None
     milling: FibsemMillingSettings = None
+    application_file: str = "Si"
 
     def __to_dict__(self) -> dict:
 
         settings_dict = {
             "system": self.system.__to_dict__(),
             "user": self.image.__to_dict__(),
+            "application_file": self.application_file,
         }
 
         return settings_dict
@@ -953,6 +951,7 @@ class MicroscopeSettings:
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
             protocol=protocol,
+            application_file=settings.get("application_file", "Si"),
         )
 
 

@@ -69,7 +69,7 @@ def main():
         return
 
     # setup milling
-    settings.milling.application_file = settings.protocol.get("application_file", "autolamella")
+    settings.application_file = settings.protocol.get("application_file", "autolamella")
     milling.setup_milling(microscope = microscope,
         patterning_mode  = "Serial",
         mill_settings = settings.milling)

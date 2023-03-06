@@ -23,7 +23,6 @@ def setup_milling(
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
-        application_file (str, optional): Application file for ion beam milling. Defaults to "autolamella".
         patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
