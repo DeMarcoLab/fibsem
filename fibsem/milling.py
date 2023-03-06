@@ -17,7 +17,6 @@ from fibsem.microscope import FibsemMicroscope
 
 def setup_milling(
     microscope: FibsemMicroscope,
-    patterning_mode: str = "Serial",
     mill_settings: FibsemMillingSettings = None,
 ):
     """Setup Microscope for Ion Beam Milling.
@@ -28,7 +27,7 @@ def setup_milling(
         patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
-    microscope.setup_milling(patterning_mode, mill_settings)
+    microscope.setup_milling(mill_settings)
 
 def run_milling(
     microscope: FibsemMicroscope,
