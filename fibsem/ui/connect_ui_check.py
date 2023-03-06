@@ -61,7 +61,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
 
         if self.microscope is not None:
-           self.update_position_ui()
+            self.update_position_ui()
+            # Get scan directions 
+            direction_list = self.microscope.get_scan_directions()
+            for i in range(len(direction_list)-1):
+                self.scan_direction.addItem(direction_list[i-1])
 
 
         ### NAPARI settings and initialisation
@@ -108,6 +112,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         # GIS
         self.sputterButton.clicked.connect(self.sputter_protocol)
+
+
 
     def add_line(self):
         line = FibsemPatternSettings(

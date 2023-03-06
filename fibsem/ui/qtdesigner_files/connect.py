@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'connect.UI'
+# Form implementation generated from reading ui file 'connect.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
@@ -590,9 +590,6 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.label_44, 15, 0, 1, 1)
         self.scan_direction = QtWidgets.QComboBox(self.verticalLayoutWidget_3)
         self.scan_direction.setObjectName("scan_direction")
-        self.scan_direction.addItem("")
-        self.scan_direction.addItem("")
-        self.scan_direction.addItem("")
         self.gridLayout_3.addWidget(self.scan_direction, 19, 1, 1, 2)
         self.label_91 = QtWidgets.QLabel(self.verticalLayoutWidget_3)
         self.label_91.setObjectName("label_91")
@@ -892,9 +889,6 @@ class Ui_MainWindow(object):
         self.label_65.setText(_translate("MainWindow", "Start Y"))
         self.label_90.setText(_translate("MainWindow", "Radius"))
         self.label_44.setText(_translate("MainWindow", "Milling Current:"))
-        self.scan_direction.setItemText(0, _translate("MainWindow", "TopToBottom"))
-        self.scan_direction.setItemText(1, _translate("MainWindow", "BottomToTop"))
-        self.scan_direction.setItemText(2, _translate("MainWindow", "ZigZag"))
         self.label_91.setText(_translate("MainWindow", "Centre Y"))
         self.label_92.setText(_translate("MainWindow", "Depth"))
         self.label_94.setText(_translate("MainWindow", "µm"))
