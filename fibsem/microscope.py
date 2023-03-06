@@ -1062,7 +1062,12 @@ class ThermoMicroscope(FibsemMicroscope):
             )
 
         pattern.rotation = pattern_settings.rotation
-        pattern.scan_direction = pattern_settings.scan_direction
+        if pattern_settings.scan_direction in ["BottomToTop", "DynamicAllDirections", "DynamicInnerToOuter", "DynamicLeftToRight", "DynamicTopToBottom", "InnerToOuter", 	"LeftToRight", 	"OuterToInner", "RightToLeft", 	"TopToBottom"]:
+            pattern.scan_direction = pattern_settings.scan_direction
+        else:
+            pattern.scan_direction = "TopToBottom"
+            logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using Flyback instead.")
+            logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
 
         return pattern
 
@@ -2267,6 +2272,7 @@ class TescanMicroscope(FibsemMicroscope):
             parallel=parallel_mode,
         )
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
+        
 
     def run_milling(self, milling_current: float, asynch: bool = False):
         """
@@ -2346,6 +2352,13 @@ class TescanMicroscope(FibsemMicroscope):
         width = pattern_settings.width
         height = pattern_settings.height
         rotation = pattern_settings.rotation * constants.RADIANS_TO_DEGREES # CHECK UNITS (TESCAN Takes Degrees)
+        if pattern_settings.scan_direction in ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]:
+            path = pattern_settings.scan_direction
+        else:
+            path = "Flyback"
+            logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using Flyback instead.")
+            logging.info(f"Supported scan directions are: Flyback, RLE, SpiralInsideOut, SpiralOutsideIn, ZigZag")
+        self.connection.DrawBeam.ScanningPath = pattern_settings.scan_direction
 
         if pattern_settings.cleaning_cross_section:
             self.layer.addRectanglePolish(
@@ -2355,6 +2368,7 @@ class TescanMicroscope(FibsemMicroscope):
                 Width=width,
                 Height=height,
                 Angle=rotation,
+                ScanningPath=path
             )
         else:
             self.layer.addRectangleFilled(
@@ -2364,9 +2378,11 @@ class TescanMicroscope(FibsemMicroscope):
                 Width=width,
                 Height=height,
                 Angle=rotation,
+                ScanningPath=path
             )
 
         pattern = self.layer
+        
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
