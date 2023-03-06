@@ -26,12 +26,9 @@ if THERMO:
 
     # TODO: change return type to list of warnings rather than reading the log...
     def validate_initial_microscope_state(
-        microscope: SdbMicroscopeClient, settings: MicroscopeSettings
+        microscope: FibsemMicroscope, settings: MicroscopeSettings
     ) -> None:
         """Set the initial microscope state to default, and validate other settings."""
-
-        # set default microscope state
-        set_initial_microscope_state(microscope, None)
 
         # validate chamber state
         _validate_chamber_state(microscope=microscope)
@@ -49,32 +46,19 @@ if THERMO:
         _validate_scanning_rotation(microscope=microscope)
 
 
-    # TODO: need to get this initial state from the user some how...
-    def set_initial_microscope_state(
-        microscope: SdbMicroscopeClient, microscope_state: MicroscopeState
-    ) -> None:
 
-        # set default microscope state
-        microscope.specimen.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
-
-        # set state
-        # calibration.set_microscope_state(microscope, microscope_state)
-
-        return
-
-
-    def _validate_stage_calibration(microscope: SdbMicroscopeClient) -> None:
+    def _validate_stage_calibration(microscope: FibsemMicroscope) -> None:
         """Validate if the required stage calibration has been performed.
 
         Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
+            microscope (FibsemMicroscope): autoscript microscope instance
         """
         # QUERY: should we home?
-        if not microscope.specimen.stage.is_homed:
+        if not microscope.get("stage_homed"):
             logging.warning("Stage is not homed.")
 
         # QUERY: should we focus and link?
-        if not microscope.specimen.stage.is_linked:
+        if not microscope.get("stage_linked"):
             logging.warning("Stage is not linked.")
 
         logging.info("Stage calibration validation complete.")
@@ -82,13 +66,13 @@ if THERMO:
         return
 
 
-    def _validate_needle_calibration(microscope: SdbMicroscopeClient) -> None:
+    def _validate_needle_calibration(microscope: FibsemMicroscope) -> None:
         """Validate if the needle is inserted
         Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
+            microscope (FibsemMicroscope): autoscript microscope instance
         """
 
-        needle_state = microscope.specimen.manipulator.state
+        needle_state = microscope.get("manipulator_state")
         logging.info(f"Needle is {needle_state}")
 
         if needle_state != "Retracted":
@@ -104,55 +88,28 @@ if THERMO:
 
 
     def _validate_beam_system_state(
-        microscope: SdbMicroscopeClient, settings: BeamSystemSettings
+        microscope: FibsemMicroscope, settings: BeamSystemSettings
     ) -> None:
-
-        if settings.beam_type is BeamType.ELECTRON:
-            microscope_beam = microscope.beams.electron_beam
-        if settings.beam_type is BeamType.ION:
-            microscope_beam = microscope.beams.ion_beam
 
         beam_name = settings.beam_type.name
 
         logging.info(f"Validating {beam_name} Beam")
-        if not microscope_beam.is_on:
+        if not microscope.get("on", settings.beam_type):
             logging.warning(f"{beam_name} Beam is not on, switching on now...")
-            microscope_beam.turn_on()
-            assert microscope_beam.is_on, f"Unable to turn on {beam_name} Beam."
+            microscope.set("on", True, settings.beam_type)
+            assert microscope.get("on", settings.beam_type), f"Unable to turn on {beam_name} Beam."
             logging.warning(f"{beam_name} Beam turned on.")
 
         # blanked?
-        if microscope_beam.is_blanked:
+        if microscope.get("blanked", settings.beam_type):
             logging.warning(f"{beam_name} Beam is blanked, unblanking now...")
-            microscope_beam.unblank()
-            assert not microscope_beam.is_blanked, f"Unable to unblank {beam_name} Beam."
+            microscope.set("blanked", False, settings.beam_type)
+            assert not microscope.get("blanked", settings.beam_type), f"Unable to unblank {beam_name} Beam."
             logging.warning(f"{beam_name} Beam unblanked.")
 
-        # set beam active view and device
-        microscope.imaging.set_active_view(settings.beam_type.value)
-        microscope.imaging.set_active_device(settings.beam_type.value)
-
-        # validate detector type
-        if str(microscope.detector.type.value) != settings.detector_type:
-            logging.warning(
-                f"{beam_name} detector type should be {settings.detector_type} (Currently is {str(microscope.detector.type.value)})"
-            )
-            if settings.detector_type in microscope.detector.type.available_values:
-                microscope.detector.type.value = settings.detector_type
-                logging.warning(
-                    f"Changed {beam_name} detector type to {str(microscope.detector.type.value)}"
-                )
-
-        # validate detector mode
-        if str(microscope.detector.mode.value) != settings.detector_mode:
-            logging.warning(
-                f"{beam_name} detector mode should be {settings.detector_mode} (Currently is {str(microscope.detector.mode.value)}"
-            )
-            if "SecondaryElectrons" in microscope.detector.mode.available_values:
-                microscope.detector.mode.value = settings.detector_mode
-                logging.warning(
-                    f"Changed {beam_name} detector mode to {str(microscope.detector.mode.value)}"
-                )
+        # set detectors
+        microscope.set("detector_type", settings.detector_type, settings.beam_type)
+        microscope.set("detector_mode", settings.detector_mode, settings.beam_type)       
 
         # validate working distances
         if not check_working_distance_is_within_tolerance(
@@ -160,25 +117,25 @@ if THERMO:
         ):
             logging.warning(
                 f"""{beam_name} Beam is not close to eucentric height. It should be {settings.eucentric_height}m
-                (Currently is {microscope_beam.working_distance.value:.4f}m)"""
+                (Currently is {microscope.get("working_distance", settings.beam_type):.4f}m)"""
             )
 
         # validate high voltage
-        high_voltage_limits = str(microscope_beam.high_voltage.limits)
+        high_voltage_limits = str(microscope.get("voltage_limits", settings.beam_type))
         logging.info(f"{beam_name} Beam High Voltage Limits are: {high_voltage_limits}")
 
-        if microscope_beam.high_voltage.value != settings.voltage:
+        if microscope.get("voltage", settings.beam_type) != settings.voltage:
             logging.warning(
-                f"{beam_name} Beam High Voltage should be {settings.voltage}V (Currently {microscope_beam.high_voltage.value}V)"
+                f"{beam_name} Beam High Voltage should be {settings.voltage}V (Currently {microscope.get('voltage', settings.beam_type)}V)"
             )
 
-            if bool(microscope_beam.high_voltage.is_controllable):
+            if bool(microscope.get("voltage_controllable", settings.beam_type)):
                 logging.warning(
                     f"Changing {beam_name} Beam High Voltage to {settings.voltage}V."
                 )
-                microscope_beam.high_voltage.value = settings.voltage
+                microscope.set("voltage", settings.voltage, settings.beam_type)
                 assert (
-                    microscope_beam.high_voltage.value == settings.voltage
+                    microscope.get("voltage", settings.beam_type) == settings.voltage
                 ), f"Unable to change {beam_name} Beam High Voltage"
                 logging.warning(f"{beam_name} Beam High Voltage Changed")
 
@@ -186,17 +143,15 @@ if THERMO:
         if settings.beam_type is BeamType.ION:
 
             plasma_gas = settings.plasma_gas.capitalize()
-            if plasma_gas not in microscope_beam.source.plasma_gas.available_values:
+            if plasma_gas not in microscope.get_available(key="plasma_gas", beam_type=settings.beam_type):
                 logging.warning(f"{plasma_gas} is not available as a plasma gas.")
 
-            if microscope_beam.source.plasma_gas.value != plasma_gas:
-                logging.warning(
-                    f"Plasma Gas is should be {plasma_gas} (Currently {microscope_beam.source.plasma_gas.value})"
-                )
-
+            current_plasma_gas = microscope.get("plasma_gas", settings.beam_type)
+            if current_plasma_gas != plasma_gas:
+                logging.warning(f"Plasma Gas is should be {plasma_gas} (Currently {current_plasma_gas})")
 
     def _validate_beam_system_settings(
-        microscope: SdbMicroscopeClient, settings: MicroscopeSettings
+        microscope: FibsemMicroscope, settings: MicroscopeSettings
     ) -> None:
         """Validate Beam Settings"""
 
@@ -207,24 +162,22 @@ if THERMO:
         _validate_beam_system_state(microscope, settings.system.ion)
 
 
-    def _validate_chamber_state(microscope: SdbMicroscopeClient) -> None:
+    def _validate_chamber_state(microscope: FibsemMicroscope) -> None:
         """Validate the state of the chamber"""
 
-        logging.info(
-            f"Validating Vacuum Chamber State: {str(microscope.vacuum.chamber_state)}"
-        )
-        if not str(microscope.vacuum.chamber_state) == "Pumped":
+        chamber_state = str(microscope.get('chamber_state'))
+        chamber_pressure = microscope.get("chamber_pressure")
+        
+        logging.info(f"Vacuum Chamber State: {chamber_state}")
+        if not chamber_state == "Pumped":
             logging.warning(
-                f"Chamber vacuum state should be Pumped (Currently is {str(microscope.vacuum.chamber_state)})"
+                f"Chamber vacuum state should be Pumped (Currently is {chamber_state})"
             )
 
-        logging.info(
-            f"Validating Vacuum Chamber Pressure: {microscope.vacuum.chamber_pressure.value:.6f} mbar"
+        logging.info(f"Vacuum Chamber Pressure: {chamber_pressure:.6f} mbar"
         )
-        if microscope.vacuum.chamber_pressure.value >= 1e-4:
-            logging.warning(
-                f"Chamber pressure is too high, please pump the system (Currently {microscope.vacuum.chamber_pressure.value:.6f} mbar)"
-            )
+        if chamber_pressure >= 1e-4:
+            logging.warning(f"Chamber pressure is too high, please pump the system (Currently {chamber_pressure:.6f} mbar)"            )
 
         logging.info(f"Vacuum Chamber State Validation finished.")
 
@@ -254,8 +207,8 @@ if THERMO:
     ) -> bool:
 
         # check focus distance is within tolerance
-        if link:
-            calibration.auto_link_stage(microscope)
+        # if link:
+        #     calibration.auto_link_stage(microscope)
 
         return check_working_distance_is_within_tolerance(microscope, settings=settings)
 
