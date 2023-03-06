@@ -26,7 +26,7 @@ def setup_milling(
         patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
-    microscope.setup_milling(mill_settings)
+    microscope.setup_milling(mill_settings = mill_settings)
 
 def run_milling(
     microscope: FibsemMicroscope,

@@ -160,7 +160,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def setup_milling(self, patterning_mode: str, mill_settings: FibsemMillingSettings) -> None:
+    def setup_milling(self, mill_settings: FibsemMillingSettings) -> None:
         pass
 
     @abstractmethod
@@ -208,7 +208,7 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def get_available(self, key:str, beam_type: BeamType = None) -> list:
+    def get_available_values(self, key:str, beam_type: BeamType = None) -> list:
         pass
 
     @abstractmethod
@@ -219,9 +219,9 @@ class FibsemMicroscope(ABC):
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
-    @abstractmethod
-    def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
-        pass
+    # @abstractmethod
+    # def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
+    #     pass
 
 class ThermoMicroscope(FibsemMicroscope):
     """
@@ -277,7 +277,7 @@ class ThermoMicroscope(FibsemMicroscope):
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
             Make the sample surface flat to the electron or ion beam.
 
-        setup_milling(self, application_file: str, patterning_mode: str, hfw: float, mill_settings: FibsemMillingSettings):
+        setup_milling(self, mill_settings: FibsemMillingSettings):
             Configure the microscope for milling using the ion beam.
 
         run_milling(self, milling_current: float, asynch: bool = False):
@@ -1341,7 +1341,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
     
-    def get_available(self, key: str, beam_type: BeamType = None)-> list:
+    def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
         values = []
         if key == "application_file":
             values = self.connection.patterning.list_all_application_files()
@@ -1596,7 +1596,7 @@ class TescanMicroscope(FibsemMicroscope):
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
             Make the sample surface flat to the electron or ion beam.
 
-        setup_milling(self, application_file: str, patterning_mode: str, hfw: float, mill_settings: FibsemMillingSettings):
+        setup_milling(self, mill_settings: FibsemMillingSettings):
             Configure the microscope for milling using the ion beam.
 
         run_milling(self, milling_current: float, asynch: bool = False):
@@ -2691,7 +2691,7 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"microscope state restored")
         return
 
-    def get_available(self, key: str, beam_type: BeamType = None)-> list:
+    def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
 
         return []
     
@@ -2908,8 +2908,8 @@ class DemoMicroscope(FibsemMicroscope):
         if name == "EUCENTRIC":
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
-    def setup_milling(self, patterning_mode:str, mill_settings: FibsemMillingSettings):
-        logging.info(f"Setting up milling: {patterning_mode}, {mill_settings}")
+    def setup_milling(self, mill_settings: FibsemMillingSettings):
+        logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
 
     def run_milling(self, milling_current: float, asynch: bool = False) -> None:
         logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
@@ -2926,6 +2926,10 @@ class DemoMicroscope(FibsemMicroscope):
     def draw_circle(self, pattern_settings: FibsemPatternSettings) -> None:
         logging.info(f"Drawing circle: {pattern_settings}")
 
+    def get_scan_directions(self) -> list:
+        pass
+
+
     def setup_sputter(self, protocol: dict) -> None:
         logging.info(f"Setting up sputter: {protocol}")
 
@@ -2941,7 +2945,7 @@ class DemoMicroscope(FibsemMicroscope):
     def set_microscope_state(self, state: MicroscopeState):
         logging.info(f"Setting microscope state")
 
-    def get_available(self, key: str, beam_type: BeamType = None) -> list[float]:
+    def get_available_values(self, key: str, beam_type: BeamType = None) -> list[float]:
         
         values = []
         if key == "current":
