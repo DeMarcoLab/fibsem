@@ -1361,7 +1361,13 @@ class ThermoMicroscope(FibsemMicroscope):
 
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
-                values = self.connection.ion_beam.source.plasma_gas.available_values
+                values = self.connection.beams.ion_beam.source.plasma_gas.available_values
+
+        if key == "current":
+            if beam_type is BeamType.ION:
+                values = self.connection.beams.ion_beam.beam_current.available_values
+            elif beam_type is BeamType.ELECTRON:
+                values = self.connection.beams.electron_beam.beam_current.limits
 
         return values
 
@@ -2718,8 +2724,19 @@ class TescanMicroscope(FibsemMicroscope):
         return
 
     def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
+        values = []
+        if beam_type is BeamType.ION:
+            if key == "plasma_gas":
+                values = self.connection.GIS.Lines
 
-        return []
+        if key == "current":
+            if beam_type == BeamType.ELECTRON:
+                values = [1.0e-12]
+            if beam_type == BeamType.ION:
+                values = [20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.6e-9, 28.0e-9, 120e-9]
+
+        return values
+
     
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
 
