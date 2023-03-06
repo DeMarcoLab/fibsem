@@ -941,7 +941,6 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def setup_milling(
         self,
-        patterning_mode: str,
         mill_settings: FibsemMillingSettings,
     ):
         """
@@ -972,7 +971,7 @@ class ThermoMicroscope(FibsemMicroscope):
             BeamType.ION.value
         )  # ion beam default
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
-        self.connection.patterning.mode = patterning_mode
+        self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
         self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
 
@@ -2220,7 +2219,6 @@ class TescanMicroscope(FibsemMicroscope):
 
     def setup_milling(
         self,
-        patterning_mode: str,
         mill_settings: FibsemMillingSettings,
     ):
         """
@@ -2253,7 +2251,7 @@ class TescanMicroscope(FibsemMicroscope):
         rate = mill_settings.rate  ## in application file called Volume per Dose (m3/C)
         dwell_time = mill_settings.dwell_time  # in seconds ## in application file
 
-        if patterning_mode == "Serial":
+        if mill_settings.patterning_mode == "Serial":
             parallel_mode = False
         else:
             parallel_mode = True
