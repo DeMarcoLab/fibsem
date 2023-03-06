@@ -39,7 +39,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_run_milling.clicked.connect(self.run_milling)
 
         # milling
-        available_currents = self.microscope.get_available("current", BeamType.ION)
+        available_currents = self.microscope.get_available_values("current", BeamType.ION)
         self.comboBox_milling_current.addItems([str(current) for current in available_currents])
 
         _THERMO = isinstance(self.microscope, ThermoMicroscope)
@@ -51,7 +51,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # THERMO 
         self.label_application_file.setVisible(_THERMO)
         self.comboBox_application_file.setVisible(_THERMO)
-        available_application_files = self.microscope.get_available("application_file")
+        available_application_files = self.microscope.get_available_values("application_file")
         self.comboBox_application_file.addItems(available_application_files)
         
         # TESCAN
@@ -61,6 +61,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_rate.setVisible(_TESCAN)
         self.doubleSpinBox_spot_size.setVisible(_TESCAN)
         self.doubleSpinBox_dwell_time.setVisible(_TESCAN)
+
+        direction_list = self.microscope.get_scan_directions()
+        for i in range(len(direction_list)-1):
+            self.scan_direction.addItem(direction_list[i-1])
+        
 
         # patterns
         self.comboBox_pattern.addItems([pattern.name for pattern in FibsemPattern])
@@ -78,6 +83,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             start_y = self.doubleSpinBox_centre_y.value() * constants.MICRO_TO_SI,
             end_x = (self.doubleSpinBox_centre_x.value() + (self.doubleSpinBox_width.value() / 2)) * constants.MICRO_TO_SI,
             end_y = self.doubleSpinBox_centre_y.value() * constants.MICRO_TO_SI,
+            scan_direction=self.scan_direction.currentText(),
         )
     
         return pattern_settings

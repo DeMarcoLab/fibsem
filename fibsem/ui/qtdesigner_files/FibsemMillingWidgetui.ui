@@ -155,74 +155,10 @@
        <string>Pattern</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_width">
-         <property name="text">
-          <string>Width (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_height">
-         <property name="text">
-          <string>Height (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="comboBox_pattern"/>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_pattern">
-         <property name="text">
-          <string>Pattern</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_centre_x">
-         <property name="text">
-          <string>Centre X (um)</string>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_centre_y">
          <property name="text">
           <string>Centre Y (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_depth">
-         <property name="text">
-          <string>Depth (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_x">
-         <property name="minimum">
-          <double>-9999999999999999583119736832.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>1000000000000000000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_y">
-         <property name="minimum">
-          <double>-10000000000000000.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>99999999999999991611392.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
          </property>
         </widget>
        </item>
@@ -242,6 +178,9 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="comboBox_pattern"/>
+       </item>
        <item row="4" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_height">
          <property name="minimum">
@@ -255,6 +194,53 @@
          </property>
          <property name="value">
           <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_centre_x">
+         <property name="text">
+          <string>Centre X (um)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_x">
+         <property name="minimum">
+          <double>-9999999999999999583119736832.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000000000000000.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_width">
+         <property name="text">
+          <string>Width (um)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_depth">
+         <property name="text">
+          <string>Depth (um)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_y">
+         <property name="minimum">
+          <double>-10000000000000000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>99999999999999991611392.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
          </property>
         </widget>
        </item>
@@ -273,6 +259,30 @@
           <double>2.000000000000000</double>
          </property>
         </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_height">
+         <property name="text">
+          <string>Height (um)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_pattern">
+         <property name="text">
+          <string>Pattern</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Scan direction</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QComboBox" name="scan_direction"/>
        </item>
       </layout>
      </widget>
