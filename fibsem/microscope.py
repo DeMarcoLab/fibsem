@@ -2523,14 +2523,14 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "hfw":
             return beam.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE
         if key == "resolution":
-            if beam_type == BeamType.ELECTRON:
+            if beam_type == BeamType.ELECTRON and self.last_image_eb is not None:
                 return self.last_image_eb.metadata.image_settings.resolution
-            else:
+            elif beam_type == BeamType.ION and self.last_image_ib is not None:
                 return self.last_image_ib.metadata.image_settings.resolution
         if key == "dwell_time":
-            if beam_type == BeamType.ELECTRON:
+            if beam_type == BeamType.ELECTRON and self.last_image_eb is not None:
                 return self.last_image_eb.metadata.image_settings.dwell_time
-            else:
+            elif beam_type == BeamType.ION and self.last_image_ib is not None:
                 return self.last_image_ib.metadata.image_settings.dwell_time        
 
         return None    
