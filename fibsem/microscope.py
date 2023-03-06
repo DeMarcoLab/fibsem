@@ -204,15 +204,15 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def get_available(self):
+    def get_available(self, key:str, beam_type: BeamType = None) -> list:
         pass
 
     @abstractmethod
-    def get(self, key:str, beam_type: BeamType):
+    def get(self, key:str, beam_type: BeamType = None):
         pass
 
     @abstractmethod
-    def set(self, key: str, value, beam_type: BeamType) -> None:
+    def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
 class ThermoMicroscope(FibsemMicroscope):
@@ -513,7 +513,6 @@ class ThermoMicroscope(FibsemMicroscope):
             CoordinateSystem.RAW
         )
         stage_position = self.connection.specimen.stage.current_position
-        print(stage_position)
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.SPECIMEN
         )
@@ -1311,12 +1310,23 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "application_file":
             values = self.connection.patterning.list_all_application_files()
 
+        if beam_type is BeamType.ION:
+            if key == "plasma_gas":
+                values = self.connection.ion_beam.source.plasma_gas.available_values
+
         return values
 
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
+        
+        # TODO: make the list of get and set keys available to the user
 
         beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
-
+       
+        # beam properties
+        if key == "on": 
+            return beam.is_on
+        if key == "blanked":
+            return beam.is_blanked
         if key == "working_distance":
             return beam.working_distance.value
         if key == "current":
@@ -1329,16 +1339,65 @@ class ThermoMicroscope(FibsemMicroscope):
             return beam.scanning.resolution.value
         if key == "dwell_time":
             return beam.scanning.dwell_time.value
-        
-        if key == "angular_correction_angle":
-            return beam.angular_correction.angle.value
 
+        if key == "voltage_limits":
+            return beam.high_voltage.limits
+        if key == "voltage_controllable":
+            return beam.high_voltage.is_controllable
+
+
+        # ion beam properties
+        if beam_type is BeamType.ELECTRON:
+            if key == "angular_correction_angle":
+                return beam.angular_correction.angle.value
+
+        if beam_type is BeamType.ION:
+            if key == "plasma_gas":
+                return beam.source.plasma_gas.value # might need to check if this is available?
+
+        # stage properties
+        if key == "stage_position":
+            return self.connection.specimen.stage.current_position
+        if key == "stage_homed":
+            return self.connection.specimen.stage.is_homed
+        if key == "stage_linked":
+            return self.connection.specimen.stage.is_linked
+
+        # chamber properties
+        if "chamber_state":
+            return self.connection.vacuum.chamber_state
+        
+        if "chamber_pressure":
+            return self.connection.vacuum.chamber_pressure.value
+
+        # detector mode and type
+        if key in ["detector_mode", "detector_type"]:
+            
+            # set beam active view and device
+            self.connection.imaging.set_active_view(beam_type.value)
+            self.connection.imaging.set_active_device(beam_type.value)
+
+            if key == "detector_type":
+                return self.connection.detector.type.value
+
+            if key == "detector_mode":
+                return self.connection.detector.mode.value
+
+        # manipulator properties
+        if key == "manipulator_position":
+            return self.connection.specimen.manipulator.current_position
+        if key == "manipulator_state":
+            return self.connection.specimen.manipulator.state
+        
+        logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
 
+        # get beam
         beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
 
+        # beam properties
         if key == "working_distance":
             beam.working_distance.value = value
             self.connection.specimen.stage.link() # Link the specimen stage
@@ -1359,6 +1418,33 @@ class ThermoMicroscope(FibsemMicroscope):
             beam.scanning.dwell_time.value = value
             logging.info(f"{beam_type.name} dwell time set to {value} s.")
         
+        # beam control
+        if key == "on":
+            beam.turn_on() if value else beam.turn_off()
+            logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
+        if key == "blanked":
+            beam.blank() if value else beam.unblank()
+            logging.info(f"{beam_type.name} beam {'blanked' if value else 'unblanked'}.")
+
+        # detector properties
+        if key in ["detector_mode", "detector_type"]:
+            # set beam active view and device
+            self.connection.imaging.set_active_view(beam_type.value)
+            self.connection.imaging.set_active_device(beam_type.value)
+
+            if key == "detector_mode":
+                if value in self.connection.detector.mode.available_values:
+                    self.connection.detector.mode.value = value
+                    logging.info(f"Detector mode set to {value}.")
+                else:
+                    logging.warning(f"Detector mode {value} not available.")
+            if key == "detector_type":
+                if value in self.connection.detector.type.available_values:
+                    self.connection.detector.type.value = value
+                    logging.info(f"Detector type set to {value}.")
+                else:
+                    logging.warning(f"Detector type {value} not available.")
+
         # only supported for Electron
         if beam_type is BeamType.ELECTRON:
             if key == "angular_correction_angle":
@@ -1368,6 +1454,34 @@ class ThermoMicroscope(FibsemMicroscope):
             if key == "angular_correction_tilt_correction":
                 beam.angular_correction.tilt_correction.turn_on() if value else beam.angular_correction.tilt_correction.turn_off()
         
+        if beam_type is BeamType.ION:
+            if key == "plasma_gas":
+                beam.source.plasma_gas.value = value
+                logging.info(f"Plasma gas set to {value}.")
+
+        # chamber control (NOTE: dont implment until able to test on hardware)
+        if key == "pump":
+            logging.info(f"Not Implemented Yet")
+            self.connection.vacuum.pump()
+            # logging.info(f"Vacuum pump on.")
+        if key == "vent":
+            logging.info(f"Not Implemented Yet")
+            # self.connection.vacuum.vent()
+            logging.info(f"Vacuum vent on.")
+
+
+        # stage properties
+        if key == "stage_home":
+            self.connection.specimen.stage.home()
+            logging.info(f"Stage homed.")
+        if key == "stage_link":
+            self.connection.specimen.stage.link() if value else self.connection.specimen.stage.unlink()
+            logging.info(f"Stage {'linked' if value else 'unlinked'}.")    
+
+        
+        logging.warning(f"Unknown key: {key} ({beam_type})")
+        return
+
 class TescanMicroscope(FibsemMicroscope):
     """
     A class representing a TESCAN FIB-SEM microscope.
@@ -2787,6 +2901,7 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "working_distance":
             return beam.working_distance
 
+        logging.warning(f"Unknown key: {key} ({beam_type})")
         return NotImplemented
 
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
@@ -2809,9 +2924,7 @@ class DemoMicroscope(FibsemMicroscope):
             beam.working_distance = value
             return
 
-        if key == "beam":
-            return beam
-
+        logging.warning(f"Unknown key: {key} ({beam_type})")
         return NotImplemented
 
     def get_beam_system_state(self, beam_type: BeamType) -> BeamSystemSettings:
