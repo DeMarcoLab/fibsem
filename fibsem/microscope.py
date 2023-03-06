@@ -250,11 +250,14 @@ class ThermoMicroscope(FibsemMicroscope):
         autocontrast(self, beam_type=BeamType.ELECTRON) -> None: 
             Automatically adjust the microscope image contrast for the specified beam type.
 
+        auto_focus(self, beam_type: BeamType) -> None:
+            Automatically adjust the microscope focus for the specified beam type.
+
         reset_beam_shifts(self) -> None:
             Set the beam shift to zero for the electron and ion beams.
         
-        beam_shift(self, dx: float, dy: float) -> None:
-            Adjusts the beam shift based on relative values that are provided.
+        beam_shift(self, dx: float, dy: float,  beam_type: BeamType) -> None:
+            Adjusts the beam shift of given beam based on relative values that are provided.
 
         get_stage_position(self) -> FibsemStagePosition:
             Get the current stage position.
@@ -294,6 +297,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         draw_circle(self, pattern_settings: FibsemPatternSettings):
             Draws a circular pattern on the current imaging view of the microscope.
+        
+        get_scan_directions(self) -> list:
+            Get the available scan directions for milling.
 
         setup_sputter(self, protocol: dict):
             Set up the sputter coating process on the microscope.
@@ -309,6 +315,12 @@ class ThermoMicroscope(FibsemMicroscope):
 
         set_microscope_state(self, microscope_state: MicroscopeState) -> None:
             Reset the microscope state to the provided state.
+        
+        get(self, key:str, beam_type: BeamType = None):
+            Returns the value of the specified key.
+
+        set(self, key: str, value, beam_type: BeamType = None) -> None:
+            Sets the value of the specified key.
 
     New methods:
         __init__(self): 
@@ -722,9 +734,10 @@ class ThermoMicroscope(FibsemMicroscope):
 
         PRETILT_SIGN = 1.0
         # pretilt angle depends on rotation
-        if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
+        from fibsem import movement
+        if movement.rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
             PRETILT_SIGN = 1.0
-        if rotation_angle_is_smaller(
+        if movement.rotation_angle_is_smaller(
             stage_rotation, stage_rotation_flat_to_ion, atol=5
         ):
             PRETILT_SIGN = -1.0
@@ -1569,11 +1582,14 @@ class TescanMicroscope(FibsemMicroscope):
         autocontrast(self, beam_type=BeamType.ELECTRON) -> None: 
             Automatically adjust the microscope image contrast for the specified beam type.
 
+        auto_focus(self, beam_type: BeamType) -> None:
+            Automatically adjust the microscope focus for the specified beam type.
+
         reset_beam_shifts(self) -> None:
             Set the beam shift to zero for the electron and ion beams.
         
-        beam_shift(self, dx: float, dy: float) -> None:
-            Adjusts the beam shift based on relative values that are provided.
+        beam_shift(self, dx: float, dy: float,  beam_type: BeamType) -> None:
+            Adjusts the beam shift of given beam based on relative values that are provided.
 
         get_stage_position(self) -> FibsemStagePosition:
             Get the current stage position.
@@ -1614,6 +1630,9 @@ class TescanMicroscope(FibsemMicroscope):
         draw_circle(self, pattern_settings: FibsemPatternSettings):
             Draws a circular pattern on the current imaging view of the microscope.
 
+        get_scan_directions(self) -> list:
+            Get the available scan directions for milling.    
+
         setup_sputter(self, protocol: dict):
             Set up the sputter coating process on the microscope.
 
@@ -1628,6 +1647,12 @@ class TescanMicroscope(FibsemMicroscope):
 
         set_microscope_state(self, microscope_state: MicroscopeState) -> None:
             Reset the microscope state to the provided state.
+        
+        get(self, key:str, beam_type: BeamType = None):
+            Returns the value of the specified key.
+
+        set(self, key: str, value, beam_type: BeamType = None) -> None:
+            Sets the value of the specified key.
 
     New methods:
         __init__(self): 
@@ -2205,10 +2230,11 @@ class TescanMicroscope(FibsemMicroscope):
         stage_tilt = current_stage_position.t
 
         PRETILT_SIGN = 1.0
+        from fibsem import movement
         # pretilt angle depends on rotation
         # if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
         #     PRETILT_SIGN = 1.0
-        if rotation_angle_is_smaller(
+        if movement.rotation_angle_is_smaller(
             stage_rotation, stage_rotation_flat_to_ion, atol=5
         ):
             PRETILT_SIGN = -1.0
@@ -3045,3 +3071,4 @@ def printProgressBar(
     filled_length = int(length * value // total)
     bar = fill * filled_length + "-" * (length - filled_length)
     print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="")
+
