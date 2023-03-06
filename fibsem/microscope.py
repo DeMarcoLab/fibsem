@@ -87,7 +87,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def beam_shift(self, dx: float, dy: float) -> None:
+    def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
         pass
 
     @abstractmethod
