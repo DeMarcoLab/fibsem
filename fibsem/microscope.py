@@ -2472,13 +2472,56 @@ class TescanMicroscope(FibsemMicroscope):
 
         return []
     
-    def get(self, key: str, beam_type: BeamType = None)-> object:
+    def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
 
-        return None
-    
-    def set(self, key: str, value: object, beam_type: BeamType = None)-> None:
-            
-        return None
+        beam = self.connection.SEM if beam_type == BeamType.ELECTRON else self.connection.FIB
+
+        if key == "working_distance":
+            return beam.Optics.GetWD() * constants.MILLIMETRE_TO_METRE
+        if key == "current":
+            if beam_type == BeamType.ELECTRON:
+                return beam.Beam.GetCurrent() * constants.PICO_TO_SI
+            else:
+                beam.Beam.ReadProbeCurrent() * constants.PICO_TO_SI
+        if key == "voltage":
+            return beam.Beam.GetVoltage() 
+        if key == "hfw":
+            return beam.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE
+        if key == "resolution":
+            if beam_type == BeamType.ELECTRON:
+                return self.last_image_eb.metadata.image_settings.resolution
+            else:
+                return self.last_image_ib.metadata.image_settings.resolution
+        if key == "dwell_time":
+            if beam_type == BeamType.ELECTRON:
+                return self.last_image_eb.metadata.image_settings.dwell_time
+            else:
+                return self.last_image_ib.metadata.image_settings.dwell_time        
+
+        return None    
+
+    def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
+
+        beam = self.connection.SEM if beam_type == BeamType.ELECTRON else self.connection.FIB
+
+        if key == "working_distance":
+            if beam_type == BeamType.ELECTRON:
+                beam.Optics.SetWD(value * constants.METRE_TO_MILLIMETRE)
+            else: 
+                logging.info(f"Setting working distance for ion beam is not supported by Tescan API.")
+        if key == "current":
+            if beam_type == BeamType.ELECTRON:
+                beam.Beam.SetCurrent(value * constants.SI_TO_PICO)
+            else: 
+                logging.info(f"Setting current for ion beam is not supported by Tescan API, please use the native microscope interface.")
+        if key == "voltage":
+            if beam_type == BeamType.ELECTRON:
+                beam.Beam.SetVoltage(value)
+            else:
+                logging.info(f"Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
+        if key == "hfw":
+            beam.Optics.SetViewfield(value * constants.METRE_TO_MILLIMETRE)
+
 
 ########################
 class DemoMicroscope(FibsemMicroscope):
