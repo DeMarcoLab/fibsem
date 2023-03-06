@@ -184,6 +184,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def get_scan_directions(self) -> list:
+        pass
+
+    @abstractmethod
     def setup_sputter(self, *args, **kwargs):
         pass
 
@@ -1062,16 +1066,8 @@ class ThermoMicroscope(FibsemMicroscope):
             )
 
         pattern.rotation = pattern_settings.rotation
-        if pattern_settings.scan_direction in ["BottomToTop", 
-                                               "DynamicAllDirections", 
-                                               "DynamicInnerToOuter", 
-                                               "DynamicLeftToRight", 
-                                               "DynamicTopToBottom", 
-                                               "InnerToOuter", 	
-                                               "LeftToRight", 	
-                                               "OuterToInner", 
-                                               "RightToLeft", 	
-                                               "TopToBottom"]:
+        paths = self.get_scan_directions()
+        if pattern_settings.scan_direction in paths:
             pattern.scan_direction = pattern_settings.scan_direction
         else:
             pattern.scan_direction = "TopToBottom"
@@ -1129,6 +1125,29 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         return pattern
+
+    def get_scan_directions(self) -> list:
+        """
+        Returns the available scan directions of the microscope.
+
+        Returns:
+            list: The scan direction of the microscope.
+
+        Raises:
+            None
+        """
+        list = ["BottomToTop", 
+                "DynamicAllDirections", 
+                "DynamicInnerToOuter", 
+                "DynamicLeftToRight", 
+                "DynamicTopToBottom", 
+                "InnerToOuter", 	
+                "LeftToRight", 	
+                "OuterToInner", 
+                "RightToLeft", 	
+                "TopToBottom"]
+        return list 
+
 
     def setup_sputter(self, protocol: dict):
         """
@@ -2361,7 +2380,8 @@ class TescanMicroscope(FibsemMicroscope):
         width = pattern_settings.width
         height = pattern_settings.height
         rotation = pattern_settings.rotation * constants.RADIANS_TO_DEGREES # CHECK UNITS (TESCAN Takes Degrees)
-        if pattern_settings.scan_direction in ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]:
+        paths = self.get_scan_directions()
+        if pattern_settings.scan_direction in paths:
             path = pattern_settings.scan_direction
         else:
             path = "Flyback"
@@ -2442,6 +2462,11 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         return pattern
+    
+    def get_scan_directions(self):
+        
+        list = ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]
+        return list
 
     def setup_sputter(self, protocol: dict):
         """
