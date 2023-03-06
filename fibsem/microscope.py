@@ -1867,7 +1867,8 @@ class TescanMicroscope(FibsemMicroscope):
         if beam_type.name == BeamType.ION:
             self.connection.FIB.Detector.AutoSignal(0)
     
-    def auto_focus(self):
+    def auto_focus(self, beam_type: BeamType) -> None:
+        self.connection.SEM.AutoWD(0)
         return 
 
     def reset_beam_shifts(self):
