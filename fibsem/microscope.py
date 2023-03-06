@@ -35,7 +35,7 @@ except:
 try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-        CleaningCrossSectionPattern, RectanglePattern)
+        CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern)
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem, ManipulatorCoordinateSystem,
         ManipulatorSavedPosition)
@@ -59,7 +59,7 @@ class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
 
     @abstractmethod
-    def connect_to_microscope(self):
+    def connect_to_microscope(self, ip_address: str, port: int) -> None:
         pass
 
     @abstractmethod
@@ -67,15 +67,15 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def acquire_image(self):
+    def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         pass
 
     @abstractmethod
-    def last_image(self):
+    def last_image(self, beam_type: BeamType) -> FibsemImage:
         pass
 
     @abstractmethod
-    def autocontrast(self):
+    def autocontrast(self, beam_type: BeamType) -> None:
         pass
 
     @abstractmethod
@@ -83,11 +83,11 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def reset_beam_shifts(self):
+    def reset_beam_shifts(self) -> None:
         pass
 
     @abstractmethod
-    def beam_shift(self):
+    def beam_shift(self, dx: float, dy: float) -> None:
         pass
 
     @abstractmethod
@@ -95,15 +95,15 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def get_current_microscope_state(self):
+    def get_current_microscope_state(self) -> MicroscopeState:
         pass
 
     @abstractmethod
-    def move_stage_absolute(self):
+    def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         pass
 
     @abstractmethod
-    def move_stage_relative(self):
+    def move_stage_relative(self, position: FibsemStagePosition) -> None:
         pass
 
     @abstractmethod
@@ -116,19 +116,23 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def eucentric_move(self):
+    def eucentric_move(self,
+        settings: MicroscopeSettings,
+        dy: float,
+        static_wd: bool = True,
+    ) -> None:
         pass
 
     @abstractmethod
-    def move_flat_to_beam(self):
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
         pass
 
     @abstractmethod
-    def get_manipulator_position(self):
+    def get_manipulator_position(self) -> FibsemManipulatorPosition:
         pass
 
     @abstractmethod
-    def insert_manipulator(self):
+    def insert_manipulator(self, name: str) -> None:
         pass
 
     @abstractmethod
@@ -136,47 +140,47 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def move_manipulator_relative(self):
+    def move_manipulator_relative(self, position: FibsemManipulatorPosition) -> None:
         pass
 
     @abstractmethod
-    def move_manipulator_absolute(self):
+    def move_manipulator_absolute(self, position: FibsemManipulatorPosition) -> None:
         pass
     
     @abstractmethod
-    def move_manipulator_corrected(self):
+    def move_manipulator_corrected(self, dx: float, dy: float, beam_type: BeamType) -> None:
         pass
 
     @abstractmethod
-    def move_manipulator_to_position_offset(self):
+    def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str) -> None:
         pass
 
     @abstractmethod
-    def _get_saved_manipulator_position(self):
+    def _get_saved_manipulator_position(self, name: str) -> FibsemManipulatorPosition:
         pass
 
     @abstractmethod
-    def setup_milling(self):
+    def setup_milling(self, patterning_mode: str, mill_settings: FibsemMillingSettings) -> None:
         pass
 
     @abstractmethod
-    def run_milling(self):
+    def run_milling(self, milling_current: float, asynch: bool) -> None:
         pass
 
     @abstractmethod
-    def finish_milling(self):
+    def finish_milling(self, imaging_current: float) -> None:
         pass
 
     @abstractmethod
-    def draw_rectangle(self):
+    def draw_rectangle(self, pattern_settings: FibsemPatternSettings):
         pass
 
     @abstractmethod
-    def draw_line(self):
+    def draw_line(self, pattern_settings: FibsemPatternSettings):
         pass
 
     @abstractmethod
-    def draw_circle(self):
+    def draw_circle(self, pattern_settings: FibsemPatternSettings):
         pass
 
     @abstractmethod
@@ -810,7 +814,7 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"moving manipulator by {position}")
         needle.relative_move(position)
     
-    def move_manipulator_absolute(self):
+    def move_manipulator_absolute(self, position: FibsemManipulatorPosition):
         needle = self.connection.specimen.manipulator
         position = position.to_autoscript_position()
         logging.info(f"moving manipulator to {position}")
