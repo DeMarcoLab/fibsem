@@ -36,90 +36,54 @@ if THERMO:
 
         return
 
-    ############################## STAGE ##############################
+    # # TODO: make these consistenly use degrees or radians...
+    # def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
+    #     """Check the rotation angles are large
+
+    #     Args:
+    #         angle1 (float): angle1 (radians)
+    #         angle2 (float): angle2 (radians)
+    #         atol : tolerance (degrees)
+
+    #     Returns:
+    #         bool: rotation angle is larger than atol
+    #     """
+
+    #     return angle_difference(angle1, angle2) > (np.deg2rad(atol))
 
 
-    def move_flat_to_beam(
-        microscope: SdbMicroscopeClient,
-        settings: MicroscopeSettings,
-        beam_type: BeamType = BeamType.ELECTRON,
-    ) -> None:
-        """Make the sample surface flat to the electron or ion beam.
+    # def rotation_angle_is_smaller(angle1: float, angle2: float, atol: float = 5) -> bool:
+    #     """Check the rotation angles are large
 
-        Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
-            settings (MicroscopeSettings): microscope settings
-            beam_type (BeamType, optional): beam type to move flat to. Defaults to BeamType.ELECTRON.
-        """
+    #     Args:
+    #         angle1 (float): angle1 (radians)
+    #         angle2 (float): angle2 (radians)
+    #         atol : tolerance (degrees)
 
-        stage_settings = settings.system.stage
+    #     Returns:
+    #         bool: rotation angle is smaller than atol
+    #     """
 
-        if beam_type is BeamType.ELECTRON:
-            rotation = np.deg2rad(stage_settings.rotation_flat_to_electron)
-            tilt = np.deg2rad(stage_settings.tilt_flat_to_electron)
-
-        if beam_type is BeamType.ION:
-            rotation = np.deg2rad(stage_settings.rotation_flat_to_ion)
-            tilt = np.deg2rad(
-                stage_settings.tilt_flat_to_ion - stage_settings.tilt_flat_to_electron
-            )
-
-        # updated safe rotation move
-        logging.info(f"moving flat to {beam_type.name}")
-        stage_position = StagePosition(r=rotation, t=tilt, coordinate_system="Raw")
-        safe_absolute_stage_movement(microscope, stage_position)
-
-        return
+    #     return angle_difference(angle1, angle2) < (np.deg2rad(atol))
 
 
-    # TODO: make these consistenly use degrees or radians...
-    def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
-        """Check the rotation angles are large
+    # def angle_difference(angle1: float, angle2: float) -> float:
+    #     """Return the difference between two angles, accounting for greater than 360, less than 0 angles
 
-        Args:
-            angle1 (float): angle1 (radians)
-            angle2 (float): angle2 (radians)
-            atol : tolerance (degrees)
+    #     Args:
+    #         angle1 (float): angle1 (radians)
+    #         angle2 (float): angle2 (radians)
 
-        Returns:
-            bool: rotation angle is larger than atol
-        """
+    #     Returns:
+    #         float: _description_
+    #     """
+    #     angle1 %= 2 * np.pi
+    #     angle2 %= 2 * np.pi
 
-        return angle_difference(angle1, angle2) > (np.deg2rad(atol))
+    #     large_angle = np.max([angle1, angle2])
+    #     small_angle = np.min([angle1, angle2])
 
-
-    def rotation_angle_is_smaller(angle1: float, angle2: float, atol: float = 5) -> bool:
-        """Check the rotation angles are large
-
-        Args:
-            angle1 (float): angle1 (radians)
-            angle2 (float): angle2 (radians)
-            atol : tolerance (degrees)
-
-        Returns:
-            bool: rotation angle is smaller than atol
-        """
-
-        return angle_difference(angle1, angle2) < (np.deg2rad(atol))
-
-
-    def angle_difference(angle1: float, angle2: float) -> float:
-        """Return the difference between two angles, accounting for greater than 360, less than 0 angles
-
-        Args:
-            angle1 (float): angle1 (radians)
-            angle2 (float): angle2 (radians)
-
-        Returns:
-            float: _description_
-        """
-        angle1 %= 2 * np.pi
-        angle2 %= 2 * np.pi
-
-        large_angle = np.max([angle1, angle2])
-        small_angle = np.min([angle1, angle2])
-
-        return min((large_angle - small_angle), ((2 * np.pi + small_angle - large_angle)))
+    #     return min((large_angle - small_angle), ((2 * np.pi + small_angle - large_angle)))
 
 
     def safe_rotation_movement(
@@ -189,3 +153,53 @@ if THERMO:
 
         return
 
+
+
+
+def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
+    """Check the rotation angles are large
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+        atol : tolerance (degrees)
+
+    Returns:
+        bool: rotation angle is larger than atol
+    """
+
+    return angle_difference(angle1, angle2) > (np.deg2rad(atol))
+
+
+def rotation_angle_is_smaller(angle1: float, angle2: float, atol: float = 5) -> bool:
+    """Check the rotation angles are large
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+        atol : tolerance (degrees)
+
+    Returns:
+        bool: rotation angle is smaller than atol
+    """
+
+    return angle_difference(angle1, angle2) < (np.deg2rad(atol))
+
+
+def angle_difference(angle1: float, angle2: float) -> float:
+    """Return the difference between two angles, accounting for greater than 360, less than 0 angles
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+
+    Returns:
+        float: _description_
+    """
+    angle1 %= 2 * np.pi
+    angle2 %= 2 * np.pi
+
+    large_angle = np.max([angle1, angle2])
+    small_angle = np.min([angle1, angle2])
+
+    return min((large_angle - small_angle), ((2 * np.pi + small_angle - large_angle)))

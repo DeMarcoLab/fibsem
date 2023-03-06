@@ -36,7 +36,7 @@ def main():
     # )
     # movement.safe_absolute_stage_movement(microscope, stage_position)
 
-    movement.move_flat_to_beam(microscope, settings, BeamType.ION)
+    microscope.move_flat_to_beam(settings, BeamType.ION)
 
     # eucentric, select position
     windows.ask_user_movement(
