@@ -626,6 +626,7 @@ class FibsemMillingSettings:
     dwell_time: float = 1.0e-6 # s
     application_file: str = "Si"
     hfw: float = 150e-6
+    patterning_mode: str = "Serial" 
 
     def __to_dict__(self) -> dict:
 
@@ -636,6 +637,7 @@ class FibsemMillingSettings:
             "dwell_time": self.dwell_time,
             "hfw": self.hfw,
             "application_file": self.application_file,
+            "patterning_mode": self.patterning_mode,
         }
 
         return settings_dict
@@ -650,6 +652,7 @@ class FibsemMillingSettings:
             dwell_time=settings.get("dwell_time", 1.0e-6),
             application_file=settings.get("application_file", "Si"),
             hfw=settings.get("hfw", 150e-6),
+            patterning_mode=settings.get("patterning_mode", "Serial"),
         )
 
         return milling_settings
