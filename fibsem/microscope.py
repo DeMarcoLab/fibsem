@@ -2727,7 +2727,7 @@ class TescanMicroscope(FibsemMicroscope):
         values = []
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
-                values = self.connection.GIS.Lines
+                values = self.connection.GIS.Enum()
 
         if key == "current":
             if beam_type == BeamType.ELECTRON:
