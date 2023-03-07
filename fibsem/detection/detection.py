@@ -3,7 +3,8 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
+from fibsem.microscope import FibsemMicroscope
 from scipy.spatial import distance
 from skimage import feature
 
@@ -363,7 +364,7 @@ def plot_det_result_v2(det: DetectedFeatures):
 
 
 def move_based_on_detection(
-    microscope: SdbMicroscopeClient,
+    microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     det: DetectedFeatures,
     beam_type: BeamType,
@@ -394,25 +395,78 @@ def move_based_on_detection(
         if beam_type is BeamType.ELECTRON:
             det.distance.y *= -1
 
-        movement.move_needle_relative_with_corrected_movement(
-            microscope=microscope,
+        microscope.move_manipulator_corrected(
             dx=det.distance.x,
             dy=det.distance.y,
             beam_type=beam_type,
         )
 
-    if f1.type is FeatureType.LamellaCentre:
-        if f2.type is FeatureType.ImageCentre:
+    if f1.type is FeatureType.LamellaCentre and f2.type is FeatureType.ImageCentre:
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
-            movement.move_stage_relative_with_corrected_movement(
-                microscope=microscope,
+            microscope.stable_move(
                 settings=settings,
-                dx=-det.distance_metres.x,
-                dy=-det.distance_metres.y,
+                dx=-det.distance.x,
+                dy=-det.distance.y,
                 beam_type=beam_type,
             )
 
             # TODO: support other movements?
     return
 
+
+
+# v3 - Feature(ABC)
+
+_DETECTION_V3 = False
+if _DETECTION_V3:
+
+    from abc import ABC, abstractmethod
+    # TODO: maybe static methods? probs nicer to use?
+    # e.g. needle_tip = NeedleTip.detect(img, mask, point)
+    # can store color info there too?
+
+    @dataclass
+    class Feature(ABC):
+        feature_px: Point 
+        feature_m: Point
+
+        @abstractmethod
+        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature':
+            pass
+
+    @dataclass
+    class ImageCentre(Feature):
+        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
+            self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
+            return self
+
+    @dataclass
+    class NeedleTip(Feature):
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
+            self.feature_px = detect_needle_v4(mask)
+            return self
+
+    @dataclass
+    class LamellaCentre(Feature):
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
+            self.feature_px = detect_lamella(mask, FeatureType.LamellaCentre)
+
+    @dataclass
+    class LamellaLeftEdge(Feature):
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
+            self.feature_px = detect_lamella(mask, FeatureType.LamellaLeftEdge)
+            return self
+    @dataclass
+    class LamellaRightEdge(Feature):
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
+            self.feature_px = detect_lamella(mask, FeatureType.LamellaRightEdge)
+            return self
+
+    @dataclass
+    class LandingPost(Feature):
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
+            self.feature_px = detect_landing_post_v3(img, point)
+            return self
+
+    __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
