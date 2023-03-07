@@ -836,20 +836,20 @@ class ThermoMicroscope(FibsemMicroscope):
         needle.absolute_move(position)
         
 
-    def _x_corrected_needle_movement(self, expected_x: float) -> ManipulatorPosition:
+    def _x_corrected_needle_movement(self, expected_x: float) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the x-axis.
 
         Args:
             expected_x (float): distance along the x-axis (image coordinates)
         Returns:
-            ManipulatorPosition: x-corrected needle movement (relative position)
+            FibsemManipulatorPosition: x-corrected needle movement (relative position)
         """
-        return ManipulatorPosition(x=expected_x, y=0, z=0)  # no adjustment needed
+        return FibsemManipulatorPosition(x=expected_x, y=0, z=0)  # no adjustment needed
 
 
     def _y_corrected_needle_movement(self, 
         expected_y: float, stage_tilt: float
-    ) -> ManipulatorPosition:
+    ) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the y-axis.
 
         Args:
@@ -857,16 +857,16 @@ class ThermoMicroscope(FibsemMicroscope):
             stage_tilt (float, optional): stage tilt.
 
         Returns:
-            ManipulatorPosition: y-corrected needle movement (relative position)
+            FibsemManipulatorPosition: y-corrected needle movement (relative position)
         """
         y_move = +np.cos(stage_tilt) * expected_y
         z_move = +np.sin(stage_tilt) * expected_y
-        return ManipulatorPosition(x=0, y=y_move, z=z_move)
+        return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
 
 
     def _z_corrected_needle_movement(self, 
         expected_z: float, stage_tilt: float
-    ) -> ManipulatorPosition:
+    ) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the z-axis.
 
         Args:
@@ -874,11 +874,11 @@ class ThermoMicroscope(FibsemMicroscope):
             stage_tilt (float, optional): stage tilt.
 
         Returns:
-            ManipulatorPosition: z-corrected needle movement (relative position)
+            FibsemManipulatorPosition: z-corrected needle movement (relative position)
         """
         y_move = -np.sin(stage_tilt) * expected_z
         z_move = +np.cos(stage_tilt) * expected_z
-        return ManipulatorPosition(x=0, y=y_move, z=z_move)
+        return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
 
     def move_manipulator_corrected(self, 
         dx: float,

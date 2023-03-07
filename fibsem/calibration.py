@@ -29,31 +29,6 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemRectangle, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings,
                                MicroscopeState)
-
-# def auto_link_stage(microscope: FibsemMicroscope, hfw: float = 150e-6) -> None:
-#     """Automatically focus and link sample stage z-height.
-
-#     Notes:
-#         - Focusing determines the working distance (focal distance) of the beam
-#         - Relinking is required whenever there is a significant change in vertical distance, i.e. moving
-#           from the landing grid to the sample grid.
-#         - Linking determines the specimen coordinate system, as it is defined as the relative dimensions of the top of stage
-#           to the instruments.
-#     """
-#     if TESCAN:
-#         raise NotImplementedError
-
-#     microscope.connection.imaging.set_active_view(BeamType.ELECTRON.value)
-#     original_hfw = microscope.connection.beams.electron_beam.horizontal_field_width.value
-#     microscope.connection.beams.electron_beam.horizontal_field_width.value = hfw
-#     microscope.autocontrast(beam_type=BeamType.ELECTRON)
-#     microscope.connection.auto_functions.run_auto_focus()
-#     microscope.connection.specimen.stage.link()
-#     # NOTE: replace with auto_focus_and_link if performance of focus is poor
-#     # # Restore original settings
-#     microscope.connection.beams.electron_beam.horizontal_field_width.value = original_hfw
-
-
 def auto_focus_beam(
     microscope: FibsemMicroscope,
     beam_type: BeamType,
