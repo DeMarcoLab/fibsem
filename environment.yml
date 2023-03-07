@@ -13,7 +13,6 @@ dependencies:
   - tqdm
   - matplotlib
   - napari
-  - scikit-image
   - pytest
   - mypy
   - pip
