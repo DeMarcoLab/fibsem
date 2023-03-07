@@ -1420,10 +1420,10 @@ class ThermoMicroscope(FibsemMicroscope):
             return self.connection.specimen.stage.is_linked
 
         # chamber properties
-        if "chamber_state":
+        if key == "chamber_state":
             return self.connection.vacuum.chamber_state
         
-        if "chamber_pressure":
+        if key == "chamber_pressure":
             return self.connection.vacuum.chamber_pressure.value
 
         # detector mode and type
@@ -1497,12 +1497,14 @@ class ThermoMicroscope(FibsemMicroscope):
                     logging.info(f"Detector mode set to {value}.")
                 else:
                     logging.warning(f"Detector mode {value} not available.")
+                return
             if key == "detector_type":
                 if value in self.connection.detector.type.available_values:
                     self.connection.detector.type.value = value
                     logging.info(f"Detector type set to {value}.")
                 else:
                     logging.warning(f"Detector type {value} not available.")
+                return
 
         # only supported for Electron
         if beam_type is BeamType.ELECTRON:
@@ -1678,6 +1680,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection = Automation(ip_address)
         detectors = self.connection.FIB.Detector.Enum()
         self.ion_detector_active = detectors[0]
+        self.electron_detector_active = self.connection.SEM.Detector.SESuitable()
         self.last_image_eb = None
         self.last_image_ib = None
 
@@ -1754,8 +1757,8 @@ class TescanMicroscope(FibsemMicroscope):
         # Select the detector for image i.e.:
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
-        detector = self.connection.SEM.Detector.SESuitable()
-        self.connection.SEM.Detector.Set(0, detector, Bpp.Grayscale_8_bit)
+        
+        self.connection.SEM.Detector.Set(0, self.electron_detector_active, Bpp.Grayscale_8_bit)
 
         dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
         # resolution
@@ -2742,13 +2745,16 @@ class TescanMicroscope(FibsemMicroscope):
 
         beam = self.connection.SEM if beam_type == BeamType.ELECTRON else self.connection.FIB
 
-        if key == "working_distance":
+        # beam properties 
+        if key == "on": 
+            return beam.Beam.GetStatus()
+        if key == "working_distance" and beam_type == BeamType.ELECTRON:
             return beam.Optics.GetWD() * constants.MILLIMETRE_TO_METRE
         if key == "current":
             if beam_type == BeamType.ELECTRON:
                 return beam.Beam.GetCurrent() * constants.PICO_TO_SI
             else:
-                beam.Beam.ReadProbeCurrent() * constants.PICO_TO_SI
+                return beam.Beam.ReadProbeCurrent() * constants.PICO_TO_SI
         if key == "voltage":
             return beam.Beam.GetVoltage() 
         if key == "hfw":
@@ -2762,9 +2768,34 @@ class TescanMicroscope(FibsemMicroscope):
             if beam_type == BeamType.ELECTRON and self.last_image_eb is not None:
                 return self.last_image_eb.metadata.image_settings.dwell_time
             elif beam_type == BeamType.ION and self.last_image_ib is not None:
-                return self.last_image_ib.metadata.image_settings.dwell_time        
+                return self.last_image_ib.metadata.image_settings.dwell_time   
+        if key =="scan_rotation":
+            return beam.Optics.GetImageRotation()     
+        
+        # stage properties
+        if key == "stage_position":
+            return self.get_stage_position()
+        if key == "stage_calibrated":
+            return self.connection.Stage.IsCalibrated()
+        
+        # chamber properties
+        if key == "chamber_state":
+            return self.connection.Chamber.GetStatus()
+        if key == "chamber_pressure":
+            return self.connection.Chamber.GetPressure(0)
+        
+        #detector properties
+        if key == "detector_type":
+            return beam.Detector.Get(Channel = 0).name
+        
+        # manipulator properties
+        if key == "manipulator_position":
+            return self.connection.Nanomanipulator.GetPosition(0)
+        if key == "manipulator_calibrated":
+            return self.connection.Nanomanipulator.IsCalibrated(0)
 
-        return None    
+        logging.warning(f"Unknown key: {key} ({beam_type})")
+        return None   
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
 
@@ -2776,21 +2807,48 @@ class TescanMicroscope(FibsemMicroscope):
                 logging.info(f"Electron beam working distance set to {value} m.")
             else: 
                 logging.info(f"Setting working distance for ion beam is not supported by Tescan API.")
+            return
         if key == "current":
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetCurrent(value * constants.SI_TO_PICO)
                 logging.info(f"Electron beam current set to {value} A.")
             else: 
                 logging.info(f"Setting current for ion beam is not supported by Tescan API, please use the native microscope interface.")
+            return
         if key == "voltage":
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetVoltage(value)
             else:
                 logging.info(f"Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
+            return
         if key == "hfw":
             beam.Optics.SetViewfield(value * constants.METRE_TO_MILLIMETRE)
             logging.info(f"{beam_type.name} HFW set to {value} m.")
+            return
+        if key == "scan_rotation":
+            beam.Optics.SetImageRotation(value)
+            logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
+            return
+        # beam control
+        if key == "on":
+            beam.Beam.On() if value else beam.Beam.Off()
+            logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
+            return
+        # detector control
+        if key == "detector_type":
+            if beam_type == BeamType.ELECTRON:
+                self.electron_detector_active = value
+                beam.Detector.Set(Channel = 0, Detector = value)
+                logging.info(f"{beam_type} detector type set to {value}.")
+                return
+            elif beam_type == BeamType.ION:
+                self.ion_detector_active = value
+                beam.Detector.Set(Channel = 0, Detector = value)
+                logging.info(f"{beam_type} detector type set to {value}.")
+                return
 
+        logging.warning(f"Unknown key: {key} ({beam_type})")
+        return
 
 ########################
 class DemoMicroscope(FibsemMicroscope):
