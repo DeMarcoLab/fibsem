@@ -48,7 +48,7 @@ def auto_focus_beam(
 
         if focus_image_settings is None:
             focus_image_settings = ImageSettings(
-                resolution=(768, 512),
+                resolution=[768, 512],
                 dwell_time=200e-9,
                 hfw=50e-6,
                 beam_type=beam_type,

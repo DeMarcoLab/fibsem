@@ -3053,6 +3053,9 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Checking if {key}={value} is available ({beam_type})")
         return True
     
+    def home(self):
+        logging.info("Homing Stage")
+        return
 
 
 ######################################## Helper functions ########################################
