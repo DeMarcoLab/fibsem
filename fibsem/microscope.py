@@ -219,9 +219,13 @@ class FibsemMicroscope(ABC):
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
-    # @abstractmethod
-    # def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
-    #     pass
+    @abstractmethod
+    def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
+        pass
+
+    @abstractmethod
+    def home(self):
+        pass
 
 class ThermoMicroscope(FibsemMicroscope):
     """
@@ -849,20 +853,20 @@ class ThermoMicroscope(FibsemMicroscope):
         needle.absolute_move(position)
         
 
-    def _x_corrected_needle_movement(self, expected_x: float) -> ManipulatorPosition:
+    def _x_corrected_needle_movement(self, expected_x: float) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the x-axis.
 
         Args:
             expected_x (float): distance along the x-axis (image coordinates)
         Returns:
-            ManipulatorPosition: x-corrected needle movement (relative position)
+            FibsemManipulatorPosition: x-corrected needle movement (relative position)
         """
-        return ManipulatorPosition(x=expected_x, y=0, z=0)  # no adjustment needed
+        return FibsemManipulatorPosition(x=expected_x, y=0, z=0)  # no adjustment needed
 
 
     def _y_corrected_needle_movement(self, 
         expected_y: float, stage_tilt: float
-    ) -> ManipulatorPosition:
+    ) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the y-axis.
 
         Args:
@@ -870,16 +874,16 @@ class ThermoMicroscope(FibsemMicroscope):
             stage_tilt (float, optional): stage tilt.
 
         Returns:
-            ManipulatorPosition: y-corrected needle movement (relative position)
+            FibsemManipulatorPosition: y-corrected needle movement (relative position)
         """
         y_move = +np.cos(stage_tilt) * expected_y
         z_move = +np.sin(stage_tilt) * expected_y
-        return ManipulatorPosition(x=0, y=y_move, z=z_move)
+        return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
 
 
     def _z_corrected_needle_movement(self, 
         expected_z: float, stage_tilt: float
-    ) -> ManipulatorPosition:
+    ) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the z-axis.
 
         Args:
@@ -887,11 +891,11 @@ class ThermoMicroscope(FibsemMicroscope):
             stage_tilt (float, optional): stage tilt.
 
         Returns:
-            ManipulatorPosition: z-corrected needle movement (relative position)
+            FibsemManipulatorPosition: z-corrected needle movement (relative position)
         """
         y_move = -np.sin(stage_tilt) * expected_z
         z_move = +np.cos(stage_tilt) * expected_z
-        return ManipulatorPosition(x=0, y=y_move, z=z_move)
+        return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
 
     def move_manipulator_corrected(self, 
         dx: float,
@@ -1575,6 +1579,11 @@ class ThermoMicroscope(FibsemMicroscope):
                 if value < min(available_values) or value > max(available_values):
                     return False
         return True
+    
+    def home(self) -> None:
+        logging.info(f"Homing stage.")
+        self.connection.specimen.stage.home()
+        logging.info(f"Stage homed.")
 
 
 class TescanMicroscope(FibsemMicroscope):
@@ -2906,6 +2915,15 @@ class TescanMicroscope(FibsemMicroscope):
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
 
+        def check_available_values(self, key: str, beam_type: BeamType = None) -> bool:
+            return False
+        
+        def home(self) -> None:
+            # self.connection.SEM.Stage.Home()
+            # self.connection.FIB.Stage.Home()
+            # logging.info(f"Stage homed.")
+            return
+
 ########################
 class DemoMicroscope(FibsemMicroscope):
 
@@ -3187,6 +3205,15 @@ class DemoMicroscope(FibsemMicroscope):
             eucentric_height=eucentric_height,
             plasma_gas=plasma_gas,
         )
+    
+    def check_available_values(self, key: str, value, beam_type: BeamType = None) -> bool:
+        logging.info(f"Checking if {key}={value} is available ({beam_type})")
+        return True
+    
+    def home(self):
+        logging.info("Homing Stage")
+        return
+
 
 ######################################## Helper functions ########################################
 

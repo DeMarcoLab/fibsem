@@ -29,31 +29,6 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemRectangle, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings,
                                MicroscopeState)
-
-# def auto_link_stage(microscope: FibsemMicroscope, hfw: float = 150e-6) -> None:
-#     """Automatically focus and link sample stage z-height.
-
-#     Notes:
-#         - Focusing determines the working distance (focal distance) of the beam
-#         - Relinking is required whenever there is a significant change in vertical distance, i.e. moving
-#           from the landing grid to the sample grid.
-#         - Linking determines the specimen coordinate system, as it is defined as the relative dimensions of the top of stage
-#           to the instruments.
-#     """
-#     if TESCAN:
-#         raise NotImplementedError
-
-#     microscope.connection.imaging.set_active_view(BeamType.ELECTRON.value)
-#     original_hfw = microscope.connection.beams.electron_beam.horizontal_field_width.value
-#     microscope.connection.beams.electron_beam.horizontal_field_width.value = hfw
-#     microscope.autocontrast(beam_type=BeamType.ELECTRON)
-#     microscope.connection.auto_functions.run_auto_focus()
-#     microscope.connection.specimen.stage.link()
-#     # NOTE: replace with auto_focus_and_link if performance of focus is poor
-#     # # Restore original settings
-#     microscope.connection.beams.electron_beam.horizontal_field_width.value = original_hfw
-
-
 def auto_focus_beam(
     microscope: FibsemMicroscope,
     beam_type: BeamType,
@@ -73,7 +48,7 @@ def auto_focus_beam(
 
         if focus_image_settings is None:
             focus_image_settings = ImageSettings(
-                resolution=(768, 512),
+                resolution=[768, 512],
                 dwell_time=200e-9,
                 hfw=50e-6,
                 beam_type=beam_type,
@@ -258,105 +233,17 @@ def auto_charge_neutralisation(
 #     acquire.take_reference_images(microscope, settings.image)
 
 
-# def auto_home_and_link(
-#     microscope: FibsemMicroscope, state: MicroscopeState = None
-# ) -> None:
+def auto_home_and_link_v2(
+    microscope: FibsemMicroscope, state: MicroscopeState = None
+) -> None:
 
-#     if TESCAN:
-#         raise NotImplementedError
+    # home the stage and return the linked state
+    if state is None:
+        state = microscope.get_current_microscope_state()
 
-#     import os
-#     from fibsem import utils, config
+    # home the stage
+    microscope.home()
 
-#     # home the stage
-#     logging.info(f"Homing stage...")
-#     microscope.connection.specimen.stage.home()
+    # move to saved linked state
+    microscope.set_microscope_state(state)
 
-#     # if no state provided, use the default
-#     if state is None:
-#         path = os.path.join(config.CONFIG_PATH, "calibrated_state.yaml")
-#         state = MicroscopeState.__from_dict__(utils.load_yaml(path))
-
-#     # move to saved linked state
-#     microscope.set_microscope_state(state)
-
-#     # link
-#     logging.info("Linking stage...")
-#     microscope.autocontrast(beam_type=BeamType.ELECTRON)
-#     microscope.connection.auto_functions.run_auto_focus()
-#     microscope.connection.specimen.stage.link()
-
-
-# def auto_home_and_link_v2(
-#     microscope: FibsemMicroscope, state: MicroscopeState = None
-# ) -> None:
-
-#     if TESCAN:
-#         raise NotImplementedError
-#     # home the stage and return the linked state
-
-#     if state is None:
-#         state = microscope.get_current_microscope_state()
-
-#     # home the stage
-#     logging.info(f"Homing stage...")
-#     microscope.connection.specimen.stage.home()
-
-#     # move to saved linked state
-#     microscope.set_microscope_state(state)
-
-#     # relink (set state also links...)
-#     microscope.connection.specimen.stage.link()
-
-
-# STATE MANAGEMENT
-
-
-# def get_raw_stage_position(microscope: FibsemMicroscope) -> FibsemStagePosition:
-#     """Get the current stage position in raw coordinate system, and switch back to specimen"""
-
-#     if TESCAN:
-#         raise NotImplementedError
-
-#     microscope.connection.specimen.stage.set_default_coordinate_system(CoordinateSystem.RAW)
-#     stage_position = microscope.connection.specimen.stage.current_position
-#     microscope.connection.specimen.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
-
-#     return stage_position
-
-# def get_current_beam_system_state(microscope: FibsemMicroscope, beam_type: BeamType):
-
-#     if TESCAN:
-#         raise NotImplementedError
-
-#     if beam_type is BeamType.ELECTRON:
-#         microscope_beam = microscope.connection.beams.electron_beam
-#     if beam_type is BeamType.ION:
-#         microscope_beam = microscope.connection.beams.ion_beam
-
-#     # set beam active view and device
-#     microscope.connection.imaging.set_active_view(beam_type.value)
-#     microscope.connection.imaging.set_active_device(beam_type.value)
-
-#     # get current beam settings
-#     voltage = microscope_beam.high_voltage.value
-#     current = microscope_beam.beam_current.value
-#     detector_type = microscope.connection.detector.type.value
-#     detector_mode = microscope.connection.detector.mode.value
-
-#     if beam_type is BeamType.ION:
-#         eucentric_height = 16.5e-3
-#         plasma_gas = microscope_beam.source.plasma_gas.value
-#     else:
-#         eucentric_height = 4.0e-3
-#         plasma_gas = None
-
-#     return BeamSystemSettings(
-#         beam_type=beam_type,
-#         voltage=voltage,
-#         current=current,
-#         detector_type=detector_type,
-#         detector_mode=detector_mode,
-#         eucentric_height=eucentric_height,
-#         plasma_gas=plasma_gas,
-#     )
