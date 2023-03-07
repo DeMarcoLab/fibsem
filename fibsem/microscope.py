@@ -1427,7 +1427,7 @@ class ThermoMicroscope(FibsemMicroscope):
             return self.connection.vacuum.chamber_pressure.value
 
         # detector mode and type
-        if key in ["detector_mode", "detector_type"]:
+        if key in ["detector_mode", "detector_type", "detector_brightness", "detector_contrast"]:
             
             # set beam active view and device
             self.connection.imaging.set_active_view(beam_type.value)
@@ -1435,9 +1435,12 @@ class ThermoMicroscope(FibsemMicroscope):
 
             if key == "detector_type":
                 return self.connection.detector.type.value
-
             if key == "detector_mode":
                 return self.connection.detector.mode.value
+            if key == "detector_brightness":
+                return self.connection.detector.brightness.value
+            if key == "detector_contrast":
+                return self.connection.detector.contrast.value
 
         # manipulator properties
         if key == "manipulator_position":
@@ -1486,7 +1489,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info(f"{beam_type.name} beam {'blanked' if value else 'unblanked'}.")
 
         # detector properties
-        if key in ["detector_mode", "detector_type"]:
+        if key in ["detector_mode", "detector_type", "detector_brightness", "detector_contrast"]:
             # set beam active view and device
             self.connection.imaging.set_active_view(beam_type.value)
             self.connection.imaging.set_active_device(beam_type.value)
@@ -1504,6 +1507,20 @@ class ThermoMicroscope(FibsemMicroscope):
                     logging.info(f"Detector type set to {value}.")
                 else:
                     logging.warning(f"Detector type {value} not available.")
+                return
+            if key == "detector_brightness":
+                if 0 <= value <= 1 :
+                    self.connection.detector.brightness.value = value
+                    logging.info(f"Detector brightness set to {value}.")
+                else:
+                    logging.warning(f"Detector brightness {value} not available, must be between 0 and 1.")
+                return
+            if key == "detector_contrast":
+                if 0 <= value <= 1 :
+                    self.connection.detector.contrast.value = value
+                    logging.info(f"Detector contrast set to {value}.")
+                else:
+                    logging.warning(f"Detector contrast {value} not available, mut be between 0 and 1.")
                 return
 
         # only supported for Electron
@@ -2787,6 +2804,18 @@ class TescanMicroscope(FibsemMicroscope):
         #detector properties
         if key == "detector_type":
             return beam.Detector.Get(Channel = 0).name
+        if key == "detector_contrast":
+            if beam_type == BeamType.ELECTRON:
+                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
+            elif beam_type == BeamType.ION:
+                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
+            return contrast/100
+        if key == "detector_brightness":
+            if beam_type == BeamType.ELECTRON:
+                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
+            elif beam_type == BeamType.ION:
+                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
+            return brightness/100
         
         # manipulator properties
         if key == "manipulator_position":
@@ -2846,6 +2875,33 @@ class TescanMicroscope(FibsemMicroscope):
                 beam.Detector.Set(Channel = 0, Detector = value)
                 logging.info(f"{beam_type} detector type set to {value}.")
                 return
+        if key in ["detector_brightness", "detector_contrast"]:
+            if key == "detector_brightness":
+                if 0 <= value <= 1:
+                    if beam_type == BeamType.ELECTRON:
+                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
+                        beam.Detector.SetGainBlack(Detector= self.electron_detector_active, Gain = og_contrast, Black = value*100)
+                        logging.info(f"{beam_type} detector brightness set to {value}.")
+                    elif beam_type == BeamType.ION:
+                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
+                        beam.Detector.SetGainBlack(Detector= self.ion_detector_active, Gain = og_contrast, Black = value*100)
+                        logging.info(f"{beam_type} detector brightness set to {value}.")
+                else:
+                    logging.warning(f"Invalid brightness value: {value}, must be between 0 and 1.")
+                return 
+            if key == "detector_contrast":
+                if 0 <= value <= 1:
+                    if beam_type == BeamType.ELECTRON:
+                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
+                        beam.Detector.SetGainBlack(Detector= self.electron_detector_active, Gain = value*100, Black = og_brightness)
+                        logging.info(f"{beam_type} detector contrast set to {value}.")
+                    elif beam_type == BeamType.ION:
+                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
+                        beam.Detector.SetGainBlack(Detector= self.ion_detector_active, Gain = value*100, Black = og_brightness)
+                        logging.info(f"{beam_type} detector contrast set to {value}.")
+                else:
+                    logging.warning(f"Invalid contrast value: {value}, must be between 0 and 1.")
+                return 
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
