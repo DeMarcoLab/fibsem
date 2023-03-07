@@ -219,9 +219,13 @@ class FibsemMicroscope(ABC):
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
-    # @abstractmethod
-    # def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
-    #     pass
+    @abstractmethod
+    def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
+        pass
+
+    @abstractmethod
+    def home(self):
+        pass
 
 class ThermoMicroscope(FibsemMicroscope):
     """
@@ -1537,6 +1541,11 @@ class ThermoMicroscope(FibsemMicroscope):
                 if value < min(available_values) or value > max(available_values):
                     return False
         return True
+    
+    def home(self) -> None:
+        logging.info(f"Homing stage.")
+        self.connection.specimen.stage.home()
+        logging.info(f"Stage homed.")
 
 
 class TescanMicroscope(FibsemMicroscope):
@@ -2749,6 +2758,15 @@ class TescanMicroscope(FibsemMicroscope):
             logging.info(f"{beam_type.name} HFW set to {value} m.")
 
 
+        def check_available_values(self, key: str, beam_type: BeamType = None) -> bool:
+            return False
+        
+        def home(self) -> None:
+            # self.connection.SEM.Stage.Home()
+            # self.connection.FIB.Stage.Home()
+            # logging.info(f"Stage homed.")
+            return
+
 ########################
 class DemoMicroscope(FibsemMicroscope):
 
@@ -3030,6 +3048,12 @@ class DemoMicroscope(FibsemMicroscope):
             eucentric_height=eucentric_height,
             plasma_gas=plasma_gas,
         )
+    
+    def check_available_values(self, key: str, value, beam_type: BeamType = None) -> bool:
+        logging.info(f"Checking if {key}={value} is available ({beam_type})")
+        return True
+    
+
 
 ######################################## Helper functions ########################################
 
