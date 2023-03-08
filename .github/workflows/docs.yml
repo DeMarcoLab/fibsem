@@ -2,7 +2,10 @@ name: docs
 on:
   push:
     branches:
-      - microscope_v2_working
+      - v0.2-stable
+  pull_request:
+    branches:
+      - v0.2-stable
 jobs:
   deploy:
     runs-on: ubuntu-latest
