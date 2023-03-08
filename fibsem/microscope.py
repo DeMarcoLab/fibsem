@@ -2915,14 +2915,14 @@ class TescanMicroscope(FibsemMicroscope):
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
 
-        def check_available_values(self, key: str, beam_type: BeamType = None) -> bool:
-            return False
-        
-        def home(self) -> None:
-            # self.connection.SEM.Stage.Home()
-            # self.connection.FIB.Stage.Home()
-            # logging.info(f"Stage homed.")
-            return
+    def check_available_values(self, key: str, beam_type: BeamType = None) -> bool:
+        return False
+    
+    def home(self) -> None:
+        home = FibsemStagePosition(x=0, y=0, z=0.081, r=0, t=0)
+        self.move_stage_absolute(home)
+        logging.info(f"Stage homed.")
+        return
 
 ########################
 class DemoMicroscope(FibsemMicroscope):
