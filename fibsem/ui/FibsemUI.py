@@ -9,6 +9,7 @@ from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 
+from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
 from fibsem.ui.qtdesigner_files import FibsemUI
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
@@ -22,8 +23,12 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.setup_connections()
 
-        self.microscope = None
-        self.settings = None
+        self.microscope: FibsemMicroscope = None
+        self.settings:MicroscopeSettings = None
+
+        self.image_widget: FibsemImageSettingsWidget = None
+        self.movement_widget: FibsemMovementWidget = None
+        self.milling_widget: FibsemMillingWidget = None
 
         self.update_ui()
 
@@ -45,24 +50,32 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if _microscope_connected:
             self.pushButton.setStyleSheet("background-color: green")
             self.pushButton.setText("Microscope Connected")
-            self.pushButton.setEnabled(False)
+            # self.pushButton.setEnabled(False)
         else:
             self.pushButton.setStyleSheet("background-color: gray")
             self.pushButton.setText("Connect to Microscope")
 
     def connect_to_microscope(self):
+        
+        # TODO: add toggle for connect / disconnect
+        
+        _microscope_connected = bool(self.microscope is not None)
 
-        ip_address = self.lineEdit_ip_address.text()
-        manufacturer = self.comboBox_manufacturer.currentText()
+        if _microscope_connected:
+            self.microscope.disconnect()
+            self.microscope, self.settings = None, None
+        else:
+            ip_address = self.lineEdit_ip_address.text()
+            manufacturer = self.comboBox_manufacturer.currentText()
 
-        try:
-            self.microscope, self.settings = utils.setup_session(ip_address=ip_address, 
-                                                                 manufacturer=manufacturer)  # type: ignore
-        except Exception as e:
-            msg = f"Could not connect to microscope: {e}"
-            logging.exception(msg)
-            napari.utils.notifications.show_info(msg)
-            return
+            try:
+                self.microscope, self.settings = utils.setup_session(ip_address=ip_address, 
+                                                                    manufacturer=manufacturer)  # type: ignore
+            except Exception as e:
+                msg = f"Could not connect to microscope: {e}"
+                logging.exception(msg)
+                napari.utils.notifications.show_info(msg)
+                return
         
         self.update_microscope_ui()
         self.update_ui()
@@ -93,9 +106,17 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.gridLayout_movement_tab.addWidget(self.movement_widget, 0, 0)
             self.gridLayout_milling_tab.addWidget(self.milling_widget, 0, 0)
 
+        else:
+            if self.image_widget is None:
+                return
+            
+            self.gridLayout_imaging_tab.removeWidget(self.image_widget)
+            self.gridLayout_movement_tab.removeWidget(self.movement_widget)
+            self.gridLayout_milling_tab.removeWidget(self.milling_widget)
 
-
-
+            self.image_widget.deleteLater()
+            self.movement_widget.deleteLater()
+            self.milling_widget.deleteLater()
 
 
 def main():
