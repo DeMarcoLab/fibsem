@@ -200,18 +200,21 @@ def decode_segmap(image, nc=3):
     """
 
     # 0=background, 1=lamella, 2= needle
-    label_colors = np.zeros((6, 3))
+    label_colors = np.zeros((8, 3))
     label_colors[1, :] = (255, 0, 0)
     label_colors[2, :] = (0, 255, 0)
     label_colors[3, :] = (0, 0, 255)
     label_colors[4, :] = (0, 255, 255)
     label_colors[5, :] = (255, 255, 0)
+    label_colors[6, :] = (255, 0, 255)
+    label_colors[7, :] = (128, 0, 0)
 
     # pre-allocate r, g, b channels as zero
     r = np.zeros_like(image, dtype=np.uint8)
     g = np.zeros_like(image, dtype=np.uint8)
     b = np.zeros_like(image, dtype=np.uint8)
 
+    # TODO: make this more efficient
     # apply the class label colours to each pixel
     for class_idx in range(1, nc):
         idx = image == class_idx

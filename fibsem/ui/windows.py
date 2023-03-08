@@ -17,7 +17,7 @@ from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
 from fibsem.ui.FibsemMovementUI import FibsemMovementUI
 from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
-
+from fibsem.microscope import FibsemMicroscope
 
 def ask_user_interaction(
     msg="Default Ask User Message", image: np.ndarray = None
@@ -55,20 +55,21 @@ def ask_user_movement(
 
     # napari.run()
 
-def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
+def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
 
     # take new image
     image = acquire.new_image(microscope, settings.image)
 
     # load model
-    checkpoint = settings.protocol["ml"]["weights"]
-    encoder = settings.protocol["ml"]["encoder"]
-    num_classes = int(settings.protocol["ml"]["num_classes"])
-    cuda = settings.protocol["ml"]["cuda"]
+    ml_protocol = settings.protocol.get("ml", {})
+    checkpoint = ml_protocol.get("weights", None)    
+    encoder = ml_protocol.get("encoder", "ResNet18")
+    num_classes = int(ml_protocol.get("num_classes", 3))
+    cuda = ml_protocol.get("cuda", False)
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
     # detect features
-    pixelsize = image.metadata.binary_result.pixel_size.x
+    pixelsize = image.metadata.pixel_size.x
     det = detection.locate_shift_between_features_v2(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
 
     # user validate features...
@@ -92,7 +93,7 @@ def detect_features_v2(microscope: SdbMicroscopeClient, settings: MicroscopeSett
 
 
 def run_validation_ui(
-    microscope: SdbMicroscopeClient, settings: MicroscopeSettings, log_path: Path
+    microscope: FibsemMicroscope, settings: MicroscopeSettings, log_path: Path
 ):
     """Run validation checks to confirm microscope state before run."""
 

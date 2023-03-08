@@ -8,11 +8,6 @@ import numpy as np
 
 from fibsem.config import load_microscope_manufacturer
 
-manufacturer = load_microscope_manufacturer()
-if manufacturer == "Thermo":
-    from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-        CleaningCrossSectionPattern, RectanglePattern)
-    from autoscript_sdb_microscope_client.structures import AdornedImage
 from fibsem.structures import Point, FibsemImage, FibsemPatternSettings
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -148,26 +143,26 @@ import napari
 
 
 
-# from PyQt5 import QtWidgets
-# from PyQt5.QtCore import Qt
-# from PyQt5.QtGui import QImage, QPixmap
-# from PyQt5.QtWidgets import QGridLayout, QLabel
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QGridLayout, QLabel
 
-# def set_arr_as_qlabel(
-#     arr: np.ndarray,
-#     label: QLabel,
-#     shape: tuple = (1536//4, 1024//4),
-# ) -> QLabel:
+def set_arr_as_qlabel(
+    arr: np.ndarray,
+    label: QLabel,
+    shape: tuple = (1536//4, 1024//4),
+) -> QLabel:
 
-#     image = QImage(
-#         arr.data,
-#         arr.shape[1],
-#         arr.shape[0],
-#         QImage.Format_Grayscale16,
-#     )
-#     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
+    image = QImage(
+        arr.data,
+        arr.shape[1],
+        arr.shape[0],
+        QImage.Format_Grayscale8,
+    )
+    label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
-#     return label
+    return label
 
 # def set_arr_as_qlabel_8(
 #     arr: np.ndarray,
@@ -184,6 +179,7 @@ import napari
 #     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
 #     return label
+
 
 
 def convert_pattern_to_napari_rect(
@@ -260,7 +256,10 @@ def _draw_patterns_in_napari(
     # colour wheel
     colour = ["yellow", "cyan", "magenta", "purple"]
 
+    from fibsem.structures import FibsemPattern
+   
     # convert fibsem patterns to napari shapes
+    
     for i, stage in enumerate(all_patterns):
         shape_patterns = []
         for pattern_settings in stage:

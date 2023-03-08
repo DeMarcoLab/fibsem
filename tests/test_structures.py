@@ -5,16 +5,16 @@ import numpy as np
 import pytest
 from autoscript_sdb_microscope_client.structures import StagePosition
 from fibsem.structures import (BeamSettings, BeamType,
-                               GammaSettings, ImageSettings, MicroscopeState,
-                               MillingSettings, StageSettings, SystemSettings,
-                               BeamSystemSettings,
+                               ImageSettings, MicroscopeState,
+                               FibsemMillingSettings, StageSettings, SystemSettings,
+                               BeamSystemSettings, FibsemPatternSettings, FibsemStagePosition,
                                FibsemStagePosition)
 
 
 @pytest.fixture
-def milling_settings() -> MillingSettings:
+def milling_settings() -> FibsemPatternSettings:
 
-    milling_settings = MillingSettings(
+    milling_settings = FibsemPatternSettings(
         width=10.0e-6,
         height=10.0e-6,
         depth=10.0e-6,
@@ -57,20 +57,7 @@ def microscope_state(beam_settings: BeamSettings) -> MicroscopeState:
     return microscope_state
 
 @pytest.fixture
-def gamma_settings() -> GammaSettings:
-
-    gamma_settings = GammaSettings(
-        enabled=True, 
-        min_gamma=0.15, 
-        max_gamma=1.8, 
-        scale_factor=0.1, 
-        threshold=46
-    )
-
-    return gamma_settings
-
-@pytest.fixture
-def image_settings(gamma_settings: GammaSettings) -> ImageSettings:
+def image_settings() -> ImageSettings:
 
 
     image_settings = ImageSettings(
@@ -80,7 +67,7 @@ def image_settings(gamma_settings: GammaSettings) -> ImageSettings:
         save=False, 
         label = "label",
         save_path=None,
-        gamma=gamma_settings
+        gamma_enabled=True
     )
 
     return image_settings
@@ -118,7 +105,7 @@ def system_settings(beam_system_settings: BeamSystemSettings) -> SystemSettings:
 
     return system_settings
 
-def test_milling_settings_to_dict(milling_settings: MillingSettings):
+def test_milling_settings_to_dict(milling_settings: FibsemPatternSettings):
 
     milling_settings_dict = milling_settings.__to_dict__()
 
@@ -296,25 +283,6 @@ def test_microscope_state_from_dict():
     assert microscope_state.ib_settings.dwell_time == state_dict["ib_settings"]["dwell_time"]
     # assert microscope_state.ib_settings.stigmation == state_dict["ib_settings"]["stigmation"]
 
-
-def test_gamma_settings_from_dict():
-
-    gamma_dict = {
-        "enabled": True,
-        "min_gamma": 0.5,
-        "max_gamma": 1.8,
-        "scale_factor": 0.01,
-        "threshold": 46
-    }
-
-    gamma_settings = GammaSettings.__from_dict__(gamma_dict)
-
-    assert gamma_settings.enabled == gamma_dict["enabled"]
-    assert gamma_settings.min_gamma == gamma_dict["min_gamma"]
-    assert gamma_settings.max_gamma == gamma_dict["max_gamma"]
-    assert gamma_settings.scale_factor == gamma_dict["scale_factor"]
-    assert gamma_settings.threshold == gamma_dict["threshold"]
-
 def test_image_settings_from_dict():
 
     gamma_dict = {
@@ -347,11 +315,6 @@ def test_image_settings_from_dict():
     assert image_settings.save == image_settings_dict["save"]
     assert image_settings.save_path == image_settings_dict["save_path"]
     assert image_settings.label == image_settings_dict["label"]
-    assert image_settings.gamma.enabled == image_settings_dict["gamma"]["enabled"]
-    assert image_settings.gamma.min_gamma == image_settings_dict["gamma"]["min_gamma"]
-    assert image_settings.gamma.max_gamma == image_settings_dict["gamma"]["max_gamma"]
-    assert image_settings.gamma.scale_factor == image_settings_dict["gamma"]["scale_factor"]
-    assert image_settings.gamma.threshold == image_settings_dict["gamma"]["threshold"]
 
 
 def test_system_settings_to_dict(system_settings: SystemSettings):
@@ -359,7 +322,6 @@ def test_system_settings_to_dict(system_settings: SystemSettings):
     settings_dict = system_settings.__to_dict__()
 
     assert system_settings.ip_address == settings_dict["ip_address"]
-    assert system_settings.application_file == settings_dict["application_file"]
     assert system_settings.stage.__to_dict__() == settings_dict["stage"]
     assert system_settings.ion.__to_dict__() == settings_dict["ion"]
     assert system_settings.electron.__to_dict__() == settings_dict["electron"]
@@ -443,12 +405,12 @@ def test_stage_settings_from_dict():
     assert stage_settings.needle_stage_height_limit == settings_dict["needle_stage_height_limit"]
 
 def test_stage_position_to_dict():
-    
-    stage_position = StagePosition(
+    from fibsem.structures import FibsemStagePosition
+    stage_position = FibsemStagePosition(
         x=1, y=2, z=3, r=4, t=5, coordinate_system="Raw"
     )
 
-    stage_position_dict = stage_position_to_dict(stage_position)
+    stage_position_dict = stage_position.__to_dict__()
 
     assert stage_position.x == stage_position_dict["x"]
     assert stage_position.y == stage_position_dict["y"] 
@@ -467,8 +429,9 @@ def test_stage_position_from_dict():
         "t": 5,
         "coordinate_system": "Raw"
     }
+    from fibsem.structures import FibsemStagePosition
 
-    stage_position = stage_position_from_dict(stage_position_dict)
+    stage_position = FibsemStagePosition.__from_dict__(stage_position_dict)
 
     assert stage_position.x == stage_position_dict["x"]
     assert stage_position.y == stage_position_dict["y"] 

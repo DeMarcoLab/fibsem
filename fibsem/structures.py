@@ -167,6 +167,103 @@ Methods:
 
 
 @dataclass
+class FibsemManipulatorPosition:
+    """Data class for storing manipulator position data.
+
+Attributes:
+    x (float): The X position of the manipulator in meters.
+    y (float): The Y position of the manipulator in meters.
+    z (float): The Z position of the manipulator in meters.
+    r (float): The Rotation of the manipulator in radians.
+    t (float): The Tilt of the manipulator in radians.
+    coordinate_system (str): The coordinate system used for the manipulator position.
+
+Methods:
+    __to_dict__(): Convert the manipulator position object to a dictionary.
+    __from_dict__(data: dict): Create a new manipulator position object from a dictionary.
+    to_autoscript_position() -> ManipulatorPosition: Convert the manipulator position to a ManipulatorPosition object that is compatible with Autoscript.
+    from_autoscript_position(position: ManipulatorPosition) -> None: Create a new FibsemManipulatorPosition object from a ManipulatorPosition object that is compatible with Autoscript.
+    to_tescan_position(): Convert the manipulator position to a format that is compatible with Tescan.
+    from_tescan_position(): Create a new FibsemManipulatorPosition object from a Tescan-compatible manipulator position.
+
+"""
+
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    r: float = 0.0
+    t: float = 0.0
+    coordinate_system: str = None
+
+    def __to_dict__(self) -> dict:
+        position_dict = {}
+        position_dict["x"] = self.x
+        position_dict["y"] = self.y
+        position_dict["z"] = self.z
+        position_dict["r"] = self.r
+        position_dict["t"] = self.t
+        position_dict["coordinate_system"] = self.coordinate_system
+
+        return position_dict
+    
+    @classmethod
+    def __from_dict__(cls, data: dict) -> "FibsemManipulatorPosition":
+        return cls(
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            r=data["r"],
+            t=data["t"],
+            coordinate_system=data["coordinate_system"],
+        )
+    
+    if THERMO:
+            
+            def to_autoscript_position(self) -> ManipulatorPosition:
+                return ManipulatorPosition(
+                    x=self.x,
+                    y=self.y,
+                    z=self.z,
+                    r=self.r,
+                    t=self.t,
+                    coordinate_system=self.coordinate_system,
+                )
+    
+            @classmethod
+            def from_autoscript_position(cls, position: ManipulatorPosition) -> None:
+                return cls(
+                    x=position.x,
+                    y=position.y,
+                    z=position.z,
+                    r=position.r,
+                    t=position.t,
+                    coordinate_system=position.coordinate_system,
+                )
+            
+
+    if TESCAN:
+            
+            def to_tescan_position(self):
+                pass
+    
+            @classmethod
+            def from_tescan_position(self):
+                pass
+
+    def __add__(self, other:'FibsemManipulatorPosition') -> 'FibsemManipulatorPosition':
+
+        return FibsemManipulatorPosition(
+            self.x + other.x,
+            self.y + other.y,
+            self.z + other.z,
+            self.r + other.r,
+            self.t + other.t,
+            self.coordinate_system,
+        )
+
+
+
+@dataclass
 class FibsemRectangle:
     """Universal Rectangle class used for ReducedArea"""
 
@@ -326,7 +423,8 @@ class BeamSettings:
             "hfw": self.hfw,
             "resolution": self.resolution,
             "dwell_time": self.dwell_time,
-            # "stigmation": self.stigmation,
+            "stigmation": self.stigmation.__to_dict__() if self.stigmation is not None else None,
+            "shift": self.shift.__to_dict__() if self.shift is not None else None,
         }
 
         return state_dict
@@ -340,8 +438,9 @@ class BeamSettings:
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
             dwell_time=state_dict["dwell_time"],
-            # stigmation=state_dict["stigmation"],
-        )
+            stigmation=Point.__from_dict__(state_dict.get(("stigmation", {"x":0.0, "y":0.0})),
+            shift=Point.__from_dict__(state_dict.get("shift", {"x":0.0, "y":0.0}))),
+            )
 
         return beam_settings
     
@@ -392,12 +491,13 @@ class MicroscopeState:
 
         return microscope_state
 
-class FibsemPattern(Enum):
+class FibsemPattern(Enum): # TODO: reanme to FibsemPatternType
     Rectangle = 1
     Line = 2
+    Circle = 3
 
-# TODO: convert this to a dataclass
-class FibsemPatternSettings:
+# TODO: convert this to a dataclass, rename to FibsemPattern
+class FibsemPatternSettings: 
     '''
     FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
     
@@ -438,12 +538,70 @@ class FibsemPatternSettings:
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
-
+        elif pattern == FibsemPattern.Circle:
+            self.centre_x = kwargs["centre_x"]
+            self.centre_y = kwargs["centre_y"]
+            self.radius = kwargs["radius"]
+            self.depth = kwargs["depth"]
+            self.start_angle = kwargs["start_angle"] if "start_angle" in kwargs else 0.0
+            self.end_angle = kwargs["end_angle"] if "end_angle" in kwargs else 360.0
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
             return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
         elif self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+
+
+    @staticmethod
+    def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
+        
+        print(state_dict["pattern"])
+        if state_dict["pattern"] == "Rectangle":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Rectangle,
+                width=state_dict["width"],
+                height=state_dict["height"],
+                depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
+                scan_direction=state_dict["scan_direction"],
+                cleaning_cross_section=state_dict["cleaning_cross_section"],
+            )
+        elif state_dict["pattern"] == "Line":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Line,
+                start_x=state_dict["start_x"],
+                start_y=state_dict["start_y"],
+                end_x=state_dict["end_x"],
+                end_y=state_dict["end_y"],
+                depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
+                scan_direction=state_dict["scan_direction"],
+                cleaning_cross_section=state_dict["cleaning_cross_section"],
+            )
+        elif state_dict["pattern"] == "Circle":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Circle,
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
+                radius=state_dict["radius"],
+                depth=state_dict["depth"],
+                start_angle=state_dict["start_angle"],
+                end_angle=state_dict["end_angle"],
+                rotation=state_dict["rotation"],
+                scan_direction=state_dict["scan_direction"],
+                cleaning_cross_section=state_dict["cleaning_cross_section"],
+            )
+
+
+
+
+
+
 
 @dataclass
 class FibsemMillingSettings:
@@ -455,7 +613,6 @@ class FibsemMillingSettings:
     spot_size (float): The size of the beam spot used in the FIBSEM milling process. Default value is 5.0e-8 m.
     rate (float): The milling rate of the FIBSEM process. Default value is 3.0e-3 m^3/A/s.
     dwell_time (float): The dwell time of the beam at each point during the FIBSEM milling process. Default value is 1.0e-6 s.
-    application_file (str): The name of the application file used in the FIBSEM milling process. Default value is "Si". (ThermoFisher)
     hfw (float): The high voltage field width used in the FIBSEM milling process. Default value is 150e-6 m.
 
     Methods:
@@ -467,8 +624,9 @@ class FibsemMillingSettings:
     spot_size: float = 5.0e-8
     rate: float = 3.0e-3 # m3/A/s
     dwell_time: float = 1.0e-6 # s
-    application_file: str = "Si"
     hfw: float = 150e-6
+    patterning_mode: str = "Serial" 
+    application_file: str = "Si"
 
     def __to_dict__(self) -> dict:
 
@@ -478,6 +636,7 @@ class FibsemMillingSettings:
             "rate": self.rate,
             "dwell_time": self.dwell_time,
             "hfw": self.hfw,
+            "patterning_mode": self.patterning_mode,
             "application_file": self.application_file,
         }
 
@@ -491,8 +650,9 @@ class FibsemMillingSettings:
             spot_size=settings.get("spot_size", 5.0e-8),
             rate=settings.get("rate", 3.0e-3),
             dwell_time=settings.get("dwell_time", 1.0e-6),
-            application_file=settings.get("application_file", "Si"),
             hfw=settings.get("hfw", 150e-6),
+            patterning_mode=settings.get("patterning_mode", "Serial"),
+            application_file=settings.get("application_file", "Si"),
         )
 
         return milling_settings
@@ -776,12 +936,14 @@ class MicroscopeSettings:
     image: ImageSettings
     protocol: dict = None
     milling: FibsemMillingSettings = None
+    
 
     def __to_dict__(self) -> dict:
 
         settings_dict = {
             "system": self.system.__to_dict__(),
             "user": self.image.__to_dict__(),
+
         }
 
         return settings_dict
@@ -793,6 +955,7 @@ class MicroscopeSettings:
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
             protocol=protocol,
+
         )
 
 
@@ -1146,3 +1309,18 @@ def check_data_format(data: np.ndarray) -> bool:
     # if data.ndim == 3 and data.shape[2] == 1:
     #     data = data[:, :, 0]
     return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]
+
+
+@dataclass
+class FibsemDetectorSettings:
+    type: str
+    mode: str 
+    brightness: float
+    contrast: float
+
+    if TESCAN:
+        def to_tescan(self):
+            """Converts to tescan format."""
+            tescan_brightness = self.brightness * 100
+            tescan_contrast = self.contrast * 100
+            return tescan_brightness, tescan_contrast

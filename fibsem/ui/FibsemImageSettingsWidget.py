@@ -9,6 +9,7 @@ from fibsem.ui import utils as ui_utils
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
 import numpy as np
+from pathlib import Path
 
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
@@ -75,7 +76,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             autocontrast=self.checkBox_image_use_autocontrast.isChecked(),
             gamma_enabled=self.checkBox_image_use_autogamma.isChecked(),
             save=self.checkBox_image_save_image.isChecked(),
-            save_path=self.lineEdit_image_path.text(),
+            save_path=Path(self.lineEdit_image_path.text()),
             label=self.lineEdit_image_label.text()
             
         )
@@ -119,17 +120,23 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             if self.ib_layer is None and name == BeamType.ION.name:
                 self.ib_layer = layer
         
+        # centre the camera
+        if self.eb_layer:
+            self.viewer.camera.center = [
+                0.0,
+                self.eb_layer.data.shape[0] / 2,
+                self.eb_layer.data.shape[1],
+            ]
+            self.viewer.camera.zoom = 0.45
+
         if self.ib_layer:
             self.ib_layer.translate = [0.0, arr.shape[1]]        
         self.viewer.layers.selection.active = self.eb_layer
 
-
-    # TODO: crosshair
-
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
         eb_shape = self.eb_image.data.shape[0], self.eb_image.data.shape[1]
-        ib_shape = self.ib_image.data.shape[0], self.ib_image.data.shape[1] * 2
+        ib_shape = self.ib_image.data.shape[0], self.ib_image.data.shape[1] + self.eb_image.data.shape[1]
 
         if (coords[0] > 0 and coords[0] < eb_shape[0]) and (
             coords[1] > 0 and coords[1] < eb_shape[1]

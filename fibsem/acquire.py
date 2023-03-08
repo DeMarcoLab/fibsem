@@ -261,3 +261,16 @@ def new_image(
         image.save(save_path=filename)
 
     return image
+
+
+def last_image(microscope: FibsemMicroscope, beam_type: BeamType) -> FibsemImage:
+    """_summary_
+
+    Args:
+        microscope (FibsemMicroscope): microscope instance
+        beam_type (BeamType): beam type for image
+
+    Returns:
+        FibsemImage: last image acquired by the microscope
+    """
+    return microscope.last_image(beam_type=beam_type)

@@ -17,18 +17,16 @@ from fibsem.microscope import FibsemMicroscope
 
 def setup_milling(
     microscope: FibsemMicroscope,
-    patterning_mode: str = "Serial",
     mill_settings: FibsemMillingSettings = None,
 ):
     """Setup Microscope for Ion Beam Milling.
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
-        application_file (str, optional): Application file for ion beam milling. Defaults to "autolamella".
         patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
-    microscope.setup_milling(patterning_mode, mill_settings)
+    microscope.setup_milling(mill_settings = mill_settings)
 
 def run_milling(
     microscope: FibsemMicroscope,
@@ -74,6 +72,10 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
 
     elif pattern_settings.pattern is FibsemPattern.Line:
         microscope.draw_line(pattern_settings)
+
+    elif pattern_settings.pattern is FibsemPattern.Circle:
+        microscope.draw_circle(pattern_settings)
+        
 
 
 def draw_rectangle(
@@ -222,18 +224,24 @@ def draw_fiducial(
 
     return [pattern_1, pattern_2]
 
+def draw_circle_pattern(
+    microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings
+):
+    pattern = microscope.draw_circle(pattern_settings)
+    
+    return pattern
 
 def milling_protocol(
     microscope: FibsemMicroscope,
     mill_settings: FibsemMillingSettings,
     patterning_mode: str = "Serial",
-    pattern_settings: list = [],
+    patterns: list = [FibsemPatternSettings],
 ):
     # setup milling
     setup_milling(microscope, patterning_mode, mill_settings)
 
     # draw patterns
-    for pattern in pattern_settings:
+    for pattern in patterns:
         draw_pattern(microscope, pattern)
 
     # run milling

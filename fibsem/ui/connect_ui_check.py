@@ -47,8 +47,9 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
         self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
-
-        self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+        
+        self.plainTextEdit.setPlainText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+    
 
         # Initialise microscope object
         self.microscope = None
@@ -60,7 +61,11 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         
 
         if self.microscope is not None:
-           self.update_position_ui()
+            self.update_position_ui()
+            # Get scan directions 
+            direction_list = self.microscope.get_scan_directions()
+            for i in range(len(direction_list)-1):
+                self.scan_direction.addItem(direction_list[i-1])
 
 
         ### NAPARI settings and initialisation
@@ -103,9 +108,12 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         self.pushButton_milling.clicked.connect(self.milling_protocol)
         self.pushButton_line.clicked.connect(self.add_line)
         self.pushButton_rec.clicked.connect(self.add_rectangle)
+        self.button_circle.clicked.connect(self.add_circle)
 
         # GIS
         self.sputterButton.clicked.connect(self.sputter_protocol)
+
+
 
     def add_line(self):
         line = FibsemPatternSettings(
@@ -119,6 +127,18 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
         )
         self.pattern_settings.append(line)
         logging.info("UI | Line pattern added with start point: ({},{}), end point: ({},{}), depth: {} and rotation: {}".format(self.milling_start_x.value(),self.milling_start_y.value(),self.milling_end_x.value(),self.milling_end_y.value(),self.depth_milling.value(),self.rotation_milling.value()))
+
+    def add_circle(self):
+        circle = FibsemPatternSettings(
+            pattern = FibsemPattern.Circle,
+            radius = self.circle_radius.value()*constants.MICRO_TO_SI,
+            centre_x = self.circle_x.value()*constants.MICRO_TO_SI,
+            centre_y = self.circle_y.value()*constants.MICRO_TO_SI,
+            depth = self.circle_depth.value()*constants.MICRO_TO_SI,
+            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
+        )
+        self.pattern_settings.append(circle)
+        logging.info("UI | Circle pattern added with radius: {}, centre: ({},{}), depth: {} and rotation: {}".format(self.circle_radius.value(),self.circle_x.value(),self.circle_y.value(),self.circle_depth.value(),self.rotation_milling.value()))
 
     def add_rectangle(self):
         rectangle = FibsemPatternSettings(
@@ -393,32 +413,29 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
 
     def update_log(self):
-        
+       
         with open(self.log_path, "r") as f:
             lines = f.read().splitlines()
             lin_len = len(lines)
-            
-        if self.lines != lin_len:   
+
+        if self.lines != lin_len:
             for i in reversed(range(lin_len - self.lines)):
-                line_display = lines[-1-i]
-                if re.search("napari.loader — DEBUG", line_display):
+                line_display = lines[-1 - i]
+                if re.search("DEBUG", line_display):
+                    self.lines = lin_len
+                    continue
+                if re.search("vispy", line_display):
                     self.lines = lin_len
                     continue
                 line_divided = line_display.split(",")
                 time = line_divided[0]
-                message = line_divided[1].split("—")
+                message = line_display.split("—")
                 disp_str = f"{time} | {message[-1]}"
 
-                self.lines = lin_len
-                self.CLog.setText(self.CLog2.text())
-                self.CLog2.setText(self.CLog3.text())
-                self.CLog3.setText(self.CLog4.text())
-                self.CLog4.setText(self.CLog5.text())
-                self.CLog5.setText(self.CLog6.text())
-                self.CLog6.setText(self.CLog7.text())
-                self.CLog7.setText(self.CLog8.text())
+                disp_paragraph = self.plainTextEdit.toPlainText() + disp_str + "\n"
 
-                self.CLog8.setText(disp_str)
+                self.lines = lin_len
+                self.plainTextEdit.setPlainText(disp_paragraph)
       
 
     def connect_to_microscope(self):
@@ -622,8 +639,8 @@ class MainWindow(QtWidgets.QMainWindow, connect.Ui_MainWindow):
 
         logging.info("Beginning platinum sputtering.")
 
-        import fibsem.GIS as GIS
-        GIS.sputter_platinum(self.microscope, protocol, False, self.applicationFileComboBox.currentText())
+        import fibsem.gis as gis
+        gis.sputter_platinum(self.microscope, protocol, False, self.applicationFileComboBox.currentText())
 
         logging.info("Finished platinum sputtering.")
 
