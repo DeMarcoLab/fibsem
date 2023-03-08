@@ -122,10 +122,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         pattern_settings = self.get_pattern_settings_from_ui()
         milling_settings = self.get_milling_settings_from_ui()
 
-        milling.setup_milling(None, mill_settings=milling_settings)
-        milling.draw_pattern(pattern_settings, self.microscope)
+        milling.setup_milling(self.microscope, mill_settings=milling_settings)
+        milling.draw_pattern(self.microscope, pattern_settings)
 
-        milling.run_milling(self.microscope, milling_settings)
+        milling.run_milling(self.microscope, milling_settings.milling_current)
         milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
         napari.utils.notifications.show_info("Milling complete.")
@@ -136,7 +136,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # take new images and update ui
         self.image_widget.take_reference_images()
-        self.update_ui()
+        pattern_settings = self.get_pattern_settings_from_ui()
+        self.update_ui(pattern_settings)
 
 
 def main():

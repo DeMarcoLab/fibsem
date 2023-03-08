@@ -71,7 +71,6 @@ def main():
     # setup milling
     settings.application_file = settings.protocol.get("application_file", "autolamella")
     milling.setup_milling(microscope = microscope,
-        patterning_mode  = "Serial",
         mill_settings = settings.milling)
 
     # mill (fiducial, trench, thin, polish)

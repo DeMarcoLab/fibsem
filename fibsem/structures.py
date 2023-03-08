@@ -423,8 +423,8 @@ class BeamSettings:
             "hfw": self.hfw,
             "resolution": self.resolution,
             "dwell_time": self.dwell_time,
-            "stigmation": self.stigmation,
-            "shift": self.shift,
+            "stigmation": self.stigmation.__to_dict__() if self.stigmation is not None else None,
+            "shift": self.shift.__to_dict__() if self.shift is not None else None,
         }
 
         return state_dict
@@ -438,9 +438,9 @@ class BeamSettings:
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
             dwell_time=state_dict["dwell_time"],
-            stigmation=state_dict["stigmation"],
-            shift=state_dict["shift"],
-        )
+            stigmation=Point.__from_dict__(state_dict.get(("stigmation", {"x":0.0, "y":0.0})),
+            shift=Point.__from_dict__(state_dict.get("shift", {"x":0.0, "y":0.0}))),
+            )
 
         return beam_settings
     
