@@ -61,10 +61,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_rate.setVisible(_TESCAN)
         self.doubleSpinBox_spot_size.setVisible(_TESCAN)
         self.doubleSpinBox_dwell_time.setVisible(_TESCAN)
-
-        direction_list = self.microscope.get_scan_directions()
-        for i in range(len(direction_list)-1):
-            self.scan_direction.addItem(direction_list[i-1])
+        self.scan_direction.addItems(self.microscope.get_scan_directions())
         
 
         # patterns

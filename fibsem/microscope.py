@@ -3106,7 +3106,20 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Drawing circle: {pattern_settings}")
 
     def get_scan_directions(self) -> list:
-        pass
+        """
+        Returns the available scan directions of the microscope.
+
+        Returns:
+            list: The scan direction of the microscope.
+
+        Raises:
+            None
+        """
+        list = ["BottomToTop", 
+                "LeftToRight", 	
+                "RightToLeft", 	
+                "TopToBottom"]
+        return list 
 
 
     def setup_sputter(self, protocol: dict) -> None:
