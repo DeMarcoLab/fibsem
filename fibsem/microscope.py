@@ -1221,12 +1221,8 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern_settings: FibsemPatternSettings,
         path: str,
     ):
-        from PIL import Image
-        import os 
-        img=Image.open(path)
-        a=img.convert("RGB", palette=Image.ADAPTIVE, colors=8)
-        a.save(os.path.join(os.path.dirname(path), "24bit_img.tif"))
-        bitmap_pattern = BitmapPatternDefinition().load(os.path.join(os.path.dirname(path), "24bit_img.tif"))
+
+        bitmap_pattern = BitmapPatternDefinition().load(path)
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
