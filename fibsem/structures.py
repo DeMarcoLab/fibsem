@@ -431,6 +431,17 @@ class BeamSettings:
 
     @staticmethod
     def __from_dict__(state_dict: dict) -> "BeamSettings":
+
+        if "stigmation" in state_dict and state_dict["stigmation"] is not None:
+            stigmation = FibsemRectangle.__from_dict__(state_dict["stigmation"])
+        else:
+            stigmation = Point()
+        if "shift" in state_dict and state_dict["shift"] is not None:
+            shift = FibsemRectangle.__from_dict__(state_dict["shift"])
+        else:
+            shift = Point()
+
+
         beam_settings = BeamSettings(
             beam_type=BeamType[state_dict["beam_type"].upper()],
             working_distance=state_dict["working_distance"],
@@ -438,8 +449,8 @@ class BeamSettings:
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
             dwell_time=state_dict["dwell_time"],
-            stigmation=Point.__from_dict__(state_dict.get(("stigmation", {"x":0.0, "y":0.0})),
-            shift=Point.__from_dict__(state_dict.get("shift", {"x":0.0, "y":0.0}))),
+            stigmation=stigmation,
+            shift=shift,
             )
 
         return beam_settings

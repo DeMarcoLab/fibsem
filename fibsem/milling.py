@@ -4,6 +4,8 @@ import numpy as np
 from fibsem.structures import (
     BeamType,
     FibsemPattern,
+    FibsemImage,
+    FibsemRectangle,
     FibsemPatternSettings,
     FibsemMillingSettings,
     Point,
@@ -28,6 +30,22 @@ def setup_milling(
     """
     microscope.setup_milling(mill_settings = mill_settings)
 
+def run_milling_drift_corrected(
+    microscope: FibsemMicroscope, 
+    milling_current: float,  
+    image_settings: ImageSettings, 
+    ref_image: FibsemImage, 
+    reduced_area: FibsemRectangle = None,
+) -> None:
+    """Run Ion Beam Milling.
+
+    Args:
+        microscope (FibsemMicroscope): Fibsem microscope instance
+        milling_current (float, optional): ion beam milling current. Defaults to None.
+        asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
+    """
+    microscope.run_milling_drift_corrected(milling_current, image_settings, ref_image, reduced_area)
+
 def run_milling(
     microscope: FibsemMicroscope,
     milling_current: float,
@@ -41,7 +59,6 @@ def run_milling(
         asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
     """
     microscope.run_milling(milling_current, asynch)
-
 
 def finish_milling(
     microscope: FibsemMicroscope, imaging_current: float = 20e-12
@@ -99,6 +116,24 @@ def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSetti
         mill_settings (MillingSettings): milling pattern settings
     """
     microscope.draw_line(pattern_settings)
+
+def draw_circle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
+    """Draw a circular milling pattern from settings
+
+    Args:
+        microscope (FibsemMicroscope): Fibsem microscope instance
+        mill_settings (MillingSettings): milling pattern settings
+    """
+    microscope.draw_circle(pattern_settings)
+
+def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, path: str):
+    """Draw a butmap milling pattern from settings
+
+    Args:
+        microscope (FibsemMicroscope): Fibsem
+        mill_settings (MillingSettings): milling pattern settings
+    """
+    microscope.draw_bitmap_pattern(pattern_settings, path)
 
 def extract_trench_parameters(protocol: dict, point: Point = Point()):
     
@@ -236,16 +271,24 @@ def milling_protocol(
     mill_settings: FibsemMillingSettings,
     patterning_mode: str = "Serial",
     patterns: list = [FibsemPatternSettings],
+    drift_correction: bool = False,
+    image_settings: ImageSettings = None,
+    ref_image: FibsemImage = None,
+    reduced_area: FibsemRectangle = None,
+    asynch: bool = False,
 ):
     # setup milling
-    setup_milling(microscope, patterning_mode, mill_settings)
+    setup_milling(microscope, mill_settings)
 
     # draw patterns
     for pattern in patterns:
         draw_pattern(microscope, pattern)
 
     # run milling
-    run_milling(microscope, mill_settings.milling_current)
+    if drift_correction:
+        run_milling_drift_corrected(microscope, mill_settings.milling_current, image_settings, ref_image, reduced_area)
+    else:
+        run_milling(microscope, mill_settings.milling_current)
 
     # finish milling
     finish_milling(microscope)
