@@ -126,6 +126,15 @@ def draw_circle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSet
     """
     microscope.draw_circle(pattern_settings)
 
+def convert_to_bitmap_format(path):
+    from PIL import Image
+    import os 
+    img=Image.open(path)
+    a=img.convert("RGB", palette=Image.ADAPTIVE, colors=8)
+    new_path = os.path.join(os.path.dirname(path), "24bit_img.tif")
+    a.save(new_path)
+    return new_path
+
 def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, path: str):
     """Draw a butmap milling pattern from settings
 
@@ -133,6 +142,7 @@ def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSet
         microscope (FibsemMicroscope): Fibsem
         mill_settings (MillingSettings): milling pattern settings
     """
+    path = convert_to_bitmap_format(path)
     microscope.draw_bitmap_pattern(pattern_settings, path)
 
 def extract_trench_parameters(protocol: dict, point: Point = Point()):
