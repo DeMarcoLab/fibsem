@@ -68,3 +68,6 @@ def load_microscope_manufacturer(config_path=None) -> str:
     manufacturer = settings["system"]["manufacturer"]
 
     return manufacturer
+
+
+__SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]

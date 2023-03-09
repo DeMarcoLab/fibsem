@@ -11,6 +11,7 @@ from PyQt5 import QtWidgets
 
 from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
 from fibsem.ui.qtdesigner_files import FibsemUI
+from fibsem import config as cfg
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def __init__(self, viewer: napari.Viewer):
@@ -37,7 +38,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.pushButton.clicked.connect(self.connect_to_microscope)
 
-        self.comboBox_manufacturer.addItems(["Thermo", "Tescan", "Demo"])
+        self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
 
 
     def update_ui(self):
