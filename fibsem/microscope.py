@@ -220,6 +220,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+
     def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
         pass
 
@@ -1709,6 +1710,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Detector.Set(Channel = 0, Detector= self.ion_detector_active)
         self.electron_detector_active = self.connection.SEM.Detector.SESuitable()
         self.connection.SEM.Detector.Set(Channel = 0, Detector = self.electron_detector_active)
+
         self.last_image_eb = None
         self.last_image_ib = None
 
@@ -1979,12 +1981,14 @@ class TescanMicroscope(FibsemMicroscope):
             >>> microscope.connect_to_microscope()
         #     >>> microscope.autocontrast(beam_type=BeamType.ION)
 
+
         # """
         logging.info(f"Running autocontrast on {beam_type.name}.")
         if beam_type == BeamType.ELECTRON:
             self.connection.SEM.Detector.AutoSignal(Detector=self.electron_detector_active)
         if beam_type == BeamType.ION:
             self.connection.FIB.Detector.AutoSignal(Detector=self.ion_detector_active)
+
     
     def auto_focus(self, beam_type: BeamType) -> None:
         if beam_type == BeamType.ELECTRON:
@@ -2770,6 +2774,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         return values
 
+
     
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
 
@@ -2915,6 +2920,7 @@ class TescanMicroscope(FibsemMicroscope):
                 else:
                     logging.warning(f"Invalid contrast value: {value}, must be between 0 and 1.")
                 return 
+
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
@@ -3120,6 +3126,7 @@ class DemoMicroscope(FibsemMicroscope):
                 "RightToLeft", 	
                 "TopToBottom"]
         return list 
+
 
 
     def setup_sputter(self, protocol: dict) -> None:

@@ -145,3 +145,4 @@ AutoLamella v2: An automated cryo-lamella preparation approach that streamlines 
 ![AutoLamellav2](/docs/img/ui/autolamella.png)
 
 We aim to continue extending the functionality of OpenFIBSEM by porting existing applications to this backend and developing new applications that can be used as examples for other users.
+

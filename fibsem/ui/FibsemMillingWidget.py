@@ -64,6 +64,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.scan_direction.addItems(self.microscope.get_scan_directions())
         
 
+        direction_list = self.microscope.get_scan_directions()
+        for i in range(len(direction_list)-1):
+            self.scan_direction.addItem(direction_list[i-1])
+        
+
         # patterns
         self.comboBox_pattern.addItems([pattern.name for pattern in FibsemPattern])
 
