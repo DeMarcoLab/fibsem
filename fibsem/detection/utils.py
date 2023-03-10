@@ -11,7 +11,8 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from autoscript_sdb_microscope_client.structures import AdornedImage
+# from autoscript_sdb_microscope_client.structures import AdornedImage
+from structures import FibsemImage, FibsemImageMetadata
 from fibsem import conversions
 from fibsem.structures import Point
 from PIL import Image
@@ -37,7 +38,7 @@ class Feature:
 @dataclass
 class DetectionResult:
     features: list[Feature]
-    adorned_image: AdornedImage
+    fibsem_image: FibsemImage
     display_image: np.ndarray
     distance_metres: Point = Point(0, 0)  # x, y
     microscope_coordinate: list[Point] = None
@@ -98,7 +99,7 @@ def coordinate_distance(p1: Point, p2: Point):
 
     return p2.x - p1.x, p2.y - p1.y
 
-def scale_pixel_coordinates(px: Point, from_image: AdornedImage, to_image: AdornedImage) -> Point:
+def scale_pixel_coordinates(px: Point, from_image: FibsemImage, to_image: FibsemImage) -> Point:
     """Scale the pixel coordinate from one image to another"""
 
     invariant_pt = get_scale_invariant_coordinates(px, from_image.data.shape)
@@ -230,7 +231,7 @@ def load_detection_result(path: Path, data) -> DetectionResult:
     p2 = Point(x=data["p2.x"], y=data["p2.y"])
 
     fname = glob.glob(os.path.join(path, f"*{label}*.tif"))[0]
-    img = AdornedImage.load(fname)
+    img = FibsemImage.load(fname)
 
     p1 = scale_coordinate_to_image(p1, img.data.shape)
     p2 = scale_coordinate_to_image(p2, img.data.shape)
@@ -240,7 +241,7 @@ def load_detection_result(path: Path, data) -> DetectionResult:
             Feature(type=p1_type, feature_px=p1),
             Feature(type=p2_type, feature_px=p2),
         ],
-        adorned_image=img,
+        fibsem_image=img,
         display_image=None,
     )
 
@@ -260,7 +261,7 @@ def plot_detection_result(det_result: DetectionResult):
     c2 = DETECTION_TYPE_COLOURS[det_result.features[1].type]
 
     if det_result.display_image is None:
-        display_image = det_result.adorned_image.data
+        display_image = det_result.fibsem_image.data #??
     else:
         display_image = det_result.display_image
 
