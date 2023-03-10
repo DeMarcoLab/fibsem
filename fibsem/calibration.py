@@ -1,36 +1,19 @@
 import logging
 from datetime import datetime
-
 import numpy as np
-
-try:
-    from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem)
-    from autoscript_sdb_microscope_client.structures import (
-        Rectangle, RunAutoFocusSettings, StagePosition)
-
-    THERMO = True
-except:
-    THERMO = False
-try:
-    import tescanautomation
-
-    TESCAN = True
-except:
-    TESCAN = False
-
 from pathlib import Path
 
 import skimage
 
-from fibsem import acquire
+from fibsem import acquire, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemRectangle, FibsemStagePosition,
-                               ImageSettings, MicroscopeSettings,
+                               ImageSettings, MicroscopeSettings, FibsemImage,
                                MicroscopeState)
 def auto_focus_beam(
     microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
     beam_type: BeamType,
     mode: str = "default",
     focus_image_settings: ImageSettings = None,
@@ -47,15 +30,17 @@ def auto_focus_beam(
         from skimage.morphology import disk
 
         if focus_image_settings is None:
+            # use preset settings if not defined
             focus_image_settings = ImageSettings(
                 resolution=[768, 512],
                 dwell_time=200e-9,
                 hfw=50e-6,
                 beam_type=beam_type,
-                save=False,
+                save=True,
+                save_path=settings.image.save_path,
                 autocontrast=True,
                 gamma_enabled=False,
-                label=None,
+                label=f"{utils.current_timestamp()}_",
                 reduced_area=FibsemRectangle(0.3, 0.3, 0.4, 0.4),
             )
 
@@ -78,10 +63,11 @@ def auto_focus_beam(
             logging.info(f"image {i}: {wd:.2e}")
             microscope.set("working_distance", wd, beam_type)
 
+            focus_image_settings.label = f"{utils.current_timestamp()}_sharpness_{i}"
             img = acquire.new_image(microscope, focus_image_settings)
 
-            # sharpness (Acutance: https://en.wikipedia.org/wiki/Acutance)
-            sharpness = np.mean(gradient(skimage.filters.median(np.copy(img.data)), disk(5)))
+            # sharpness 
+            sharpness = _sharpness(img)
             sharpeness_metric.append(sharpness)
 
         # select working distance with max acutance
@@ -105,6 +91,11 @@ def auto_focus_beam(
 
     return
 
+def _sharpness(img:FibsemImage, disk_size:int=5):
+    from skimage.filters.rank import gradient
+    from skimage.morphology import disk
+    # (Acutance: https://en.wikipedia.org/wiki/Acutance)
+    return np.mean(gradient(skimage.filters.median(np.copy(img.data)), disk(disk_size)))
 
 def auto_charge_neutralisation(
     microscope: FibsemMicroscope,
