@@ -1981,9 +1981,9 @@ class TescanMicroscope(FibsemMicroscope):
         """
         logging.info(f"Running autocontrast on {beam_type.name}.")
         if beam_type == BeamType.ELECTRON:
-            self.connection.SEM.Detector.StartAutoSignal(self.electron_detector_active)
+            self.connection.SEM.Detector.AutoSignal(Detector=self.electron_detector_active)
         if beam_type == BeamType.ION:
-            self.connection.FIB.Detector.AutoSignal(self.ion_detector_active)
+            self.connection.FIB.Detector.AutoSignal(Detector=self.ion_detector_active)
     
     def auto_focus(self, beam_type: BeamType) -> None:
         if beam_type == BeamType.ELECTRON:
