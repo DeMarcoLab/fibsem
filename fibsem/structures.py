@@ -383,6 +383,24 @@ class ImageSettings:
 
         return settings_dict
 
+    @staticmethod
+    def fromFibsemImage(image: 'FibsemImage') -> "ImageSettings":
+        """Returns the image settings for a FibsemImage object.
+
+        Args:
+            image (FibsemImage): The FibsemImage object to get the image settings from.
+
+        Returns:
+            ImageSettings: The image settings for the given FibsemImage object.
+        """
+        from fibsem import utils
+        from copy import deepcopy
+        image_settings = deepcopy(image.metadata.image_settings)
+        image_settings.label = utils.current_timestamp()
+        image_settings.save = True
+        
+        return image_settings
+
 
 @dataclass
 class BeamSettings:

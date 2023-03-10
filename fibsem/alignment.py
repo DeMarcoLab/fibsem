@@ -145,7 +145,7 @@ def beam_shift_alignment(
     )
 
     # adjust beamshift 
-    microscope.beam_shift(dx, dy)
+    microscope.beam_shift(dx, dy, image_settings.beam_type)
 
 
 def correct_stage_drift(
@@ -223,9 +223,11 @@ def correct_stage_drift(
 
         # take new images
         # set new image settings (same as reference)
-        settings.image = utils.match_image_settings(
-            ref_image, settings.image, beam_type=alignment[1]
-        )
+        # settings.image = utils.match_image_settings(
+        #     ref_image, settings.image, beam_type=alignment[1]
+        # )
+        settings.image = ImageSettings.fromFibsemImage(ref_image)
+        settings.image.beam_type = alignment[1]
         new_image = acquire.new_image(microscope, settings.image)
 
         # crosscorrelation alignment
