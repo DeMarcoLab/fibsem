@@ -11,10 +11,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-# from autoscript_sdb_microscope_client.structures import AdornedImage
-from structures import FibsemImage, FibsemImageMetadata
-from fibsem import conversions
-from fibsem.structures import Point
+from fibsem.structures import Point, FibsemImage, FibsemImageMetadata
 from PIL import Image
 
 # TODO: rename from detection to features, e.g. FeatureType
