@@ -3164,7 +3164,7 @@ class DemoMicroscope(FibsemMicroscope):
         self.electron_beam.shift = Point(0,0)
         self.ion_beam.shift = Point(0,0)
 
-    def beam_shift(self, dx: float, dy: float) -> None:
+    def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
         beam_type = BeamType.ION # TODO: add beam_type to params for ABC
         logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
         if beam_type == BeamType.ELECTRON:
