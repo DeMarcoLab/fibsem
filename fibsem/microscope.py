@@ -1089,6 +1089,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info("Drift correction")
             if reduced_area is not None:
                 reduced_area = reduced_area.__to_FEI__()
+            image_settings.beam_type = BeamType.ION
             alignment.beam_shift_alignment(microscope = self, image_settings= image_settings, ref_image=ref_image, reduced_area=reduced_area)
             time.sleep(1) # need delay to switch back to patterning mode 
             self.connection.imaging.set_active_view(BeamType.ION.value)
@@ -2561,13 +2562,20 @@ class TescanMicroscope(FibsemMicroscope):
                 self.connection.Progress.SetPercents(progress)
                 time.sleep(3)
                 self.connection.DrawBeam.Pause()
+                logging.info("Drift correction in progress...")
+                image_settings.beam_type = BeamType.ION
                 alignment.beam_shift_alignment(
-                    self.connection,
+                    self,
                     image_settings,
                     ref_image,
                     reduced_area,
                 )
                 self.connection.DrawBeam.Resume()
+                status = self.connection.DrawBeam.GetStatus()
+                while status[0] != DBStatus.ProjectLoadedExpositionInProgress:
+                    time.sleep(0.2)
+                    status = self.connection.DrawBeam.GetStatus()
+                logging.info("Drift correction complete.")
             else:
                 if status[0] == DBStatus.ProjectLoadedExpositionIdle:
                     printProgressBar(100, 100, suffix="Finished")
