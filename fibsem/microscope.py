@@ -3278,7 +3278,10 @@ class DemoMicroscope(FibsemMicroscope):
                 "TopToBottom"]
         return list 
 
-
+    def draw_bitmap_pattern(self):
+        return 
+    def run_milling_drift_corrected(self):
+        return
 
     def setup_sputter(self, protocol: dict) -> None:
         logging.info(f"Setting up sputter: {protocol}")
@@ -3314,7 +3317,7 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Getting {key} ({beam_type})")
 
         # get beam
-        if beam is not None:
+        if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
 
         # voltage
