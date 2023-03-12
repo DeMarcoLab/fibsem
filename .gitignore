@@ -38,3 +38,4 @@ fibsem/segmentation/training/*
 scratch/training/*
 fibsem/testing.ipynb
 fibsem/_version.py
+demo_*/*
