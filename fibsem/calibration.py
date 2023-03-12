@@ -23,6 +23,13 @@ def auto_focus_beam(
     verbose: bool = False,
 ) -> None:
 
+    # TODO: @patrickcleeve2 this could be generalised further if we specify the parameter to sweep through too...
+    # e.g. microscope.set("working_distance", value, beam_type) for auto focus
+    # e.g. microscope.set("beam_current", value, beam_type) for auto stigmation
+    # e.g. microscope.set("beam_current", value, beam_type) for auto beam current
+    # might be too much generalisation though...
+    # also need to specify a default function
+
     if metric_fn is None:
         # run the default autofocus routine
         microscope.auto_focus(beam_type=beam_type)
