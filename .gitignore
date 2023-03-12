@@ -9,12 +9,9 @@ scratch/test_image.tif
 
 fibsem/wandb/*
 fibsem/models/*
-fibsem/models/05_09_2022_13_09_31_n01_model.pt
 *.json
 fibsem/segmentation/wandb/*
 fibsem/segmentation/models/*
-fibsem/segmentation/lucile_config.yml
-fibsem/segmentation/lachie_config.yml
 wandb/*
 
 fibsem/segmentation/data/*
