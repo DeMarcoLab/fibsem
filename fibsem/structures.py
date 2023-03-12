@@ -587,7 +587,6 @@ class FibsemPatternSettings:
     @staticmethod
     def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
         
-        print(state_dict["pattern"])
         if state_dict["pattern"] == "Rectangle":
             return FibsemPatternSettings(
                 pattern=FibsemPattern.Rectangle,
