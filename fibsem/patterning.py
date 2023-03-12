@@ -3,7 +3,7 @@ from enum import Enum
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import FibsemPatternSettings, FibsemPattern, Point
-
+import logging
 
 class MillingPattern(Enum):
     Trench = 1
@@ -22,7 +22,6 @@ class MillingPattern(Enum):
 
 
 # @patrickcleeve2 March 7
-# TODO: define all the patterns
 # TODO: unify the draw method
 # TODO: fix the ui install / test in ui
 # TODO: map the patterns to types for liftout? (separate issue)
@@ -41,20 +40,13 @@ class BasePattern(ABC):
     required_keys: tuple[str] = ()
 
     @abstractmethod
-    def define(self, protocol: dict) -> list[FibsemPatternSettings]:
+    def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
         pass
-
-    @abstractmethod
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-        pass
-
 
 @dataclass
 class RectanglePattern(BasePattern):
     name: str = "Rectangle"
-    required_keys: tuple[str] = ("width", "height", "depth")
+    required_keys: tuple[str] = ("width", "height", "depth", "rotation")
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -62,12 +54,11 @@ class RectanglePattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Rectangle"  # redundant now
-        return [FibsemPatternSettings.__from_dict__(protocol)]
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
 
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-        return microscope.draw_rectangle(self.define(protocol, point)[0])
+        return self.patterns 
 
 
 @dataclass
@@ -79,13 +70,12 @@ class LinePattern(BasePattern):
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
         protocol["pattern"] = "Line"  # redundant now
-        return [FibsemPatternSettings.__from_dict__(protocol)]
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-
-        return microscope.draw_line(self.define(protocol, point)[0])
+        protocol["centre_x"] = point.x
+        protocol["centre_y"] = point.y
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        return self.patterns
 
 
 @dataclass
@@ -100,13 +90,8 @@ class CirclePattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Circle"  # redundant now
-        return [FibsemPatternSettings.__from_dict__(protocol)]
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-
-        microscope.draw_circle(self.define(protocol, point)[0])
+        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)] 
+        return self.patterns
 
 
 @dataclass
@@ -118,7 +103,7 @@ class TrenchPattern(BasePattern):
         "trench_height",
         "size_ratio",
         "offset",
-        "milling_depth",
+        "depth",
     )
 
     def define(
@@ -132,7 +117,7 @@ class TrenchPattern(BasePattern):
         trench_height = protocol["trench_height"]
         upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
-        milling_depth = protocol["milling_depth"]
+        depth = protocol["depth"]
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
@@ -144,7 +129,7 @@ class TrenchPattern(BasePattern):
             pattern=FibsemPattern.Rectangle,
             width=lamella_width,
             height=trench_height,
-            depth=milling_depth,
+            depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
             cleaning_cross_section=True,
@@ -155,25 +140,15 @@ class TrenchPattern(BasePattern):
             pattern=FibsemPattern.Rectangle,
             width=lamella_width,
             height=upper_trench_height,
-            depth=milling_depth,
+            depth=depth,
             centre_x=point.x,
             centre_y=centre_upper_y,
             cleaning_cross_section=True,
             scan_direction="TopToBottom",
         )
 
-        return [lower_pattern_settings, upper_pattern_settings]
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-        """Calculate the trench milling patterns"""
-
-        patterns = self.define(protocol, point)
-        for pattern in patterns:
-            microscope.draw_rectangle(
-                pattern
-            )  # probs a better way than individually doing this? map draw method to pattern type?
+        self.patterns = [lower_pattern_settings, upper_pattern_settings]    
+        return self.patterns
 
 
 @dataclass
@@ -184,9 +159,10 @@ class HorseshoePattern(BasePattern):
         "lamella_height",
         "trench_height",
         "size_ratio",
-        "side_width",
         "offset",
-        "milling_depth",
+        "side_offset",
+        "side_width",
+        "depth",
     )
 
     # TODO:ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
@@ -203,7 +179,7 @@ class HorseshoePattern(BasePattern):
         trench_height = protocol["trench_height"]
         upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
-        milling_depth = protocol["milling_depth"]
+        depth = protocol["depth"]
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
@@ -214,7 +190,7 @@ class HorseshoePattern(BasePattern):
             pattern=FibsemPattern.Rectangle,
             width=lamella_width,
             height=trench_height,
-            depth=milling_depth,
+            depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
             cleaning_cross_section=True,
@@ -225,7 +201,7 @@ class HorseshoePattern(BasePattern):
             pattern=FibsemPattern.Rectangle,
             width=lamella_width,
             height=upper_trench_height,
-            depth=milling_depth,
+            depth=depth,
             centre_x=point.x,
             centre_y=centre_upper_y,
             cleaning_cross_section=True,
@@ -236,28 +212,20 @@ class HorseshoePattern(BasePattern):
             pattern=FibsemPattern.Rectangle,
             width=protocol["side_width"],
             height=lamella_height + offset,
-            depth=milling_depth,
-            centre_x=point.x - (lamella_width / 2 - protocol["side_width"] / 2),
+            depth=depth,
+            centre_x=point.x - protocol["side_offset"] + (lamella_width / 2 - protocol["side_width"] / 2) ,
             centre_y=point.y,
             cleaning_cross_section=True,
             scan_direction="TopToBottom",
         )
 
-        return [lower_pattern, upper_pattern, side_pattern]
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-
-        patterns = self.define(protocol, point)
-        for pattern in patterns:
-            microscope.draw_rectangle(pattern)
-
+        self.patterns = [lower_pattern, upper_pattern, side_pattern]
+        return self.patterns
 
 @dataclass
 class FiducialPattern(BasePattern):
     name: str = "Fiducial"
-    required_keys: tuple[str] = ("rotation", "depth", "width")
+    required_keys: tuple[str] = ("height", "width", "depth", "rotation")
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -268,26 +236,22 @@ class FiducialPattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Rectangle"
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
         left_pattern = FibsemPatternSettings.__from_dict__(protocol)
         left_pattern.rotation = np.deg2rad(45)
         right_pattern = FibsemPatternSettings.__from_dict__(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
-        return [left_pattern, right_pattern]
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-
-        for pattern in self.define(protocol, point):
-            microscope.draw_rectangle(pattern)
+        self.patterns = [left_pattern, right_pattern]
+        return self.patterns
 
 
 @dataclass
 class UndercutPattern(BasePattern):
     name: str = "Undercut"
-    required_keys: tuple[str] = ("width", "depth", "rhs_height", "h_offset", "offset")
+    required_keys: tuple[str] = ("height", "width", "depth", "trench_width", "rhs_height", "h_offset", "offset")
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -297,12 +261,12 @@ class UndercutPattern(BasePattern):
 
         # jcut_lhs_height = protocol["lhs_height"]
         jcut_rhs_height = protocol["rhs_height"]
-        jcut_lamella_height = protocol["lamella_height"]
+        jcut_lamella_height = protocol["height"]
         jcut_width = protocol["width"]
         jcut_trench_thickness = protocol["trench_width"]
         # jcut_lhs_trench_thickness = protocol["lhs_trench_width"]
         # jcut_lhs_offset = protocol["lhs_offset"]
-        jcut_milling_depth = protocol["depth"]
+        jcut_depth = protocol["depth"]
         jcut_h_offset = protocol["h_offset"]
 
         jcut_half_width = jcut_width - jcut_trench_thickness / 2
@@ -315,7 +279,7 @@ class UndercutPattern(BasePattern):
         jcut_top_centre_y = point.y + jcut_lamella_height
         jcut_top_width = jcut_width
         jcut_top_height = jcut_trench_thickness
-        jcut_top_depth = jcut_milling_depth
+        jcut_top_depth = jcut_depth
 
         top_pattern = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
@@ -334,7 +298,7 @@ class UndercutPattern(BasePattern):
         #     center_y=point.y + jcut_half_height - (jcut_lhs_height / 2 - jcut_half_height),
         #     width=jcut_lhs_trench_thickness,
         #     height=jcut_lhs_height,
-        #     depth=jcut_milling_depth,
+        #     depth=jcut_depth,
         # )  # depth
 
         # rhs jcut
@@ -347,7 +311,7 @@ class UndercutPattern(BasePattern):
         )
         jcut_rhs_width = jcut_trench_thickness
         jcut_rhs_height = jcut_rhs_height
-        jcut_rhs_depth = jcut_milling_depth
+        jcut_rhs_depth = jcut_depth
 
         rhs_pattern = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
@@ -360,22 +324,16 @@ class UndercutPattern(BasePattern):
             scan_direction="TopToBottom",
         )
 
-        return [top_pattern, rhs_pattern]
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-
-        for pattern in self.define(protocol, point):
-            microscope.draw_rectangle(pattern)
+        self.patterns = [top_pattern, rhs_pattern]
+        return self.patterns
 
 
 @dataclass
 class MicroExpansionPattern(BasePattern):
     name: str = "MicroExpansion"
     required_keys: tuple[str] = (
-        "width",
         "height",
+        "width",
         "depth",
         "distance",
         "lamella_width",
@@ -425,21 +383,13 @@ class MicroExpansionPattern(BasePattern):
             scan_direction="RightToLeft",
         )
 
-        return [left_pattern_settings, right_pattern_settings]
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-
-        patterns = self.define(protocol, point)
-        for pattern in patterns:
-            microscope.draw_rectangle(pattern)
-
+        self.patterns = [left_pattern_settings, right_pattern_settings]
+        return self.patterns
 
 @dataclass
 class SpotWeldPattern(BasePattern):
     name: str = "SpotWeld"
-    required_keys: tuple[str] = ("width", "height", "depth", "distance", "number")
+    required_keys: tuple[str] = ("height","width" , "depth", "distance", "number")
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
     def define(
@@ -451,7 +401,7 @@ class SpotWeldPattern(BasePattern):
         height = protocol["height"]
         depth = protocol["depth"]
         distance = protocol["distance"]
-        n_patterns = protocol["number"]
+        n_patterns = int(protocol["number"])
 
         patterns = []
         for i in range(n_patterns):
@@ -460,22 +410,15 @@ class SpotWeldPattern(BasePattern):
                 width=width,
                 height=height,
                 depth=depth,
-                centre_x=point.x + (i - (n_patterns - 1) / 2) * distance,
-                centre_y=point.y,
+                centre_x=point.x ,
+                centre_y=point.y + (i - (n_patterns - 1) / 2) * distance,
                 cleaning_cross_section=True,
                 scan_direction="LeftToRight",
             )
             patterns.append(pattern_settings)
 
-        return patterns
-
-    def draw(
-        self, microscope: FibsemMicroscope, protocol: dict, point: Point = Point()
-    ):
-
-        patterns = self.define(protocol, point)
-        for pattern in patterns:
-            microscope.draw_rectangle(pattern)
+        self.patterns = patterns
+        return self.patterns
 
 
 __PATTERNS__ = [

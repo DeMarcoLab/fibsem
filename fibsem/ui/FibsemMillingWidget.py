@@ -11,8 +11,10 @@ from fibsem.structures import (BeamType, FibsemMillingSettings, FibsemPattern,
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari
-from fibsem import milling
+from fibsem import milling, patterning
 import logging
+from fibsem.structures import Point
+
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
@@ -32,6 +34,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget = image_widget
 
         self.setup_connections()
+
+        self.pattern_update()
 
     def setup_connections(self):
 
@@ -75,6 +79,59 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
         self.image_widget.ib_layer.mouse_drag_callbacks.append(self._single_click)
 
+
+        # new patterns
+        self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
+        self.comboBox_patterns.currentIndexChanged.connect(self.pattern_update)
+        
+
+    def pattern_update(self):
+
+        # get current pattern
+        pattern = patterning.__PATTERNS__[self.comboBox_patterns.currentIndex()]
+
+        logging.info(f"Selected pattern: {pattern.name}")
+        logging.info(f"Required parameters: {pattern.required_keys}")
+
+        # create a label and double spinbox for each required keys and add it to the layout
+
+        # clear layout
+        for i in reversed(range(self.gridLayout_patterns.count())):
+            self.gridLayout_patterns.itemAt(i).widget().setParent(None)
+
+        # add new widgets
+        # TODO: smarter logic for which widgets to add
+        for i, key in enumerate(pattern.required_keys):
+            label = QtWidgets.QLabel(key)
+            spinbox = QtWidgets.QDoubleSpinBox()
+            spinbox.setDecimals(3)
+            spinbox.setSingleStep(0.001)
+            spinbox.setRange(0, 1000)
+            spinbox.setValue(0)
+            self.gridLayout_patterns.addWidget(label, i, 0)
+            self.gridLayout_patterns.addWidget(spinbox, i, 1)
+
+
+    def get_pattern_from_ui(self):
+
+        pattern_dict = {}
+
+        # get current pattern
+        pattern = patterning.__PATTERNS__[self.comboBox_patterns.currentIndex()]
+
+        for i, key in enumerate(pattern.required_keys):
+            spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
+            
+            value = spinbox.value() * constants.MICRO_TO_SI if key not in ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number"] else spinbox.value()
+            pattern_dict[key] = value # TODO: not everythign is in microns
+
+        # define pattern
+        pattern: patterning.BasePattern = pattern()
+        point = Point(x=self.doubleSpinBox_centre_x.value() * constants.MICRO_TO_SI, y=self.doubleSpinBox_centre_y.value() * constants.MICRO_TO_SI)
+        pattern_settings_list = pattern.define(protocol=pattern_dict, point=point)
+        
+        return pattern_settings_list
+
     def _single_click(self, layer, event):
         """Callback for single click on image layer."""
         if event.button != 2:
@@ -105,8 +162,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # update ui
         self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
         self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
-        pattern_settings = self.get_pattern_settings_from_ui()   
-        self.update_ui(pattern_settings=pattern_settings)
+        # pattern_settings = self.get_pattern_settings_from_ui()   
+        self.update_ui()
 
     def get_pattern_settings_from_ui(self):
         
@@ -141,18 +198,36 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         return milling_settings
 
-    def update_ui(self, pattern_settings: FibsemPatternSettings = None):
+    def update_ui(self, pattern_settings: list[FibsemPatternSettings] = None):
         
-        if self.sender() == self.pushButton:
-            pattern_settings = self.get_pattern_settings_from_ui()
+        if self.sender() == self.pushButton or pattern_settings is None:
+            pattern_settings = self.get_pattern_from_ui()
+
+        # should be a list for plotting
+        if isinstance(pattern_settings, FibsemPatternSettings):
+            pattern_settings = [pattern_settings]
 
         # clear patterns then draw new ones
         _draw_patterns_in_napari(self.viewer, 
             ib_image=self.image_widget.ib_image, 
             eb_image=self.image_widget.eb_image, 
-            all_patterns=[[pattern_settings]])
+            all_patterns=[pattern_settings])
 
         self.viewer.layers.selection.active = self.image_widget.eb_layer
+
+
+
+
+        # if self.sender() == self.pushButton:
+        #     pattern_settings = self.get_pattern_settings_from_ui()
+
+        # # clear patterns then draw new ones
+        # _draw_patterns_in_napari(self.viewer, 
+        #     ib_image=self.image_widget.ib_image, 
+        #     eb_image=self.image_widget.eb_image, 
+        #     all_patterns=[[pattern_settings]])
+
+        # self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def run_milling(self):
         

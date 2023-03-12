@@ -41,11 +41,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def setup_connections(self):
 
         self.pushButton.clicked.connect(self.connect_to_microscope)
-
-
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
-
-
 
     def update_ui(self):
 
