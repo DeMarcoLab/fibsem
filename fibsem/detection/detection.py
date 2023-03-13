@@ -415,6 +415,11 @@ def plot_det_result_v2(det: DetectedFeatures):
 ### TODO: Change plotting colors to match with class color
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
+
+    # convert rgb 255 range to 0-1 tuple
+    c1 = ((255-det.features[0]._color_UINT8[0])/255,(255-det.features[0]._color_UINT8[1])/255,(255-det.features[0]._color_UINT8[2])/255)
+    c2 = ((255-det.features[1]._color_UINT8[0])/255,(255-det.features[1]._color_UINT8[1])/255,(255-det.features[1]._color_UINT8[2])/255)
+
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
     ax[1].imshow(det.mask)
@@ -422,14 +427,16 @@ def plot_det_result_v2(det: DetectedFeatures):
     ax[1].plot(
         det.features[0].feature_px.x,
         det.features[0].feature_px.y,
-        "g+",
+        color=c1,
+        marker="+",
         ms=20,
         label=det.features[0].type.name,
     )
     ax[1].plot(
         det.features[1].feature_px.x,
         det.features[1].feature_px.y,
-        "w+",
+        color=c2,
+        marker="+",
         ms=20,
         label=det.features[1].type.name,
     )
