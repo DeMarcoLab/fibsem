@@ -224,8 +224,6 @@ Methods:
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    r=self.r,
-                    t=self.t,
                     coordinate_system=self.coordinate_system,
                 )
     
@@ -235,8 +233,6 @@ Methods:
                     x=position.x,
                     y=position.y,
                     z=position.z,
-                    r=position.r,
-                    t=position.t,
                     coordinate_system=position.coordinate_system,
                 )
             

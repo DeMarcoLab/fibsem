@@ -870,7 +870,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.move_stage_absolute(stage_position)
 
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
-        return self.connection.specimen.manipulator.current_position
+        position = self.connection.specimen.manipulator.current_position
+        return FibsemManipulatorPosition.from_autoscript_position(position)
     
     def insert_manipulator(self, name: str = "PARK"):
 
@@ -878,7 +879,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
 
-        insert_position = ManipulatorSavedPosition[name]
+        insert_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         needle = self.connection.specimen.manipulator
         insert_position = needle.get_saved_position(
             insert_position, ManipulatorCoordinateSystem.RAW
@@ -1023,7 +1024,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
         
-        named_position = ManipulatorSavedPosition[name]
+        named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         position = self.connection.specimen.manipulator.get_saved_position(
                 named_position, ManipulatorCoordinateSystem.STAGE
             )
