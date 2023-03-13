@@ -31,7 +31,6 @@ class Feature:
     feature_px: Point  = None # x, y (image)
     feature_m: Point = None # x, y (microscope image coord)
 
-
 @dataclass
 class DetectionResult:
     features: list[Feature]

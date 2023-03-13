@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 from dataclasses import dataclass
-
+from enum import Enum
 import numpy as np
 
 from fibsem.microscope import FibsemMicroscope
@@ -9,19 +9,121 @@ from scipy.spatial import distance
 from skimage import feature
 
 from fibsem import conversions
-from fibsem.detection.utils import Feature, FeatureType
+# from fibsem.detection.utils import Feature, FeatureType
 from fibsem.imaging import masks
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
 
-FEATURE_COLOURS_UINT8 = {
-    FeatureType.ImageCentre: (255, 255, 255),
-    FeatureType.LamellaCentre: (255, 0, 0),
-    FeatureType.LamellaLeftEdge: (255, 0, 0),
-    FeatureType.LamellaRightEdge: (255, 0, 0),
-    FeatureType.NeedleTip: (0, 255, 0),
-    FeatureType.LandingPost: (255, 255, 255),
-}
+_DETECTION_V3 = True
+if _DETECTION_V3:
+
+    class FeatureType(Enum):
+        LamellaCentre = 1
+        NeedleTip = 2
+        LamellaRightEdge = 3
+        LamellaLeftEdge = 4
+        LandingPost = 5
+        ImageCentre = 6
+
+    from abc import ABC, abstractmethod
+    # TODO: maybe static methods? probs nicer to use?
+    # e.g. needle_tip = NeedleTip.detect(img, mask, point)
+    # can store color info there too?
+
+    @dataclass
+    class Feature_v3(ABC):
+        feature_px: Point 
+        feature_m: Point
+        _colour_UINT8: None
+        type: FeatureType
+
+        @abstractmethod
+        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature_v3':
+            pass
+
+    @dataclass
+    class ImageCentre(Feature_v3):
+        feature_m: Point = None
+        feature_px: Point = None
+        _colour_UINT8: tuple = (255,255,255)
+        type: FeatureType = FeatureType.ImageCentre
+
+        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
+            self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
+            return self.feature_px
+
+        
+
+    @dataclass
+    class NeedleTip(Feature_v3):
+        feature_m: Point = None
+        feature_px: Point = None
+        _colour_UINT8: tuple = (0,255,0)
+        type: FeatureType = FeatureType.NeedleTip
+
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
+            self.feature_px = detect_needle_v4(mask)
+            return self.feature_px
+        
+        
+
+    @dataclass
+    class LamellaCentre(Feature_v3):
+        feature_m: Point = None
+        feature_px: Point = None
+        _colour_UINT8: tuple = (255,0,0)
+        type: FeatureType = FeatureType.LamellaCentre
+
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
+            self.feature_px = detect_lamella(mask, FeatureType.LamellaCentre)
+
+        
+    @dataclass
+    class LamellaLeftEdge(Feature_v3):
+        feature_m: Point = None
+        feature_px: Point = None
+        _colour_UINT8: tuple = (255,0,0)
+        type: FeatureType = FeatureType.LamellaLeftEdge
+
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
+            self.feature_px = detect_lamella(mask, FeatureType.LamellaLeftEdge)
+            return self.feature_px
+        
+
+    @dataclass
+    class LamellaRightEdge(Feature_v3):
+        feature_m: Point = None
+        feature_px: Point = None
+        _colour_UINT8: tuple = (255,0,0)
+        type: FeatureType = FeatureType.LamellaRightEdge
+
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
+            self.feature_px = detect_lamella(mask, FeatureType.LamellaRightEdge)
+            return self.feature_px
+        
+
+    @dataclass
+    class LandingPost(Feature_v3):
+        feature_m: Point = None
+        feature_px: Point = None
+        _colour_UINT8: tuple = (255,255,255)
+        type: FeatureType = FeatureType.LandingPost
+
+        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
+            self.feature_px = detect_landing_post_v3(img, point)
+            return self.feature_px
+        
+
+    __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
+
+# FEATURE_COLOURS_UINT8 = {
+#     FeatureType.ImageCentre: (255, 255, 255),
+#     FeatureType.LamellaCentre: (255, 0, 0),
+#     FeatureType.LamellaLeftEdge: (255, 0, 0),
+#     FeatureType.LamellaRightEdge: (255, 0, 0),
+#     FeatureType.NeedleTip: (0, 255, 0),
+#     FeatureType.LandingPost: (255, 255, 255),
+# }
 
 
 def filter_selected_masks(
@@ -135,7 +237,7 @@ def detect_corner(
 def detect_lamella(
     mask: np.ndarray,
     feature_type: FeatureType,
-    color: tuple = (255, 0, 0),
+    color: tuple = LamellaCentre._colour_UINT8,
     mask_radius: int = 512,
 ) -> Point:
 
@@ -156,7 +258,7 @@ def detect_lamella(
 
 
 def detect_needle_v4(mask: np.ndarray,) -> Point:
-    needle_mask, _ = extract_class_pixels(mask, (0, 255, 0))
+    needle_mask, _ = extract_class_pixels(mask, NeedleTip._colour_UINT8)
     return detect_corner(needle_mask, threshold=100)
 
 
@@ -254,7 +356,7 @@ def detect_bounding_box(mask, color, threshold=25):
 
 @dataclass
 class DetectedFeatures:
-    features: list[Feature]
+    features: list[Feature_v3]
     image: np.ndarray
     mask: np.ndarray
     pixelsize: float
@@ -262,40 +364,16 @@ class DetectedFeatures:
 
 
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature]
-) -> list[Feature]:
+    img: np.ndarray, mask: np.ndarray, features: tuple[Feature_v3]
+) -> list[Feature_v3]:
 
     detection_features = []
 
     for feature in features:
+        
+        feature.detect(img=img,mask=mask) 
 
-        det_type = feature.type
-        initial_point = feature.feature_px
-
-        if not isinstance(det_type, FeatureType):
-            raise TypeError(f"Detection Type {det_type} is not supported.")
-
-        # get the initial position estimate
-        if initial_point is None:
-            initial_point = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
-
-        if det_type == FeatureType.ImageCentre:
-            feature_px = initial_point
-
-        if det_type == FeatureType.NeedleTip:
-            feature_px = detect_needle_v4(mask)
-
-        if det_type in [
-            FeatureType.LamellaCentre,
-            FeatureType.LamellaLeftEdge,
-            FeatureType.LamellaRightEdge,
-        ]:
-            feature_px = detect_lamella(mask, det_type)
-
-        if det_type == FeatureType.LandingPost:
-            feature_px = detect_landing_post_v3(img, initial_point)
-
-        detection_features.append(Feature(type=det_type, feature_px=feature_px))
+        detection_features.append(feature)
 
     return detection_features
 
@@ -303,7 +381,7 @@ def detect_features_v2(
 def locate_shift_between_features_v2(
     image: np.ndarray,
     model: SegmentationModel,
-    features: tuple[Feature],
+    features: tuple[Feature_v3],
     pixelsize: float,
 ) -> DetectedFeatures:
 
@@ -414,59 +492,3 @@ def move_based_on_detection(
             # TODO: support other movements?
     return
 
-
-
-# v3 - Feature(ABC)
-
-_DETECTION_V3 = False
-if _DETECTION_V3:
-
-    from abc import ABC, abstractmethod
-    # TODO: maybe static methods? probs nicer to use?
-    # e.g. needle_tip = NeedleTip.detect(img, mask, point)
-    # can store color info there too?
-
-    @dataclass
-    class Feature(ABC):
-        feature_px: Point 
-        feature_m: Point
-
-        @abstractmethod
-        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature':
-            pass
-
-    @dataclass
-    class ImageCentre(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
-            self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
-            return self
-
-    @dataclass
-    class NeedleTip(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-            self.feature_px = detect_needle_v4(mask)
-            return self
-
-    @dataclass
-    class LamellaCentre(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaCentre)
-
-    @dataclass
-    class LamellaLeftEdge(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaLeftEdge)
-            return self
-    @dataclass
-    class LamellaRightEdge(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaRightEdge)
-            return self
-
-    @dataclass
-    class LandingPost(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-            self.feature_px = detect_landing_post_v3(img, point)
-            return self
-
-    __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
