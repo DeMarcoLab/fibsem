@@ -40,7 +40,7 @@ def auto_focus_beam(
         focus_image_settings = ImageSettings(
             resolution=[768, 512],
             dwell_time=200e-9,
-            hfw=50e-6,
+            hfw=100e-6,
             beam_type=beam_type,
             save=True,
             save_path=settings.image.save_path,

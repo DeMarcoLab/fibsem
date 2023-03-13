@@ -491,8 +491,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         """
         logging.info(f"Running autocontrast on {beam_type.name}.")
-        self.connection.imaging.set_active_device(beam_type.value)
         self.connection.imaging.set_active_view(beam_type.value)
+        self.connection.imaging.set_active_device(beam_type.value)
         self.connection.auto_functions.run_auto_cb()
 
     def auto_focus(self, beam_type: BeamType) -> None:
@@ -502,8 +502,8 @@ class ThermoMicroscope(FibsemMicroscope):
             beam_type (BeamType): The imaging beam type for which to focus.
         """
         logging.info(f"Running auto-focus on {beam_type.name}.")
-        self.connection.imaging.set_active_device(beam_type.value)
         self.connection.imaging.set_active_view(beam_type.value)  
+        self.connection.imaging.set_active_device(beam_type.value)
         self.connection.auto_functions.run_auto_focus()
 
     def reset_beam_shifts(self) -> None:
