@@ -34,7 +34,7 @@ if _DETECTION_V3:
     class Feature_v3(ABC):
         feature_px: Point 
         feature_m: Point
-        _colour_UINT8: None
+        _color_UINT8: None
         type: FeatureType
 
         @abstractmethod
@@ -45,7 +45,7 @@ if _DETECTION_V3:
     class ImageCentre(Feature_v3):
         feature_m: Point = None
         feature_px: Point = None
-        _colour_UINT8: tuple = (255,255,255)
+        _color_UINT8: tuple = (255,255,255)
         type: FeatureType = FeatureType.ImageCentre
 
         def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
@@ -58,7 +58,7 @@ if _DETECTION_V3:
     class NeedleTip(Feature_v3):
         feature_m: Point = None
         feature_px: Point = None
-        _colour_UINT8: tuple = (0,255,0)
+        _color_UINT8: tuple = (0,255,0)
         type: FeatureType = FeatureType.NeedleTip
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
@@ -71,7 +71,7 @@ if _DETECTION_V3:
     class LamellaCentre(Feature_v3):
         feature_m: Point = None
         feature_px: Point = None
-        _colour_UINT8: tuple = (255,0,0)
+        _color_UINT8: tuple = (255,0,0)
         type: FeatureType = FeatureType.LamellaCentre
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
@@ -82,7 +82,7 @@ if _DETECTION_V3:
     class LamellaLeftEdge(Feature_v3):
         feature_m: Point = None
         feature_px: Point = None
-        _colour_UINT8: tuple = (255,0,0)
+        _color_UINT8: tuple = (255,0,0)
         type: FeatureType = FeatureType.LamellaLeftEdge
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
@@ -94,7 +94,7 @@ if _DETECTION_V3:
     class LamellaRightEdge(Feature_v3):
         feature_m: Point = None
         feature_px: Point = None
-        _colour_UINT8: tuple = (255,0,0)
+        _color_UINT8: tuple = (255,0,0)
         type: FeatureType = FeatureType.LamellaRightEdge
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
@@ -106,7 +106,7 @@ if _DETECTION_V3:
     class LandingPost(Feature_v3):
         feature_m: Point = None
         feature_px: Point = None
-        _colour_UINT8: tuple = (255,255,255)
+        _color_UINT8: tuple = (255,255,255)
         type: FeatureType = FeatureType.LandingPost
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
@@ -116,7 +116,7 @@ if _DETECTION_V3:
 
     __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
 
-# FEATURE_COLOURS_UINT8 = {
+# FEATURE_colorS_UINT8 = {
 #     FeatureType.ImageCentre: (255, 255, 255),
 #     FeatureType.LamellaCentre: (255, 0, 0),
 #     FeatureType.LamellaLeftEdge: (255, 0, 0),
@@ -130,8 +130,8 @@ def filter_selected_masks(
     mask: np.ndarray, shift_type: tuple[FeatureType]
 ) -> np.ndarray:
     """Combine only the masks for the selected detection types"""
-    c1 = FEATURE_COLOURS_UINT8[shift_type[0]]
-    c2 = FEATURE_COLOURS_UINT8[shift_type[1]]
+    c1 = FEATURE_colorS_UINT8[shift_type[0]]
+    c2 = FEATURE_colorS_UINT8[shift_type[1]]
 
     # get mask for first detection type
     mask1, _ = extract_class_pixels(mask, color=c1)
@@ -237,7 +237,7 @@ def detect_corner(
 def detect_lamella(
     mask: np.ndarray,
     feature_type: FeatureType,
-    color: tuple = LamellaCentre._colour_UINT8,
+    color: tuple = LamellaCentre._color_UINT8,
     mask_radius: int = 512,
 ) -> Point:
 
@@ -258,7 +258,7 @@ def detect_lamella(
 
 
 def detect_needle_v4(mask: np.ndarray,) -> Point:
-    needle_mask, _ = extract_class_pixels(mask, NeedleTip._colour_UINT8)
+    needle_mask, _ = extract_class_pixels(mask, NeedleTip._color_UINT8)
     return detect_corner(needle_mask, threshold=100)
 
 
@@ -410,6 +410,9 @@ def locate_shift_between_features_v2(
 
 def plot_det_result_v2(det: DetectedFeatures):
     import matplotlib.pyplot as plt
+
+
+### TODO: Change plotting colors to match with class color
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
     ax[0].imshow(det.image, cmap="gray")
