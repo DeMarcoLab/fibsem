@@ -54,7 +54,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings,
-                               MicroscopeState, Point)
+                               MicroscopeState, Point, FibsemDetectorSettings)
 
 
 class FibsemMicroscope(ABC):
@@ -466,8 +466,16 @@ class ThermoMicroscope(FibsemMicroscope):
 
         state = self.get_current_microscope_state()
 
+        detector = FibsemDetectorSettings(
+                type = self.get("detector_type", image_settings.beam_type),
+                mode = self.get("detector_mode", image_settings.beam_type),
+                contrast = self.get("detector_contrast", image_settings.beam_type),
+                brightness= self.get("detector_brightness", image_settings.beam_type),
+
+            )
+
         fibsem_image = FibsemImage.fromAdornedImage(
-            copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(state)
+            copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(state), detector = detector
         )
 
         return fibsem_image
@@ -497,7 +505,15 @@ class ThermoMicroscope(FibsemMicroscope):
             image, beam_type
         )
 
-        fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state)
+        detector = FibsemDetectorSettings(
+                type = self.get("detector_type", beam_type),
+                mode = self.get("detector_mode", beam_type),
+                contrast = self.get("detector_contrast", beam_type),
+                brightness= self.get("detector_brightness", beam_type),
+
+            )
+
+        fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state, detector = detector) 
 
         return fibsem_image
 
@@ -1985,8 +2001,17 @@ class TescanMicroscope(FibsemMicroscope):
             ),
             ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
+
+        detector = FibsemDetectorSettings(
+                type = self.get("detector_type", image_settings.beam_type),
+                mode = "N/A",
+                contrast = self.get("detector_contrast", image_settings.beam_type),
+                brightness= self.get("detector_brightness", image_settings.beam_type),
+
+            )
+
         fibsem_image = FibsemImage.fromTescanImage(
-            image, deepcopy(image_settings), microscope_state
+            image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
         )
 
         fibsem_image.metadata.image_settings.resolution = (imageWidth, imageHeight)
@@ -2079,8 +2104,16 @@ class TescanMicroscope(FibsemMicroscope):
             ),
         )
 
+        detector = FibsemDetectorSettings(
+                type = self.get("detector_type", image_settings.beam_type),
+                mode = "N/A",
+                contrast = self.get("detector_contrast", image_settings.beam_type),
+                brightness= self.get("detector_brightness", image_settings.beam_type),
+
+            )
+
         fibsem_image = FibsemImage.fromTescanImage(
-            image, deepcopy(image_settings), microscope_state
+            image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
         )
 
         fibsem_image.metadata.image_settings.resolution = (imageWidth, imageHeight)

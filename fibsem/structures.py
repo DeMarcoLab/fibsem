@@ -1042,6 +1042,38 @@ class FibsemState:
 
         return autoliftout_state
 
+@dataclass
+class FibsemDetectorSettings:
+    type: str
+    mode: str 
+    brightness: float
+    contrast: float
+
+    if TESCAN:
+        def to_tescan(self):
+            """Converts to tescan format."""
+            tescan_brightness = self.brightness * 100
+            tescan_contrast = self.contrast * 100
+            return tescan_brightness, tescan_contrast
+
+    def __to_dict__(self) -> dict:
+        """Converts to a dictionary."""
+        return {
+            "type": self.type,
+            "mode": self.mode,
+            "brightness": self.brightness,
+            "contrast": self.contrast,
+        }
+    
+    @staticmethod
+    def __from_dict__(settings: dict) -> "FibsemDetectorSettings":
+        """Converts from a dictionary."""
+        return FibsemDetectorSettings(
+            type = settings.get("type", "Unknown"),
+            mode = settings.get("mode", "Unknown"),
+            brightness = settings.get("brightness", 0.0),
+            contrast = settings.get("contrast", 0.0),
+        )
 
 @dataclass
 class FibsemImageMetadata:
@@ -1050,7 +1082,9 @@ class FibsemImageMetadata:
     image_settings: ImageSettings
     pixel_size: Point
     microscope_state: MicroscopeState
+    detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
+    
 
     def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
@@ -1066,6 +1100,8 @@ class FibsemImageMetadata:
             settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
         if self.microscope_state is not None:
             settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
+        if self.detector_settings is not None:
+            settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
         return settings_dict
 
     @staticmethod
@@ -1088,12 +1124,16 @@ class FibsemImageMetadata:
                     settings["microscope_state"]["ib_settings"]
                 ),
             )
-
+        if settings["detector_settings"] is not None:
+            detector_settings = FibsemDetectorSettings.__from_dict__(
+                settings["detector_settings"]
+            )
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
             version=version,
             pixel_size=pixel_size,
             microscope_state=microscope_state,
+            detector_settings=detector_settings,
         )
         return metadata
 
@@ -1249,6 +1289,7 @@ class FibsemImage:
             adorned: AdornedImage,
             image_settings: ImageSettings,
             state: MicroscopeState = None,
+            detector: FibsemDetectorSettings = None,
         ) -> "FibsemImage":
             """Creates FibsemImage from an AdornedImage (microscope output format).
 
@@ -1280,10 +1321,12 @@ class FibsemImage:
                 adorned.metadata.binary_result.pixel_size.x,
                 adorned.metadata.binary_result.pixel_size.y,
             )
+            
             metadata = FibsemImageMetadata(
                 image_settings=image_settings,
                 pixel_size=pixel_size,
                 microscope_state=state,
+                detector_settings= detector, 
             )
             return cls(data=adorned.data, metadata=metadata)
 
@@ -1295,6 +1338,7 @@ class FibsemImage:
             image: Document,
             image_settings: ImageSettings,
             state: MicroscopeState,
+            detector: FibsemDetectorSettings,
         ) -> "FibsemImage":
             """Creates FibsemImage from an AdornedImage (microscope output format).
 
@@ -1314,7 +1358,9 @@ class FibsemImage:
                 image_settings=image_settings,
                 pixel_size=pixel_size,
                 microscope_state=state,
+                detector_settings= detector,
             )
+            
             return cls(data=np.array(image.Image), metadata=metadata)
 
 
@@ -1339,16 +1385,3 @@ def check_data_format(data: np.ndarray) -> bool:
     return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]
 
 
-@dataclass
-class FibsemDetectorSettings:
-    type: str
-    mode: str 
-    brightness: float
-    contrast: float
-
-    if TESCAN:
-        def to_tescan(self):
-            """Converts to tescan format."""
-            tescan_brightness = self.brightness * 100
-            tescan_contrast = self.contrast * 100
-            return tescan_brightness, tescan_contrast
