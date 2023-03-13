@@ -304,12 +304,39 @@ class ThermoMicroscope(FibsemMicroscope):
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
             Make the sample surface flat to the electron or ion beam.
 
+        get_manipulator_position(self) -> FibsemManipulatorPosition:
+            Get the current manipulator position.
+        
+        insert_manipulator(self, name: str) -> None:
+            Insert the manipulator into the sample.
+        
+        retract_manipulator(self) -> None:
+            Retract the manipulator from the sample.
+
+        move_manipulator_relative(self, position: FibsemManipulatorPosition) -> None:
+            Move the manipulator by the specified relative move.
+        
+        move_manipulator_absolute(self, position: FibsemManipulatorPosition) -> None:
+            Move the manipulator to the specified coordinates.
+
+        move_manipulator_corrected(self, dx: float, dy: float, beam_type: BeamType) -> None:
+            Move the manipulator by the specified relative move, correcting for the beam type.      
+
+        move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str) -> None:
+            Move the manipulator to the specified position offset.
+
+        _get_saved_manipulator_position(self, name: str) -> FibsemManipulatorPosition:
+            Get the saved manipulator position with the specified name.
+
         setup_milling(self, mill_settings: FibsemMillingSettings):
             Configure the microscope for milling using the ion beam.
 
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
 
+        def run_milling_drift_corrected(self, milling_current: float, image_settings: ImageSettings, ref_image: FibsemImage, reduced_area: FibsemRectangle = None, asynch: bool = False):
+            Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
+        
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
 
@@ -322,6 +349,9 @@ class ThermoMicroscope(FibsemMicroscope):
         draw_circle(self, pattern_settings: FibsemPatternSettings):
             Draws a circular pattern on the current imaging view of the microscope.
         
+        draw_bitmap_pattern(self, pattern_settings: FibsemPatternSettings, path: str):
+            Draws a bitmap pattern using the provided image file. 
+
         get_scan_directions(self) -> list:
             Get the available scan directions for milling.
 
@@ -1733,12 +1763,37 @@ class TescanMicroscope(FibsemMicroscope):
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
             Make the sample surface flat to the electron or ion beam.
+        get_manipulator_position(self) -> FibsemManipulatorPosition:
+            Get the current manipulator position.
+        
+        insert_manipulator(self, name: str) -> None:
+            Insert the manipulator into the sample.
+        
+        retract_manipulator(self) -> None:
+            Retract the manipulator from the sample.
 
+        move_manipulator_relative(self, position: FibsemManipulatorPosition) -> None:
+            Move the manipulator by the specified relative move.
+        
+        move_manipulator_absolute(self, position: FibsemManipulatorPosition) -> None:
+            Move the manipulator to the specified coordinates.
+
+        move_manipulator_corrected(self, dx: float, dy: float, beam_type: BeamType) -> None:
+            Move the manipulator by the specified relative move, correcting for the beam type.      
+
+        move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str) -> None:
+            Move the manipulator to the specified position offset.
+
+        _get_saved_manipulator_position(self, name: str) -> FibsemManipulatorPosition:
+            Get the saved manipulator position with the specified name.
         setup_milling(self, mill_settings: FibsemMillingSettings):
             Configure the microscope for milling using the ion beam.
 
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
+
+        def run_milling_drift_corrected(self, milling_current: float, image_settings: ImageSettings, ref_image: FibsemImage, reduced_area: FibsemRectangle = None, asynch: bool = False):
+        Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
 
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
