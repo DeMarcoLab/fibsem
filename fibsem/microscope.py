@@ -2560,8 +2560,12 @@ class TescanMicroscope(FibsemMicroscope):
                     progress = min(100, status[2] / status[1] * 100)
                 printProgressBar(progress, 100)
                 self.connection.Progress.SetPercents(progress)
-                time.sleep(3)
-                self.connection.DrawBeam.Pause()
+                status = self.connection.DrawBeam.GetStatus()
+                if status[0] == DBStatus.ProjectLoadedExpositionInProgress:
+                    self.connection.DrawBeam.Pause()
+                elif status[0] == DBStatus.ProjectLoadedExpositionIdle:
+                    printProgressBar(100, 100, suffix="Finished")
+                    break
                 logging.info("Drift correction in progress...")
                 image_settings.beam_type = BeamType.ION
                 alignment.beam_shift_alignment(
@@ -2570,12 +2574,12 @@ class TescanMicroscope(FibsemMicroscope):
                     ref_image,
                     reduced_area,
                 )
-                self.connection.DrawBeam.Resume()
+                time.sleep(1)
                 status = self.connection.DrawBeam.GetStatus()
-                while status[0] != DBStatus.ProjectLoadedExpositionInProgress:
-                    time.sleep(0.2)
-                    status = self.connection.DrawBeam.GetStatus()
+                if status[0] == DBStatus.ProjectLoadedExpositionPaused :
+                    self.connection.DrawBeam.Resume()
                 logging.info("Drift correction complete.")
+                time.sleep(5)
             else:
                 if status[0] == DBStatus.ProjectLoadedExpositionIdle:
                     printProgressBar(100, 100, suffix="Finished")
@@ -2591,7 +2595,11 @@ class TescanMicroscope(FibsemMicroscope):
         Args:
             imaging_current (float): The current to use for imaging in amps.
         """
-        self.connection.DrawBeam.UnloadLayer()
+        try:
+            self.connection.DrawBeam.UnloadLayer()
+        except:
+            pass 
+        # self.connection.DrawBeam.UnloadLayer()
 
     def draw_rectangle(
         self,
@@ -3414,5 +3422,5 @@ def printProgressBar(
     percent = ("{0:." + str(decimals) + "f}").format(100 * (value / float(total)))
     filled_length = int(length * value // total)
     bar = fill * filled_length + "-" * (length - filled_length)
-    print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="")
+    print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\n")
 
