@@ -94,7 +94,7 @@ if _DETECTION_V3:
     class LamellaRightEdge(Feature_v3):
         feature_m: Point = None
         feature_px: Point = None
-        _color_UINT8: tuple = (255,0,0)
+        _color_UINT8: tuple = (255,0,255)
         type: FeatureType = FeatureType.LamellaRightEdge
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
