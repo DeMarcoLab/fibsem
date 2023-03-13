@@ -215,7 +215,8 @@ def draw_stress_relief(
     width = microexpansion_protocol["width"]
     height = microexpansion_protocol["height"]
     depth = lamella_protocol["milling_depth"]
-
+    if scan_direction is None:
+        scan_direction = ["LeftToRight", "RightToLeft"]
 
     left_pattern_settings = FibsemPatternSettings(
         width=width,
