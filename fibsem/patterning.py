@@ -71,6 +71,11 @@ class CirclePattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Circle"  # redundant now
+        protocol["start_angle"] = 0
+        protocol["end_angle"] = 360
+        protocol["rotation"] = 0
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)] 
         return self.patterns
 

@@ -180,7 +180,26 @@ def set_arr_as_qlabel(
 
 #     return label
 
+def convert_pattern_to_napari_circle(pattern_settings: FibsemPatternSettings, image: FibsemImage):
+    
+    # image centre
+    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
 
+    # pixel size
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
+    # pattern to pixel coords
+    r = int(pattern_settings.radius / pixelsize_x)
+    cx = int(icx + (pattern_settings.centre_x / pixelsize_y))
+    cy = int(icy - (pattern_settings.centre_y / pixelsize_y))
+
+    # create corner coords
+    xmin, ymin = cx - r, cy - r
+    xmax, ymax = cx + r, cy + r
+
+    # create circle
+    shape = [[ymin, xmin], [ymin, xmax], [ymax, xmax], [ymax, xmin]] #??
+    return shape
 
 def convert_pattern_to_napari_rect(
     pattern_settings: FibsemPatternSettings, image: FibsemImage
@@ -263,7 +282,12 @@ def _draw_patterns_in_napari(
     for i, stage in enumerate(all_patterns):
         shape_patterns = []
         for pattern_settings in stage:
-            shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+            if pattern_settings.pattern is FibsemPattern.Circle:
+                shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
+                shape_type = "ellipse"
+            else:
+                shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+                shape_type = "rectangle"
 
             # offset the x coord by image width
             if eb_image is not None:
@@ -275,7 +299,7 @@ def _draw_patterns_in_napari(
         viewer.add_shapes(
             shape_patterns,
             name=f"Stage {i+1}",
-            shape_type="rectangle",
+            shape_type=shape_type,
             edge_width=0.5,
             edge_color=colour[i % 4],
             face_color=colour[i % 4],
