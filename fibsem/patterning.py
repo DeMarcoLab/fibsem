@@ -424,8 +424,10 @@ class SpotWeldPattern(BasePattern):
 class WaffleNotchPattern(BasePattern):
     name: str = "WaffleNotch"
     required_keys: tuple[str] = (
-            "height",
-            "width",
+            "vheight",
+            "vwidth",
+            "hheight",
+            "hwidth",
             "depth",
             "distance",
             "lamella_width",
@@ -437,30 +439,32 @@ class WaffleNotchPattern(BasePattern):
 
         check_keys(protocol, self.required_keys)
 
-        width = protocol["width"]
-        height = protocol["height"]
+        vwidth = protocol["vwidth"]
+        vheight = protocol["vheight"]
+        hwidth = protocol["hwidth"]
+        hheight = protocol["hheight"]
         depth = protocol["depth"]
         distance = protocol["distance"]
 
         # five patterns
         top_vertical_pattern = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
-            width=width,
-            height=height,
+            width=vwidth,
+            height=vheight,
             depth=depth,
             centre_x=point.x,
-            centre_y=point.y - distance + width/2,
+            centre_y=point.y - distance/2 - vheight/2 + hheight/2,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
         )
 
         bottom_vertical_pattern = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
-            width=width,
-            height=height,
+            width=vwidth,
+            height=vheight,
             depth=depth,
             centre_x=point.x,
-            centre_y=point.y + distance - width/2,
+            centre_y=point.y + distance/2 + vheight/2 - hheight/2,
             cleaning_cross_section=False,
             scan_direction="BottomToTop",
         )
@@ -468,10 +472,10 @@ class WaffleNotchPattern(BasePattern):
 
         top_horizontal_pattern = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
-            width=height + width,
-            height=width,
+            width=hwidth,
+            height=hheight,
             depth=depth,
-            centre_x=point.x + width/2 + height/2,
+            centre_x=point.x + hwidth/2 + vwidth/2,
             centre_y=point.y - distance/2,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
@@ -479,10 +483,10 @@ class WaffleNotchPattern(BasePattern):
 
         bottom_horizontal_pattern = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
-            width=height + width,
-            height=width,
+            width=hwidth,
+            height=hheight,
             depth=depth,
-            centre_x=point.x + width/2 + height/2,
+            centre_x=point.x + hwidth/2 + vwidth/2,
             centre_y=point.y + distance/2,
             cleaning_cross_section=False,
             scan_direction="BottomToTop",
@@ -491,10 +495,10 @@ class WaffleNotchPattern(BasePattern):
 
         centre_vertical_pattern = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
-            width=width,
-            height=distance,
+            width=vwidth,
+            height=distance + hheight,
             depth=depth,
-            centre_x=point.x + width + height,
+            centre_x=point.x + hwidth + vwidth,
             centre_y=point.y,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
