@@ -17,13 +17,6 @@ from fibsem.structures import BeamType, MicroscopeSettings, Point
 _DETECTION_V3 = True
 if _DETECTION_V3:
 
-    class FeatureType(Enum):
-        LamellaCentre = 1
-        NeedleTip = 2
-        LamellaRightEdge = 3
-        LamellaLeftEdge = 4
-        LandingPost = 5
-        ImageCentre = 6
 
     from abc import ABC, abstractmethod
     # TODO: maybe static methods? probs nicer to use?
@@ -35,7 +28,7 @@ if _DETECTION_V3:
         feature_px: Point 
         feature_m: Point
         _color_UINT8: None
-        type: FeatureType
+        name: str = None
 
         @abstractmethod
         def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature_v3':
@@ -46,7 +39,7 @@ if _DETECTION_V3:
         feature_m: Point = None
         feature_px: Point = None
         _color_UINT8: tuple = (255,255,255)
-        type: FeatureType = FeatureType.ImageCentre
+        name: str = "ImageCentre"
 
         def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
             self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
@@ -59,7 +52,7 @@ if _DETECTION_V3:
         feature_m: Point = None
         feature_px: Point = None
         _color_UINT8: tuple = (0,255,0)
-        type: FeatureType = FeatureType.NeedleTip
+        name: str = "NeedleTip"
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
             self.feature_px = detect_needle_v4(mask)
@@ -72,10 +65,10 @@ if _DETECTION_V3:
         feature_m: Point = None
         feature_px: Point = None
         _color_UINT8: tuple = (255,0,0)
-        type: FeatureType = FeatureType.LamellaCentre
+        name: str = "LamellaCentre"
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaCentre)
+            self.feature_px = detect_lamella(mask, self.name)
 
         
     @dataclass
@@ -83,10 +76,10 @@ if _DETECTION_V3:
         feature_m: Point = None
         feature_px: Point = None
         _color_UINT8: tuple = (255,0,0)
-        type: FeatureType = FeatureType.LamellaLeftEdge
+        name: str = "LamellaLeftEdge"
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaLeftEdge)
+            self.feature_px = detect_lamella(mask, self.name)
             return self.feature_px
         
 
@@ -95,10 +88,10 @@ if _DETECTION_V3:
         feature_m: Point = None
         feature_px: Point = None
         _color_UINT8: tuple = (255,0,255)
-        type: FeatureType = FeatureType.LamellaRightEdge
+        name: str = "LamellaRightEdge"
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaRightEdge)
+            self.feature_px = detect_lamella(mask, self.name)
             return self.feature_px
         
 
@@ -107,7 +100,7 @@ if _DETECTION_V3:
         feature_m: Point = None
         feature_px: Point = None
         _color_UINT8: tuple = (255,255,255)
-        type: FeatureType = FeatureType.LandingPost
+        name: str = "LandingPost"
 
         def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
             self.feature_px = detect_landing_post_v3(img, point)
@@ -116,18 +109,7 @@ if _DETECTION_V3:
 
     __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
 
-# FEATURE_colorS_UINT8 = {
-#     FeatureType.ImageCentre: (255, 255, 255),
-#     FeatureType.LamellaCentre: (255, 0, 0),
-#     FeatureType.LamellaLeftEdge: (255, 0, 0),
-#     FeatureType.LamellaRightEdge: (255, 0, 0),
-#     FeatureType.NeedleTip: (0, 255, 0),
-#     FeatureType.LandingPost: (255, 255, 255),
-# }
-
-
-
-# 
+ 
 
 
 # Detection and Drawing Tools
@@ -222,7 +204,7 @@ def detect_corner(
 
 def detect_lamella(
     mask: np.ndarray,
-    feature_type: FeatureType,
+    feature_type: str,
     color: tuple = LamellaCentre._color_UINT8,
     mask_radius: int = 512,
 ) -> Point:
@@ -231,13 +213,13 @@ def detect_lamella(
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
     lamella_centre = detect_centre_point(lamella_mask, color=color)
 
-    if feature_type is FeatureType.LamellaCentre:
+    if feature_type == "LamellaCentre":
         feature_px = detect_centre_point(lamella_mask, color=color)
 
-    if feature_type is FeatureType.LamellaLeftEdge:
+    if feature_type == "LamellaLeftEdge":
         feature_px = detect_corner(lamella_mask, left=True)
 
-    if feature_type is FeatureType.LamellaRightEdge:
+    if feature_type == "LamellaRightEdge":
         feature_px = detect_corner(lamella_mask, left=False)
 
     return feature_px
@@ -395,6 +377,12 @@ def locate_shift_between_features_v2(
 
 
 def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
+    """Plotting image with detected features
+
+    Args:
+        det (DetectedFeatures): detected features type
+        inverse (bool, optional): Inverses the colour of the centre crosshair of the feature. Defaults to True.
+    """
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
@@ -432,7 +420,7 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
         color=c1,
         marker="+",
         ms=20,
-        label=det.features[0].type.name,
+        label=det.features[0].name,
     )
     ax[1].plot(
         det.features[1].feature_px.x,
@@ -440,7 +428,7 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
         color=c2,
         marker="+",
         ms=20,
-        label=det.features[1].type.name,
+        label=det.features[1].name,
     )
     ax[1].plot(
         [det.features[0].feature_px.x, det.features[1].feature_px.x],
@@ -479,7 +467,7 @@ def move_based_on_detection(
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
     # these movements move the needle...
-    if f1.type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
+    if f1.name in ["NeedleTip", "LamellaRightEdge"]:
 
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ELECTRON:
@@ -491,7 +479,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.type is FeatureType.LamellaCentre and f2.type is FeatureType.ImageCentre:
+    if f1.name is "LamellaCentre" and f2.name is "ImageCentre":
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(

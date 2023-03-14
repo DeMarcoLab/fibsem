@@ -16,48 +16,41 @@ from PIL import Image
 
 # TODO: rename from detection to features, e.g. FeatureType
 
-class FeatureType(Enum):
-    LamellaCentre = 1
-    NeedleTip = 2
-    LamellaRightEdge = 3
-    LamellaLeftEdge = 4
-    LandingPost = 5
-    ImageCentre = 6
 
 
-@dataclass
-class Feature:
-    type: FeatureType # rename from type to type
-    feature_px: Point  = None # x, y (image)
-    feature_m: Point = None # x, y (microscope image coord)
+# @dataclass
+# class Feature:
+#     type: FeatureType # rename from type to type
+#     feature_px: Point  = None # x, y (image)
+#     feature_m: Point = None # x, y (microscope image coord)
 
-@dataclass
-class DetectionResult:
-    features: list[Feature]
-    fibsem_image: FibsemImage
-    display_image: np.ndarray
-    distance_metres: Point = Point(0, 0)  # x, y
-    microscope_coordinate: list[Point] = None
+# @dataclass
+# class DetectionResult:
+#     features: list[Feature]
+#     fibsem_image: FibsemImage
+#     display_image: np.ndarray
+#     distance_metres: Point = Point(0, 0)  # x, y
+#     microscope_coordinate: list[Point] = None
 
 
-# detection colour map
-DETECTION_TYPE_COLOURS = {
-    FeatureType.LamellaCentre: (1, 0, 0, 1),
-    FeatureType.NeedleTip: (0, 1, 0, 1),
-    FeatureType.LamellaLeftEdge: (1, 0.5, 0.5, 1),
-    FeatureType.LamellaRightEdge: (1, 0.5, 0, 1),
-    FeatureType.LandingPost: (0, 1, 1, 1),
-    FeatureType.ImageCentre: (1, 1, 1, 1)
-}
+# # detection colour map
+# DETECTION_TYPE_COLOURS = {
+#     FeatureType.LamellaCentre: (1, 0, 0, 1),
+#     FeatureType.NeedleTip: (0, 1, 0, 1),
+#     FeatureType.LamellaLeftEdge: (1, 0.5, 0.5, 1),
+#     FeatureType.LamellaRightEdge: (1, 0.5, 0, 1),
+#     FeatureType.LandingPost: (0, 1, 1, 1),
+#     FeatureType.ImageCentre: (1, 1, 1, 1)
+# }
 
-DETECTION_TYPE_COLOURS_v2 = {
-    FeatureType.LamellaCentre: "red",
-    FeatureType.NeedleTip: "green",
-    FeatureType.LamellaLeftEdge: "magenta",
-    FeatureType.LamellaRightEdge: "orange",
-    FeatureType.LandingPost: "cyan",
-    FeatureType.ImageCentre: "white"
-}
+# DETECTION_TYPE_COLOURS_v2 = {
+#     FeatureType.LamellaCentre: "red",
+#     FeatureType.NeedleTip: "green",
+#     FeatureType.LamellaLeftEdge: "magenta",
+#     FeatureType.LamellaRightEdge: "orange",
+#     FeatureType.LandingPost: "cyan",
+#     FeatureType.ImageCentre: "white"
+# }
 
 def decode_segmap(image, nc=3):
 
@@ -217,63 +210,63 @@ def write_data_to_csv(path: Path, info: list) -> None:
 
 
 
-def load_detection_result(path: Path, data) -> DetectionResult:
-    """Read detection result from dataframe row, and return"""
+# def load_detection_result(path: Path, data) -> DetectionResult:
+#     """Read detection result from dataframe row, and return"""
 
-    label = data["label"]
-    p1_type = FeatureType[data["p1.type"]]
-    p1 = Point(x=data["p1.x"], y=data["p1.y"])
-    p2_type = FeatureType[data["p2.type"]]
-    p2 = Point(x=data["p2.x"], y=data["p2.y"])
+#     label = data["label"]
+#     p1_type = FeatureType[data["p1.type"]]
+#     p1 = Point(x=data["p1.x"], y=data["p1.y"])
+#     p2_type = FeatureType[data["p2.type"]]
+#     p2 = Point(x=data["p2.x"], y=data["p2.y"])
 
-    fname = glob.glob(os.path.join(path, f"*{label}*.tif"))[0]
-    img = FibsemImage.load(fname)
+#     fname = glob.glob(os.path.join(path, f"*{label}*.tif"))[0]
+#     img = FibsemImage.load(fname)
 
-    p1 = scale_coordinate_to_image(p1, img.data.shape)
-    p2 = scale_coordinate_to_image(p2, img.data.shape)
+#     p1 = scale_coordinate_to_image(p1, img.data.shape)
+#     p2 = scale_coordinate_to_image(p2, img.data.shape)
 
-    det = DetectionResult(
-        features=[
-            Feature(type=p1_type, feature_px=p1),
-            Feature(type=p2_type, feature_px=p2),
-        ],
-        fibsem_image=img,
-        display_image=None,
-    )
+#     det = DetectionResult(
+#         features=[
+#             Feature(type=p1_type, feature_px=p1),
+#             Feature(type=p2_type, feature_px=p2),
+#         ],
+#         fibsem_image=img,
+#         display_image=None,
+#     )
 
-    return det
+#     return det
 
 
-def plot_detection_result(det_result: DetectionResult):
-    """Plot the Detection Result using matplotlib using the full scale image and coordinates"""
-    from fibsem.detection.utils import DETECTION_TYPE_COLOURS
+# def plot_detection_result(det_result: DetectionResult):
+#     """Plot the Detection Result using matplotlib using the full scale image and coordinates"""
+#     from fibsem.detection.utils import DETECTION_TYPE_COLOURS
 
-    # TODO: consolidate this with what is in FibsemDetectionUI
+#     # TODO: consolidate this with what is in FibsemDetectionUI
 
-    p1 = det_result.features[0].feature_px
-    p2 = det_result.features[1].feature_px
+#     p1 = det_result.features[0].feature_px
+#     p2 = det_result.features[1].feature_px
 
-    c1 = DETECTION_TYPE_COLOURS[det_result.features[0].type]
-    c2 = DETECTION_TYPE_COLOURS[det_result.features[1].type]
+#     c1 = DETECTION_TYPE_COLOURS[det_result.features[0].type]
+#     c2 = DETECTION_TYPE_COLOURS[det_result.features[1].type]
 
-    if det_result.display_image is None:
-        display_image = det_result.fibsem_image.data #??
-    else:
-        display_image = det_result.display_image
+#     if det_result.display_image is None:
+#         display_image = det_result.fibsem_image.data #??
+#     else:
+#         display_image = det_result.display_image
 
-    fig = plt.figure(figsize=(15, 15))
-    plt.title(f"{det_result.features[0].type.name} to {det_result.features[1].type.name}")
-    plt.imshow(display_image, cmap="gray")
-    plt.plot(p1.x, p1.y, color=c1, marker="+", ms=50, markeredgewidth=2)
-    plt.plot(p2.x, p2.y, color=c2, marker="+", ms=50, markeredgewidth=2)
-    plt.plot((p1.x, p2.x),(p1.y, p2.y), color="white", ms=50, markeredgewidth=2) # line between
+#     fig = plt.figure(figsize=(15, 15))
+#     plt.title(f"{det_result.features[0].type.name} to {det_result.features[1].type.name}")
+#     plt.imshow(display_image, cmap="gray")
+#     plt.plot(p1.x, p1.y, color=c1, marker="+", ms=50, markeredgewidth=2)
+#     plt.plot(p2.x, p2.y, color=c2, marker="+", ms=50, markeredgewidth=2)
+#     plt.plot((p1.x, p2.x),(p1.y, p2.y), color="white", ms=50, markeredgewidth=2) # line between
 
-    # legend
-    patch_one = mpatches.Patch(color=c1, label=det_result.features[0].type.name)
-    patch_two = mpatches.Patch(color=c2, label=det_result.features[1].type.name)
-    plt.legend(handles=[patch_one, patch_two])
+#     # legend
+#     patch_one = mpatches.Patch(color=c1, label=det_result.features[0].type.name)
+#     patch_two = mpatches.Patch(color=c2, label=det_result.features[1].type.name)
+#     plt.legend(handles=[patch_one, patch_two])
 
-    return fig
+#     return fig
 
 
 def write_data_to_disk(path: Path, detected_features) -> None:
