@@ -412,13 +412,17 @@ def plot_det_result_v2(det: DetectedFeatures):
     import matplotlib.pyplot as plt
 
 
-### TODO: Change plotting colors to match with class color
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
 
     # convert rgb 255 range to 0-1 tuple
-    c1 = ((255-det.features[0]._color_UINT8[0])/255,(255-det.features[0]._color_UINT8[1])/255,(255-det.features[0]._color_UINT8[2])/255)
-    c2 = ((255-det.features[1]._color_UINT8[0])/255,(255-det.features[1]._color_UINT8[1])/255,(255-det.features[1]._color_UINT8[2])/255)
+    c1 = ((255-det.features[0]._color_UINT8[0])/255,
+          (255-det.features[0]._color_UINT8[1])/255,
+          (255-det.features[0]._color_UINT8[2])/255)
+    
+    c2 = ((255-det.features[1]._color_UINT8[0])/255,
+          (255-det.features[1]._color_UINT8[1])/255,
+          (255-det.features[1]._color_UINT8[2])/255)
 
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
