@@ -338,7 +338,7 @@ class MicroExpansionPattern(BasePattern):
         "distance",
         "lamella_width",
     )
-
+    # ref: https://www.nature.com/articles/s41467-022-29501-3
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -420,6 +420,91 @@ class SpotWeldPattern(BasePattern):
         self.patterns = patterns
         return self.patterns
 
+@dataclass
+class WaffleNotchPattern(BasePattern):
+    name: str = "WaffleNotch"
+    required_keys: tuple[str] = (
+            "height",
+            "width",
+            "depth",
+            "distance",
+            "lamella_width",
+        )
+
+    # ref: https://www.nature.com/articles/s41467-022-29501-3
+
+    def define(self, protocol: dict, point: Point = Point() ) -> list[FibsemPatternSettings]:
+
+        check_keys(protocol, self.required_keys)
+
+        width = protocol["width"]
+        height = protocol["height"]
+        depth = protocol["depth"]
+        distance = protocol["distance"]
+
+        # five patterns
+        top_vertical_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=width,
+            height=height,
+            depth=depth,
+            centre_x=point.x,
+            centre_y=point.y - distance + width/2,
+            cleaning_cross_section=False,
+            scan_direction="TopToBottom",
+        )
+
+        bottom_vertical_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=width,
+            height=height,
+            depth=depth,
+            centre_x=point.x,
+            centre_y=point.y + distance - width/2,
+            cleaning_cross_section=False,
+            scan_direction="BottomToTop",
+        )
+
+
+        top_horizontal_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=height + width,
+            height=width,
+            depth=depth,
+            centre_x=point.x + width/2 + height/2,
+            centre_y=point.y - distance/2,
+            cleaning_cross_section=False,
+            scan_direction="TopToBottom",
+        )
+
+        bottom_horizontal_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=height + width,
+            height=width,
+            depth=depth,
+            centre_x=point.x + width/2 + height/2,
+            centre_y=point.y + distance/2,
+            cleaning_cross_section=False,
+            scan_direction="BottomToTop",
+        )
+
+
+        centre_vertical_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=width,
+            height=distance,
+            depth=depth,
+            centre_x=point.x + width + height,
+            centre_y=point.y,
+            cleaning_cross_section=False,
+            scan_direction="TopToBottom",
+        )
+
+
+        self.patterns = [top_vertical_pattern, bottom_vertical_pattern, top_horizontal_pattern, bottom_horizontal_pattern, centre_vertical_pattern]
+
+        return self.patterns 
+
 
 __PATTERNS__ = [
     RectanglePattern,
@@ -429,6 +514,7 @@ __PATTERNS__ = [
     HorseshoePattern,
     UndercutPattern,
     FiducialPattern,
-    MicroExpansionPattern,
     SpotWeldPattern,
+    MicroExpansionPattern,
+    WaffleNotchPattern,
 ]
