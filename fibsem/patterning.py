@@ -1,33 +1,10 @@
-from dataclasses import dataclass
-from enum import Enum
-
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import FibsemPatternSettings, FibsemPattern, Point
-import logging
-
-class MillingPattern(Enum):
-    Trench = 1
-    JCut = 2
-    Sever = 3
-    Weld = 4
-    Cut = 5
-    Sharpen = 6
-    Thin = 7
-    Polish = 8
-    Flatten = 9
-    Fiducial = 10
-    Horseshoe = 11
-    Line = 12
-    Rectangle = 13
-
-
-# @patrickcleeve2 March 7
-# TODO: unify the draw method
-# TODO: fix the ui install / test in ui
-# TODO: map the patterns to types for liftout? (separate issue)
-# Maybe strategy pattern? instead of ABC? drawStrategy? defineStrategy?
-
+import json
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+import yaml
+
+from fibsem.structures import FibsemPattern, FibsemPatternSettings, Point
 
 
 def check_keys(protocol: dict, required_keys: list[str]) -> bool:
@@ -38,6 +15,7 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 class BasePattern(ABC):
     name: str = "BasePattern"
     required_keys: tuple[str] = ()
+    patterns = None
 
     @abstractmethod
     def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
@@ -47,6 +25,7 @@ class BasePattern(ABC):
 class RectanglePattern(BasePattern):
     name: str = "Rectangle"
     required_keys: tuple[str] = ("width", "height", "depth", "rotation")
+    patterns = None
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -65,6 +44,7 @@ class RectanglePattern(BasePattern):
 class LinePattern(BasePattern):
     name: str = "Line"
     required_keys: tuple[str] = ("start_x", "end_x", "start_y", "end_y", "depth")
+    patterns = None
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -82,6 +62,7 @@ class LinePattern(BasePattern):
 class CirclePattern(BasePattern):
     name: str = "Circle"
     required_keys: tuple[str] = ("radius", "depth")
+    patterns = None
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -105,6 +86,7 @@ class TrenchPattern(BasePattern):
         "offset",
         "depth",
     )
+    patterns = None
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -164,8 +146,8 @@ class HorseshoePattern(BasePattern):
         "side_width",
         "depth",
     )
-
-    # TODO:ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
+    patterns = None
+    # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -226,6 +208,7 @@ class HorseshoePattern(BasePattern):
 class FiducialPattern(BasePattern):
     name: str = "Fiducial"
     required_keys: tuple[str] = ("height", "width", "depth", "rotation")
+    patterns = None
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -240,7 +223,7 @@ class FiducialPattern(BasePattern):
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
         left_pattern = FibsemPatternSettings.__from_dict__(protocol)
-        left_pattern.rotation = np.deg2rad(45)
+        left_pattern.rotation = np.deg2rad(protocol["rotation"])
         right_pattern = FibsemPatternSettings.__from_dict__(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
@@ -251,7 +234,8 @@ class FiducialPattern(BasePattern):
 @dataclass
 class UndercutPattern(BasePattern):
     name: str = "Undercut"
-    required_keys: tuple[str] = ("height", "width", "depth", "trench_width", "rhs_height", "h_offset", "offset")
+    required_keys: tuple[str] = ("height", "width", "depth", "trench_width", "rhs_height", "h_offset")
+    patterns = None
 
     def define(
         self, protocol: dict, point: Point = Point()
@@ -338,6 +322,7 @@ class MicroExpansionPattern(BasePattern):
         "distance",
         "lamella_width",
     )
+    patterns = None
     # ref: https://www.nature.com/articles/s41467-022-29501-3
     def define(
         self, protocol: dict, point: Point = Point()
@@ -390,6 +375,7 @@ class MicroExpansionPattern(BasePattern):
 class SpotWeldPattern(BasePattern):
     name: str = "SpotWeld"
     required_keys: tuple[str] = ("height","width" , "depth", "distance", "number")
+    patterns = None
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
     def define(
@@ -430,8 +416,8 @@ class WaffleNotchPattern(BasePattern):
             "hwidth",
             "depth",
             "distance",
-            "lamella_width",
         )
+    patterns = None
 
     # ref: https://www.nature.com/articles/s41467-022-29501-3
 
@@ -522,3 +508,38 @@ __PATTERNS__ = [
     MicroExpansionPattern,
     WaffleNotchPattern,
 ]
+
+def get_pattern(name: str) -> BasePattern:
+
+    for pattern in __PATTERNS__:
+        if pattern.name == name:
+            return pattern()
+
+    raise ValueError(f"Pattern {name} not found.")
+
+def get_pattern_names() -> list[str]:
+    return [pattern.name for pattern in __PATTERNS__]
+
+def get_pattern_required_keys(name: str) -> tuple[str]:
+    pattern = get_pattern(name)
+    return pattern.required_keys
+
+def get_pattern_required_keys_dict() -> dict[str, list[str]]:
+    return {pattern.name: pattern.required_keys for pattern in __PATTERNS__}
+
+def get_pattern_required_keys_json() -> str:
+    return json.dumps(get_pattern_required_keys_dict())
+
+def get_pattern_required_keys_yaml() -> str:
+    return yaml.dump(get_pattern_required_keys_dict())
+
+
+from fibsem.utils import FibsemMillingSettings
+
+@dataclass
+class FibsemMillingStage:
+    name: str = "Milling Stage"
+    num: int = 0
+    milling: FibsemMillingSettings = FibsemMillingSettings()
+    pattern: BasePattern  = get_pattern("Rectangle")
+    point: Point = Point()

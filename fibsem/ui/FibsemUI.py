@@ -100,11 +100,12 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
+
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
-                image_widget=self.image_widget,
+                image_widget=self.image_widget, 
             )
 
             self.gridLayout_imaging_tab.addWidget(self.image_widget, 0, 0)
