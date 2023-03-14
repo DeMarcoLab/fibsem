@@ -2,16 +2,6 @@ import logging
 
 import numpy as np
 from fibsem.microscope import FibsemMicroscope
-try:
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-    from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem,
-        ManipulatorState,
-    )
-    from autoscript_sdb_microscope_client.structures import AdornedImage
-    THERMO = True
-except:
-    THERMO = False
 from fibsem import calibration
 from fibsem.structures import (
     BeamSystemSettings,

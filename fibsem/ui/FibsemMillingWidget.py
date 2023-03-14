@@ -12,7 +12,7 @@ from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari
 from fibsem import milling
-
+import logging
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
@@ -68,9 +68,45 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for i in range(len(direction_list)-1):
             self.scan_direction.addItem(direction_list[i-1])
         
-
         # patterns
         self.comboBox_pattern.addItems([pattern.name for pattern in FibsemPattern])
+
+        # register mouse callbacks
+        self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
+        self.image_widget.ib_layer.mouse_drag_callbacks.append(self._single_click)
+
+    def _single_click(self, layer, event):
+        """Callback for single click on image layer."""
+        if event.button != 2:
+            return
+
+        # get coords
+        coords = layer.world_to_data(event.position)
+
+        # TODO: dimensions are mixed which makes this confusing to interpret... resolve
+        coords, beam_type, image = self.image_widget.get_data_from_coord(coords)
+        
+        if beam_type is not BeamType.ION:
+            napari.utils.notifications.show_info(
+                f"Please right click on the {BeamType.ION.name} image to move pattern."
+            )
+            return
+
+        # only move the pattern if milling widget is activate and beamtype is ion?
+
+        # update pattern
+        from fibsem import conversions
+        from fibsem.structures import Point
+        point = conversions.image_to_microscope_image_coordinates(
+            Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+        )
+        logging.info(f"Moved pattern to {point}")
+
+        # update ui
+        self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+        self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+        pattern_settings = self.get_pattern_settings_from_ui()   
+        self.update_ui(pattern_settings=pattern_settings)
 
     def get_pattern_settings_from_ui(self):
         
