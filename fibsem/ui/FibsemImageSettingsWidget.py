@@ -136,6 +136,23 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.ib_layer.translate = [0.0, arr.shape[1]]        
         self.viewer.layers.selection.active = self.eb_layer
 
+        if self.eb_layer:
+            points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150]])
+            string = ["ELECTRON BEAM", "ION BEAM"]
+            text = {
+                "string": string,
+                "color": "white"
+            }
+            self.viewer.add_points(
+                points,
+                text=text,
+                size=20,
+                edge_width=7,
+                edge_width_is_relative=False,
+                edge_color='transparent',
+                face_color='transparent',
+            )   
+
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
         eb_shape = self.eb_image.data.shape[0], self.eb_image.data.shape[1]

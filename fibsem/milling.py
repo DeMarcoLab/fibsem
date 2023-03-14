@@ -156,7 +156,7 @@ def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSet
     path = convert_to_bitmap_format(path)
     microscope.draw_bitmap_pattern(pattern_settings, path)
 
-def extract_trench_parameters(protocol: dict, point: Point = Point()):
+def extract_trench_parameters(protocol: dict, point: Point = Point(), scan_direction: str = "BottomToTop"):
     
     lamella_width = protocol["lamella_width"]
     lamella_height = protocol["lamella_height"]
@@ -164,6 +164,7 @@ def extract_trench_parameters(protocol: dict, point: Point = Point()):
     upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
     offset = protocol["offset"]
     milling_depth = protocol["milling_depth"]
+
 
     centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
     centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
@@ -176,7 +177,7 @@ def extract_trench_parameters(protocol: dict, point: Point = Point()):
         centre_x=point.x,
         centre_y=centre_lower_y,
         cleaning_cross_section=True,
-        scan_direction="BottomToTop",
+        scan_direction=scan_direction,
     )
 
     upper_pattern_settings = FibsemPatternSettings(
@@ -186,15 +187,16 @@ def extract_trench_parameters(protocol: dict, point: Point = Point()):
         centre_x=point.x,
         centre_y=centre_upper_y,
         cleaning_cross_section=True,
-        scan_direction="TopToBottom",
+        scan_direction=scan_direction,
     )
 
     return  lower_pattern_settings, upper_pattern_settings
 
-def draw_trench(microscope: FibsemMicroscope, protocol: dict, point: Point = Point()):
+def draw_trench(microscope: FibsemMicroscope, protocol: dict, point: Point = Point(), scan_direction: str = "BottomToTop"):
     """Calculate the trench milling patterns"""
 
-    lower_pattern_settings, upper_pattern_settings = extract_trench_parameters(protocol, point)
+
+    lower_pattern_settings, upper_pattern_settings = extract_trench_parameters(protocol, point, scan_direction)
 
     # draw patterns
     lower_pattern = draw_rectangle(microscope, lower_pattern_settings)
@@ -208,6 +210,7 @@ def draw_stress_relief(
     microexpansion_protocol: dict,
     lamella_protocol: dict,
     centre_point: Point = Point(0, 0),
+    scan_direction: list[str] = ["LeftToRight", "RightToLeft"], 
 ):
     """
     Draw the microexpansion joints for stress relief of lamella.
@@ -223,6 +226,8 @@ def draw_stress_relief(
     width = microexpansion_protocol["width"]
     height = microexpansion_protocol["height"]
     depth = lamella_protocol["milling_depth"]
+    if scan_direction is None:
+        scan_direction = ["LeftToRight", "RightToLeft"]
 
     left_pattern_settings = FibsemPatternSettings(
         width=width,
@@ -233,7 +238,7 @@ def draw_stress_relief(
         - microexpansion_protocol["distance"],
         centre_y=centre_point.y,
         cleaning_cross_section=True,
-        scan_direction="LeftToRight",
+        scan_direction=scan_direction[0],
     )
 
     right_pattern_settings = FibsemPatternSettings(
@@ -245,7 +250,7 @@ def draw_stress_relief(
         + microexpansion_protocol["distance"],
         centre_y=centre_point.y,
         cleaning_cross_section=True,
-        scan_direction="RightToLeft",
+        scan_direction=scan_direction[1],
     )
 
     left_pattern = draw_rectangle(
