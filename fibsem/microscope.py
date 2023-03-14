@@ -813,6 +813,7 @@ class ThermoMicroscope(FibsemMicroscope):
             PRETILT_SIGN = -1.0
 
         corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
+        # corrected_pretilt_angle = PRETILT_SIGN * settings.system.stage.pre_tilt
 
         # perspective tilt adjustment (difference between perspective view and sample coordinate system)
         if beam_type == BeamType.ELECTRON:
@@ -828,6 +829,10 @@ class ThermoMicroscope(FibsemMicroscope):
         y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
             stage_tilt + perspective_tilt_adjustment
         )
+
+        # angle for adjustement 
+        # angle = corrected_pretilt_angle + stage_tilt + perspective_tilt_adjustment
+        # y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(angle)
 
         # the amount the stage has to move in each axis
         y_move = y_sample_move * np.cos(corrected_pretilt_angle)
@@ -2654,6 +2659,8 @@ class TescanMicroscope(FibsemMicroscope):
                     self.connection.DrawBeam.Pause()
                 elif status[0] == DBStatus.ProjectLoadedExpositionIdle:
                     printProgressBar(100, 100, suffix="Finished")
+                    self.connection.DrawBeam.Stop()
+                    self.connection.DrawBeam.UnloadLayer()
                     break
                 logging.info("Drift correction in progress...")
                 image_settings.beam_type = BeamType.ION
@@ -2672,6 +2679,8 @@ class TescanMicroscope(FibsemMicroscope):
             else:
                 if status[0] == DBStatus.ProjectLoadedExpositionIdle:
                     printProgressBar(100, 100, suffix="Finished")
+                    self.connection.DrawBeam.Stop()
+                    self.connection.DrawBeam.UnloadLayer()
                 break
 
         print()  # new line on complete
@@ -2683,11 +2692,14 @@ class TescanMicroscope(FibsemMicroscope):
 
         Args:
             imaging_current (float): The current to use for imaging in amps.
-        """
-        try:
-            self.connection.DrawBeam.UnloadLayer()
-        except:
-            pass 
+        # """
+        # try:
+        #     self.connection.DrawBeam.Stop()
+        #     self.connection.DrawBeam.UnloadLayer()
+        #     print("hello")
+        # except:
+        #     pass
+
         # self.connection.DrawBeam.UnloadLayer()
 
     def draw_rectangle(
