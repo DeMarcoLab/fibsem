@@ -126,22 +126,8 @@ if _DETECTION_V3:
 # }
 
 
-def filter_selected_masks(
-    mask: np.ndarray, shift_type: tuple[FeatureType]
-) -> np.ndarray:
-    """Combine only the masks for the selected detection types"""
-    c1 = FEATURE_colorS_UINT8[shift_type[0]]
-    c2 = FEATURE_colorS_UINT8[shift_type[1]]
 
-    # get mask for first detection type
-    mask1, _ = extract_class_pixels(mask, color=c1)
-    # get mask for second detection type
-    mask2, _ = extract_class_pixels(mask, color=c2)
-
-    # combine masks
-    mask_combined = mask1 + mask2
-
-    return mask_combined
+# 
 
 
 # Detection and Drawing Tools
@@ -408,21 +394,33 @@ def locate_shift_between_features_v2(
     return det
 
 
-def plot_det_result_v2(det: DetectedFeatures):
+def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
     import matplotlib.pyplot as plt
-
-
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
 
     # convert rgb 255 range to 0-1 tuple
-    c1 = ((255-det.features[0]._color_UINT8[0])/255,
-          (255-det.features[0]._color_UINT8[1])/255,
-          (255-det.features[0]._color_UINT8[2])/255)
-    
-    c2 = ((255-det.features[1]._color_UINT8[0])/255,
-          (255-det.features[1]._color_UINT8[1])/255,
-          (255-det.features[1]._color_UINT8[2])/255)
+    if inverse:
+        # plotting crosshairs are contrasted against feature
+        c1 = ((255-det.features[0]._color_UINT8[0])/255,
+            (255-det.features[0]._color_UINT8[1])/255,
+            (255-det.features[0]._color_UINT8[2])/255)
+        
+        c2 = ((255-det.features[1]._color_UINT8[0])/255,
+            (255-det.features[1]._color_UINT8[1])/255,
+            (255-det.features[1]._color_UINT8[2])/255)
+        
+    else:
+
+        c1 = ((det.features[0]._color_UINT8[0])/255,
+            (det.features[0]._color_UINT8[1])/255,
+            (det.features[0]._color_UINT8[2])/255)
+        
+        c2 = ((det.features[1]._color_UINT8[0])/255,
+            (det.features[1]._color_UINT8[1])/255,
+            (det.features[1]._color_UINT8[2])/255)
+        
+        
 
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
