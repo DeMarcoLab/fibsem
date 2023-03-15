@@ -114,12 +114,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.layers[name].data = arr
         except:    
             layer = self.viewer.add_image(arr, name = name)
-            
-            if self.eb_layer is None and name == BeamType.ELECTRON.name:
-                self.eb_layer = layer
-            if self.ib_layer is None and name == BeamType.ION.name:
-                self.ib_layer = layer
         
+
+        layer = self.viewer.layers[name]
+        if self.eb_layer is None and name == BeamType.ELECTRON.name:
+            self.eb_layer = layer
+        if self.ib_layer is None and name == BeamType.ION.name:
+            self.ib_layer = layer
+        
+
         # centre the camera
         if self.eb_layer:
             self.viewer.camera.center = [
@@ -132,6 +135,23 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.ib_layer:
             self.ib_layer.translate = [0.0, arr.shape[1]]        
         self.viewer.layers.selection.active = self.eb_layer
+
+        if self.eb_layer:
+            points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150]])
+            string = ["ELECTRON BEAM", "ION BEAM"]
+            text = {
+                "string": string,
+                "color": "white"
+            }
+            self.viewer.add_points(
+                points,
+                text=text,
+                size=20,
+                edge_width=7,
+                edge_width_is_relative=False,
+                edge_color='transparent',
+                face_color='transparent',
+            )   
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
@@ -156,6 +176,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             beam_type, image = None, None
 
         return coords, beam_type, image
+    
+    def closeEvent(self, event):
+        self.viewer.layers.clear()
+        event.accept()
 
 def main():
 

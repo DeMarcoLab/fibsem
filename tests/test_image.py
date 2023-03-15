@@ -13,18 +13,18 @@ if THERMO_ENABLED:
     from autoscript_sdb_microscope_client.structures import AdornedImage
 
 
-@pytest.fixture
-def gamma_settings() -> fs.GammaSettings:
+# @pytest.fixture
+# def gamma_settings() -> fs.GammaSettings:
 
-    gamma_settings = fs.GammaSettings(
-        enabled=True,
-        min_gamma=0.5,
-        max_gamma=1.8,
-        scale_factor=0.01,
-        threshold=46,
-    )
+#     gamma_settings = fs.GammaSettings(
+#         enabled=True,
+#         min_gamma=0.5,
+#         max_gamma=1.8,
+#         scale_factor=0.01,
+#         threshold=46,
+#     )
 
-    return gamma_settings
+#     return gamma_settings
 
 
 @pytest.fixture
@@ -48,21 +48,21 @@ def rectangle() -> fs.FibsemRectangle:
 
 @pytest.fixture
 def image_settings(
-    gamma_settings: fs.GammaSettings, rectangle: fs.FibsemRectangle
+     rectangle: fs.FibsemRectangle
 ) -> fs.ImageSettings:
 
-    # image_settings = ImageSettings(
-    #     resolution=(32,32),
-    #     dwell_time=1.0e-6,
-    #     hfw=150.0e-6,
-    #     autocontrast=True,
-    #     beam_type=BeamType.ELECTRON,
-    #     gamma=gamma_settings,
-    #     save=False,
-    #     save_path="path",
-    #     label="label",
-    #     reduced_area=rectangle,
-    # )
+    image_settings = fs.ImageSettings(
+        resolution=(32,32),
+        dwell_time=1.0e-6,
+        hfw=150.0e-6,
+        autocontrast=True,
+        beam_type=fs.BeamType.ELECTRON,
+        gamma_enabled=True,
+        save=False,
+        save_path="path",
+        label="label",
+        reduced_area=rectangle,
+    )
     image_settings = fs.ImageSettings()
     return image_settings
 

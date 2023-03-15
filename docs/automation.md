@@ -145,9 +145,15 @@ def detect_features_v2(
 
 The supported Feature Types are as follows:
 
-::: fibsem.detection.utils.Feature
+::: fibsem.detection.detection.Feature
+::: fibsem.detection.detection.LamellaCentre
+::: fibsem.detection.detection.ImageCentre
+::: fibsem.detection.detection.LamellaRightEdge
+::: fibsem.detection.detection.LamellaLeftEdge
+::: fibsem.detection.detection.NeedleTip
+::: fibsem.detection.detection.LandingPost
 
-::: fibsem.detection.utils.FeatureType
+
 
 
 ## Machine Learning
