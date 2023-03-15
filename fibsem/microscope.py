@@ -1499,6 +1499,10 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"Microscope state restored.")
     
     def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
+        """Get a list of available values for a given key.
+        Keys: application_file, plasma_gas, current, detector_type, detector_mode
+        """
+
         values = []
         if key == "application_file":
             values = self.connection.patterning.list_all_application_files()
@@ -1512,6 +1516,12 @@ class ThermoMicroscope(FibsemMicroscope):
                 values = self.connection.beams.ion_beam.beam_current.available_values
             elif beam_type is BeamType.ELECTRON:
                 values = self.connection.beams.electron_beam.beam_current.limits
+
+        if key == "detector_type":
+            values = self.connection.detector.type.available_values
+        
+        if key == "detector_mode":
+            values = self.connection.detector.mode.available_values
 
         return values
 
@@ -3041,6 +3051,9 @@ class TescanMicroscope(FibsemMicroscope):
         return
 
     def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
+        """Get a list of available values for a given key.
+        Keys: plasma_gas, current, detector_type
+        """
         values = []
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
@@ -3051,6 +3064,15 @@ class TescanMicroscope(FibsemMicroscope):
                 values = [1.0e-12]
             if beam_type == BeamType.ION:
                 values = [20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.6e-9, 28.0e-9, 120e-9]
+
+        if key == "detector_type" and beam_type == BeamType.ELECTRON:
+            values = self.connection.SEM.Detector.Enum()
+            for i in range(len(values)):
+                values[i-1] = values[i-1].name 
+        if key == "detector_type" and beam_type == BeamType.ION:
+            values = self.connection.FIB.Detector.Enum()
+            for i in range(len(values)):
+                values[i-1] = values[i-1].name
 
         return values
 
