@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import yaml
-
+import numpy as np
 from fibsem.structures import FibsemPattern, FibsemPatternSettings, Point
 
 
@@ -561,6 +561,42 @@ class CloverPattern(BasePattern):
         return self.patterns
 
 
+@dataclass
+class TriForcePattern(BasePattern):
+    name: str = "TriForce"
+    required_keys: tuple[str] = ("height", "width", "depth")
+    patterns = None
+
+    def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
+
+        check_keys(protocol, self.required_keys)
+
+        height = protocol["height"]
+        width = protocol["width"]
+        depth = protocol["depth"]
+
+        # triforce pattern
+        angle = 30
+
+        self.patterns = []
+
+        # centre of each triangle
+        points = [
+            Point(point.x, point.y + height),
+            Point(point.x - height/2, point.y),
+            Point(point.x + height/2, point.y),
+        ]
+
+        for point in points:
+
+            left_pattern, right_pattern, bottom_pattern = create_triangle_patterns(width=width, height=height, depth=depth, point=point, angle=angle)
+
+            self.patterns.append(left_pattern)
+            self.patterns.append(right_pattern)
+            self.patterns.append(bottom_pattern)
+
+        return self.patterns
+
 
 
 __PATTERNS__ = [
@@ -575,6 +611,7 @@ __PATTERNS__ = [
     MicroExpansionPattern,
     WaffleNotchPattern,
     CloverPattern,
+    TriForcePattern,
 ]
 
 def get_pattern(name: str) -> BasePattern:
@@ -600,6 +637,49 @@ def get_pattern_required_keys_json() -> str:
 
 def get_pattern_required_keys_yaml() -> str:
     return yaml.dump(get_pattern_required_keys_dict())
+
+
+def create_triangle_patterns(width: float, height: float, depth: float, angle: float = 30, point: Point = Point()) -> list[FibsemPatternSettings]:
+    h_offset = height/2 * np.sin(np.deg2rad(angle))
+
+    left_pattern = FibsemPatternSettings(
+        pattern=FibsemPattern.Rectangle,
+        width=width,
+        height=height,
+        depth=depth,
+        rotation = np.deg2rad(-angle),
+        centre_x=point.x - h_offset,
+        centre_y=point.y,
+        cleaning_cross_section=False,
+        scan_direction="LeftToRight",
+    )
+
+    right_pattern = FibsemPatternSettings(
+        pattern=FibsemPattern.Rectangle,
+        width=width,
+        height=height,
+        depth=depth,
+        rotation = np.deg2rad(angle),
+        centre_x=point.x + h_offset,
+        centre_y=point.y,
+        cleaning_cross_section=False,
+        scan_direction="RightToLeft",
+    )
+
+    bottom_pattern = FibsemPatternSettings(
+        pattern=FibsemPattern.Rectangle,
+        width=width,
+        height=height,
+        depth=depth,
+        rotation = np.deg2rad(90),
+        centre_x=point.x,
+        centre_y=point.y - height / 2,
+        cleaning_cross_section=False,
+        scan_direction="BottomToTop",
+    )
+
+    return [left_pattern, right_pattern, bottom_pattern]
+
 
 
 from fibsem.utils import FibsemMillingSettings

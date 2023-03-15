@@ -78,3 +78,7 @@ patterns:
   Clover:
     radius: 10.0e-6
     depth: 5.0e-6
+  TriForce:
+    height: 10.0e-6
+    width: 1.0e-6
+    depth: 5.0e-6    
