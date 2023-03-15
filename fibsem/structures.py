@@ -1120,10 +1120,10 @@ class FibsemImageMetadata:
                     settings["microscope_state"]["ib_settings"]
                 ),
             )
-        if settings["detector_settings"] is not None:
-            detector_settings = FibsemDetectorSettings.__from_dict__(
-                settings["detector_settings"]
-            )
+        
+        detector_dict = settings.get("detector_settings", {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0})
+        detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
+        
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
             version=version,
