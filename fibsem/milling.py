@@ -284,7 +284,6 @@ def draw_circle_pattern(
 def milling_protocol(
     microscope: FibsemMicroscope,
     mill_settings: FibsemMillingSettings,
-    patterning_mode: str = "Serial",
     patterns: list = [FibsemPatternSettings],
     drift_correction: bool = False,
     image_settings: ImageSettings = None,
@@ -303,7 +302,7 @@ def milling_protocol(
     if drift_correction:
         run_milling_drift_corrected(microscope, mill_settings.milling_current, image_settings, ref_image, reduced_area)
     else:
-        run_milling(microscope, mill_settings.milling_current)
+        run_milling(microscope, mill_settings.milling_current, asynch)
 
     # finish milling
     finish_milling(microscope)
