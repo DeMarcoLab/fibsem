@@ -1605,32 +1605,41 @@ class ThermoMicroscope(FibsemMicroscope):
             beam.working_distance.value = value
             self.connection.specimen.stage.link() # Link the specimen stage
             logging.info(f"{beam_type.name} working distance set to {value} m.")
+            return 
         if key == "current":
             beam.beam_current.value = value
             logging.info(f"{beam_type.name} current set to {value} A.")
+            return
         if key == "voltage":
             beam.high_voltage.value = value
             logging.info(f"{beam_type.name} voltage set to {value} V.")
+            return
         if key == "hfw":
             beam.horizontal_field_width.value = value
             logging.info(f"{beam_type.name} HFW set to {value} m.")
+            return
         if key == "resolution":
             beam.scanning.resolution.value = value
             logging.info(f"{beam_type.name} resolution set to {value} m.")
+            return
         if key == "dwell_time":
             beam.scanning.dwell_time.value = value
             logging.info(f"{beam_type.name} dwell time set to {value} s.")
+            return
         if key == "scan_rotation":
             beam.scanning.rotation.value = value
             logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
+            return
 
         # beam control
         if key == "on":
             beam.turn_on() if value else beam.turn_off()
             logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
+            return
         if key == "blanked":
             beam.blank() if value else beam.unblank()
             logging.info(f"{beam_type.name} beam {'blanked' if value else 'unblanked'}.")
+            return
 
         # detector properties
         if key in ["detector_mode", "detector_type", "detector_brightness", "detector_contrast"]:
@@ -1672,33 +1681,38 @@ class ThermoMicroscope(FibsemMicroscope):
             if key == "angular_correction_angle":
                 beam.angular_correction.angle.value = value
                 logging.info(f"Angular correction angle set to {value} radians.")
+                return
 
             if key == "angular_correction_tilt_correction":
                 beam.angular_correction.tilt_correction.turn_on() if value else beam.angular_correction.tilt_correction.turn_off()
-        
+                return
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
                 beam.source.plasma_gas.value = value
                 logging.info(f"Plasma gas set to {value}.")
-
+            return
         # chamber control (NOTE: dont implment until able to test on hardware)
         if key == "pump":
             logging.info(f"Not Implemented Yet")
             self.connection.vacuum.pump()
             # logging.info(f"Vacuum pump on.")
+            return
         if key == "vent":
             logging.info(f"Not Implemented Yet")
             # self.connection.vacuum.vent()
             logging.info(f"Vacuum vent on.")
+            return
 
 
         # stage properties
         if key == "stage_home":
             self.connection.specimen.stage.home()
             logging.info(f"Stage homed.")
+            return
         if key == "stage_link":
             self.connection.specimen.stage.link() if value else self.connection.specimen.stage.unlink()
             logging.info(f"Stage {'linked' if value else 'unlinked'}.")    
+            return
 
         
         logging.warning(f"Unknown key: {key} ({beam_type})")
@@ -3152,11 +3166,13 @@ class TescanMicroscope(FibsemMicroscope):
             if beam_type == BeamType.ELECTRON:
                 self.electron_detector_active = value
                 beam.Detector.Set(Channel = 0, Detector = value)
+                self.electron_detector_active = beam.Detector.Get(Channel = 0)
                 logging.info(f"{beam_type} detector type set to {value}.")
                 return
             elif beam_type == BeamType.ION:
                 self.ion_detector_active = value
                 beam.Detector.Set(Channel = 0, Detector = value)
+                self.ion_detector_active = beam.Detector.Get(Channel = 0)
                 logging.info(f"{beam_type} detector type set to {value}.")
                 return
         if key in ["detector_brightness", "detector_contrast"]:
