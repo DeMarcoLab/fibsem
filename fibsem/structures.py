@@ -165,6 +165,40 @@ Methods:
             self.coordinate_system,
         )
 
+@dataclass
+class FibsemHardware:
+    """Data class for storing hardware information.
+Attributes:
+
+    """
+    electron_beam: bool = True
+    ion_beam: bool = True
+    stage_enabled: bool = True
+    stage_rotation: bool = True
+    stage_tilt: bool = True
+    manipulator_enabled: bool = True
+    manipulator_rotation: bool = True
+    manipulator_tilt: bool = True
+    gis_enabled: bool = True
+    gis_multichem: bool = True
+
+    @classmethod
+    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
+        return cls(
+            electron_beam=hardware_dict["electron"]["enabled"],
+            ion_beam=hardware_dict["ion"]["enabled"],
+            stage_enabled=hardware_dict["stage"]["enabled"],
+            stage_rotation=hardware_dict["stage"]["rotation"],
+            stage_tilt=hardware_dict["stage"]["tilt"],
+            manipulator_enabled=hardware_dict["manipulator"]["enabled"],
+            manipulator_rotation=hardware_dict["manipulator"]["rotation"],
+            manipulator_tilt=hardware_dict["manipulator"]["tilt"],
+            gis_enabled=hardware_dict["gis"]["enabled"],
+            gis_multichem=hardware_dict["gis"]["multichem"],
+        )
+
+
+
 
 @dataclass
 class FibsemManipulatorPosition:
