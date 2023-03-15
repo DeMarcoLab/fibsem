@@ -339,7 +339,7 @@ class ImageSettings:
 
         
         image_settings = ImageSettings(
-            resolution=settings.get("resolution", [1536, 1024]),
+            resolution=settings.get("resolution", (1536, 1024)),
             dwell_time=settings.get("dwell_time", 1.0e-6),
             hfw=settings.get("hfw", 150e-6),
             autocontrast=settings.get("autocontrast", False),
@@ -1165,7 +1165,7 @@ class FibsemImageMetadata:
             bool: True if the image settings match the metadata image settings.
         """
         assert (
-            self.image_settings.resolution == image_settings.resolution
+            self.image_settings.resolution[0] == image_settings.resolution[0] and self.image_settings.resolution[1] == image_settings.resolution[1]
         ), f"resolution: {self.image_settings.resolution} != {image_settings.resolution}"
         assert (
             self.image_settings.dwell_time == image_settings.dwell_time
