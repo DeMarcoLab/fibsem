@@ -522,7 +522,7 @@ class FibsemPattern(Enum): # TODO: reanme to FibsemPatternType
     Circle = 3
 
 # TODO: convert this to a dataclass, rename to FibsemPattern
-class FibsemPatternSettings: 
+class FibsemPatternSettings:  # FibsemBasePattern
     '''
     FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
     
@@ -576,8 +576,10 @@ class FibsemPatternSettings:
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
             return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-        elif self.pattern == FibsemPattern.Line:
+        if self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+        if self.pattern is FibsemPattern.Circle:
+            return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
 
 
     @staticmethod
