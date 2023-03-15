@@ -13,101 +13,94 @@ from fibsem import conversions
 from fibsem.imaging import masks
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
-
-_DETECTION_V3 = True
-if _DETECTION_V3:
+from abc import ABC, abstractmethod
 
 
-    from abc import ABC, abstractmethod
-    # TODO: maybe static methods? probs nicer to use?
-    # e.g. needle_tip = NeedleTip.detect(img, mask, point)
-    # can store color info there too?
+@dataclass
+class Feature(ABC):
+    feature_px: Point 
+    feature_m: Point
+    _color_UINT8: None
+    name: str = None
 
-    @dataclass
-    class Feature_v3(ABC):
-        feature_px: Point 
-        feature_m: Point
-        _color_UINT8: None
-        name: str = None
+    @abstractmethod
+    def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature':
+        pass
 
-        @abstractmethod
-        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature_v3':
-            pass
+@dataclass
+class ImageCentre(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,255,255)
+    name: str = "ImageCentre"
 
-    @dataclass
-    class ImageCentre(Feature_v3):
-        feature_m: Point = None
-        feature_px: Point = None
-        _color_UINT8: tuple = (255,255,255)
-        name: str = "ImageCentre"
+    def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
+        self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
+        return self.feature_px
 
-        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
-            self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
-            return self.feature_px
+    
 
-        
+@dataclass
+class NeedleTip(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (0,255,0)
+    name: str = "NeedleTip"
 
-    @dataclass
-    class NeedleTip(Feature_v3):
-        feature_m: Point = None
-        feature_px: Point = None
-        _color_UINT8: tuple = (0,255,0)
-        name: str = "NeedleTip"
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
+        self.feature_px = detect_needle_v4(mask)
+        return self.feature_px
+    
+    
 
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-            self.feature_px = detect_needle_v4(mask)
-            return self.feature_px
-        
-        
+@dataclass
+class LamellaCentre(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,0,0)
+    name: str = "LamellaCentre"
 
-    @dataclass
-    class LamellaCentre(Feature_v3):
-        feature_m: Point = None
-        feature_px: Point = None
-        _color_UINT8: tuple = (255,0,0)
-        name: str = "LamellaCentre"
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
+        self.feature_px = detect_lamella(mask, self.name)
 
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
-            self.feature_px = detect_lamella(mask, self.name)
+    
+@dataclass
+class LamellaLeftEdge(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,0,0)
+    name: str = "LamellaLeftEdge"
 
-        
-    @dataclass
-    class LamellaLeftEdge(Feature_v3):
-        feature_m: Point = None
-        feature_px: Point = None
-        _color_UINT8: tuple = (255,0,0)
-        name: str = "LamellaLeftEdge"
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
+        self.feature_px = detect_lamella(mask, self.name)
+        return self.feature_px
+    
 
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
-            self.feature_px = detect_lamella(mask, self.name)
-            return self.feature_px
-        
+@dataclass
+class LamellaRightEdge(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,0,255)
+    name: str = "LamellaRightEdge"
 
-    @dataclass
-    class LamellaRightEdge(Feature_v3):
-        feature_m: Point = None
-        feature_px: Point = None
-        _color_UINT8: tuple = (255,0,255)
-        name: str = "LamellaRightEdge"
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
+        self.feature_px = detect_lamella(mask, self.name)
+        return self.feature_px
+    
 
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
-            self.feature_px = detect_lamella(mask, self.name)
-            return self.feature_px
-        
+@dataclass
+class LandingPost(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,255,255)
+    name: str = "LandingPost"
 
-    @dataclass
-    class LandingPost(Feature_v3):
-        feature_m: Point = None
-        feature_px: Point = None
-        _color_UINT8: tuple = (255,255,255)
-        name: str = "LandingPost"
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
+        self.feature_px = detect_landing_post_v3(img, point)
+        return self.feature_px
+    
 
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-            self.feature_px = detect_landing_post_v3(img, point)
-            return self.feature_px
-        
-
-    __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
 
  
 
@@ -324,7 +317,7 @@ def detect_bounding_box(mask, color, threshold=25):
 
 @dataclass
 class DetectedFeatures:
-    features: list[Feature_v3]
+    features: list[Feature]
     image: np.ndarray
     mask: np.ndarray
     pixelsize: float
@@ -332,8 +325,8 @@ class DetectedFeatures:
 
 
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature_v3]
-) -> list[Feature_v3]:
+    img: np.ndarray, mask: np.ndarray, features: tuple[Feature]
+) -> list[Feature]:
 
     detection_features = []
 
@@ -349,7 +342,7 @@ def detect_features_v2(
 def locate_shift_between_features_v2(
     image: np.ndarray,
     model: SegmentationModel,
-    features: tuple[Feature_v3],
+    features: tuple[Feature],
     pixelsize: float,
 ) -> DetectedFeatures:
 
