@@ -281,13 +281,14 @@ def _draw_patterns_in_napari(
     
     for i, stage in enumerate(all_patterns):
         shape_patterns = []
+        shape_types = []
         for pattern_settings in stage:
             if pattern_settings.pattern is FibsemPattern.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
-                shape_type = "ellipse"
+                shape_types.append("ellipse")
             else:
                 shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
-                shape_type = "rectangle"
+                shape_types.append("rectangle")
 
             # offset the x coord by image width
             if eb_image is not None:
@@ -299,7 +300,7 @@ def _draw_patterns_in_napari(
         viewer.add_shapes(
             shape_patterns,
             name=f"Stage {i+1}",
-            shape_type=shape_type,
+            shape_type=shape_types,
             edge_width=0.5,
             edge_color=colour[i % 4],
             face_color=colour[i % 4],

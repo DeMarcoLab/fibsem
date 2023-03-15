@@ -500,6 +500,68 @@ class WaffleNotchPattern(BasePattern):
 
         return self.patterns 
 
+@dataclass
+class CloverPattern(BasePattern):
+    name: str = "Clover"
+    required_keys: tuple[str] = ("radius", "depth")
+    patterns = None
+
+    def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
+
+        check_keys(protocol, self.required_keys)
+
+        radius = protocol["radius"]
+        depth = protocol["depth"]
+
+        # three leaf clover pattern
+
+        top_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Circle,
+            radius=radius,
+            depth=depth,
+            centre_x=point.x,
+            centre_y=point.y + radius,
+            cleaning_cross_section=False,
+            scan_direction="TopToBottom",
+        )
+
+        right_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Circle,
+            radius=radius,
+            depth=depth,
+            centre_x=point.x + radius,
+            centre_y=point.y,
+            cleaning_cross_section=False,
+            scan_direction="BottomToTop",
+        )
+
+        left_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Circle,
+            radius=radius,
+            depth=depth,
+            centre_x=point.x - radius,
+            centre_y=point.y,
+            cleaning_cross_section=False,
+            scan_direction="LeftToRight",
+        )
+
+        stem_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=radius / 4,
+            height=radius * 2,
+            depth=depth,
+            centre_x=point.x,
+            centre_y=point.y-radius,
+            cleaning_cross_section=False,
+            scan_direction="TopToBottom",
+        )
+
+        self.patterns = [top_pattern, right_pattern, left_pattern, stem_pattern]
+
+        return self.patterns
+
+
+
 
 __PATTERNS__ = [
     RectanglePattern,
@@ -512,6 +574,7 @@ __PATTERNS__ = [
     SpotWeldPattern,
     MicroExpansionPattern,
     WaffleNotchPattern,
+    CloverPattern,
 ]
 
 def get_pattern(name: str) -> BasePattern:

@@ -75,3 +75,6 @@ patterns:
     hheight: 1.0e-6
     depth: 5.0e-6
     distance: 10.0e-6
+  Clover:
+    radius: 10.0e-6
+    depth: 5.0e-6
