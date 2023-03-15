@@ -20,7 +20,8 @@ from abc import ABC, abstractmethod
 class Feature(ABC):
     feature_px: Point 
     feature_m: Point
-    _color_UINT8: None
+    _color_UINT8: tuple = (255,255,255)
+    color = "white"
     name: str = None
 
     @abstractmethod
@@ -32,6 +33,7 @@ class ImageCentre(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,255,255)
+    color = "white"
     name: str = "ImageCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
@@ -45,6 +47,7 @@ class NeedleTip(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (0,255,0)
+    color = "green"
     name: str = "NeedleTip"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
@@ -58,6 +61,7 @@ class LamellaCentre(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,0,0)
+    color = "red"
     name: str = "LamellaCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
@@ -68,7 +72,8 @@ class LamellaCentre(Feature):
 class LamellaLeftEdge(Feature):
     feature_m: Point = None
     feature_px: Point = None
-    _color_UINT8: tuple = (255,0,0)
+    _color_UINT8: tuple = (255,0,255)
+    color = "magenta"
     name: str = "LamellaLeftEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
@@ -80,7 +85,8 @@ class LamellaLeftEdge(Feature):
 class LamellaRightEdge(Feature):
     feature_m: Point = None
     feature_px: Point = None
-    _color_UINT8: tuple = (255,0,255)
+    _color_UINT8: tuple = (255,165,0)
+    color = "orange"
     name: str = "LamellaRightEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
@@ -93,6 +99,7 @@ class LandingPost(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,255,255)
+    color = "cyan"
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':

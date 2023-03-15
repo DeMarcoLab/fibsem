@@ -54,6 +54,17 @@ class Point:
     
     def __add__(self, other) -> 'Point':
         return Point(self.x + other.x, self.y + other.y)
+    
+    def __len__(self) -> int:
+        return 2
+    
+    def __getitem__(self, key: int) -> float:
+        if key == 0:
+            return self.x
+        elif key == 1:
+            return self.y
+        else:
+            raise IndexError("Index out of range")
 
 
 # TODO: convert these to match autoscript...
