@@ -143,15 +143,23 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 "string": string,
                 "color": "white"
             }
-            self.viewer.add_points(
+
+            try:
+                self.viewer.layers['label'].data = points
+            except:    
+                self.viewer.add_points(
                 points,
+                name="label",
                 text=text,
                 size=20,
                 edge_width=7,
                 edge_width_is_relative=False,
                 edge_color='transparent',
                 face_color='transparent',
-            )   
+                )   
+
+
+        
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
