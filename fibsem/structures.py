@@ -185,16 +185,16 @@ Attributes:
     @classmethod
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
         return cls(
-            electron_beam=hardware_dict["electron"]["enabled"],
-            ion_beam=hardware_dict["ion"]["enabled"],
-            stage_enabled=hardware_dict["stage"]["enabled"],
-            stage_rotation=hardware_dict["stage"]["rotation"],
-            stage_tilt=hardware_dict["stage"]["tilt"],
-            manipulator_enabled=hardware_dict["manipulator"]["enabled"],
-            manipulator_rotation=hardware_dict["manipulator"]["rotation"],
-            manipulator_tilt=hardware_dict["manipulator"]["tilt"],
-            gis_enabled=hardware_dict["gis"]["enabled"],
-            gis_multichem=hardware_dict["gis"]["multichem"],
+            electron_beam=bool(hardware_dict["electron"]["enabled"]),
+            ion_beam=bool(hardware_dict["ion"]["enabled"]),
+            stage_enabled=bool(hardware_dict["stage"]["enabled"]),
+            stage_rotation=bool(hardware_dict["stage"]["rotation"]),
+            stage_tilt=bool(hardware_dict["stage"]["tilt"]),
+            manipulator_enabled=bool(hardware_dict["manipulator"]["enabled"]),
+            manipulator_rotation=bool(hardware_dict["manipulator"]["rotation"]),
+            manipulator_tilt=bool(hardware_dict["manipulator"]["tilt"]),
+            gis_enabled=bool(hardware_dict["gis"]["enabled"]),
+            gis_multichem=bool(hardware_dict["gis"]["multichem"]),
         )
 
 
@@ -996,6 +996,7 @@ class MicroscopeSettings:
     image: ImageSettings
     protocol: dict = None
     milling: FibsemMillingSettings = None
+    hardware: FibsemHardware = None
     
 
     def __to_dict__(self) -> dict:
@@ -1009,12 +1010,13 @@ class MicroscopeSettings:
         return settings_dict
 
     @staticmethod
-    def __from_dict__(settings: dict, protocol: dict = None) -> "MicroscopeSettings":
+    def __from_dict__(settings: dict, protocol: dict = None, hardware: dict = None) -> "MicroscopeSettings":
 
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
             protocol=protocol,
+            hardware=FibsemHardware.__from_dict__(hardware),
 
         )
 
