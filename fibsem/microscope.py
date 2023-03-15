@@ -2255,10 +2255,8 @@ class TescanMicroscope(FibsemMicroscope):
             ib_settings = BeamSettings(
                     beam_type=BeamType.ION,
                     working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance,
-                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent()
-                    * constants.PICO_TO_SI,
-                    hfw=self.connection.FIB.Optics.GetViewfield()
-                    * constants.MILLIMETRE_TO_METRE,
+                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent() * constants.PICO_TO_SI,
+                    hfw=self.connection.FIB.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
                     resolution=image_ib.metadata.image_settings.resolution,
                     dwell_time=image_ib.metadata.image_settings.dwell_time,
                     stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
@@ -2270,12 +2268,9 @@ class TescanMicroscope(FibsemMicroscope):
         if image_eb is not None:
             eb_settings = BeamSettings(
                 beam_type=BeamType.ELECTRON,
-                working_distance=self.connection.SEM.Optics.GetWD()
-                * constants.MILLIMETRE_TO_METRE,
-                beam_current=self.connection.SEM.Beam.GetCurrent()
-                * constants.MICRO_TO_SI,
-                hfw=self.connection.SEM.Optics.GetViewfield()
-                * constants.MILLIMETRE_TO_METRE,
+                working_distance=self.connection.SEM.Optics.GetWD() * constants.MILLIMETRE_TO_METRE,
+                beam_current=self.connection.SEM.Beam.GetCurrent() * constants.PICO_TO_SI,
+                hfw=self.connection.SEM.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
                 resolution=image_eb.metadata.image_settings.resolution,  # TODO fix these empty parameters
                 dwell_time=image_eb.metadata.image_settings.dwell_time,
                 stigmation=image_eb.metadata.microscope_state.eb_settings.stigmation,
@@ -2873,13 +2868,15 @@ class TescanMicroscope(FibsemMicroscope):
         try:
             layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
                 syncWriteField=True,
-                writeFieldSize=protocol["weld"]["hfw"],
+                writeFieldSize=protocol["hfw"],
                 beamCurrent=protocol["beam_current"],
                 spotSize=protocol["spot_size"],
                 rate=3e-10, # Value for platinum
                 dwellTime=protocol["dwell_time"],
             )
-            self.layer = self.connection.DrawBeam.LoadLayer(layerSettings)
+            self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
+            self.connection.DrawBeam.LoadLayer(self.layer)
+
         except:
             defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
             self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
@@ -2973,6 +2970,7 @@ class TescanMicroscope(FibsemMicroscope):
         # Move GIS out from chamber and turn off heating
         self.connection.GIS.MoveTo(self.line, Automation.GIS.Position.Home)
         self.connection.GIS.PrepareTemperature(self.line, False)
+        self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
