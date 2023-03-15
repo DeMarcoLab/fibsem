@@ -43,6 +43,7 @@ class Ui_Form(object):
         self.comboBox_feature.setObjectName("comboBox_feature")
         self.gridLayout.addWidget(self.comboBox_feature, 1, 1, 1, 1)
         self.label_instructions = QtWidgets.QLabel(Form)
+        self.label_instructions.setWordWrap(True)
         self.label_instructions.setObjectName("label_instructions")
         self.gridLayout.addWidget(self.label_instructions, 4, 0, 1, 2)
         self.pushButton_test_function = QtWidgets.QPushButton(Form)

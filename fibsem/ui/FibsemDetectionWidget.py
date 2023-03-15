@@ -22,6 +22,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         settings: MicroscopeSettings = None,
         viewer: napari.Viewer = None,
         image_widget: FibsemImageSettingsWidget = None,
+        detected_features: DetectedFeatures = None,
         parent=None,
     ):
         super(FibsemDetectionWidgetUI, self).__init__(parent=parent)
@@ -32,12 +33,18 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.image_widget = image_widget
 
-        self.detected_features = None
-
         self.setup_connections()
 
+        # set detected features
+        if detected_features is not None:
+            self.set_detected_features(detected_features)
+        else:
+            self.test_function()
+
+
     def setup_connections(self):
-        print("setup connections")
+
+        self.label_instructions.setText("""Drag the detected feature positions to move them. Press continue when finished.""")
         self.pushButton_continue.clicked.connect(self.continue_button_clicked)
 
         self.pushButton_test_function.clicked.connect(self.test_function)
@@ -64,8 +71,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
 
         # detect features
         pixelsize = 10e-9
-        features = (detection.NeedleTip(), detection.ImageCentre())
-        det = detection.locate_shift_between_features_v2(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
+        features = (detection.NeedleTip(), detection.LamellaRightEdge())
+        det = detection.locate_shift_between_features_v2(deepcopy(image.data), model, 
+                                                         features=features, pixelsize=pixelsize)
 
         # calculate features in microscope image coords
         # det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].feature_px, image.data, pixelsize)
@@ -91,17 +99,25 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         )
 
 
-        # add image to viewer
+        # TODO: read the image metadata properly
+
+
+        # add image to viewer (Should be handled by the image widget)
         try:
-            self.viewer.layers["detected_features"].data = self.detected_features.image
+            self.viewer.layers["image"].data = self.detected_features.image
         except:
-            self.viewer.add_image(self.detected_features.image, name="detected_features", opacity=0.7)
+            self.viewer.add_image(self.detected_features.image, name="image", opacity=0.7)
 
         # add mask to viewer
         try:
             self.viewer.layers["mask"].data = self.detected_features.mask
         except:
             self.viewer.add_image(self.detected_features.mask, name="mask", opacity=0.3)
+
+        IB_IMAGE = False
+        if IB_IMAGE:
+            self.viewer.layers["image"].translate = [0.0, self.detected_features.image.shape[1]]
+            self.viewer.layers["mask"].translate = [0.0, self.detected_features.image.shape[1]]  
 
         # add points to viewer
 
@@ -129,10 +145,59 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
             edge_color='transparent',
             face_color=[feature.color for feature in self.detected_features.features]
 
-            )  
+            )
+        if IB_IMAGE:
+            self.viewer.layers["features"].translate = [0.0, self.detected_features.image.shape[1]]  
+
+        # set points layer to select mode
+        self.viewer.layers["features"].mode = "select"
+
+        # when the point is moved update the feature
+        self.viewer.layers["features"].mouse_drag_callbacks.append(self.point_moved)
+
+        self.update_info()
 
 
-    def get_detected_features(self):
+    def update_info(self):
+        self.label_info.setText(f""" Moving {self.detected_features.features[0].name} to {self.detected_features.features[1].name}
+        \n{self.detected_features.features[0].name} is at {self.detected_features.features[0].feature_px}
+        \n{self.detected_features.features[1].name} is at {self.detected_features.features[1].feature_px}
+        \n\nx distance: {self.detected_features.distance.x*1e6:.2f}um 
+        \ny distance: {self.detected_features.distance.y*1e6:.2f}um
+        """)
+
+    def point_moved(self, layer, event):
+
+        dragged = False
+        yield
+        
+        # on move
+        while event.type == 'mouse_move':
+            dragged = True
+            yield
+
+        # on release
+        if not dragged:
+            return
+        
+        # get the data
+        data = layer.data
+
+        # update the feature
+        self.detected_features.features[0].feature_px = Point(x=data[0][1], y=data[0][0])
+        self.detected_features.features[1].feature_px = Point(x=data[1][1], y=data[1][0])
+
+        # update the point
+        print("point moved: ", self.detected_features.features[0].feature_px)
+        print("point moved: ", self.detected_features.features[1].feature_px)
+
+        point_diff_px  = self.detected_features.features[0].feature_px._distance_to(self.detected_features.features[1].feature_px)
+        self.detected_features.distance = point_diff_px._to_metres(self.detected_features.pixelsize)
+
+        self.update_info()
+
+
+    def _get_detected_features(self):
         return self.detected_features
 
 

@@ -66,6 +66,14 @@ class Point:
         else:
             raise IndexError("Index out of range")
 
+    def _to_metres(self, pixel_size: float) -> 'Point':
+        return Point(self.x * pixel_size, self.y * pixel_size)
+    
+    def _to_pixels(self, pixel_size: float) -> 'Point':
+        return Point(self.x / pixel_size, self.y / pixel_size)
+    
+    def _distance_to(self, other: 'Point') -> 'Point':
+        return Point(x=(other.x - self.x), y=(other.y - self.y))
 
 # TODO: convert these to match autoscript...
 class BeamType(Enum):
