@@ -3073,6 +3073,9 @@ class TescanMicroscope(FibsemMicroscope):
             values = self.connection.FIB.Detector.Enum()
             for i in range(len(values)):
                 values[i-1] = values[i-1].name
+        
+        if key == "detector_mode": 
+            values = None 
 
         return values
 
