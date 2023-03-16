@@ -1,4 +1,5 @@
 from fibsem.config import load_yaml, load_microscope_manufacturer, CONFIG_PATH
+from fibsem.utils import load_protocol
 from fibsem.structures import (
     BeamType,
     MicroscopeSettings,
@@ -8,6 +9,7 @@ from fibsem.structures import (
     FibsemMillingSettings,
     StageSettings,
     BeamSystemSettings,
+    FibsemHardware
 )
 import os
 import pytest
@@ -17,14 +19,16 @@ import pytest
 def load_settings():
     
     settings = load_yaml(os.path.join(CONFIG_PATH, "system.yaml"))
+    model_path = os.path.join(CONFIG_PATH, "model.yaml")
     
     
     system_settings = SystemSettings.__from_dict__(settings["system"])
     image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
     milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
+    hardware_settings = FibsemHardware.__from_dict__(load_protocol(model_path))
+    protocol = load_protocol()
 
-
-    return [system_settings,image_settings,milling_settings]
+    return [system_settings,image_settings,milling_settings,hardware_settings,hardware_settings,protocol]
 
 
 def test_yaml_loaded(load_settings):
@@ -117,3 +121,25 @@ def test_load_microscope_manufacturer():
     assert manufacturer in ["Tescan","Thermo","Demo"], f"{manufacturer} is Not Tescan, Thermo or Demo"
 
 
+def test_hardware_settings(load_settings):
+
+
+    hardware_attributes = [
+        "electron_beam",
+        "ion_beam",
+        "stage_enabled",
+        "stage_rotation",
+        "stage_tilt",
+        "manipulator_enabled",
+        "manipulator_rotation",
+        "manipulator_tilt",
+        "gis_enabled",
+        "gis_multichem",
+    ]
+
+    hardware_settings = load_settings[3]
+
+    for attribute in hardware_attributes:
+
+        assert hasattr(hardware_settings,attribute), f"FibsemHardware has no attribute {attribute}"
+        assert getattr(hardware_settings,attribute) is not None, f"{attribute} is None in FibsemHardware"
