@@ -64,10 +64,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def update_brightness(self):
         beam = BeamType(self.beam_detector.currentIndex()+1)
         self.microscope.set("detector_brightness", self.brightness.value()/100, beam_type=beam)
+        self.brightness_label.setText(f"{self.brightness.value()}%")
 
     def update_contrast(self):
         beam = BeamType(self.beam_detector.currentIndex()+1)
         self.microscope.set("detector_contrast", self.contrast.value()/100, beam_type=beam)
+        self.contrast_label.setText(f"{self.contrast.value()}%")
 
     def set_ui_from_settings(self, image_settings: ImageSettings):
 

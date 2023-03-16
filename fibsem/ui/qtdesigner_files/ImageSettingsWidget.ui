@@ -180,7 +180,7 @@
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="4" column="2">
-        <widget class="QLabel" name="label_6">
+        <widget class="QLabel" name="brightness_label">
          <property name="text">
           <string>50%</string>
          </property>
@@ -225,7 +225,7 @@
         </widget>
        </item>
        <item row="5" column="2">
-        <widget class="QLabel" name="label_7">
+        <widget class="QLabel" name="contrast_label">
          <property name="text">
           <string>50%</string>
          </property>
