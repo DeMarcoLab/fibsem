@@ -13,9 +13,13 @@ electron:
 ion:
   enabled: True
 stage:
-  enabled: True
+  enabled: False
+  rotation: True
+  tilt: True
 manipulator:
   enabled: True
+  rotation: True
+  tilt: True
 gis:
   enabled: True
   multichem: True
