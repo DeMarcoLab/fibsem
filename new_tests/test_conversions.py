@@ -15,13 +15,6 @@ def points():
 
     return [point_o,pointUR,pointUL,pointDR,pointDL]
 
-@pytest.fixture
-def image():
-
-    image_array =np.random.randint(0,256,size=(64,128))
-
-    return image_array
-
 
 def test_convert_m_to_p():
 
@@ -116,12 +109,28 @@ def test_convert_point_m_to_p(points):
 
 def test_image_to_microscope_image_coordinates(points,image):
 
-    p1 = points[2]
+    
+    for i in range(len(points)):
 
-    point_m = conversions.image_to_microscope_image_coordinates(p1,image,0.001)
+        pointA = points[0]
 
-    assert point_m.x == 0
-    assert point_m.y == 0
+        image_dim = np.random.randint(20,1000,2)
+
+        image_array =np.random.randint(0,256,size=(image_dim[0],image_dim[1]))
+
+        cy,cx = np.asarray(image_array.shape) // 2
+
+        # dist from centre
+
+        dy = -(pointA.y - cy)
+        dx = pointA.x - cx
+
+
+
+        point_m = conversions.image_to_microscope_image_coordinates(p1,image,0.001)
+
+        assert point_m.x == 0
+        assert point_m.y == 0
 
     
 
