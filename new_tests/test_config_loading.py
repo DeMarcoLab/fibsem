@@ -15,7 +15,7 @@ import pytest
 
 @pytest.fixture
 def load_settings():
-
+    
     settings = load_yaml(os.path.join(CONFIG_PATH, "system.yaml"))
     
     
@@ -110,5 +110,10 @@ def test_milling_settings(load_settings):
         assert getattr(milling_settings,attribute) is not None, f"{attribute} is None in FibsemMillingSettings"
 
 
+def test_load_microscope_manufacturer():
+
+    manufacturer = load_microscope_manufacturer()
+
+    assert manufacturer in ["Tescan","Thermo","Demo"], f"{manufacturer} is Not Tescan, Thermo or Demo"
 
 
