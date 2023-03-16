@@ -13,7 +13,7 @@ electron:
 ion:
   enabled: True
 stage:
-  enabled: False
+  enabled: True
   rotation: True
   tilt: True
 manipulator:
