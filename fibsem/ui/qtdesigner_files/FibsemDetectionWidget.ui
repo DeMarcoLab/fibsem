@@ -6,15 +6,22 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>305</height>
+    <width>467</width>
+    <height>646</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="0" colspan="2">
+   <item row="12" column="0">
+    <widget class="QLabel" name="label_feature">
+     <property name="text">
+      <string>Features</string>
+     </property>
+    </widget>
+   </item>
+   <item row="14" column="0" colspan="3">
     <widget class="QLabel" name="label_info">
      <property name="minimumSize">
       <size>
@@ -27,37 +34,40 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_feature">
+   <item row="16" column="0" colspan="3">
+    <widget class="QLabel" name="label_instructions">
      <property name="text">
-      <string>Feature</string>
+      <string>Select the feature, and click to change the feature position.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="5" column="0" colspan="2">
+   <item row="17" column="0" colspan="3">
     <widget class="QPushButton" name="pushButton_continue">
      <property name="text">
       <string>Continue</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QCheckBox" name="checkBox_show_mask">
+   <item row="10" column="0" colspan="3">
+    <widget class="QLabel" name="label_2">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
      <property name="text">
-      <string>Show Mask</string>
+      <string>Feature Detection</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_encoder">
+     <property name="text">
+      <string>Encoder</string>
      </property>
     </widget>
    </item>
@@ -73,25 +83,98 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="comboBox_feature"/>
+   <item row="8" column="1" colspan="2">
+    <widget class="QSpinBox" name="spinBox_num_classes"/>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QLabel" name="label_instructions">
-     <property name="text">
-      <string>Select the feature, and click to change the feature position.</string>
+   <item row="19" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-     <property name="wordWrap">
-      <bool>true</bool>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
      </property>
-    </widget>
+    </spacer>
    </item>
-   <item row="6" column="0">
+   <item row="18" column="0">
     <widget class="QPushButton" name="pushButton_test_function">
      <property name="text">
-      <string>TEST</string>
+      <string>Test 1</string>
      </property>
     </widget>
+   </item>
+   <item row="12" column="1">
+    <widget class="QComboBox" name="comboBox_feature_1"/>
+   </item>
+   <item row="9" column="0" colspan="3">
+    <widget class="QPushButton" name="pushButton_load_model">
+     <property name="text">
+      <string>Load Model</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0">
+    <widget class="QCheckBox" name="checkBox_show_mask">
+     <property name="text">
+      <string>Show Mask</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="label_checkpoint">
+     <property name="text">
+      <string>Checkpoint</string>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="0" colspan="3">
+    <widget class="QPushButton" name="pushButton_run_feature_detection">
+     <property name="text">
+      <string>Run Feature Detection</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1" colspan="2">
+    <widget class="QLineEdit" name="lineEdit_encoder"/>
+   </item>
+   <item row="12" column="2">
+    <widget class="QComboBox" name="comboBox_feature_2"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Segmentation Model</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0">
+    <widget class="QLabel" name="label_num_classes">
+     <property name="text">
+      <string>No. Classes</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1" colspan="2">
+    <widget class="QLineEdit" name="lineEdit_checkpoint"/>
+   </item>
+   <item row="11" column="0">
+    <widget class="QLabel" name="label_beam_type">
+     <property name="text">
+      <string>Beam Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="1" colspan="2">
+    <widget class="QComboBox" name="comboBox_beam_type"/>
    </item>
   </layout>
  </widget>
