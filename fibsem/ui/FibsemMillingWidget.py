@@ -152,6 +152,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
         self.update_milling_stage_ui()
 
+    def get_milling_stages(self):
+        return self.milling_stages
 
     def get_point_from_ui(self):
 
@@ -304,7 +306,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
         
         if self.sender() is self.pushButton or milling_stages is None:
-            milling_stages = self.milling_stages
+            milling_stages = self.get_milling_stages()
+
+        # make milling stage a list if it is not
+        if not isinstance(milling_stages, list):
+            milling_stages = [milling_stages]
 
         # get all patterns (2D list, one list of pattern settings per stage)
         patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
