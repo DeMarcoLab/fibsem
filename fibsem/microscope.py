@@ -3126,7 +3126,11 @@ class TescanMicroscope(FibsemMicroscope):
         
         #detector properties
         if key == "detector_type":
-            return beam.Detector.Get(Channel = 0).name
+            detector = beam.Detector.Get(Channel = 0) 
+            if detector is not None:
+                return detector.name
+            else: 
+                return None
         if key == "detector_contrast":
             if beam_type == BeamType.ELECTRON:
                 contrast, brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)

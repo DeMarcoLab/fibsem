@@ -29,6 +29,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         if self.microscope is not None:
             self.ui_detector()
+            self.update_brightness()
+            self.update_contrast()
 
         self.setup_connections()
     
@@ -47,19 +49,20 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_image.clicked.connect(self.take_image)
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
         self.checkBox_image_save_image.toggled.connect(self.update_ui)
-        self.type.currentTextChanged.connect(self.select_detector_type)
-        self.mode.currentTextChanged.connect(self.select_detector_mode)
+        self.set_detector.clicked.connect(self.select_detector)
         self.brightness.valueChanged.connect(self.update_brightness)
         self.contrast.valueChanged.connect(self.update_contrast)
         self.beam_detector.currentTextChanged.connect(self.ui_detector)
 
-    def select_detector_type(self):
+    def select_detector(self):
         beam = BeamType(self.beam_detector.currentIndex()+1)
         self.microscope.set("detector_type", self.type.currentText(), beam_type=beam)
+        self.microscope.set("detector_mode", self.mode.currentText(), beam_type=beam)
+        contrast = self.microscope.get("detector_contrast", beam_type=BeamType(self.beam_detector.currentIndex()+1))
+        brightness = self.microscope.get("detector_brightness", beam_type=BeamType(self.beam_detector.currentIndex()+1))
+        self.contrast.setValue(contrast*100)
+        self.brightness.setValue(brightness*100)
 
-    def select_detector_mode(self):
-        beam = BeamType(self.beam_detector.currentIndex()+1)
-        self.microscope.setI("detector_mode", self.mode.currentText(), beam_type=beam)
         
     def update_brightness(self):
         beam = BeamType(self.beam_detector.currentIndex()+1)
@@ -92,28 +95,41 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.lineEdit_image_label.setVisible(self.checkBox_image_save_image.isChecked())
         
     def ui_detector(self):
-        self.detector_type_ion = self.microscope.get_available_values("detector_type", beam_type=BeamType.ION)  
-        for i in range(len(self.detector_type_ion)):
-            self.type.addItem(self.detector_type_ion[i-1]) 
-        self.detector_type_electron = self.microscope.get_available_values("detector_type", beam_type=BeamType.ELECTRON)
-        for i in range(len(self.detector_type_electron)):
-            self.type.addItem(self.detector_type_electron[i-1])
-        self.detector_mode_ion = self.microscope.get_available_values("detector_mode", beam_type=BeamType.ION)
-        if self.detector_mode_ion is not None:
-            for i in range(len(self.detector_mode_ion)):
-                self.mode.addItem(self.detector_mode_ion[i-1])
+        if self.beam_detector.currentText() == "ELECTRON":
+            self.detector_type_electron = self.microscope.get_available_values("detector_type", beam_type=BeamType.ELECTRON)
+            self.type.clear()
+            for i in range(len(self.detector_type_electron)):
+                self.type.addItem(self.detector_type_electron[i-1])
+            self.detector_mode_electron = self.microscope.get_available_values("detector_mode", beam_type=BeamType.ELECTRON)
+            self.mode.clear()
+            if self.detector_mode_electron is not None:
+                for i in range(len(self.detector_mode_electron)):
+                    self.mode.addItem(self.detector_mode_electron[i-1])
+            else:
+                self.mode.addItem("N/A")
+            self.microscope.set("detector_brightness", self.brightness.value()/100, beam_type=BeamType.ELECTRON)
+            self.microscope.set("detector_contrast", self.contrast.value()/100, beam_type=BeamType.ELECTRON)
+            self.type.setCurrentIndex(self.type.findText(self.microscope.get("detector_type", beam_type=BeamType.ION)))
+            self.mode.setCurrentIndex(self.mode.findText(self.microscope.get("detector_mode", beam_type=BeamType.ION)))
         else:
-            self.mode.addItem("N/A")
-        self.detector_mode_electron = self.microscope.get_available_values("detector_mode", beam_type=BeamType.ELECTRON)
-        if self.detector_mode_electron is not None:
-            for i in range(len(self.detector_mode_electron)):
-                self.mode.addItem(self.detector_mode_electron[i-1])
-        else:
-            self.mode.addItem("N/A")
-
-        self.microscope.set("detector_brightness", 0.5, beam_type=BeamType.ION)
-        self.microscope.set("detector_contrast", 0.5, beam_type=BeamType.ION)
+            self.detector_type_ion = self.microscope.get_available_values("detector_type", beam_type=BeamType.ION)  
+            self.type.clear()
+            for i in range(len(self.detector_type_ion)):
+                self.type.addItem(self.detector_type_ion[i-1]) 
+            self.detector_mode_ion = self.microscope.get_available_values("detector_mode", beam_type=BeamType.ION)
+            self.mode.clear()
+            if self.detector_mode_ion is not None:
+                for i in range(len(self.detector_mode_ion)):
+                    self.mode.addItem(self.detector_mode_ion[i-1])
+            else:
+                self.mode.addItem("N/A")   
+            self.microscope.set("detector_brightness", self.brightness.value()/100, beam_type=BeamType.ION)
+            self.microscope.set("detector_contrast", self.contrast.value()/100, beam_type=BeamType.ION)    
+            self.type.setCurrentIndex(self.type.findText(self.microscope.get("detector_type", beam_type=BeamType.ION)))
         
+        
+
+
     def get_settings_from_ui(self):
 
         self.image_settings = ImageSettings(
@@ -206,7 +222,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
-
+        contrast = self.microscope.get("detector_contrast", beam_type=BeamType(self.beam_detector.currentIndex()+1))
+        brightness = self.microscope.get("detector_brightness", beam_type=BeamType(self.beam_detector.currentIndex()+1))
+        self.contrast.setValue(contrast*100)
+        self.brightness.setValue(brightness*100)
         
 
     def get_data_from_coord(self, coords: tuple) -> tuple:

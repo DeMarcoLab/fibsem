@@ -98,6 +98,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 image_settings=self.settings.image,
                 viewer=self.viewer,
             )
+            self.image_widget.setMinimumWidth(500)
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
                 settings=self.settings,
