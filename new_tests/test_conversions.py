@@ -1,6 +1,6 @@
 import pytest
 from fibsem import conversions
-from fibsem.structures import FibsemImage, Point
+from fibsem.structures import FibsemImage, Point, FibsemImageMetadata, ImageSettings, MicroscopeState,FibsemDetectorSettings
 import numpy as np
 
 
@@ -29,6 +29,11 @@ def test_convert_m_to_p():
         output = conversions.convert_metres_to_pixels(distance_in_m[i],pixelsizes[i])
 
         assert output == int(answers[i]), f"output: {output} does not match answer: {int(answers)}"
+
+    with pytest.raises(Exception) as e_info:
+
+        output = conversions.convert_metres_to_pixels("23","0.1")
+
 
 def test_convert_p_to_m():
 
@@ -107,12 +112,14 @@ def test_convert_point_m_to_p(points):
 
 
 
-def test_image_to_microscope_image_coordinates(points,image):
+def test_image_to_microscope_image_coordinates(points):
+
+    pixel_sizes = np.random.rand(len(points))*1e-6
 
     
     for i in range(len(points)):
 
-        pointA = points[0]
+        pointA = points[i]
 
         image_dim = np.random.randint(20,1000,2)
 
@@ -125,18 +132,56 @@ def test_image_to_microscope_image_coordinates(points,image):
         dy = -(pointA.y - cy)
         dx = pointA.x - cx
 
+        p1 = conversions.convert_point_from_pixel_to_metres(Point(dx,dy),pixel_sizes[i])
 
+        point_m = conversions.image_to_microscope_image_coordinates(pointA,image_array,pixel_sizes[i])
 
-        point_m = conversions.image_to_microscope_image_coordinates(p1,image,0.001)
-
-        assert point_m.x == 0
-        assert point_m.y == 0
+        assert point_m.x == p1.x
+        assert point_m.y == p1.y
 
     
 
 def test_get_lamella_size_in_pixels():
 
-    pass
+    fake_metadata = FibsemImageMetadata(
+        pixel_size=Point(1.23e-6,1.23e-6),
+        image_settings=ImageSettings(resolution=[1000,1000]),
+        microscope_state=MicroscopeState(timestamp=None,absolute_position=None,eb_settings=None,ib_settings=None),
+        detector_settings=FibsemDetectorSettings(type=None,mode=None,brightness=None,contrast=None)
+        )
+        
+
+    pic = FibsemImage(np.random.randint(0,256,size=(100,100)).astype(np.uint8),fake_metadata)
+
+    protocol = {
+    "lamella_width":10.e-6,
+    "lamella_height": 800.e-9,
+    }
+
+    
+    total_height = protocol["lamella_height"]
+    lamella_width = protocol["lamella_width"]
+
+    pixelsize = pic.metadata.pixel_size.x
+
+    width, height = pic.metadata.image_settings.resolution
+
+    vfw = conversions.convert_pixels_to_metres(height, pixelsize)
+    hfw = conversions.convert_pixels_to_metres(width,pixelsize)
+
+    lamella_height_px = int((total_height/vfw)*height)
+    lamella_width_px = int((lamella_width/hfw)*width)
+
+    output_height, output_width = conversions.get_lamella_size_in_pixels(pic,protocol,use_trench_height=False)
+
+    assert output_height == lamella_height_px
+    assert output_width == lamella_width_px
+
+
+
+
+
+    
 
 
     

@@ -33,4 +33,9 @@ def test_point():
 
     assert p1.x == 5
 
+    with pytest.raises(Exception):
+
+        bad_point = structures.Point("a","b")
+
+
 
