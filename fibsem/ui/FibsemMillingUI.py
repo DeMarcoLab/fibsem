@@ -191,7 +191,7 @@ class FibsemMillingUI(MillingUI.Ui_Dialog, QtWidgets.QDialog):
         milling_time_seconds = milling.estimate_milling_time_in_seconds(patterns)
         # multiple by the ratio of the imaging_current to milling_current
         time_str = fibsem_utils._format_time_seconds(milling_time_seconds)
-        self.label_milling_time.setText(f"Estimated Time: {time_str}")
+        self.label_milling_time.setText(f"Estimated Time: Not Available")
 
     def update_milling_stages(self):
 
@@ -417,7 +417,7 @@ def main():
         protocol_path=liftout_config.protocol_path
     )
     settings.image.hfw = 150e-6
-    milling_pattern = MillingPattern.Trench
+    milling_pattern = MillingPattern.JCut
     point = None
     change_pattern = True
     validate = True

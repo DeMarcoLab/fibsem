@@ -264,7 +264,7 @@ class DetectedFeatures:
 
 
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], mask_radius: int = 256
+    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], mask_radius: int = 512
 ) -> list[Feature]:
 
     detection_features = []
