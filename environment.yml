@@ -1,6 +1,8 @@
 name: fibsem
 channels:
   - conda-forge
+  - pytorch
+  - nvidia
 dependencies:
   - python=3.9
   - zarr
@@ -16,3 +18,7 @@ dependencies:
   - pytest
   - mypy
   - pip
+  - pytorch
+  - torchvision
+  - cudatoolkit
+  - segmentation-models-pytorch
