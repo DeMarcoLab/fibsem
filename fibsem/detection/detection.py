@@ -467,8 +467,8 @@ def move_based_on_detection(
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
     # these movements move the needle...
-    if f1.name in ["NeedleTip", "LamellaRightEdge"]:
-
+    if isinstance(f1, NeedleTip) or isinstance(f1, LamellaRightEdge):
+    
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ELECTRON:
             det.distance.y *= -1
@@ -479,7 +479,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.name is "LamellaCentre" and f2.name is "ImageCentre":
+    if isinstance(f1, LamellaCentre) and isinstance(f2, ImageCentre):
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
