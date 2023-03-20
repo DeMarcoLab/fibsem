@@ -197,3 +197,46 @@ def test_manipulator_position():
     with pytest.raises(Exception):
 
         bad_position = structures.FibsemManipulatorPosition.__from_dict__(bad_dict)
+
+
+def test_fibsem_rectangle():
+
+    new_rect = structures.FibsemRectangle(
+        left=2.31,
+        top=4.5,
+        width=5,
+        height=1.1
+    )
+
+    assert new_rect.left == 2.31
+    assert new_rect.top == 4.5
+    assert new_rect.width == 5
+    assert new_rect.height == 1.1
+
+
+    rect_dict = {"left":1,"top":2,"width":3,"height":4}
+
+    points = ["left","top","width","height"]
+
+    rectangle_from_dict = structures.FibsemRectangle.__from_dict__(rect_dict)
+
+    for point in points:
+        
+        output = getattr(rectangle_from_dict,point)
+        assert output == rect_dict[point], f"point: {point} -- output {output} does not match expected {rect_dict[point]} "
+
+    to_dict = new_rect.__to_dict__()
+
+    assert to_dict["left"] == 2.31
+    assert to_dict["top"] == 4.5
+    assert to_dict["width"] == 5
+    assert to_dict["height"] == 1.1
+
+    bad_dict = {"left":1,"top":"a","width":34.4,"height": [1]}
+
+    with pytest.raises(Exception):
+
+        bad_rect = structures.FibsemRectangle.__from_dict__(bad_dict)
+
+    
+

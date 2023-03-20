@@ -368,6 +368,15 @@ class FibsemRectangle:
     height: float = 0.0
 
     def __from_dict__(settings: dict) -> "FibsemRectangle":
+
+        points = ["left","top","width","height"]
+
+        for point in points:
+
+            value = settings[point]
+
+            assert isinstance(value,float) or isinstance(value,int) or value is None
+
         return FibsemRectangle(
             left=settings["left"],
             top=settings["top"],
