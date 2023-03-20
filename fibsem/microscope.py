@@ -1554,6 +1554,10 @@ class ThermoMicroscope(FibsemMicroscope):
             return beam.high_voltage.limits
         if key == "voltage_controllable":
             return beam.high_voltage.is_controllable
+        if key == "shift":
+            return beam.beam_shift.value
+        if key == "stigmation": 
+            return beam.stigmator.value
 
 
         # ion beam properties
@@ -1639,6 +1643,14 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "scan_rotation":
             beam.scanning.rotation.value = value
             logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
+            return
+        if key == "shift":
+            beam.beam_shift.value = value
+            logging.info(f"{beam_type.name} shift set to {value}.")
+            return
+        if key == "stigmation":
+            beam.stigmator.value = value
+            logging.info(f"{beam_type.name} stigmation set to {value}.")
             return
 
         # beam control
@@ -3111,6 +3123,10 @@ class TescanMicroscope(FibsemMicroscope):
                 return self.last_image_ib.metadata.image_settings.dwell_time   
         if key =="scan_rotation":
             return beam.Optics.GetImageRotation()     
+        if key == "shift":
+            values = beam.Optics.GetImageShift()
+            shift = Point(values[0]*constants.MILLIMETRE_TO_METRE, values[1]*constants.MILLIMETRE_TO_METRE)
+            return shift
         
         # stage properties
         if key == "stage_position":
@@ -3189,6 +3205,11 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "on":
             beam.Beam.On() if value else beam.Beam.Off()
             logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
+            return
+        if key == "shift":
+            point = Point(value.x*constants.METRE_TO_MILLIMETRE, value.y*constants.METRE_TO_MILLIMETRE)
+            beam.Optics.SetImageShift(point.x, point.y)
+            logging.info(f"{beam_type.name} beam shift set to {value}.")
             return
         # detector control
         if key == "detector_type":

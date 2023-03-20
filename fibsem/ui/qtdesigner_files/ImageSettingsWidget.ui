@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>477</width>
-    <height>721</height>
+    <width>677</width>
+    <height>895</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -68,18 +68,7 @@
         </widget>
        </item>
        <item row="0" column="1" colspan="2">
-        <widget class="QComboBox" name="beam_detector">
-         <item>
-          <property name="text">
-           <string>ELECTRON</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>ION</string>
-          </property>
-         </item>
-        </widget>
+        <widget class="QComboBox" name="selected_beam"/>
        </item>
        <item row="7" column="1" colspan="2">
         <widget class="QLineEdit" name="lineEdit_image_label"/>
@@ -186,23 +175,10 @@
         <x>0</x>
         <y>235</y>
         <width>441</width>
-        <height>425</height>
+        <height>221</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="11" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_5"/>
-       </item>
-       <item row="9" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Working distance (mm)</string>
-         </property>
-        </widget>
-       </item>
        <item row="6" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
@@ -210,55 +186,24 @@
          </property>
         </widget>
        </item>
-       <item row="13" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_3"/>
-       </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="label_11">
+       <item row="1" column="0">
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
-          <string>Stigmation</string>
+          <string>Detector Settings</string>
          </property>
         </widget>
        </item>
-       <item row="15" column="0" colspan="3">
-        <widget class="QPushButton" name="pushButton_take_all_images">
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_3">
          <property name="text">
-          <string>Take All Images</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="2">
-        <widget class="QLabel" name="contrast_label">
-         <property name="text">
-          <string>50%</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>Voltage (V)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Brightness (%)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0" colspan="3">
-        <widget class="QPushButton" name="pushButton_take_image">
-         <property name="text">
-          <string>Take Image</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Beam current (pA)</string>
+          <string>Mode</string>
          </property>
         </widget>
        </item>
@@ -269,27 +214,46 @@
          </property>
         </widget>
        </item>
-       <item row="10" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Beam Settings</string>
+          <string>Brightness (%)</string>
          </property>
         </widget>
        </item>
-       <item row="13" column="0">
-        <widget class="QLabel" name="label_12">
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>Shift</string>
+          <string>Type</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QComboBox" name="mode"/>
+       </item>
+       <item row="6" column="1">
+        <widget class="QSlider" name="contrast">
+         <property name="maximum">
+          <number>100</number>
+         </property>
+         <property name="sliderPosition">
+          <number>50</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="tickPosition">
+          <enum>QSlider::TicksAbove</enum>
+         </property>
+         <property name="tickInterval">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="set_detector">
+         <property name="text">
+          <string>Set Detector</string>
          </property>
         </widget>
        </item>
@@ -315,13 +279,6 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Mode</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="1">
         <widget class="QComboBox" name="type"/>
        </item>
@@ -338,59 +295,6 @@
          </property>
         </spacer>
        </item>
-       <item row="6" column="1">
-        <widget class="QSlider" name="contrast">
-         <property name="maximum">
-          <number>100</number>
-         </property>
-         <property name="sliderPosition">
-          <number>50</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="tickPosition">
-          <enum>QSlider::TicksAbove</enum>
-         </property>
-         <property name="tickInterval">
-          <number>10</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Detector Settings</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QComboBox" name="mode"/>
-       </item>
-       <item row="12" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_4"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="set_detector">
-         <property name="text">
-          <string>Set Detector</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Type</string>
-         </property>
-        </widget>
-       </item>
        <item row="7" column="1">
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
@@ -403,6 +307,137 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="6" column="2">
+        <widget class="QLabel" name="contrast_label">
+         <property name="text">
+          <string>50%</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="gridLayoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>460</y>
+        <width>441</width>
+        <height>221</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>Shift (x,y)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QDoubleSpinBox" name="shift_x">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QDoubleSpinBox" name="shift_y">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Beam current (pA)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="beam_current">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QDoubleSpinBox" name="beam_voltage">
+         <property name="maximum">
+          <double>100000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="QDoubleSpinBox" name="stigmation_y">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Beam Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>Stigmation (x,y)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="working_distance">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="stigmation_x">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>Voltage (kV)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Working distance (mm)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="3">
+        <widget class="QPushButton" name="pushButton_take_image">
+         <property name="text">
+          <string>Take Image</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="3">
+        <widget class="QPushButton" name="pushButton_take_all_images">
+         <property name="text">
+          <string>Take All Images</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
