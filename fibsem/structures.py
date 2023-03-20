@@ -207,6 +207,38 @@ Attributes:
 
     @classmethod
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
+
+        
+        electron_beam=(hardware_dict["electron"]["enabled"]),
+        ion_beam=(hardware_dict["ion"]["enabled"]),
+        stage_enabled=(hardware_dict["stage"]["enabled"]),
+        stage_rotation=(hardware_dict["stage"]["rotation"]),
+        stage_tilt=(hardware_dict["stage"]["tilt"]),
+        manipulator_enabled=(hardware_dict["manipulator"]["enabled"]),
+        manipulator_rotation=(hardware_dict["manipulator"]["rotation"]),
+        manipulator_tilt=(hardware_dict["manipulator"]["tilt"]),
+        gis_enabled=(hardware_dict["gis"]["enabled"]),
+        gis_multichem=(hardware_dict["gis"]["multichem"])
+        
+        attributes = [
+            electron_beam,
+            ion_beam,
+            stage_enabled,
+            stage_rotation,
+            stage_tilt,
+            manipulator_enabled,
+            manipulator_rotation,
+            manipulator_tilt,
+            gis_enabled,
+            gis_multichem
+        ]
+
+        for attribute in attributes:
+
+            attribute = attribute[0] if isinstance(attribute,tuple) else attribute
+
+            assert isinstance(attribute,bool), f"attribute {attribute} is not of Bool type"
+
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
             ion_beam=bool(hardware_dict["ion"]["enabled"]),
