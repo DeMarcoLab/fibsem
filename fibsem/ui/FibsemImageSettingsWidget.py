@@ -133,7 +133,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.camera.zoom = 0.45
 
         if self.ib_layer:
-            self.ib_layer.translate = [0.0, arr.shape[1]]        
+            translation = self.viewer.layers["ELECTRON"].data.shape[1] if self.eb_layer else arr.shape[1]
+            self.ib_layer.translate = [0.0, translation]        
         self.viewer.layers.selection.active = self.eb_layer
 
         if self.eb_layer:
