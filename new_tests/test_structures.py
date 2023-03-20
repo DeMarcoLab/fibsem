@@ -88,8 +88,56 @@ def test_fibsemStagePosition():
         output = getattr(fsp_from_dict,property)
         assert output == answer, f'Dict output {output} does not match answer {answer}'
 
+    bad_dict = {
+        "x": 0,
+        "y": "a",
+        "z": structures.Point(),
+        "r": 0.123,
+        "t": "hello"
+    }
+
+    with pytest.raises(Exception):
+
+        bad_position = structures.FibsemStagePosition.__from_dict__(bad_dict)
+
 def test_fibsemhardware():
 
+    hardware_dict = {
 
+        "electron":{"enabled":False},
+        "ion":{"enabled":True},
+        "stage":{"enabled":True,"rotation":True,"tilt":True},
+        "manipulator":{"enabled":False,"rotation":False,"tilt":False},
+        "gis":{"enabled":True,"multichem":True}
+    }
+
+    fbhardware = structures.FibsemHardware()
+
+    from_dict_hardware = structures.FibsemHardware.__from_dict__(hardware_dict)
+
+    attributes = [
+        "electron_beam",
+        "ion_beam",
+        "stage_enabled",
+        "stage_rotation",
+        "stage_tilt",
+        "manipulator_enabled",
+        "manipulator_rotation",
+        "manipulator_tilt",
+        "gis_enabled",
+        "gis_multichem",
+    ]
+
+    for attribute in attributes:
+
+        assert getattr(fbhardware,attribute) == True, f"attribute: {attribute} does not match" 
+
+        if "manipulator" in attribute or "electron" in attribute:
+
+            assert getattr(from_dict_hardware,attribute) == False, f"attribute: {attribute} does not match" 
+        else:
+            assert getattr(from_dict_hardware,attribute) == True, f"attribute: {attribute} does not match" 
+
+    
 
 
