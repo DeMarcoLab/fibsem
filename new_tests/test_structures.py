@@ -154,3 +154,46 @@ def test_fibsemhardware():
     
 
 
+def test_manipulator_position():
+
+    fmp = structures.FibsemManipulatorPosition(1,2,3,4,5)
+
+    properties = ["x","y","z","r","t","coordinate_system"]
+    values = [1,2,3,4,5,None]
+    output_dict = fmp.__to_dict__()
+
+    for property, value, dict_value in zip(properties,values,output_dict):
+
+        output = getattr(fmp,property)
+        assert output == value, f'output {output} does not match value {value}'
+        assert output_dict[property] == value, f'output dict value {output_dict[property]} does not match value {value}'
+
+    new_dict = {
+        "x": 0.2,
+        "y": 4,
+        "z": 3,
+        "r": 0.0012,
+        "t": 0,
+        "coordinate_system":None
+    }
+
+    fmp_from_dict = structures.FibsemManipulatorPosition.__from_dict__(new_dict)
+
+    new_dict_values = [0.2,4,3,0.0012,0,None]
+
+    for property,answer in zip(properties,new_dict_values):
+
+        output = getattr(fmp_from_dict,property)
+        assert output == answer, f'Dict output {output} does not match answer {answer}'
+
+    bad_dict = {
+        "x": 0,
+        "y": "a",
+        "z": structures.Point(),
+        "r": 0.123,
+        "t": "hello"
+    }
+
+    with pytest.raises(Exception):
+
+        bad_position = structures.FibsemManipulatorPosition.__from_dict__(bad_dict)

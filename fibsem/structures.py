@@ -297,6 +297,16 @@ Methods:
     
     @classmethod
     def __from_dict__(cls, data: dict) -> "FibsemManipulatorPosition":
+
+        items = ["x","y","z","r","t"]
+
+        for item in items:
+
+            value = data[item]
+
+            assert isinstance(value,float) or isinstance(value,int) or value is None
+
+
         return cls(
             x=data["x"],
             y=data["y"],
