@@ -3403,6 +3403,10 @@ class DemoMicroscope(FibsemMicroscope):
             stigmation=Point(0, 0),
             shift=Point(0, 0),
         )
+        import fibsem
+        from fibsem.utils import load_protocol
+        base_path = os.path.dirname(fibsem.__path__[0])
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
 
     def connect_to_microscope(self):
         logging.info(f"Connected to Demo Microscope")
@@ -3412,6 +3416,8 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Disconnected from Demo Microscope")
 
     def acquire_image(self, image_settings: ImageSettings) -> FibsemImage:
+
+        _check_beam(image_settings.beam_type, self.hardware_settings)
 
         vfw = image_settings.hfw * image_settings.resolution[1] / image_settings.resolution[0]
         pixelsize = Point(image_settings.hfw / image_settings.resolution[0], 
@@ -3432,22 +3438,28 @@ class DemoMicroscope(FibsemMicroscope):
         return image
 
     def last_image(self, beam_type: BeamType) -> FibsemImage:
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Getting last image: {beam_type}")
         return self._eb_image if beam_type is BeamType.ELECTRON else self._ib_image
     
     def autocontrast(self, beam_type: BeamType) -> None:
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Autocontrast: {beam_type}")
 
     def auto_focus(self, beam_type: BeamType) -> None:
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Auto focus: {beam_type}")
         logging.info(f"I'm focusing my laser...")
 
     def reset_beam_shifts(self) -> None:
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
+        _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Resetting beam shifts")
         self.electron_beam.shift = Point(0,0)
         self.ion_beam.shift = Point(0,0)
 
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
+        _check_beam(beam_type, self.hardware_settings)
         beam_type = BeamType.ION # TODO: add beam_type to params for ABC
         logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
         if beam_type == BeamType.ELECTRON:
@@ -3456,6 +3468,7 @@ class DemoMicroscope(FibsemMicroscope):
             self.ion_beam.shift += Point(dx, dy)
 
     def get_stage_position(self) -> FibsemStagePosition:
+        _check_stage(self.hardware_settings)
         logging.info(f"Getting stage position: {self.stage_position}")
         return self.stage_position
     
@@ -3464,23 +3477,29 @@ class DemoMicroscope(FibsemMicroscope):
         return MicroscopeState(absolute_position=self.stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: {position} (Absolute)")
         self.stage_position = position
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: {position} (Relative)")
         self.stage_position += position
 
     def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dx={dx:.2e}, dy={dy:.2e}, beam_type = {beam_type.name} (Stable)")
         self.stage_position.x += dx
         self.stage_position.y += dy
 
     def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
         self.stage_position.z += dy / np.cos(np.deg2rad(90-settings.system.stage.tilt_flat_to_ion))
 
     def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
+        _check_stage(self.hardware_settings)
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Moving stage: Flat to {beam_type.name} beam")
 
         if beam_type is BeamType.ELECTRON:
@@ -3496,28 +3515,35 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position.t = np.deg2rad(t)
     
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
+        _check_needle(self.hardware_settings)
         logging.info(f"Getting manipulator position: {self.manipulator_position}")
         return self.manipulator_position
 
     def insert_manipulator(self, name: str = "PARK"):
+        _check_needle(self.hardware_settings)
         logging.info(f"Inserting manipulator to {name}")
     
     def retract_manipulator(self):
+        _check_needle(self.hardware_settings)
         logging.info(f"Retracting manipulator")
     
     def move_manipulator_relative(self, position: FibsemManipulatorPosition):
+        _check_needle(self.hardware_settings)
         logging.info(f"Moving manipulator: {position} (Relative)")
         self.manipulator_position += position
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition):
+        _check_needle(self.hardware_settings)
         logging.info(f"Moving manipulator: {position} (Absolute)")
         self.manipulator_position = position
               
     def move_manipulator_corrected(self, position: FibsemManipulatorPosition, beam_type: BeamType):
+        _check_needle(self.hardware_settings)
         logging.info(f"Moving manipulator: {position} (Corrected)")
         self.manipulator_position = position
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
+        _check_needle(self.hardware_settings)
         if name is None:
             name = "EUCENTRIC"
 
@@ -3527,6 +3553,7 @@ class DemoMicroscope(FibsemMicroscope):
         self.manipulator_position = position + offset
 
     def _get_saved_manipulator_position(self, name: str = "PARK") -> FibsemManipulatorPosition:
+        _check_needle(self.hardware_settings)
 
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"Unknown manipulator position: {name}")
@@ -3536,12 +3563,15 @@ class DemoMicroscope(FibsemMicroscope):
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
     def setup_milling(self, mill_settings: FibsemMillingSettings):
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
         logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
 
     def run_milling(self, milling_current: float, asynch: bool = False) -> None:
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
         logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
 
     def finish_milling(self, imaging_current: float) -> None:
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
 
     def draw_rectangle(self, pattern_settings: FibsemPatternSettings) -> None:
@@ -3575,15 +3605,18 @@ class DemoMicroscope(FibsemMicroscope):
         return
 
     def setup_sputter(self, protocol: dict) -> None:
+        _check_sputter(self.hardware_settings)
         logging.info(f"Setting up sputter: {protocol}")
 
     def draw_sputter_pattern(self, hfw: float, line_pattern_length: float, sputter_time: float):
         logging.info(f"Drawing sputter pattern: hfw={hfw:.2e}, line_pattern_length={line_pattern_length:.2e}, sputter_time={sputter_time:.2e}")
 
     def run_sputter(self, **kwargs):
+        _check_sputter(self.hardware_settings)
         logging.info(f"Running sputter: {kwargs}")
 
     def finish_sputter(self, **kwargs):
+        _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
 
     def set_microscope_state(self, state: MicroscopeState):
@@ -3680,6 +3713,7 @@ class DemoMicroscope(FibsemMicroscope):
         return True
     
     def home(self):
+        _check_stage(self.hardware_settings)
         logging.info("Homing Stage")
         return
 
