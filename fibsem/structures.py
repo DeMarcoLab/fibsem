@@ -37,20 +37,33 @@ from fibsem.config import METADATA_VERSION
 class Point:
     x: float = 0.0
     y: float = 0.0
+    assert isinstance(x,float) or x is None, f'Invalid type {type(x)} for point'
+    assert isinstance(y,float) or y is None, f'Invalid type {type(y)} for point'
+    
+
 
     def __to_dict__(self) -> dict:
         return {"x": self.x, "y": self.y}
 
     @staticmethod
     def __from_dict__(d: dict) -> "Point":
-        return Point(d["x"], d["y"])
+        x = float(d["x"])
+        y = float(d["y"])
+        assert isinstance(x,float) or x is None, f'Invalid type {type(x)} for point'
+        assert isinstance(y,float) or y is None, f'Invalid type {type(y)} for point'
+        return Point(x, y)
+        
 
     def __to_list__(self) -> list:
         return [self.x, self.y]
 
     @staticmethod
     def __from_list__(l: list) -> "Point":
-        return Point(l[0], l[1])
+        x = float(l[0])
+        y = float(l[1])
+        assert isinstance(x,float) or x is None, f"Invalid type {type(x)} for point"
+        assert isinstance(y,float) or y is None, f'invalid type {type(y)} for point'
+        return Point(x, y)
     
     def __add__(self, other) -> 'Point':
         return Point(self.x + other.x, self.y + other.y)
