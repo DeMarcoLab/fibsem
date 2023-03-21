@@ -533,8 +533,11 @@ class BeamSettings:
     hfw: float = None
     resolution: list = None
     dwell_time: float = None
-    stigmation: Point = None
-    shift: Point = None
+    stigmation: Point = None # should be list of points?
+    shift: Point = None # same? it is being turned to fibsem rectangle? needs 4 points?
+
+    ## FROM DICT AND TO DICT DOES NOT HAVE VOLTAGE (ADDED IN)
+
 
     def __to_dict__(self) -> dict:
 
@@ -542,6 +545,7 @@ class BeamSettings:
             "beam_type": self.beam_type.name,
             "working_distance": self.working_distance,
             "beam_current": self.beam_current,
+            "voltage": self.voltage,
             "hfw": self.hfw,
             "resolution": self.resolution,
             "dwell_time": self.dwell_time,
@@ -568,6 +572,7 @@ class BeamSettings:
             beam_type=BeamType[state_dict["beam_type"].upper()],
             working_distance=state_dict["working_distance"],
             beam_current=state_dict["beam_current"],
+            voltage=state_dict["voltage"],
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
             dwell_time=state_dict["dwell_time"],

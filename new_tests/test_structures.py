@@ -341,6 +341,100 @@ def test_image_settings(fake_fibsem_image):
     assert image_settings_2.save_path is None
 
 
+def test_beam_settings():
+
+    attributes = {
+        "beam_type":"ION",
+        "working_distance": 1.2343,
+        "beam_current": 34.545,
+        "voltage":2.33,
+        "hfw":1.23e-5,
+        "resolution":[100,200],
+        "dwell_time":1.23e-6,
+        "stigmation":None,
+        "shift":None
+    }
+
+    answers = {
+        "beam_type":structures.BeamType.ION,
+        "working_distance": 1.2343,
+        "beam_current": 34.545,
+        "voltage":2.33,
+        "hfw":1.23e-5,
+        "resolution":[100,200],
+        "dwell_time":1.23e-6,
+        "stigmation":structures.Point(),
+        "shift":structures.Point()
+    }
+
+    new_BeamSettings = structures.BeamSettings.__from_dict__(attributes)
+
+    assert isinstance(new_BeamSettings,structures.BeamSettings)
+    assert new_BeamSettings.beam_current == 34.545
+    assert new_BeamSettings.working_distance == 1.2343
+
+
+    from_dict(new_BeamSettings,attributes=attributes,answers=answers)
+
+    beamsettings_ = structures.BeamSettings(
+        beam_type=structures.BeamType.ION,
+        working_distance=1.23,
+        beam_current=1.44,
+        voltage=5.4,
+        hfw=1.3e-6,
+        resolution=[100,100],
+        dwell_time=1.3e-5,
+        stigmation=None,
+        shift=None
+    )
+
+    beamsettings_to_dict = beamsettings_.__to_dict__()
+
+    answers_to_dict = {
+        "beam_type":"ION",
+        "working_distance": 1.23,
+        "beam_current": 1.44,
+        "voltage":5.4,
+        "hfw":1.3e-6,
+        "resolution":[100,100],
+        "dwell_time":1.3e-5,
+        "stigmation":None,
+        "shift":None
+    }
+    
+    to_dict(beamsettings_to_dict,answers_to_dict)
+
+
+
+
+
+def from_dict(main_object,attributes: dict, answers: dict):
+
+    
+
+    for attribute in attributes:
+
+        output = getattr(main_object,attribute)
+        answer = answers[attribute]
+
+        assert output == answer, f"Attribute: {attribute} output: {output} does not match answer: {answer}"
+
+def to_dict(attributes: dict, answers: dict):
+
+    for attribute in attributes:
+
+        output = attributes[attribute] 
+        answer = answers[attribute]
+
+        assert output == answer , f"Attribute: {attribute} output: {output} does not match answer: {answer}"
+
+
+
+
+
+
+
+
         
 
 
