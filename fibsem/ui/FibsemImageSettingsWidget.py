@@ -153,7 +153,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 text=text,
                 size=20,
                 edge_width=7,
-                edge_width_is_relative=False,
+                # edge_width_is_relative=False,
                 edge_color='transparent',
                 face_color='transparent',
                 )   

@@ -3284,6 +3284,7 @@ class DemoMicroscope(FibsemMicroscope):
                 size=(image_settings.resolution[1],image_settings.resolution[0]), 
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
+            detector_settings = FibsemDetectorSettings.__from_dict__({}),
                                          microscope_state=MicroscopeState()))
 
         if image_settings.beam_type is BeamType.ELECTRON:
