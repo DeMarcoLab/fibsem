@@ -1,5 +1,31 @@
 import pytest
 from fibsem import structures
+import os
+import numpy as np
+
+@pytest.fixture
+def fake_fibsem_image():
+    fake_image_settings = structures.ImageSettings(
+        resolution=(1234,1234)
+    )
+    fake_metadata = structures.FibsemImageMetadata(
+        image_settings=fake_image_settings,
+        pixel_size=structures.Point(0.001,0.001),
+        microscope_state=structures.MicroscopeState(),
+        detector_settings=structures.FibsemDetectorSettings(
+        type=None,
+        mode=None,
+        brightness=1.234,
+        contrast=83.2
+        ),
+
+    )
+    pic = structures.FibsemImage(
+        data=np.random.randint(0,256,size=(10,10)).astype(np.uint8),
+        metadata=fake_metadata
+    )
+
+    return pic
 
 def test_point():
 
@@ -238,5 +264,83 @@ def test_fibsem_rectangle():
 
         bad_rect = structures.FibsemRectangle.__from_dict__(bad_dict)
 
+
+def test_image_settings(fake_fibsem_image):
+
     
+
+    attributes_dict = {
+        "resolution":(1000,2000),
+        "dwell_time":2.0e-6,
+        "hfw":100e-6,
+        "autocontrast":False,
+        "beam_type":"electron",
+        "save":False,
+        "label":"Fake_image",
+        "gamma_enabled":False,
+        "save_path":os.getcwd(),
+        "reduced_area":{"left":1,"top":2,"width":3,"height":4}
+    }
+
+
+    new_image_settings = structures.ImageSettings.__from_dict__(attributes_dict)
+
+    for attribute in attributes_dict:
+
+        output = getattr(new_image_settings,attribute)
+        if attribute == "beam_type":
+            answer = structures.BeamType.ELECTRON
+        elif attribute == "reduced_area":
+            answer = structures.FibsemRectangle.__from_dict__(attributes_dict[attribute])
+        else:    
+            answer = attributes_dict[attribute]
+        assert output == answer, f"output: {output} does not match answer: {answer}"
+
+    from_fb_image = fake_fibsem_image.metadata.image_settings
+
+    assert from_fb_image.resolution == (1234,1234)
+
+    
+    image_settings_2 = structures.ImageSettings(
+        resolution=(100,100),
+        dwell_time=1.23e-6,
+        hfw=200e-6,
+        autocontrast=True,
+        beam_type=structures.BeamType.ION,
+        save=False,
+        label="my_image",
+        gamma_enabled=True,
+        save_path=None,
+        reduced_area=None
+    )
+
+    answers_dict ={
+        "resolution":(100,100),
+        "dwell_time":1.23e-6,
+        "hfw":200e-6,
+        "autocontrast":True,
+        "beam_type":structures.BeamType.ION.name,
+        "save":False,
+        "label":"my_image",
+        "gamma_enabled":True,
+        "save_path":None,
+        "reduced_area":None
+    }
+
+    output_dict = image_settings_2.__to_dict__()
+
+    for item in output_dict:
+
+        output = output_dict[item]
+        answer = answers_dict[item]
+
+        assert output == answer, f"output: {output} does not match answer {answer}"
+
+    assert image_settings_2.autocontrast is True
+    assert image_settings_2.label == "my_image"
+    assert image_settings_2.save_path is None
+
+
+        
+
 

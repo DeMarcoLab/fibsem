@@ -1152,10 +1152,10 @@ class FibsemState:
 
 @dataclass
 class FibsemDetectorSettings:
-    type: str
-    mode: str 
-    brightness: float
-    contrast: float
+    type: str = None
+    mode: str = None
+    brightness: float = None
+    contrast: float = None
 
     if TESCAN:
         def to_tescan(self):
