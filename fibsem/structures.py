@@ -819,6 +819,12 @@ if THERMO:
 def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
     """Converts the FibsemStagePosition Object into a dictionary"""
 
+    attributes = ["x","y","z","r","t"]
+    for attribute in attributes:
+        assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
+
+    assert stage_position.coordinate_system in ["RAW","SPECIMEN"] or stage_position.coordinate_system is None
+
     stage_position_dict = {
         "x": stage_position.x,
         "y": stage_position.y,

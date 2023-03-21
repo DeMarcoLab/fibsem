@@ -459,6 +459,42 @@ def to_dict(attributes: dict, answers: dict):
         assert output == answer , f"Attribute: {attribute} output: {output} does not match answer: {answer}"
 
 
+def test_FibsemPattern():
+
+    fbPattern = structures.FibsemPattern
+
+    assert fbPattern.Rectangle.value == 1
+    assert fbPattern.Line.value == 2
+    assert fbPattern.Circle.value == 3
+
+
+def test_fibsemMillingSettings():
+
+    attributes = {
+        "milling_current":20.0e-12,
+        "spot_size":5.0e-8,
+        "rate":3.0e-3,
+        "dwell_time":1.0e-6,
+        "hfw":150e-6,
+        "patterning_mode":"Serial",
+        "application_file":"Si"
+    }
+
+    new_fbMillingSettings = structures.FibsemMillingSettings()
+
+    from_dict(new_fbMillingSettings,attributes,attributes)
+
+    fbMillingSettings_dict = new_fbMillingSettings.__to_dict__()
+
+    to_dict(fbMillingSettings_dict,attributes)
+
+    new_fbMillingSettings.spot_size = 4.0e-8
+    new_fbMillingSettings.hfw = 54
+
+    assert new_fbMillingSettings.spot_size == 4.0e-8
+    assert new_fbMillingSettings.hfw == 54
+
+
 
 
 
