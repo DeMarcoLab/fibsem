@@ -405,7 +405,37 @@ def test_beam_settings():
     to_dict(beamsettings_to_dict,answers_to_dict)
 
 
+def test_MicroscopeState():
+    from datetime import datetime
 
+    eb_settings = structures.BeamSettings(beam_type=structures.BeamType.ELECTRON)
+    ib_settings = structures.BeamSettings(beam_type=structures.BeamType.ION)
+
+
+    attributes = {
+        "timestamp": datetime.timestamp(datetime.now()),
+        "absolute_position": {"x":0,"y":0,"z":0,"r":0,"t":0,"coordinate_system":None},
+        "eb_settings": eb_settings.__to_dict__(),
+        "ib_settings": ib_settings.__to_dict__()
+    }
+
+    new_microscopeState = structures.MicroscopeState.__from_dict__(attributes)
+    time_now = datetime.timestamp(datetime.now())
+    assert new_microscopeState.ib_settings.beam_type.name == "ION"
+    assert new_microscopeState.absolute_position.x == 0
+    assert isinstance(new_microscopeState.timestamp,float)
+    assert abs(time_now-new_microscopeState.timestamp) < 10
+    assert isinstance(new_microscopeState.eb_settings,structures.BeamSettings)
+
+    new_microscopeState.absolute_position.y += 7    
+
+    assert new_microscopeState.absolute_position.y == 7
+
+    dict_microscopeState = new_microscopeState.__to_dict__()
+
+    assert dict_microscopeState["absolute_position"]["x"]==0
+    assert dict_microscopeState["absolute_position"]["y"]==7
+    assert dict_microscopeState["eb_settings"]["beam_type"]=="ELECTRON"
 
 
 def from_dict(main_object,attributes: dict, answers: dict):
