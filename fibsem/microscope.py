@@ -3262,6 +3262,7 @@ class DemoMicroscope(FibsemMicroscope):
                 size=(image_settings.resolution[1],image_settings.resolution[0]), 
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
+                                         detector_settings=FibsemDetectorSettings(type="Unknown", mode="Unknown", brightness=0.5, contrast=0.5),
                                          microscope_state=MicroscopeState()))
 
         if image_settings.beam_type is BeamType.ELECTRON:
@@ -3353,9 +3354,10 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Moving manipulator: {position} (Absolute)")
         self.manipulator_position = position
               
-    def move_manipulator_corrected(self, position: FibsemManipulatorPosition, beam_type: BeamType):
-        logging.info(f"Moving manipulator: {position} (Corrected)")
-        self.manipulator_position = position
+    def move_manipulator_corrected(self, dx: float, dy:float, beam_type: BeamType):
+        logging.info(f"Moving manipulator: dx={dx:.2e}, dy={dy:.2e} ({beam_type}) (Corrected)")
+        self.manipulator_position.x += dx
+        self.manipulator_position.y += dy
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
         if name is None:

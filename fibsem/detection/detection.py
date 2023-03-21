@@ -449,9 +449,6 @@ def move_based_on_detection(
     move_x: bool = True,
     move_y: bool = True,
 ):
-
-    from fibsem import movement
-
     # nulify movements in unsupported axes
     if not move_x:
         det.distance.x = 0

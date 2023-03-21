@@ -1,44 +1,31 @@
+import os
+from copy import deepcopy
+from pathlib import Path
+
 import napari
 import napari.utils.notifications
-from PyQt5 import QtWidgets
-
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (
-    MicroscopeSettings,
-    Point,
-    BeamType,
-    ImageSettings,
-    FibsemImage,
-)
-from fibsem.ui.qtdesigner_files import FibsemDetectionWidget
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 import numpy as np
-from pathlib import Path
+import tifffile as tff
+from PyQt5 import QtWidgets
 
 from fibsem.detection import detection
 from fibsem.detection.detection import DetectedFeatures
-
-import tifffile as tff
-import os
-
-from fibsem.detection import detection
-from copy import deepcopy
-import tifffile as tff
-import os
-
+from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation import model as fibsem_model
 from fibsem.segmentation.model import load_model
-
-import os
+from fibsem.structures import (BeamType, FibsemImage, ImageSettings,
+                               MicroscopeSettings, Point)
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.qtdesigner_files import FibsemDetectionWidget
 
 
 class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
         self,
+        image_widget: FibsemImageSettingsWidget,
         microscope: FibsemMicroscope = None,
         settings: MicroscopeSettings = None,
         viewer: napari.Viewer = None,
-        image_widget: FibsemImageSettingsWidget = None,
         detected_features: DetectedFeatures = None,
         parent=None,
     ):
@@ -57,8 +44,6 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         # set detected features
         if detected_features is not None:
             self.set_detected_features(detected_features)
-        else:
-            self.test_function()
 
     def setup_connections(self):
 
@@ -73,7 +58,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
 
         self.pushButton_test_function.setText(f"Move Feature Positions")
         self.pushButton_test_function.clicked.connect(self.toggle_feature_interaction)
-        
+        self.pushButton_test_function.setEnabled(False) # disabled until features are loaded 
+
+
         self.pushButton_load_model.clicked.connect(self.load_model)
 
         self.comboBox_feature_1.addItems(
@@ -92,6 +79,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         self.spinBox_num_classes.setValue(3)
 
     def toggle_feature_interaction(self):
+        
+        if "features" in self.viewer.layers:
+            self.pushButton_test_function.setEnabled(True)
 
         # change colour of test button between orange and green
         if self.pushButton_test_function.text() == "Move Feature Positions":
@@ -102,7 +92,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         else:
             self.pushButton_test_function.setText(f"Move Feature Positions")
             self.pushButton_test_function.setStyleSheet("background-color: gray")
-            self.viewer.layers.selection.active = self.viewer.layers["image"]
+            self.viewer.layers.selection.active = self.viewer.layers[self.image_layer_name]
 
     def run_feature_detection(self):
 
@@ -153,6 +143,31 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
     def continue_button_clicked(self):
         print("continue button clicked")
 
+
+        # TODO:
+        # save image if corrected
+        if self._USER_CORRECTED:
+            
+            if self.image_layer_name == BeamType.ELECTRON.name:
+                image = self.image_widget.eb_image
+            else:
+                image = self.image_widget.ib_image
+
+            # TODO: these should be fibsem images so we have metatdata
+            from fibsem import utils
+            tff.imsave(f"{utils.current_timestamp()}.tif", image)
+        
+        # save coordinates for testing
+
+
+
+
+        # move based on detected features
+        from fibsem.detection import detection
+
+        # TODO: add x, y limtis
+        detection.move_based_on_detection(self.microscope, self.settings, det=self.detected_features, beam_type=BeamType[self.comboBox_beam_type.currentText()])
+
     def set_detected_features(
         self, det_features: DetectedFeatures, beam_type: BeamType = None
     ):
@@ -168,19 +183,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_feature_1.setCurrentText(self.detected_features.features[0].name)
         self.comboBox_feature_2.setCurrentText(self.detected_features.features[1].name)
 
-        # TODO: read the image metadata properly
-
         # add image to viewer (Should be handled by the image widget)
-
-        if self.image_widget is not None:
-            self.image_widget.update_viewer(self.detected_features.image, beam_type.name)
-        else:
-            try:
-                self.viewer.layers["image"].data = self.detected_features.image
-            except:
-                self.viewer.add_image(
-                    self.detected_features.image, name="image", opacity=0.7
-                )
+        self.image_layer_name = beam_type.name
+        self.image_widget.update_viewer(self.detected_features.image, self.image_layer_name)
 
         # add mask to viewer
         try:
@@ -211,7 +216,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
             text=text,
             size=20,
             edge_width=7,
-            edge_width_is_relative=False,
+            # edge_width_is_relative=False,
             edge_color="transparent",
             face_color=[
                 feature.color for feature in self.detected_features.features
@@ -225,7 +230,6 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         else:
             translation = [0, 0]
 
-        self.viewer.layers["image"].translate = translation
         self.viewer.layers["mask"].translate = translation
         self.viewer.layers["features"].translate = translation
 
@@ -294,8 +298,14 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
 
 
 def main():
+
+    from fibsem import utils
+    microscope, settings = utils.setup_session()
+
     viewer = napari.Viewer(ndisplay=2)
-    det_widget_ui = FibsemDetectionWidgetUI(viewer=viewer)
+
+    image_widget = FibsemImageSettingsWidget(microscope=microscope, image_settings=settings.image, viewer=viewer)
+    det_widget_ui = FibsemDetectionWidgetUI(microscope=microscope, settings=settings, viewer=viewer, image_widget=image_widget)
     viewer.window.add_dock_widget(
         det_widget_ui, area="right", add_vertical_stretch=False
     )
