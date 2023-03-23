@@ -64,9 +64,9 @@ def test_point():
     assert p4.x == 10
     assert p4.y == 9
 
-    # with pytest.raises(Exception):
+    with pytest.raises(Exception):
 
-    #     bad_point = structures.Point("a","b")
+        bad_point = structures.Point("a","b")
 
 def test_BeamType():
 

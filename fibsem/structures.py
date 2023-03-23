@@ -37,9 +37,12 @@ from fibsem.config import METADATA_VERSION
 class Point:
     x: float = 0.0
     y: float = 0.0
-    assert isinstance(x,float) or x is None, f'Invalid type {type(x)} for point'
-    assert isinstance(y,float) or y is None, f'Invalid type {type(y)} for point'
-    
+
+    def __post_init__(self):
+
+        assert isinstance(self.x,float) or isinstance(self.x,int), f'Invalid type {type(self.x)} for point'
+        assert isinstance(self.y,float) or isinstance(self.y,int), f'Invalid type {type(self.y)} for point'
+        
 
 
     def __to_dict__(self) -> dict:
@@ -208,36 +211,7 @@ Attributes:
     @classmethod
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
 
-        
-        electron_beam=(hardware_dict["electron"]["enabled"]),
-        ion_beam=(hardware_dict["ion"]["enabled"]),
-        stage_enabled=(hardware_dict["stage"]["enabled"]),
-        stage_rotation=(hardware_dict["stage"]["rotation"]),
-        stage_tilt=(hardware_dict["stage"]["tilt"]),
-        manipulator_enabled=(hardware_dict["manipulator"]["enabled"]),
-        manipulator_rotation=(hardware_dict["manipulator"]["rotation"]),
-        manipulator_tilt=(hardware_dict["manipulator"]["tilt"]),
-        gis_enabled=(hardware_dict["gis"]["enabled"]),
-        gis_multichem=(hardware_dict["gis"]["multichem"])
-        
-        attributes = [
-            electron_beam,
-            ion_beam,
-            stage_enabled,
-            stage_rotation,
-            stage_tilt,
-            manipulator_enabled,
-            manipulator_rotation,
-            manipulator_tilt,
-            gis_enabled,
-            gis_multichem
-        ]
-
-        for attribute in attributes:
-
-            attribute = attribute[0] if isinstance(attribute,tuple) else attribute
-
-            assert isinstance(attribute,bool), f"attribute {attribute} is not of Bool type"
+           
 
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
