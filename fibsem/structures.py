@@ -399,7 +399,7 @@ class ImageSettings:
             else None,
             "gamma_enabled": self.gamma_enabled if self.gamma_enabled is not None else None,
             "save": self.save if self.save is not None else None,
-            "save_path": self.save_path if self.save_path is not None else None,
+            "save_path": str(self.save_path) if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
             "reduced_area": {
                 "left": self.reduced_area.left,
