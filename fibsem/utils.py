@@ -18,7 +18,7 @@ from fibsem.structures import (
     SystemSettings,
     FibsemImage,
     FibsemMillingSettings,
-    FibsemHardware,
+    
 )
 from fibsem.config import BASE_PATH
 from fibsem.microscope import FibsemMicroscope
@@ -266,7 +266,7 @@ def load_settings_from_config(
     protocol = load_protocol(protocol_path)
 
     # hardware settings
-    hardware_settings = FibsemHardware.__from_dict__(load_protocol(model_path))
+    #hardware_settings = FibsemHardware.__from_dict__(load_protocol(model_path))
 
     settings = MicroscopeSettings(
         system=system_settings,
@@ -274,7 +274,7 @@ def load_settings_from_config(
         image=image_settings,
         protocol=protocol,
         milling=milling_settings,
-        hardware=hardware_settings,
+        #hardware=hardware_settings,
     )
 
     return settings
