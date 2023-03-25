@@ -68,6 +68,9 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if _microscope_connected:
             self.microscope.disconnect()
             self.microscope, self.settings = None, None
+            if self.image_widget is not None:
+                self.image_widget.clear_viewer()
+            
         else:
             ip_address = self.lineEdit_ip_address.text()
             manufacturer = self.comboBox_manufacturer.currentText()

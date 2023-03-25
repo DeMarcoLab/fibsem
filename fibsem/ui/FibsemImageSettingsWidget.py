@@ -30,6 +30,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.setup_connections()
 
+        # PPP: what is a better place to do this?
         if self.microscope is not None:
             self.ui_detector()
             self.update_brightness()
@@ -68,6 +69,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.shift_x.valueChanged.connect(self.update_shift)
         self.shift_y.valueChanged.connect(self.update_shift)
 
+    # PPP: defsigner: properly label all the widgets
+    # PPP: BeamType[self.selected_beam.currentText()] is more readable
     def select_detector(self):
         beam = BeamType(self.selected_beam.currentIndex()+1)
         self.microscope.set("detector_type", self.type.currentText(), beam_type=beam)
@@ -77,7 +80,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.contrast.setValue(contrast*100)
         self.brightness.setValue(brightness*100)
 
-        
+    # PPP: just do one function 
     def update_brightness(self):
         beam = BeamType(self.selected_beam.currentIndex()+1)
         self.microscope.set("detector_brightness", self.brightness.value()/100, beam_type=beam)
@@ -133,6 +136,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.label_image_label.setVisible(self.checkBox_image_save_image.isChecked())
         self.lineEdit_image_label.setVisible(self.checkBox_image_save_image.isChecked())
         
+    # PPP
     def ui_detector(self):
         if self.selected_beam.currentText() == "ELECTRON":
             self.detector_type_electron = self.microscope.get_available_values("detector_type", beam_type=BeamType.ELECTRON)
@@ -259,10 +263,20 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 text=text,
                 size=20,
                 edge_width=7,
-                edge_width_is_relative=False,
                 edge_color='transparent',
                 face_color='transparent',
                 )   
+
+
+
+        # PPP: instead of all this, why not:
+
+        # get_detector_settings(self, beam_type: BeamType):
+        # get_beam_settings(self, beam_type: BeamType):
+        # update_ui_from_settings(self, detectors-settings, beam-settings):
+        # and also
+        # get_settings_from_ui(self) -> detectors-settings, beam-settings:
+
 
         contrast = self.microscope.get("detector_contrast", beam_type=BeamType(self.selected_beam.currentIndex()+1))
         brightness = self.microscope.get("detector_brightness", beam_type=BeamType(self.selected_beam.currentIndex()+1))
@@ -318,6 +332,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer.layers.clear()
         event.accept()
 
+    def clear_viewer(self):
+        self.viewer.layers.clear()
+        self.eb_layer = None
+        self.ib_layer = None
 
 def main():
 
