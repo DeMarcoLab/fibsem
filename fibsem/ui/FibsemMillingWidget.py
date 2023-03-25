@@ -359,7 +359,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self._toggle_interaction(enabled=False)
         for stage in self.milling_stages:
-            yield f"Running milling stage: {stage.name}"
+            yield f"Preparing: {stage.name}"
             if stage.pattern is not None:
 
                 import time, random
