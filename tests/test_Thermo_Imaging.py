@@ -3,7 +3,7 @@ import pytest
 
 from fibsem import microscope, utils, acquire
 import fibsem.alignment as fa
-from fibsem.structures import BeamType, ImageSettings, GammaSettings, FibsemRectangle, FibsemImage, check_data_format
+from fibsem.structures import BeamType, ImageSettings, FibsemRectangle, FibsemImage, check_data_format
 import matplotlib.pyplot as plt
 from fibsem import calibration
 import os
@@ -70,18 +70,18 @@ def connection(microscope=microscope_thermo,settings=general_setup):
         logging.info('Could not connect to microscope')
     return microscope
 
-@pytest.fixture
-def gamma_settings():
+# @pytest.fixture
+# def gamma_settings():
 
-    gamma_settings = GammaSettings(
-    enabled=True,
-    min_gamma=0.5,
-    max_gamma=1.8,
-    scale_factor=0.01,
-    threshold=46,
-    )
+#     gamma_settings = GammaSettings(
+#     enabled=True,
+#     min_gamma=0.5,
+#     max_gamma=1.8,
+#     scale_factor=0.01,
+#     threshold=46,
+#     )
 
-    return gamma_settings
+#     return gamma_settings
 
 @pytest.fixture
 def image_settings():
@@ -92,7 +92,7 @@ def image_settings():
     hfw=150.0e-6,
     autocontrast=True,
     beam_type=BeamType.ELECTRON,
-    gamma=gamma_settings,
+    gamma_enabled=True,
     save=True,
     save_path="fibsem\\test_images",
     label=utils.current_timestamp(),

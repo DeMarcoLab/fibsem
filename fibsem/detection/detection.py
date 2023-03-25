@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 from dataclasses import dataclass
-
+from enum import Enum
 import numpy as np
 
 from fibsem.microscope import FibsemMicroscope
@@ -9,37 +9,100 @@ from scipy.spatial import distance
 from skimage import feature
 
 from fibsem import conversions
-from fibsem.detection.utils import Feature, FeatureType
+# from fibsem.detection.utils import Feature, FeatureType
 from fibsem.imaging import masks
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
-
-FEATURE_COLOURS_UINT8 = {
-    FeatureType.ImageCentre: (255, 255, 255),
-    FeatureType.LamellaCentre: (255, 0, 0),
-    FeatureType.LamellaLeftEdge: (255, 0, 0),
-    FeatureType.LamellaRightEdge: (255, 0, 0),
-    FeatureType.NeedleTip: (0, 255, 0),
-    FeatureType.LandingPost: (255, 255, 255),
-}
+from abc import ABC, abstractmethod
 
 
-def filter_selected_masks(
-    mask: np.ndarray, shift_type: tuple[FeatureType]
-) -> np.ndarray:
-    """Combine only the masks for the selected detection types"""
-    c1 = FEATURE_COLOURS_UINT8[shift_type[0]]
-    c2 = FEATURE_COLOURS_UINT8[shift_type[1]]
+@dataclass
+class Feature(ABC):
+    feature_px: Point 
+    feature_m: Point
+    _color_UINT8: None
+    name: str = None
 
-    # get mask for first detection type
-    mask1, _ = extract_class_pixels(mask, color=c1)
-    # get mask for second detection type
-    mask2, _ = extract_class_pixels(mask, color=c2)
+    @abstractmethod
+    def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature':
+        pass
 
-    # combine masks
-    mask_combined = mask1 + mask2
+@dataclass
+class ImageCentre(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,255,255)
+    name: str = "ImageCentre"
 
-    return mask_combined
+    def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
+        self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
+        return self.feature_px
+
+    
+
+@dataclass
+class NeedleTip(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (0,255,0)
+    name: str = "NeedleTip"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
+        self.feature_px = detect_needle_v4(mask)
+        return self.feature_px
+    
+    
+
+@dataclass
+class LamellaCentre(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,0,0)
+    name: str = "LamellaCentre"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
+        self.feature_px = detect_lamella(mask, self.name)
+
+    
+@dataclass
+class LamellaLeftEdge(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,0,0)
+    name: str = "LamellaLeftEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
+        self.feature_px = detect_lamella(mask, self.name)
+        return self.feature_px
+    
+
+@dataclass
+class LamellaRightEdge(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,0,255)
+    name: str = "LamellaRightEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
+        self.feature_px = detect_lamella(mask, self.name)
+        return self.feature_px
+    
+
+@dataclass
+class LandingPost(Feature):
+    feature_m: Point = None
+    feature_px: Point = None
+    _color_UINT8: tuple = (255,255,255)
+    name: str = "LandingPost"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
+        self.feature_px = detect_landing_post_v3(img, point)
+        return self.feature_px
+    
+
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
+
+ 
 
 
 # Detection and Drawing Tools
@@ -134,8 +197,8 @@ def detect_corner(
 
 def detect_lamella(
     mask: np.ndarray,
-    feature_type: FeatureType,
-    color: tuple = (255, 0, 0),
+    feature_type: str,
+    color: tuple = LamellaCentre._color_UINT8,
     mask_radius: int = 512,
 ) -> Point:
 
@@ -143,20 +206,20 @@ def detect_lamella(
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
     lamella_centre = detect_centre_point(lamella_mask, color=color)
 
-    if feature_type is FeatureType.LamellaCentre:
+    if feature_type == "LamellaCentre":
         feature_px = detect_centre_point(lamella_mask, color=color)
 
-    if feature_type is FeatureType.LamellaLeftEdge:
+    if feature_type == "LamellaLeftEdge":
         feature_px = detect_corner(lamella_mask, left=True)
 
-    if feature_type is FeatureType.LamellaRightEdge:
+    if feature_type == "LamellaRightEdge":
         feature_px = detect_corner(lamella_mask, left=False)
 
     return feature_px
 
 
 def detect_needle_v4(mask: np.ndarray,) -> Point:
-    needle_mask, _ = extract_class_pixels(mask, (0, 255, 0))
+    needle_mask, _ = extract_class_pixels(mask, NeedleTip._color_UINT8)
     return detect_corner(needle_mask, threshold=100)
 
 
@@ -268,34 +331,10 @@ def detect_features_v2(
     detection_features = []
 
     for feature in features:
+        
+        feature.detect(img=img,mask=mask) 
 
-        det_type = feature.type
-        initial_point = feature.feature_px
-
-        if not isinstance(det_type, FeatureType):
-            raise TypeError(f"Detection Type {det_type} is not supported.")
-
-        # get the initial position estimate
-        if initial_point is None:
-            initial_point = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
-
-        if det_type == FeatureType.ImageCentre:
-            feature_px = initial_point
-
-        if det_type == FeatureType.NeedleTip:
-            feature_px = detect_needle_v4(mask)
-
-        if det_type in [
-            FeatureType.LamellaCentre,
-            FeatureType.LamellaLeftEdge,
-            FeatureType.LamellaRightEdge,
-        ]:
-            feature_px = detect_lamella(mask, det_type)
-
-        if det_type == FeatureType.LandingPost:
-            feature_px = detect_landing_post_v3(img, initial_point)
-
-        detection_features.append(Feature(type=det_type, feature_px=feature_px))
+        detection_features.append(feature)
 
     return detection_features
 
@@ -330,10 +369,40 @@ def locate_shift_between_features_v2(
     return det
 
 
-def plot_det_result_v2(det: DetectedFeatures):
+def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
+    """Plotting image with detected features
+
+    Args:
+        det (DetectedFeatures): detected features type
+        inverse (bool, optional): Inverses the colour of the centre crosshair of the feature. Defaults to True.
+    """
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
+
+    # convert rgb 255 range to 0-1 tuple
+    if inverse:
+        # plotting crosshairs are contrasted against feature
+        c1 = ((255-det.features[0]._color_UINT8[0])/255,
+            (255-det.features[0]._color_UINT8[1])/255,
+            (255-det.features[0]._color_UINT8[2])/255)
+        
+        c2 = ((255-det.features[1]._color_UINT8[0])/255,
+            (255-det.features[1]._color_UINT8[1])/255,
+            (255-det.features[1]._color_UINT8[2])/255)
+        
+    else:
+
+        c1 = ((det.features[0]._color_UINT8[0])/255,
+            (det.features[0]._color_UINT8[1])/255,
+            (det.features[0]._color_UINT8[2])/255)
+        
+        c2 = ((det.features[1]._color_UINT8[0])/255,
+            (det.features[1]._color_UINT8[1])/255,
+            (det.features[1]._color_UINT8[2])/255)
+        
+        
+
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
     ax[1].imshow(det.mask)
@@ -341,16 +410,18 @@ def plot_det_result_v2(det: DetectedFeatures):
     ax[1].plot(
         det.features[0].feature_px.x,
         det.features[0].feature_px.y,
-        "g+",
+        color=c1,
+        marker="+",
         ms=20,
-        label=det.features[0].type.name,
+        label=det.features[0].name,
     )
     ax[1].plot(
         det.features[1].feature_px.x,
         det.features[1].feature_px.y,
-        "w+",
+        color=c2,
+        marker="+",
         ms=20,
-        label=det.features[1].type.name,
+        label=det.features[1].name,
     )
     ax[1].plot(
         [det.features[0].feature_px.x, det.features[1].feature_px.x],
@@ -389,7 +460,7 @@ def move_based_on_detection(
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
     # these movements move the needle...
-    if f1.type in [FeatureType.NeedleTip, FeatureType.LamellaRightEdge]:
+    if f1.name in ["NeedleTip", "LamellaRightEdge"]:
 
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ELECTRON:
@@ -401,7 +472,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.type is FeatureType.LamellaCentre and f2.type is FeatureType.ImageCentre:
+    if f1.name is "LamellaCentre" and f2.name is "ImageCentre":
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
@@ -414,59 +485,3 @@ def move_based_on_detection(
             # TODO: support other movements?
     return
 
-
-
-# v3 - Feature(ABC)
-
-_DETECTION_V3 = False
-if _DETECTION_V3:
-
-    from abc import ABC, abstractmethod
-    # TODO: maybe static methods? probs nicer to use?
-    # e.g. needle_tip = NeedleTip.detect(img, mask, point)
-    # can store color info there too?
-
-    @dataclass
-    class Feature(ABC):
-        feature_px: Point 
-        feature_m: Point
-
-        @abstractmethod
-        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature':
-            pass
-
-    @dataclass
-    class ImageCentre(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
-            self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
-            return self
-
-    @dataclass
-    class NeedleTip(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-            self.feature_px = detect_needle_v4(mask)
-            return self
-
-    @dataclass
-    class LamellaCentre(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaCentre)
-
-    @dataclass
-    class LamellaLeftEdge(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaLeftEdge)
-            return self
-    @dataclass
-    class LamellaRightEdge(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
-            self.feature_px = detect_lamella(mask, FeatureType.LamellaRightEdge)
-            return self
-
-    @dataclass
-    class LandingPost(Feature):
-        def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-            self.feature_px = detect_landing_post_v3(img, point)
-            return self
-
-    __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]

@@ -122,8 +122,8 @@ def _dog(img: FibsemImage, **kwargs) -> float:
     Returns:
         _type_: _description_
     """
-    low = kwargs.get("low", 1)
-    high = kwargs.get("high", 2)
+    low = kwargs.get("low", 3)
+    high = kwargs.get("high", 9)
     from skimage.filters import difference_of_gaussians
     return np.mean(difference_of_gaussians(np.copy(img.data), low, high))
 
