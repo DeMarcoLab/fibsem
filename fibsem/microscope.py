@@ -3287,6 +3287,7 @@ class DemoMicroscope(FibsemMicroscope):
             detector_settings = FibsemDetectorSettings.__from_dict__({}),
                                          microscope_state=MicroscopeState()))
 
+
         if image_settings.beam_type is BeamType.ELECTRON:
             self._eb_image = image
         else:

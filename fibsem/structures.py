@@ -30,9 +30,6 @@ import yaml
 
 from fibsem.config import METADATA_VERSION
 
-# @patrickcleeve: dataclasses.asdict -> :(
-
-# TODO: overload constructors instead of from_dict...
 @dataclass
 class Point:
     x: float = 0.0
@@ -594,9 +591,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.end_x = kwargs["end_x"]
             self.end_y = kwargs["end_y"]
             self.depth = kwargs["depth"]
-            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
-            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
         elif pattern == FibsemPattern.Circle:
             self.centre_x = kwargs["centre_x"]
             self.centre_y = kwargs["centre_y"]
@@ -639,7 +634,6 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 end_x=state_dict["end_x"],
                 end_y=state_dict["end_y"],
                 depth=state_dict["depth"],
-                rotation=state_dict["rotation"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
