@@ -38,3 +38,4 @@ fibsem/_version.py
 demo_*/*
 scratch/figure/wd*/*
 fibsem/segmentation/.DS_Store
+
