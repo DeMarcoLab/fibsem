@@ -5,11 +5,10 @@ from pprint import pprint
 
 import matplotlib.patches as mpatches
 from fibsem import conversions, utils
-from fibsem.structures import BeamType, MicroscopeSettings
+from fibsem.structures import BeamType, MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui_utils
 
 from fibsem.detection import utils as det_utils
-from fibsem.detection.utils import FeatureType, Point
 from fibsem.detection.detection import DetectedFeatures
                                      
 
@@ -202,10 +201,10 @@ def main():
     app = QtWidgets.QApplication([])
 
     import random
-
+    from fibsem.detection.detection import NeedleTip, ImageCentre
     # beam_type = BeamType.ELECTRON
-    features = [Feature(FeatureType.NeedleTip), 
-                Feature(FeatureType.ImageCentre)]
+    features = [NeedleTip(), 
+                ImageCentre()]
 
         
     for beam_type in [BeamType.ELECTRON, BeamType.ION]:

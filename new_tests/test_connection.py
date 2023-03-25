@@ -2,6 +2,7 @@ import pytest
 
 from fibsem import utils, microscope
 
+
 @pytest.fixture
 def microscope_connection():
 
@@ -20,4 +21,3 @@ def test_connection(microscope_connection):
     assert settings is not None
     assert isinstance(settings,microscope.MicroscopeSettings)
     assert settings.system.manufacturer == "Tescan"
-
