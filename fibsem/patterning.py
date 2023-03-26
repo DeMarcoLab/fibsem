@@ -24,6 +24,7 @@ class MillingPattern(Enum):
     Polish = 8
     Flatten = 9
     Fiducial = 10
+    SpotWeld = 11
 
 
 ############################## PATTERNS ##############################
@@ -74,7 +75,7 @@ def spot_weld_pattern(
 ) -> list[RectanglePattern]:
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
-    n_patterns = protocol["number"]
+    n_patterns = int(protocol["number"])
     mill_settings = MillingSettings.__from_dict__(protocol)
     mill_settings.centre_x = point.x
     mill_settings.centre_y = (
@@ -84,6 +85,7 @@ def spot_weld_pattern(
     patterns = []
     for i in range(n_patterns):
         pattern = milling._draw_rectangle_pattern_v2(microscope, mill_settings)
+        pattern.scan_direction = "LeftToRight"
         patterns.append(pattern)
         mill_settings.centre_y += protocol["offset"] + protocol["height"]
 
@@ -332,6 +334,9 @@ def create_milling_patterns(
         mill_settings.centre_x = point.x
         mill_settings.centre_y = point.y
         patterns = milling._draw_fiducial_patterns(microscope, mill_settings)
+
+    if milling_pattern_type == MillingPattern.SpotWeld:
+        patterns = spot_weld_pattern(microscope, milling_protocol, point)
 
     # convert patterns is list
     if not isinstance(patterns, list):
