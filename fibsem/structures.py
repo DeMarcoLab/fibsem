@@ -217,8 +217,39 @@ Attributes:
     gis_enabled: bool = True
     gis_multichem: bool = True
 
+    def __post_init__(self):
+        attributes = [
+            "electron_beam",
+            "ion_beam",
+            "stage_enabled",
+            "stage_rotation",
+            "stage_tilt",
+            "manipulator_enabled",
+            "manipulator_rotation",
+            "manipulator_tilt",
+            "gis_enabled",
+            "gis_multichem"
+        ]
+
+        for attribute in attributes:
+            object_attribute = getattr(self,attribute)
+            assert isinstance(object_attribute,bool)
+
     @classmethod
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
+
+        assert isinstance(hardware_dict["electron"]["enabled"],bool)
+        assert isinstance(hardware_dict["ion"]["enabled"],bool)
+        assert isinstance(hardware_dict["stage"]["enabled"],bool)
+        assert isinstance(hardware_dict["stage"]["rotation"],bool)
+        assert isinstance(hardware_dict["stage"]["tilt"],bool)
+        assert isinstance(hardware_dict["manipulator"]["enabled"],bool)
+        assert isinstance(hardware_dict["manipulator"]["rotation"],bool)
+        assert isinstance(hardware_dict["manipulator"]["tilt"],bool)
+        assert isinstance(hardware_dict["gis"]["enabled"],bool)
+        assert isinstance(hardware_dict["gis"]["multichem"],bool)
+        
+        
 
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
