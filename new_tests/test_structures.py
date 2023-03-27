@@ -888,3 +888,30 @@ def test_stage_settings():
 
     from_dict = structures.StageSettings.__from_dict__(to_dict)
     assert settings == from_dict
+
+
+def test_image_metadata(fake_image_settings, fake_eb_settings, fake_ib_settings, fake_detector_settings):
+    metadata = structures.FibsemImageMetadata(
+        image_settings = fake_image_settings,
+        pixel_size = structures.Point(1, 1),
+        microscope_state = structures.MicroscopeState(
+            absolute_position= structures.FibsemStagePosition(0,0,0,0,0),
+            eb_settings= fake_eb_settings,
+            ib_settings= fake_ib_settings,
+        ),
+        detector_settings = fake_detector_settings, 
+        version = "v1", 
+        )
+
+    to_dict = metadata.__to_dict__()
+
+    assert metadata.compare_image_settings(fake_image_settings)
+    assert metadata.pixel_size == structures.Point(1, 1)
+    assert metadata.microscope_state.absolute_position == structures.FibsemStagePosition(0,0,0,0,0)
+    assert metadata.microscope_state.eb_settings  == fake_eb_settings
+    assert metadata.microscope_state.ib_settings  == fake_ib_settings
+    assert metadata.detector_settings == fake_detector_settings
+    assert metadata.version == "v1"
+
+    from_dict = structures.FibsemImageMetadata.__from_dict__(to_dict)
+    assert metadata == from_dict
