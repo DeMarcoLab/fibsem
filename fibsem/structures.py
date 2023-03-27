@@ -675,7 +675,7 @@ class MicroscopeState:
         assert isinstance(self.absolute_position,FibsemStagePosition), f"absolute position must be of type FibsemStagePosition, currently is {type(self.absolute_position)}"
         assert isinstance(self.eb_settings,BeamSettings), f"eb_settings must be of type BeamSettings, currently is {type(self.eb_settings)}"
         assert isinstance(self.ib_settings,BeamSettings), f"ib_settings must be of type BeamSettings, currently us {type(self.ib_settings)}"
-        
+
 
     def __to_dict__(self) -> dict:
 
@@ -836,6 +836,16 @@ class FibsemMillingSettings:
     hfw: float = 150e-6
     patterning_mode: str = "Serial" 
     application_file: str = "Si"
+
+    def __post_init__(self):
+
+        assert isinstance(self.milling_current,(float,int)), f"invalid type for milling_current, must be int or float, currently {type(self.milling_current)}"
+        assert isinstance(self.spot_size,(float,int)), f"invalid type for spot_size, must be int or float, currently {type(self.spot_size)}"
+        assert isinstance(self.rate,(float,int)), f"invalid type for rate, must be int or float, currently {type(self.rate)}"
+        assert isinstance(self.dwell_time,(float,int)), f"invalid type for dwell_time, must be int or float, currently {type(self.dwell_time)}"
+        assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
+        assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
+        assert isinstance(self.application_file,str), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
 
     def __to_dict__(self) -> dict:
 
@@ -1241,6 +1251,13 @@ class FibsemDetectorSettings:
     mode: str = None
     brightness: float = None
     contrast: float = None
+
+    def __post_init__(self):
+
+        assert isinstance(self.type,str) or self.type is None, f"type must be input as str, currently is {type(self.type)}"
+        assert isinstance(self.mode,str) or self.mode is None, f"mode must be input as str, currently is {type(self.mode)}"
+        assert isinstance(self.brightness,(float,int)) or self.brightness is None, f"brightness must be int or float value, currently is {type(self.brightness)}"
+        assert isinstance(self.contrast,(float,int)) or self.contrast is None, f"contrast must be int or float value, currently is {type(self.contrast)}"
 
     if TESCAN:
         def to_tescan(self):

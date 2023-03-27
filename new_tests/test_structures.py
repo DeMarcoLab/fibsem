@@ -3,6 +3,27 @@ from fibsem import structures
 import os
 import numpy as np
 from pathlib import Path
+
+def from_dict(main_object,attributes: dict, answers: dict):
+
+    
+
+    for attribute in attributes:
+
+        output = getattr(main_object,attribute)
+        answer = answers[attribute]
+
+        assert output == answer, f"Attribute: {attribute} output: {output} does not match answer: {answer}"
+
+def to_dict(attributes: dict, answers: dict):
+
+    for attribute in attributes:
+
+        output = attributes[attribute] 
+        answer = answers[attribute]
+
+        assert output == answer , f"Attribute: {attribute} output: {output} does not match answer: {answer}"
+
 @pytest.fixture
 def fake_image_settings():
     fake_image_settings = structures.ImageSettings(
@@ -541,26 +562,6 @@ def test_MicroscopeState():
         bad_microscopeState = structures.MicroscopeState(timestamp="a",absolute_position=[1,2,3],ib_settings="b")
 
 
-def from_dict(main_object,attributes: dict, answers: dict):
-
-    
-
-    for attribute in attributes:
-
-        output = getattr(main_object,attribute)
-        answer = answers[attribute]
-
-        assert output == answer, f"Attribute: {attribute} output: {output} does not match answer: {answer}"
-
-def to_dict(attributes: dict, answers: dict):
-
-    for attribute in attributes:
-
-        output = attributes[attribute] 
-        answer = answers[attribute]
-
-        assert output == answer , f"Attribute: {attribute} output: {output} does not match answer: {answer}"
-
 
 def test_FibsemPattern():
 
@@ -596,6 +597,9 @@ def test_fibsemMillingSettings():
 
     assert new_fbMillingSettings.spot_size == 4.0e-8
     assert new_fbMillingSettings.hfw == 54
+
+    with pytest.raises(Exception):
+        bad_fbMillingSettings = structures.FibsemMillingSettings(milling_current=3,spot_size=[1],dwell_time=True)
 
 
 def test_stage_position_to_dict():
@@ -679,6 +683,10 @@ def test_detector_settings(fake_detector_settings):
 
     assert fake_detector_settings.__to_dict__() == dict
     assert structures.FibsemDetectorSettings.__from_dict__(dict) == fake_detector_settings
+
+    with pytest.raises(Exception):
+
+        bad_fb_detector_settings = structures.FibsemDetectorSettings(type=True,brightness="1.234",contrast=[1,23])
 
     
         
