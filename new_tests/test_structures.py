@@ -741,6 +741,7 @@ def test_fibsem_state(fake_eb_settings, fake_ib_settings):
     assert state == from_dict
 
 
+
 def test_microscope_settings(fake_image_settings):
     settings = structures.MicroscopeSettings(
         system = structures.SystemSettings(
@@ -801,4 +802,22 @@ def test_microscope_settings(fake_image_settings):
     to_dict = settings.__to_dict__()
     from_dict = structures.MicroscopeSettings.__from_dict__(to_dict)
     assert settings == from_dict
+
+
+def test_reference_images():
+
+    pic_size = np.random.randint(200,1000,size=2)
+
+    low_eb = np.random.randint(0,255,size=pic_size)
+    high_eb = np.random.randint(0,255,size=pic_size)
+    low_ib = np.random.randint(0,255,size=pic_size)
+    high_ib = np.random.randint(0,255,size=pic_size)
+
+    ref_images = structures.ReferenceImages(low_res_eb=low_eb, high_res_eb=high_eb, low_res_ib=low_ib, high_res_ib=high_ib)
+
+    assert (ref_images.low_res_eb == low_eb).all()
+    assert (ref_images.high_res_eb == high_eb).all()
+    assert (ref_images.low_res_ib == low_ib).all()
+    assert (ref_images.high_res_ib == high_ib).all()
+        
 
