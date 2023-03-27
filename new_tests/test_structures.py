@@ -916,3 +916,20 @@ def test_image_metadata(fake_image_settings, fake_eb_settings, fake_ib_settings,
 
     from_dict = structures.FibsemImageMetadata.__from_dict__(to_dict)
     assert metadata == from_dict
+
+
+def test_reference_images():
+
+    pic_size = np.random.randint(200,1000,size=2)
+
+    low_eb = np.random.randint(0,255,size=pic_size)
+    high_eb = np.random.randint(0,255,size=pic_size)
+    low_ib = np.random.randint(0,255,size=pic_size)
+    high_ib = np.random.randint(0,255,size=pic_size)
+
+    ref_images = structures.ReferenceImages(low_res_eb=low_eb, high_res_eb=high_eb, low_res_ib=low_ib, high_res_ib=high_ib)
+
+    assert (ref_images.low_res_eb == low_eb).all()
+    assert (ref_images.high_res_eb == high_eb).all()
+    assert (ref_images.low_res_ib == low_ib).all()
+    assert (ref_images.high_res_ib == high_ib).all()
