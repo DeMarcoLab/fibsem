@@ -322,6 +322,8 @@ def test_fibsem_rectangle():
     with pytest.raises(Exception):
 
         bad_rect = structures.FibsemRectangle.__from_dict__(bad_dict)
+        bad_rect_2 = structures.FibsemRectangle(1,2,"hello",[1,2,3])
+        bad_rect_3 = structures.FibsemRectangle([1,2,3,4])
 
 
 def test_image_settings(fake_fibsem_image):

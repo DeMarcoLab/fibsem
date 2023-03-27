@@ -388,6 +388,13 @@ class FibsemRectangle:
     width: float = 0.0
     height: float = 0.0
 
+    def __post_init__(self):
+
+        assert isinstance(self.left,float) or isinstance(self.left,int), f"type {type(self.left)} is unsupported for left, must be int or floar"
+        assert isinstance(self.top,float) or isinstance(self.top,int), f"type {type(self.top)} is unsupported for top, must be int or floar"
+        assert isinstance(self.width,float) or isinstance(self.width,int), f"type {type(self.width)} is unsupported for width, must be int or floar"
+        assert isinstance(self.height,float) or isinstance(self.height,int), f"type {type(self.height)} is unsupported for height, must be int or floar"
+
     def __from_dict__(settings: dict) -> "FibsemRectangle":
 
         points = ["left","top","width","height"]
