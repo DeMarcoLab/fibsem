@@ -1340,6 +1340,7 @@ class FibsemImageMetadata:
     detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
     
+    
 
     def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
