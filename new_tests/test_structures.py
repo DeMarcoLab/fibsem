@@ -915,3 +915,112 @@ def test_image_metadata(fake_image_settings, fake_eb_settings, fake_ib_settings,
 
     from_dict = structures.FibsemImageMetadata.__from_dict__(to_dict)
     assert metadata == from_dict
+
+
+def test_pattern_settings():
+    circle = structures.FibsemPatternSettings(
+        pattern = structures.FibsemPattern.Circle,
+        centre_x = 0,
+        centre_y = 0,
+        radius = 0,
+        rotation = 0,
+        depth = 0,
+        start_angle = 0,
+        end_angle = 0,
+        scan_direction = "TopToBottom",
+        cleaning_cross_section = False,
+        )
+    
+    to_dict = circle.__to_dict__()
+    assert circle.pattern.name == to_dict["pattern"]
+    assert circle.centre_x == to_dict["centre_x"]
+    assert circle.centre_y == to_dict["centre_y"]
+    assert circle.radius == to_dict["radius"]
+    assert circle.rotation == to_dict["rotation"]
+    assert circle.depth == to_dict["depth"]
+    assert circle.start_angle == to_dict["start_angle"]
+    assert circle.end_angle == to_dict["end_angle"]
+    assert circle.scan_direction == to_dict["scan_direction"]
+    assert circle.cleaning_cross_section == to_dict["cleaning_cross_section"]
+    from_dict = structures.FibsemPatternSettings.__from_dict__(to_dict)
+    assert circle.pattern == from_dict.pattern
+    assert circle.centre_x == from_dict.centre_x
+    assert circle.centre_y == from_dict.centre_y
+    assert circle.radius == from_dict.radius
+    assert circle.rotation == from_dict.rotation
+    assert circle.depth == from_dict.depth
+    assert circle.start_angle == from_dict.start_angle
+    assert circle.end_angle == from_dict.end_angle
+    assert circle.scan_direction == from_dict.scan_direction
+    assert circle.cleaning_cross_section == from_dict.cleaning_cross_section
+
+
+    line = structures.FibsemPatternSettings(
+        pattern = structures.FibsemPattern.Line,
+        start_x = 0,
+        start_y = 0,
+        end_x =0,
+        end_y =0, 
+        depth = 0,
+        rotation = 0,
+        scan_direction=  "TopToBottom",
+        cleaning_cross_section= False,
+    ) 
+
+    to_dict = line.__to_dict__()
+    assert line.pattern.name == to_dict["pattern"]
+    assert line.start_x == to_dict["start_x"]
+    assert line.start_y == to_dict["start_y"]
+    assert line.end_x == to_dict["end_x"]
+    assert line.end_y == to_dict["end_y"]
+    assert line.depth == to_dict["depth"]
+    assert line.rotation == to_dict["rotation"]
+    assert line.scan_direction == to_dict["scan_direction"]
+    assert line.cleaning_cross_section == to_dict["cleaning_cross_section"]
+    from_dict = structures.FibsemPatternSettings.__from_dict__(to_dict)
+    assert line.pattern == from_dict.pattern
+    assert line.start_x == from_dict.start_x
+    assert line.start_y == from_dict.start_y
+    assert line.end_x == from_dict.end_x
+    assert line.end_y == from_dict.end_y
+    assert line.depth == from_dict.depth
+    assert line.rotation == from_dict.rotation
+    assert line.scan_direction == from_dict.scan_direction
+    assert line.cleaning_cross_section == from_dict.cleaning_cross_section
+
+
+    rectangle = structures.FibsemPatternSettings(
+        pattern = structures.FibsemPattern.Rectangle,
+        centre_x = 0,
+        centre_y = 0,
+        width = 0,
+        height = 0,
+        rotation = 0,
+        depth = 0,
+        scan_direction = "TopToBottom",
+        cleaning_cross_section = False,
+    )
+
+    to_dict = rectangle.__to_dict__()
+    assert rectangle.pattern.name == to_dict["pattern"]
+    assert rectangle.centre_x == to_dict["centre_x"]
+    assert rectangle.centre_y == to_dict["centre_y"]
+    assert rectangle.width == to_dict["width"]
+    assert rectangle.height == to_dict["height"]
+    assert rectangle.rotation == to_dict["rotation"]
+    assert rectangle.depth == to_dict["depth"]
+    assert rectangle.scan_direction == to_dict["scan_direction"]
+    assert rectangle.cleaning_cross_section == to_dict["cleaning_cross_section"]
+    from_dict = structures.FibsemPatternSettings.__from_dict__(to_dict)
+    assert rectangle.pattern == from_dict.pattern
+    assert rectangle.centre_x == from_dict.centre_x
+    assert rectangle.centre_y == from_dict.centre_y
+    assert rectangle.width == from_dict.width
+    assert rectangle.height == from_dict.height
+    assert rectangle.rotation == from_dict.rotation
+    assert rectangle.depth == from_dict.depth
+    assert rectangle.scan_direction == from_dict.scan_direction
+    assert rectangle.cleaning_cross_section == from_dict.cleaning_cross_section
+
+
+    

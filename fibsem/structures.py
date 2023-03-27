@@ -725,6 +725,14 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     end_x: float (m), 
                     end_y: float (m), 
                     depth: float (m),
+                
+                If FibsemPattern.Circle
+                    centre_x: float (m),
+                    centre_y: float (m),
+                    radius: float (m),
+                    depth: float (m),
+                    start_angle: float = 0.0 (degrees),
+                    end_angle: float = 360.0 (degrees),
     '''
     def __init__(self, pattern: FibsemPattern = FibsemPattern.Rectangle, **kwargs):
         self.pattern = pattern
@@ -806,7 +814,44 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
 
-
+    def __to_dict__(self) -> dict:
+        if self.pattern == FibsemPattern.Rectangle:
+            return {
+                "pattern": "Rectangle",
+                "width": self.width,
+                "height": self.height,
+                "depth": self.depth,
+                "rotation": self.rotation,
+                "centre_x": self.centre_x,
+                "centre_y": self.centre_y,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+            }
+        elif self.pattern == FibsemPattern.Line:
+            return {
+                "pattern": "Line",
+                "start_x": self.start_x,
+                "start_y": self.start_y,
+                "end_x": self.end_x,
+                "end_y": self.end_y,
+                "depth": self.depth,
+                "rotation": self.rotation,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+            }
+        elif self.pattern == FibsemPattern.Circle:
+            return {
+                "pattern": "Circle",
+                "centre_x": self.centre_x,
+                "centre_y": self.centre_y,
+                "radius": self.radius,
+                "depth": self.depth,
+                "start_angle": self.start_angle,
+                "end_angle": self.end_angle,
+                "rotation": self.rotation,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+            }
 
 
 
