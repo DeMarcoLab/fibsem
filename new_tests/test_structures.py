@@ -27,7 +27,7 @@ def fake_eb_settings():
             beam_current=0,
             voltage=0,
             hfw=0,
-            resolution=(1536,1024),
+            resolution=[1536,1024],
             dwell_time=0,
             stigmation=structures.Point(0,0),
             shift=structures.Point(0,0),
@@ -42,7 +42,7 @@ def fake_ib_settings():
             beam_current=0,
             voltage=0,
             hfw=0,
-            resolution=(1536,1024),
+            resolution=[1536,1024],
             dwell_time=0,
             stigmation=structures.Point(0,0),
             shift=structures.Point(0,0),
@@ -474,6 +474,34 @@ def test_beam_settings():
     }
     
     to_dict(beamsettings_to_dict,answers_to_dict)
+
+    good_beam_settings = structures.BeamSettings(
+        beam_type=structures.BeamType.ELECTRON,
+        hfw=12,
+        resolution=[100,100],
+        dwell_time=1.11,
+        stigmation=structures.Point(1,2)
+    )
+    
+    a = type(structures.BeamType.ELECTRON)
+    print(a)
+    print('\n')
+    print('\n')
+    print('\n')
+    print('\n')
+
+    assert good_beam_settings.hfw == 12
+    assert good_beam_settings.beam_type == structures.BeamType.ELECTRON
+    assert good_beam_settings.dwell_time == 1.11
+    assert good_beam_settings.stigmation.x == 1
+
+    with pytest.raises(Exception):
+        bad_beam_settings = structures.BeamSettings(
+            beam_type=2,
+            working_distance=23,
+            voltage=[1,2],
+            stigmation=structures.Point(1,2),
+        )
 
 
 def test_MicroscopeState():

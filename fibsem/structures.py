@@ -580,6 +580,17 @@ class BeamSettings:
 
     ## FROM DICT AND TO DICT DOES NOT HAVE VOLTAGE (ADDED IN)
 
+    def __post_init__(self):
+
+        assert self.beam_type in [BeamType.ELECTRON,BeamType.ION] or self.beam_type is None, f"beam_type must be instance of BeamType, currently {type(self.beam_type)}"
+        assert isinstance(self.working_distance,(float,int)) or self.working_distance is None, f"Working distance must be float or int, currently is {type(self.working_distance)}"
+        assert isinstance(self.beam_current,(float,int)) or self.beam_current is None, f"beam current must be float or int, currently is {type(self.beam_current)}"
+        assert isinstance(self.voltage,(float,int)) or self.voltage is None, f"voltage must be float or int, currently is {type(self.voltage)}"
+        assert isinstance(self.hfw,(float,int)) or self.hfw is None, f"horizontal field width (HFW) must be float or int, currently is {type(self.hfw)}"
+        assert isinstance(self.resolution,list) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
+        assert isinstance(self.dwell_time,(float,int)) or self.dwell_time is None, f"dwell_time must be float or int, currently is {type(self.dwell_time)}"
+        assert isinstance(self.stigmation,Point) or self.stigmation is None, f"stigmation must be a Point instance, currently is {type(self.stigmation)}"
+        assert isinstance(self.shift,Point) or self.shift is None, f"shift must be a Point instance, currently is {type(self.shift)}"
 
     def __to_dict__(self) -> dict:
 
