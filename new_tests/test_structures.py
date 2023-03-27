@@ -794,3 +794,69 @@ def test_microscope_settings(fake_image_settings):
     from_dict = structures.MicroscopeSettings.__from_dict__(to_dict)
     assert settings == from_dict
 
+def test_default_settings():
+    dict = {
+        "imaging_current": 20.0e-12,
+        "milling_current": 2.0e-9,
+    }
+
+    settings = structures.DefaultSettings.__from_dict__(dict)
+    assert settings.imaging_current == 20.0e-12
+    assert settings.milling_current == 2.0e-9
+
+
+def test_system_settings():
+    system = structures.SystemSettings(
+            ip_address="localhost",
+            stage=structures.StageSettings(
+                rotation_flat_to_electron=0,
+                rotation_flat_to_ion=0,
+                tilt_flat_to_electron=0,
+                tilt_flat_to_ion=0,
+                pre_tilt=0,
+                needle_stage_height_limit=0,
+            ),
+            ion = structures.BeamSystemSettings(
+                beam_type=structures.BeamType.ION,
+                voltage=0,
+                current=0,
+                detector_type= 'BSE',
+                detector_mode= 'NORMAL',
+                eucentric_height=0,
+                plasma_gas = "Ar",
+            ),
+            electron = structures.BeamSystemSettings(
+                beam_type=structures.BeamType.ELECTRON,
+                voltage=0,
+                current=0,
+                detector_type= 'BSE',
+                detector_mode= 'NORMAL',
+                eucentric_height=0,
+                plasma_gas = "Ar",
+            ),
+            manufacturer="Tescan",
+        )
+    to_dict = system.__to_dict__()
+    assert system.ip_address == to_dict["ip_address"]
+    assert system.stage.rotation_flat_to_electron == to_dict["stage"]["rotation_flat_to_electron"]
+    assert system.stage.rotation_flat_to_ion == to_dict["stage"]["rotation_flat_to_ion"]
+    assert system.stage.tilt_flat_to_electron == to_dict["stage"]["tilt_flat_to_electron"]
+    assert system.stage.tilt_flat_to_ion == to_dict["stage"]["tilt_flat_to_ion"]
+    assert system.stage.pre_tilt == to_dict["stage"]["pre_tilt"]
+    assert system.stage.needle_stage_height_limit == to_dict["stage"]["needle_stage_height_limit"]
+    assert system.ion.voltage == to_dict["ion"]["voltage"]
+    assert system.ion.current == to_dict["ion"]["current"]
+    assert system.ion.detector_type == to_dict["ion"]["detector_type"]
+    assert system.ion.detector_mode == to_dict["ion"]["detector_mode"]
+    assert system.ion.eucentric_height == to_dict["ion"]["eucentric_height"]
+    assert system.ion.plasma_gas == to_dict["ion"]["plasma_gas"]
+    assert system.electron.voltage == to_dict["electron"]["voltage"]
+    assert system.electron.current == to_dict["electron"]["current"]
+    assert system.electron.detector_type == to_dict["electron"]["detector_type"]
+    assert system.electron.detector_mode == to_dict["electron"]["detector_mode"]
+    assert system.electron.eucentric_height == to_dict["electron"]["eucentric_height"]
+    assert system.electron.plasma_gas == to_dict["electron"]["plasma_gas"]
+    assert system.manufacturer == to_dict["manufacturer"]
+
+    from_dict = structures.SystemSettings.__from_dict__(to_dict)
+    assert system == from_dict
