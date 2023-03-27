@@ -222,19 +222,20 @@ def test_fibsemhardware():
             assert getattr(from_dict_hardware,attribute) == True, f"attribute: {attribute} does not match" 
 
 
-    # double check if we need to test this, 
-    # bad_hardware_dict = {
+    
+    bad_hardware_dict = {
 
-    #     "electron":{"enabled":False},
-    #     "ion":{"enabled":4},
-    #     "stage":{"enabled":True,"rotation":"hello","tilt":True},
-    #     "manipulator":{"enabled":False,"rotation":False,"tilt":False},
-    #     "gis":{"enabled":True,"multichem":7}
-    # }
+        "electron":{"enabled":False},
+        "ion":{"enabled":4},
+        "stage":{"enabled":True,"rotation":"hello","tilt":True},
+        "manipulator":{"enabled":False,"rotation":False,"tilt":False},
+        "gis":{"enabled":True,"multichem":7}
+    }
 
-    # with pytest.raises(Exception):
+    with pytest.raises(Exception):
 
-    #     bad_hardware = structures.FibsemHardware.__from_dict__(bad_hardware_dict)
+        bad_hardware = structures.FibsemHardware.__from_dict__(bad_hardware_dict)
+        bad_hardware_2 = structures.FibsemHardware(electron_beam=3,ion_beam="hello",stage_enabled=[1,2,3])
     
 
 
