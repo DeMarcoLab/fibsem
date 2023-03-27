@@ -43,7 +43,8 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
         # images
         from fibsem.segmentation.utils import image_blend
-        self.image = image_blend(self.detected_features.image, self.detected_features.mask)
+        # self.image = image_blend(self.detected_features.image, self.detected_features.mask)
+        self.image = self.detected_features.image
         self._USER_CORRECTED = False
 
         # pattern drawing

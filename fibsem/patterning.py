@@ -81,11 +81,12 @@ def spot_weld_pattern(
     mill_settings.centre_y = (
         point.y - (n_patterns - 1) * (protocol["offset"] + protocol["height"]) / 2
     )
+    mill_settings.cleaning_cross_section = bool(protocol["cleaning_cross_section"])
 
     patterns = []
     for i in range(n_patterns):
         pattern = milling._draw_rectangle_pattern_v2(microscope, mill_settings)
-        pattern.scan_direction = "LeftToRight"
+        pattern.scan_direction = protocol["scan_direction"]
         patterns.append(pattern)
         mill_settings.centre_y += protocol["offset"] + protocol["height"]
 

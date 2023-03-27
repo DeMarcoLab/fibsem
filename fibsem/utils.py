@@ -113,6 +113,8 @@ def sputter_platinum(
     microscope.imaging.set_active_view(original_active_view)
     microscope.patterning.set_default_beam_type(BeamType.ION.value)  # set ion beam
     multichem.retract()
+
+    microscope.beams.electron_beam.turn_on()
     logging.info("sputtering platinum finished.")
 
 
