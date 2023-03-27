@@ -483,12 +483,7 @@ def test_beam_settings():
         stigmation=structures.Point(1,2)
     )
     
-    a = type(structures.BeamType.ELECTRON)
-    print(a)
-    print('\n')
-    print('\n')
-    print('\n')
-    print('\n')
+
 
     assert good_beam_settings.hfw == 12
     assert good_beam_settings.beam_type == structures.BeamType.ELECTRON
@@ -535,6 +530,15 @@ def test_MicroscopeState():
     assert dict_microscopeState["absolute_position"]["x"]==0
     assert dict_microscopeState["absolute_position"]["y"]==7
     assert dict_microscopeState["eb_settings"]["beam_type"]=="ELECTRON"
+
+    good_microscopeState = structures.MicroscopeState(absolute_position=structures.FibsemStagePosition(1,2,3,4,5))
+
+    assert good_microscopeState.absolute_position.x == 1
+    assert good_microscopeState.absolute_position.y == 2
+
+    with pytest.raises(Exception):
+
+        bad_microscopeState = structures.MicroscopeState(timestamp="a",absolute_position=[1,2,3],ib_settings="b")
 
 
 def from_dict(main_object,attributes: dict, answers: dict):

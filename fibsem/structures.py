@@ -671,6 +671,12 @@ class MicroscopeState:
     eb_settings: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
     ib_settings: BeamSettings = BeamSettings(beam_type=BeamType.ION)
 
+    def __post_init__(self):
+        assert isinstance(self.absolute_position,FibsemStagePosition), f"absolute position must be of type FibsemStagePosition, currently is {type(self.absolute_position)}"
+        assert isinstance(self.eb_settings,BeamSettings), f"eb_settings must be of type BeamSettings, currently is {type(self.eb_settings)}"
+        assert isinstance(self.ib_settings,BeamSettings), f"ib_settings must be of type BeamSettings, currently us {type(self.ib_settings)}"
+        
+
     def __to_dict__(self) -> dict:
 
         state_dict = {
