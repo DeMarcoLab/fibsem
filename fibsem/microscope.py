@@ -6,7 +6,7 @@ import time
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Union
-
+import os
 import numpy as np
 
 # for easier usage
@@ -54,8 +54,8 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings,
-                               MicroscopeState, Point, FibsemDetectorSettings)
-
+                               MicroscopeState, Point, FibsemDetectorSettings,
+                               FibsemHardware)
 
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
@@ -386,6 +386,10 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def __init__(self):
         self.connection = SdbMicroscopeClient()
+        import fibsem
+        from fibsem.utils import load_protocol
+        base_path = os.path.dirname(fibsem.__path__[0])
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
 
     def disconnect(self):
         self.connection.disconnect()
@@ -427,6 +431,8 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             FibsemImage: A new FibsemImage object representing the acquired image.
         """
+        _check_beam(beam_type = image_settings.beam_type, hardware_settings = self.hardware_settings)
+
         # set frame settings
         if image_settings.reduced_area is not None:
             reduced_area = image_settings.reduced_area.__to_FEI__()
@@ -494,6 +500,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             Exception: If there's an error while getting the last image.
         """
+        _check_beam(beam_type = beam_type, hardware_settings = self.hardware_settings)
 
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.imaging.set_active_device(beam_type.value)
@@ -536,6 +543,7 @@ class ThermoMicroscope(FibsemMicroscope):
             >>> microscope.autocontrast(beam_type=BeamType.ION)
 
         """
+        _check_beam(beam_type = beam_type, hardware_settings = self.hardware_settings)
         logging.info(f"Running autocontrast on {beam_type.name}.")
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.imaging.set_active_device(beam_type.value)
@@ -547,6 +555,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             beam_type (BeamType): The imaging beam type for which to focus.
         """
+        _check_beam(beam_type = beam_type, hardware_settings = self.hardware_settings)
         logging.info(f"Running auto-focus on {beam_type.name}.")
         self.connection.imaging.set_active_view(beam_type.value)  
         self.connection.imaging.set_active_device(beam_type.value)
@@ -564,10 +573,12 @@ class ThermoMicroscope(FibsemMicroscope):
         from autoscript_sdb_microscope_client.structures import Point
 
         # reset zero beamshift
+        _check_beam(beam_type = BeamType.ELECTRON, hardware_settings = self.hardware_settings)
         logging.debug(
             f"reseting ebeam shift to (0, 0) from: {self.connection.beams.electron_beam.beam_shift.value}"
         )
         self.connection.beams.electron_beam.beam_shift.value = Point(0, 0)
+        _check_beam(beam_type = BeamType.ION, hardware_settings = self.hardware_settings)
         logging.debug(
             f"reseting ibeam shift to (0, 0) from: {self.connection.beams.electron_beam.beam_shift.value}"
         )
@@ -583,6 +594,7 @@ class ThermoMicroscope(FibsemMicroscope):
             dx (float): the relative x term
             dy (float): the relative y term
         """
+        _check_beam(beam_type = beam_type, hardware_settings = self.hardware_settings)
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
         if beam_type == BeamType.ELECTRON:
             self.connection.beams.electron_beam.beam_shift.value += (-dx, dy)
@@ -599,6 +611,8 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             FibsemStagePosition: The current stage position.
         """
+        if self.hardware_settings.stage_enabled is False:
+            raise NotImplementedError("The microscope does not have a moving stage.")
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.RAW
         )
@@ -618,11 +632,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             MicroscopeState: current microscope state
         """
-        current_microscope_state = MicroscopeState(
-            timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
-            # get absolute stage coordinates (RAW)
-            absolute_position=self.get_stage_position(),
-            # electron beam settings
+        if self.hardware_settings.electron_beam is True:
             eb_settings=BeamSettings(
                 beam_type=BeamType.ELECTRON,
                 working_distance=self.connection.beams.electron_beam.working_distance.value,
@@ -630,8 +640,11 @@ class ThermoMicroscope(FibsemMicroscope):
                 hfw=self.connection.beams.electron_beam.horizontal_field_width.value,
                 resolution=self.connection.beams.electron_beam.scanning.resolution.value,
                 dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value,
-            ),
-            # ion beam settings
+            )
+        else:
+            eb_settings=None
+        
+        if self.hardware_settings.ion_beam is True:
             ib_settings=BeamSettings(
                 beam_type=BeamType.ION,
                 working_distance=self.connection.beams.ion_beam.working_distance.value,
@@ -639,7 +652,18 @@ class ThermoMicroscope(FibsemMicroscope):
                 hfw=self.connection.beams.ion_beam.horizontal_field_width.value,
                 resolution=self.connection.beams.ion_beam.scanning.resolution.value,
                 dwell_time=self.connection.beams.ion_beam.scanning.dwell_time.value,
-            ),
+            )
+        else:
+            ib_settings=None
+
+        current_microscope_state = MicroscopeState(
+            timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
+            # get absolute stage coordinates (RAW)
+            absolute_position=self.get_stage_position(),
+            # electron beam settings
+            eb_settings=eb_settings,
+            # ion beam settings
+            ib_settings=ib_settings,
         )
 
         return current_microscope_state
@@ -658,6 +682,8 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        _check_stage(self.hardware_settings)
+
         logging.info(f"Moving stage to {position}.")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
@@ -678,6 +704,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage by {position}.")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
@@ -700,6 +727,7 @@ class ThermoMicroscope(FibsemMicroscope):
             dy (float): distance along the y-axis (image coordinates)
             beam_type (BeamType): beam type to move in
         """
+        _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
 
         # calculate stage movement
@@ -741,6 +769,7 @@ class ThermoMicroscope(FibsemMicroscope):
             settings (MicroscopeSettings): microscope settings
             dy (float): distance in y-axis (image coordinates)
         """
+        _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
 
         z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
@@ -826,15 +855,15 @@ class ThermoMicroscope(FibsemMicroscope):
             SCALE_FACTOR = 1.0
 
         # the amount the sample has to move in the y-axis
+        # y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(FLAT_TO_BEAM_ANGLE - (stage_tilt + pre tilt))
         y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
             stage_tilt + perspective_tilt_adjustment
         )
 
-        # angle for adjustement 
-        # angle = corrected_pretilt_angle + stage_tilt + perspective_tilt_adjustment
-        # y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(angle)
+        
 
         # the amount the stage has to move in each axis
+        #angle = stage_tilt + pretilt_angle
         y_move = y_sample_move * np.cos(corrected_pretilt_angle)
         z_move = y_sample_move * np.sin(corrected_pretilt_angle)
 
@@ -855,6 +884,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None.
         """
+        _check_stage(self.hardware_settings)
         stage_settings = settings.system.stage
 
         if beam_type is BeamType.ELECTRON:
@@ -875,12 +905,15 @@ class ThermoMicroscope(FibsemMicroscope):
         self.move_stage_absolute(stage_position)
 
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
+        if self.hardware_settings.manipulator_enabled is False:
+            raise NotImplementedError("Manipulator not enabled.")
         position = self.connection.specimen.manipulator.current_position
         return FibsemManipulatorPosition.from_autoscript_position(position)
     
     def insert_manipulator(self, name: str = "PARK"):
-
-         
+        
+        if self.hardware_settings.manipulator_enabled is False:
+            raise NotImplementedError("Manipulator not enabled.")
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
 
@@ -897,7 +930,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # retract multichem
         # retract_multichem(microscope) # TODO:?
-
+        if self.hardware_settings.manipulator_enabled is False:
+            raise NotImplementedError("Manipulator not enabled.")
         # Retract the needle, preserving the correct parking postiion
         needle = self.connection.specimen.manipulator
         park_position = needle.get_saved_position(
@@ -912,13 +946,14 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"retract needle complete")
     
     def move_manipulator_relative(self, position: FibsemManipulatorPosition):
-    
+        _check_needle(self.hardware_settings)
         needle = self.connection.specimen.manipulator
         position = position.to_autoscript_position()
         logging.info(f"moving manipulator by {position}")
         needle.relative_move(position)
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition):
+        _check_needle(self.hardware_settings)
         needle = self.connection.specimen.manipulator
         position = position.to_autoscript_position()
         logging.info(f"moving manipulator to {position}")
@@ -986,7 +1021,7 @@ class ThermoMicroscope(FibsemMicroscope):
             dy (float): distance along the y-axis (image corodinates)
             beam_type (BeamType, optional): the beam type to move in. Defaults to BeamType.ELECTRON.
         """
-        
+        _check_needle(self.hardware_settings)
         needle = self.connection.specimen.manipulator
         stage_tilt = self.connection.specimen.stage.current_position.t
 
@@ -1011,7 +1046,7 @@ class ThermoMicroscope(FibsemMicroscope):
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
 
         # TODO: resolve Fibsem Positions and Thermo Positions
-
+        _check_needle(self.hardware_settings)
         position = self._get_saved_manipulator_position(name)
 
         # move to relative to the eucentric point
@@ -1025,7 +1060,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.specimen.manipulator.absolute_move(position)
 
     def _get_saved_manipulator_position(self, name: str = "PARK"):
-        
+        if self.hardware_settings.manipulator_enabled is False:
+            raise NotImplementedError("Manipulator not enabled.")
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
         
@@ -1062,6 +1098,7 @@ class ThermoMicroscope(FibsemMicroscope):
             It also clears any existing patterns and sets the horizontal field width to the desired value.
             The method does not start the milling process.
         """
+        _check_beam(BeamType.ION, self.hardware_settings)
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         self.connection.imaging.set_active_device(BeamType.ION.value)
         self.connection.patterning.set_default_beam_type(
@@ -1087,6 +1124,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             None
         """
+        _check_beam(BeamType.ION, self.hardware_settings)
         # change to milling current
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         if self.connection.beams.ion_beam.beam_current.value != milling_current:
@@ -1121,6 +1159,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             None
         """
+        _check_beam(BeamType.ION, self.hardware_settings)
         # change to milling current
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         if self.connection.beams.ion_beam.beam_current.value != milling_current:
@@ -1158,6 +1197,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             imaging_current (float): The current to use for imaging in amps.
         """
+        _check_beam(BeamType.ION, self.hardware_settings)
         self.connection.patterning.clear_patterns()
         self.connection.beams.ion_beam.beam_current.value = imaging_current
         self.connection.patterning.mode = "Serial"
@@ -1329,6 +1369,7 @@ class ThermoMicroscope(FibsemMicroscope):
             It then inserts the multichem and turns on the heater for the specified gas according to the given protocol. 
             This function also waits for 3 seconds to allow the heater to warm up.
         """
+        _check_sputter(self.hardware_settings)
         self.original_active_view = self.connection.imaging.get_active_view()
         self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
         self.connection.patterning.clear_patterns()
@@ -1387,6 +1428,7 @@ class ThermoMicroscope(FibsemMicroscope):
         - If the patterning state is idle, logs a warning message suggesting to adjust the patterning
         line depth.
         """
+        _check_sputter(self.hardware_settings)
         sputter_time = kwargs["sputter_time"]
 
         self.connection.beams.electron_beam.blank()
@@ -1420,6 +1462,7 @@ class ThermoMicroscope(FibsemMicroscope):
             original state. It sets the beam current back to imaging current and sets the default beam type to ion beam.
             It also retracts the multichem and logs that the sputtering process has finished.
         """
+        _check_sputter(self.hardware_settings)
         # Clear any remaining patterns
         self.connection.patterning.clear_patterns()
 
@@ -1457,43 +1500,52 @@ class ThermoMicroscope(FibsemMicroscope):
         self.move_stage_absolute(stage_position=microscope_state.absolute_position)
 
         # Restore electron beam settings
-        logging.info(f"Restoring electron beam settings...")
-        self.connection.beams.electron_beam.working_distance.value = (
-            microscope_state.eb_settings.working_distance
-        )
-        self.connection.beams.electron_beam.beam_current.value = (
-            microscope_state.eb_settings.beam_current
-        )
-        self.connection.beams.electron_beam.horizontal_field_width.value = (
-            microscope_state.eb_settings.hfw
-        )
-        self.connection.beams.electron_beam.scanning.resolution.value = (
-            microscope_state.eb_settings.resolution
-        )
-        self.connection.beams.electron_beam.scanning.dwell_time.value = (
-            microscope_state.eb_settings.dwell_time
-        )
+        if self.hardware_settings.electron_beam is False:
+            logging.warning("Electron beam is not available.")
+        else:
+            logging.info(f"Restoring electron beam settings...")
+            self.connection.beams.electron_beam.working_distance.value = (
+                microscope_state.eb_settings.working_distance
+            )
+            self.connection.beams.electron_beam.beam_current.value = (
+                microscope_state.eb_settings.beam_current
+            )
+            self.connection.beams.electron_beam.horizontal_field_width.value = (
+                microscope_state.eb_settings.hfw
+            )
+            self.connection.beams.electron_beam.scanning.resolution.value = (
+                microscope_state.eb_settings.resolution
+            )
+            self.connection.beams.electron_beam.scanning.dwell_time.value = (
+                microscope_state.eb_settings.dwell_time
+            )
 
         # Restore ion beam settings
-        logging.info(f"Restoring ion beam settings...")
-        self.connection.beams.ion_beam.working_distance.value = (
-            microscope_state.ib_settings.working_distance
-        )
-        self.connection.beams.ion_beam.beam_current.value = (
-            microscope_state.ib_settings.beam_current
-        )
-        self.connection.beams.ion_beam.horizontal_field_width.value = (
-            microscope_state.ib_settings.hfw
-        )
-        self.connection.beams.ion_beam.scanning.resolution.value = (
-            microscope_state.ib_settings.resolution
-        )
-        self.connection.beams.ion_beam.scanning.dwell_time.value = (
-            microscope_state.ib_settings.dwell_time
-        )
+        if self.hardware_settings.ion_beam is False:
+            logging.warning("Ion beam is not available.")
+        else:
+            logging.info(f"Restoring ion beam settings...")
+            self.connection.beams.ion_beam.working_distance.value = (
+                microscope_state.ib_settings.working_distance
+            )
+            self.connection.beams.ion_beam.beam_current.value = (
+                microscope_state.ib_settings.beam_current
+            )
+            self.connection.beams.ion_beam.horizontal_field_width.value = (
+                microscope_state.ib_settings.hfw
+            )
+            self.connection.beams.ion_beam.scanning.resolution.value = (
+                microscope_state.ib_settings.resolution
+            )
+            self.connection.beams.ion_beam.scanning.dwell_time.value = (
+                microscope_state.ib_settings.dwell_time
+            )
 
         # Link the specimen stage
-        self.connection.specimen.stage.link()
+        if self.hardware_settings.stage_enabled is False:
+            logging.warning("Specimen stage is not available.")
+        else:
+            self.connection.specimen.stage.link()
 
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
@@ -1507,14 +1559,14 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "application_file":
             values = self.connection.patterning.list_all_application_files()
 
-        if beam_type is BeamType.ION:
+        if beam_type is BeamType.ION and self.hardware_settings.ion_beam is True:
             if key == "plasma_gas":
                 values = self.connection.beams.ion_beam.source.plasma_gas.available_values
 
         if key == "current":
-            if beam_type is BeamType.ION:
+            if beam_type is BeamType.ION and self.hardware_settings.ion_beam is True:
                 values = self.connection.beams.ion_beam.beam_current.available_values
-            elif beam_type is BeamType.ELECTRON:
+            elif beam_type is BeamType.ELECTRON and self.hardware_settings.electron_beam is True:
                 values = self.connection.beams.electron_beam.beam_current.limits
 
         if key == "detector_type":
@@ -1528,49 +1580,64 @@ class ThermoMicroscope(FibsemMicroscope):
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
         
         # TODO: make the list of get and set keys available to the user
-
         beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
        
         # beam properties
         if key == "on": 
+            _check_beam(beam_type, self.hardware_settings)
             return beam.is_on
         if key == "blanked":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.is_blanked
         if key == "working_distance":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.working_distance.value
         if key == "current":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.beam_current.value
         if key == "voltage":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.high_voltage.value
         if key == "hfw":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.horizontal_field_width.value
         if key == "resolution":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.scanning.resolution.value
         if key == "dwell_time":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.scanning.dwell_time.value
         if key == "scan_rotation":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.scanning.rotation.value
         if key == "voltage_limits":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.high_voltage.limits
         if key == "voltage_controllable":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.high_voltage.is_controllable
 
 
         # ion beam properties
         if beam_type is BeamType.ELECTRON:
+            _check_beam(beam_type, self.hardware_settings)
             if key == "angular_correction_angle":
                 return beam.angular_correction.angle.value
 
         if beam_type is BeamType.ION:
+            _check_beam(beam_type, self.hardware_settings)
             if key == "plasma_gas":
                 return beam.source.plasma_gas.value # might need to check if this is available?
 
         # stage properties
         if key == "stage_position":
+            _check_stage(self.hardware_settings)
             return self.connection.specimen.stage.current_position
         if key == "stage_homed":
+            _check_stage(self.hardware_settings)
             return self.connection.specimen.stage.is_homed
         if key == "stage_linked":
+            _check_stage(self.hardware_settings)
             return self.connection.specimen.stage.is_linked
 
         # chamber properties
@@ -1598,55 +1665,66 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # manipulator properties
         if key == "manipulator_position":
+            _check_needle(self.hardware_settings)
             return self.connection.specimen.manipulator.current_position
         if key == "manipulator_state":
+            _check_needle(self.hardware_settings)
             return self.connection.specimen.manipulator.state
         
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
-
+        
         # get beam
         beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
 
         # beam properties
         if key == "working_distance":
+            _check_beam(beam_type, self.hardware_settings)
             beam.working_distance.value = value
             self.connection.specimen.stage.link() # Link the specimen stage
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return 
         if key == "current":
+            _check_beam(beam_type, self.hardware_settings)
             beam.beam_current.value = value
             logging.info(f"{beam_type.name} current set to {value} A.")
             return
         if key == "voltage":
+            _check_beam(beam_type, self.hardware_settings)
             beam.high_voltage.value = value
             logging.info(f"{beam_type.name} voltage set to {value} V.")
             return
         if key == "hfw":
+            _check_beam(beam_type, self.hardware_settings)
             beam.horizontal_field_width.value = value
             logging.info(f"{beam_type.name} HFW set to {value} m.")
             return
         if key == "resolution":
+            _check_beam(beam_type, self.hardware_settings)
             beam.scanning.resolution.value = value
             logging.info(f"{beam_type.name} resolution set to {value} m.")
             return
         if key == "dwell_time":
+            _check_beam(beam_type, self.hardware_settings)
             beam.scanning.dwell_time.value = value
             logging.info(f"{beam_type.name} dwell time set to {value} s.")
             return
         if key == "scan_rotation":
+            _check_beam(beam_type, self.hardware_settings)
             beam.scanning.rotation.value = value
             logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
             return
 
         # beam control
         if key == "on":
+            _check_beam(beam_type, self.hardware_settings)
             beam.turn_on() if value else beam.turn_off()
             logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
             return
         if key == "blanked":
+            _check_beam(beam_type, self.hardware_settings)
             beam.blank() if value else beam.unblank()
             logging.info(f"{beam_type.name} beam {'blanked' if value else 'unblanked'}.")
             return
@@ -1688,6 +1766,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # only supported for Electron
         if beam_type is BeamType.ELECTRON:
+            _check_beam(beam_type, self.hardware_settings)
             if key == "angular_correction_angle":
                 beam.angular_correction.angle.value = value
                 logging.info(f"Angular correction angle set to {value} radians.")
@@ -1697,6 +1776,8 @@ class ThermoMicroscope(FibsemMicroscope):
                 beam.angular_correction.tilt_correction.turn_on() if value else beam.angular_correction.tilt_correction.turn_off()
                 return
         if beam_type is BeamType.ION:
+            _check_beam(beam_type, self.hardware_settings)
+            _check_sputter(self.hardware_settings)
             if key == "plasma_gas":
                 beam.source.plasma_gas.value = value
                 logging.info(f"Plasma gas set to {value}.")
@@ -1716,10 +1797,12 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # stage properties
         if key == "stage_home":
+            _check_stage(self.hardware_settings)
             self.connection.specimen.stage.home()
             logging.info(f"Stage homed.")
             return
         if key == "stage_link":
+            _check_stage(self.hardware_settings)
             self.connection.specimen.stage.link() if value else self.connection.specimen.stage.unlink()
             logging.info(f"Stage {'linked' if value else 'unlinked'}.")    
             return
@@ -1745,6 +1828,8 @@ class ThermoMicroscope(FibsemMicroscope):
         return True
     
     def home(self) -> None:
+        if self.hardware_settings.stage_enabled is False:
+            raise NotImplementedError("Stage not enabled.")
         logging.info(f"Homing stage.")
         self.connection.specimen.stage.home()
         logging.info(f"Stage homed.")
@@ -1902,6 +1987,11 @@ class TescanMicroscope(FibsemMicroscope):
         self.last_image_eb = None
         self.last_image_ib = None
 
+        import fibsem
+        from fibsem.utils import load_protocol
+        base_path = os.path.dirname(fibsem.__path__[0])
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+
     def disconnect(self):
         self.connection.Disconnect()
 
@@ -1933,13 +2023,16 @@ class TescanMicroscope(FibsemMicroscope):
         """
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
         if image_settings.beam_type.name == "ELECTRON":
+            _check_beam(BeamType.ELECTRON, self.hardware_settings)
             image = self._get_eb_image(image_settings)
             self.last_image_eb = image
         if image_settings.beam_type.name == "ION":
+            _check_beam(BeamType.ION, self.hardware_settings)
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
 
         return image
+
 
     def _get_eb_image(self, image_settings: ImageSettings) -> FibsemImage:
         """
@@ -2163,8 +2256,10 @@ class TescanMicroscope(FibsemMicroscope):
 
         """
         if beam_type == BeamType.ELECTRON:
+            _check_beam(BeamType.ELECTRON, self.hardware_settings)
             image = self.last_image_eb
         elif beam_type == BeamType.ION:
+            _check_beam(BeamType.ION, self.hardware_settings)
             image = self.last_image_ib
         else:
             raise Exception("Beam type error")
@@ -2191,13 +2286,16 @@ class TescanMicroscope(FibsemMicroscope):
         # """
         logging.info(f"Running autocontrast on {beam_type.name}.")
         if beam_type == BeamType.ELECTRON:
+            _check_beam(BeamType.ELECTRON, self.hardware_settings)
             self.connection.SEM.Detector.AutoSignal(Detector=self.electron_detector_active)
         if beam_type == BeamType.ION:
+            _check_beam(BeamType.ION, self.hardware_settings)
             self.connection.FIB.Detector.AutoSignal(Detector=self.ion_detector_active)
 
     
     def auto_focus(self, beam_type: BeamType) -> None:
         if beam_type == BeamType.ELECTRON:
+            _check_beam(BeamType.ELECTRON, self.hardware_settings)
             self.connection.SEM.AutoWD(self.electron_detector_active)
         else:
             logging.info("Auto focus is not supported for ion beam type.")
@@ -2212,6 +2310,8 @@ class TescanMicroscope(FibsemMicroscope):
         Args:
             self (FibsemMicroscope): instance of the FibsemMicroscope object
         """
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
+        _check_beam(BeamType.ION, self.hardware_settings)
         logging.debug(
             f"reseting ebeam shift to (0, 0) from: {self.connection.FIB.Optics.GetImageShift()} (mm)"
         )
@@ -2231,8 +2331,10 @@ class TescanMicroscope(FibsemMicroscope):
             dy (float): the relative y term
         """
         if beam_type == BeamType.ION:
+            _check_beam(BeamType.ION, self.hardware_settings)
             beam = self.connection.FIB.Optics
         elif beam_type == BeamType.ELECTRON:
+            _check_beam(BeamType.ELECTRON, self.hardware_settings)
             beam = self.connection.SEM.Optics
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
         x, y = beam.GetImageShift()
@@ -2252,6 +2354,8 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             FibsemStagePosition: The current stage position.
         """
+        if self.hardware_settings.stage_enabled is False:
+            raise NotImplementedError("Stage is not enabled.")
         x, y, z, r, t = self.connection.Stage.GetPosition()
         stage_position = FibsemStagePosition(
             x * constants.MILLIMETRE_TO_METRE,
@@ -2273,25 +2377,10 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             MicroscopeState: current microscope state
         """
-        image_eb = self.last_image(BeamType.ELECTRON)
-        image_ib = self.last_image(BeamType.ION)
-
-        if image_ib is not None:
-            ib_settings = BeamSettings(
-                    beam_type=BeamType.ION,
-                    working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance,
-                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent() * constants.PICO_TO_SI,
-                    hfw=self.connection.FIB.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
-                    resolution=image_ib.metadata.image_settings.resolution,
-                    dwell_time=image_ib.metadata.image_settings.dwell_time,
-                    stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
-                    shift=image_ib.metadata.microscope_state.ib_settings.shift,
-                )
-        else:
-            ib_settings = BeamSettings(BeamType.ION)
-
-        if image_eb is not None:
-            eb_settings = BeamSettings(
+        if self.hardware_settings.electron_beam is True:
+            image_eb = self.last_image(BeamType.ELECTRON)
+            if image_eb is not None:
+                eb_settings = BeamSettings(
                 beam_type=BeamType.ELECTRON,
                 working_distance=self.connection.SEM.Optics.GetWD() * constants.MILLIMETRE_TO_METRE,
                 beam_current=self.connection.SEM.Beam.GetCurrent() * constants.PICO_TO_SI,
@@ -2303,6 +2392,21 @@ class TescanMicroscope(FibsemMicroscope):
             )
         else:
             eb_settings = BeamSettings(BeamType.ELECTRON)
+        if self.hardware_settings.ion_beam is True:
+            image_ib = self.last_image(BeamType.ION)
+            if image_ib is not None:
+                ib_settings = BeamSettings(
+                    beam_type=BeamType.ION,
+                    working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance,
+                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent() * constants.PICO_TO_SI,
+                    hfw=self.connection.FIB.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
+                    resolution=image_ib.metadata.image_settings.resolution,
+                    dwell_time=image_ib.metadata.image_settings.dwell_time,
+                    stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
+                    shift=image_ib.metadata.microscope_state.ib_settings.shift,
+                )
+        else:
+            ib_settings = BeamSettings(BeamType.ION)
 
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
@@ -2330,6 +2434,7 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage to {position}.")
         self.connection.Stage.MoveTo(
             position.x * constants.METRE_TO_MILLIMETRE,
@@ -2356,6 +2461,7 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage by {position}.")
         current_position = self.get_stage_position()
         x_m = current_position.x
@@ -2386,6 +2492,7 @@ class TescanMicroscope(FibsemMicroscope):
             dx (float): distance along the x-axis (image coordinates)
             dy (float): distance along the y-axis (image coordinates)
         """
+        _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
 
         # calculate stage movement
@@ -2422,6 +2529,7 @@ class TescanMicroscope(FibsemMicroscope):
             settings (MicroscopeSettings): microscope settings
             dy (float): distance in y-axis (image coordinates)
         """
+        _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
 
         z_move = dy / np.cos(
@@ -2572,6 +2680,8 @@ class TescanMicroscope(FibsemMicroscope):
             It also clears any existing patterns and sets the horizontal field width to the desired value.
             The method does not start the milling process.
         """
+        _check_beam(BeamType.ION, self.hardware_settings)
+
         fieldsize = (
             self.connection.SEM.Optics.GetViewfield()
         )  # application_file.ajhsd or mill settings
@@ -2608,6 +2718,7 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        _check_beam(BeamType.ION, self.hardware_settings)
         status = self.connection.FIB.Beam.GetStatus()
         if status != Automation.FIB.Beam.Status.BeamOn:
             self.connection.FIB.Beam.On()
@@ -2655,6 +2766,7 @@ class TescanMicroscope(FibsemMicroscope):
         Raises:
             None
         """
+        _check_beam(BeamType.ION, self.hardware_settings)
         status = self.connection.FIB.Beam.GetStatus()
         if status != Automation.FIB.Beam.Status.BeamOn:
             self.connection.FIB.Beam.On()
@@ -2713,12 +2825,12 @@ class TescanMicroscope(FibsemMicroscope):
         Args:
             imaging_current (float): The current to use for imaging in amps.
         # """
-        # try:
-        #     self.connection.DrawBeam.Stop()
-        #     self.connection.DrawBeam.UnloadLayer()
-        #     print("hello")
-        # except:
-        #     pass
+        try:
+            self.connection.DrawBeam.Stop()
+            self.connection.DrawBeam.UnloadLayer()
+            print("hello")
+        except:
+            pass
 
         # self.connection.DrawBeam.UnloadLayer()
 
@@ -2875,6 +2987,7 @@ class TescanMicroscope(FibsemMicroscope):
             It then inserts the multichem and turns on the heater for the specified gas according to the given protocol. 
             This function also waits for 3 seconds to allow the heater to warm up.
         """
+        _check_sputter(self.hardware_settings)
         self.connection.FIB.Beam.On()
         lines = self.connection.GIS.Enum()
         for line in lines:
@@ -2952,6 +3065,7 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
+        _check_sputter(self.hardware_settings)
         # Open GIS valve to let the gas flow onto the sample
         self.connection.GIS.OpenValve(self.line)
 
@@ -2992,6 +3106,7 @@ class TescanMicroscope(FibsemMicroscope):
         Raises:
             None
         """
+        _check_sputter(self.hardware_settings)
         # Move GIS out from chamber and turn off heating
         self.connection.GIS.MoveTo(self.line, Automation.GIS.Position.Home)
         self.connection.GIS.PrepareTemperature(self.line, False)
@@ -3018,9 +3133,11 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"restoring microscope state...")
 
         # move to position
+        -_check_stage(self.hardware_settings)
         self.move_stage_absolute(position=microscope_state.absolute_position)
 
         # restore electron beam
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
         logging.info(f"restoring electron beam settings...")
         self.connection.SEM.Optics.SetWD(
             microscope_state.eb_settings.working_distance
@@ -3040,6 +3157,7 @@ class TescanMicroscope(FibsemMicroscope):
         # )
 
         # restore ion beam
+        _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"restoring ion beam settings...")
 
         self.connection.FIB.Optics.SetViewfield(
@@ -3080,40 +3198,50 @@ class TescanMicroscope(FibsemMicroscope):
 
     
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
-
+        
         beam = self.connection.SEM if beam_type == BeamType.ELECTRON else self.connection.FIB
 
         # beam properties 
         if key == "on": 
+            _check_beam(beam_type, self.hardware_settings)
             return beam.Beam.GetStatus()
         if key == "working_distance" and beam_type == BeamType.ELECTRON:
+            _check_beam(beam_type, self.hardware_settings)
             return beam.Optics.GetWD() * constants.MILLIMETRE_TO_METRE
         if key == "current":
+            _check_beam(beam_type, self.hardware_settings)
             if beam_type == BeamType.ELECTRON:
                 return beam.Beam.GetCurrent() * constants.PICO_TO_SI
             else:
                 return beam.Beam.ReadProbeCurrent() * constants.PICO_TO_SI
         if key == "voltage":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.Beam.GetVoltage() 
         if key == "hfw":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE
         if key == "resolution":
+            _check_beam(beam_type, self.hardware_settings)
             if beam_type == BeamType.ELECTRON and self.last_image_eb is not None:
                 return self.last_image_eb.metadata.image_settings.resolution
             elif beam_type == BeamType.ION and self.last_image_ib is not None:
                 return self.last_image_ib.metadata.image_settings.resolution
         if key == "dwell_time":
+            _check_beam(beam_type, self.hardware_settings)
             if beam_type == BeamType.ELECTRON and self.last_image_eb is not None:
                 return self.last_image_eb.metadata.image_settings.dwell_time
             elif beam_type == BeamType.ION and self.last_image_ib is not None:
                 return self.last_image_ib.metadata.image_settings.dwell_time   
         if key =="scan_rotation":
+            _check_beam(beam_type, self.hardware_settings)
             return beam.Optics.GetImageRotation()     
         
         # stage properties
         if key == "stage_position":
+            _check_stage(self.hardware_settings)
             return self.get_stage_position()
         if key == "stage_calibrated":
+            _check_stage(self.hardware_settings)
             return self.connection.Stage.IsCalibrated()
         
         # chamber properties
@@ -3140,8 +3268,10 @@ class TescanMicroscope(FibsemMicroscope):
         
         # manipulator properties
         if key == "manipulator_position":
+            _check_needle(self.hardware_settings)
             return self.connection.Nanomanipulator.GetPosition(0)
         if key == "manipulator_calibrated":
+            _check_needle(self.hardware_settings)
             return self.connection.Nanomanipulator.IsCalibrated(0)
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
@@ -3153,12 +3283,14 @@ class TescanMicroscope(FibsemMicroscope):
 
         if key == "working_distance":
             if beam_type == BeamType.ELECTRON:
+                _check_beam(beam_type, self.hardware_settings)
                 beam.Optics.SetWD(value * constants.METRE_TO_MILLIMETRE)
                 logging.info(f"Electron beam working distance set to {value} m.")
             else: 
                 logging.info(f"Setting working distance for ion beam is not supported by Tescan API.")
             return
         if key == "current":
+            _check_beam(beam_type, self.hardware_settings)
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetCurrent(value * constants.SI_TO_PICO)
                 logging.info(f"Electron beam current set to {value} A.")
@@ -3166,26 +3298,31 @@ class TescanMicroscope(FibsemMicroscope):
                 logging.info(f"Setting current for ion beam is not supported by Tescan API, please use the native microscope interface.")
             return
         if key == "voltage":
+            _check_beam(beam_type, self.hardware_settings)
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetVoltage(value)
             else:
                 logging.info(f"Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
             return
         if key == "hfw":
+            _check_beam(beam_type, self.hardware_settings)
             beam.Optics.SetViewfield(value * constants.METRE_TO_MILLIMETRE)
             logging.info(f"{beam_type.name} HFW set to {value} m.")
             return
         if key == "scan_rotation":
+            _check_beam(beam_type, self.hardware_settings)
             beam.Optics.SetImageRotation(value)
             logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
             return
         # beam control
         if key == "on":
+            _check_beam(beam_type, self.hardware_settings)
             beam.Beam.On() if value else beam.Beam.Off()
             logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
             return
         # detector control
         if key == "detector_type":
+            _check_beam(beam_type, self.hardware_settings)
             if beam_type == BeamType.ELECTRON:
                 self.electron_detector_active = value
                 beam.Detector.Set(Channel = 0, Detector = value)
@@ -3199,6 +3336,7 @@ class TescanMicroscope(FibsemMicroscope):
                 logging.info(f"{beam_type} detector type set to {value}.")
                 return
         if key in ["detector_brightness", "detector_contrast"]:
+            _check_beam(beam_type, self.hardware_settings)
             if key == "detector_brightness":
                 if 0 <= value <= 1:
                     if beam_type == BeamType.ELECTRON:
@@ -3266,6 +3404,10 @@ class DemoMicroscope(FibsemMicroscope):
             stigmation=Point(0, 0),
             shift=Point(0, 0),
         )
+        import fibsem
+        from fibsem.utils import load_protocol
+        base_path = os.path.dirname(fibsem.__path__[0])
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
 
     def connect_to_microscope(self):
         logging.info(f"Connected to Demo Microscope")
@@ -3276,6 +3418,8 @@ class DemoMicroscope(FibsemMicroscope):
 
     def acquire_image(self, image_settings: ImageSettings) -> FibsemImage:
 
+        _check_beam(image_settings.beam_type, self.hardware_settings)
+
         vfw = image_settings.hfw * image_settings.resolution[1] / image_settings.resolution[0]
         pixelsize = Point(image_settings.hfw / image_settings.resolution[0], 
                           vfw / image_settings.resolution[1])
@@ -3285,7 +3429,9 @@ class DemoMicroscope(FibsemMicroscope):
                 size=(image_settings.resolution[1],image_settings.resolution[0]), 
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
+            detector_settings = FibsemDetectorSettings.__from_dict__({}),
                                          microscope_state=MicroscopeState()))
+
 
         if image_settings.beam_type is BeamType.ELECTRON:
             self._eb_image = image
@@ -3295,22 +3441,28 @@ class DemoMicroscope(FibsemMicroscope):
         return image
 
     def last_image(self, beam_type: BeamType) -> FibsemImage:
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Getting last image: {beam_type}")
         return self._eb_image if beam_type is BeamType.ELECTRON else self._ib_image
     
     def autocontrast(self, beam_type: BeamType) -> None:
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Autocontrast: {beam_type}")
 
     def auto_focus(self, beam_type: BeamType) -> None:
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Auto focus: {beam_type}")
         logging.info(f"I'm focusing my laser...")
 
     def reset_beam_shifts(self) -> None:
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
+        _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Resetting beam shifts")
         self.electron_beam.shift = Point(0,0)
         self.ion_beam.shift = Point(0,0)
 
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
+        _check_beam(beam_type, self.hardware_settings)
         beam_type = BeamType.ION # TODO: add beam_type to params for ABC
         logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
         if beam_type == BeamType.ELECTRON:
@@ -3319,6 +3471,7 @@ class DemoMicroscope(FibsemMicroscope):
             self.ion_beam.shift += Point(dx, dy)
 
     def get_stage_position(self) -> FibsemStagePosition:
+        _check_stage(self.hardware_settings)
         logging.info(f"Getting stage position: {self.stage_position}")
         return self.stage_position
     
@@ -3327,23 +3480,29 @@ class DemoMicroscope(FibsemMicroscope):
         return MicroscopeState(absolute_position=self.stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: {position} (Absolute)")
         self.stage_position = position
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: {position} (Relative)")
         self.stage_position += position
 
     def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dx={dx:.2e}, dy={dy:.2e}, beam_type = {beam_type.name} (Stable)")
         self.stage_position.x += dx
         self.stage_position.y += dy
 
     def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
+        _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
         self.stage_position.z += dy / np.cos(np.deg2rad(90-settings.system.stage.tilt_flat_to_ion))
 
     def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
+        _check_stage(self.hardware_settings)
+        _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Moving stage: Flat to {beam_type.name} beam")
 
         if beam_type is BeamType.ELECTRON:
@@ -3359,28 +3518,35 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position.t = np.deg2rad(t)
     
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
+        _check_needle(self.hardware_settings)
         logging.info(f"Getting manipulator position: {self.manipulator_position}")
         return self.manipulator_position
 
     def insert_manipulator(self, name: str = "PARK"):
+        _check_needle(self.hardware_settings)
         logging.info(f"Inserting manipulator to {name}")
     
     def retract_manipulator(self):
+        _check_needle(self.hardware_settings)
         logging.info(f"Retracting manipulator")
     
     def move_manipulator_relative(self, position: FibsemManipulatorPosition):
+        _check_needle(self.hardware_settings)
         logging.info(f"Moving manipulator: {position} (Relative)")
         self.manipulator_position += position
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition):
+        _check_needle(self.hardware_settings)
         logging.info(f"Moving manipulator: {position} (Absolute)")
         self.manipulator_position = position
               
     def move_manipulator_corrected(self, position: FibsemManipulatorPosition, beam_type: BeamType):
+        _check_needle(self.hardware_settings)
         logging.info(f"Moving manipulator: {position} (Corrected)")
         self.manipulator_position = position
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
+        _check_needle(self.hardware_settings)
         if name is None:
             name = "EUCENTRIC"
 
@@ -3390,6 +3556,7 @@ class DemoMicroscope(FibsemMicroscope):
         self.manipulator_position = position + offset
 
     def _get_saved_manipulator_position(self, name: str = "PARK") -> FibsemManipulatorPosition:
+        _check_needle(self.hardware_settings)
 
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"Unknown manipulator position: {name}")
@@ -3399,12 +3566,15 @@ class DemoMicroscope(FibsemMicroscope):
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
     def setup_milling(self, mill_settings: FibsemMillingSettings):
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
         logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
 
     def run_milling(self, milling_current: float, asynch: bool = False) -> None:
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
         logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
 
     def finish_milling(self, imaging_current: float) -> None:
+        _check_beam(BeamType.ELECTRON, self.hardware_settings)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
 
     def draw_rectangle(self, pattern_settings: FibsemPatternSettings) -> None:
@@ -3438,15 +3608,18 @@ class DemoMicroscope(FibsemMicroscope):
         return
 
     def setup_sputter(self, protocol: dict) -> None:
+        _check_sputter(self.hardware_settings)
         logging.info(f"Setting up sputter: {protocol}")
 
     def draw_sputter_pattern(self, hfw: float, line_pattern_length: float, sputter_time: float):
         logging.info(f"Drawing sputter pattern: hfw={hfw:.2e}, line_pattern_length={line_pattern_length:.2e}, sputter_time={sputter_time:.2e}")
 
     def run_sputter(self, **kwargs):
+        _check_sputter(self.hardware_settings)
         logging.info(f"Running sputter: {kwargs}")
 
     def finish_sputter(self, **kwargs):
+        _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
 
     def set_microscope_state(self, state: MicroscopeState):
@@ -3543,6 +3716,7 @@ class DemoMicroscope(FibsemMicroscope):
         return True
     
     def home(self):
+        _check_stage(self.hardware_settings)
         logging.info("Homing Stage")
         return
 
@@ -3562,3 +3736,42 @@ def printProgressBar(
     bar = fill * filled_length + "-" * (length - filled_length)
     print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\n")
 
+def _check_beam(beam_type: BeamType, hardware_settings: FibsemHardware):
+    """
+    Checks if beam is available.
+    """
+    if beam_type == BeamType.ELECTRON and hardware_settings.electron_beam == False:
+        raise NotImplementedError("The microscope does not have an electron beam.")
+    if beam_type == BeamType.ION and hardware_settings.ion_beam == False:
+        raise NotImplementedError("The microscope does not have an ion beam.")
+    
+def _check_stage(hardware_settings: FibsemHardware):
+    """
+    Checks if the stage is fully movable.
+    """
+    if hardware_settings.stage_enabled == False:
+        raise NotImplementedError("The microscope does not have a moving stage.")
+    if hardware_settings.stage_rotation == False:
+        raise NotImplementedError("The microscope stage does not rotate.")
+    if hardware_settings.stage_tilt == False:
+        raise NotImplementedError("The microscope stage does not tilt.")
+    
+def _check_needle(hardware_settings: FibsemHardware):
+    """
+    Checks if the needle is available.
+    """
+    if hardware_settings.manipulator_enabled == False:
+        raise NotImplementedError("The microscope does not have a needle.")
+    if hardware_settings.manipulator_rotation == False:
+        raise NotImplementedError("The microscope needle does not rotate.")
+    if hardware_settings.manipulator_tilt == False:
+        raise NotImplementedError("The microscope needle does not tilt.")
+    
+def _check_sputter(hardware_settings: FibsemHardware):
+    """
+    Checks if the sputter is available.
+    """
+    if hardware_settings.gis_enabled == False:
+        raise NotImplementedError("The microscope does not have a GIS system.")
+    if hardware_settings.gis_multichem == False:
+        raise NotImplementedError("The microscope does not have a multichem system.")
