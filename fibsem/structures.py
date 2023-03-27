@@ -264,7 +264,31 @@ Attributes:
             gis_multichem=bool(hardware_dict["gis"]["multichem"]),
         )
 
-
+    def __to_dict__(self) -> dict:
+            
+            hardware_dict = {}
+    
+            hardware_dict["electron"] = {}
+            hardware_dict["electron"]["enabled"] = self.electron_beam
+    
+            hardware_dict["ion"] = {}
+            hardware_dict["ion"]["enabled"] = self.ion_beam
+    
+            hardware_dict["stage"] = {}
+            hardware_dict["stage"]["enabled"] = self.stage_enabled
+            hardware_dict["stage"]["rotation"] = self.stage_rotation
+            hardware_dict["stage"]["tilt"] = self.stage_tilt
+    
+            hardware_dict["manipulator"] = {}
+            hardware_dict["manipulator"]["enabled"] = self.manipulator_enabled
+            hardware_dict["manipulator"]["rotation"] = self.manipulator_rotation
+            hardware_dict["manipulator"]["tilt"] = self.manipulator_tilt
+    
+            hardware_dict["gis"] = {}
+            hardware_dict["gis"]["enabled"] = self.gis_enabled
+            hardware_dict["gis"]["multichem"] = self.gis_multichem
+    
+            return hardware_dict
 
 
 @dataclass
@@ -571,11 +595,11 @@ class BeamSettings:
     def __from_dict__(state_dict: dict) -> "BeamSettings":
 
         if "stigmation" in state_dict and state_dict["stigmation"] is not None:
-            stigmation = FibsemRectangle.__from_dict__(state_dict["stigmation"])
+            stigmation = Point.__from_dict__(state_dict["stigmation"])
         else:
             stigmation = Point()
         if "shift" in state_dict and state_dict["shift"] is not None:
-            shift = FibsemRectangle.__from_dict__(state_dict["shift"])
+            shift = Point.__from_dict__(state_dict["shift"])
         else:
             shift = Point()
 
@@ -1101,6 +1125,9 @@ class MicroscopeSettings:
         settings_dict = {
             "system": self.system.__to_dict__(),
             "user": self.image.__to_dict__(),
+            "protocol": self.protocol,
+            "milling": self.milling.__to_dict__(),
+            "hardware": self.hardware.__to_dict__(),
 
         }
 
@@ -1113,6 +1140,7 @@ class MicroscopeSettings:
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
             protocol=protocol,
+            milling=FibsemMillingSettings.__from_dict__(settings.get(["milling"], None)),
             hardware=FibsemHardware.__from_dict__(hardware),
 
         )
@@ -1159,11 +1187,11 @@ class FibsemState:
 
         return state_dict
 
-    @abstractstaticmethod
-    def __from_dict__(self, state_dict: dict) -> "FibsemState":
+    @staticmethod
+    def __from_dict__(state_dict: dict) -> "FibsemState":
 
         autoliftout_state = FibsemState(
-            stage=FibsemState[state_dict["stage"]],
+            stage=FibsemStage[state_dict["stage"]],
             microscope_state=MicroscopeState.__from_dict__(
                 state_dict["microscope_state"]
             ),
@@ -1473,10 +1501,10 @@ class FibsemImage:
             state: MicroscopeState,
             detector: FibsemDetectorSettings,
         ) -> "FibsemImage":
-            """Creates FibsemImage from an AdornedImage (microscope output format).
+            """Creates FibsemImage from a tescan (microscope output format).
 
             Args:
-                adorned (AdornedImage): Adorned Image from microscope
+                image (Tescan): Adorned Image from microscope
                 metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
 
             Returns:

@@ -2,7 +2,7 @@ import pytest
 from fibsem import structures
 import os
 import numpy as np
-
+from pathlib import Path
 @pytest.fixture
 def fake_image_settings():
     fake_image_settings = structures.ImageSettings(
@@ -37,7 +37,7 @@ def fake_eb_settings():
 @pytest.fixture
 def fake_ib_settings():
     ib_settings= structures.BeamSettings(
-            beam_type=structures.BeamType.ELECTRON, 
+            beam_type=structures.BeamType.ION, 
             working_distance=0,
             beam_current=0,
             voltage=0,
@@ -54,8 +54,8 @@ def fake_detector_settings():
     detector_settings = structures.FibsemDetectorSettings(
         type = "BSE",
         mode= "NORMAL",
-        brightness= 0,
-        contrast= 0,
+        brightness= 1,
+        contrast= 1,
     )
     return detector_settings
 
@@ -572,12 +572,27 @@ def test_stage_position_to_dict():
     to_dict(fake_stage_position_dict,answers)
 
 
-def test_images(fake_fibsem_image, fake_image_settings):
+def test_images(fake_fibsem_image, fake_image_settings, fake_eb_settings, fake_ib_settings):
     
     assert fake_fibsem_image.metadata.compare_image_settings(fake_image_settings)
     assert fake_fibsem_image.metadata.version == "v1"
+    assert fake_fibsem_image.metadata.microscope_state.eb_settings == fake_eb_settings
+    assert fake_fibsem_image.metadata.microscope_state.ib_settings == fake_ib_settings
+    assert fake_fibsem_image.metadata.microscope_state.absolute_position == structures.FibsemStagePosition(0,0,0,0,0)
+
     fake_fibsem_image.save()
-    assert os.path.exists(os.path.join(fake_fibsem_image.metadata.image_settings.save_path, fake_fibsem_image.metadata.image_settings.label))
+    path = os.path.join(fake_fibsem_image.metadata.image_settings.save_path, fake_fibsem_image.metadata.image_settings.label)
+    save_path = Path(path).with_suffix(".tif")
+    assert os.path.exists(save_path)
+
+    loaded = structures.FibsemImage.load(save_path)
+
+    assert loaded.metadata.compare_image_settings(fake_image_settings)
+    assert loaded.metadata.version == "v1"
+    assert loaded.metadata.microscope_state.eb_settings == fake_eb_settings
+    assert loaded.metadata.microscope_state.ib_settings == fake_ib_settings
+    assert loaded.metadata.microscope_state.absolute_position == structures.FibsemStagePosition(0,0,0,0,0)
+
 
 def test_stage_position_from_dict():
 
@@ -604,8 +619,134 @@ def test_stage_position_from_dict():
     from_dict(fake_stage_position,attributes=answers,answers=answers)
 
 
+def test_detector_settings(fake_detector_settings):
+    dict = {
+        "type": "BSE",
+        "mode": "NORMAL",
+        "contrast": 1,
+        "brightness": 1,
+    }
 
+    assert fake_detector_settings.type == "BSE"
+    assert fake_detector_settings.mode == "NORMAL"
+    assert fake_detector_settings.contrast == 1
+    assert fake_detector_settings.brightness == 1
+    assert fake_detector_settings.to_tescan() == (100, 100)
 
+    assert fake_detector_settings.__to_dict__() == dict
+    assert structures.FibsemDetectorSettings.__from_dict__(dict) == fake_detector_settings
+
+    
         
+def test_fibsem_state(fake_eb_settings, fake_ib_settings):
+    
+    state = structures.FibsemState(
+        stage= structures.FibsemStage.Base,
+        microscope_state = structures.MicroscopeState(
+        timestamp=0.0,
+        absolute_position=structures.FibsemStagePosition(0,0,0,0,0),
+        eb_settings=fake_eb_settings,
+        ib_settings=fake_ib_settings,
+        ),
+        start_timestamp = 0.0,
+        end_timestamp = 0.0,
+        )
+    
+    to_dict = state.__to_dict__()
 
+    assert to_dict["stage"] == "Base"
+    assert to_dict["microscope_state"]["timestamp"] == 0.0
+    assert to_dict["microscope_state"]["absolute_position"]["x"] == 0.0
+    assert to_dict["microscope_state"]["absolute_position"]["y"] == 0.0
+    assert to_dict["microscope_state"]["absolute_position"]["z"] == 0.0
+    assert to_dict["microscope_state"]["absolute_position"]["r"] == 0.0
+    assert to_dict["microscope_state"]["absolute_position"]["t"] == 0.0
+    assert to_dict["microscope_state"]["absolute_position"]["coordinate_system"] == None
+    assert to_dict["microscope_state"]["eb_settings"]["beam_type"] == "ELECTRON"
+    assert to_dict["microscope_state"]["eb_settings"]["working_distance"] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["beam_current"] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["voltage"] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["hfw"] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["resolution"] == (1536,1024)
+    assert to_dict["microscope_state"]["eb_settings"]["dwell_time"] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["stigmation"]["x"] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["stigmation"]["y"] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["shift"]['x'] == 0
+    assert to_dict["microscope_state"]["eb_settings"]["shift"]['y'] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["beam_type"] == "ION"
+    assert to_dict["microscope_state"]["ib_settings"]["working_distance"] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["beam_current"] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["voltage"] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["hfw"] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["resolution"] == (1536,1024)
+    assert to_dict["microscope_state"]["ib_settings"]["dwell_time"] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["stigmation"]["x"] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["stigmation"]["y"] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["shift"]['x'] == 0
+    assert to_dict["microscope_state"]["ib_settings"]["shift"]['y'] == 0
+
+    from_dict = structures.FibsemState.__from_dict__(to_dict)
+    assert state == from_dict
+
+
+def test_microscope_settings(fake_image_settings):
+    settings = structures.MicroscopeSettings(
+        system = structures.SystemSettings(
+            ip_address="localhost",
+            stage=structures.StageSettings(
+                rotation_flat_to_electron=0,
+                rotation_flat_to_ion=0,
+                tilt_flat_to_electron=0,
+                tilt_flat_to_ion=0,
+                pre_tilt=0,
+                needle_stage_height_limit=0,
+            ),
+            ion = structures.BeamSystemSettings(
+                beam_type=structures.BeamType.ION,
+                voltage=0,
+                current=0,
+                detector_type= 'BSE',
+                detector_mode= 'NORMAL',
+                eucentric_height=0,
+                plasma_gas = "Ar",
+            ),
+            electron = structures.BeamSystemSettings(
+                beam_type=structures.BeamType.ELECTRON,
+                voltage=0,
+                current=0,
+                detector_type= 'BSE',
+                detector_mode= 'NORMAL',
+                eucentric_height=0,
+                plasma_gas = "Ar",
+            ),
+            manufacturer="Tescan",
+        ), 
+        image =  fake_image_settings,
+        protocol = None,
+        milling = structures.FibsemMillingSettings(
+            milling_current=0,
+            spot_size=0,
+            rate=0,
+            dwell_time=0,
+            hfw=0,
+            patterning_mode="Serial",
+            application_file="Si"
+        ),
+        hardware=structures.FibsemHardware(
+            electron_beam=True,
+            ion_beam=True,
+            stage_enabled=True,
+            stage_rotation=True,
+            stage_tilt=True,
+            manipulator_enabled=True,
+            manipulator_rotation=True,
+            manipulator_tilt=True,
+            gis_enabled=True,
+            gis_multichem=True,
+        )
+    )
+
+    to_dict = settings.__to_dict__()
+    from_dict = structures.MicroscopeSettings.__from_dict__(to_dict)
+    assert settings == from_dict
 
