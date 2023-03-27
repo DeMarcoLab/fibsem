@@ -236,7 +236,11 @@ Attributes:
             assert isinstance(object_attribute,bool)
 
     @classmethod
+<<<<<<< HEAD
+    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":      
+=======
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
+>>>>>>> 44cb018c3ef73491b5b8d1ab652e4701a0e16d7a
 
         assert isinstance(hardware_dict["electron"]["enabled"],bool)
         assert isinstance(hardware_dict["ion"]["enabled"],bool)
@@ -1393,12 +1397,14 @@ class FibsemImage:
                 print(f"Error: {e}")
         return cls(data=data, metadata=metadata)
 
-    def save(self, save_path: Path) -> None:
+    def save(self, save_path: Path = None) -> None:
         """Saves a FibsemImage to a tiff file.
 
         Inputs:
             save_path (path): path to save directory and filename
         """
+        if save_path is None:
+            save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         save_path = Path(save_path).with_suffix(".tif")
 

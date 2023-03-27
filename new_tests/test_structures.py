@@ -4,22 +4,78 @@ import os
 import numpy as np
 
 @pytest.fixture
-def fake_fibsem_image():
+def fake_image_settings():
     fake_image_settings = structures.ImageSettings(
-        resolution=(1234,1234)
+        resolution=(1234,1234),
+        dwell_time= 150e-6,
+        beam_type=structures.BeamType.ELECTRON,
+        hfw = 150e-6,
+        autocontrast=True,
+        save = True,
+        label = "test",
+        gamma_enabled = True,
+        save_path = os.path.join(os.getcwd(),"test_images"),
+        reduced_area = structures.Rectangle(0,0,10,10),
     )
+    return fake_image_settings
+
+@pytest.fixture
+def fake_eb_settings():
+    eb_settings= structures.BeamSettings(
+            beam_type=structures.BeamType.ELECTRON, 
+            working_distance=0,
+            beam_current=0,
+            voltage=0,
+            hfw=0,
+            resolution=(1536,1024),
+            dwell_time=0,
+            stigmation=structures.Point(0,0),
+            shift=structures.Point(0,0),
+        )
+    return eb_settings
+
+@pytest.fixture
+def fake_ib_settings():
+    ib_settings= structures.BeamSettings(
+            beam_type=structures.BeamType.ELECTRON, 
+            working_distance=0,
+            beam_current=0,
+            voltage=0,
+            hfw=0,
+            resolution=(1536,1024),
+            dwell_time=0,
+            stigmation=structures.Point(0,0),
+            shift=structures.Point(0,0),
+        )
+    return ib_settings
+
+@pytest.fixture
+def fake_detector_settings():
+    detector_settings = structures.FibsemDetectorSettings(
+        type = "BSE",
+        mode= "NORMAL",
+        brightness= 0,
+        contrast= 0,
+    )
+    return detector_settings
+
+@pytest.fixture
+def fake_fibsem_image(fake_image_settings, fake_eb_settings, fake_ib_settings, fake_detector_settings):
+    state = structures.MicroscopeState(
+        timestamp=0,
+        absolute_position=structures.FibsemStagePosition(0,0,0,0,0),
+        eb_settings= fake_eb_settings,
+        ib_settings= fake_ib_settings,
+        )
+
     fake_metadata = structures.FibsemImageMetadata(
         image_settings=fake_image_settings,
         pixel_size=structures.Point(0.001,0.001),
-        microscope_state=structures.MicroscopeState(),
-        detector_settings=structures.FibsemDetectorSettings(
-        type=None,
-        mode=None,
-        brightness=1.234,
-        contrast=83.2
-        ),
+        microscope_state=state,
+        detector_settings=fake_detector_settings,
+        version="v1", 
+        )
 
-    )
     pic = structures.FibsemImage(
         data=np.random.randint(0,256,size=(10,10)).astype(np.uint8),
         metadata=fake_metadata
@@ -515,6 +571,13 @@ def test_stage_position_to_dict():
 
     to_dict(fake_stage_position_dict,answers)
 
+
+def test_images(fake_fibsem_image, fake_image_settings):
+    
+    assert fake_fibsem_image.metadata.compare_image_settings(fake_image_settings)
+    assert fake_fibsem_image.metadata.version == "v1"
+    fake_fibsem_image.save()
+    assert os.path.exists(os.path.join(fake_fibsem_image.metadata.image_settings.save_path, fake_fibsem_image.metadata.image_settings.label))
 
 def test_stage_position_from_dict():
 
