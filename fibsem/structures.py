@@ -1252,6 +1252,13 @@ class FibsemDetectorSettings:
     brightness: float = None
     contrast: float = None
 
+    def __post_init__(self):
+
+        assert isinstance(self.type,str) or self.type is None, f"type must be input as str, currently is {type(self.type)}"
+        assert isinstance(self.mode,str) or self.mode is None, f"mode must be input as str, currently is {type(self.mode)}"
+        assert isinstance(self.brightness,(float,int)) or self.brightness is None, f"brightness must be int or float value, currently is {type(self.brightness)}"
+        assert isinstance(self.contrast,(float,int)) or self.contrast is None, f"contrast must be int or float value, currently is {type(self.contrast)}"
+
     if TESCAN:
         def to_tescan(self):
             """Converts to tescan format."""

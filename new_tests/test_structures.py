@@ -684,6 +684,10 @@ def test_detector_settings(fake_detector_settings):
     assert fake_detector_settings.__to_dict__() == dict
     assert structures.FibsemDetectorSettings.__from_dict__(dict) == fake_detector_settings
 
+    with pytest.raises(Exception):
+
+        bad_fb_detector_settings = structures.FibsemDetectorSettings(type=True,brightness="1.234",contrast=[1,23])
+
     
         
 def test_fibsem_state(fake_eb_settings, fake_ib_settings):
