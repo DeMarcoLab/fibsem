@@ -76,8 +76,6 @@ def finish_milling(
     logging.info("finished ion beam milling.")
 
 
-############################# DRAWING PATTERN   
-
 def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
     """Draw a milling pattern from settings
 
@@ -96,15 +94,6 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
         microscope.draw_circle(pattern_settings)
         
 
-def draw_patterns(microscope: FibsemMicroscope, pattern_settings_list: list[FibsemPatternSettings]) -> None:
-    """Draw a milling pattern from settings
-
-    Args:
-        microscope (FibsemMicroscope): Fibsem microscope instance
-    """
-
-    for pattern_settings in pattern_settings_list:
-        draw_pattern(microscope, pattern_settings)
 
 def draw_rectangle(
     microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings

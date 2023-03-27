@@ -30,6 +30,9 @@ import yaml
 
 from fibsem.config import METADATA_VERSION
 
+# @patrickcleeve: dataclasses.asdict -> :(
+
+# TODO: overload constructors instead of from_dict...
 @dataclass
 class Point:
     x: float = 0.0
@@ -196,7 +199,6 @@ Methods:
             self.t + other.t,
             self.coordinate_system,
         )
-
 
 @dataclass
 class FibsemHardware:
@@ -524,7 +526,7 @@ class ImageSettings:
             else None,
             "gamma_enabled": self.gamma_enabled if self.gamma_enabled is not None else None,
             "save": self.save if self.save is not None else None,
-            "save_path": str(self.save_path) if self.save_path is not None else None,
+            "save_path": self.save_path if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
             "reduced_area": {
                 "left": self.reduced_area.left,
@@ -749,7 +751,9 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.end_x = kwargs["end_x"]
             self.end_y = kwargs["end_y"]
             self.depth = kwargs["depth"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
         elif pattern == FibsemPattern.Circle:
             self.centre_x = kwargs["centre_x"]
             self.centre_y = kwargs["centre_y"]
@@ -792,6 +796,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 end_x=state_dict["end_x"],
                 end_y=state_dict["end_y"],
                 depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
@@ -1226,6 +1231,7 @@ class MicroscopeSettings:
             protocol=protocol if protocol is not None else settings["protocol"],
             milling=FibsemMillingSettings.__from_dict__(settings["milling"]),
             hardware=FibsemHardware.__from_dict__(hardware) if hardware is not None else FibsemHardware.__from_dict__(settings["hardware"]),
+
         )
 
 
