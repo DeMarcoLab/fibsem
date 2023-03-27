@@ -129,8 +129,8 @@ def test_image_to_microscope_image_coordinates(points):
 
         # dist from centre
 
-        dy = -(pointA.y - cy)
-        dx = pointA.x - cx
+        dy = int(-(pointA.y - cy))
+        dx = int(pointA.x - cx)
 
         p1 = conversions.convert_point_from_pixel_to_metres(Point(dx,dy),pixel_sizes[i])
 
