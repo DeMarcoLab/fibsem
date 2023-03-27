@@ -236,7 +236,6 @@ def test_fibsemhardware():
 
         bad_hardware = structures.FibsemHardware.__from_dict__(bad_hardware_dict)
         bad_hardware_2 = structures.FibsemHardware(electron_beam=3,ion_beam="hello",stage_enabled=[1,2,3])
-    
 
 
 def test_manipulator_position():
@@ -282,6 +281,7 @@ def test_manipulator_position():
     with pytest.raises(Exception):
 
         bad_position = structures.FibsemManipulatorPosition.__from_dict__(bad_dict)
+        bad_position_2 = structures.FibsemManipulatorPosition(1,2,3,"HELLO",(1,2),"GOODBYE")
 
 
 def test_fibsem_rectangle():

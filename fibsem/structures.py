@@ -236,11 +236,7 @@ Attributes:
             assert isinstance(object_attribute,bool)
 
     @classmethod
-<<<<<<< HEAD
-    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":      
-=======
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
->>>>>>> 44cb018c3ef73491b5b8d1ab652e4701a0e16d7a
 
         assert isinstance(hardware_dict["electron"]["enabled"],bool)
         assert isinstance(hardware_dict["ion"]["enabled"],bool)
@@ -299,6 +295,15 @@ Methods:
     r: float = 0.0
     t: float = 0.0
     coordinate_system: str = None
+
+    def __post_init__(self):
+
+        attributes = ["x","y","z","r","t"]
+        for attribute in attributes:
+            output = getattr(self,attribute)
+            assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
+        assert isinstance(self.coordinate_system,str) or self.coordinate_system is None, f"unsupported type {type(self.coordinate_system)} for coorindate system"
+        assert self.coordinate_system in ["RAW","SPECIMEN"] or self.coordinate_system is None, f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
 
     def __to_dict__(self) -> dict:
         position_dict = {}
