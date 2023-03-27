@@ -238,19 +238,6 @@ Attributes:
     @classmethod
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
 
-        assert isinstance(hardware_dict["electron"]["enabled"],bool)
-        assert isinstance(hardware_dict["ion"]["enabled"],bool)
-        assert isinstance(hardware_dict["stage"]["enabled"],bool)
-        assert isinstance(hardware_dict["stage"]["rotation"],bool)
-        assert isinstance(hardware_dict["stage"]["tilt"],bool)
-        assert isinstance(hardware_dict["manipulator"]["enabled"],bool)
-        assert isinstance(hardware_dict["manipulator"]["rotation"],bool)
-        assert isinstance(hardware_dict["manipulator"]["tilt"],bool)
-        assert isinstance(hardware_dict["gis"]["enabled"],bool)
-        assert isinstance(hardware_dict["gis"]["multichem"],bool)
-        
-        
-
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
             ion_beam=bool(hardware_dict["ion"]["enabled"]),
@@ -1169,9 +1156,9 @@ class MicroscopeSettings:
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
-            protocol=protocol,
-            milling=FibsemMillingSettings.__from_dict__(settings.get(["milling"], None)),
-            hardware=FibsemHardware.__from_dict__(hardware),
+            protocol=protocol if protocol is not None else settings["protocol"],
+            milling=FibsemMillingSettings.__from_dict__(settings["milling"]),
+            hardware=FibsemHardware.__from_dict__(hardware) if hardware is not None else FibsemHardware.__from_dict__(settings["hardware"]),
 
         )
 

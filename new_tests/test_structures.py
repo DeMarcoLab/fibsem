@@ -742,7 +742,7 @@ def test_microscope_settings(fake_image_settings):
             dwell_time=0,
             hfw=0,
             patterning_mode="Serial",
-            application_file="Si"
+            application_file="Si",
         ),
         hardware=structures.FibsemHardware(
             electron_beam=True,
