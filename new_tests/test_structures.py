@@ -868,3 +868,23 @@ def test_system_settings():
 
     from_dict = structures.SystemSettings.__from_dict__(to_dict)
     assert system == from_dict
+
+def test_stage_settings():
+    settings = structures.StageSettings(
+        rotation_flat_to_electron=0,
+        rotation_flat_to_ion=0,
+        tilt_flat_to_electron=0,
+        tilt_flat_to_ion=0,
+        pre_tilt=0,
+        needle_stage_height_limit=0,
+    )
+    to_dict = settings.__to_dict__()
+    assert settings.rotation_flat_to_electron == to_dict["rotation_flat_to_electron"]
+    assert settings.rotation_flat_to_ion == to_dict["rotation_flat_to_ion"]
+    assert settings.tilt_flat_to_electron == to_dict["tilt_flat_to_electron"]
+    assert settings.tilt_flat_to_ion == to_dict["tilt_flat_to_ion"]
+    assert settings.pre_tilt == to_dict["pre_tilt"]
+    assert settings.needle_stage_height_limit == to_dict["needle_stage_height_limit"]
+
+    from_dict = structures.StageSettings.__from_dict__(to_dict)
+    assert settings == from_dict
