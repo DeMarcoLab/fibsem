@@ -195,7 +195,31 @@ Attributes:
             gis_multichem=bool(hardware_dict["gis"]["multichem"]),
         )
 
-
+    def __to_dict__(self) -> dict:
+            
+            hardware_dict = {}
+    
+            hardware_dict["electron"] = {}
+            hardware_dict["electron"]["enabled"] = self.electron_beam
+    
+            hardware_dict["ion"] = {}
+            hardware_dict["ion"]["enabled"] = self.ion_beam
+    
+            hardware_dict["stage"] = {}
+            hardware_dict["stage"]["enabled"] = self.stage_enabled
+            hardware_dict["stage"]["rotation"] = self.stage_rotation
+            hardware_dict["stage"]["tilt"] = self.stage_tilt
+    
+            hardware_dict["manipulator"] = {}
+            hardware_dict["manipulator"]["enabled"] = self.manipulator_enabled
+            hardware_dict["manipulator"]["rotation"] = self.manipulator_rotation
+            hardware_dict["manipulator"]["tilt"] = self.manipulator_tilt
+    
+            hardware_dict["gis"] = {}
+            hardware_dict["gis"]["enabled"] = self.gis_enabled
+            hardware_dict["gis"]["multichem"] = self.gis_multichem
+    
+            return hardware_dict
 
 
 @dataclass
