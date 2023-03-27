@@ -236,7 +236,7 @@ Attributes:
             assert isinstance(object_attribute,bool)
 
     @classmethod
-    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":      
+    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
 
         assert isinstance(hardware_dict["electron"]["enabled"],bool)
         assert isinstance(hardware_dict["ion"]["enabled"],bool)
@@ -319,6 +319,15 @@ Methods:
     r: float = 0.0
     t: float = 0.0
     coordinate_system: str = None
+
+    def __post_init__(self):
+
+        attributes = ["x","y","z","r","t"]
+        for attribute in attributes:
+            output = getattr(self,attribute)
+            assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
+        assert isinstance(self.coordinate_system,str) or self.coordinate_system is None, f"unsupported type {type(self.coordinate_system)} for coorindate system"
+        assert self.coordinate_system in ["RAW","SPECIMEN"] or self.coordinate_system is None, f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
 
     def __to_dict__(self) -> dict:
         position_dict = {}
@@ -403,6 +412,13 @@ class FibsemRectangle:
     width: float = 0.0
     height: float = 0.0
 
+    def __post_init__(self):
+
+        assert isinstance(self.left,float) or isinstance(self.left,int), f"type {type(self.left)} is unsupported for left, must be int or floar"
+        assert isinstance(self.top,float) or isinstance(self.top,int), f"type {type(self.top)} is unsupported for top, must be int or floar"
+        assert isinstance(self.width,float) or isinstance(self.width,int), f"type {type(self.width)} is unsupported for width, must be int or floar"
+        assert isinstance(self.height,float) or isinstance(self.height,int), f"type {type(self.height)} is unsupported for height, must be int or floar"
+
     def __from_dict__(settings: dict) -> "FibsemRectangle":
 
         points = ["left","top","width","height"]
@@ -471,6 +487,20 @@ class ImageSettings:
     gamma_enabled: bool = None
     save_path: Path = None
     reduced_area: FibsemRectangle = None
+
+    def __post_init__(self):
+
+        assert isinstance(self.resolution,list) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
+        assert isinstance(self.dwell_time,float) or self.dwell_time is None, f"dwell time must be of type float, currently is {type(self.dwell_time)}"
+        assert isinstance(self.hfw, float) or isinstance(self.hfw,int) or self.hfw is None, f"hfw must be int or float, currently is {type(self.hfw)}"
+        assert isinstance(self.autocontrast, bool) or self.autocontrast is None, f"autocontrast setting must be bool, currently is {type(self.autocontrast)}"
+        assert isinstance(self.beam_type,BeamType) or self.beam_type is None, f"beam type must be a BeamType object, currently is {type(self.beam_type)}"
+        assert isinstance(self.save,bool) or self.save is None, f"save option must be a bool, currently is {type(self.save)}"
+        assert isinstance(self.label,str) or self.label is None, f"label must b str, currently is {type(self.label)}"
+        assert isinstance(self.gamma_enabled,bool) or self.gamma_enabled is None, f"gamma enabled setting must be bool, currently is {type(self.gamma_enabled)}"
+        assert isinstance(self.save_path,str) or self.save_path is None, f"save path must be str, currently is {type(self.save_path)}"
+        assert isinstance(self.reduced_area,FibsemRectangle) or self.reduced_area is None, f"reduced area must be a fibsemRectangle object, currently is {type(self.reduced_area)}"
+
 
     @staticmethod
     def __from_dict__(settings: dict) -> "ImageSettings":

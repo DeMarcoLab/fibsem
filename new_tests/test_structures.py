@@ -6,7 +6,7 @@ from pathlib import Path
 @pytest.fixture
 def fake_image_settings():
     fake_image_settings = structures.ImageSettings(
-        resolution=(1234,1234),
+        resolution=[1234,1234],
         dwell_time= 150e-6,
         beam_type=structures.BeamType.ELECTRON,
         hfw = 150e-6,
@@ -15,7 +15,7 @@ def fake_image_settings():
         label = "test",
         gamma_enabled = True,
         save_path = os.path.join(os.getcwd(),"test_images"),
-        reduced_area = structures.Rectangle(0,0,10,10),
+        reduced_area = structures.FibsemRectangle(0,0,10,10),
     )
     return fake_image_settings
 
@@ -236,7 +236,6 @@ def test_fibsemhardware():
 
         bad_hardware = structures.FibsemHardware.__from_dict__(bad_hardware_dict)
         bad_hardware_2 = structures.FibsemHardware(electron_beam=3,ion_beam="hello",stage_enabled=[1,2,3])
-    
 
 
 def test_manipulator_position():
@@ -282,6 +281,7 @@ def test_manipulator_position():
     with pytest.raises(Exception):
 
         bad_position = structures.FibsemManipulatorPosition.__from_dict__(bad_dict)
+        bad_position_2 = structures.FibsemManipulatorPosition(1,2,3,"HELLO",(1,2),"GOODBYE")
 
 
 def test_fibsem_rectangle():
@@ -322,6 +322,8 @@ def test_fibsem_rectangle():
     with pytest.raises(Exception):
 
         bad_rect = structures.FibsemRectangle.__from_dict__(bad_dict)
+        bad_rect_2 = structures.FibsemRectangle(1,2,"hello",[1,2,3])
+        bad_rect_3 = structures.FibsemRectangle([1,2,3,4])
 
 
 def test_image_settings(fake_fibsem_image):
@@ -329,7 +331,7 @@ def test_image_settings(fake_fibsem_image):
     
 
     attributes_dict = {
-        "resolution":(1000,2000),
+        "resolution":[1000,2000],
         "dwell_time":2.0e-6,
         "hfw":100e-6,
         "autocontrast":False,
@@ -357,11 +359,11 @@ def test_image_settings(fake_fibsem_image):
 
     from_fb_image = fake_fibsem_image.metadata.image_settings
 
-    assert from_fb_image.resolution == (1234,1234)
+    assert from_fb_image.resolution == [1234,1234]
 
     
     image_settings_2 = structures.ImageSettings(
-        resolution=(100,100),
+        resolution=[100,100],
         dwell_time=1.23e-6,
         hfw=200e-6,
         autocontrast=True,
@@ -374,7 +376,7 @@ def test_image_settings(fake_fibsem_image):
     )
 
     answers_dict ={
-        "resolution":(100,100),
+        "resolution":[100,100],
         "dwell_time":1.23e-6,
         "hfw":200e-6,
         "autocontrast":True,
@@ -398,6 +400,16 @@ def test_image_settings(fake_fibsem_image):
     assert image_settings_2.autocontrast is True
     assert image_settings_2.label == "my_image"
     assert image_settings_2.save_path is None
+
+    with pytest.raises(Exception):
+        bad_image_settings = structures.ImageSettings(
+            resolution=[200,200],
+            dwell_time=2.3,
+            hfw=50,
+            autocontrast="hello",
+            beam_type="ion",
+            reduced_area=[1,2,3,4],
+            save=False)
 
 
 def test_beam_settings():
