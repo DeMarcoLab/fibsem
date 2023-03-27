@@ -2018,7 +2018,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ELECTRON,
                 working_distance=float(image.Header["SEM"]["WD"]),
                 beam_current=float(image.Header["SEM"]["PredictedBeamCurrent"]),
-                resolution=(imageWidth, imageHeight), #"{}x{}".format(imageWidth, imageHeight),
+                resolution=[imageWidth, imageHeight], #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["SEM"]["DwellTime"]),
                 stigmation=Point(
                     float(image.Header["SEM"]["StigmatorX"]),
@@ -2040,11 +2040,12 @@ class TescanMicroscope(FibsemMicroscope):
 
             )
 
+        image_settings.resolution = [imageWidth, imageHeight]
         fibsem_image = FibsemImage.fromTescanImage(
             image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
         )
 
-        fibsem_image.metadata.image_settings.resolution = (imageWidth, imageHeight)
+        #fibsem_image.metadata.image_settings.resolution = [imageWidth, imageHeight]
 
         return fibsem_image
 
@@ -2121,7 +2122,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ION,
                 working_distance=float(image.Header["FIB"]["WD"]),
                 beam_current=float(self.connection.FIB.Beam.ReadProbeCurrent()),
-                resolution=(imageWidth, imageHeight), #"{}x{}".format(imageWidth, imageHeight),
+                resolution=[imageWidth, imageHeight], #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["FIB"]["DwellTime"]),
                 stigmation=Point(
                     float(image.Header["FIB"]["StigmatorX"]),
@@ -2141,12 +2142,12 @@ class TescanMicroscope(FibsemMicroscope):
                 brightness= self.get("detector_brightness", image_settings.beam_type),
 
             )
-
+        image_settings.resolution = [imageWidth, imageHeight]
         fibsem_image = FibsemImage.fromTescanImage(
             image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
         )
 
-        fibsem_image.metadata.image_settings.resolution = (imageWidth, imageHeight)
+        # fibsem_image.metadata.image_settings.resolution = [imageWidth, imageHeight]
 
         return fibsem_image
 
