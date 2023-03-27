@@ -855,15 +855,15 @@ class ThermoMicroscope(FibsemMicroscope):
             SCALE_FACTOR = 1.0
 
         # the amount the sample has to move in the y-axis
+        # y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(FLAT_TO_BEAM_ANGLE - (stage_tilt + pre tilt))
         y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
             stage_tilt + perspective_tilt_adjustment
         )
 
-        # angle for adjustement 
-        # angle = corrected_pretilt_angle + stage_tilt + perspective_tilt_adjustment
-        # y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(angle)
+        
 
         # the amount the stage has to move in each axis
+        #angle = stage_tilt + pretilt_angle
         y_move = y_sample_move * np.cos(corrected_pretilt_angle)
         z_move = y_sample_move * np.sin(corrected_pretilt_angle)
 
@@ -3428,7 +3428,9 @@ class DemoMicroscope(FibsemMicroscope):
                 size=(image_settings.resolution[1],image_settings.resolution[0]), 
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
+            detector_settings = FibsemDetectorSettings.__from_dict__({}),
                                          microscope_state=MicroscopeState()))
+
 
         if image_settings.beam_type is BeamType.ELECTRON:
             self._eb_image = image
