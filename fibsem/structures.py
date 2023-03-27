@@ -1015,7 +1015,7 @@ class MicroscopeSettings:
     image: ImageSettings
     protocol: dict = None
     milling: FibsemMillingSettings = None
-    #hardware: FibsemHardware = None
+    hardware: FibsemHardware = None
     
 
     def __to_dict__(self) -> dict:
@@ -1023,6 +1023,9 @@ class MicroscopeSettings:
         settings_dict = {
             "system": self.system.__to_dict__(),
             "user": self.image.__to_dict__(),
+            "protocol": self.protocol,
+            "milling": self.milling.__to_dict__(),
+            "hardware": self.hardware.__to_dict__(),
 
         }
 
@@ -1034,8 +1037,9 @@ class MicroscopeSettings:
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
-            protocol=protocol,
-            hardware=FibsemHardware.__from_dict__(hardware),
+            protocol=protocol if protocol is not None else settings["protocol"],
+            milling=FibsemMillingSettings.__from_dict__(settings["milling"]),
+            hardware=FibsemHardware.__from_dict__(hardware) if hardware is not None else FibsemHardware.__from_dict__(settings["hardware"]),
         )
 
 
