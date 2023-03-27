@@ -116,6 +116,15 @@ Methods:
     t: float = 0.0
     coordinate_system: str = None
 
+    def __post_init__(self):
+
+        coordinates = ["x","y","z","r","t"]
+        for coordinate in coordinates:
+            attribute = getattr(self,coordinate)
+            assert isinstance(attribute,float) or isinstance(attribute,int)
+        
+        assert isinstance(self.coordinate_system,str) or self.coordinate_system is None
+
     def __to_dict__(self) -> dict:
         position_dict = {}
         position_dict["x"] = self.x
@@ -209,7 +218,11 @@ Attributes:
     gis_multichem: bool = True
 
     @classmethod
+<<<<<<< HEAD
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":      
+=======
+    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
+>>>>>>> 44cb018c3ef73491b5b8d1ab652e4701a0e16d7a
 
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),

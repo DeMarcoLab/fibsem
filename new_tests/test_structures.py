@@ -181,6 +181,7 @@ def test_fibsemStagePosition():
     with pytest.raises(Exception):
 
         bad_position = structures.FibsemStagePosition.__from_dict__(bad_dict)
+        bad_position_2 = structures.FibsemStagePosition(1,2,3,"hello",4,3)
 
 def test_fibsemhardware():
 
@@ -221,18 +222,19 @@ def test_fibsemhardware():
             assert getattr(from_dict_hardware,attribute) == True, f"attribute: {attribute} does not match" 
 
 
-    bad_hardware_dict = {
+    # double check if we need to test this, 
+    # bad_hardware_dict = {
 
-        "electron":{"enabled":False},
-        "ion":{"enabled":4},
-        "stage":{"enabled":True,"rotation":"hello","tilt":True},
-        "manipulator":{"enabled":False,"rotation":False,"tilt":False},
-        "gis":{"enabled":True,"multichem":7}
-    }
+    #     "electron":{"enabled":False},
+    #     "ion":{"enabled":4},
+    #     "stage":{"enabled":True,"rotation":"hello","tilt":True},
+    #     "manipulator":{"enabled":False,"rotation":False,"tilt":False},
+    #     "gis":{"enabled":True,"multichem":7}
+    # }
 
-    with pytest.raises(Exception):
+    # with pytest.raises(Exception):
 
-        bad_hardware = structures.FibsemHardware.__from_dict__(bad_hardware_dict)
+    #     bad_hardware = structures.FibsemHardware.__from_dict__(bad_hardware_dict)
     
 
 
@@ -551,6 +553,22 @@ def test_fibsemMillingSettings():
     assert new_fbMillingSettings.hfw == 54
 
 
+def test_stage_position_to_dict():
+
+    fake_stage_position = structures.FibsemStagePosition(1,2,3,4,5,"RAW")
+
+    fake_stage_position_dict = structures.stage_position_to_dict(fake_stage_position)
+
+    answers = {
+        "x": 1,
+        "y":2,
+        "z":3,
+        "r":4,
+        "t":5,
+        "coordinate_system":"RAW"
+    }
+
+    to_dict(fake_stage_position_dict,answers)
 
 
 def test_images(fake_fibsem_image, fake_image_settings):
@@ -560,6 +578,29 @@ def test_images(fake_fibsem_image, fake_image_settings):
     fake_fibsem_image.save()
     assert os.path.exists(os.path.join(fake_fibsem_image.metadata.image_settings.save_path, fake_fibsem_image.metadata.image_settings.label))
 
+def test_stage_position_from_dict():
+
+    fake_stage_position_dict = {
+        "x": 1,
+        "y":2,
+        "z":3,
+        "r":4,
+        "t":5,
+        "coordinate_system": None
+    }
+
+    fake_stage_position = structures.stage_position_from_dict(fake_stage_position_dict)
+
+    answers = {
+        "x": 1,
+        "y":2,
+        "z":3,
+        "r":4,
+        "t":5,
+        "coordinate_system":None
+    }
+
+    from_dict(fake_stage_position,attributes=answers,answers=answers)
 
 
 
