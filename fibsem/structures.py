@@ -218,11 +218,7 @@ Attributes:
     gis_multichem: bool = True
 
     @classmethod
-<<<<<<< HEAD
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":      
-=======
-    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
->>>>>>> 44cb018c3ef73491b5b8d1ab652e4701a0e16d7a
 
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
