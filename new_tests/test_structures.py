@@ -707,7 +707,7 @@ def test_fibsem_state(fake_eb_settings, fake_ib_settings):
     assert to_dict["microscope_state"]["eb_settings"]["beam_current"] == 0
     assert to_dict["microscope_state"]["eb_settings"]["voltage"] == 0
     assert to_dict["microscope_state"]["eb_settings"]["hfw"] == 0
-    assert to_dict["microscope_state"]["eb_settings"]["resolution"] == (1536,1024)
+    assert to_dict["microscope_state"]["eb_settings"]["resolution"] == [1536,1024]
     assert to_dict["microscope_state"]["eb_settings"]["dwell_time"] == 0
     assert to_dict["microscope_state"]["eb_settings"]["stigmation"]["x"] == 0
     assert to_dict["microscope_state"]["eb_settings"]["stigmation"]["y"] == 0
@@ -718,7 +718,7 @@ def test_fibsem_state(fake_eb_settings, fake_ib_settings):
     assert to_dict["microscope_state"]["ib_settings"]["beam_current"] == 0
     assert to_dict["microscope_state"]["ib_settings"]["voltage"] == 0
     assert to_dict["microscope_state"]["ib_settings"]["hfw"] == 0
-    assert to_dict["microscope_state"]["ib_settings"]["resolution"] == (1536,1024)
+    assert to_dict["microscope_state"]["ib_settings"]["resolution"] == [1536,1024]
     assert to_dict["microscope_state"]["ib_settings"]["dwell_time"] == 0
     assert to_dict["microscope_state"]["ib_settings"]["stigmation"]["x"] == 0
     assert to_dict["microscope_state"]["ib_settings"]["stigmation"]["y"] == 0
