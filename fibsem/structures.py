@@ -464,6 +464,20 @@ class ImageSettings:
     save_path: Path = None
     reduced_area: FibsemRectangle = None
 
+    def __post_init__(self):
+
+        assert isinstance(self.resolution,list) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
+        assert isinstance(self.dwell_time,float) or self.dwell_time is None, f"dwell time must be of type float, currently is {type(self.dwell_time)}"
+        assert isinstance(self.hfw, float) or isinstance(self.hfw,int) or self.hfw is None, f"hfw must be int or float, currently is {type(self.hfw)}"
+        assert isinstance(self.autocontrast, bool) or self.autocontrast is None, f"autocontrast setting must be bool, currently is {type(self.autocontrast)}"
+        assert isinstance(self.beam_type,BeamType) or self.beam_type is None, f"beam type must be a BeamType object, currently is {type(self.beam_type)}"
+        assert isinstance(self.save,bool) or self.save is None, f"save option must be a bool, currently is {type(self.save)}"
+        assert isinstance(self.label,str) or self.label is None, f"label must b str, currently is {type(self.label)}"
+        assert isinstance(self.gamma_enabled,bool) or self.gamma_enabled is None, f"gamma enabled setting must be bool, currently is {type(self.gamma_enabled)}"
+        assert isinstance(self.save_path,str) or self.save_path is None, f"save path must be str, currently is {type(self.save_path)}"
+        assert isinstance(self.reduced_area,FibsemRectangle) or self.reduced_area is None, f"reduced area must be a fibsemRectangle object, currently is {type(self.reduced_area)}"
+
+
     @staticmethod
     def __from_dict__(settings: dict) -> "ImageSettings":
 
