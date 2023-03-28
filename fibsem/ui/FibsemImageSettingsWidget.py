@@ -5,9 +5,9 @@ from PyQt5 import QtWidgets
 from fibsem.microscope import FibsemMicroscope
 from fibsem import constants, acquire
 
-from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point
+from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
 from fibsem.ui import utils as ui_utils 
-ort utils as ui_utils 
+import utils as ui_utils 
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
@@ -32,15 +32,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.setup_connections()
 
-
-        # PPP: what is a better place to do this?
-        if self.microscope is not None:
-            self.ui_detector()
-            self.update_brightness()
-            self.update_contrast()
-
         if image_settings is not None:
-            self.set_ui_from_settings(image_settings)
+            self.detector_settings = self.get_detector_settings()
+            self.beam_settings = self.get_beam_settings()
+            self.image_settings = image_settings
+            # self.set_ui_from_settings(image_settings = image_settings, beam_settings= self.beam_settings, detector_settings= self.detector_settings, beam_type = BeamType.ELECTRON)
+        self.update_detector_ui()
 
         # register initial images
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
@@ -51,70 +48,38 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # set ui elements
 
         self.selected_beam.addItems([beam.name for beam in BeamType])
-        
-
 
         self.pushButton_take_image.clicked.connect(self.take_image)
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
         self.checkBox_image_save_image.toggled.connect(self.update_ui)
-        self.set_detector.clicked.connect(self.select_detector)
-        self.brightness.valueChanged.connect(self.update_brightness)
-        self.contrast.valueChanged.connect(self.update_contrast)
-        self.selected_beam.currentTextChanged.connect(self.ui_detector)
-        self.working_distance.valueChanged.connect(self.update_working_distance)
-        self.beam_current.valueChanged.connect(self.update_beam_current)
-        self.beam_voltage.valueChanged.connect(self.update_beam_voltage)
-        self.stigmation_x.valueChanged.connect(self.update_stigmation)
-        self.stigmation_y.valueChanged.connect(self.update_stigmation)
-        self.shift_x.valueChanged.connect(self.update_shift)
-        self.shift_y.valueChanged.connect(self.update_shift)
+        self.set_detector_button.clicked.connect(self.select_detector)
+        self.selected_beam.currentTextChanged.connect(self.update_detector_ui)
+        self.button_set_beam_settings.clicked.connect(self.update_beam_settings)
+        self.detector_contrast_slider.valueChanged.connect(self.update_labels)
+        self.detector_brightness_slider.valueChanged.connect(self.update_labels)
+    
+    def update_labels(self):
+        self.detector_contrast_label.setText(f"{self.detector_contrast_slider.value()}%")
+        self.detector_brightness_label.setText(f"{self.detector_brightness_slider.value()}%")
 
-    # PPP: defsigner: properly label all the widgets
-    # PPP: BeamType[self.selected_beam.currentText()] is more readable
     def select_detector(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
-        self.microscope.set("detector_type", self.type.currentText(), beam_type=beam)
-        self.microscope.set("detector_mode", self.mode.currentText(), beam_type=beam)
-        contrast = self.microscope.get("detector_contrast", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        brightness = self.microscope.get("detector_brightness", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        self.contrast.setValue(contrast*100)
-        self.brightness.setValue(brightness*100)
+        beam =  BeamType[self.selected_beam.currentText()]
+        self.microscope.set("detector_type", self.detector_type_combobox.currentText(), beam_type=beam)
+        self.microscope.set("detector_mode", self.detector_mode_combobox.currentText(), beam_type=beam)
+        self.microscope.set("detector_brightness", self.detector_brightness_slider.value()*constants.FROM_PERCENTAGES, beam_type=beam)
+        self.detector_brightness_label.setText(f"{self.detector_brightness_slider.value()}%")
+        self.microscope.set("detector_contrast", self.detector_contrast_slider.value()*constants.FROM_PERCENTAGES, beam_type=beam)
+        self.detector_contrast_label.setText(f"{self.detector_contrast_slider.value()}%")
 
-    # PPP: just do one function 
-    def update_brightness(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
-        self.microscope.set("detector_brightness", self.brightness.value()/100, beam_type=beam)
-        self.brightness_label.setText(f"{self.brightness.value()}%")
-
-    def update_contrast(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
-        self.microscope.set("detector_contrast", self.contrast.value()/100, beam_type=beam)
-        self.contrast_label.setText(f"{self.contrast.value()}%")
-
-    def update_working_distance(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
+    def update_beam_settings(self):
+        beam = BeamType[self.selected_beam.currentText()]
         self.microscope.set("working_distance", self.working_distance.value()*constants.MILLIMETRE_TO_METRE, beam_type=beam)
-
-    def update_beam_current(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
         self.microscope.set("current", self.beam_current.value()*constants.PICO_TO_SI, beam_type=beam)
-
-
-    def update_beam_voltage(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
         self.microscope.set("voltage", self.beam_voltage.value()*constants.KILO_TO_SI, beam_type=beam)
-
-    def update_stigmation(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
         self.microscope.set("stigmation", Point(self.stigmation_x.value(), self.stigmation_y.value()), beam_type=beam)
-
-    def update_shift(self):
-        beam = BeamType(self.selected_beam.currentIndex()+1)
         self.microscope.set("shift", Point(self.shift_x.value(), self.shift_y.value()), beam_type=beam)
 
-
-
-    def set_ui_from_settings(self, image_settings: ImageSettings):
+    def set_ui_from_settings(self, image_settings: ImageSettings, beam_settings: BeamSettings, detector_settings: FibsemDetectorSettings, beam_type: BeamType):
 
         self.spinBox_resolution_x.setValue(image_settings.resolution[0])
         self.spinBox_resolution_y.setValue(image_settings.resolution[1])
@@ -127,8 +92,20 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.checkBox_image_use_autocontrast.setChecked(image_settings.autocontrast)
         self.checkBox_image_use_autogamma.setChecked(image_settings.gamma_enabled)
         self.checkBox_image_save_image.setChecked(image_settings.save)
-        self.lineEdit_image_path.setText(image_settings.save_path)
+        self.lineEdit_image_path.setText(str(image_settings.save_path))
         self.lineEdit_image_label.setText(image_settings.label)
+
+        self.detector_contrast_slider.setValue(detector_settings.contrast*100)
+        self.detector_brightness_slider.setValue(detector_settings.brightness*100)
+        self.beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
+        self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
+        self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE if beam_settings.working_distance is not None else None)
+        if beam_settings.shift is not None:
+            self.shift_x.setValue(beam_settings.shift.x)
+            self.shift_y.setValue(beam_settings.shift.y)
+        if beam_settings.stigmation is not None:
+            self.stigmation_x.setValue(beam_settings.stigmation.x)
+            self.stigmation_y.setValue(beam_settings.stigmation.y)
 
     def update_ui(self):
 
@@ -137,41 +114,21 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.label_image_label.setVisible(self.checkBox_image_save_image.isChecked())
         self.lineEdit_image_label.setVisible(self.checkBox_image_save_image.isChecked())
         
-    # PPP
-    def ui_detector(self):
-        if self.selected_beam.currentText() == "ELECTRON":
-            self.detector_type_electron = self.microscope.get_available_values("detector_type", beam_type=BeamType.ELECTRON)
-            self.type.clear()
-            for i in range(len(self.detector_type_electron)):
-                self.type.addItem(self.detector_type_electron[i-1])
-            self.detector_mode_electron = self.microscope.get_available_values("detector_mode", beam_type=BeamType.ELECTRON)
-            self.mode.clear()
-            if self.detector_mode_electron is not None:
-                for i in range(len(self.detector_mode_electron)):
-                    self.mode.addItem(self.detector_mode_electron[i-1])
-            else:
-                self.mode.addItem("N/A")
-            self.microscope.set("detector_brightness", self.brightness.value()/100, beam_type=BeamType.ELECTRON)
-            self.microscope.set("detector_contrast", self.contrast.value()/100, beam_type=BeamType.ELECTRON)
-            self.type.setCurrentIndex(self.type.findText(self.microscope.get("detector_type", beam_type=BeamType.ION)))
-            self.mode.setCurrentIndex(self.mode.findText(self.microscope.get("detector_mode", beam_type=BeamType.ION)))
-        else:
-            self.detector_type_ion = self.microscope.get_available_values("detector_type", beam_type=BeamType.ION)  
-            self.type.clear()
-            for i in range(len(self.detector_type_ion)):
-                self.type.addItem(self.detector_type_ion[i-1]) 
-            self.detector_mode_ion = self.microscope.get_available_values("detector_mode", beam_type=BeamType.ION)
-            self.mode.clear()
-            if self.detector_mode_ion is not None:
-                for i in range(len(self.detector_mode_ion)):
-                    self.mode.addItem(self.detector_mode_ion[i-1])
-            else:
-                self.mode.addItem("N/A")   
-            self.microscope.set("detector_brightness", self.brightness.value()/100, beam_type=BeamType.ION)
-            self.microscope.set("detector_contrast", self.contrast.value()/100, beam_type=BeamType.ION)    
-            self.type.setCurrentIndex(self.type.findText(self.microscope.get("detector_type", beam_type=BeamType.ION)))
+  
+    def update_detector_ui(self):
+        beam_type = BeamType[self.selected_beam.currentText()]
+        self.detector_type = self.microscope.get_available_values("detector_type", beam_type=beam_type)
+        self.detector_type_combobox.clear()
+        self.detector_type_combobox.addItems(self.detector_type)
+        self.detector_type_combobox.setCurrentText(self.microscope.get("detector_type", beam_type=beam_type))
         
-        
+        self.detector_mode = self.microscope.get_available_values("detector_mode", beam_type=beam_type)
+        self.detector_mode_combobox.clear()
+        self.detector_mode_combobox.addItems(self.detector_mode if self.detector_mode is not None else ["N/A"])# if self.detector_mode is not None  else self.mode.addItem("N/A")
+        self.detector_mode_combobox.setCurrentText(self.microscope.get("detector_mode", beam_type=beam_type))
+
+        self.microscope.set("detector_brightness", self.detector_brightness_slider.value()*constants.FROM_PERCENTAGES, beam_type=beam_type)
+        self.microscope.set("detector_contrast", self.detector_contrast_slider.value()*constants.FROM_PERCENTAGES, beam_type=beam_type)
 
 
     def get_settings_from_ui(self):
@@ -189,10 +146,29 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             
         )
 
-        return self.image_settings
+        self.detector_settings = FibsemDetectorSettings(
+            type=self.detector_type_combobox.currentText(),
+            mode=self.detector_mode_combobox.currentText(),
+            brightness=self.detector_brightness_slider.value(),
+            contrast=self.detector_contrast_slider.value()
+        )
+
+        self.beam_settings = BeamSettings(
+            beam_type=BeamType[self.selected_beam.currentText()],
+            working_distance=self.working_distance.value(),
+            beam_current=self.beam_current.value(),
+            voltage=self.beam_voltage.value(),
+            hfw = self.doubleSpinBox_image_hfw.value() * constants.MICRO_TO_SI,
+            resolution=[self.spinBox_resolution_x.value(), self.spinBox_resolution_y.value()],
+            dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
+            stigmation = Point(self.stigmation_x.value(), self.stigmation_y.value()),
+            shift = Point(self.shift_x.value(), self.shift_y.value()),
+        )
+
+        return self.image_settings, self.detector_settings, self.beam_settings
 
     def take_image(self):
-        self.image_settings: ImageSettings = self.get_settings_from_ui()
+        self.image_settings = self.get_settings_from_ui()[0]
 
         arr =  acquire.new_image(self.microscope, self.image_settings)
         name = f"{self.image_settings.beam_type.name}"
@@ -206,7 +182,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def take_reference_images(self):
 
-        self.image_settings = self.get_settings_from_ui()
+        self.image_settings = self.get_settings_from_ui()[0]
 
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
@@ -266,41 +242,31 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
-
-
-        # PPP: instead of all this, why not:
-
-        # get_detector_settings(self, beam_type: BeamType):
-        # get_beam_settings(self, beam_type: BeamType):
-        # update_ui_from_settings(self, detectors-settings, beam-settings):
-        # and also
-        # get_settings_from_ui(self) -> detectors-settings, beam-settings:
-
-
-        contrast = self.microscope.get("detector_contrast", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        brightness = self.microscope.get("detector_brightness", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        self.contrast.setValue(contrast*100)
-        self.brightness.setValue(brightness*100)
-        beam_current = self.microscope.get("current", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        self.beam_current.setValue(beam_current*constants.SI_TO_PICO)
-        beam_voltage = self.microscope.get("voltage", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        self.beam_voltage.setValue(beam_voltage*constants.SI_TO_KILO)
-        wd = self.microscope.get("working_distance", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        if wd is not None:
-            self.working_distance.setValue(wd*constants.METRE_TO_MILLIMETRE)
-        shift = self.microscope.get("shift", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        if shift is not None:
-            self.shift_x.setValue(shift.x)
-            self.shift_y.setValue(shift.y)
-        stigmation = self.microscope.get("stigmation", beam_type=BeamType(self.selected_beam.currentIndex()+1))
-        if stigmation is not None:
-            self.stigmation_x.setValue(stigmation.x)
-            self.stigmation_y.setValue(stigmation.y)
+        beam_settings = self.get_beam_settings(BeamType[self.selected_beam.currentText()])
+        detector_settings = self.get_detector_settings(BeamType[self.selected_beam.currentText()])
+        self.set_ui_from_settings(image_settings = self.image_settings, detector_settings  = detector_settings, beam_settings = beam_settings, beam_type= BeamType[self.selected_beam.currentText()])
         
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
             self.viewer.layers.selection.active = self.eb_layer
 
+    def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
+        contrast = self.microscope.get("detector_contrast", beam_type=beam_type)
+        brightness = self.microscope.get("detector_brightness", beam_type=beam_type)
+        type = self.microscope.get("detector_type", beam_type=beam_type)
+        mode = self.microscope.get("detector_mode", beam_type=beam_type)
+        return FibsemDetectorSettings(type, mode, brightness, contrast)
+    
+    def get_beam_settings(self, beam_type: BeamType= BeamType.ELECTRON) -> BeamSettings:
+        beam_settings = BeamSettings(
+            beam_type = beam_type,
+            working_distance=self.microscope.get("working_distance", beam_type=beam_type),
+            beam_current = self.microscope.get("current", beam_type=beam_type),
+            voltage = self.microscope.get("voltage", beam_type=beam_type),
+            shift=self.microscope.get("shift", beam_type=beam_type),
+            stigmation=self.microscope.get("stigmation", beam_type=beam_type),
+        )
+        return beam_settings
 
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
