@@ -618,6 +618,13 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             MicroscopeState: current microscope state
         """
+        resolution_eb = self.connection.beams.electron_beam.scanning.resolution.value
+        width_eb = int(resolution_eb.split("x")[0])
+        height_eb = int(resolution_eb.split("x")[-1])
+        resolution__ib = self.connection.beams.ion_beam.scanning.resolution.value
+        width_ib = int(resolution__ib.split("x")[0])
+        height_ib = int(resolution__ib.split("x")[-1])
+
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
@@ -628,7 +635,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 working_distance=self.connection.beams.electron_beam.working_distance.value,
                 beam_current=self.connection.beams.electron_beam.beam_current.value,
                 hfw=self.connection.beams.electron_beam.horizontal_field_width.value,
-                resolution=self.connection.beams.electron_beam.scanning.resolution.value,
+                resolution=[width_eb, height_eb],
                 dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value,
             ),
             # ion beam settings
@@ -637,7 +644,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 working_distance=self.connection.beams.ion_beam.working_distance.value,
                 beam_current=self.connection.beams.ion_beam.beam_current.value,
                 hfw=self.connection.beams.ion_beam.horizontal_field_width.value,
-                resolution=self.connection.beams.ion_beam.scanning.resolution.value,
+                resolution=[width_ib, height_ib],
                 dwell_time=self.connection.beams.ion_beam.scanning.dwell_time.value,
             ),
         )
@@ -1555,9 +1562,9 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "voltage_controllable":
             return beam.high_voltage.is_controllable
         if key == "shift":
-            return beam.beam_shift.value
+            return Point(beam.beam_shift.value.x, beam.beam_shift.value.y)
         if key == "stigmation": 
-            return beam.stigmator.value
+            return Point(beam.stigmator.value.x, beam.stigmator.value.y)
 
 
         # ion beam properties
@@ -3541,9 +3548,9 @@ class DemoMicroscope(FibsemMicroscope):
             return beam.working_distance
         
         if key == "stigmation":
-            return beam.stigmation
+            return Point(beam.stigmation.x, beam.stigmation.y)
         if key == "shift":
-            return beam.shift
+            return Point(beam.shift.x, beam.shift.y)
 
         if key == "detector_type":
             return detector.type
