@@ -6,8 +6,10 @@
    <rect>
     <x>0</x>
     <y>0</y>
+
     <width>369</width>
     <height>887</height>
+
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,6 +88,7 @@
     </widget>
    </item>
    <item row="4" column="1">
+
     <widget class="QSpinBox" name="spinBox_resolution_x">
      <property name="minimum">
       <number>1</number>
@@ -109,6 +112,7 @@
     <widget class="QLabel" name="brightness_label">
      <property name="text">
       <string>50%</string>
+
      </property>
     </widget>
    </item>
