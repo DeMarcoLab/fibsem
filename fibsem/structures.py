@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
 
 import numpy as np
 import tifffile as tff
@@ -30,24 +31,43 @@ import yaml
 
 from fibsem.config import METADATA_VERSION
 
+# @patrickcleeve: dataclasses.asdict -> :(
+
+# TODO: overload constructors instead of from_dict...
 @dataclass
 class Point:
     x: float = 0.0
     y: float = 0.0
+
+    def __post_init__(self):
+
+        assert isinstance(self.x,float) or isinstance(self.x,int), f'Invalid type {type(self.x)} for point'
+        assert isinstance(self.y,float) or isinstance(self.y,int), f'Invalid type {type(self.y)} for point'
+        
+
 
     def __to_dict__(self) -> dict:
         return {"x": self.x, "y": self.y}
 
     @staticmethod
     def __from_dict__(d: dict) -> "Point":
-        return Point(d["x"], d["y"])
+        x = float(d["x"])
+        y = float(d["y"])
+        assert isinstance(x,float) or x is None, f'Invalid type {type(x)} for point'
+        assert isinstance(y,float) or y is None, f'Invalid type {type(y)} for point'
+        return Point(x, y)
+        
 
     def __to_list__(self) -> list:
         return [self.x, self.y]
 
     @staticmethod
     def __from_list__(l: list) -> "Point":
-        return Point(l[0], l[1])
+        x = float(l[0])
+        y = float(l[1])
+        assert isinstance(x,float) or x is None, f"Invalid type {type(x)} for point"
+        assert isinstance(y,float) or y is None, f'invalid type {type(y)} for point'
+        return Point(x, y)
     
     def __add__(self, other) -> 'Point':
         return Point(self.x + other.x, self.y + other.y)
@@ -97,6 +117,15 @@ Methods:
     t: float = 0.0
     coordinate_system: str = None
 
+    def __post_init__(self):
+
+        coordinates = ["x","y","z","r","t"]
+        for coordinate in coordinates:
+            attribute = getattr(self,coordinate)
+            assert isinstance(attribute,float) or isinstance(attribute,int)
+        
+        assert isinstance(self.coordinate_system,str) or self.coordinate_system is None
+
     def __to_dict__(self) -> dict:
         position_dict = {}
         position_dict["x"] = self.x
@@ -110,6 +139,16 @@ Methods:
 
     @classmethod
     def __from_dict__(cls, data: dict) -> "FibsemStagePosition":
+
+        items = ["x","y","z","r","t"]
+
+        for item in items:
+
+            value = data[item]
+
+            assert isinstance(value,float) or isinstance(value,int) or value is None
+
+
         return cls(
             x=data["x"],
             y=data["y"],
@@ -162,7 +201,6 @@ Methods:
             self.coordinate_system,
         )
 
-
 @dataclass
 class FibsemHardware:
     """Data class for storing hardware information.
@@ -180,8 +218,27 @@ Attributes:
     gis_enabled: bool = True
     gis_multichem: bool = True
 
+    def __post_init__(self):
+        attributes = [
+            "electron_beam",
+            "ion_beam",
+            "stage_enabled",
+            "stage_rotation",
+            "stage_tilt",
+            "manipulator_enabled",
+            "manipulator_rotation",
+            "manipulator_tilt",
+            "gis_enabled",
+            "gis_multichem"
+        ]
+
+        for attribute in attributes:
+            object_attribute = getattr(self,attribute)
+            assert isinstance(object_attribute,bool)
+
     @classmethod
     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
+
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
             ion_beam=bool(hardware_dict["ion"]["enabled"]),
@@ -251,6 +308,15 @@ Methods:
     t: float = 0.0
     coordinate_system: str = None
 
+    def __post_init__(self):
+
+        attributes = ["x","y","z","r","t"]
+        for attribute in attributes:
+            output = getattr(self,attribute)
+            assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
+        assert isinstance(self.coordinate_system,str) or self.coordinate_system is None, f"unsupported type {type(self.coordinate_system)} for coorindate system"
+        assert self.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or self.coordinate_system is None, f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
+
     def __to_dict__(self) -> dict:
         position_dict = {}
         position_dict["x"] = self.x
@@ -264,6 +330,16 @@ Methods:
     
     @classmethod
     def __from_dict__(cls, data: dict) -> "FibsemManipulatorPosition":
+
+        items = ["x","y","z","r","t"]
+
+        for item in items:
+
+            value = data[item]
+
+            assert isinstance(value,float) or isinstance(value,int) or value is None
+
+
         return cls(
             x=data["x"],
             y=data["y"],
@@ -324,7 +400,23 @@ class FibsemRectangle:
     width: float = 0.0
     height: float = 0.0
 
+    def __post_init__(self):
+
+        assert isinstance(self.left,float) or isinstance(self.left,int), f"type {type(self.left)} is unsupported for left, must be int or floar"
+        assert isinstance(self.top,float) or isinstance(self.top,int), f"type {type(self.top)} is unsupported for top, must be int or floar"
+        assert isinstance(self.width,float) or isinstance(self.width,int), f"type {type(self.width)} is unsupported for width, must be int or floar"
+        assert isinstance(self.height,float) or isinstance(self.height,int), f"type {type(self.height)} is unsupported for height, must be int or floar"
+
     def __from_dict__(settings: dict) -> "FibsemRectangle":
+
+        points = ["left","top","width","height"]
+
+        for point in points:
+
+            value = settings[point]
+
+            assert isinstance(value,float) or isinstance(value,int) or value is None
+
         return FibsemRectangle(
             left=settings["left"],
             top=settings["top"],
@@ -384,6 +476,20 @@ class ImageSettings:
     save_path: Path = None
     reduced_area: FibsemRectangle = None
 
+    def __post_init__(self):
+
+        assert isinstance(self.resolution,list) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
+        assert isinstance(self.dwell_time,float) or self.dwell_time is None, f"dwell time must be of type float, currently is {type(self.dwell_time)}"
+        assert isinstance(self.hfw, float) or isinstance(self.hfw,int) or self.hfw is None, f"hfw must be int or float, currently is {type(self.hfw)}"
+        assert isinstance(self.autocontrast, bool) or self.autocontrast is None, f"autocontrast setting must be bool, currently is {type(self.autocontrast)}"
+        assert isinstance(self.beam_type,BeamType) or self.beam_type is None, f"beam type must be a BeamType object, currently is {type(self.beam_type)}"
+        assert isinstance(self.save,bool) or self.save is None, f"save option must be a bool, currently is {type(self.save)}"
+        assert isinstance(self.label,str) or self.label is None, f"label must b str, currently is {type(self.label)}"
+        assert isinstance(self.gamma_enabled,bool) or self.gamma_enabled is None, f"gamma enabled setting must be bool, currently is {type(self.gamma_enabled)}"
+        assert isinstance(self.save_path,(Path,str)) or self.save_path is None, f"save path must be Path or str, currently is {type(self.save_path)}"
+        assert isinstance(self.reduced_area,FibsemRectangle) or self.reduced_area is None, f"reduced area must be a fibsemRectangle object, currently is {type(self.reduced_area)}"
+
+
     @staticmethod
     def __from_dict__(settings: dict) -> "ImageSettings":
 
@@ -421,7 +527,7 @@ class ImageSettings:
             else None,
             "gamma_enabled": self.gamma_enabled if self.gamma_enabled is not None else None,
             "save": self.save if self.save is not None else None,
-            "save_path": str(self.save_path) if self.save_path is not None else None,
+            "save_path": self.save_path if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
             "reduced_area": {
                 "left": self.reduced_area.left,
@@ -481,8 +587,22 @@ class BeamSettings:
     hfw: float = None
     resolution: list = None
     dwell_time: float = None
-    stigmation: Point = None
-    shift: Point = None
+    stigmation: Point = None # should be list of points?
+    shift: Point = None # same? it is being turned to fibsem rectangle? needs 4 points?
+
+    ## FROM DICT AND TO DICT DOES NOT HAVE VOLTAGE (ADDED IN)
+
+    def __post_init__(self):
+
+        assert self.beam_type in [BeamType.ELECTRON,BeamType.ION] or self.beam_type is None, f"beam_type must be instance of BeamType, currently {type(self.beam_type)}"
+        assert isinstance(self.working_distance,(float,int)) or self.working_distance is None, f"Working distance must be float or int, currently is {type(self.working_distance)}"
+        assert isinstance(self.beam_current,(float,int)) or self.beam_current is None, f"beam current must be float or int, currently is {type(self.beam_current)}"
+        assert isinstance(self.voltage,(float,int)) or self.voltage is None, f"voltage must be float or int, currently is {type(self.voltage)}"
+        assert isinstance(self.hfw,(float,int)) or self.hfw is None, f"horizontal field width (HFW) must be float or int, currently is {type(self.hfw)}"
+        assert isinstance(self.resolution,list) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
+        assert isinstance(self.dwell_time,(float,int)) or self.dwell_time is None, f"dwell_time must be float or int, currently is {type(self.dwell_time)}"
+        assert isinstance(self.stigmation,Point) or self.stigmation is None, f"stigmation must be a Point instance, currently is {type(self.stigmation)}"
+        assert isinstance(self.shift,Point) or self.shift is None, f"shift must be a Point instance, currently is {type(self.shift)}"
 
     def __to_dict__(self) -> dict:
 
@@ -490,6 +610,7 @@ class BeamSettings:
             "beam_type": self.beam_type.name,
             "working_distance": self.working_distance,
             "beam_current": self.beam_current,
+            "voltage": self.voltage,
             "hfw": self.hfw,
             "resolution": self.resolution,
             "dwell_time": self.dwell_time,
@@ -503,11 +624,11 @@ class BeamSettings:
     def __from_dict__(state_dict: dict) -> "BeamSettings":
 
         if "stigmation" in state_dict and state_dict["stigmation"] is not None:
-            stigmation = FibsemRectangle.__from_dict__(state_dict["stigmation"])
+            stigmation = Point.__from_dict__(state_dict["stigmation"])
         else:
             stigmation = Point()
         if "shift" in state_dict and state_dict["shift"] is not None:
-            shift = FibsemRectangle.__from_dict__(state_dict["shift"])
+            shift = Point.__from_dict__(state_dict["shift"])
         else:
             shift = Point()
 
@@ -516,6 +637,7 @@ class BeamSettings:
             beam_type=BeamType[state_dict["beam_type"].upper()],
             working_distance=state_dict["working_distance"],
             beam_current=state_dict["beam_current"],
+            voltage=state_dict["voltage"],
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
             dwell_time=state_dict["dwell_time"],
@@ -549,6 +671,12 @@ class MicroscopeState:
     absolute_position: FibsemStagePosition = FibsemStagePosition()
     eb_settings: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
     ib_settings: BeamSettings = BeamSettings(beam_type=BeamType.ION)
+
+    def __post_init__(self):
+        assert isinstance(self.absolute_position,FibsemStagePosition) or self.absolute_position is None, f"absolute position must be of type FibsemStagePosition, currently is {type(self.absolute_position)}"
+        assert isinstance(self.eb_settings,BeamSettings) or self.eb_settings is None, f"eb_settings must be of type BeamSettings, currently is {type(self.eb_settings)}"
+        assert isinstance(self.ib_settings,BeamSettings) or self.ib_settings is None, f"ib_settings must be of type BeamSettings, currently us {type(self.ib_settings)}"
+
 
     def __to_dict__(self) -> dict:
 
@@ -598,6 +726,14 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     end_x: float (m), 
                     end_y: float (m), 
                     depth: float (m),
+                
+                If FibsemPattern.Circle
+                    centre_x: float (m),
+                    centre_y: float (m),
+                    radius: float (m),
+                    depth: float (m),
+                    start_angle: float = 0.0 (degrees),
+                    end_angle: float = 360.0 (degrees),
     '''
     def __init__(self, pattern: FibsemPattern = FibsemPattern.Rectangle, **kwargs):
         self.pattern = pattern
@@ -616,7 +752,9 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.end_x = kwargs["end_x"]
             self.end_y = kwargs["end_y"]
             self.depth = kwargs["depth"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
         elif pattern == FibsemPattern.Circle:
             self.centre_x = kwargs["centre_x"]
             self.centre_y = kwargs["centre_y"]
@@ -659,6 +797,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 end_x=state_dict["end_x"],
                 end_y=state_dict["end_y"],
                 depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
@@ -676,7 +815,44 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
 
-
+    def __to_dict__(self) -> dict:
+        if self.pattern == FibsemPattern.Rectangle:
+            return {
+                "pattern": "Rectangle",
+                "width": self.width,
+                "height": self.height,
+                "depth": self.depth,
+                "rotation": self.rotation,
+                "centre_x": self.centre_x,
+                "centre_y": self.centre_y,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+            }
+        elif self.pattern == FibsemPattern.Line:
+            return {
+                "pattern": "Line",
+                "start_x": self.start_x,
+                "start_y": self.start_y,
+                "end_x": self.end_x,
+                "end_y": self.end_y,
+                "depth": self.depth,
+                "rotation": self.rotation,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+            }
+        elif self.pattern == FibsemPattern.Circle:
+            return {
+                "pattern": "Circle",
+                "centre_x": self.centre_x,
+                "centre_y": self.centre_y,
+                "radius": self.radius,
+                "depth": self.depth,
+                "start_angle": self.start_angle,
+                "end_angle": self.end_angle,
+                "rotation": self.rotation,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+            }
 
 
 
@@ -706,6 +882,16 @@ class FibsemMillingSettings:
     hfw: float = 150e-6
     patterning_mode: str = "Serial" 
     application_file: str = "Si"
+
+    def __post_init__(self):
+
+        assert isinstance(self.milling_current,(float,int)), f"invalid type for milling_current, must be int or float, currently {type(self.milling_current)}"
+        assert isinstance(self.spot_size,(float,int)), f"invalid type for spot_size, must be int or float, currently {type(self.spot_size)}"
+        assert isinstance(self.rate,(float,int)), f"invalid type for rate, must be int or float, currently {type(self.rate)}"
+        assert isinstance(self.dwell_time,(float,int)), f"invalid type for dwell_time, must be int or float, currently {type(self.dwell_time)}"
+        assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
+        assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
+        assert isinstance(self.application_file,str), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
 
     def __to_dict__(self) -> dict:
 
@@ -758,6 +944,12 @@ if THERMO:
 
 def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
     """Converts the FibsemStagePosition Object into a dictionary"""
+
+    attributes = ["x","y","z","r","t"]
+    for attribute in attributes:
+        assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
+
+    assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
 
     stage_position_dict = {
         "x": stage_position.x,
@@ -1040,6 +1232,7 @@ class MicroscopeSettings:
             protocol=protocol if protocol is not None else settings["protocol"],
             milling=FibsemMillingSettings.__from_dict__(settings["milling"]),
             hardware=FibsemHardware.__from_dict__(hardware) if hardware is not None else FibsemHardware.__from_dict__(settings["hardware"]),
+
         )
 
 
@@ -1084,11 +1277,11 @@ class FibsemState:
 
         return state_dict
 
-    @abstractstaticmethod
-    def __from_dict__(self, state_dict: dict) -> "FibsemState":
+    @staticmethod
+    def __from_dict__(state_dict: dict) -> "FibsemState":
 
         autoliftout_state = FibsemState(
-            stage=FibsemState[state_dict["stage"]],
+            stage=FibsemStage[state_dict["stage"]],
             microscope_state=MicroscopeState.__from_dict__(
                 state_dict["microscope_state"]
             ),
@@ -1100,10 +1293,17 @@ class FibsemState:
 
 @dataclass
 class FibsemDetectorSettings:
-    type: str
-    mode: str 
-    brightness: float
-    contrast: float
+    type: str = None
+    mode: str = None
+    brightness: float = None
+    contrast: float = None
+
+    def __post_init__(self):
+
+        assert isinstance(self.type,str) or self.type is None, f"type must be input as str, currently is {type(self.type)}"
+        assert isinstance(self.mode,str) or self.mode is None, f"mode must be input as str, currently is {type(self.mode)}"
+        assert isinstance(self.brightness,(float,int)) or self.brightness is None, f"brightness must be int or float value, currently is {type(self.brightness)}"
+        assert isinstance(self.contrast,(float,int)) or self.contrast is None, f"contrast must be int or float value, currently is {type(self.contrast)}"
 
     if TESCAN:
         def to_tescan(self):
@@ -1141,6 +1341,7 @@ class FibsemImageMetadata:
     detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
     
+
 
     def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
@@ -1318,12 +1519,14 @@ class FibsemImage:
                 print(f"Error: {e}")
         return cls(data=data, metadata=metadata)
 
-    def save(self, save_path: Path) -> None:
+    def save(self, save_path: Path = None) -> None:
         """Saves a FibsemImage to a tiff file.
 
         Inputs:
             save_path (path): path to save directory and filename
         """
+        if save_path is None:
+            save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         save_path = Path(save_path).with_suffix(".tif")
 
@@ -1396,10 +1599,10 @@ class FibsemImage:
             state: MicroscopeState,
             detector: FibsemDetectorSettings,
         ) -> "FibsemImage":
-            """Creates FibsemImage from an AdornedImage (microscope output format).
+            """Creates FibsemImage from a tescan (microscope output format).
 
             Args:
-                adorned (AdornedImage): Adorned Image from microscope
+                image (Tescan): Adorned Image from microscope
                 metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
 
             Returns:

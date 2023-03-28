@@ -13,12 +13,18 @@ MILLING_SPUTTER_RATE = {
     28.0e-9: 1.18e1,  # 30 kv
 }
 
+SUPPORTED_COORDINATE_SYSTEMS = [
+    "RAW",
+    "SPECIMEN"
+] 
+
+
 import os
 import fibsem
 
-BASE_PATH = os.path.dirname(fibsem.__path__[0]) # TODO: figure out a more stable way to do this
+BASE_PATH = os.path.dirname(fibsem.__path__[0])
 CONFIG_PATH = os.path.join(BASE_PATH, "fibsem", "config")
-PROTOCOL_PATH = os.path.join(CONFIG_PATH, "protocol.yaml")
+
 import yaml
 
 
