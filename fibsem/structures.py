@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
 
 import numpy as np
 import tifffile as tff
@@ -314,7 +315,7 @@ Methods:
             output = getattr(self,attribute)
             assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
         assert isinstance(self.coordinate_system,str) or self.coordinate_system is None, f"unsupported type {type(self.coordinate_system)} for coorindate system"
-        assert self.coordinate_system in ["RAW","SPECIMEN"] or self.coordinate_system is None, f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
+        assert self.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or self.coordinate_system is None, f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
 
     def __to_dict__(self) -> dict:
         position_dict = {}
@@ -672,9 +673,9 @@ class MicroscopeState:
     ib_settings: BeamSettings = BeamSettings(beam_type=BeamType.ION)
 
     def __post_init__(self):
-        assert isinstance(self.absolute_position,FibsemStagePosition), f"absolute position must be of type FibsemStagePosition, currently is {type(self.absolute_position)}"
-        assert isinstance(self.eb_settings,BeamSettings), f"eb_settings must be of type BeamSettings, currently is {type(self.eb_settings)}"
-        assert isinstance(self.ib_settings,BeamSettings), f"ib_settings must be of type BeamSettings, currently us {type(self.ib_settings)}"
+        assert isinstance(self.absolute_position,FibsemStagePosition) or self.absolute_position is None, f"absolute position must be of type FibsemStagePosition, currently is {type(self.absolute_position)}"
+        assert isinstance(self.eb_settings,BeamSettings) or self.eb_settings is None, f"eb_settings must be of type BeamSettings, currently is {type(self.eb_settings)}"
+        assert isinstance(self.ib_settings,BeamSettings) or self.ib_settings is None, f"ib_settings must be of type BeamSettings, currently us {type(self.ib_settings)}"
 
 
     def __to_dict__(self) -> dict:
@@ -948,7 +949,7 @@ def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
     for attribute in attributes:
         assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
 
-    assert stage_position.coordinate_system in ["RAW","SPECIMEN"] or stage_position.coordinate_system is None
+    assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
 
     stage_position_dict = {
         "x": stage_position.x,
