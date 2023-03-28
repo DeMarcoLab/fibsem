@@ -485,7 +485,7 @@ class ImageSettings:
         assert isinstance(self.save,bool) or self.save is None, f"save option must be a bool, currently is {type(self.save)}"
         assert isinstance(self.label,str) or self.label is None, f"label must b str, currently is {type(self.label)}"
         assert isinstance(self.gamma_enabled,bool) or self.gamma_enabled is None, f"gamma enabled setting must be bool, currently is {type(self.gamma_enabled)}"
-        assert isinstance(self.save_path,str) or self.save_path is None, f"save path must be str, currently is {type(self.save_path)}"
+        assert isinstance(self.save_path,(Path,str)) or self.save_path is None, f"save path must be Path or str, currently is {type(self.save_path)}"
         assert isinstance(self.reduced_area,FibsemRectangle) or self.reduced_area is None, f"reduced area must be a fibsemRectangle object, currently is {type(self.reduced_area)}"
 
 
@@ -1340,7 +1340,7 @@ class FibsemImageMetadata:
     detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
     
-    
+
 
     def __to_dict__(self) -> dict:
         """Converts metadata to a dictionary.
