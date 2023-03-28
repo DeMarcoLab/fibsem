@@ -162,39 +162,64 @@ Methods:
             self.coordinate_system,
         )
 
-# @dataclass
-# class FibsemHardware:
-#     """Data class for storing hardware information.
-# Attributes:
 
-#     """
-#     electron_beam: bool = True
-#     ion_beam: bool = True
-#     stage_enabled: bool = True
-#     stage_rotation: bool = True
-#     stage_tilt: bool = True
-#     manipulator_enabled: bool = True
-#     manipulator_rotation: bool = True
-#     manipulator_tilt: bool = True
-#     gis_enabled: bool = True
-#     gis_multichem: bool = True
+@dataclass
+class FibsemHardware:
+    """Data class for storing hardware information.
+Attributes:
 
-#     @classmethod
-#     def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
-#         return cls(
-#             electron_beam=bool(hardware_dict["electron"]["enabled"]),
-#             ion_beam=bool(hardware_dict["ion"]["enabled"]),
-#             stage_enabled=bool(hardware_dict["stage"]["enabled"]),
-#             stage_rotation=bool(hardware_dict["stage"]["rotation"]),
-#             stage_tilt=bool(hardware_dict["stage"]["tilt"]),
-#             manipulator_enabled=bool(hardware_dict["manipulator"]["enabled"]),
-#             manipulator_rotation=bool(hardware_dict["manipulator"]["rotation"]),
-#             manipulator_tilt=bool(hardware_dict["manipulator"]["tilt"]),
-#             gis_enabled=bool(hardware_dict["gis"]["enabled"]),
-#             gis_multichem=bool(hardware_dict["gis"]["multichem"]),
-#         )
+    """
+    electron_beam: bool = True
+    ion_beam: bool = True
+    stage_enabled: bool = True
+    stage_rotation: bool = True
+    stage_tilt: bool = True
+    manipulator_enabled: bool = True
+    manipulator_rotation: bool = True
+    manipulator_tilt: bool = True
+    gis_enabled: bool = True
+    gis_multichem: bool = True
 
+    @classmethod
+    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
+        return cls(
+            electron_beam=bool(hardware_dict["electron"]["enabled"]),
+            ion_beam=bool(hardware_dict["ion"]["enabled"]),
+            stage_enabled=bool(hardware_dict["stage"]["enabled"]),
+            stage_rotation=bool(hardware_dict["stage"]["rotation"]),
+            stage_tilt=bool(hardware_dict["stage"]["tilt"]),
+            manipulator_enabled=bool(hardware_dict["manipulator"]["enabled"]),
+            manipulator_rotation=bool(hardware_dict["manipulator"]["rotation"]),
+            manipulator_tilt=bool(hardware_dict["manipulator"]["tilt"]),
+            gis_enabled=bool(hardware_dict["gis"]["enabled"]),
+            gis_multichem=bool(hardware_dict["gis"]["multichem"]),
+        )
 
+    def __to_dict__(self) -> dict:
+            
+            hardware_dict = {}
+    
+            hardware_dict["electron"] = {}
+            hardware_dict["electron"]["enabled"] = self.electron_beam
+    
+            hardware_dict["ion"] = {}
+            hardware_dict["ion"]["enabled"] = self.ion_beam
+    
+            hardware_dict["stage"] = {}
+            hardware_dict["stage"]["enabled"] = self.stage_enabled
+            hardware_dict["stage"]["rotation"] = self.stage_rotation
+            hardware_dict["stage"]["tilt"] = self.stage_tilt
+    
+            hardware_dict["manipulator"] = {}
+            hardware_dict["manipulator"]["enabled"] = self.manipulator_enabled
+            hardware_dict["manipulator"]["rotation"] = self.manipulator_rotation
+            hardware_dict["manipulator"]["tilt"] = self.manipulator_tilt
+    
+            hardware_dict["gis"] = {}
+            hardware_dict["gis"]["enabled"] = self.gis_enabled
+            hardware_dict["gis"]["multichem"] = self.gis_multichem
+    
+            return hardware_dict
 
 
 
@@ -991,7 +1016,7 @@ class MicroscopeSettings:
     image: ImageSettings
     protocol: dict = None
     milling: FibsemMillingSettings = None
-    #hardware: FibsemHardware = None
+    hardware: FibsemHardware = None
     
 
     def __to_dict__(self) -> dict:
@@ -999,6 +1024,9 @@ class MicroscopeSettings:
         settings_dict = {
             "system": self.system.__to_dict__(),
             "user": self.image.__to_dict__(),
+            "protocol": self.protocol,
+            "milling": self.milling.__to_dict__(),
+            "hardware": self.hardware.__to_dict__(),
 
         }
 
@@ -1010,7 +1038,9 @@ class MicroscopeSettings:
         return MicroscopeSettings(
             system=SystemSettings.__from_dict__(settings["system"]),
             image=ImageSettings.__from_dict__(settings["user"]),
-            protocol=protocol,
+            protocol=protocol if protocol is not None else settings["protocol"],
+            milling=FibsemMillingSettings.__from_dict__(settings["milling"]),
+            hardware=FibsemHardware.__from_dict__(hardware) if hardware is not None else FibsemHardware.__from_dict__(settings["hardware"]),
         )
 
 

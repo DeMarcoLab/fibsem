@@ -185,7 +185,7 @@ def setup_session(
     # create session directories
     session = f'{settings.protocol["name"]}_{current_timestamp()}'
     if protocol_path is None:
-        protocol_path = os.getcwd()
+        protocol_path = os.getcwd() # TODO: better default
 
     # configure paths
     if session_path is None:
@@ -242,7 +242,6 @@ def load_settings_from_config(
     Returns:
         MicroscopeSettings: microscope settings
     """
-    # print("HELLO")
     # TODO: this should just be system.yaml path, not directory
     if config_path is None:
         from fibsem.config import CONFIG_PATH
@@ -257,7 +256,6 @@ def load_settings_from_config(
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
-    # default_settings = DefaultSettings.__from_dict__(settings["user"])
     image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
 
     milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
@@ -328,27 +326,6 @@ def _format_dictionary(dictionary: dict) -> dict:
                 except ValueError:
                     pass
     return dictionary
-
-
-def match_image_settings(
-    ref_image: FibsemImage,
-    image_settings: ImageSettings,
-    beam_type: BeamType = BeamType.ELECTRON,
-) -> ImageSettings:
-    
-    
-    """Generate matching image settings from an image."""
-
-
-    image_settings.resolution = (ref_image.data.shape[1], ref_image.data.shape[0])
-    # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
-    image_settings.hfw = ref_image.data.shape[1] * ref_image.metadata.pixel_size.x
-    image_settings.beam_type = beam_type
-    image_settings.save = True
-    image_settings.label = current_timestamp()
-
-    return image_settings
-
 
 def get_params(main_str: str) -> list:
     """Helper function to access relevant metadata parameters from sub field
