@@ -72,6 +72,9 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if _microscope_connected:
             self.microscope.disconnect()
             self.microscope, self.settings = None, None
+            if self.image_widget is not None:
+                self.image_widget.clear_viewer()
+            
         else:
             ip_address = self.lineEdit_ip_address.text()
             manufacturer = self.comboBox_manufacturer.currentText()
@@ -98,6 +101,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 image_settings=self.settings.image,
                 viewer=self.viewer,
             )
+            # self.image_widget.setMinimumWidth(500)
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
                 settings=self.settings,
