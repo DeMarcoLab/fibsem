@@ -53,7 +53,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemManipulatorPosition,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
-                               ImageSettings, MicroscopeSettings,
+                               ImageSettings, MicroscopeSettings, FibsemHardware,
                                MicroscopeState, Point, FibsemDetectorSettings)
 
 
@@ -3318,6 +3318,7 @@ class DemoMicroscope(FibsemMicroscope):
         )
         import fibsem
         from fibsem.utils import load_protocol
+        import os
         base_path = os.path.dirname(fibsem.__path__[0])
         self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
 
