@@ -13,6 +13,12 @@ MILLING_SPUTTER_RATE = {
     28.0e-9: 1.18e1,  # 30 kv
 }
 
+SUPPORTED_COORDINATE_SYSTEMS = [
+    "RAW",
+    "SPECIMEN"
+] 
+
+
 import os
 import fibsem
 

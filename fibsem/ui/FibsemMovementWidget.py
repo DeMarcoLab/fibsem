@@ -51,6 +51,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.ib_layer.mouse_double_click_callbacks.append(self._double_click)
 
         # disable ui elements
+        self.label_movement_instructions.setText("Double click to move.")
+        self.pushButton_continue.setVisible(False)
         self.pushButton_save_position.setVisible(False)
         self.pushButton_auto_eucentric.setVisible(False)
 
