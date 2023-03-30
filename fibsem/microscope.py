@@ -58,7 +58,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
-                               ImageSettings, MicroscopeSettings,
+                               ImageSettings, MicroscopeSettings, FibsemHardware,
                                MicroscopeState, Point, FibsemDetectorSettings)
                                MicroscopeState, Point, FibsemDetectorSettings)
 
@@ -691,6 +691,13 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             MicroscopeState: current microscope state
         """
+        resolution_eb = self.connection.beams.electron_beam.scanning.resolution.value
+        width_eb = int(resolution_eb.split("x")[0])
+        height_eb = int(resolution_eb.split("x")[-1])
+        resolution__ib = self.connection.beams.ion_beam.scanning.resolution.value
+        width_ib = int(resolution__ib.split("x")[0])
+        height_ib = int(resolution__ib.split("x")[-1])
+
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
@@ -701,7 +708,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 working_distance=self.connection.beams.electron_beam.working_distance.value,
                 beam_current=self.connection.beams.electron_beam.beam_current.value,
                 hfw=self.connection.beams.electron_beam.horizontal_field_width.value,
-                resolution=self.connection.beams.electron_beam.scanning.resolution.value,
+                resolution=[width_eb, height_eb],
                 dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value,
             ),
             # ion beam settings
@@ -710,7 +717,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 working_distance=self.connection.beams.ion_beam.working_distance.value,
                 beam_current=self.connection.beams.ion_beam.beam_current.value,
                 hfw=self.connection.beams.ion_beam.horizontal_field_width.value,
-                resolution=self.connection.beams.ion_beam.scanning.resolution.value,
+                resolution=[width_ib, height_ib],
                 dwell_time=self.connection.beams.ion_beam.scanning.dwell_time.value,
             ),
         )
@@ -1627,6 +1634,10 @@ class ThermoMicroscope(FibsemMicroscope):
             return beam.high_voltage.limits
         if key == "voltage_controllable":
             return beam.high_voltage.is_controllable
+        if key == "shift":
+            return Point(beam.beam_shift.value.x, beam.beam_shift.value.y)
+        if key == "stigmation": 
+            return Point(beam.stigmator.value.x, beam.stigmator.value.y)
 
 
         # ion beam properties
@@ -1712,6 +1723,14 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "scan_rotation":
             beam.scanning.rotation.value = value
             logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
+            return
+        if key == "shift":
+            beam.beam_shift.value = value
+            logging.info(f"{beam_type.name} shift set to {value}.")
+            return
+        if key == "stigmation":
+            beam.stigmator.value = value
+            logging.info(f"{beam_type.name} stigmation set to {value}.")
             return
 
         # beam control
@@ -3253,6 +3272,9 @@ class TescanMicroscope(FibsemMicroscope):
             values = self.connection.FIB.Detector.Enum()
             for i in range(len(values)):
                 values[i-1] = values[i-1].name
+        
+        if key == "detector_mode": 
+            values = None 
 
         return values
 
@@ -3289,6 +3311,10 @@ class TescanMicroscope(FibsemMicroscope):
                 return self.last_image_ib.metadata.image_settings.dwell_time   
         if key =="scan_rotation":
             return beam.Optics.GetImageRotation()     
+        if key == "shift":
+            values = beam.Optics.GetImageShift()
+            shift = Point(values[0]*constants.MILLIMETRE_TO_METRE, values[1]*constants.MILLIMETRE_TO_METRE)
+            return shift
         
         # stage properties
         if key == "stage_position":
@@ -3304,7 +3330,11 @@ class TescanMicroscope(FibsemMicroscope):
         
         #detector properties
         if key == "detector_type":
-            return beam.Detector.Get(Channel = 0).name
+            detector = beam.Detector.Get(Channel = 0) 
+            if detector is not None:
+                return detector.name
+            else: 
+                return None
         if key == "detector_contrast":
             if beam_type == BeamType.ELECTRON:
                 contrast, brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
@@ -3363,6 +3393,11 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "on":
             beam.Beam.On() if value else beam.Beam.Off()
             logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
+            return
+        if key == "shift":
+            point = Point(value.x*constants.METRE_TO_MILLIMETRE, value.y*constants.METRE_TO_MILLIMETRE)
+            beam.Optics.SetImageShift(point.x, point.y)
+            logging.info(f"{beam_type.name} beam shift set to {value}.")
             return
         # detector control
         if key == "detector_type":
@@ -3430,7 +3465,8 @@ class DemoMicroscope(FibsemMicroscope):
         self.electron_beam = BeamSettings(
             beam_type=BeamType.ELECTRON,
             working_distance=4.0e-3,
-            beam_current=2000,
+            beam_current=1e-12,
+            voltage=2000,
             hfw=150e-6,
             resolution=[1536, 1024],
             dwell_time=1e-6,
@@ -3440,13 +3476,34 @@ class DemoMicroscope(FibsemMicroscope):
         self.ion_beam = BeamSettings(
             beam_type=BeamType.ION,
             working_distance=16.5e-3,
-            beam_current=30000,
+            beam_current=20e-12, 
+            voltage=30000,
             hfw=150e-6,
             resolution=[1536, 1024],
             dwell_time=1e-6,
             stigmation=Point(0, 0),
             shift=Point(0, 0),
         )
+
+        self.electron_detector_settings = FibsemDetectorSettings(
+            type="ETD",
+            mode="SecondaryElectrons",
+            brightness=0.5,
+            contrast=0.5,
+        )
+        self.ion_detector_settings = FibsemDetectorSettings(
+            type="ETD",
+            mode="SecondaryElectrons",
+            brightness=0.5,
+            contrast=0.5,
+        )
+        import fibsem
+        from fibsem.utils import load_protocol
+        import os
+        base_path = os.path.dirname(fibsem.__path__[0])
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+
+
 
     def connect_to_microscope(self):
         logging.info(f"Connected to Demo Microscope")
@@ -3665,6 +3722,11 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "application_file":
             values = ["Si", "autolamella", "cryo_Pt_dep"]
 
+        if key == "detector_type":
+            values = ["ETD", "TLD", "EDS"]
+        if key == "detector_mode":
+            values = ["SecondaryElectrons", "BackscatteredElectrons", "EDS"]
+
         return values
 
     def get(self, key, beam_type: BeamType = None) -> float:
@@ -3674,7 +3736,7 @@ class DemoMicroscope(FibsemMicroscope):
         if beam_type is not None:
         if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
-
+            detector = self.electron_detector_settings if beam_type is BeamType.ELECTRON else self.ion_detector_settings
         # voltage
         if key == "voltage":
             return beam.voltage
@@ -3686,6 +3748,20 @@ class DemoMicroscope(FibsemMicroscope):
         # working distance
         if key == "working_distance":
             return beam.working_distance
+        
+        if key == "stigmation":
+            return Point(beam.stigmation.x, beam.stigmation.y)
+        if key == "shift":
+            return Point(beam.shift.x, beam.shift.y)
+
+        if key == "detector_type":
+            return detector.type
+        if key == "detector_mode":
+            return detector.mode
+        if key == "detector_brightness":
+            return detector.brightness
+        if key == "detector_contrast":
+            return detector.contrast
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return NotImplemented
@@ -3696,6 +3772,7 @@ class DemoMicroscope(FibsemMicroscope):
         # get beam
         if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
+            detector = self.electron_detector_settings if beam_type is BeamType.ELECTRON else self.ion_detector_settings
 
         # voltage
         if key == "voltage":
@@ -3708,6 +3785,26 @@ class DemoMicroscope(FibsemMicroscope):
         
         if key == "working_distance":
             beam.working_distance = value
+            return
+        
+        if key == "stigmation":
+            beam.stigmation = value
+            return
+        if key == "shift":
+            beam.shift = value
+            return
+
+        if key == "detector_type":
+            detector.type = value
+            return
+        if key == "detector_mode":
+            detector.mode = value
+            return 
+        if key == "detector_contrast":
+            detector.contrast = value
+            return
+        if key == "detector_brightness":
+            detector.brightness = value
             return
 
         logging.warning(f"Unknown key: {key} ({beam_type})")

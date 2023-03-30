@@ -279,6 +279,7 @@ Attributes:
             return hardware_dict
 
 
+
 @dataclass
 class FibsemManipulatorPosition:
     """Data class for storing manipulator position data.
