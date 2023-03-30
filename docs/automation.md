@@ -102,7 +102,7 @@ By default, the function will move the stage to align the reference image. The f
 We also provide a number of utility functions that can help with crosscorrelation. For example:
 
 - `rotate_image`: rotate the image 180deg while preserving metadata
-- `match_image_settings`: match the image settings used for reference image
+- `fromFibsemImage`: match the image settings used for reference image
 
  These utilities are available in `fibsem.imaging.utils`.
 

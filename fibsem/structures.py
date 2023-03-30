@@ -528,7 +528,7 @@ class ImageSettings:
             else None,
             "gamma_enabled": self.gamma_enabled if self.gamma_enabled is not None else None,
             "save": self.save if self.save is not None else None,
-            "save_path": self.save_path if self.save_path is not None else None,
+            "save_path": str(self.save_path) if self.save_path is not None else None,
             "label": self.label if self.label is not None else None,
             "reduced_area": {
                 "left": self.reduced_area.left,
@@ -1526,6 +1526,7 @@ class FibsemImage:
         Inputs:
             save_path (path): path to save directory and filename
         """
+        self.metadata.image_settings.save_path = str(self.metadata.image_settings.save_path)
         if save_path is None:
             save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)

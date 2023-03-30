@@ -5,7 +5,7 @@ from pprint import pprint
 
 import matplotlib.patches as mpatches
 from fibsem import conversions, utils
-from fibsem.structures import BeamType, MicroscopeSettings
+from fibsem.structures import BeamType, MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui_utils
 
 from fibsem.detection import utils as det_utils
@@ -195,6 +195,7 @@ def main():
     import fibsem.ui.windows as fibsem_ui_windows
     from fibsem import movement, acquire
     from liftout import actions 
+    from fibsem.detection.detection import NeedleTip, ImageCentre
 
 
     microscope, settings = utils.setup_session(protocol_path=r"C:\Users\Admin\Github\autoliftout\liftout\protocol\protocol.yaml")
@@ -204,8 +205,8 @@ def main():
     import random
 
     # beam_type = BeamType.ELECTRON
-    features = [Feature(FeatureType.NeedleTip), 
-                Feature(FeatureType.ImageCentre)]
+    features = [NeedleTip(), 
+                ImageCentre()]
 
         
     for beam_type in [BeamType.ELECTRON, BeamType.ION]:

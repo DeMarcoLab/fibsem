@@ -89,6 +89,39 @@ User parameters can also be preset using the system.yaml file. All numerical val
 - Time: Seconds (s)
 - Distance: Metres (m)
 
+# Setting Hardware Parameters
+
+The hardware specifications need to be provided in the model.yaml file, found at:
+
+      …/FIBSEM/fibsem/config/model.yaml
+
+```yaml
+# this file is used to define the microscope model, and enabled components
+system:
+  name: "FIBSEM"
+  manufacturer: "Demo"
+  description: "FIBSEM"
+  version: "0.1"
+  id: 00000
+# define the microscope model
+electron:
+  enabled: True
+ion:
+  enabled: True
+stage:
+  enabled: True
+  rotation: True
+  tilt: True
+manipulator:
+  enabled: True
+  rotation: True
+  tilt: True
+gis:
+  enabled: True
+  multichem: True
+```
+Simply set the parameter to True if the hardware is present in the microscope. 
+
 ## Example code
 An example function for taking images with both beams can be found in the example_OpenFIBSEM file. 
 

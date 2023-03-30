@@ -7,7 +7,6 @@ from fibsem import constants, acquire
 
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
 from fibsem.ui import utils as ui_utils 
-import utils as ui_utils 
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
@@ -29,6 +28,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope = microscope
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
+        self.eb_image, self.ib_image = None, None
 
         self.setup_connections()
 
@@ -247,8 +247,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.camera.zoom = 0.45
 
         if self.ib_layer:
-            self.ib_layer.translate = [0.0, arr.shape[1]]        
-        self.viewer.layers.selection.active = self.eb_layer
+            translation = (
+                self.viewer.layers["ELECTRON"].data.shape[1]
+                if self.eb_layer
+                else arr.shape[1]
+            )
+            self.ib_layer.translate = [0.0, translation]       
 
         if self.eb_layer:
             points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150]])
