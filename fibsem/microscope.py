@@ -2538,7 +2538,22 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.Stage.MoveTo(tiltx=tilt)
 
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
-        pass
+        # pass
+        index = 0
+        output_position = self.connection.Nanomanipulator.GetPosition(Index=index)
+
+        # GetPosition returns tuple in the form (x, y, z, r)
+        # x,y,z in mm and r in degrees, no tilt information
+
+        x = output_position[0]*constants.MILLIMETRE_TO_METRE
+        y = output_position[1]*constants.MILLIMETRE_TO_METRE
+        z = output_position[2]*constants.MILLIMETRE_TO_METRE
+        r = output_position[3]*constants.DEGREES_TO_RADIANS
+
+        return FibsemManipulatorPosition(x=x, y=y, z=z, r=r)
+
+
+
 
     def insert_manipulator(self, name: str = "PARK"):
         pass
@@ -2548,13 +2563,32 @@ class TescanMicroscope(FibsemMicroscope):
         pass
 
     
-    def move_manipulator_relative(self):
-        pass
+    def move_manipulator_relative(self,position: FibsemManipulatorPosition, name: str = None):
+        current_position = self.get_manipulator_position()
+        
+        x = (current_position.x + position.x)*constants.METRE_TO_MILLIMETRE
+        y = (current_position.y + position.y)*constants.METRE_TO_MILLIMETRE
+        z = (current_position.z + position.z)*constants.METRE_TO_MILLIMETRE
+        r = (current_position.r + position.r)*constants.RADIANS_TO_DEGREES
+        index = 0
+
+        logging.info(f"moving manipulator by {position}")
+
+        self.connection.Nanomanipulator.MoveTo(Index=index,X=x, Y=y, Z=z, Rot=r)
+
 
     
-    def move_manipulator_absolute(self):
-        pass
-    
+    def move_manipulator_absolute(self, position: FibsemManipulatorPosition, name: str = None):
+        
+        x = position.x*constants.METRE_TO_MILLIMETRE
+        y = position.y*constants.METRE_TO_MILLIMETRE
+        z = position.z*constants.METRE_TO_MILLIMETRE
+        r = position.r*constants.RADIANS_TO_DEGREES
+        index = 0
+
+        logging.info(f"moving manipulator to {position}")
+
+        self.connection.Nanomanipulator.MoveTo(Index=index, X=x, Y=y, Z=z, Rot=r)
     
     def move_manipulator_corrected(self):
         pass
