@@ -20,7 +20,8 @@ from abc import ABC, abstractmethod
 class Feature(ABC):
     feature_px: Point 
     feature_m: Point
-    _color_UINT8: None
+    _color_UINT8: tuple = (255,255,255)
+    color = "white"
     name: str = None
 
     @abstractmethod
@@ -32,76 +33,81 @@ class ImageCentre(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,255,255)
+    color = "white"
     name: str = "ImageCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
-        self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
+        self.feature_px = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
         return self.feature_px
 
-    
+
 
 @dataclass
 class NeedleTip(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (0,255,0)
+    color = "green"
     name: str = "NeedleTip"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
         self.feature_px = detect_needle_v4(mask)
         return self.feature_px
-    
-    
+
+
 
 @dataclass
 class LamellaCentre(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,0,0)
+    color = "red"
     name: str = "LamellaCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
         self.feature_px = detect_lamella(mask, self.name)
 
-    
+
 @dataclass
 class LamellaLeftEdge(Feature):
     feature_m: Point = None
     feature_px: Point = None
-    _color_UINT8: tuple = (255,0,0)
+    _color_UINT8: tuple = (255,0,255)
+    color = "magenta"
     name: str = "LamellaLeftEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
         self.feature_px = detect_lamella(mask, self.name)
         return self.feature_px
-    
+
 
 @dataclass
 class LamellaRightEdge(Feature):
     feature_m: Point = None
     feature_px: Point = None
-    _color_UINT8: tuple = (255,0,255)
+    _color_UINT8: tuple = (255,165,0)
+    color = "orange"
     name: str = "LamellaRightEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
         self.feature_px = detect_lamella(mask, self.name)
         return self.feature_px
-    
+
 
 @dataclass
 class LandingPost(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,255,255)
+    color = "cyan"
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
         self.feature_px = detect_landing_post_v3(img, point)
         return self.feature_px
-    
+
 
 __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
-
  
 
 
@@ -192,7 +198,7 @@ def detect_corner(
 
         edge_px = coords[0][v_idx], coords[1][v_idx]
 
-    return Point(x=edge_px[1], y=edge_px[0])
+    return Point(x=int(edge_px[1]), y=int(edge_px[0]))
 
 
 def detect_lamella(
@@ -262,7 +268,7 @@ def detect_closest_edge_v2(
             min_dst = dst
             landing_edge_px = px
 
-    return Point(x=landing_edge_px[1], y=landing_edge_px[0])
+    return Point(x=int(landing_edge_px[1]), y=int(landing_edge_px[0]))
 
 
 def detect_bounding_box(mask, color, threshold=25):
