@@ -247,8 +247,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.camera.zoom = 0.45
 
         if self.ib_layer:
-            self.ib_layer.translate = [0.0, arr.shape[1]]        
-        self.viewer.layers.selection.active = self.eb_layer
+            translation = (
+                self.viewer.layers["ELECTRON"].data.shape[1]
+                if self.eb_layer
+                else arr.shape[1]
+            )
+            self.ib_layer.translate = [0.0, translation]       
 
         if self.eb_layer:
             points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150]])
