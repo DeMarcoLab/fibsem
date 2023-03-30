@@ -36,14 +36,10 @@ try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
-    from autoscript_sdb_microscope_client.structures import (
-    BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-        CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
         CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem, ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition, PatterningState)
         ManipulatorSavedPosition, PatterningState)
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
@@ -56,10 +52,8 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemImage, FibsemImageMetadata,
                                FibsemManipulatorPosition,
                                FibsemMillingSettings, FibsemRectangle,
-                               FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
-                               MicroscopeState, Point, FibsemDetectorSettings)
                                MicroscopeState, Point, FibsemDetectorSettings)
 
 
@@ -184,16 +178,6 @@ class FibsemMicroscope(ABC):
         ):
         pass
 
-    
-    @abstractmethod
-    def run_milling_drift_corrected(self, milling_current: float,  
-        image_settings: ImageSettings, 
-        ref_image: FibsemImage, 
-        reduced_area: FibsemRectangle = None,
-        asynch: bool = False
-        ):
-        pass
-
     @abstractmethod
     def finish_milling(self, imaging_current: float) -> None:
         pass
@@ -208,14 +192,6 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def draw_circle(self, pattern_settings: FibsemPatternSettings):
-        pass
-
-    @abstractmethod
-    def draw_bitmap_pattern(
-        self,
-        pattern_settings: FibsemPatternSettings,
-        path: str,
-    ):
         pass
 
     @abstractmethod
@@ -263,7 +239,6 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-
 
     def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
         pass
@@ -353,39 +328,12 @@ class ThermoMicroscope(FibsemMicroscope):
         _get_saved_manipulator_position(self, name: str) -> FibsemManipulatorPosition:
             Get the saved manipulator position with the specified name.
 
-        get_manipulator_position(self) -> FibsemManipulatorPosition:
-            Get the current manipulator position.
-        
-        insert_manipulator(self, name: str) -> None:
-            Insert the manipulator into the sample.
-        
-        retract_manipulator(self) -> None:
-            Retract the manipulator from the sample.
-
-        move_manipulator_relative(self, position: FibsemManipulatorPosition) -> None:
-            Move the manipulator by the specified relative move.
-        
-        move_manipulator_absolute(self, position: FibsemManipulatorPosition) -> None:
-            Move the manipulator to the specified coordinates.
-
-        move_manipulator_corrected(self, dx: float, dy: float, beam_type: BeamType) -> None:
-            Move the manipulator by the specified relative move, correcting for the beam type.      
-
-        move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str) -> None:
-            Move the manipulator to the specified position offset.
-
-        _get_saved_manipulator_position(self, name: str) -> FibsemManipulatorPosition:
-            Get the saved manipulator position with the specified name.
-
         setup_milling(self, mill_settings: FibsemMillingSettings):
             Configure the microscope for milling using the ion beam.
 
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
 
-        def run_milling_drift_corrected(self, milling_current: float, image_settings: ImageSettings, ref_image: FibsemImage, reduced_area: FibsemRectangle = None, asynch: bool = False):
-            Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
-        
         def run_milling_drift_corrected(self, milling_current: float, image_settings: ImageSettings, ref_image: FibsemImage, reduced_area: FibsemRectangle = None, asynch: bool = False):
             Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
         
@@ -401,9 +349,6 @@ class ThermoMicroscope(FibsemMicroscope):
         draw_circle(self, pattern_settings: FibsemPatternSettings):
             Draws a circular pattern on the current imaging view of the microscope.
         
-        draw_bitmap_pattern(self, pattern_settings: FibsemPatternSettings, path: str):
-            Draws a bitmap pattern using the provided image file. 
-
         draw_bitmap_pattern(self, pattern_settings: FibsemPatternSettings, path: str):
             Draws a bitmap pattern using the provided image file. 
 
@@ -529,16 +474,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
             )
 
-        detector = FibsemDetectorSettings(
-                type = self.get("detector_type", image_settings.beam_type),
-                mode = self.get("detector_mode", image_settings.beam_type),
-                contrast = self.get("detector_contrast", image_settings.beam_type),
-                brightness= self.get("detector_brightness", image_settings.beam_type),
-
-            )
-
         fibsem_image = FibsemImage.fromAdornedImage(
-            copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(state), detector = detector
             copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(state), detector = detector
         )
 
@@ -569,15 +505,6 @@ class ThermoMicroscope(FibsemMicroscope):
             image, beam_type
         )
 
-        detector = FibsemDetectorSettings(
-                type = self.get("detector_type", beam_type),
-                mode = self.get("detector_mode", beam_type),
-                contrast = self.get("detector_contrast", beam_type),
-                brightness= self.get("detector_brightness", beam_type),
-
-            )
-
-        fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state, detector = detector) 
         detector = FibsemDetectorSettings(
                 type = self.get("detector_type", beam_type),
                 mode = self.get("detector_mode", beam_type),
@@ -2237,7 +2164,6 @@ class TescanMicroscope(FibsemMicroscope):
         image_settings.resolution = [imageWidth, imageHeight]
         fibsem_image = FibsemImage.fromTescanImage(
             image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
-            image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
         )
 
         # fibsem_image.metadata.image_settings.resolution = [imageWidth, imageHeight]
@@ -2279,10 +2205,7 @@ class TescanMicroscope(FibsemMicroscope):
             >>> microscope = TescanMicroscope()
             >>> microscope.connect_to_microscope()
         #     >>> microscope.autocontrast(beam_type=BeamType.ION)
-        #     >>> microscope.autocontrast(beam_type=BeamType.ION)
 
-
-        # """
 
         # """
         logging.info(f"Running autocontrast on {beam_type.name}.")
@@ -2290,8 +2213,6 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.SEM.Detector.AutoSignal(Detector=self.electron_detector_active)
         if beam_type == BeamType.ION:
             self.connection.FIB.Detector.AutoSignal(Detector=self.ion_detector_active)
-
-    
 
     
     def auto_focus(self, beam_type: BeamType) -> None:
@@ -2380,8 +2301,6 @@ class TescanMicroscope(FibsemMicroscope):
                     working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance,
                     beam_current=self.connection.FIB.Beam.ReadProbeCurrent() * constants.PICO_TO_SI,
                     hfw=self.connection.FIB.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
-                    beam_current=self.connection.FIB.Beam.ReadProbeCurrent() * constants.PICO_TO_SI,
-                    hfw=self.connection.FIB.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
                     resolution=image_ib.metadata.image_settings.resolution,
                     dwell_time=image_ib.metadata.image_settings.dwell_time,
                     stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
@@ -2393,9 +2312,6 @@ class TescanMicroscope(FibsemMicroscope):
         if image_eb is not None:
             eb_settings = BeamSettings(
                 beam_type=BeamType.ELECTRON,
-                working_distance=self.connection.SEM.Optics.GetWD() * constants.MILLIMETRE_TO_METRE,
-                beam_current=self.connection.SEM.Beam.GetCurrent() * constants.PICO_TO_SI,
-                hfw=self.connection.SEM.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
                 working_distance=self.connection.SEM.Optics.GetWD() * constants.MILLIMETRE_TO_METRE,
                 beam_current=self.connection.SEM.Beam.GetCurrent() * constants.PICO_TO_SI,
                 hfw=self.connection.SEM.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
@@ -2714,9 +2630,6 @@ class TescanMicroscope(FibsemMicroscope):
         status = self.connection.FIB.Beam.GetStatus()
         if status != Automation.FIB.Beam.Status.BeamOn:
             self.connection.FIB.Beam.On()
-        status = self.connection.FIB.Beam.GetStatus()
-        if status != Automation.FIB.Beam.Status.BeamOn:
-            self.connection.FIB.Beam.On()
         self.connection.DrawBeam.LoadLayer(self.layer)
         logging.info(f"running ion beam milling now...")
         self.connection.DrawBeam.Start()
@@ -2736,77 +2649,6 @@ class TescanMicroscope(FibsemMicroscope):
             else:
                 if status[0] == DBStatus.ProjectLoadedExpositionIdle:
                     printProgressBar(100, 100, suffix="Finished")
-                break
-
-        print()  # new line on complete
-        self.connection.Progress.Hide()
-
-    def run_milling_drift_corrected(self, milling_current: float,  
-        image_settings: ImageSettings, 
-        ref_image: FibsemImage, 
-        reduced_area: FibsemRectangle = None,
-        asynch: bool = False
-        ):
-        """
-        Run ion beam milling using the specified milling current.
-
-        Args:
-            milling_current (float): The current to use for milling in amps.
-            asynch (bool, optional): If True, the milling will be run asynchronously. 
-                                     Defaults to False, in which case it will run synchronously.
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        status = self.connection.FIB.Beam.GetStatus()
-        if status != Automation.FIB.Beam.Status.BeamOn:
-            self.connection.FIB.Beam.On()
-        self.connection.DrawBeam.LoadLayer(self.layer)
-        logging.info(f"running ion beam milling now...")
-        self.connection.DrawBeam.Start()
-        self.connection.Progress.Show(
-            "DrawBeam", "Layer 1 in progress", False, False, 0, 100
-        )
-        from fibsem import alignment
-        while True:
-            status = self.connection.DrawBeam.GetStatus()
-            running = status[0] == DBStatus.ProjectLoadedExpositionInProgress
-            if running:
-                progress = 0
-                if status[1] > 0:
-                    progress = min(100, status[2] / status[1] * 100)
-                printProgressBar(progress, 100)
-                self.connection.Progress.SetPercents(progress)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionInProgress:
-                    self.connection.DrawBeam.Pause()
-                elif status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
-                    break
-                logging.info("Drift correction in progress...")
-                image_settings.beam_type = BeamType.ION
-                alignment.beam_shift_alignment(
-                    self,
-                    image_settings,
-                    ref_image,
-                    reduced_area,
-                )
-                time.sleep(1)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionPaused :
-                    self.connection.DrawBeam.Resume()
-                logging.info("Drift correction complete.")
-                time.sleep(5)
-            else:
-                if status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
                 break
 
         print()  # new line on complete
@@ -2889,15 +2731,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         Args:
             imaging_current (float): The current to use for imaging in amps.
-        # """
-        # try:
-        #     self.connection.DrawBeam.Stop()
-        #     self.connection.DrawBeam.UnloadLayer()
-        #     print("hello")
-        # except:
-        #     pass
-
-        # self.connection.DrawBeam.UnloadLayer()
         # """
         # try:
         #     self.connection.DrawBeam.Stop()
@@ -3031,13 +2864,6 @@ class TescanMicroscope(FibsemMicroscope):
     ):
         return NotImplemented
     
-    def draw_bitmap_pattern(
-        self,
-        pattern_settings: FibsemPatternSettings,
-        path: str,
-    ):
-        return NotImplemented
-    
     def get_scan_directions(self):
         
         list = ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]
@@ -3087,15 +2913,11 @@ class TescanMicroscope(FibsemMicroscope):
             layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
                 syncWriteField=True,
                 writeFieldSize=protocol["hfw"],
-                writeFieldSize=protocol["hfw"],
                 beamCurrent=protocol["beam_current"],
                 spotSize=protocol["spot_size"],
                 rate=3e-10, # Value for platinum
                 dwellTime=protocol["dwell_time"],
             )
-            self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
-            self.connection.DrawBeam.LoadLayer(self.layer)
-
             self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
             self.connection.DrawBeam.LoadLayer(self.layer)
 
@@ -3193,7 +3015,6 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.GIS.MoveTo(self.line, Automation.GIS.Position.Home)
         self.connection.GIS.PrepareTemperature(self.line, False)
         self.connection.DrawBeam.UnloadLayer()
-        self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
@@ -3277,7 +3098,6 @@ class TescanMicroscope(FibsemMicroscope):
             values = None 
 
         return values
-
 
 
     
@@ -3442,7 +3262,6 @@ class TescanMicroscope(FibsemMicroscope):
                 return 
 
 
-
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
 
@@ -3548,7 +3367,6 @@ class DemoMicroscope(FibsemMicroscope):
         self.electron_beam.shift = Point(0,0)
         self.ion_beam.shift = Point(0,0)
 
-    def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
         beam_type = BeamType.ION # TODO: add beam_type to params for ABC
         logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
@@ -3658,25 +3476,7 @@ class DemoMicroscope(FibsemMicroscope):
     def get_scan_directions(self) -> list:
         """
         Returns the available scan directions of the microscope.
-        """
-        Returns the available scan directions of the microscope.
 
-        Returns:
-            list: The scan direction of the microscope.
-
-        Raises:
-            None
-        """
-        list = ["BottomToTop", 
-                "LeftToRight", 	
-                "RightToLeft", 	
-                "TopToBottom"]
-        return list 
-
-    def draw_bitmap_pattern(self):
-        return 
-    def run_milling_drift_corrected(self):
-        return
         Returns:
             list: The scan direction of the microscope.
 
@@ -3733,7 +3533,6 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Getting {key} ({beam_type})")
 
         # get beam
-        if beam_type is not None:
         if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
             detector = self.electron_detector_settings if beam_type is BeamType.ELECTRON else self.ion_detector_settings
@@ -3858,6 +3657,5 @@ def printProgressBar(
     percent = ("{0:." + str(decimals) + "f}").format(100 * (value / float(total)))
     filled_length = int(length * value // total)
     bar = fill * filled_length + "-" * (length - filled_length)
-    print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\n")
     print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\n")
 
