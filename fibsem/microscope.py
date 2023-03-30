@@ -724,7 +724,7 @@ class ThermoMicroscope(FibsemMicroscope):
             z=yz_move.z,
             r=0,
             t=0,
-            coordinate_system="raw",
+            coordinate_system="RAW",
         )
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
@@ -754,7 +754,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(
-            z=z_move, coordinate_system="Specimen"
+            z=z_move, coordinate_system="SPECIMEN"
         ).to_autoscript_position()
         self.connection.specimen.stage.relative_move(z_move, move_settings)
         logging.info(f"eucentric movement: {z_move}")
@@ -2031,7 +2031,7 @@ class TescanMicroscope(FibsemMicroscope):
                 z=float(image.Header["SEM"]["StageZ"]),
                 r=float(image.Header["SEM"]["StageRotation"]),
                 t=float(image.Header["SEM"]["StageTilt"]),
-                coordinate_system="Raw",
+                coordinate_system="RAW",
             ),
             eb_settings=BeamSettings(
                 beam_type=BeamType.ELECTRON,
@@ -2134,7 +2134,7 @@ class TescanMicroscope(FibsemMicroscope):
                 z=float(image.Header["FIB"]["StageZ"]),
                 r=float(image.Header["FIB"]["StageRotation"]),
                 t=float(image.Header["FIB"]["StageTilt"]),
-                coordinate_system="Raw",
+                coordinate_system="RAW",
             ),
             eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
             ib_settings=BeamSettings(
@@ -2278,7 +2278,7 @@ class TescanMicroscope(FibsemMicroscope):
             z * constants.MILLIMETRE_TO_METRE,
             r * constants.DEGREES_TO_RADIANS,
             t * constants.DEGREES_TO_RADIANS,
-            "raw",
+            "RAW",
         )
         return stage_position
 
@@ -2386,7 +2386,7 @@ class TescanMicroscope(FibsemMicroscope):
             z_m + position.z,
             current_position.r + position.r,
             current_position.t + position.t,
-            "raw",
+            "RAW",
         )
         self.move_stage_absolute(new_position)
 

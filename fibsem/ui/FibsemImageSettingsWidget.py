@@ -7,7 +7,6 @@ from fibsem import constants, acquire
 
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
 from fibsem.ui import utils as ui_utils 
-import utils as ui_utils 
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
@@ -29,6 +28,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope = microscope
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
+        self.eb_image, self.ib_image = None, None
 
         self.setup_connections()
 

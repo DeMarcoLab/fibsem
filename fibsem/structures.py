@@ -1526,6 +1526,7 @@ class FibsemImage:
         Inputs:
             save_path (path): path to save directory and filename
         """
+        self.metadata.image_settings.save_path = str(self.metadata.image_settings.save_path)
         if save_path is None:
             save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
