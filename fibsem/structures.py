@@ -502,6 +502,7 @@ class ImageSettings:
         
         image_settings = ImageSettings(
             resolution=settings.get("resolution", (1536, 1024)),
+            resolution=settings.get("resolution", (1536, 1024)),
             dwell_time=settings.get("dwell_time", 1.0e-6),
             hfw=settings.get("hfw", 150e-6),
             autocontrast=settings.get("autocontrast", False),
@@ -540,6 +541,24 @@ class ImageSettings:
         }
 
         return settings_dict
+
+    @staticmethod
+    def fromFibsemImage(image: 'FibsemImage') -> "ImageSettings":
+        """Returns the image settings for a FibsemImage object.
+
+        Args:
+            image (FibsemImage): The FibsemImage object to get the image settings from.
+
+        Returns:
+            ImageSettings: The image settings for the given FibsemImage object.
+        """
+        from fibsem import utils
+        from copy import deepcopy
+        image_settings = deepcopy(image.metadata.image_settings)
+        image_settings.label = utils.current_timestamp()
+        image_settings.save = True
+        
+        return image_settings
 
     @staticmethod
     def fromFibsemImage(image: 'FibsemImage') -> "ImageSettings":
@@ -641,6 +660,8 @@ class BeamSettings:
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
             dwell_time=state_dict["dwell_time"],
+            stigmation=stigmation,
+            shift=shift,
             stigmation=stigmation,
             shift=shift,
             )
@@ -1339,6 +1360,7 @@ class FibsemImageMetadata:
     pixel_size: Point
     microscope_state: MicroscopeState
     detector_settings: FibsemDetectorSettings
+    detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
     
 
@@ -1357,6 +1379,8 @@ class FibsemImageMetadata:
             settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
         if self.microscope_state is not None:
             settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
+        if self.detector_settings is not None:
+            settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
         if self.detector_settings is not None:
             settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
         return settings_dict
@@ -1390,6 +1414,7 @@ class FibsemImageMetadata:
             version=version,
             pixel_size=pixel_size,
             microscope_state=microscope_state,
+            detector_settings=detector_settings,
             detector_settings=detector_settings,
         )
         return metadata

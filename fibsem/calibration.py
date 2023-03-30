@@ -6,19 +6,25 @@ from pathlib import Path
 import skimage
 
 from fibsem import acquire, utils
+from fibsem import acquire, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemRectangle, FibsemStagePosition,
+                               ImageSettings, MicroscopeSettings, FibsemImage,
                                ImageSettings, MicroscopeSettings, FibsemImage,
                                MicroscopeState)
 def auto_focus_beam(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
+    settings: MicroscopeSettings,
     beam_type: BeamType,
+    metric_fn = None, # function to calculate focus metric
     metric_fn = None, # function to calculate focus metric
     focus_image_settings: ImageSettings = None,
     step_size: float = 0.05e-3,
     num_steps: int = 5,
+    kwargs: dict = {},
+    verbose: bool = False,
     kwargs: dict = {},
     verbose: bool = False,
 ) -> None:
@@ -32,9 +38,33 @@ def auto_focus_beam(
 
     if metric_fn is None:
         # run the default autofocus routine
+    # TODO: @patrickcleeve2 this could be generalised further if we specify the parameter to sweep through too...
+    # e.g. microscope.set("working_distance", value, beam_type) for auto focus
+    # e.g. microscope.set("beam_current", value, beam_type) for auto stigmation
+    # e.g. microscope.set("beam_current", value, beam_type) for auto beam current
+    # might be too much generalisation though...
+    # also need to specify a default function
+
+    if metric_fn is None:
+        # run the default autofocus routine
         microscope.auto_focus(beam_type=beam_type)
         return
+        return
         
+    if focus_image_settings is None:
+        # use preset settings if not defined
+        focus_image_settings = ImageSettings(
+            resolution=[768, 512],
+            dwell_time=200e-9,
+            hfw=100e-6,
+            beam_type=beam_type,
+            save=True,
+            save_path=settings.image.save_path,
+            autocontrast=True,
+            gamma_enabled=False,
+            label=f"{utils.current_timestamp()}_",
+            reduced_area=FibsemRectangle(0.3, 0.3, 0.4, 0.4),
+        )
     if focus_image_settings is None:
         # use preset settings if not defined
         focus_image_settings = ImageSettings(
@@ -52,7 +82,12 @@ def auto_focus_beam(
 
     # get current working distance
     current_wd = microscope.get("working_distance", beam_type)
+    # get current working distance
+    current_wd = microscope.get("working_distance", beam_type)
 
+    if verbose:
+        logging.info(f"{metric_fn.__name__} based auto-focus routine")
+        logging.info(f"doc: {metric_fn.__doc__}")
     if verbose:
         logging.info(f"{metric_fn.__name__} based auto-focus routine")
         logging.info(f"doc: {metric_fn.__doc__}")
@@ -62,7 +97,15 @@ def auto_focus_beam(
     min_wd = current_wd - (num_steps * step_size / 2)
     max_wd = current_wd + (num_steps * step_size / 2)
     wds = np.linspace(min_wd, max_wd, num_steps + 1)
+    # define working distance range
+    min_wd = current_wd - (num_steps * step_size / 2)
+    max_wd = current_wd + (num_steps * step_size / 2)
+    wds = np.linspace(min_wd, max_wd, num_steps + 1)
 
+    # loop through working distances and calculate the sharpness (acutance)
+    # highest acutance is best focus
+    metrics = []
+    for i, wd in enumerate(wds):
     # loop through working distances and calculate the sharpness (acutance)
     # highest acutance is best focus
     metrics = []
@@ -70,22 +113,40 @@ def auto_focus_beam(
 
         logging.info(f"image {i}: {wd:.2e}")
         microscope.set("working_distance", wd, beam_type)
+        logging.info(f"image {i}: {wd:.2e}")
+        microscope.set("working_distance", wd, beam_type)
 
+        focus_image_settings.label = f"{utils.current_timestamp()}_sharpness_{i}"
+        img = acquire.new_image(microscope, focus_image_settings)
         focus_image_settings.label = f"{utils.current_timestamp()}_sharpness_{i}"
         img = acquire.new_image(microscope, focus_image_settings)
 
         # calculate focus metric 
         metric = metric_fn(img, **kwargs)
         metrics.append(metric)
+        # calculate focus metric 
+        metric = metric_fn(img, **kwargs)
+        metrics.append(metric)
 
+    # select working distance with highest metric
+    idx = np.argmax(metrics)
     # select working distance with highest metric
     idx = np.argmax(metrics)
 
     if verbose:
         pairs = list(zip(wds, metrics))
+    if verbose:
+        pairs = list(zip(wds, metrics))
         logging.info([f"{wd:.2e}: {metric:.4f}" for wd, metric in pairs])
         logging.info(f"{idx}, {wds[idx]:.2e}, {metrics[idx]:.4f}")
+        logging.info(f"{idx}, {wds[idx]:.2e}, {metrics[idx]:.4f}")
 
+    # set working distance
+    microscope.set(
+        key="working_distance",
+        value=wds[idx],
+        beam_type=beam_type,
+    )
     # set working distance
     microscope.set(
         key="working_distance",

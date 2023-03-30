@@ -123,6 +123,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.ib_layer = layer
         
 
+        layer = self.viewer.layers[name]
+        if self.eb_layer is None and name == BeamType.ELECTRON.name:
+            self.eb_layer = layer
+        if self.ib_layer is None and name == BeamType.ION.name:
+            self.ib_layer = layer
+        
+
+
         # centre the camera
         if self.eb_layer:
             self.viewer.camera.center = [
@@ -184,6 +192,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             beam_type, image = None, None
 
         return coords, beam_type, image
+    
+    def closeEvent(self, event):
+        self.viewer.layers.clear()
+        event.accept()
+
     
     def closeEvent(self, event):
         self.viewer.layers.clear()
