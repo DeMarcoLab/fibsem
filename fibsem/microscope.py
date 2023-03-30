@@ -234,6 +234,14 @@ class FibsemMicroscope(ABC):
     @abstractmethod
     def get(self, key:str, beam_type: BeamType = None):
         pass
+    
+    @abstractmethod
+    def get_beam_settings(self, beam_type: BeamType = None) -> BeamSettings:
+        pass
+
+    @abstractmethod
+    def get_detector_settings(self, beam_type: BeamType = None) -> FibsemDetectorSettings:
+        pass
 
     @abstractmethod
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
@@ -1576,6 +1584,55 @@ class ThermoMicroscope(FibsemMicroscope):
             values = self.connection.detector.mode.available_values
 
         return values
+
+    def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:
+        """Get the current beam settings for the specified beam type.
+
+        Args:
+            beam_type (BeamType, optional): The beam type to get the settings for. Defaults to BeamType.ELECTRON.
+
+        Returns:
+            BeamSettings: A `BeamSettings` object containing the current beam settings.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Getting {beam_type.value} beam settings...")
+        beam_settings = BeamSettings(
+            beam_type=beam_type,
+            working_distance=self.get("working_distance", beam_type),
+            beam_current=self.get("current", beam_type),
+            voltage=self.get("voltage", beam_type),
+            hfw=self.get("hfw", beam_type),
+            resolution=self.connection.beams.electron_beam.scanning.resolution.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.resolution.value,
+            dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.dwell_time.value,
+            stigmation=self.get("stigmation", beam_type),
+            beam_shift=self.get("shift", beam_type),
+        )
+
+        return beam_settings
+    
+    def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
+        """Get the current detector settings for the specified beam type.
+
+        Args:
+            beam_type (BeamType, optional): The beam type to get the settings for. Defaults to BeamType.ELECTRON.
+
+        Returns:
+            FibsemDetectorSettings: A `FibsemDetectorSettings` object containing the current detector settings.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Getting {beam_type.value} detector settings...")
+        detector_settings = FibsemDetectorSettings(
+            type=self.get("detector_type", beam_type),
+            mode=self.get("detector_mode", beam_type),
+            brightness=self.get("detector_brightness", beam_type),
+            contrast=self.get("detector_contrast", beam_type),
+        )
+
+        return detector_settings
 
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
         
@@ -3255,7 +3312,36 @@ class TescanMicroscope(FibsemMicroscope):
 
         return values
 
+    def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:
+        """Get the current beam settings for the microscope.
 
+        """
+        beam_settings = BeamSettings(
+            beam_type=beam_type,
+            beam_current=self.get("current", beam_type),
+            working_distance=self.get("working_distance", beam_type),
+            hfw=self.get("hfw", beam_type),
+            stigmation=self.get("stigmation", beam_type),
+            shift=self.get("shift", beam_type),
+            resolution=self.last_image(beam_type).metadata.image_settings.resolution,
+            voltage=self.get("voltage", beam_type),
+            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time
+        )
+
+        return beam_settings
+    
+    def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
+        """Get the current detector settings for the microscope.
+
+        """
+        detector_settings = FibsemDetectorSettings(
+            type = self.get("detector_type", beam_type),
+            mode = self.get("detector_mode", beam_type),
+            brightness= self.get("detector_brightness", beam_type),
+            contrast= self.get("detector_contrast", beam_type),
+        )
+
+        return detector_settings
     
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
 
@@ -3738,6 +3824,29 @@ class DemoMicroscope(FibsemMicroscope):
             values = ["SecondaryElectrons", "BackscatteredElectrons", "EDS"]
 
         return values
+
+    def get_beam_settings(self, beam_type: BeamType) -> BeamSettings:
+        beam_settings = BeamSettings(
+            beam_type=beam_type,
+            voltage=self.get("voltage", beam_type),
+            beam_current=self.get("current", beam_type),
+            working_distance=self.get("working_distance", beam_type),
+            hfw=self.get("hfw", beam_type),
+            stigmation=self.get("stigmation", beam_type),
+            shift=self.get("shift", beam_type),
+            resolution=self.get("resolution", beam_type),
+            dwell_time=self.get("dwell_time", beam_type),
+        )
+        return beam_settings
+    
+    def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
+        detector_settings = FibsemDetectorSettings(
+            dtype=self.get("detector_type", beam_type),
+            mode=self.get("detector_mode", beam_type),
+            brightness=self.get("detector_brightness", beam_type),
+            contrast=self.get("detector_contrast", beam_type),
+        )
+        return detector_settings
 
     def get(self, key, beam_type: BeamType = None) -> float:
         logging.info(f"Getting {key} ({beam_type})")
