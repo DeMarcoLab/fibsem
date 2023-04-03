@@ -2759,9 +2759,85 @@ class TescanMicroscope(FibsemMicroscope):
 
         self.connection.Nanomanipulator.MoveTo(Index=index, X=x, Y=y, Z=z, Rot=r)
     
-    def move_manipulator_corrected(self):
+    def _x_corrected_needle_movement(self, expected_x: float) -> FibsemManipulatorPosition:
+        """Calculate the corrected needle movement to move in the x-axis.
+
+        Args:
+            expected_x (float): distance along the x-axis (image coordinates)
+        Returns:
+            FibsemManipulatorPosition: x-corrected needle movement (relative position)
+        """
+        return FibsemManipulatorPosition(x=expected_x, y=0, z=0)  # no adjustment needed
+
+
+    def _y_corrected_needle_movement(self, 
+        expected_y: float, stage_tilt: float
+    ) -> FibsemManipulatorPosition:
+        """Calculate the corrected needle movement to move in the y-axis.
+
+        Args:
+            expected_y (float): distance along the y-axis (image coordinates)
+            stage_tilt (float, optional): stage tilt.
+
+        Returns:
+            FibsemManipulatorPosition: y-corrected needle movement (relative position)
+        """
+        y_move = +np.cos(stage_tilt) * expected_y
+        z_move = +np.sin(stage_tilt) * expected_y
+        return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
+
+
+    def _z_corrected_needle_movement(self, 
+        expected_z: float, stage_tilt: float
+    ) -> FibsemManipulatorPosition:
+        """Calculate the corrected needle movement to move in the z-axis.
+
+        Args:
+            expected_z (float): distance along the z-axis (image coordinates)
+            stage_tilt (float, optional): stage tilt.
+
+        Returns:
+            FibsemManipulatorPosition: z-corrected needle movement (relative position)
+        """
+        y_move = -np.sin(stage_tilt) * expected_z
+        z_move = +np.cos(stage_tilt) * expected_z
+        return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
+
+    def move_manipulator_corrected(self, 
+        dx: float,
+        dy: float,
+        beam_type: BeamType = BeamType.ELECTRON,
+    ) -> None:
+        """Calculate the required corrected needle movements based on the BeamType to move in the desired image coordinates.
+        Then move the needle relatively.
+
+        BeamType.ELECTRON:  move in x, y (raw coordinates)
+        BeamType.ION:       move in x, z (raw coordinates)
+
+        Args:
+            microscope (SdbMicroscopeClient): autoScript microscope instance
+            dx (float): distance along the x-axis (image coordinates)
+            dy (float): distance along the y-axis (image corodinates)
+            beam_type (BeamType, optional): the beam type to move in. Defaults to BeamType.ELECTRON.
+        """
         _check_needle(self.hardware_settings)
-        pass
+        stage_tilt = self.get_stage_position().t
+
+        # xy
+        if beam_type is BeamType.ELECTRON:
+            x_move = self._x_corrected_needle_movement(expected_x=dx)
+            yz_move = self._y_corrected_needle_movement(dy, stage_tilt=stage_tilt)
+
+        # xz,
+        if beam_type is BeamType.ION:
+
+            x_move = self._x_corrected_needle_movement(expected_x=dx)
+            yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
+
+        # move needle (relative)
+        self.connection.Nanomanipulator.MoveTo(Index=0, X=x_move, Y=yz_move.y, Z=yz_move.z)
+
+        return
     
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
         _check_needle(self.hardware_settings)
