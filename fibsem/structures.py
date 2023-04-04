@@ -39,10 +39,10 @@ class Point:
     x: float = 0.0
     y: float = 0.0
 
-    def __post_init__(self):
+    # def __post_init__(self):
 
-        assert isinstance(self.x,float) or isinstance(self.x,int), f'Invalid type {type(self.x)} for point'
-        assert isinstance(self.y,float) or isinstance(self.y,int), f'Invalid type {type(self.y)} for point'
+    #     assert isinstance(self.x,float) or isinstance(self.x,int), f'Invalid type {type(self.x)} for point'
+    #     assert isinstance(self.y,float) or isinstance(self.y,int), f'Invalid type {type(self.y)} for point'
         
 
 
@@ -53,8 +53,8 @@ class Point:
     def __from_dict__(d: dict) -> "Point":
         x = float(d["x"])
         y = float(d["y"])
-        assert isinstance(x,float) or x is None, f'Invalid type {type(x)} for point'
-        assert isinstance(y,float) or y is None, f'Invalid type {type(y)} for point'
+        # assert isinstance(x,float) or x is None, f'Invalid type {type(x)} for point'
+        # assert isinstance(y,float) or y is None, f'Invalid type {type(y)} for point'
         return Point(x, y)
         
 
@@ -65,8 +65,8 @@ class Point:
     def __from_list__(l: list) -> "Point":
         x = float(l[0])
         y = float(l[1])
-        assert isinstance(x,float) or x is None, f"Invalid type {type(x)} for point"
-        assert isinstance(y,float) or y is None, f'invalid type {type(y)} for point'
+        # assert isinstance(x,float) or x is None, f"Invalid type {type(x)} for point"
+        # assert isinstance(y,float) or y is None, f'invalid type {type(y)} for point'
         return Point(x, y)
     
     def __add__(self, other) -> 'Point':
