@@ -4,10 +4,8 @@
 name: Python package
 
 on:
-  push:
-    branches: [ "v0.2-stable" ]
   pull_request:
-    branches: [ "v0.2-dev" ]
+    branches: [ "v0.2-stable" ]
 
 jobs:
   build:
