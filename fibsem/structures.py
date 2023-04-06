@@ -950,7 +950,7 @@ def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
     for attribute in attributes:
         assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
 
-    assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
+    #assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
 
     stage_position_dict = {
         "x": stage_position.x,
