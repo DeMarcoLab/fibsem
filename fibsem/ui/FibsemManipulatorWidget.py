@@ -47,7 +47,8 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
     def setup_connections(self):
 
         self.movetoposition_button.clicked.connect(self.move_to_position)
-
+        self.insertManipulator_button.clicked.connect(self.insert_manipulator)
+        self.retractManipulator_button.clicked.connect(self.retract_manipulator)
 
 
     def move_to_position(self):
@@ -66,6 +67,20 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             ## how to show napari error message?
             logging.error(e)
             self.update_ui()
+
+    def retract_manipulator(self):
+
+        self.microscope.retract_manipulator()
+        self.update_ui()
+
+    def insert_manipulator(self):
+
+        self.microscope.insert_manipulator()
+        self.update_ui()
+
+
+
+
 def main():
 
     viewer = napari.Viewer(ndisplay=2)
