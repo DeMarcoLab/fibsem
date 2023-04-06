@@ -86,24 +86,6 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="imaging">
-       <attribute name="title">
-        <string>Image</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_imaging_tab"/>
-      </widget>
-      <widget class="QWidget" name="movement">
-       <attribute name="title">
-        <string>Movement</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_movement_tab"/>
-      </widget>
-      <widget class="QWidget" name="milling">
-       <attribute name="title">
-        <string>Milling</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_milling_tab"/>
-      </widget>
      </widget>
     </item>
     <item row="0" column="0">
@@ -128,7 +110,7 @@
      <x>0</x>
      <y>0</y>
      <width>568</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>
