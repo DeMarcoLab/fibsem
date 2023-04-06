@@ -154,8 +154,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.detector_type_combobox.setCurrentText(detector_settings.type)
         self.detector_mode_combobox.setCurrentText(detector_settings.mode)
-        self.detector_contrast_slider.setValue(detector_settings.contrast*100)
-        self.detector_brightness_slider.setValue(detector_settings.brightness*100)
+        self.detector_contrast_slider.setValue(int(detector_settings.contrast*100))
+        self.detector_brightness_slider.setValue(int(detector_settings.brightness*100))
         self.beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
         self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
         if beam_settings.working_distance is not None:
