@@ -7,6 +7,7 @@ from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
+from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 
@@ -35,6 +36,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
+        self.GIS_widget: FibsemGISWidget = None
 
 
         self.update_ui()
@@ -52,6 +54,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setTabVisible(2, _microscope_connected)
         self.tabWidget.setTabVisible(3, _microscope_connected)
         self.tabWidget.setTabVisible(4, _microscope_connected)
+        self.tabWidget.setTabVisible(5, _microscope_connected)
 
         if _microscope_connected:
             self.pushButton.setStyleSheet("background-color: green")
@@ -119,12 +122,19 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
+            self.GIS_widget = FibsemGISWidget(
+                microscope=self.microscope,
+                settings=self.settings,
+                viewer=self.viewer,
+                image_widget=self.image_widget,
+            )
 
             # add widgets to tabs
             self.tabWidget.addTab(self.image_widget, "Image")
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
+            self.tabWidget.addTab(self.GIS_widget, "GIS")
 
 
         else:
@@ -132,7 +142,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 return
             
             # remove tabs
-            # self.tabWidget.removeTab(4)
+            self.tabWidget.removeTab(5)
+            self.tabWidget.removeTab(4)
             self.tabWidget.removeTab(3)
             self.tabWidget.removeTab(2)
             self.tabWidget.removeTab(1)
@@ -142,6 +153,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
             self.manipulator_widget.deleteLater()
+            self.GIS_widget.deleteLater()
 
 
 def main():
