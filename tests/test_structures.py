@@ -279,7 +279,7 @@ def test_manipulator_position():
         "z": 3,
         "r": 0.0012,
         "t": 0,
-        "coordinate_system":None
+        "coordinate_system": "RAW"
     }
 
     fmp_from_dict = structures.FibsemManipulatorPosition.__from_dict__(new_dict)
@@ -523,15 +523,15 @@ def test_beam_settings():
 def test_MicroscopeState():
     from datetime import datetime
 
-    eb_settings = structures.BeamSettings(beam_type=structures.BeamType.ELECTRON)
-    ib_settings = structures.BeamSettings(beam_type=structures.BeamType.ION)
-
-
-    attributes = {
-        "timestamp": datetime.timestamp(datetime.now()),
-        "absolute_position": {"x":0,"y":0,"z":0,"r":0,"t":0,"coordinate_system":None},
-        "eb_settings": eb_settings.__to_dict__(),
-        "ib_settings": ib_settings.__to_dict__()
+def test_stage_position_from_dict():
+    
+    stage_position_dict = {
+        "x": 1,
+        "y": 2,
+        "z": 3,
+        "r": 4,
+        "t": 5,
+        "coordinate_system": "RAW"
     }
 
     new_microscopeState = structures.MicroscopeState.__from_dict__(attributes)
@@ -688,23 +688,23 @@ def test_detector_settings(fake_detector_settings):
 
         bad_fb_detector_settings = structures.FibsemDetectorSettings(type=True,brightness="1.234",contrast=[1,23])
 
-    
-        
-def test_fibsem_state(fake_eb_settings, fake_ib_settings):
-    
-    state = structures.FibsemState(
-        stage= structures.FibsemStage.Base,
-        microscope_state = structures.MicroscopeState(
-        timestamp=0.0,
-        absolute_position=structures.FibsemStagePosition(0,0,0,0,0),
-        eb_settings=fake_eb_settings,
-        ib_settings=fake_ib_settings,
-        ),
-        start_timestamp = 0.0,
-        end_timestamp = 0.0,
-        )
-    
-    to_dict = state.__to_dict__()
+    assert point.x == point_list[0]
+    assert point.y == point_list[1]
+
+
+@pytest.fixture
+def fibsem_stage_position() -> FibsemStagePosition:
+
+    stage_position = FibsemStagePosition(
+        x=1.0,
+        y=2.0,
+        z=3.0,
+        r=4.0,
+        t=5.0,
+        coordinate_system="RAW"
+    )
+
+    return stage_position
 
     assert to_dict["stage"] == "Base"
     assert to_dict["microscope_state"]["timestamp"] == 0.0
