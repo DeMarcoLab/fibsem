@@ -2766,7 +2766,14 @@ class TescanMicroscope(FibsemMicroscope):
 
         logging.info(f"moving manipulator to {position}")
 
-        self.connection.Nanomanipulator.MoveTo(Index=index, X=x, Y=y, Z=z, Rot=r)
+        try:
+            self.connection.Nanomanipulator.MoveTo(Index=index, X=x, Y=y, Z=z, Rot=r)
+        except Exception as e:
+            logging.error(e)
+            return e
+            
+    
+
     
     def _x_corrected_needle_movement(self, expected_x: float) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the x-axis.

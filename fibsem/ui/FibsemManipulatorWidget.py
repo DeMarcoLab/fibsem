@@ -31,6 +31,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.viewer = viewer
         self.image_widget = image_widget
         self.saved_positions = {}
+        self.manipulator_inserted = False
 
         self.setup_connections()
 
@@ -46,12 +47,10 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.rotationCoordinate_spinbox.setValue(manipulator_position.r * constants.RADIANS_TO_DEGREES)
         self.tiltCoordinate_spinbox.setValue(manipulator_position.t * constants.RADIANS_TO_DEGREES)
 
-
     def setup_connections(self):
 
         self.movetoposition_button.clicked.connect(self.move_to_position)
-        self.insertManipulator_button.clicked.connect(self.insert_manipulator)
-        self.retractManipulator_button.clicked.connect(self.retract_manipulator)
+        self.insertManipulator_button.clicked.connect(self.insert_retract_manipulator)
         self.addSavedPosition_button.clicked.connect(self.add_saved_position)
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
 
@@ -66,19 +65,16 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
         position = FibsemManipulatorPosition(x=x,y=y,z=z,r=r,t=t)
 
-        try: 
-            self.microscope.move_manipulator_absolute(position=position)
-        except Exception as e:
+         
+        e = self.microscope.move_manipulator_absolute(position=position)
+        if e is not None:
             ## how to show napari error message?
-            logging.error(e)
+            error_message = f"Error moving manipulator: {str(e)}"
+
+            napari.utils.notifications.show_error(error_message)
             self.update_ui()
 
-    def retract_manipulator(self):
-
-        self.microscope.retract_manipulator()
-        self.update_ui()
-
-    def insert_manipulator(self):
+    def insert_retract_manipulator(self):
 
         self.microscope.insert_manipulator()
         self.update_ui()
