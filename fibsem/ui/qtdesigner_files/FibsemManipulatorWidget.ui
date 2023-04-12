@@ -39,14 +39,20 @@
        <number>4</number>
       </property>
       <property name="minimum">
-       <double>-99.000000000000000</double>
+       <double>-1000.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>1000.000000000000000</double>
       </property>
      </widget>
     </item>
     <item row="5" column="2">
      <widget class="QDoubleSpinBox" name="rotationCoordinate_spinbox">
       <property name="minimum">
-       <double>-99.000000000000000</double>
+       <double>-360.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>360.000000000000000</double>
       </property>
      </widget>
     </item>
@@ -63,7 +69,10 @@
        <number>4</number>
       </property>
       <property name="minimum">
-       <double>-99.000000000000000</double>
+       <double>-1000.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>1000.000000000000000</double>
       </property>
      </widget>
     </item>
@@ -94,14 +103,20 @@
        <number>4</number>
       </property>
       <property name="minimum">
-       <double>-99.000000000000000</double>
+       <double>-1000.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>1000.000000000000000</double>
       </property>
      </widget>
     </item>
     <item row="6" column="2">
      <widget class="QDoubleSpinBox" name="tiltCoordinate_spinbox">
       <property name="minimum">
-       <double>-99.000000000000000</double>
+       <double>-360.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>360.000000000000000</double>
       </property>
      </widget>
     </item>
