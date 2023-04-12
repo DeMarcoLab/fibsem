@@ -178,7 +178,7 @@ Methods:
                 z=position.z, # * np.cos(stage_tilt),
                 r=position.r,
                 t=position.t,
-                coordinate_system=position.coordinate_system,
+                coordinate_system=position.coordinate_system.upper(),
             )
 
     if TESCAN:
@@ -325,7 +325,7 @@ Methods:
         position_dict["z"] = self.z
         position_dict["r"] = self.r
         position_dict["t"] = self.t
-        position_dict["coordinate_system"] = self.coordinate_system
+        position_dict["coordinate_system"] = self.coordinate_system.upper()
 
         return position_dict
     
@@ -357,7 +357,7 @@ Methods:
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    coordinate_system=self.coordinate_system,
+                    coordinate_system=self.coordinate_system.upper(),
                 )
     
             @classmethod
@@ -366,7 +366,7 @@ Methods:
                     x=position.x,
                     y=position.y,
                     z=position.z,
-                    coordinate_system=position.coordinate_system,
+                    coordinate_system=position.coordinate_system.upper(),
                 )
             
 
