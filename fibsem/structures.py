@@ -307,7 +307,7 @@ Methods:
     z: float = 0.0
     r: float = 0.0
     t: float = 0.0
-    coordinate_system: str = None
+    coordinate_system: str = "RAW"
 
     def __post_init__(self):
 
@@ -353,11 +353,15 @@ Methods:
     if THERMO:
             
             def to_autoscript_position(self) -> ManipulatorPosition:
+                if self.coordinate_system == "RAW":
+                    coordinate_system = "Raw"
+                elif self.coordinate_system == "STAGE":
+                    coordinate_system = "Stage"
                 return ManipulatorPosition(
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    coordinate_system=self.coordinate_system.upper(),
+                    coordinate_system=coordinate_system,
                 )
     
             @classmethod

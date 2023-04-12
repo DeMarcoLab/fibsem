@@ -2722,16 +2722,22 @@ class TescanMicroscope(FibsemMicroscope):
 
     def insert_manipulator(self, name: str = "PARK"):
         _check_needle(self.hardware_settings)
+        raise NotImplementedError("TESCAN API does not support manipulator insertion.")
         pass
 
     
     def retract_manipulator(self):
         _check_needle(self.hardware_settings)
+        raise NotImplementedError("TESCAN API does not support manipulator retraction.")
         pass
 
     
     def move_manipulator_relative(self,position: FibsemManipulatorPosition, name: str = None):
         _check_needle(self.hardware_settings)
+        if self.connection.Nanomanipulator.IsCalibrated(0) == False:
+            logging.info("Calibrating manipulator")
+            self.connection.Nanomanipulator.Calibrate(0)
+
         current_position = self.get_manipulator_position()
         
         x = (current_position.x + position.x)*constants.METRE_TO_MILLIMETRE
@@ -2748,6 +2754,9 @@ class TescanMicroscope(FibsemMicroscope):
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition, name: str = None):
         _check_needle(self.hardware_settings)
+        if self.connection.Nanomanipulator.IsCalibrated(0) == False:
+            logging.info("Calibrating manipulator")
+            self.connection.Nanomanipulator.Calibrate(0)
         
         x = position.x*constants.METRE_TO_MILLIMETRE
         y = position.y*constants.METRE_TO_MILLIMETRE
@@ -2821,6 +2830,9 @@ class TescanMicroscope(FibsemMicroscope):
             beam_type (BeamType, optional): the beam type to move in. Defaults to BeamType.ELECTRON.
         """
         _check_needle(self.hardware_settings)
+        if self.connection.Nanomanipulator.IsCalibrated(0) == False:
+            logging.info("Calibrating manipulator")
+            self.connection.Nanomanipulator.Calibrate(0)
         stage_tilt = self.get_stage_position().t
 
         # xy
@@ -2841,6 +2853,7 @@ class TescanMicroscope(FibsemMicroscope):
     
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
         _check_needle(self.hardware_settings)
+        raise NotImplementedError("Not supported by TESCAN API")
         pass
 
     def _get_saved_manipulator_position(self):

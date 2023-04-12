@@ -4,12 +4,14 @@ import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (MicroscopeSettings, FibsemManipulatorPosition)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemManipulatorWidget
+from fibsem.ui.utils import message_box_ui
 
 
 class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget):
@@ -28,6 +30,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.settings = settings
         self.viewer = viewer
         self.image_widget = image_widget
+        self.saved_positions = {}
 
         self.setup_connections()
 
@@ -49,6 +52,8 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.movetoposition_button.clicked.connect(self.move_to_position)
         self.insertManipulator_button.clicked.connect(self.insert_manipulator)
         self.retractManipulator_button.clicked.connect(self.retract_manipulator)
+        self.addSavedPosition_button.clicked.connect(self.add_saved_position)
+        self.goToPosition_button.clicked.connect(self.move_to_saved_position)
 
 
     def move_to_position(self):
@@ -78,6 +83,34 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.microscope.insert_manipulator()
         self.update_ui()
 
+    def add_saved_position(self):
+        if self.savedPositionName_lineEdit.text() == "":
+            _ = message_box_ui(
+                title="No name.",
+                text="Please enter a position name.",
+                buttons=QMessageBox.Ok,
+            )
+            return
+        name = self.savedPositionName_lineEdit.text()
+        position = FibsemManipulatorPosition(
+            x=self.xCoordinate_spinbox.value() * constants.MILLI_TO_SI,
+            y=self.yCoordinate_spinbox.value() * constants.MILLI_TO_SI,
+            z=self.zCoordinate_spinbox.value() * constants.MILLI_TO_SI,
+            r=self.rotationCoordinate_spinbox.value() * constants.DEGREES_TO_RADIANS,
+            t=self.tiltCoordinate_spinbox.value() * constants.DEGREES_TO_RADIANS,
+            coordinate_system='STAGE'
+        )
+        self.saved_positions[name] = position
+        logging.info(f"Saved position {name} at {position}")
+        self.savedPosition_combobox.addItem(name)
+        self.savedPositionName_lineEdit.clear()
+
+    def move_to_saved_position(self):
+        name = self.savedPosition_combobox.currentText()
+        position = self.saved_positions[name]
+        logging.info(f"Moving to saved position {name} at {position}")
+        self.microscope.move_manipulator_absolute(position=position)
+        self.update_ui()
 
 
 

@@ -31,7 +31,7 @@
      </widget>
     </item>
     <item row="10" column="2">
-     <widget class="QComboBox" name="insertPosition_combobox"/>
+     <widget class="QComboBox" name="savedPosition_combobox"/>
     </item>
     <item row="4" column="2">
      <widget class="QDoubleSpinBox" name="zCoordinate_spinbox">
@@ -51,7 +51,7 @@
      </widget>
     </item>
     <item row="10" column="1">
-     <widget class="QPushButton" name="pushButton">
+     <widget class="QPushButton" name="goToPosition_button">
       <property name="text">
        <string>Go To Position</string>
       </property>
@@ -106,7 +106,7 @@
      </widget>
     </item>
     <item row="9" column="2">
-     <widget class="QLineEdit" name="lineEdit"/>
+     <widget class="QLineEdit" name="savedPositionName_lineEdit"/>
     </item>
     <item row="1" column="2">
      <widget class="QPushButton" name="retractManipulator_button">
@@ -153,7 +153,7 @@
     <item row="7" column="1" colspan="2">
      <widget class="QPushButton" name="movetoposition_button">
       <property name="text">
-       <string>Move to Position</string>
+       <string>Move</string>
       </property>
      </widget>
     </item>
