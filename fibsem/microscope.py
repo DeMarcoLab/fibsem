@@ -2747,9 +2747,11 @@ class TescanMicroscope(FibsemMicroscope):
         index = 0
 
         logging.info(f"moving manipulator by {position}")
-
-        self.connection.Nanomanipulator.MoveTo(Index=index,X=x, Y=y, Z=z, Rot=r)
-
+        try:
+            self.connection.Nanomanipulator.MoveTo(Index=index,X=x, Y=y, Z=z, Rot=r)
+        except Exception as e:
+            logging.error(e)
+            return e
 
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition, name: str = None):

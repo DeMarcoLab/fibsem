@@ -47,12 +47,19 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.rotationCoordinate_spinbox.setValue(manipulator_position.r * constants.RADIANS_TO_DEGREES)
         self.tiltCoordinate_spinbox.setValue(manipulator_position.t * constants.RADIANS_TO_DEGREES)
 
+        self.dX_spinbox.setValue(0)
+        self.dY_spinbox.setValue(0)
+        self.dZ_spinbox.setValue(0)
+        self.dR_spinbox.setValue(0)
+        self.dT_spinbox.setValue(0)
+
     def setup_connections(self):
 
         self.movetoposition_button.clicked.connect(self.move_to_position)
         self.insertManipulator_button.clicked.connect(self.insert_retract_manipulator)
         self.addSavedPosition_button.clicked.connect(self.add_saved_position)
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
+        self.moveRelative_button.clicked.connect(self.move_relative)
         self.insertManipulator_button.setText("Insert")
 
 
@@ -69,11 +76,29 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
          
         e = self.microscope.move_manipulator_absolute(position=position)
         if e is not None:
-            ## how to show napari error message?
             error_message = f"Error moving manipulator: {str(e)}"
-
             napari.utils.notifications.show_error(error_message)
             self.update_ui()
+
+        self.update_ui()
+
+    def move_relative(self):
+
+        x = self.dX_spinbox.value() * constants.MILLI_TO_SI
+        y = self.dY_spinbox.value() * constants.MILLI_TO_SI
+        z = self.dZ_spinbox.value() * constants.MILLI_TO_SI
+        r = self.dR_spinbox.value() * constants.DEGREES_TO_RADIANS
+        t = self.dT_spinbox.value() * constants.DEGREES_TO_RADIANS
+
+        position = FibsemManipulatorPosition(x=x,y=y,z=z,r=r,t=t)
+
+        e = self.microscope.move_manipulator_relative(position=position)
+        if e is not None:
+            error_message = f"Error moving manipulator: {str(e)}"
+            napari.utils.notifications.show_error(error_message)
+            self.update_ui()
+        
+        self.update_ui()
 
     def insert_retract_manipulator(self):
         
