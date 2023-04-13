@@ -406,6 +406,7 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
     ax[1].imshow(det.mask)
+    plt.imsave("mask.tiff",det.mask)
     ax[1].set_title("Prediction")
     ax[1].plot(
         det.features[0].feature_px.x,
@@ -472,7 +473,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.name is "LamellaCentre" and f2.name is "ImageCentre":
+    if f1.name == "LamellaCentre" and f2.name == "ImageCentre":
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
