@@ -176,6 +176,13 @@
    <item row="11" column="1" colspan="2">
     <widget class="QComboBox" name="comboBox_beam_type"/>
    </item>
+   <item row="13" column="1">
+    <widget class="QCheckBox" name="checkBox_move_features">
+     <property name="text">
+      <string>Move Features</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>

@@ -64,10 +64,11 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         self.pushButton_test_function.setText(f"Move Feature Positions")
-        self.pushButton_test_function.clicked.connect(self.toggle_feature_interaction)
-        self.pushButton_test_function.setEnabled(
-            False
-        )  # disabled until features are loaded
+        self.pushButton_test_function.setVisible(False)
+        self.checkBox_move_features.clicked.connect(self.toggle_feature_interaction)
+        self.checkBox_move_features.setEnabled(False)  # disabled until features are loaded
+
+        self.checkBox_show_mask.setVisible(False)
 
         self.pushButton_load_model.clicked.connect(self.load_model)
 
@@ -88,17 +89,12 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
 
     def toggle_feature_interaction(self):
         if "features" in self.viewer.layers:
-            self.pushButton_test_function.setEnabled(True)
-
-        # change colour of test button between orange and green
-        if self.pushButton_test_function.text() == "Move Feature Positions":
-            self.pushButton_test_function.setText(f"Disable Feature Interaction")
-            self.pushButton_test_function.setStyleSheet("background-color: orange")
+            self.checkBox_move_features.setEnabled(True)
+            
+        if self.checkBox_move_features.isChecked():
             self.viewer.layers.selection.active = self.viewer.layers["features"]
 
         else:
-            self.pushButton_test_function.setText(f"Move Feature Positions")
-            self.pushButton_test_function.setStyleSheet("background-color: gray")
             self.viewer.layers.selection.active = self.viewer.layers["image"]
 
     def run_feature_detection(self):
@@ -130,8 +126,16 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
             f"Model loaded: {os.path.basename(checkpoint)}"
         )
 
-    def load_feature_detection(self):
-        return
+    def load_feature_detection(self, det: DetectedFeatures):
+
+        # load feature detection
+
+        # update ui elements
+        self.comboBox_feature_1.setCurrentText(det.features[0].name)
+        self.comboBox_feature_2.setCurrentText(det.features[1].name)
+
+        # update detected features
+        self.set_detected_features(det)
 
     def test_function(self):
         print("test function....")
@@ -207,6 +211,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer.layers["features"].mouse_drag_callbacks.append(self.point_moved)
 
         self.update_info()
+        self.checkBox_move_features.setChecked(True)
         self.toggle_feature_interaction()
 
         napari.utils.notifications.show_info(f"Features Detected")
@@ -252,7 +257,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         self.detected_features.distance = self.detected_features.features[0].feature_px._distance_to(
             self.detected_features.features[1].feature_px
         )
-
+        self.detected_features.distance = self.detected_features.distance._to_metres(pixel_size = self.detected_features.pixelsize) # TODO: get from metadata)
 
         self._USER_CORRECTED = True
         self.update_info()
@@ -271,8 +276,15 @@ def main():
     # load image
     image = FibsemImage.load(os.path.join(os.path.dirname(detection.__file__), "test_image.tif"))
     
+    # TODO: START_HERE
+    # add load detected feature
+    # convert / add fibsem image and binary masks for detections
+
     det_widget_ui = FibsemDetectionWidgetUI(
-        microscope=microscope, settings=settings, viewer=viewer, image = image)
+        microscope=microscope, 
+        settings=settings, 
+        viewer=viewer, 
+        image = image)
     viewer.window.add_dock_widget(
         det_widget_ui, area="right", add_vertical_stretch=False
     )

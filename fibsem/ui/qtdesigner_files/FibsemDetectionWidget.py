@@ -96,6 +96,9 @@ class Ui_Form(object):
         self.comboBox_beam_type = QtWidgets.QComboBox(Form)
         self.comboBox_beam_type.setObjectName("comboBox_beam_type")
         self.gridLayout.addWidget(self.comboBox_beam_type, 11, 1, 1, 2)
+        self.checkBox_move_features = QtWidgets.QCheckBox(Form)
+        self.checkBox_move_features.setObjectName("checkBox_move_features")
+        self.gridLayout.addWidget(self.checkBox_move_features, 13, 1, 1, 1)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -117,3 +120,4 @@ class Ui_Form(object):
         self.label.setText(_translate("Form", "Segmentation Model"))
         self.label_num_classes.setText(_translate("Form", "No. Classes"))
         self.label_beam_type.setText(_translate("Form", "Beam Type"))
+        self.checkBox_move_features.setText(_translate("Form", "Move Features"))
