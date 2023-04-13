@@ -33,20 +33,6 @@
     <item row="6" column="1">
      <widget class="QDoubleSpinBox" name="hfw_spinbox"/>
     </item>
-    <item row="1" column="0">
-     <widget class="QPushButton" name="insertGIS_button">
-      <property name="text">
-       <string>Insert</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QPushButton" name="retractGIS_button">
-      <property name="text">
-       <string>Retract</string>
-      </property>
-     </widget>
-    </item>
     <item row="2" column="1">
      <widget class="QComboBox" name="position_combobox"/>
     </item>
@@ -104,7 +90,7 @@
     <item row="7" column="1">
      <widget class="QCheckBox" name="checkBox">
       <property name="text">
-       <string>CheckBox</string>
+       <string>Blank Beam</string>
       </property>
      </widget>
     </item>
@@ -112,6 +98,20 @@
      <widget class="QPushButton" name="run_button">
       <property name="text">
        <string>Run</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="insertGIS_button">
+      <property name="text">
+       <string>Insert</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="GIS_insert_status_label">
+      <property name="text">
+       <string/>
       </property>
      </widget>
     </item>
