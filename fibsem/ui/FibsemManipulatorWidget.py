@@ -7,7 +7,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, TescanMicroscope, DemoMicroscope
 from fibsem.structures import (MicroscopeSettings, FibsemManipulatorPosition)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemManipulatorWidget
@@ -31,11 +31,27 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.viewer = viewer
         self.image_widget = image_widget
         self.saved_positions = {}
-        self.manipulator_inserted = False
+        self.manipulator_inserted = False # TODO need to read from microscope if manipulator is inserted or not??
+
 
         self.setup_connections()
 
         self.update_ui()
+
+        _THERMO = isinstance(self.microscope, (ThermoMicroscope,DemoMicroscope))
+        _TESCAN = isinstance(self.microscope, (TescanMicroscope,DemoMicroscope))
+
+        if _THERMO:
+
+            park_position = self.microscope._get_saved_manipulator_position("PARK")
+            eucentric_position = self.microscope._get_saved_manipulator_position("EUCENTRIC")
+            
+            self.saved_positions["PARK"] = park_position
+            self.saved_positions["EUCENTRIC"] = eucentric_position
+
+            self.savedPosition_combobox.addItem("PARK")
+            self.savedPosition_combobox.addItem("EUCENTRIC")
+            
 
     def update_ui(self):
 
@@ -53,6 +69,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.dR_spinbox.setValue(0)
         self.dT_spinbox.setValue(0)
 
+        
     def setup_connections(self):
 
         self.movetoposition_button.clicked.connect(self.move_to_position)
@@ -61,6 +78,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
         self.moveRelative_button.clicked.connect(self.move_relative)
         self.insertManipulator_button.setText("Insert")
+        self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")
 
 
     def move_to_position(self):
@@ -106,6 +124,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
             self.microscope.retract_manipulator()
             self.insertManipulator_button.setText("Insert")
+            self.manipulatorStatus_label.setText("Manipulator Status: Retracted")
             self.update_ui()
             self.manipulator_inserted = False
         
@@ -113,6 +132,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
             self.microscope.insert_manipulator()
             self.insertManipulator_button.setText("Retract")
+            self.manipulatorStatus_label.setText("Manipulator Status: Inserted")
             self.update_ui()
             self.manipulator_inserted = True
 
