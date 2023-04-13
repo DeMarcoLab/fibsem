@@ -208,3 +208,45 @@ def write_data_to_disk(path: Path, detected_features) -> None:
 
     write_data_to_csv(path, info)
 
+from fibsem.detection.detection import DetectedFeatures
+from fibsem import utils
+from fibsem.structures import FibsemImage, Point
+from fibsem import config as cfg 
+import pandas as pd
+def save_data(det: DetectedFeatures, corrected: bool = False) -> None:
+
+    image = det.image
+    image = FibsemImage(image, None)
+    fname = os.path.join(cfg.DATA_PATH, f"{utils.current_timestamp()}.tif")
+    image.save(fname) # type: ignore 
+
+    # save coordinates for testing
+
+    
+    # save the feature_type, feature_px and feature_nm coordinates for each feature into a pandas dataframe
+    feat_list = []
+    for i, feature in enumerate(det.features):
+
+        if feature.feature_m is None:
+            feature.feature_m = Point(0, 0)
+
+        dat = {"feature": feature.name, 
+                        "p.x": feature.feature_px.x, 
+                        "p.y": feature.feature_px.y, 
+                        "m.x": feature.feature_m.x, 
+                        "m.y": feature.feature_m.y, 
+                    "beam_type": "ELECTRON", 
+                    "image": os.path.basename(fname), 
+                    "corrected": corrected} # TODO: beamtype
+        feat_list.append(dat)
+
+    df = pd.DataFrame(feat_list)
+    
+    # save the dataframe to a csv file, append if the file already exists
+    DATAFRAME_PATH = os.path.join(cfg.DATA_PATH, "data.csv")
+    if os.path.exists(DATAFRAME_PATH):
+        df_tmp = pd.read_csv(DATAFRAME_PATH)
+        df = pd.concat([df_tmp, df], axis=0, ignore_index=True)
+    
+    logging.info(f"{df.tail(10)}")
+    df.to_csv(DATAFRAME_PATH, index=False)

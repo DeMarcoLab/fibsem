@@ -3627,10 +3627,12 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Moving manipulator: {position} (Absolute)")
         self.manipulator_position = position
               
-    def move_manipulator_corrected(self, position: FibsemManipulatorPosition, beam_type: BeamType):
+    def move_manipulator_corrected(self, dx: float, dy: float, beam_type: BeamType):
         _check_needle(self.hardware_settings)
-        logging.info(f"Moving manipulator: {position} (Corrected)")
-        self.manipulator_position = position
+        logging.info(f"Moving manipulator: dx={dx:.2e}, dy={dy:.2e}, beam_type = {beam_type.name} (Corrected)")
+        self.manipulator_position.x += dx
+        self.manipulator_position.y += dy
+        
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
         _check_needle(self.hardware_settings)
