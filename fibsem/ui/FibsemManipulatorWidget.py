@@ -41,11 +41,14 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         _THERMO = isinstance(self.microscope, (ThermoMicroscope,DemoMicroscope))
         _TESCAN = isinstance(self.microscope, (TescanMicroscope,DemoMicroscope))
 
+
         if _THERMO:
 
             park_position = self.microscope._get_saved_manipulator_position("PARK")
             eucentric_position = self.microscope._get_saved_manipulator_position("EUCENTRIC")
             
+            # eucentric position is 0,0,0,0,0 ???
+
             self.saved_positions["PARK"] = park_position
             self.saved_positions["EUCENTRIC"] = eucentric_position
 
