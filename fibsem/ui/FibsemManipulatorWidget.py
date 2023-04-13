@@ -53,6 +53,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.insertManipulator_button.clicked.connect(self.insert_retract_manipulator)
         self.addSavedPosition_button.clicked.connect(self.add_saved_position)
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
+        self.insertManipulator_button.setText("Insert")
 
 
     def move_to_position(self):
@@ -75,9 +76,22 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.update_ui()
 
     def insert_retract_manipulator(self):
+        
+        if self.manipulator_inserted:
 
-        self.microscope.insert_manipulator()
-        self.update_ui()
+            self.microscope.retract_manipulator()
+            self.insertManipulator_button.setText("Insert")
+            self.update_ui()
+            self.manipulator_inserted = False
+        
+        else:
+
+            self.microscope.insert_manipulator()
+            self.insertManipulator_button.setText("Retract")
+            self.update_ui()
+            self.manipulator_inserted = True
+
+
 
     def add_saved_position(self):
         if self.savedPositionName_lineEdit.text() == "":

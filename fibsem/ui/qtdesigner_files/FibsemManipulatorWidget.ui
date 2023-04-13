@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>286</width>
-    <height>376</height>
+    <height>479</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,23 +19,55 @@
      <x>0</x>
      <y>0</y>
      <width>281</width>
-     <height>293</height>
+     <height>452</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="10" column="2">
-     <widget class="QComboBox" name="savedPosition_combobox"/>
+    <item row="9" column="2">
+     <widget class="QDoubleSpinBox" name="dX_spinbox"/>
     </item>
-    <item row="4" column="2">
-     <widget class="QDoubleSpinBox" name="zCoordinate_spinbox">
-      <property name="decimals">
-       <number>4</number>
+    <item row="6" column="1">
+     <widget class="QLabel" name="label_movement_stage_tilt">
+      <property name="text">
+       <string>Tilt (deg)</string>
       </property>
-      <property name="minimum">
-       <double>-1000.000000000000000</double>
+     </widget>
+    </item>
+    <item row="9" column="1">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>dX (mm)</string>
       </property>
-      <property name="maximum">
-       <double>1000.000000000000000</double>
+     </widget>
+    </item>
+    <item row="5" column="1">
+     <widget class="QLabel" name="label_movement_stage_rotation">
+      <property name="text">
+       <string>Rotation (deg)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="2">
+     <widget class="QPushButton" name="insertManipulator_button">
+      <property name="text">
+       <string>Insert</string>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="1">
+     <widget class="QLabel" name="label_4">
+      <property name="text">
+       <string>dR (deg)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="13" column="2">
+     <widget class="QDoubleSpinBox" name="dT_spinbox"/>
+    </item>
+    <item row="16" column="1">
+     <widget class="QPushButton" name="goToPosition_button">
+      <property name="text">
+       <string>Go To Position</string>
       </property>
      </widget>
     </item>
@@ -49,10 +81,10 @@
       </property>
      </widget>
     </item>
-    <item row="10" column="1">
-     <widget class="QPushButton" name="goToPosition_button">
+    <item row="7" column="1" colspan="2">
+     <widget class="QPushButton" name="movetoposition_button">
       <property name="text">
-       <string>Go To Position</string>
+       <string>Move</string>
       </property>
      </widget>
     </item>
@@ -69,13 +101,6 @@
       </property>
      </widget>
     </item>
-    <item row="9" column="1">
-     <widget class="QPushButton" name="addSavedPosition_button">
-      <property name="text">
-       <string>Save Position</string>
-      </property>
-     </widget>
-    </item>
     <item row="2" column="1">
      <widget class="QLabel" name="label_movement_stage_x">
       <property name="text">
@@ -83,10 +108,10 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="1">
-     <widget class="QLabel" name="label_movement_stage_z">
+    <item row="3" column="1">
+     <widget class="QLabel" name="label_movement_stage_y">
       <property name="text">
-       <string>Z Coordinate (mm)</string>
+       <string>Y Coordinate (mm)</string>
       </property>
      </widget>
     </item>
@@ -103,58 +128,43 @@
       </property>
      </widget>
     </item>
-    <item row="6" column="2">
-     <widget class="QDoubleSpinBox" name="tiltCoordinate_spinbox">
-      <property name="minimum">
-       <double>-360.000000000000000</double>
-      </property>
-      <property name="maximum">
-       <double>360.000000000000000</double>
-      </property>
-     </widget>
-    </item>
-    <item row="9" column="2">
+    <item row="15" column="2">
      <widget class="QLineEdit" name="savedPositionName_lineEdit"/>
     </item>
-    <item row="3" column="1">
-     <widget class="QLabel" name="label_movement_stage_y">
+    <item row="4" column="1">
+     <widget class="QLabel" name="label_movement_stage_z">
       <property name="text">
-       <string>Y Coordinate (mm)</string>
+       <string>Z Coordinate (mm)</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="1">
-     <widget class="QLabel" name="label_movement_stage_rotation">
-      <property name="text">
-       <string>Rotation (deg)</string>
+    <item row="4" column="2">
+     <widget class="QDoubleSpinBox" name="zCoordinate_spinbox">
+      <property name="decimals">
+       <number>4</number>
+      </property>
+      <property name="minimum">
+       <double>-1000.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>1000.000000000000000</double>
       </property>
      </widget>
     </item>
-    <item row="0" column="1" colspan="2">
-     <widget class="QLabel" name="label_title">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
+    <item row="16" column="2">
+     <widget class="QComboBox" name="savedPosition_combobox"/>
+    </item>
+    <item row="15" column="1">
+     <widget class="QPushButton" name="addSavedPosition_button">
       <property name="text">
-       <string>Manipulator</string>
+       <string>Save Position</string>
       </property>
      </widget>
     </item>
-    <item row="6" column="1">
-     <widget class="QLabel" name="label_movement_stage_tilt">
+    <item row="10" column="1">
+     <widget class="QLabel" name="label_2">
       <property name="text">
-       <string>Tilt (deg)</string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="1" colspan="2">
-     <widget class="QPushButton" name="movetoposition_button">
-      <property name="text">
-       <string>Move</string>
+       <string>dY (mm)</string>
       </property>
      </widget>
     </item>
@@ -171,10 +181,57 @@
       </property>
      </spacer>
     </item>
-    <item row="1" column="1" colspan="2">
-     <widget class="QPushButton" name="insertManipulator_button">
+    <item row="13" column="1">
+     <widget class="QLabel" name="label_5">
       <property name="text">
-       <string>Insert</string>
+       <string>dT (deg)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="2">
+     <widget class="QDoubleSpinBox" name="dZ_spinbox"/>
+    </item>
+    <item row="10" column="2">
+     <widget class="QDoubleSpinBox" name="dY_spinbox"/>
+    </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QLabel" name="label_title">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Manipulator</string>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="1">
+     <widget class="QLabel" name="label_3">
+      <property name="text">
+       <string>dZ (mm)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="2">
+     <widget class="QDoubleSpinBox" name="tiltCoordinate_spinbox">
+      <property name="minimum">
+       <double>-360.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>360.000000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="2">
+     <widget class="QDoubleSpinBox" name="dR_spinbox"/>
+    </item>
+    <item row="14" column="1" colspan="2">
+     <widget class="QPushButton" name="moveRelative_button">
+      <property name="text">
+       <string>Move (Relative)</string>
       </property>
      </widget>
     </item>
