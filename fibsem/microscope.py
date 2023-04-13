@@ -2719,7 +2719,6 @@ class TescanMicroscope(FibsemMicroscope):
 
 
 
-
     def insert_manipulator(self, name: str = "PARK"):
         _check_needle(self.hardware_settings)
         raise NotImplementedError("TESCAN API does not support manipulator insertion.")
@@ -2730,8 +2729,27 @@ class TescanMicroscope(FibsemMicroscope):
         _check_needle(self.hardware_settings)
         raise NotImplementedError("TESCAN API does not support manipulator retraction.")
         pass
-
     
+    def _check_manipulator_limits(self,x,y,z,r):
+
+        limits = self.connection.Nanomanipulator.GetLimits(Index=0,Type=0)
+
+        xmin = limits[0]
+        xmax = limits[1]
+        ymin = limits[2]
+        ymax = limits[3]
+        zmin = limits[4]
+        zmax = limits[5]
+        rmin = limits[6]
+        rmax = limits[7]
+
+        assert x >= xmin and x <= xmax, f"X position {x} is outside of manipulator limits {xmin} to {xmax}"
+        assert y >= ymin and y <= ymax, f"Y position {y} is outside of manipulator limits {ymin} to {ymax}"
+        assert z >= zmin and z <= zmax, f"Z position {z} is outside of manipulator limits {zmin} to {zmax}"
+        assert r >= rmin and r <= rmax, f"R position {r} is outside of manipulator limits {rmin} to {rmax}"
+
+
+
     def move_manipulator_relative(self,position: FibsemManipulatorPosition, name: str = None):
         _check_needle(self.hardware_settings)
         if self.connection.Nanomanipulator.IsCalibrated(0) == False:
@@ -2745,6 +2763,8 @@ class TescanMicroscope(FibsemMicroscope):
         z = (current_position.z + position.z)*constants.METRE_TO_MILLIMETRE
         r = (current_position.r + position.r)*constants.RADIANS_TO_DEGREES
         index = 0
+
+        self._check_manipulator_limits(x,y,z,r)
 
         logging.info(f"moving manipulator by {position}")
         try:
@@ -2765,6 +2785,8 @@ class TescanMicroscope(FibsemMicroscope):
         z = position.z*constants.METRE_TO_MILLIMETRE
         r = position.r*constants.RADIANS_TO_DEGREES
         index = 0
+
+        self._check_manipulator_limits(x,y,z,r)
 
         logging.info(f"moving manipulator to {position}")
 
@@ -4126,3 +4148,4 @@ def _check_sputter(hardware_settings: FibsemHardware):
         raise NotImplementedError("The microscope does not have a GIS system.")
     if hardware_settings.gis_multichem == False:
         raise NotImplementedError("The microscope does not have a multichem system.")
+    
