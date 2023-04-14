@@ -402,6 +402,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def disconnect(self):
         self.connection.disconnect()
+        del self.connection
+        self.connection = None
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 7520) -> None:
@@ -2069,6 +2071,8 @@ class TescanMicroscope(FibsemMicroscope):
 
     def disconnect(self):
         self.connection.Disconnect()
+        del self.connection
+        self.connection = None
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 8300) -> None:
