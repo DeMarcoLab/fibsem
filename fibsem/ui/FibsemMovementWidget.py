@@ -38,7 +38,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         # set ui elements
         self.comboBox_movement_mode.addItems([mode.name for mode in MovementMode])
-        self.comboBox_movement_stage_coordinate_system.addItems(["Specimen", "Raw"])
+        self.comboBox_movement_stage_coordinate_system.addItems(["SPECIMEN", "RAW"])
 
         # buttons
         self.pushButton_move.clicked.connect(self.move_to_position)

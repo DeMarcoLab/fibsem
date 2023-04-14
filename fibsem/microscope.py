@@ -402,6 +402,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def disconnect(self):
         self.connection.disconnect()
+        del self.connection
+        self.connection = None
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 7520) -> None:
@@ -2069,6 +2071,8 @@ class TescanMicroscope(FibsemMicroscope):
 
     def disconnect(self):
         self.connection.Disconnect()
+        del self.connection
+        self.connection = None
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 8300) -> None:
@@ -2835,7 +2839,8 @@ class TescanMicroscope(FibsemMicroscope):
             yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
 
         # move needle (relative)
-        self.connection.Nanomanipulator.MoveTo(Index=0, X=x_move, Y=yz_move.y, Z=yz_move.z)
+        self.connection.Nanomanipulator.MoveTo(Index=0, X=x_move.x, Y=yz_move.y, Z=yz_move.z)
+
 
         return
 

@@ -319,3 +319,12 @@ def _draw_crosshair(arr: np.ndarray, width: float = 0.1) -> np.ndarray:
 
     arr = np.array(im)
     return arr
+
+def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
+
+    icy, icx = resolution[1] // 2, resolution[0] // 2
+
+    cx = int(icx + (centre.x / pixel_size))
+    cy = int(icy - (centre.y / pixel_size))
+    
+    return Point(cx, cy)
