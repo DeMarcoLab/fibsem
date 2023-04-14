@@ -1784,12 +1784,14 @@ class ThermoMicroscope(FibsemMicroscope):
             return
         if key == "shift":
             _check_beam(beam_type, self.hardware_settings)
-            beam.beam_shift.value = value
+            beam.beam_shift.value.x = value.x
+            beam.beam_shift.value.x = value.y
             logging.info(f"{beam_type.name} shift set to {value}.")
             return
         if key == "stigmation":
             _check_beam(beam_type, self.hardware_settings)
-            beam.stigmator.value = value
+            beam.stigmator.value.x = value.x
+            beam.stigmator.value.y = value.y
             logging.info(f"{beam_type.name} stigmation set to {value}.")
             return
 
