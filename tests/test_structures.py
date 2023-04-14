@@ -4,6 +4,7 @@ import os
 import numpy as np
 from pathlib import Path
 
+
 def from_dict(main_object,attributes: dict, answers: dict):
 
     
@@ -367,6 +368,7 @@ def test_image_settings(fake_fibsem_image):
 
     new_image_settings = structures.ImageSettings.__from_dict__(attributes_dict)
 
+
     for attribute in attributes_dict:
 
         output = getattr(new_image_settings,attribute)
@@ -466,6 +468,24 @@ def test_beam_settings():
     assert new_BeamSettings.working_distance == 1.2343
 
 
+    to_dict = new_rect.__to_dict__()
+
+    assert to_dict["left"] == 2.31
+    assert to_dict["top"] == 4.5
+    assert to_dict["width"] == 5
+    assert to_dict["height"] == 1.1
+
+    bad_dict = {"left":1,"top":"a","width":34.4,"height": [1]}
+
+    with pytest.raises(Exception):
+
+        bad_rect = structures.FibsemRectangle.__from_dict__(bad_dict)
+        bad_rect_2 = structures.FibsemRectangle(1,2,"hello",[1,2,3])
+        bad_rect_3 = structures.FibsemRectangle([1,2,3,4])
+
+
+def test_image_settings(fake_fibsem_image):
+
     from_dict(new_BeamSettings,attributes=attributes,answers=answers)
 
     beamsettings_ = structures.BeamSettings(
@@ -523,7 +543,7 @@ def test_beam_settings():
 def test_MicroscopeState():
     from datetime import datetime
 
-def test_stage_position_from_dict():
+
     
     stage_position_dict = {
         "x": 1,
@@ -688,9 +708,10 @@ def test_detector_settings(fake_detector_settings):
 
         bad_fb_detector_settings = structures.FibsemDetectorSettings(type=True,brightness="1.234",contrast=[1,23])
 
-    assert point.x == point_list[0]
-    assert point.y == point_list[1]
 
+    fake_stage_position = structures.FibsemStagePosition(1,2,3,4,5,"RAW")
+
+    fake_stage_position_dict = structures.stage_position_to_dict(fake_stage_position)
 
 @pytest.fixture
 def fibsem_stage_position() -> FibsemStagePosition:
@@ -704,7 +725,8 @@ def fibsem_stage_position() -> FibsemStagePosition:
         coordinate_system="RAW"
     )
 
-    return stage_position
+
+    to_dict(fake_stage_position_dict,answers)
 
     assert to_dict["stage"] == "Base"
     assert to_dict["microscope_state"]["timestamp"] == 0.0
@@ -1018,6 +1040,7 @@ def test_pattern_settings():
         scan_direction = "TopToBottom",
         cleaning_cross_section = False,
     )
+
 
     to_dict = rectangle.__to_dict__()
     assert rectangle.pattern.name == to_dict["pattern"]

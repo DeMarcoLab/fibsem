@@ -2841,6 +2841,7 @@ class TescanMicroscope(FibsemMicroscope):
         # move needle (relative)
         self.connection.Nanomanipulator.MoveTo(Index=0, X=x_move.x, Y=yz_move.y, Z=yz_move.z)
 
+
         return
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
