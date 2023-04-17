@@ -8,8 +8,6 @@ import numpy as np
 import tifffile as tff
 from PyQt5 import QtWidgets
 
-from fibsem import config as cfg
-from fibsem import utils
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
