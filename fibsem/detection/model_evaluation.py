@@ -67,10 +67,13 @@ detection_types = {
     "ImageCentre": ImageCentre(),
 
 }
+i=0
 
 for filename in filenames:
 
     pic = filename.split('\\')[-1][:-4]
+    print(f"{i}/{len(filenames)}")
+    i+=1
 
     if pic in fnames_list:
 
@@ -117,6 +120,54 @@ for filename in filenames:
 
         ML_p2_x.append(convert_p2_x)
         ML_p2_y.append(convert_p2_y)
+
+        plt.imshow(det.image, cmap="gray")
+
+        plt.plot(
+            int(p1_x*res_x),
+            int(p1_y*res_y),
+            color="blue",
+            marker="+",
+            ms=20,
+            label=f"{f1.name} GT",
+        )
+        plt.plot(
+            int(p2_x*res_x),
+            int(p2_y*res_y),
+            color="blue",
+            marker="x",
+            ms=20,
+            label=f"{f2.name} GT",
+        )
+
+
+        plt.plot(
+            f1.feature_px.x,
+            f1.feature_px.y,
+            color="red",
+            marker="+",
+            ms=20,
+            label=f"{f1.name} ML",
+        )
+        plt.plot(
+            f2.feature_px.x,
+            f2.feature_px.y,
+            color="red",
+            marker="x",
+            ms=20,
+            label=f"{f2.name} ML",
+        )
+
+        plt.legend()
+        plt.show()
+       
+        # plt.savefig(r'C:\Users\Rohit\Documents\UNI\DEMARCO\new_eval\label_00\mask.tiff')
+
+        if i == 1:
+            break
+
+
+        
 
 data = {"label":labels_list,"p1.type":p1_type_list,"p1.x":p1_x_list,"p1.y":p1_y_list,"p2.type":p2_type_list,"p2.x":p2_x_list,"p2.y":p2_y_list,"ML_p1.x":ML_p1_x,"ML_p1.y":ML_p1_y,"ML_p2.x":ML_p2_x,"ML_p2.y":ML_p2_y}
 
