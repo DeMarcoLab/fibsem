@@ -791,7 +791,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(
-            z=z_move, coordinate_system="SPECIMEN"
+            z=z_move, coordinate_system="Specimen"
         ).to_autoscript_position()
         self.connection.specimen.stage.relative_move(z_move, move_settings)
         logging.info(f"eucentric movement: {z_move}")
