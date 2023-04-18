@@ -24,9 +24,9 @@ from fibsem import config
 
 ### load evaluation folder 
 
-eval_folder = r'C:\Users\Rohit\Documents\UNI\DEMARCO\new_eval\label_00\{}'
+eval_folder = r'C:\Users\rkan0039\Documents\detection_training\new_eval\label_01\{}'
 
-GT_data_file = r'C:\Users\Rohit\Documents\UNI\DEMARCO\new_eval\label_00\data.csv'
+GT_data_file = r'C:\Users\rkan0039\Documents\detection_training\new_eval\label_01\data.csv'
 
 GT_data = pd.read_csv(GT_data_file)
 
@@ -37,7 +37,7 @@ fnames_list = fnames.to_list()
 # b = GT_data.loc[GT_data["label"]==a]
 # print(b["p1.x"])
 filenames = sorted(glob.glob(eval_folder.format('*.tif')))
-checkpoint = r"C:\Users\Rohit\Documents\UNI\DEMARCO\seg_model_fibsem\model4.pt"
+checkpoint = r"C:\Users\rkan0039\Documents\detection_training\models\model4.pt"
 model = load_model(checkpoint,encoder="resnet34")
 
 ## ML_ evaulations
@@ -121,9 +121,31 @@ for filename in filenames:
         ML_p2_x.append(convert_p2_x)
         ML_p2_y.append(convert_p2_y)
 
-        plt.imshow(det.image, cmap="gray")
+        fig, ax = plt.subplots(1, 2, figsize=(12, 7))
 
-        plt.plot(
+        ax[0].imshow(det.image, cmap="gray")
+        ax[1].imshow(det.mask)
+
+        ax[1].plot(
+            f1.feature_px.x,
+            f1.feature_px.y,
+            color="blue",
+            marker="x",
+            ms=20,
+            label=f"{f1.name} ML"
+        )
+
+        ax[1].plot(
+            f2.feature_px.x,
+            f2.feature_px.y,
+            color="white",
+            marker="x",
+            ms=20,
+            label=f"{f2.name} ML"
+        )
+
+
+        ax[0].plot(
             int(p1_x*res_x),
             int(p1_y*res_y),
             color="blue",
@@ -131,25 +153,26 @@ for filename in filenames:
             ms=20,
             label=f"{f1.name} GT",
         )
-        plt.plot(
-            int(p2_x*res_x),
-            int(p2_y*res_y),
+        
+        ax[0].plot(
+            f1.feature_px.x,
+            f1.feature_px.y,
             color="blue",
             marker="x",
+            ms=20,
+            label=f"{f1.name} ML",
+        )
+
+        ax[0].plot(
+            int(p2_x*res_x),
+            int(p2_y*res_y),
+            color="red",
+            marker="+",
             ms=20,
             label=f"{f2.name} GT",
         )
 
-
-        plt.plot(
-            f1.feature_px.x,
-            f1.feature_px.y,
-            color="red",
-            marker="+",
-            ms=20,
-            label=f"{f1.name} ML",
-        )
-        plt.plot(
+        ax[0].plot(
             f2.feature_px.x,
             f2.feature_px.y,
             color="red",
@@ -158,7 +181,9 @@ for filename in filenames:
             label=f"{f2.name} ML",
         )
 
-        plt.legend()
+        ax[0].legend()
+        ax[1].legend()
+        plt.title(f"{label}")
         plt.show()
        
         # plt.savefig(r'C:\Users\Rohit\Documents\UNI\DEMARCO\new_eval\label_00\mask.tiff')
@@ -173,61 +198,6 @@ data = {"label":labels_list,"p1.type":p1_type_list,"p1.x":p1_x_list,"p1.y":p1_y_
 
 df = pd.DataFrame(data)
 
-df.to_csv(r"C:\Users\Rohit\Documents\UNI\DEMARCO\new_eval\label_00\ML_output.csv")
+# df.to_csv(r"C:\Users\rkan0039\Documents\detection_training\new_eval\label_00\ML_output.csv")
 
 
-
-# p1_type = result_row["p1.type"]
-# p2_type = result_row["p2.type"]
-
-# print(f'label: {f1} p1_type: {p1_type}, p2_type: {p2_type}')
-
-# labels = []
-# p1_type = []
-# p2_type = []
-# p1_x = []
-# p1_y = []
-# p2_x = []
-# p2_y = []
-
-
-# assert len(filenames) > 0
-
-# # model
-
-
-# for i, fname in enumerate(filenames):
-
-#     img = tf.imread(fname)
-
-#     # inference
-#     mask = model.inference(img)
-
-#     # detect features
-#     features = [NeedleTip(), LamellaCentre()]
-
-#     det = locate_shift_between_features_v2(img, model, features=features, pixelsize=10e-9)
-#     label = name = fname.split('\\')[-1][:-4]
-#     labels.append(label)
-
-#     #plot_det_result_EVAL(det,save=True,save_path=save_path)
-#     f1 = det.features[0]
-#     f2 = det.features[1]
-
-#     p1_type.append(f1.name)
-#     p2_type.append(f2.name)
-#     p1_x.append(f1.feature_px.x)
-#     p1_y.append(f1.feature_px.y)
-#     p2_x.append(f2.feature_px.x)
-#     p2_y.append(f2.feature_px.y)
-
-#     print(f"image {(i+1)}/{len(filenames)} Feature: {f1.name}:  x: {f1.feature_px.x}, y: {f1.feature_px.y}  Feature: {f2.name}:  x: {f2.feature_px.x}, y: {f2.feature_px.y}")
-#     data = {"label":labels,"p1_type":p1_type,"p1_x":p1_x,"p1_y":p1_y,"p2_type":p2_type,"p2_x":p2_x,"p2_y":p2_y}
-
-#     if i == 0:
-#         break
-
-
-# df = pd.DataFrame(data)
-
-# df.to_csv(r"C:\Users\Rohit\Documents\UNI\DEMARCO\new_eval\label_00\ML_output.csv")
