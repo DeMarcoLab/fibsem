@@ -3539,6 +3539,7 @@ class TescanMicroscope(FibsemMicroscope):
             _check_beam(beam_type, self.hardware_settings)
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetVoltage(value)
+                logging.info(f"Electron beam voltage set to {value} V.")
             else:
                 logging.info(f"Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
             return
