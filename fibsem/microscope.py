@@ -2416,7 +2416,7 @@ class TescanMicroscope(FibsemMicroscope):
         x, y = beam.GetImageShift()
         dx *=  constants.METRE_TO_MILLIMETRE # Convert to mm from m.
         dy *=  constants.METRE_TO_MILLIMETRE
-        x -= dx # NOTE: Not sure why the dx is -dx, this may be thermo specific and doesn't apply to TESCAN?
+        x += dx 
         y += dy
         beam.SetImageShift(x,y) 
         
@@ -3023,7 +3023,7 @@ class TescanMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         # """
         try:
-            self.connection.DrawBeam.Stop()
+            # self.connection.DrawBeam.Stop()
             self.connection.DrawBeam.UnloadLayer()
             print("hello")
         except:
