@@ -1,9 +1,12 @@
 import logging
+import traceback
 
 import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QTimer
+
 
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
@@ -31,7 +34,11 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget = image_widget
 
         self.setup_connections()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_ui)
+        self.timer.start(1000)
 
+   
         self.update_ui()
 
     def setup_connections(self):
