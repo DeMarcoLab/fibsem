@@ -881,7 +881,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # the amount the stage has to move in each axis
         
         y_move = y_sample_move * np.cos(corrected_pretilt_angle)
-        z_move = y_sample_move * np.sin(corrected_pretilt_angle)
+        z_move = -y_sample_move * np.sin(corrected_pretilt_angle) #TODO: investigate this
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
