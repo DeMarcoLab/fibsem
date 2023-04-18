@@ -2373,7 +2373,8 @@ class TescanMicroscope(FibsemMicroscope):
     def auto_focus(self, beam_type: BeamType) -> None:
         _check_beam(beam_type, self.hardware_settings)
         if beam_type == BeamType.ELECTRON:
-            self.connection.SEM.AutoWD(self.electron_detector_active)
+            logging.info("Running autofocus on electron beam.")
+            self.connection.SEM.AutoWDFine(self.electron_detector_active)
         else:
             logging.info("Auto focus is not supported for ion beam type.")
         return 
@@ -2825,22 +2826,22 @@ class TescanMicroscope(FibsemMicroscope):
             beam_type (BeamType, optional): the beam type to move in. Defaults to BeamType.ELECTRON.
         """
         _check_needle(self.hardware_settings)
-        stage_tilt = self.get_stage_position().t
+        # stage_tilt = self.get_stage_position().t
 
-        # xy
-        if beam_type is BeamType.ELECTRON:
-            x_move = self._x_corrected_needle_movement(expected_x=dx)
-            yz_move = self._y_corrected_needle_movement(dy, stage_tilt=stage_tilt)
+        # # xy
+        # if beam_type is BeamType.ELECTRON:
+        #     x_move = self._x_corrected_needle_movement(expected_x=dx)
+        #     yz_move = self._y_corrected_needle_movement(dy, stage_tilt=stage_tilt)
 
-        # xz,
-        if beam_type is BeamType.ION:
+        # # xz,
+        # if beam_type is BeamType.ION:
 
-            x_move = self._x_corrected_needle_movement(expected_x=dx)
-            yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
+        #     x_move = self._x_corrected_needle_movement(expected_x=dx)
+        #     yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
 
         # move needle (relative)
-        self.connection.Nanomanipulator.MoveTo(Index=0, X=x_move.x, Y=yz_move.y, Z=yz_move.z)
-
+        #self.connection.Nanomanipulator.MoveTo(Index=0, X=x_move.x, Y=yz_move.y, Z=yz_move.z)
+        self.move_manipulator_relative(FibsemManipulatorPosition(x=dx, y=dy, z=0))
 
         return
 
@@ -3136,10 +3137,11 @@ class TescanMicroscope(FibsemMicroscope):
         Raises:
             autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
         """
-        pattern = self.layer.addArcOutline(
+        pattern = self.layer.addAnnulusFilled(
             CenterX=pattern_settings.centre_x,
             CenterY=pattern_settings.centre_y,
-            Radius=pattern_settings.radius,
+            RadiusA=pattern_settings.radius,
+            RadiusB=0,
             Depth=pattern_settings.depth,
         )
 
