@@ -2542,6 +2542,20 @@ class TescanMicroscope(FibsemMicroscope):
         """
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage by {position}.")
+        # current_position = self.get_stage_position()
+        # x2,y2,z2 = self.connection.Stage.KVF.Compute(
+        #     wd= self.get("working_distance", beam_type=BeamType.ELECTRON),
+        #     x1= current_position.x * constants.METRE_TO_MILLIMETRE,
+        #     y1= current_position.y * constants.METRE_TO_MILLIMETRE,
+        #     z1= current_position.z * constants.METRE_TO_MILLIMETRE,
+        #     r1= current_position.r * constants.RADIANS_TO_DEGREES,
+        #     tx1= current_position.t * constants.RADIANS_TO_DEGREES,
+        #     ty1 = 0,
+        #     r2 = position.r * constants.RADIANS_TO_DEGREES + current_position.r * constants.RADIANS_TO_DEGREES,
+        #     tx2 = position.t * constants.RADIANS_TO_DEGREES + current_position.t * constants.RADIANS_TO_DEGREES,
+        #     ty2 = 0,
+        # )
+        # self.move_stage_absolute(FibsemStagePosition(x2,y2,z2))
         current_position = self.get_stage_position()
         x_m = current_position.x
         y_m = current_position.y
@@ -2646,7 +2660,7 @@ class TescanMicroscope(FibsemMicroscope):
         stage_tilt_flat_to_electron = np.deg2rad(
             settings.system.stage.tilt_flat_to_electron
         )
-        # stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
 
         # stage_rotation_flat_to_eb = np.deg2rad(
         #     settings.system.stage.rotation_flat_to_electron
@@ -2670,14 +2684,16 @@ class TescanMicroscope(FibsemMicroscope):
         ):
             PRETILT_SIGN = -1.0
 
-        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt)
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
         
-        y_move = expected_y/np.cos((stage_tilt + corrected_pretilt_angle))
+        perspective_tilt = - corrected_pretilt_angle if beam_type is BeamType.ELECTRON else (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
+
+        y_move = expected_y/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
          
-        z_move = y_move*np.sin((stage_tilt + corrected_pretilt_angle)) 
+        z_move = y_move*np.sin((corrected_pretilt_angle)) 
         print(f'Stage tilt: {stage_tilt}, corrected pretilt: {corrected_pretilt_angle}, y_move: {y_move} z_move: {z_move}')
 
-        return FibsemStagePosition(x=0, y=y_move, z=z_move)
+        return FibsemStagePosition(x=0, y=-y_move, z=z_move)
 
     def move_flat_to_beam(
         self, settings=MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON
