@@ -204,13 +204,17 @@ def write_data_to_disk(path: Path, detected_features) -> None:
     write_data_to_csv(path, info)
 
 
-def save_data(det: DetectedFeatures, corrected: bool = False) -> None:
+def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None) -> None:
 
     image = det.image
     if not isinstance(image, FibsemImage):
         image = FibsemImage(image, None)
-    fname = os.path.join(cfg.DATA_PATH, f"{utils.current_timestamp()}.tif")
+    
+    if fname is None:
+        fname = f"{utils.current_timestamp()}"
+    fname = os.path.join(cfg.DATA_PATH, f"{fname}")
     image.save(fname) # type: ignore 
+    logging.info(f"Saved image to {fname}") # TODO: handle duplicate fname
 
     # save coordinates for testing    
     # save the feature_type, feature_px coordinates for each feature into a pandas dataframe

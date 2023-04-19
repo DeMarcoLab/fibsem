@@ -25,6 +25,8 @@ import logging
 CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
 
 class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
+    continue_signal = pyqtSignal(DetectedFeatures)
+
     def __init__(
         self,
         viewer: napari.Viewer,
@@ -77,8 +79,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.lineEdit_checkpoint.setText(CHECKPOINT_PATH)
         self.spinBox_num_classes.setValue(3)
 
-        # # setup continue signal
-        # self.continue_signal = pyqtSignal(str)
+        self.continue_signal.connect(self.do_something)
 
         self.lineEdit_image_path_folder.setText(f"/home/patrick/github/data/liftout/training/train/images")
         self.label_image_path_num.setText("")
@@ -100,6 +101,11 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.update_image()
     
     def update_image(self):
+
+        # save current data
+        # fname = os.path.basename(self.image_paths[self.idx])
+        det_utils.save_data(det = self.detected_features, corrected=self._USER_CORRECTED, fname=None)
+
         if self.sender() == self.pushButton_previous_image:
             self.idx -= 1
         if self.sender() == self.pushButton_next_image:
@@ -112,10 +118,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
         self.run_feature_detection()
 
-
     def do_something(self, msg):
         print("do_something called")
-        print(msg)
+        # print(msg)
         
 
     def _toggle_ui(self):
@@ -168,8 +173,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         det_utils.save_data(det = self.detected_features, corrected=self._USER_CORRECTED)
 
         # emit signal
-        # self.continue_signal.emit("continue_signal")
-        # print("continue signal emitted")
+        self.continue_signal.emit(self.detected_features)
+        print("continue signal emitted")
 
         if not self._eval_mode:
             self.close()
@@ -338,7 +343,7 @@ def detection_movement(microscope: FibsemMicroscope, settings: MicroscopeSetting
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
  
     features = [detection.NeedleTip(), detection.LamellaCentre()]
-    det = detection_ui(image, model, features, validate=validate, _load_image=True)
+    det = detection_ui(image, model, features, validate=validate)
 
     return det
 
