@@ -23,6 +23,7 @@ from fibsem.ui.qtdesigner_files import FibsemDetectionWidget
 import logging
 
 CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
+CLASS_COLORS = {0: "black", 1: "red", 2: "green", 3: "cyan", 4: "yellow", 5: "magenta", 6: "blue"}
 
 class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
     continue_signal = pyqtSignal(DetectedFeatures)
@@ -43,6 +44,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.image = image
         self.model = model
         self._eval_mode = _eval_mode
+        self.image_paths = None
 
         self.setup_connections()
 
@@ -93,19 +95,40 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.pushButton_previous_image.setVisible(self._eval_mode)
         self.pushButton_next_image.setVisible(self._eval_mode)
         self.label_image_path_num.setVisible(self._eval_mode)
+        self.pushButton_next_image.setVisible(False)
+        self.pushButton_previous_image.setVisible(False)
+        self.label_image_path_num.setVisible(False)
+
+        # TODO: add button to go to idx
 
     def load_image_folder(self):
         folder = self.lineEdit_image_path_folder.text()
         self.image_paths = sorted(list(Path(folder).glob("*.tif")))
         self.idx = 0
         self.update_image()
+        self.pushButton_next_image.setVisible(True)
+        self.pushButton_previous_image.setVisible(True)
+        self.label_image_path_num.setVisible(True)
     
-    def update_image(self):
-
+    def save_data(self):
+        
+        # get the updated mask
+        self.detected_features.mask = self.viewer.layers["mask"].data.astype(np.uint8)
+        
         # save current data
         # fname = os.path.basename(self.image_paths[self.idx])
         det_utils.save_data(det = self.detected_features, corrected=self._USER_CORRECTED, fname=None)
 
+
+    def update_image(self):
+
+        if self.image_paths is None:
+            return
+
+        # save current data
+        self.save_data()
+
+        # update image view
         if self.sender() == self.pushButton_previous_image:
             self.idx -= 1
         if self.sender() == self.pushButton_next_image:
@@ -169,8 +192,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
     def continue_button_clicked(self):
         
-        # save all images and coordinates for testing
-        det_utils.save_data(det = self.detected_features, corrected=self._USER_CORRECTED)
+        # save current data
+        self.save_data()
 
         # emit signal
         self.continue_signal.emit(self.detected_features)
@@ -202,7 +225,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         try:
             self.viewer.layers["mask"].data = self.detected_features.mask
         except:
-            self.viewer.add_image(self.detected_features.mask, name="mask", opacity=0.3)
+            self.viewer.add_labels(self.detected_features.mask, name="mask", opacity=0.3, color=CLASS_COLORS)
 
         # add points to viewer
         data = []

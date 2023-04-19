@@ -216,6 +216,14 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
     image.save(fname) # type: ignore 
     logging.info(f"Saved image to {fname}") # TODO: handle duplicate fname
 
+    # save mask to disk
+    os.makedirs(os.path.join(cfg.DATA_PATH, "mask"), exist_ok=True)
+    mask_fname = os.path.join(cfg.DATA_PATH, "mask", os.path.basename(fname))
+    mask_fname = Path(mask_fname).with_suffix(".tif")
+    im = Image.fromarray(det.mask) 
+    im.save(mask_fname)
+
+
     # save coordinates for testing    
     # save the feature_type, feature_px coordinates for each feature into a pandas dataframe
     feat_list = []
