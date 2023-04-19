@@ -207,11 +207,11 @@ Methods:
     if TESCAN:
 
         def to_tescan_position(self, stage_tilt: float = 0.0):
-            self.y=self.y / np.cos(stage_tilt),
+            self.y=self.y #/ np.cos(stage_tilt),
 
         @classmethod
         def from_tescan_position(self, stage_tilt: float = 0.0):
-            self.y = self.y * np.cos(stage_tilt)
+            self.y = self.y #* np.cos(stage_tilt)
 
 
     def __add__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
@@ -221,6 +221,16 @@ Methods:
             self.z + other.z,
             self.r + other.r,
             self.t + other.t,
+            self.coordinate_system,
+        )
+
+    def __sub__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
+        return FibsemStagePosition(
+            self.x - other.x,
+            self.y - other.y,
+            self.z - other.z,
+            self.r - other.r,
+            self.t - other.t,
             self.coordinate_system,
         )
 
@@ -973,7 +983,7 @@ def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
     for attribute in attributes:
         assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
 
-    assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
+    #assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
 
     stage_position_dict = {
         "x": stage_position.x,

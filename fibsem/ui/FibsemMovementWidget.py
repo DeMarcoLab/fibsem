@@ -1,9 +1,12 @@
 import logging
+import traceback
 
 import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QTimer
+
 
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
@@ -31,14 +34,16 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget = image_widget
 
         self.setup_connections()
+        self.image_widget.picture_signal.connect(self.update_ui)
 
+   
         self.update_ui()
 
     def setup_connections(self):
 
         # set ui elements
         self.comboBox_movement_mode.addItems([mode.name for mode in MovementMode])
-        self.comboBox_movement_stage_coordinate_system.addItems(["Specimen", "Raw"])
+        self.comboBox_movement_stage_coordinate_system.addItems(["SPECIMEN", "RAW"])
 
         # buttons
         self.pushButton_move.clicked.connect(self.move_to_position)

@@ -38,3 +38,5 @@ fibsem/_version.py
 demo_*/*
 scratch/figure/wd*/*
 fibsem/log/data/*
+test_images/test.tif
+

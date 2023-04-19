@@ -41,11 +41,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def setup_connections(self):
 
         self.pushButton.clicked.connect(self.connect_to_microscope)
-
-
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
-
-
 
     def update_ui(self):
 
@@ -115,18 +111,20 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 image_widget=self.image_widget,
             )
 
-            self.gridLayout_imaging_tab.addWidget(self.image_widget, 0, 0)
-            self.gridLayout_movement_tab.addWidget(self.movement_widget, 0, 0)
-            self.gridLayout_milling_tab.addWidget(self.milling_widget, 0, 0)
+            # add widgets to tabs
+            self.tabWidget.addTab(self.image_widget, "Image")
+            self.tabWidget.addTab(self.movement_widget, "Movement")
+            self.tabWidget.addTab(self.milling_widget, "Milling")
 
 
         else:
             if self.image_widget is None:
                 return
             
-            self.gridLayout_imaging_tab.removeWidget(self.image_widget)
-            self.gridLayout_movement_tab.removeWidget(self.movement_widget)
-            self.gridLayout_milling_tab.removeWidget(self.milling_widget)
+            # remove tabs
+            self.tabWidget.removeTab(3)
+            self.tabWidget.removeTab(2)
+            self.tabWidget.removeTab(1)
 
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
