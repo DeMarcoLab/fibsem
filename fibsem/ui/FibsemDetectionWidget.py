@@ -34,6 +34,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         image: FibsemImage,
         detected_features: DetectedFeatures = None,
         model: fibsem_model.SegmentationModel = None,
+        _SEG_MODE: bool = True,
+        _DET_MODE: bool = True,
         _EVAL_MODE: bool = False,
         parent=None,
     ):
@@ -48,6 +50,14 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self._EVAL_MODE = _EVAL_MODE
         self._USER_CORRECTED = False
         self._USE_ALL_FEATURES = False
+
+        self.USE_SEGMENTATION = _SEG_MODE
+        self.USE_FEATURE_DETECTION = _DET_MODE
+        self.USE_EVALUATION = _EVAL_MODE
+
+        self.checkBox_use_segmentation.setChecked(self.USE_SEGMENTATION)
+        self.checkBox_use_feature_detection.setChecked(self.USE_FEATURE_DETECTION)
+        self.checkBox_use_evaluation.setChecked(self.USE_EVALUATION)
 
         self.setup_connections()
 
@@ -66,11 +76,13 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         )
 
         # ui
-        self.checkBox_move_features.clicked.connect(self._toggle_ui)
+        self.checkBox_use_segmentation.stateChanged.connect(self._toggle_ui)
+        self.checkBox_use_feature_detection.stateChanged.connect(self._toggle_ui)
+        self.checkBox_use_evaluation.stateChanged.connect(self._toggle_ui)
+        self.checkBox_move_features.stateChanged.connect(self._toggle_ui)
         self.checkBox_move_features.setEnabled(False)  # disabled until features are loaded
-        self.checkBox_all_features.clicked.connect(self._toggle_ui)
-        self.checkBox_show_info.clicked.connect(self._toggle_ui)
-
+        self.checkBox_all_features.stateChanged.connect(self._toggle_ui)
+        self.checkBox_show_info.stateChanged.connect(self._toggle_ui)
 
         # features
         self.comboBox_feature_1.addItems([f.name for f in detection.__FEATURES__])
@@ -113,6 +125,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
     
     def save_data(self):
 
+        # TODO: if self.USE_FEATURE_DETECTION is False, need to remove the features...
+        
         # get the updated mask
         self.detected_features.mask = self.viewer.layers["mask"].data.astype(np.uint8)
         
@@ -149,15 +163,62 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
     def _toggle_ui(self):
 
-        # info
-        self.label_info.setVisible(self.checkBox_show_info.isChecked())
-        
+        self.USE_SEGMENTATION = self.checkBox_use_segmentation.isChecked()
+        self.USE_FEATURE_DETECTION = self.checkBox_use_feature_detection.isChecked()
+        self.USE_EVALUATION = self.checkBox_use_evaluation.isChecked()
+
+        # hide segmentation if not used
+        self.label_header_model.setVisible(self.USE_SEGMENTATION)
+        self.label_encoder.setVisible(self.USE_SEGMENTATION)
+        self.lineEdit_encoder.setVisible(self.USE_SEGMENTATION)
+        self.label_checkpoint.setVisible(self.USE_SEGMENTATION)
+        self.lineEdit_checkpoint.setVisible(self.USE_SEGMENTATION)
+        self.label_num_classes.setVisible(self.USE_SEGMENTATION)
+        self.spinBox_num_classes.setVisible(self.USE_SEGMENTATION)
+        self.pushButton_load_model.setVisible(self.USE_SEGMENTATION)
+
+        # hide feature detection if not used
+        self.label_header_features.setVisible(self.USE_FEATURE_DETECTION)
+        self.label_feature.setVisible(self.USE_FEATURE_DETECTION)
+        self.comboBox_feature_1.setVisible(self.USE_FEATURE_DETECTION)
+        self.comboBox_feature_2.setVisible(self.USE_FEATURE_DETECTION)
+        self.checkBox_all_features.setVisible(self.USE_FEATURE_DETECTION)
+        self.checkBox_move_features.setVisible(self.USE_FEATURE_DETECTION)
+        self.checkBox_show_info.setVisible(self.USE_FEATURE_DETECTION)
+        # self.pushButton_run_feature_detection.setVisible(self.USE_FEATURE_DETECTION)
+
+
+        # hide evaluation if not used
+        self.label_header_evalulation.setVisible(self.USE_EVALUATION)
+        self.label_dataset.setVisible(self.USE_EVALUATION)
+        self.lineEdit_image_path_folder.setVisible(self.USE_EVALUATION)
+        self.pushButton_load_images.setVisible(self.USE_EVALUATION)
+        self.pushButton_previous_image.setVisible(self.USE_EVALUATION)
+        self.pushButton_next_image.setVisible(self.USE_EVALUATION)
+        self.label_image_path_num.setVisible(self.USE_EVALUATION)
+
+        if self.USE_SEGMENTATION:
+            self.pushButton_run_feature_detection.setText("Run Segmentation")
+
+        if self.USE_FEATURE_DETECTION:
+            self.pushButton_run_feature_detection.setText("Run Feature Detection")
+    
+
         # features
+        if not self.USE_FEATURE_DETECTION:
+            if "features" in self.viewer.layers:
+                self.viewer.layers.remove("features")
+
+            return
+        
         self._USE_ALL_FEATURES = self.checkBox_all_features.isChecked()
         self.label_feature.setVisible(not self._USE_ALL_FEATURES)
         self.comboBox_feature_1.setVisible(not self._USE_ALL_FEATURES)
         self.comboBox_feature_2.setVisible(not self._USE_ALL_FEATURES)
-
+        
+        # info
+        self.label_info.setVisible(self.checkBox_show_info.isChecked())
+        
         if "features" in self.viewer.layers:
             self.checkBox_move_features.setEnabled(True)
             
@@ -167,8 +228,6 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         else:
             self.viewer.layers.selection.active = self.viewer.layers["image"]
 
-
-
     def run_feature_detection(self):
 
         self._USER_CORRECTED = False # reset user corrected flag
@@ -176,7 +235,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         if self.model is None:
             self.load_model()
 
-        if self._USE_ALL_FEATURES:
+        if self._USE_ALL_FEATURES or self.USE_FEATURE_DETECTION is False:
             features = [f() for f in detection.__FEATURES__]
         else:
             features = (
@@ -240,15 +299,20 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         except:
             self.viewer.add_labels(self.detected_features.mask, name="mask", opacity=0.3, color=CLASS_COLORS)
 
+        # if the features layer already exists, remove the layer
+        if "features" in self.viewer.layers:
+            self.viewer.layers.remove("features")
+
+        if not self.USE_FEATURE_DETECTION:
+            napari.utils.notifications.show_info(f"Segmentation finished.")
+            return
+
         # add points to viewer
         data = []
         for feature in self.detected_features.features:
             x, y = feature.feature_px
             data.append([y, x])
 
-        # if the features layer already exists, remove the layer
-        if "features" in self.viewer.layers:
-            self.viewer.layers.remove("features")
 
         text = {
             "string": [feature.name for feature in self.detected_features.features],
@@ -333,41 +397,6 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.update_info()
 
 
-    # def point_moved(self, layer, event):
-    #     dragged = False
-    #     yield
-
-    #     # on move
-    #     while event.type == "mouse_move":
-    #         dragged = True
-    #         yield
-
-    #     # on release
-    #     if not dragged:
-    #         return
-
-    #     # get the data
-    #     data = layer.data
-
-    #     # get which point was moved
-    #     index: list[int] = list(layer.selected_data)  
-    #     for idx in index:
-            
-    #         logging.info(f"point moved: {self.detected_features.features[idx].name} to {data[idx]}") # TODO: fix for logging statistics
-    #         logging.info(f"Event: {event}")
-    #         # update the feature
-    #         self.detected_features.features[idx].feature_px = Point(
-    #             x=data[idx][1], y=data[idx][0]
-    #         )
-
-    #     # recalculate the distance
-    #     self.detected_features.distance = self.detected_features.features[0].feature_px._distance_to(
-    #         self.detected_features.features[1].feature_px
-    #     )
-    #     self.detected_features.distance = self.detected_features.distance._to_metres(pixel_size = self.detected_features.pixelsize) # TODO: get from metadata)
-
-    #     self._USER_CORRECTED = True
-    #     self.update_info()
 
     def _get_detected_features(self):
         return self.detected_features
@@ -391,7 +420,7 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
         det_widget_ui = FibsemDetectionWidgetUI(
             viewer=viewer, 
             image = image, 
-            _EVAL_MODE=True)
+            _EVAL_MODE=False)
         
         det_widget_ui.set_detected_features(det)
 
@@ -468,3 +497,5 @@ if __name__ == "__main__":
 # - toggle show info checkbox
 # - maybe integrate as labelling ui? -> assisted labelling
 # - add toggles for seg / feature detection / move
+# - need to ensure feature det is only enabled if seg is enabled
+# - need seg to be enabled if feature det is enabled same for eval

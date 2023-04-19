@@ -114,6 +114,9 @@
      <property name="text">
       <string>Segmentation</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item row="25" column="0" colspan="3">
@@ -147,6 +150,9 @@
     <widget class="QCheckBox" name="checkBox_use_feature_detection">
      <property name="text">
       <string>Feature Detection</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
