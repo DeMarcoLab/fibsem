@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
+import glob
 
 Needle_tip_dist = []
 Lamella_centre_dist = []
@@ -37,10 +38,10 @@ for label in labels:
     main_folder = r'C:\Users\rkan0039\Documents\detection_training\new_eval'
     report_folder_name = f"report_{label_folder}"
     eval_folder = os.path.join(main_folder, label_folder)
-    report_folder_name = report_name = f"Report_{label_folder}.csv"
-    report_folder_path = os.path.join(eval_folder, report_folder_name)
+    report_folder_name = "*_eval.csv"
+    report_folder_path = glob.glob(os.path.join(eval_folder, report_folder_name))
 
-    report = pd.read_csv(report_folder_path)
+    report = pd.read_csv(report_folder_path[0])
 
     
 
@@ -54,7 +55,7 @@ for label in labels:
 
         output = [[x,y] for x, y in zip(output_x, output_y)]
 
-        e_dist_ouput = report.loc[mask1, "p1_euc_dist"].to_list()
+        e_dist_ouput = report.loc[mask1, "p1.euc_dist"].to_list()
 
         euclid_dist_values[feature].extend(e_dist_ouput)
 
@@ -73,7 +74,7 @@ for label in labels:
 
         detection_features[feature].extend(output)
 
-        e_dist_ouput = report.loc[mask2, "p2_euc_dist"].to_list()
+        e_dist_ouput = report.loc[mask2, "p2.euc_dist"].to_list()
 
         euclid_dist_values[feature].extend(e_dist_ouput)
 

@@ -30,7 +30,7 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
 
     # load evaluation folder 
     main_folder = r'C:\Users\rkan0039\Documents\detection_training\new_eval'
-    date_time_test_conducted = time.strftime("%Y-%m-%d--%H-%M-%S")
+    date_time_test_conducted = time.strftime("%Y_%m_%d__%H_%M_%S")
     report_folder_name = f"report_{label_folder}"
     eval_folder = os.path.join(main_folder, label_folder)
 
@@ -68,7 +68,7 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
     ]
 
     # main loop that goes through each image and evaluates the model
-    for idx, filename in tqdm(enumerate(filenames),desc="Evaluating Images"):
+    for  filename in tqdm(filenames,desc="Evaluating Images"):
 
         # takes the file name and removes the file path and .tif
         pic = filename.split('\\')[-1][:-4]
@@ -202,6 +202,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
 
                 plt.close(fig)
 
+    eval_name = f"{date_time_test_conducted}_eval.csv"
+
     df = pd.DataFrame(data_list)
-    df.to_csv(os.path.join(report_folder_path,"eval.csv"))
+    df.to_csv(os.path.join(eval_folder,eval_name))
 
