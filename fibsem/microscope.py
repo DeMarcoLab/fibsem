@@ -163,7 +163,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def setup_milling(self, mill_settings: FibsemMillingSettings) -> None:
+    def setup_milling(self, mill_settings: FibsemMillingSettings, preset: str) -> None:
         pass
 
     @abstractmethod
@@ -1090,6 +1090,7 @@ class ThermoMicroscope(FibsemMicroscope):
     def setup_milling(
         self,
         mill_settings: FibsemMillingSettings,
+        preset: str = None,
     ):
         """
         Configure the microscope for milling using the ion beam.
@@ -2880,6 +2881,7 @@ class TescanMicroscope(FibsemMicroscope):
     def setup_milling(
         self,
         mill_settings: FibsemMillingSettings,
+        preset: str = None,
     ):
         """
         Configure the microscope for milling using the ion beam.
@@ -2925,6 +2927,7 @@ class TescanMicroscope(FibsemMicroscope):
             rate=rate,
             dwellTime=dwell_time,
             parallel=parallel_mode,
+            preset = preset,
         )
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
         
@@ -3048,7 +3051,7 @@ class TescanMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         # """
         try:
-            # self.connection.DrawBeam.Stop()
+            self.connection.FIB.Preset.Activate("30 keV; UHR imaging")
             self.connection.DrawBeam.UnloadLayer()
             print("hello")
         except:
