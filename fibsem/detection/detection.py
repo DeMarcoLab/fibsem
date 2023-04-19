@@ -64,7 +64,7 @@ class LamellaCentre(Feature):
     name: str = "LamellaCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
-        self.feature_px = detect_lamella(mask, self.name)
+        self.feature_px = detect_lamella(mask, self)
 
 
 @dataclass
@@ -76,7 +76,7 @@ class LamellaLeftEdge(Feature):
     name: str = "LamellaLeftEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
-        self.feature_px = detect_lamella(mask, self.name)
+        self.feature_px = detect_lamella(mask, self)
         return self.feature_px
 
 
@@ -89,7 +89,7 @@ class LamellaRightEdge(Feature):
     name: str = "LamellaRightEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
-        self.feature_px = detect_lamella(mask, self.name)
+        self.feature_px = detect_lamella(mask, self)
         return self.feature_px
 
 
@@ -141,12 +141,12 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     return feature_px
 
 
-def detect_centre_point(mask: np.ndarray, color: tuple, threshold: int = 25) -> Point:
+def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
     """ Detect the centre (mean) point of the mask for a given color (label)
 
     args:
         mask: the detection mask (PIL.Image)
-        color: the color of the label for the feature to detect (rgb tuple)
+        idx: the index of the desired class in the mask (int)
         threshold: the minimum number of required pixels for a detection to count (int)
 
     return:
@@ -154,9 +154,8 @@ def detect_centre_point(mask: np.ndarray, color: tuple, threshold: int = 25) -> 
         centre_px: the pixel coordinates of the centre point of the feature (tuple)
     """
     centre_px = Point(x=0, y=0)
-
-    # extract class pixels
-    class_mask, idx = extract_class_pixels(mask, color)
+    # get mask px coordinates
+    idx = np.where(mask)
 
     # only return a centre point if detection is above a threshold
     if len(idx[0]) > threshold:
@@ -202,28 +201,28 @@ def detect_corner(
 
 def detect_lamella(
     mask: np.ndarray,
-    feature_type: str,
-    color: tuple = LamellaCentre._color_UINT8,
+    feature: Feature,
     mask_radius: int = 512,
+    idx: int = 1,
 ) -> Point:
 
-    lamella_mask, _ = extract_class_pixels(mask, color)
+    lamella_mask = mask == idx
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
 
-    if feature_type == "LamellaCentre":
-        feature_px = detect_centre_point(lamella_mask, color=color)
+    if isinstance(feature, LamellaCentre):
+        feature_px = detect_centre_point(lamella_mask)
 
-    if feature_type == "LamellaLeftEdge":
+    if isinstance(feature, LamellaLeftEdge):
         feature_px = detect_corner(lamella_mask, left=True)
 
-    if feature_type == "LamellaRightEdge":
+    if isinstance(feature, LamellaRightEdge):
         feature_px = detect_corner(lamella_mask, left=False)
 
     return feature_px
 
 
-def detect_needle_v4(mask: np.ndarray,) -> Point:
-    needle_mask, _ = extract_class_pixels(mask, NeedleTip._color_UINT8)
+def detect_needle_v4(mask: np.ndarray, idx:int=2) -> Point:
+    needle_mask = mask == idx
     return detect_corner(needle_mask, threshold=100)
 
 
@@ -323,7 +322,8 @@ def detect_bounding_box(mask, color, threshold=25):
 class DetectedFeatures:
     features: list[Feature]
     image: np.ndarray # TODO: convert or add FIBSEMImage
-    mask: np.ndarray # TODO: add rgb mask / binary mask
+    mask: np.ndarray # class binary mask
+    rgb: np.ndarray # rgb mask
     pixelsize: float
     distance: Point # convert to property
 
@@ -351,7 +351,9 @@ def locate_shift_between_features_v2(
 ) -> DetectedFeatures:
 
     # model inference
-    mask = model.inference(image)
+    mask = model.inference(image, rgb=False)
+    rgb = model.postprocess(mask, model.num_classes)
+    mask = mask[0] # remove channel dim
 
     # detect features
     feature_1, feature_2 = detect_features_v2(image, mask, features)
@@ -366,6 +368,7 @@ def locate_shift_between_features_v2(
         features=[feature_1, feature_2],
         image=image,
         mask=mask,
+        rgb=rgb,
         distance=distance_m,
         pixelsize=pixelsize,
     )
@@ -409,7 +412,7 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
 
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
-    ax[1].imshow(det.mask)
+    ax[1].imshow(det.rgb)
     ax[1].set_title("Prediction")
     ax[1].plot(
         det.features[0].feature_px.x,
