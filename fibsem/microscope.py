@@ -2598,7 +2598,7 @@ class TescanMicroscope(FibsemMicroscope):
         wd = self.connection.SEM.Optics.GetWD()
 
         # calculate stage movement
-        x_move = FibsemStagePosition(x=-dx, y=0, z=0) 
+        x_move = FibsemStagePosition(x=dx, y=0, z=0) 
         yz_move = self._y_corrected_stage_movement(
             settings=settings,
             expected_y=-dy,
@@ -2634,9 +2634,33 @@ class TescanMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
 
-        z_move = dy / np.cos(
-            np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion + settings.system.stage.pre_tilt)
-        )  # TODO: MAGIC NUMBER, 90 - fib tilt
+        PRETILT_SIGN = 1.0
+        from fibsem import movement
+        # current stage position
+        current_stage_position = self.get_stage_position()
+        stage_rotation = current_stage_position.r % (2 * np.pi)
+        stage_tilt = current_stage_position.t
+        stage_tilt_flat_to_electron = np.deg2rad(
+            settings.system.stage.tilt_flat_to_electron
+        )
+        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+
+        stage_rotation_flat_to_ion = np.deg2rad(
+            settings.system.stage.rotation_flat_to_ion
+        ) % (2 * np.pi)
+
+        if movement.rotation_angle_is_smaller(
+            stage_rotation, stage_rotation_flat_to_ion, atol=5
+        ):
+            PRETILT_SIGN = -1.0
+
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
+        perspective_tilt = (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
+        z_perspective = - dy/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
+        z_move = z_perspective*np.sin(90*constants.DEGREES_TO_RADIANS - stage_tilt_flat_to_ion) 
+        # z_move = dy / np.cos(
+        #     np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion + settings.system.stage.pre_tilt)
+        # )  # TODO: MAGIC NUMBER, 90 - fib tilt
         logging.info(f"eucentric movement: {z_move}")
         z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
