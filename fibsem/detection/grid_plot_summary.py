@@ -39,9 +39,9 @@ for label in labels:
     report_folder_name = f"report_{label_folder}"
     eval_folder = os.path.join(main_folder, label_folder)
     report_folder_name = "*_eval.csv"
-    report_folder_path = glob.glob(os.path.join(eval_folder, report_folder_name))
+    report_folder_path = sorted(glob.glob(os.path.join(eval_folder, report_folder_name)))
 
-    report = pd.read_csv(report_folder_path[0])
+    report = pd.read_csv(report_folder_path[-1])
 
     
 
@@ -111,4 +111,5 @@ ax[1].bar(f_names, e_values)
 
 
 plt.show()
+fig.savefig("detection_summary.png")
 # st.pyplot(plt)
