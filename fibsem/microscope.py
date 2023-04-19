@@ -2158,16 +2158,18 @@ class TescanMicroscope(FibsemMicroscope):
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
         if image_settings.reduced_area is not None:
-            left =  imageWidth - int(image_settings.reduced_area.left * imageWidth)
-            top = imageHeight - int(image_settings.reduced_area.top * imageHeight)
+            left =  int(image_settings.reduced_area.left * imageWidth)
+            top = int(image_settings.reduced_area.top * imageHeight) 
+            width = int(image_settings.reduced_area.width * imageWidth)
+            height = int(image_settings.reduced_area.height * imageHeight)
             image = self.connection.SEM.Scan.AcquireROIFromChannel(
                 Channel= 0,
                 Width= imageWidth,
                 Height= imageHeight,
                 Left= left,
                 Top= top,
-                Right= left - imageWidth -1 ,
-                Bottom= top - imageHeight - 1,
+                Right= left + width -1 ,
+                Bottom= top + height - 1,
                 DwellTime= dwell_time
             )
         else:
@@ -2261,16 +2263,18 @@ class TescanMicroscope(FibsemMicroscope):
         
         
         if image_settings.reduced_area is not None:
-            left =  imageWidth - int(image_settings.reduced_area.left * imageWidth)
-            top = imageHeight - int(image_settings.reduced_area.top * imageHeight)
+            left =  int(image_settings.reduced_area.left * imageWidth)
+            top = int(image_settings.reduced_area.top * imageHeight) 
+            width = int(image_settings.reduced_area.width * imageWidth)
+            height = int(image_settings.reduced_area.height * imageHeight)
             image = self.connection.FIB.Scan.AcquireROIFromChannel(
                 Channel= 0,
                 Width= imageWidth,
                 Height= imageHeight,
                 Left= left,
                 Top= top,
-                Right= left - imageWidth -1 ,
-                Bottom= top - imageHeight - 1,
+                Right= left + width -1 ,
+                Bottom= top + height - 1,
                 DwellTime= dwell_time
             )
         else:
