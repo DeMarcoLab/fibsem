@@ -13,7 +13,7 @@ from tqdm import tqdm
 import time
 
 # setting up folders for evaluation
-label_folders = ["label_00"]
+label_folders = ["label_00","label_01","label_02","label_03"]
 
 # setting up model for inference
 checkpoint_path = r"C:\Users\rkan0039\Documents\detection_training\models"
@@ -21,6 +21,8 @@ checkpoint_name = "model4.pt"
 checkpoint = os.path.join(checkpoint_path,checkpoint_name)
 encoder = "resnet34"
 model = load_model(checkpoint,encoder=encoder)
+
+save_images = False
 
 # Main loop that goes through each folder and evaluates the model
 
@@ -45,28 +47,6 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
 
     filenames = sorted(glob.glob(os.path.join(eval_folder,'*.tif')))
     
-    # ML_ evaulations
-    # pre-creating lists to put ML data into for csv output
-    ML_p1_x = []
-    ML_p1_y = []
-
-    ML_p2_x = []
-    ML_p2_y = []
-
-    p1_x_offset = []
-    p1_y_offset = []
-    p2_x_offset = []
-    p2_y_offset = []
-    p1_euc_dist = []
-    p2_euc_dist = []
-
-    labels_list = []
-    p1_x_list =[]
-    p1_y_list = []
-    p2_x_list = []
-    p2_y_list = []
-    p1_type_list = []
-    p2_type_list = []
 
     detection_types = {
         "NeedleTip": NeedleTip(),
@@ -79,9 +59,16 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
     }
 
     i=0
+    data_list = []
+
+    Evaluation_ID = [
+    f"Report Conducted: {date_time_test_conducted}",
+    f"Model: {checkpoint_name}",
+    f'Encoder: {encoder}'
+    ]
 
     # main loop that goes through each image and evaluates the model
-    for filename in tqdm(filenames,desc="Evaluating Images"):
+    for idx, filename in tqdm(enumerate(filenames),desc="Evaluating Images"):
 
         # takes the file name and removes the file path and .tif
         pic = filename.split('\\')[-1][:-4]
@@ -99,14 +86,9 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
             p2_x = label_row["p2.x"].values[0]
             p2_y = label_row["p2.y"].values[0]
 
-            # appending data to lists
-            labels_list.append(label)
-            p1_x_list.append(p1_x)
-            p1_y_list.append(p1_y)
-            p2_x_list.append(p2_x)
-            p2_y_list.append(p2_y)
-            p1_type_list.append(p1_type)
-            p2_type_list.append(p2_type)
+
+            from copy import deepcopy
+            dat = {"label":label,"p1.type":p1_type,"p2.type":p2_type,"p1.x":p1_x,"p1.y":p1_y,"p2.x":p2_x,"p2.y":p2_y}
 
             # reading image and running inference
             img = tf.imread(filename)
@@ -125,133 +107,101 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
             convert_p2_x = f2.feature_px.x/res_x
             convert_p2_y = f2.feature_px.y/res_y
 
-            # Appending ML data to lists
-            ML_p1_x.append(convert_p1_x)
-            ML_p1_y.append(convert_p1_y)
-            ML_p2_x.append(convert_p2_x)
-            ML_p2_y.append(convert_p2_y)
+            dat["ML_p1_x"] = convert_p1_x
+            dat["ML_p1_y"] = convert_p1_y
+            dat["ML_p2_x"] = convert_p2_x
+            dat["ML_p2_y"] = convert_p2_y
 
-            # calculating offset and euclidean distance
-            # GT value is subtracted from ML value, meaning + offset is when ML predicition is to the left of the GT when viewed on the image (x axis) and above the GT when viewed on the image (y axis)
-            p1_x_offset.append(p1_x - convert_p1_x)
-            p1_y_offset.append(p1_y - convert_p1_y)
-            p2_x_offset.append(p2_x - convert_p2_x)
-            p2_y_offset.append(p2_y - convert_p2_y)
+            dat["p1.x_offset"] = convert_p1_x - p1_x
+            dat["p1.y_offset"] = convert_p1_y - p1_y
+            dat["p2.x_offset"] = convert_p2_x - p2_x
+            dat["p2.y_offset"] = convert_p2_y - p2_y
 
-            p1_euc_dist.append(np.sqrt((p1_x - convert_p1_x)**2 + (p1_y - convert_p1_y)**2))
-            p2_euc_dist.append(np.sqrt((p2_x - convert_p2_x)**2 + (p2_y - convert_p2_y)**2))
+            dat["p1.euc_dist"] = np.sqrt((p1_x - convert_p1_x)**2 + (p1_y - convert_p1_y)**2)
+            dat["p2.euc_dist"] = np.sqrt((p2_x - convert_p2_x)**2 + (p2_y - convert_p2_y)**2)
 
+            dat["datetime"] = date_time_test_conducted
+            dat["model"] = checkpoint_name
+            dat["encoder"] = encoder
 
+            data_list.append(deepcopy(dat))           
 
             # creating figures for review
             # each feature is a seperate colour
             # GT is marked with a + and ML is marked with an x
             
-            fig,ax = plt.subplots(1, 2, figsize=(12, 7))
+            if save_images:
+                fig,ax = plt.subplots(1, 2, figsize=(12, 7))
 
-            ax[0].imshow(det.image, cmap="gray")
-            ax[1].imshow(det.mask)
+                ax[0].imshow(det.image, cmap="gray")
+                ax[1].imshow(det.mask)
 
-            ax[1].plot(
-                f1.feature_px.x,
-                f1.feature_px.y,
-                color="blue",
-                marker="x",
-                ms=20,
-                label=f"{f1.name} ML"
-            )
+                ax[1].plot(
+                    f1.feature_px.x,
+                    f1.feature_px.y,
+                    color="blue",
+                    marker="x",
+                    ms=20,
+                    label=f"{f1.name} ML"
+                )
 
-            ax[1].plot(
-                f2.feature_px.x,
-                f2.feature_px.y,
-                color="white",
-                marker="x",
-                ms=20,
-                label=f"{f2.name} ML"
-            )
+                ax[1].plot(
+                    f2.feature_px.x,
+                    f2.feature_px.y,
+                    color="white",
+                    marker="x",
+                    ms=20,
+                    label=f"{f2.name} ML"
+                )
 
 
-            ax[0].plot(
-                int(p1_x*res_x),
-                int(p1_y*res_y),
-                color="blue",
-                marker="+",
-                ms=20,
-                label=f"{f1.name} GT",
-            )
+                ax[0].plot(
+                    int(p1_x*res_x),
+                    int(p1_y*res_y),
+                    color="blue",
+                    marker="+",
+                    ms=20,
+                    label=f"{f1.name} GT",
+                )
+                
+                ax[0].plot(
+                    f1.feature_px.x,
+                    f1.feature_px.y,
+                    color="blue",
+                    marker="x",
+                    ms=20,
+                    label=f"{f1.name} ML",
+                )
+
+                ax[0].plot(
+                    int(p2_x*res_x),
+                    int(p2_y*res_y),
+                    color="red",
+                    marker="+",
+                    ms=20,
+                    label=f"{f2.name} GT",
+                )
+
+                ax[0].plot(
+                    f2.feature_px.x,
+                    f2.feature_px.y,
+                    color="red",
+                    marker="x",
+                    ms=20,
+                    label=f"{f2.name} ML",
+                )
+
+                ax[0].legend()
+                ax[1].legend()
+                plt.title(f"{label}")
+                
             
-            ax[0].plot(
-                f1.feature_px.x,
-                f1.feature_px.y,
-                color="blue",
-                marker="x",
-                ms=20,
-                label=f"{f1.name} ML",
-            )
+                report_fig_name = f"Report_{label}.png"
 
-            ax[0].plot(
-                int(p2_x*res_x),
-                int(p2_y*res_y),
-                color="red",
-                marker="+",
-                ms=20,
-                label=f"{f2.name} GT",
-            )
+                fig.savefig(os.path.join(report_folder_path,report_fig_name))
 
-            ax[0].plot(
-                f2.feature_px.x,
-                f2.feature_px.y,
-                color="red",
-                marker="x",
-                ms=20,
-                label=f"{f2.name} ML",
-            )
+                plt.close(fig)
 
-            ax[0].legend()
-            ax[1].legend()
-            plt.title(f"{label}")
-            
-        
-            report_fig_name = f"Report_{label}.png"
-
-            fig.savefig(os.path.join(report_folder_path,report_fig_name))
-
-            plt.close(fig)
-
-
-    Evaluation_ID = [
-    f"Report Conducted: {date_time_test_conducted}",
-    f"Model: {checkpoint_name}",
-    f'Encoder: {encoder}'
-    ]
-            
-
-    data = {
-        "label":labels_list,
-        "p1.type":p1_type_list,
-        "p1.x":p1_x_list,
-        "p1.y":p1_y_list,
-        "p2.type":p2_type_list,
-        "p2.x":p2_x_list,
-        "p2.y":p2_y_list,
-        "ML_p1.x":ML_p1_x,
-        "ML_p1.y":ML_p1_y,
-        "ML_p2.x":ML_p2_x,
-        "ML_p2.y":ML_p2_y,
-        "p1.x_offset":p1_x_offset,
-        "p1.y_offset":p1_y_offset,
-        "p2.x_offset":p2_x_offset,
-        "p2.y_offset":p2_y_offset,
-        "p1_euc_dist":p1_euc_dist,
-        "p2_euc_dist":p2_euc_dist,
-        }
-
-    df = pd.DataFrame(data)
-    eval_info = pd.Series(Evaluation_ID)
-    df["Evaluation Info"] = eval_info
-
-    report_name = f"Report_{label_folder}.csv"
-
-    df.to_csv(os.path.join(eval_folder,report_name))
-
+    df = pd.DataFrame(data_list)
+    df.to_csv(os.path.join(report_folder_path,"eval.csv"))
 
