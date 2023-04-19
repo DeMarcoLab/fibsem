@@ -2347,6 +2347,10 @@ class TescanMicroscope(FibsemMicroscope):
             raise Exception("Beam type error")
         return image
 
+    def _get_presets(self):
+        presets = self.connection.FIB.Preset.Enum()	
+        return presets
+
     def autocontrast(self, beam_type: BeamType) -> None:
         """Automatically adjust the microscope image contrast for the specified beam type.
 
@@ -3531,6 +3535,9 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "manipulator_calibrated":
             _check_needle(self.hardware_settings)
             return self.connection.Nanomanipulator.IsCalibrated(0)
+
+        if key == "presets":
+            return self._get_presets()
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return None   
