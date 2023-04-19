@@ -11,37 +11,36 @@ from PyQt5 import QtWidgets
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
-from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation import model as fibsem_model
 from fibsem.segmentation.model import load_model
 from fibsem.structures import (
     BeamType,
     FibsemImage,
-    ImageSettings,
-    MicroscopeSettings,
     Point,
 )
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from PyQt5.QtCore import pyqtSignal
 from fibsem.ui.qtdesigner_files import FibsemDetectionWidget
 import logging
 
-class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
+CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
+
+class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
     def __init__(
         self,
-        microscope: FibsemMicroscope = None,
-        settings: MicroscopeSettings = None,
-        viewer: napari.Viewer = None,
+        viewer: napari.Viewer,
+        image: FibsemImage,
         detected_features: DetectedFeatures = None,
-        image: FibsemImage = None,
+        model: fibsem_model.SegmentationModel = None,
+        _eval_mode: bool = False,
         parent=None,
     ):
         super(FibsemDetectionWidgetUI, self).__init__(parent=parent)
         self.setupUi(self)
 
-        self.microscope = microscope
-        self.settings = settings
         self.viewer = viewer
         self.image = image
+        self.model = model
+        self._eval_mode = _eval_mode
 
         self.setup_connections()
 
@@ -61,31 +60,65 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
             self.run_feature_detection
         )
 
-        self.pushButton_test_function.setText(f"Move Feature Positions")
-        self.pushButton_test_function.setVisible(False)
-        self.checkBox_move_features.clicked.connect(self.toggle_feature_interaction)
+        self.checkBox_show_mask.clicked.connect(self._toggle_ui)
+        self.checkBox_show_mask.setEnabled(False)
+        self.checkBox_show_mask.setChecked(True)
+        self.checkBox_move_features.clicked.connect(self._toggle_ui)
         self.checkBox_move_features.setEnabled(False)  # disabled until features are loaded
 
-        self.checkBox_show_mask.setVisible(False)
-
-        self.pushButton_load_model.clicked.connect(self.load_model)
-
-        self.comboBox_feature_1.addItems(
-            [feature.name for feature in detection.__FEATURES__]
-        )
-        self.comboBox_feature_2.addItems(
-            [feature.name for feature in detection.__FEATURES__]
-        )
-
+        # features
+        self.comboBox_feature_1.addItems([f.name for f in detection.__FEATURES__])
+        self.comboBox_feature_2.addItems([f.name for f in detection.__FEATURES__])
         self.comboBox_beam_type.addItems([beam_type.name for beam_type in BeamType])
 
+        # model
+        self.pushButton_load_model.clicked.connect(self.load_model)
         self.lineEdit_encoder.setText("resnet34")
-        self.lineEdit_checkpoint.setText(
-            os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
-        )
+        self.lineEdit_checkpoint.setText(CHECKPOINT_PATH)
         self.spinBox_num_classes.setValue(3)
 
-    def toggle_feature_interaction(self):
+        # # setup continue signal
+        # self.continue_signal = pyqtSignal(str)
+
+        self.lineEdit_image_path_folder.setText(f"/home/patrick/github/data/liftout/training/train/images")
+        self.label_image_path_num.setText("")
+
+        self.label_header_evalulation.setVisible(self._eval_mode)
+        self.lineEdit_image_path_folder.setVisible(self._eval_mode)
+        self.pushButton_load_images.setVisible(self._eval_mode)
+        self.pushButton_load_images.clicked.connect(self.load_image_folder)
+        self.pushButton_previous_image.clicked.connect(self.update_image)
+        self.pushButton_next_image.clicked.connect(self.update_image)
+        self.pushButton_previous_image.setVisible(self._eval_mode)
+        self.pushButton_next_image.setVisible(self._eval_mode)
+        self.label_image_path_num.setVisible(self._eval_mode)
+
+    def load_image_folder(self):
+        folder = self.lineEdit_image_path_folder.text()
+        self.image_paths = sorted(list(Path(folder).glob("*.tif")))
+        self.idx = 0
+        self.update_image()
+    
+    def update_image(self):
+        if self.sender() == self.pushButton_previous_image:
+            self.idx -= 1
+        if self.sender() == self.pushButton_next_image:
+            self.idx += 1
+
+        self.idx = np.clip(self.idx, 0, len(self.image_paths)-1)
+        self.label_image_path_num.setText(f"{self.idx+1}/{len(self.image_paths)}")
+
+        self.image = FibsemImage.load(self.image_paths[self.idx])
+
+        self.run_feature_detection()
+
+
+    def do_something(self, msg):
+        print("do_something called")
+        print(msg)
+        
+
+    def _toggle_ui(self):
         if "features" in self.viewer.layers:
             self.checkBox_move_features.setEnabled(True)
             
@@ -95,11 +128,16 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         else:
             self.viewer.layers.selection.active = self.viewer.layers["image"]
 
+        if "mask" in self.viewer.layers:
+            self.checkBox_show_mask.setEnabled(True)
+            self.viewer.layers["mask"].visible = self.checkBox_show_mask.isChecked()
+
     def run_feature_detection(self):
 
         self._USER_CORRECTED = False # reset user corrected flag
 
-        image = self.image
+        if self.model is None:
+            self.load_model()
 
         features = (
             detection.__FEATURES__[self.comboBox_feature_1.currentIndex()](),
@@ -109,7 +147,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         # detect features
         pixelsize = 25e-9 # TODO: get from metadata
         det = detection.locate_shift_between_features_v2(
-            deepcopy(image.data), self.model, features=features, pixelsize=pixelsize
+            deepcopy(self.image.data), self.model, features=features, pixelsize=pixelsize
         )
 
         self.set_detected_features(det)
@@ -124,32 +162,18 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
             f"Model loaded: {os.path.basename(checkpoint)}"
         )
 
-    def load_feature_detection(self, det: DetectedFeatures):
-
-        # load feature detection
-
-        # update ui elements
-        self.comboBox_feature_1.setCurrentText(det.features[0].name)
-        self.comboBox_feature_2.setCurrentText(det.features[1].name)
-
-        # update detected features
-        self.set_detected_features(det)
-
-    def test_function(self):
-        print("test function....")
-
     def continue_button_clicked(self):
+        
         # save all images and coordinates for testing
         det_utils.save_data(det = self.detected_features, corrected=self._USER_CORRECTED)
 
-        # move based on detected features
-        # TODO: add x, y limits to UI
-        detection.move_based_on_detection(
-            self.microscope,
-            self.settings,
-            det=self.detected_features,
-            beam_type=BeamType[self.comboBox_beam_type.currentText()],
-        )
+        # emit signal
+        # self.continue_signal.emit("continue_signal")
+        # print("continue signal emitted")
+
+        if not self._eval_mode:
+            self.close()
+            self.viewer.close()
 
     def set_detected_features(self, det_features: DetectedFeatures):
         self.detected_features = det_features
@@ -157,6 +181,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         self.update_features_ui()
 
     def update_features_ui(self):
+        
         # update combo box
         self.comboBox_feature_1.setCurrentText(self.detected_features.features[0].name)
         self.comboBox_feature_2.setCurrentText(self.detected_features.features[1].name)
@@ -210,7 +235,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
 
         self.update_info()
         self.checkBox_move_features.setChecked(True)
-        self.toggle_feature_interaction()
+        self._toggle_ui()
 
         napari.utils.notifications.show_info(f"Features Detected")
 
@@ -264,30 +289,95 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QWidget):
         return self.detected_features
 
 
-def main():
-    from fibsem import utils
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import MicroscopeSettings
+from fibsem.detection.detection import Feature, DetectedFeatures
+from fibsem import acquire
+def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: list[Feature], validate: bool = True) -> DetectedFeatures:
 
+    pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
+
+    # detect features
+    det = detection.locate_shift_between_features_v2(
+        deepcopy(image.data), model, features=features, pixelsize=pixelsize
+    )
+
+    if validate:
+        viewer = napari.Viewer(ndisplay=2)
+        det_widget_ui = FibsemDetectionWidgetUI(
+            viewer=viewer, 
+            image = image, 
+            _eval_mode=True)
+        
+        det_widget_ui.set_detected_features(det)
+
+        viewer.window.add_dock_widget(
+            det_widget_ui, area="right", add_vertical_stretch=False
+        )
+        det_widget_ui.exec_()
+        # napari.run()
+
+        det = det_widget_ui.detected_features
+    
+    return det
+
+
+
+def detection_movement(microscope: FibsemMicroscope, settings: MicroscopeSettings, validate: bool = True, _load_image: bool = False) -> DetectedFeatures:
+
+    if _load_image:
+        # load image
+        image = FibsemImage.load(os.path.join(os.path.dirname(detection.__file__), "test_image.tif"))
+    else:
+        image = acquire.new_image(microscope, settings.image)
+
+    # TODO: read from config?
+    checkpoint = str(CHECKPOINT_PATH)
+    encoder="resnet34"
+    num_classes = 3
+    model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
+ 
+    features = [detection.NeedleTip(), detection.LamellaCentre()]
+    det = detection_ui(image, model, features, validate=validate, _load_image=True)
+
+    return det
+
+
+
+def main():
+
+    # TODO: START_HERE
+    # convert / add fibsem image and binary masks for detections
+    # convert detections to use binary masks instead of rgb
+
+    validate = True
+    _load_image = True
+
+    from fibsem import utils
     microscope, settings = utils.setup_session()
 
-    viewer = napari.Viewer(ndisplay=2)
+    det = detection_movement(microscope, settings, validate=validate, _load_image=_load_image)
 
-    # load image
-    image = FibsemImage.load(os.path.join(os.path.dirname(detection.__file__), "test_image.tif"))
-    
-    # TODO: START_HERE
-    # add load detected feature
-    # convert / add fibsem image and binary masks for detections
-
-    det_widget_ui = FibsemDetectionWidgetUI(
-        microscope=microscope, 
-        settings=settings, 
-        viewer=viewer, 
-        image = image)
-    viewer.window.add_dock_widget(
-        det_widget_ui, area="right", add_vertical_stretch=False
-    )
-    napari.run()
+    detection.move_based_on_detection(
+    microscope,
+    settings,
+    det=det,
+    beam_type=settings.image.beam_type,
+)
 
 
 if __name__ == "__main__":
     main()
+
+
+# TODO:
+# - convert to use binary masks instead of rgb
+# - convert detected features / detection to take in Union[FibsemImage, np.ndarray]
+# - add mask, rgb to detected features + save to file
+# - convert mask layer to label not image
+# - save detected features to file on prev / save image
+# - edittable mask -> rerun detection
+# - abstract segmentation model widget
+# - add n detections, not just two.. if no features are passed... use all?
+# - toggle show info checkbox
+# - maybe integrate as labelling ui? -> assisted labelling

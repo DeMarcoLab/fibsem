@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>467</width>
+    <width>363</width>
     <height>646</height>
    </rect>
   </property>
@@ -14,45 +14,8 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="12" column="0">
-    <widget class="QLabel" name="label_feature">
-     <property name="text">
-      <string>Features</string>
-     </property>
-    </widget>
-   </item>
-   <item row="14" column="0" colspan="3">
-    <widget class="QLabel" name="label_info">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>150</height>
-      </size>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item row="16" column="0" colspan="3">
-    <widget class="QLabel" name="label_instructions">
-     <property name="text">
-      <string>Select the feature, and click to change the feature position.</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="17" column="0" colspan="3">
-    <widget class="QPushButton" name="pushButton_continue">
-     <property name="text">
-      <string>Continue</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="0" colspan="3">
-    <widget class="QLabel" name="label_2">
+   <item row="1" column="0" colspan="3">
+    <widget class="QLabel" name="label_header_model">
      <property name="font">
       <font>
        <weight>75</weight>
@@ -60,33 +23,31 @@
       </font>
      </property>
      <property name="text">
-      <string>Feature Detection</string>
+      <string>Segmentation Model</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="label_encoder">
-     <property name="text">
-      <string>Encoder</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="label_title">
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
+   <item row="15" column="0" colspan="3">
+    <widget class="QLabel" name="label_info">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
      </property>
      <property name="text">
-      <string>Feature Detection</string>
+      <string/>
      </property>
     </widget>
    </item>
-   <item row="8" column="1" colspan="2">
-    <widget class="QSpinBox" name="spinBox_num_classes"/>
+   <item row="13" column="0">
+    <widget class="QCheckBox" name="checkBox_show_mask">
+     <property name="text">
+      <string>Show Mask</string>
+     </property>
+    </widget>
    </item>
-   <item row="19" column="0" colspan="2">
+   <item row="23" column="0" colspan="3">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -99,60 +60,55 @@
      </property>
     </spacer>
    </item>
-   <item row="18" column="0">
-    <widget class="QPushButton" name="pushButton_test_function">
+   <item row="13" column="1">
+    <widget class="QCheckBox" name="checkBox_move_features">
      <property name="text">
-      <string>Test 1</string>
+      <string>Move Features</string>
      </property>
     </widget>
    </item>
-   <item row="12" column="1">
-    <widget class="QComboBox" name="comboBox_feature_1"/>
+   <item row="7" column="1" colspan="2">
+    <widget class="QLineEdit" name="lineEdit_checkpoint"/>
    </item>
-   <item row="9" column="0" colspan="3">
-    <widget class="QPushButton" name="pushButton_load_model">
-     <property name="text">
-      <string>Load Model</string>
-     </property>
-    </widget>
+   <item row="11" column="1" colspan="2">
+    <widget class="QComboBox" name="comboBox_beam_type"/>
    </item>
-   <item row="13" column="0">
-    <widget class="QCheckBox" name="checkBox_show_mask">
-     <property name="text">
-      <string>Show Mask</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="label_checkpoint">
-     <property name="text">
-      <string>Checkpoint</string>
-     </property>
-    </widget>
-   </item>
-   <item row="15" column="0" colspan="3">
-    <widget class="QPushButton" name="pushButton_run_feature_detection">
-     <property name="text">
-      <string>Run Feature Detection</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="1" colspan="2">
-    <widget class="QLineEdit" name="lineEdit_encoder"/>
-   </item>
-   <item row="12" column="2">
-    <widget class="QComboBox" name="comboBox_feature_2"/>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label">
+   <item row="0" column="0" colspan="3">
+    <widget class="QLabel" name="label_title">
      <property name="font">
       <font>
-       <weight>75</weight>
-       <bold>true</bold>
+       <pointsize>12</pointsize>
       </font>
      </property>
      <property name="text">
-      <string>Segmentation Model</string>
+      <string>Feature Detection</string>
+     </property>
+    </widget>
+   </item>
+   <item row="22" column="1">
+    <widget class="QLabel" name="label_image_path_num">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="0">
+    <widget class="QLabel" name="label_feature">
+     <property name="text">
+      <string>Features</string>
+     </property>
+    </widget>
+   </item>
+   <item row="20" column="0" colspan="3">
+    <widget class="QLineEdit" name="lineEdit_image_path_folder"/>
+   </item>
+   <item row="22" column="0">
+    <widget class="QPushButton" name="pushButton_previous_image">
+     <property name="text">
+      <string>Previous</string>
      </property>
     </widget>
    </item>
@@ -163,8 +119,87 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1" colspan="2">
-    <widget class="QLineEdit" name="lineEdit_checkpoint"/>
+   <item row="10" column="0" colspan="3">
+    <widget class="QLabel" name="label_header_features">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Feature Detection</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1" colspan="2">
+    <widget class="QSpinBox" name="spinBox_num_classes"/>
+   </item>
+   <item row="9" column="0" colspan="3">
+    <widget class="QPushButton" name="pushButton_load_model">
+     <property name="text">
+      <string>Load Model</string>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="1">
+    <widget class="QComboBox" name="comboBox_feature_1"/>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_encoder">
+     <property name="text">
+      <string>Encoder</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="label_checkpoint">
+     <property name="text">
+      <string>Checkpoint</string>
+     </property>
+    </widget>
+   </item>
+   <item row="18" column="0" colspan="3">
+    <widget class="QPushButton" name="pushButton_continue">
+     <property name="text">
+      <string>Continue</string>
+     </property>
+    </widget>
+   </item>
+   <item row="22" column="2">
+    <widget class="QPushButton" name="pushButton_next_image">
+     <property name="text">
+      <string>Next</string>
+     </property>
+    </widget>
+   </item>
+   <item row="17" column="0" colspan="3">
+    <widget class="QLabel" name="label_instructions">
+     <property name="text">
+      <string>Select the feature, and click to change the feature position.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="2">
+    <widget class="QComboBox" name="comboBox_feature_2"/>
+   </item>
+   <item row="6" column="1" colspan="2">
+    <widget class="QLineEdit" name="lineEdit_encoder"/>
+   </item>
+   <item row="19" column="0" colspan="3">
+    <widget class="QLabel" name="label_header_evalulation">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Evaluation Mode</string>
+     </property>
+    </widget>
    </item>
    <item row="11" column="0">
     <widget class="QLabel" name="label_beam_type">
@@ -173,13 +208,17 @@
      </property>
     </widget>
    </item>
-   <item row="11" column="1" colspan="2">
-    <widget class="QComboBox" name="comboBox_beam_type"/>
-   </item>
-   <item row="13" column="1">
-    <widget class="QCheckBox" name="checkBox_move_features">
+   <item row="14" column="0" colspan="3">
+    <widget class="QPushButton" name="pushButton_run_feature_detection">
      <property name="text">
-      <string>Move Features</string>
+      <string>Run Feature Detection</string>
+     </property>
+    </widget>
+   </item>
+   <item row="21" column="0" colspan="3">
+    <widget class="QPushButton" name="pushButton_load_images">
+     <property name="text">
+      <string>Load Images</string>
      </property>
     </widget>
    </item>
