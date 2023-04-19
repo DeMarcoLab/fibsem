@@ -9,7 +9,6 @@ from scipy.spatial import distance
 from skimage import feature
 
 from fibsem import conversions
-# from fibsem.detection.utils import Feature, FeatureType
 from fibsem.imaging import masks
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
@@ -210,7 +209,6 @@ def detect_lamella(
 
     lamella_mask, _ = extract_class_pixels(mask, color)
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
-    lamella_centre = detect_centre_point(lamella_mask, color=color)
 
     if feature_type == "LamellaCentre":
         feature_px = detect_centre_point(lamella_mask, color=color)
