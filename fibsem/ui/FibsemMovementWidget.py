@@ -34,9 +34,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget = image_widget
 
         self.setup_connections()
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_ui)
-        self.timer.start(1000)
+        self.image_widget.picture_signal.connect(self.update_ui)
 
    
         self.update_ui()

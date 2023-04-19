@@ -34,10 +34,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.setup_connections()
 
         if image_settings is not None:
-            self.detector_settings = self.get_detector_settings()
-            self.beam_settings = self.get_beam_settings()
+            # self.detector_settings = self.get_detector_settings()
+            # self.beam_settings = self.get_beam_settings()
             self.image_settings = image_settings
-            # self.set_ui_from_settings(image_settings = image_settings, beam_settings= self.beam_settings, detector_settings= self.detector_settings, beam_type = BeamType.ELECTRON)
+            self.set_ui_from_settings(image_settings = image_settings, beam_type = BeamType.ELECTRON)
         self.update_detector_ui()
 
         # register initial images
