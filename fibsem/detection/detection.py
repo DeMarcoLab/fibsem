@@ -356,20 +356,19 @@ def locate_shift_between_features_v2(
     mask = mask[0] # remove channel dim
 
     # detect features
-    feature_1, feature_2 = detect_features_v2(image, mask, features)
+    features = detect_features_v2(image, mask, features)
 
-    # calculate distance between features
+    # calculate distance between features (only for first two)
     distance_px = conversions.distance_between_points(
-        feature_1.feature_px, feature_2.feature_px
+        features[0].feature_px, features[1].feature_px # type: ignore
     )
-    distance_m = conversions.convert_point_from_pixel_to_metres(distance_px, pixelsize)
 
     det = DetectedFeatures(
-        features=[feature_1, feature_2],
+        features=features, # type: ignore
         image=image,
         mask=mask,
         rgb=rgb,
-        distance=distance_m,
+        distance=distance_px._to_metres(pixelsize),
         pixelsize=pixelsize,
     )
 
@@ -387,54 +386,18 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
 
-    # convert rgb 255 range to 0-1 tuple
-    if inverse:
-        # plotting crosshairs are contrasted against feature
-        c1 = ((255-det.features[0]._color_UINT8[0])/255,
-            (255-det.features[0]._color_UINT8[1])/255,
-            (255-det.features[0]._color_UINT8[2])/255)
-        
-        c2 = ((255-det.features[1]._color_UINT8[0])/255,
-            (255-det.features[1]._color_UINT8[1])/255,
-            (255-det.features[1]._color_UINT8[2])/255)
-        
-    else:
-
-        c1 = ((det.features[0]._color_UINT8[0])/255,
-            (det.features[0]._color_UINT8[1])/255,
-            (det.features[0]._color_UINT8[2])/255)
-        
-        c2 = ((det.features[1]._color_UINT8[0])/255,
-            (det.features[1]._color_UINT8[1])/255,
-            (det.features[1]._color_UINT8[2])/255)
-        
-        
-
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
     ax[1].imshow(det.rgb)
     ax[1].set_title("Prediction")
-    ax[1].plot(
-        det.features[0].feature_px.x,
-        det.features[0].feature_px.y,
-        color=c1,
-        marker="+",
-        ms=20,
-        label=det.features[0].name,
-    )
-    ax[1].plot(
-        det.features[1].feature_px.x,
-        det.features[1].feature_px.y,
-        color=c2,
-        marker="+",
-        ms=20,
-        label=det.features[1].name,
-    )
-    ax[1].plot(
-        [det.features[0].feature_px.x, det.features[1].feature_px.x],
-        [det.features[0].feature_px.y, det.features[1].feature_px.y],
-        "w--",
-    )
+    
+    for f in det.features:
+        # c = f.color
+        # marker edge color = white 
+        ax[1].plot(f.feature_px.x, f.feature_px.y, 
+                   "o",  color=f.color, 
+                   markersize=5, markeredgecolor="w", 
+                   label=f.name)
     ax[1].legend(loc="best")
     plt.show()
 
