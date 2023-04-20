@@ -455,3 +455,53 @@ def move_based_on_detection(
             # TODO: support other movements?
     return
 
+
+from fibsem.structures import FibsemImage, Point
+from fibsem.detection.detection import DetectedFeatures, Feature, __FEATURES__, plot_det_result_v2
+from fibsem.segmentation import utils as seg_utils
+import tifffile as tff
+from pathlib import Path
+import pandas as pd
+import glob, os
+from typing import Optional
+
+def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedFeatures]:
+        
+    # glob for the image in the path
+    img_fname = glob.glob(os.path.join(path, f"{fname}.*"))
+    mask_fname = glob.glob(os.path.join(path, "mask", f"{fname}.*"))
+
+    if img_fname == [] or mask_fname == []:
+        return None
+
+    img = FibsemImage.load(img_fname[0])
+    mask = tff.imread(mask_fname[0])
+
+    df_filt = df[df["image"] == fname]
+
+    def _from_df(df: pd.DataFrame) -> list[Feature]:
+
+        features = []
+        for feat_name in df["feature"].unique():
+            
+            # create feature from name
+            idx = [i for i, feat in enumerate(__FEATURES__) if feat.__name__ == feat_name][0]
+            feature = __FEATURES__[idx](
+                feature_px=Point(x=df[df["feature"] == feat_name]["p.x"].values[0],
+                        y=df[df["feature"] == feat_name]["p.y"].values[0]),
+            )
+
+            features.append(feature)
+
+
+        return features
+
+    features = _from_df(df_filt)
+    det = DetectedFeatures(features=features, 
+                        image=img.data, 
+                        mask=mask, 
+                        rgb=seg_utils.decode_segmap(mask),
+                        pixelsize=df_filt["pixelsize"].values[0],
+                        distance=None)
+    
+    return det

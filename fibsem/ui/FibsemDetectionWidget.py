@@ -51,11 +51,12 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self._USER_CORRECTED = False
         self._USE_ALL_FEATURES = False
 
-        self.USE_SEGMENTATION = _SEG_MODE
+        self.USE_SEGMENTATION = True
         self.USE_FEATURE_DETECTION = _DET_MODE
         self.USE_EVALUATION = _EVAL_MODE
 
         self.checkBox_use_segmentation.setChecked(self.USE_SEGMENTATION)
+        self.checkBox_use_segmentation.setVisible(False)
         self.checkBox_use_feature_detection.setChecked(self.USE_FEATURE_DETECTION)
         self.checkBox_use_evaluation.setChecked(self.USE_EVALUATION)
 
@@ -76,7 +77,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         )
 
         # ui
-        self.checkBox_use_segmentation.stateChanged.connect(self._toggle_ui)
+        # self.checkBox_use_segmentation.stateChanged.connect(self._toggle_ui)
         self.checkBox_use_feature_detection.stateChanged.connect(self._toggle_ui)
         self.checkBox_use_evaluation.stateChanged.connect(self._toggle_ui)
         self.checkBox_move_features.stateChanged.connect(self._toggle_ui)
@@ -163,19 +164,23 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
     def _toggle_ui(self):
 
-        self.USE_SEGMENTATION = self.checkBox_use_segmentation.isChecked()
+        # self.USE_SEGMENTATION = self.checkBox_use_segmentation.isChecked()
+
+        # if self.USE_SEGMENTATION is False:
+            # self.checkBox_use_feature_detection.setChecked(False)
+
         self.USE_FEATURE_DETECTION = self.checkBox_use_feature_detection.isChecked()
         self.USE_EVALUATION = self.checkBox_use_evaluation.isChecked()
 
-        # hide segmentation if not used
-        self.label_header_model.setVisible(self.USE_SEGMENTATION)
-        self.label_encoder.setVisible(self.USE_SEGMENTATION)
-        self.lineEdit_encoder.setVisible(self.USE_SEGMENTATION)
-        self.label_checkpoint.setVisible(self.USE_SEGMENTATION)
-        self.lineEdit_checkpoint.setVisible(self.USE_SEGMENTATION)
-        self.label_num_classes.setVisible(self.USE_SEGMENTATION)
-        self.spinBox_num_classes.setVisible(self.USE_SEGMENTATION)
-        self.pushButton_load_model.setVisible(self.USE_SEGMENTATION)
+        # # hide segmentation if not used
+        # self.label_header_model.setVisible(self.USE_SEGMENTATION)
+        # self.label_encoder.setVisible(self.USE_SEGMENTATION)
+        # self.lineEdit_encoder.setVisible(self.USE_SEGMENTATION)
+        # self.label_checkpoint.setVisible(self.USE_SEGMENTATION)
+        # self.lineEdit_checkpoint.setVisible(self.USE_SEGMENTATION)
+        # self.label_num_classes.setVisible(self.USE_SEGMENTATION)
+        # self.spinBox_num_classes.setVisible(self.USE_SEGMENTATION)
+        # self.pushButton_load_model.setVisible(self.USE_SEGMENTATION)
 
         # hide feature detection if not used
         self.label_header_features.setVisible(self.USE_FEATURE_DETECTION)
@@ -197,11 +202,11 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.pushButton_next_image.setVisible(self.USE_EVALUATION)
         self.label_image_path_num.setVisible(self.USE_EVALUATION)
 
-        if self.USE_SEGMENTATION:
-            self.pushButton_run_feature_detection.setText("Run Segmentation")
-
         if self.USE_FEATURE_DETECTION:
             self.pushButton_run_feature_detection.setText("Run Feature Detection")
+        else:
+            self.pushButton_run_feature_detection.setText("Run Segmentation")
+
     
 
         # features
@@ -222,11 +227,10 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         if "features" in self.viewer.layers:
             self.checkBox_move_features.setEnabled(True)
             
-        if self.checkBox_move_features.isChecked():
-            self.viewer.layers.selection.active = self.viewer.layers["features"]
-
-        else:
-            self.viewer.layers.selection.active = self.viewer.layers["image"]
+            if self.checkBox_move_features.isChecked():
+                self.viewer.layers.selection.active = self.viewer.layers["features"]
+            else:
+                self.viewer.layers.selection.active = self.viewer.layers["image"]
 
     def run_feature_detection(self):
 
@@ -488,14 +492,14 @@ if __name__ == "__main__":
 # - add mask, rgb to detected features + save to file  # DONE
 # - convert mask layer to label not image # DONE
 # - save detected features to file on prev / save image # DONE
+# - add n detections, not just two.. if no features are passed... use all?
+# - add toggles for seg / feature detection / eval
+# - maybe integrate as labelling ui? -> assisted labelling
+# - toggle show info checkbox
 
 # TODO:
 # - convert detected features / detection to take in Union[FibsemImage, np.ndarray]
 # - edittable mask -> rerun detection 
 # - abstract segmentation model widget
-# - add n detections, not just two.. if no features are passed... use all?
-# - toggle show info checkbox
-# - maybe integrate as labelling ui? -> assisted labelling
-# - add toggles for seg / feature detection / move
 # - need to ensure feature det is only enabled if seg is enabled
 # - need seg to be enabled if feature det is enabled same for eval
