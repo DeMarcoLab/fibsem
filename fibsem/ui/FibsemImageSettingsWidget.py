@@ -79,6 +79,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.set("stigmation", self.beam_settings.stigmation, beam_type=beam)
         self.microscope.set("shift", self.beam_settings.shift, beam_type=beam)
 
+        self.set_ui_from_settings(self.image_settings,beam)
+
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         contrast = self.microscope.get("detector_contrast", beam_type=beam_type)
         brightness = self.microscope.get("detector_brightness", beam_type=beam_type)
@@ -128,7 +130,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             resolution=[self.spinBox_resolution_x.value(), self.spinBox_resolution_y.value()],
             dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
             stigmation = Point(self.stigmation_x.value(), self.stigmation_y.value()),
-            shift = Point(self.shift_x.value(), self.shift_y.value()),
+            shift = Point(self.shift_x.value() * constants.MICRO_TO_SI, self.shift_y.value()*constants.MICRO_TO_SI),
         )
 
         return self.image_settings, self.detector_settings, self.beam_settings
@@ -161,8 +163,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if beam_settings.working_distance is not None:
             self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
         if beam_settings.shift is not None:
-            self.shift_x.setValue(beam_settings.shift.x)
-            self.shift_y.setValue(beam_settings.shift.y)
+            self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
+            self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
         if beam_settings.stigmation is not None:
             self.stigmation_x.setValue(beam_settings.stigmation.x)
             self.stigmation_y.setValue(beam_settings.stigmation.y)

@@ -212,7 +212,7 @@ class Ui_Form(object):
         self.detector_brightness_label.setText(_translate("Form", "50%"))
         self.label_11.setText(_translate("Form", "Stigmation (x,y)"))
         self.label_7.setText(_translate("Form", "Working Distance (mm)"))
-        self.label_12.setText(_translate("Form", "Shift (x,y)"))
+        self.label_12.setText(_translate("Form", "Shift (x,y) (um)"))
         self.label.setText(_translate("Form", "Detector Settings"))
         self.label_5.setText(_translate("Form", "Contrast (%)"))
         self.label_image_dwell_time.setText(_translate("Form", "Dwell Time (us)"))
