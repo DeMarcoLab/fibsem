@@ -298,7 +298,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
             self._image_layer.data = self.detected_features.image
         except:
             self._image_layer = self.viewer.add_image(
-                self.detected_features.image, name="image", opacity=0.3
+                self.detected_features.image, name="image", opacity=0.7, blending="additive",
             )
 
         # add mask to viewer
@@ -307,7 +307,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         except:
             self._mask_layer = self.viewer.add_labels(self.detected_features.mask, 
                                                       name="mask", 
-                                                      opacity=0.3, 
+                                                      opacity=0.7,
+                                                      blending="additive", 
                                                       color=CLASS_COLORS)
 
         # if the features layer already exists, remove the layer
@@ -398,11 +399,12 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
                     x=data[idx][1], y=data[idx][0]
                 )
 
-            # recalculate the distance
-            self.detected_features.distance = self.detected_features.features[0].feature_px._distance_to(
-                self.detected_features.features[1].feature_px
-            )
-            self.detected_features.distance = self.detected_features.distance._to_metres(pixel_size = self.detected_features.pixelsize) # TODO: get from metadata)
+            if len(self.detected_features.features) >= 2:
+                # recalculate the distance
+                self.detected_features.distance = self.detected_features.features[0].feature_px._distance_to(
+                    self.detected_features.features[1].feature_px
+                )
+                self.detected_features.distance = self.detected_features.distance._to_metres(pixel_size = self.detected_features.pixelsize) # TODO: get from metadata)
 
         self._USER_CORRECTED = True
         self.update_info()
