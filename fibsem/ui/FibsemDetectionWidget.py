@@ -55,6 +55,10 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.USE_FEATURE_DETECTION = _DET_MODE
         self.USE_EVALUATION = _EVAL_MODE
 
+        self._image_layer = None
+        self._mask_layer = None
+        self._features_layer = None
+
         self.checkBox_use_segmentation.setChecked(self.USE_SEGMENTATION)
         self.checkBox_use_segmentation.setVisible(False)
         self.checkBox_use_feature_detection.setChecked(self.USE_FEATURE_DETECTION)
@@ -126,10 +130,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
     
     def save_data(self):
 
-        # TODO: if self.USE_FEATURE_DETECTION is False, need to remove the features...
         
         # get the updated mask
-        self.detected_features.mask = self.viewer.layers["mask"].data.astype(np.uint8)
+        self.detected_features.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
         
         # save current data
         # fname = os.path.basename(self.image_paths[self.idx])
@@ -212,7 +215,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         # features
         if not self.USE_FEATURE_DETECTION:
             if "features" in self.viewer.layers:
-                self.viewer.layers.remove("features")
+                self.viewer.layers.remove(self._features_layer)
+                self._features_layer = None
 
             return
         
@@ -228,9 +232,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
             self.checkBox_move_features.setEnabled(True)
             
             if self.checkBox_move_features.isChecked():
-                self.viewer.layers.selection.active = self.viewer.layers["features"]
+                self.viewer.layers.selection.active = self._features_layer
             else:
-                self.viewer.layers.selection.active = self.viewer.layers["image"]
+                self.viewer.layers.selection.active = self._image_layer
 
     def run_feature_detection(self):
 
@@ -291,21 +295,25 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
             self.comboBox_feature_2.setCurrentText(self.detected_features.features[1].name)
 
         try:
-            self.viewer.layers["image"].data = self.detected_features.image
+            self._image_layer.data = self.detected_features.image
         except:
-            self.viewer.add_image(
+            self._image_layer = self.viewer.add_image(
                 self.detected_features.image, name="image", opacity=0.3
             )
 
         # add mask to viewer
         try:
-            self.viewer.layers["mask"].data = self.detected_features.mask
+            self._mask_layer.data = self.detected_features.mask
         except:
-            self.viewer.add_labels(self.detected_features.mask, name="mask", opacity=0.3, color=CLASS_COLORS)
+            self._mask_layer = self.viewer.add_labels(self.detected_features.mask, 
+                                                      name="mask", 
+                                                      opacity=0.3, 
+                                                      color=CLASS_COLORS)
 
         # if the features layer already exists, remove the layer
         if "features" in self.viewer.layers:
-            self.viewer.layers.remove("features")
+            self.viewer.layers.remove(self._features_layer)
+            self._features_layer = None
 
         if not self.USE_FEATURE_DETECTION:
             napari.utils.notifications.show_info(f"Segmentation finished.")
@@ -324,7 +332,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
             "translation": np.array([-30, 0]),
         }
 
-        self.viewer.add_points(
+        self._features_layer = self.viewer.add_points(
             data,
             name="features",
             text=text,
@@ -337,11 +345,11 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         )
 
         # set points layer to select mode and active
-        self.viewer.layers["features"].mode = "select"
+        self._features_layer.mode = "select"
 
         # when the point is moved update the feature
-        # self.viewer.layers["features"].mouse_drag_callbacks.append(self.point_moved)
-        self.viewer.layers["features"].events.data.connect(self.update_point)
+        # self._features_layer.mouse_drag_callbacks.append(self.point_moved)
+        self._features_layer.events.data.connect(self.update_point)
 
         self.update_info()
         self.checkBox_move_features.setChecked(True)
