@@ -902,7 +902,7 @@ class FibsemMillingSettings:
         assert isinstance(self.dwell_time,(float,int)), f"invalid type for dwell_time, must be int or float, currently {type(self.dwell_time)}"
         assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
         assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
-        assert isinstance(self.application_file,(str, None)), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
+        assert isinstance(self.application_file,(str)), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
 
     def __to_dict__(self) -> dict:
 
