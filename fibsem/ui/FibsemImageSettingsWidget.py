@@ -1,7 +1,7 @@
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets
-
+from PyQt5.QtCore import pyqtSignal
 from fibsem.microscope import FibsemMicroscope
 from fibsem import constants, acquire
 
@@ -15,6 +15,7 @@ from pathlib import Path
 
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
+    picture_signal = pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -33,10 +34,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.setup_connections()
 
         if image_settings is not None:
-            self.detector_settings = self.get_detector_settings()
-            self.beam_settings = self.get_beam_settings()
+            # self.detector_settings = self.get_detector_settings()
+            # self.beam_settings = self.get_beam_settings()
             self.image_settings = image_settings
-            # self.set_ui_from_settings(image_settings = image_settings, beam_settings= self.beam_settings, detector_settings= self.detector_settings, beam_type = BeamType.ELECTRON)
+            self.set_ui_from_settings(image_settings = image_settings, beam_type = BeamType.ELECTRON)
         self.update_detector_ui()
 
         # register initial images
@@ -201,6 +202,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_image = arr
         if self.image_settings.beam_type == BeamType.ION:
             self.ib_image = arr
+        
+        self.picture_signal.emit()
 
         self.update_viewer(arr.data, name)
 
@@ -212,7 +215,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.update_viewer(self.ib_image.data, BeamType.ION.name)
         self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
-
+        self.picture_signal.emit()
 
     def update_viewer(self, arr: np.ndarray, name: str):
        
