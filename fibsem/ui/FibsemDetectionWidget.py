@@ -348,7 +348,6 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self._features_layer.mode = "select"
 
         # when the point is moved update the feature
-        # self._features_layer.mouse_drag_callbacks.append(self.point_moved)
         self._features_layer.events.data.connect(self.update_point)
 
         self.update_info()
