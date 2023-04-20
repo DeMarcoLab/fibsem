@@ -2,7 +2,7 @@ import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope
 from fibsem import constants, acquire
 
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
@@ -31,6 +31,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.eb_layer, self.ib_layer = None, None
         self.eb_image, self.ib_image = None, None
 
+        self._TESCAN = isinstance(self.microscope, TescanMicroscope)
+
         self.setup_connections()
 
         if image_settings is not None:
@@ -58,7 +60,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.button_set_beam_settings.clicked.connect(self.apply_beam_settings)
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
-    
+
+        if self._TESCAN:
+
+            self.label_11.hide()
+            self.stigmation_x.hide()
+            self.stigmation_y.hide()
+            self.stigmation_x.setEnabled(False)
+            self.stigmation_y.setEnabled(False)
+
     def update_labels(self):
         self.detector_contrast_label.setText(f"{self.detector_contrast_slider.value()}%")
         self.detector_brightness_label.setText(f"{self.detector_brightness_slider.value()}%")
