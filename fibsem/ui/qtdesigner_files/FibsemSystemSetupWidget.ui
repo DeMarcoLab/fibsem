@@ -112,7 +112,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="rotationFlatToElectronLabel">
         <property name="text">
-         <string>Rotation flat to electron</string>
+         <string>Rotation Flat To Electron (deg)</string>
         </property>
        </widget>
       </item>
@@ -129,7 +129,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="rotationFlatToIonLabel">
         <property name="text">
-         <string>Rotation flat to ion</string>
+         <string>Rotation Flat To Ion (deg)</string>
         </property>
        </widget>
       </item>
@@ -146,7 +146,7 @@
       <item row="3" column="0">
        <widget class="QLabel" name="tiltFlatToElectronLabel">
         <property name="text">
-         <string>Tilt flat to electron</string>
+         <string>Tilt Flat To Electron (deg)</string>
         </property>
        </widget>
       </item>
@@ -163,7 +163,7 @@
       <item row="4" column="0">
        <widget class="QLabel" name="tiltFlatToIonLabel">
         <property name="text">
-         <string>Tilt flat to ion</string>
+         <string>Tilt Flat To Ion (deg)</string>
         </property>
        </widget>
       </item>
@@ -180,7 +180,7 @@
       <item row="5" column="0">
        <widget class="QLabel" name="preTiltLabel">
         <property name="text">
-         <string>Pre tilt</string>
+         <string>Shuttle Pre Tilt (deg)</string>
         </property>
        </widget>
       </item>
@@ -197,7 +197,7 @@
       <item row="6" column="0">
        <widget class="QLabel" name="needleStageHeightLimitnMmLabel">
         <property name="text">
-         <string>Needle stage height limit (mm)</string>
+         <string>Needle Stage Height Limit (mm)</string>
         </property>
        </widget>
       </item>
