@@ -54,6 +54,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 
     def set_stage_parameters(self):
+        if self.microscope is None:
+            return
         self.settings.system.stage = self.system_widget.settings.system.stage   
         logging.info("Stage parameters set")  
 
