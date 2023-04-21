@@ -305,6 +305,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             dwell_time = self.doubleSpinBox_dwell_time.value() * constants.MICRO_TO_SI,
             spot_size=self.doubleSpinBox_spot_size.value() * constants.MICRO_TO_SI,
             hfw=self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI,
+            preset= self.comboBox_preset.currentText(),
 
         )
 
