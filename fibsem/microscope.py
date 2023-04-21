@@ -3444,6 +3444,9 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "detector_mode": 
             values = None 
 
+        if key == "presets":
+            return self._get_presets()
+
         return values
 
     def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:

@@ -73,6 +73,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_application_file.setVisible(_THERMO)
         available_application_files = self.microscope.get_available_values("application_file")
         self.comboBox_application_file.addItems(available_application_files)
+        self.comboBox_preset.setVisible(_THERMO)
+        self.label_preset.setVisible(_THERMO)
+        
         
         # TESCAN
         self.label_rate.setVisible(_TESCAN)
@@ -80,7 +83,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.label_dwell_time.setVisible(_TESCAN)
         self.doubleSpinBox_rate.setVisible(_TESCAN)
         self.doubleSpinBox_spot_size.setVisible(_TESCAN)
-        self.doubleSpinBox_dwell_time.setVisible(_TESCAN)       
+        self.doubleSpinBox_dwell_time.setVisible(_TESCAN)   
+        self.comboBox_preset.setVisible(_TESCAN)
+        self.label_preset.setVisible(_TESCAN)
+        available_presets = self.microscope.get_available_values("presets")
+        self.comboBox_preset.addItems(available_presets)    
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
