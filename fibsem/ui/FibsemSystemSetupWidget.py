@@ -7,6 +7,7 @@ import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+from fibsem import config as cfg
 
 
 from fibsem import constants, conversions
@@ -38,6 +39,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.settings = settings
         self.viewer = viewer
         self.config_path = config_path
+        self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
 
         self.setup_connections()
 
