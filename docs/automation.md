@@ -162,3 +162,40 @@ We provide a basic machine learning pipeline and workflow. Currently only segmen
 For detailed information on the machine learning tools, please see [Machine Learning](ml.md).
 
 
+## Movement
+
+The movement module contains functions for moving the microscope stage. 
+
+We provide a number of advanced movement functions that are useful for correcting and maintianing the eucentricity of the microscope.
+
+![Movement Axes](img/movement/movement_axes.svg)
+
+### Eucentric Movement
+
+Eucentric movements correct the eucentric position of the microscope. This is useful when initially setting up the microscope, or when the eucentric position has been lost. The eucentric movements move the stage vertically in the chamber to correct the eucentric position.
+
+![Eucentric Movement](img/movement/eucentric/eucentric.gif)
+
+To use eucentric movements, use: 
+```python
+microscope.eucentric_move(settings, dy)
+```
+
+::: fibsem.microscope.ThermoMicroscope.eucentric_move
+
+where dy is the distance to move in the image plane (eucentric movements are always calculated from the ion beam perspective).
+
+
+### Stable Movement
+
+Stable movements maintain the sample at the eucentric position, allowing for movement along the sample plane without losing the eucentric position. This is useful for performing liftout, and other tasks that require movement along the sample plane.
+
+![Stable Movement](img/movement/stable/stable.gif)
+
+To use stable movements, use: 
+```python 
+microscope.stable_move(settings, dx, dy, beam_type)
+```
+where dx, dy are the distance to move in the image plane, and beam_type is the beam type to use for the movement.
+
+::: fibsem.microscope.ThermoMicroscope.stable_move
