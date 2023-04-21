@@ -472,7 +472,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.name is "LamellaCentre" and f2.name is "ImageCentre":
+    if f1.name == "LamellaCentre" and f2.name == "ImageCentre":
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
