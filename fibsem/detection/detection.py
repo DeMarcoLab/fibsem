@@ -406,7 +406,6 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
     ax[1].imshow(det.mask)
-    plt.imsave("mask.tiff",det.mask)
     ax[1].set_title("Prediction")
     ax[1].plot(
         det.features[0].feature_px.x,
