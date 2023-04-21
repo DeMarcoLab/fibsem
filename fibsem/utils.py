@@ -48,7 +48,7 @@ def current_timestamp():
     Returns:
         String: Current time
     """
-    return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%I-%M-%S%p")
+    return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%I-%M-%S%p") #PM/AM doesnt work?
 
 
 def _format_time_seconds(seconds: float) -> str:

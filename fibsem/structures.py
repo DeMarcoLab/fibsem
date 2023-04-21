@@ -71,6 +71,29 @@ class Point:
     
     def __add__(self, other) -> 'Point':
         return Point(self.x + other.x, self.y + other.y)
+    
+    def __sub__(self, other) -> 'Point':
+        return Point(self.x - other.x, self.y - other.y)
+
+    def __len__(self) -> int:
+        return 2
+
+    def __getitem__(self, key: int) -> float:
+        if key == 0:
+            return self.x
+        elif key == 1:
+            return self.y
+        else:
+            raise IndexError("Index out of range")
+
+    def _to_metres(self, pixel_size: float) -> 'Point':
+        return Point(self.x * pixel_size, self.y * pixel_size)
+
+    def _to_pixels(self, pixel_size: float) -> 'Point':
+        return Point(self.x / pixel_size, self.y / pixel_size)
+
+    def _distance_to(self, other: 'Point') -> 'Point':
+        return Point(x=(other.x - self.x), y=(other.y - self.y))
 
 
 # TODO: convert these to match autoscript...
@@ -1536,7 +1559,7 @@ class FibsemImage:
         Inputs:
             save_path (path): path to save directory and filename
         """
-        self.metadata.image_settings.save_path = str(self.metadata.image_settings.save_path)
+        # self.metadata.image_settings.save_path = str(self.metadata.image_settings.save_path)
         if save_path is None:
             save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)

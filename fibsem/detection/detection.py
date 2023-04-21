@@ -9,7 +9,6 @@ from scipy.spatial import distance
 from skimage import feature
 
 from fibsem import conversions
-# from fibsem.detection.utils import Feature, FeatureType
 from fibsem.imaging import masks
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
@@ -20,7 +19,8 @@ from abc import ABC, abstractmethod
 class Feature(ABC):
     feature_px: Point 
     feature_m: Point
-    _color_UINT8: None
+    _color_UINT8: tuple = (255,255,255)
+    color = "white"
     name: str = None
 
     @abstractmethod
@@ -32,76 +32,81 @@ class ImageCentre(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,255,255)
+    color = "white"
     name: str = "ImageCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
-        self.feature_px = Point(x=img.shape[1] / 2, y=img.shape[0] / 2)
+        self.feature_px = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
         return self.feature_px
 
-    
+
 
 @dataclass
 class NeedleTip(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (0,255,0)
+    color = "green"
     name: str = "NeedleTip"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
         self.feature_px = detect_needle_v4(mask)
         return self.feature_px
-    
-    
+
+
 
 @dataclass
 class LamellaCentre(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,0,0)
+    color = "red"
     name: str = "LamellaCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
-        self.feature_px = detect_lamella(mask, self.name)
+        self.feature_px = detect_lamella(mask, self)
 
-    
+
 @dataclass
 class LamellaLeftEdge(Feature):
     feature_m: Point = None
     feature_px: Point = None
-    _color_UINT8: tuple = (255,0,0)
+    _color_UINT8: tuple = (255,0,255)
+    color = "magenta"
     name: str = "LamellaLeftEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
-        self.feature_px = detect_lamella(mask, self.name)
+        self.feature_px = detect_lamella(mask, self)
         return self.feature_px
-    
+
 
 @dataclass
 class LamellaRightEdge(Feature):
     feature_m: Point = None
     feature_px: Point = None
-    _color_UINT8: tuple = (255,0,255)
+    _color_UINT8: tuple = (255,165,0)
+    color = "orange"
     name: str = "LamellaRightEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
-        self.feature_px = detect_lamella(mask, self.name)
+        self.feature_px = detect_lamella(mask, self)
         return self.feature_px
-    
+
 
 @dataclass
 class LandingPost(Feature):
     feature_m: Point = None
     feature_px: Point = None
     _color_UINT8: tuple = (255,255,255)
+    color = "cyan"
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
         self.feature_px = detect_landing_post_v3(img, point)
         return self.feature_px
-    
+
 
 __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
-
  
 
 
@@ -136,12 +141,12 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     return feature_px
 
 
-def detect_centre_point(mask: np.ndarray, color: tuple, threshold: int = 25) -> Point:
+def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
     """ Detect the centre (mean) point of the mask for a given color (label)
 
     args:
         mask: the detection mask (PIL.Image)
-        color: the color of the label for the feature to detect (rgb tuple)
+        idx: the index of the desired class in the mask (int)
         threshold: the minimum number of required pixels for a detection to count (int)
 
     return:
@@ -149,9 +154,8 @@ def detect_centre_point(mask: np.ndarray, color: tuple, threshold: int = 25) -> 
         centre_px: the pixel coordinates of the centre point of the feature (tuple)
     """
     centre_px = Point(x=0, y=0)
-
-    # extract class pixels
-    class_mask, idx = extract_class_pixels(mask, color)
+    # get mask px coordinates
+    idx = np.where(mask)
 
     # only return a centre point if detection is above a threshold
     if len(idx[0]) > threshold:
@@ -192,34 +196,33 @@ def detect_corner(
 
         edge_px = coords[0][v_idx], coords[1][v_idx]
 
-    return Point(x=edge_px[1], y=edge_px[0])
+    return Point(x=int(edge_px[1]), y=int(edge_px[0]))
 
 
 def detect_lamella(
     mask: np.ndarray,
-    feature_type: str,
-    color: tuple = LamellaCentre._color_UINT8,
+    feature: Feature,
     mask_radius: int = 512,
+    idx: int = 1,
 ) -> Point:
 
-    lamella_mask, _ = extract_class_pixels(mask, color)
+    lamella_mask = mask == idx
     lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
-    lamella_centre = detect_centre_point(lamella_mask, color=color)
 
-    if feature_type == "LamellaCentre":
-        feature_px = detect_centre_point(lamella_mask, color=color)
+    if isinstance(feature, LamellaCentre):
+        feature_px = detect_centre_point(lamella_mask)
 
-    if feature_type == "LamellaLeftEdge":
+    if isinstance(feature, LamellaLeftEdge):
         feature_px = detect_corner(lamella_mask, left=True)
 
-    if feature_type == "LamellaRightEdge":
+    if isinstance(feature, LamellaRightEdge):
         feature_px = detect_corner(lamella_mask, left=False)
 
     return feature_px
 
 
-def detect_needle_v4(mask: np.ndarray,) -> Point:
-    needle_mask, _ = extract_class_pixels(mask, NeedleTip._color_UINT8)
+def detect_needle_v4(mask: np.ndarray, idx:int=2) -> Point:
+    needle_mask = mask == idx
     return detect_corner(needle_mask, threshold=100)
 
 
@@ -262,7 +265,7 @@ def detect_closest_edge_v2(
             min_dst = dst
             landing_edge_px = px
 
-    return Point(x=landing_edge_px[1], y=landing_edge_px[0])
+    return Point(x=int(landing_edge_px[1]), y=int(landing_edge_px[0]))
 
 
 def detect_bounding_box(mask, color, threshold=25):
@@ -318,10 +321,11 @@ def detect_bounding_box(mask, color, threshold=25):
 @dataclass
 class DetectedFeatures:
     features: list[Feature]
-    image: np.ndarray
-    mask: np.ndarray
+    image: np.ndarray # TODO: convert or add FIBSEMImage
+    mask: np.ndarray # class binary mask
+    rgb: np.ndarray # rgb mask
     pixelsize: float
-    distance: Point
+    distance: Point # convert to property
 
 
 def detect_features_v2(
@@ -347,22 +351,24 @@ def locate_shift_between_features_v2(
 ) -> DetectedFeatures:
 
     # model inference
-    mask = model.inference(image)
+    mask = model.inference(image, rgb=False)
+    rgb = model.postprocess(mask, model.num_classes)
+    mask = mask[0] # remove channel dim
 
     # detect features
-    feature_1, feature_2 = detect_features_v2(image, mask, features)
+    features = detect_features_v2(image, mask, features)
 
-    # calculate distance between features
+    # calculate distance between features (only for first two)
     distance_px = conversions.distance_between_points(
-        feature_1.feature_px, feature_2.feature_px
+        features[0].feature_px, features[1].feature_px # type: ignore
     )
-    distance_m = conversions.convert_point_from_pixel_to_metres(distance_px, pixelsize)
 
     det = DetectedFeatures(
-        features=[feature_1, feature_2],
+        features=features, # type: ignore
         image=image,
         mask=mask,
-        distance=distance_m,
+        rgb=rgb,
+        distance=distance_px._to_metres(pixelsize),
         pixelsize=pixelsize,
     )
 
@@ -380,54 +386,18 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 7))
 
-    # convert rgb 255 range to 0-1 tuple
-    if inverse:
-        # plotting crosshairs are contrasted against feature
-        c1 = ((255-det.features[0]._color_UINT8[0])/255,
-            (255-det.features[0]._color_UINT8[1])/255,
-            (255-det.features[0]._color_UINT8[2])/255)
-        
-        c2 = ((255-det.features[1]._color_UINT8[0])/255,
-            (255-det.features[1]._color_UINT8[1])/255,
-            (255-det.features[1]._color_UINT8[2])/255)
-        
-    else:
-
-        c1 = ((det.features[0]._color_UINT8[0])/255,
-            (det.features[0]._color_UINT8[1])/255,
-            (det.features[0]._color_UINT8[2])/255)
-        
-        c2 = ((det.features[1]._color_UINT8[0])/255,
-            (det.features[1]._color_UINT8[1])/255,
-            (det.features[1]._color_UINT8[2])/255)
-        
-        
-
     ax[0].imshow(det.image, cmap="gray")
     ax[0].set_title(f"Image")
-    ax[1].imshow(det.mask)
+    ax[1].imshow(det.rgb)
     ax[1].set_title("Prediction")
-    ax[1].plot(
-        det.features[0].feature_px.x,
-        det.features[0].feature_px.y,
-        color=c1,
-        marker="+",
-        ms=20,
-        label=det.features[0].name,
-    )
-    ax[1].plot(
-        det.features[1].feature_px.x,
-        det.features[1].feature_px.y,
-        color=c2,
-        marker="+",
-        ms=20,
-        label=det.features[1].name,
-    )
-    ax[1].plot(
-        [det.features[0].feature_px.x, det.features[1].feature_px.x],
-        [det.features[0].feature_px.y, det.features[1].feature_px.y],
-        "w--",
-    )
+    
+    for f in det.features:
+        # c = f.color
+        # marker edge color = white 
+        ax[1].plot(f.feature_px.x, f.feature_px.y, 
+                   "o",  color=f.color, 
+                   markersize=5, markeredgecolor="w", 
+                   label=f.name)
     ax[1].legend(loc="best")
     plt.show()
 
@@ -460,7 +430,7 @@ def move_based_on_detection(
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
     # these movements move the needle...
-    if f1.name in ["NeedleTip", "LamellaRightEdge"]:
+    if isinstance(f1, NeedleTip) or isinstance(f1, LamellaRightEdge):
 
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ELECTRON:
@@ -472,7 +442,8 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if f1.name == "LamellaCentre" and f2.name == "ImageCentre":
+    if isinstance(f1, LamellaCentre) and isinstance(f2, ImageCentre):
+
 
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
@@ -485,3 +456,53 @@ def move_based_on_detection(
             # TODO: support other movements?
     return
 
+
+from fibsem.structures import FibsemImage, Point
+from fibsem.detection.detection import DetectedFeatures, Feature, __FEATURES__, plot_det_result_v2
+from fibsem.segmentation import utils as seg_utils
+import tifffile as tff
+from pathlib import Path
+import pandas as pd
+import glob, os
+from typing import Optional
+
+def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedFeatures]:
+        
+    # glob for the image in the path
+    img_fname = glob.glob(os.path.join(path, f"{fname}.*"))
+    mask_fname = glob.glob(os.path.join(path, "mask", f"{fname}.*"))
+
+    if img_fname == [] or mask_fname == []:
+        return None
+
+    img = FibsemImage.load(img_fname[0])
+    mask = tff.imread(mask_fname[0])
+
+    df_filt = df[df["image"] == fname]
+
+    def _from_df(df: pd.DataFrame) -> list[Feature]:
+
+        features = []
+        for feat_name in df["feature"].unique():
+            
+            # create feature from name
+            idx = [i for i, feat in enumerate(__FEATURES__) if feat.__name__ == feat_name][0]
+            feature = __FEATURES__[idx](
+                feature_px=Point(x=df[df["feature"] == feat_name]["p.x"].values[0],
+                        y=df[df["feature"] == feat_name]["p.y"].values[0]),
+            )
+
+            features.append(feature)
+
+
+        return features
+
+    features = _from_df(df_filt)
+    det = DetectedFeatures(features=features, 
+                        image=img.data, 
+                        mask=mask, 
+                        rgb=seg_utils.decode_segmap(mask),
+                        pixelsize=df_filt["pixelsize"].values[0],
+                        distance=None)
+    
+    return det
