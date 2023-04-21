@@ -444,6 +444,7 @@ def move_based_on_detection(
 
     if isinstance(f1, LamellaCentre) and isinstance(f2, ImageCentre):
 
+
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
                 settings=settings,

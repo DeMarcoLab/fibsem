@@ -163,7 +163,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def setup_milling(self, mill_settings: FibsemMillingSettings) -> None:
+    def setup_milling(self, mill_settings: FibsemMillingSettings, preset: str) -> None:
         pass
 
     @abstractmethod
@@ -1090,6 +1090,7 @@ class ThermoMicroscope(FibsemMicroscope):
     def setup_milling(
         self,
         mill_settings: FibsemMillingSettings,
+        preset: str = None,
     ):
         """
         Configure the microscope for milling using the ion beam.
@@ -2158,16 +2159,18 @@ class TescanMicroscope(FibsemMicroscope):
             image_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
         if image_settings.reduced_area is not None:
-            left =  imageWidth - int(image_settings.reduced_area.left * imageWidth)
-            top = imageHeight - int(image_settings.reduced_area.top * imageHeight)
+            left =  int(image_settings.reduced_area.left * imageWidth)
+            top = int(image_settings.reduced_area.top * imageHeight) 
+            width = int(image_settings.reduced_area.width * imageWidth)
+            height = int(image_settings.reduced_area.height * imageHeight)
             image = self.connection.SEM.Scan.AcquireROIFromChannel(
                 Channel= 0,
                 Width= imageWidth,
                 Height= imageHeight,
                 Left= left,
                 Top= top,
-                Right= left - imageWidth -1 ,
-                Bottom= top - imageHeight - 1,
+                Right= left + width -1 ,
+                Bottom= top + height - 1,
                 DwellTime= dwell_time
             )
         else:
@@ -2261,16 +2264,18 @@ class TescanMicroscope(FibsemMicroscope):
         
         
         if image_settings.reduced_area is not None:
-            left =  imageWidth - int(image_settings.reduced_area.left * imageWidth)
-            top = imageHeight - int(image_settings.reduced_area.top * imageHeight)
+            left =  int(image_settings.reduced_area.left * imageWidth)
+            top = int(image_settings.reduced_area.top * imageHeight) 
+            width = int(image_settings.reduced_area.width * imageWidth)
+            height = int(image_settings.reduced_area.height * imageHeight)
             image = self.connection.FIB.Scan.AcquireROIFromChannel(
                 Channel= 0,
                 Width= imageWidth,
                 Height= imageHeight,
                 Left= left,
                 Top= top,
-                Right= left - imageWidth -1 ,
-                Bottom= top - imageHeight - 1,
+                Right= left + width -1 ,
+                Bottom= top + height - 1,
                 DwellTime= dwell_time
             )
         else:
@@ -2342,6 +2347,10 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             raise Exception("Beam type error")
         return image
+
+    def _get_presets(self):
+        presets = self.connection.FIB.Preset.Enum()	
+        return presets
 
     def autocontrast(self, beam_type: BeamType) -> None:
         """Automatically adjust the microscope image contrast for the specified beam type.
@@ -2589,7 +2598,7 @@ class TescanMicroscope(FibsemMicroscope):
         wd = self.connection.SEM.Optics.GetWD()
 
         # calculate stage movement
-        x_move = FibsemStagePosition(x=-dx, y=0, z=0) 
+        x_move = FibsemStagePosition(x=dx, y=0, z=0) 
         yz_move = self._y_corrected_stage_movement(
             settings=settings,
             expected_y=-dy,
@@ -2625,9 +2634,33 @@ class TescanMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
 
-        z_move = dy / np.cos(
-            np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion + settings.system.stage.pre_tilt)
-        )  # TODO: MAGIC NUMBER, 90 - fib tilt
+        PRETILT_SIGN = 1.0
+        from fibsem import movement
+        # current stage position
+        current_stage_position = self.get_stage_position()
+        stage_rotation = current_stage_position.r % (2 * np.pi)
+        stage_tilt = current_stage_position.t
+        stage_tilt_flat_to_electron = np.deg2rad(
+            settings.system.stage.tilt_flat_to_electron
+        )
+        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+
+        stage_rotation_flat_to_ion = np.deg2rad(
+            settings.system.stage.rotation_flat_to_ion
+        ) % (2 * np.pi)
+
+        if movement.rotation_angle_is_smaller(
+            stage_rotation, stage_rotation_flat_to_ion, atol=5
+        ):
+            PRETILT_SIGN = -1.0
+
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
+        perspective_tilt = (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
+        z_perspective = - dy/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
+        z_move = z_perspective*np.sin(90*constants.DEGREES_TO_RADIANS - stage_tilt_flat_to_ion) 
+        # z_move = dy / np.cos(
+        #     np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion + settings.system.stage.pre_tilt)
+        # )  # TODO: MAGIC NUMBER, 90 - fib tilt
         logging.info(f"eucentric movement: {z_move}")
         z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
@@ -2872,6 +2905,7 @@ class TescanMicroscope(FibsemMicroscope):
     def setup_milling(
         self,
         mill_settings: FibsemMillingSettings,
+        preset: str = None,
     ):
         """
         Configure the microscope for milling using the ion beam.
@@ -2917,6 +2951,7 @@ class TescanMicroscope(FibsemMicroscope):
             rate=rate,
             dwellTime=dwell_time,
             parallel=parallel_mode,
+            preset = preset,
         )
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
         
@@ -3040,7 +3075,7 @@ class TescanMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         # """
         try:
-            # self.connection.DrawBeam.Stop()
+            self.connection.FIB.Preset.Activate("30 keV; UHR imaging")
             self.connection.DrawBeam.UnloadLayer()
             print("hello")
         except:
@@ -3528,6 +3563,9 @@ class TescanMicroscope(FibsemMicroscope):
             _check_needle(self.hardware_settings)
             return self.connection.Nanomanipulator.IsCalibrated(0)
 
+        if key == "presets":
+            return self._get_presets()
+
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return None   
 
@@ -3840,7 +3878,7 @@ class DemoMicroscope(FibsemMicroscope):
         if name == "EUCENTRIC":
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
-    def setup_milling(self, mill_settings: FibsemMillingSettings):
+    def setup_milling(self, mill_settings: FibsemMillingSettings, preset: str = None):
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
 

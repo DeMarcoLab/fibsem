@@ -74,7 +74,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def move_to_position(self):
         stage_position = self.get_position_from_ui()
         self.microscope.move_stage_absolute(stage_position)
-
+        self.image_widget.take_reference_images()
         self.update_ui()
     
     def update_ui(self):

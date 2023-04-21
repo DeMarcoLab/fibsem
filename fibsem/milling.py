@@ -20,6 +20,7 @@ from fibsem.microscope import FibsemMicroscope
 def setup_milling(
     microscope: FibsemMicroscope,
     mill_settings: FibsemMillingSettings = None,
+    preset: str = None,
 ):
     """Setup Microscope for Ion Beam Milling.
 
@@ -28,7 +29,7 @@ def setup_milling(
         patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
-    microscope.setup_milling(mill_settings = mill_settings)
+    microscope.setup_milling(mill_settings = mill_settings, preset = preset)
 
 def run_milling_drift_corrected(
     microscope: FibsemMicroscope, 
@@ -71,7 +72,7 @@ def finish_milling(
 
     """
     # restore imaging current
-    logging.info(f"changing to imaging current: {imaging_current:.2e}")
+    logging.info(f"changing to imaging settings")
     microscope.finish_milling(imaging_current)
     logging.info("finished ion beam milling.")
 
@@ -299,9 +300,10 @@ def milling_protocol(
     ref_image: FibsemImage = None,
     reduced_area: FibsemRectangle = None,
     asynch: bool = False,
+    preset: str = None,
 ):
     # setup milling
-    setup_milling(microscope, mill_settings)
+    setup_milling(microscope, mill_settings, preset)
 
     # draw patterns
     for pattern in patterns:
