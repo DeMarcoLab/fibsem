@@ -31,58 +31,11 @@
       </property>
       <widget class="QWidget" name="general">
        <attribute name="title">
-        <string>General</string>
+        <string>System</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="2" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>Connect to Microscope</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0" colspan="2">
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="0" column="0">
-         <widget class="QLabel" name="label_ip_address">
-          <property name="text">
-           <string>IP Address</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_manufacturer">
-          <property name="minimumSize">
-           <size>
-            <width>150</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Manufacturer</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="comboBox_manufacturer"/>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEdit_ip_address">
-          <property name="text">
-           <string>localhost</string>
-          </property>
-         </widget>
+         <layout class="QGridLayout" name="gridLayout_system"/>
         </item>
        </layout>
       </widget>
@@ -110,7 +63,7 @@
      <x>0</x>
      <y>0</y>
      <width>568</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
