@@ -39,6 +39,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.settings = settings
         self.viewer = viewer
         self.config_path = config_path
+        self.lineEdit_ipadress.setText("localhost")
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
 
         self.setup_connections()
@@ -57,11 +58,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def connect(self):
         if self.lineEdit_ipadress.text() == "":
-            _ = message_box_ui(
-                title="IP adress not set.",
-                text="Please enter an IP adress before connecting to microscope.",
-                buttons=QMessageBox.Ok,
-            )
+            napari.utils.notifications.show_error(f"IP address not set. Please enter an IP address before connecting to microscope.")
             return
         try:
             ip_address = self.lineEdit_ipadress.text()
@@ -80,7 +77,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.rotationFlatToIonSpinBox.setValue(self.settings.system.stage.rotation_flat_to_ion)
             self.connected_signal.emit()
         except Exception as e:
-            logging.error(f"Unable to connect to the microscope: {traceback.format_exc()}")
+            msg = f"Unable to connect to the microscope: {traceback.format_exc()}"
+            logging.error(msg)
+            napari.utils.notifications.show_error(msg)
             self.microscope_status.setText("Microscope Disconnected")
             self.microscope_status.setStyleSheet("background-color: red")
 
