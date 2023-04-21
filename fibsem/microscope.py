@@ -163,7 +163,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def setup_milling(self, mill_settings: FibsemMillingSettings, preset: str) -> None:
+    def setup_milling(self, mill_settings: FibsemMillingSettings) -> None:
         pass
 
     @abstractmethod
@@ -1090,7 +1090,6 @@ class ThermoMicroscope(FibsemMicroscope):
     def setup_milling(
         self,
         mill_settings: FibsemMillingSettings,
-        preset: str = None,
     ):
         """
         Configure the microscope for milling using the ion beam.
@@ -2905,7 +2904,6 @@ class TescanMicroscope(FibsemMicroscope):
     def setup_milling(
         self,
         mill_settings: FibsemMillingSettings,
-        preset: str = None,
     ):
         """
         Configure the microscope for milling using the ion beam.
@@ -2951,7 +2949,7 @@ class TescanMicroscope(FibsemMicroscope):
             rate=rate,
             dwellTime=dwell_time,
             parallel=parallel_mode,
-            preset = preset,
+            preset = mill_settings.preset,
         )
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
         
