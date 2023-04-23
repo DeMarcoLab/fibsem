@@ -5,8 +5,6 @@ from pathlib import Path
 
 import napari
 import numpy as np
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import AdornedImage
 from fibsem import acquire, conversions, validation
 from fibsem.detection import detection
 from fibsem.detection.detection import (DetectedFeatures,Feature)
@@ -14,46 +12,9 @@ from fibsem.segmentation.model import load_model
 from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
-from fibsem.ui.FibsemMovementUI import FibsemMovementUI
-from fibsem.ui.user_window import GUIUserWindow
 from PyQt5.QtWidgets import QMessageBox
 from fibsem.microscope import FibsemMicroscope
 
-def ask_user_interaction(
-    msg="Default Ask User Message", image: np.ndarray = None
-):
-    """Create user interaction window and get return response"""
-    ask_user_window = GUIUserWindow(msg=msg, image=image)
-    ask_user_window.show()
-
-    response = bool(ask_user_window.exec_())
-    return response
-
-
-def ask_user_movement(
-    microscope: SdbMicroscopeClient,
-    settings: MicroscopeSettings,
-    msg_type="eucentric",
-    msg: str = None,
-    parent=None,
-):
-
-    viewer = napari.Viewer()
-
-    movement_ui = FibsemMovementUI(
-        microscope=microscope,
-        settings=settings,
-        msg_type=msg_type,
-        msg=msg,
-        parent=parent,
-        viewer=viewer
-    )
-    
-    viewer.window.add_dock_widget(movement_ui, area="right", add_vertical_stretch=False)
-    movement_ui.exec_()
-    viewer.close()
-
-    # napari.run()
 
 def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
 

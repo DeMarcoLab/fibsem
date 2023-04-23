@@ -11,11 +11,12 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from fibsem.structures import Point, FibsemImage, FibsemImageMetadata
 from PIL import Image
 
-# TODO: rename from detection to features, e.g. FeatureType
-
+from fibsem import config as cfg
+from fibsem import utils
+from fibsem.detection.detection import DetectedFeatures
+from fibsem.structures import FibsemImage, FibsemImageMetadata, Point
 
 def decode_segmap(image, nc=3):
 
@@ -41,12 +42,6 @@ def decode_segmap(image, nc=3):
     # stack rgb channels to form an image
     rgb_mask = np.stack([r, g, b], axis=2)
     return rgb_mask
-
-
-
-
-
-
 
 def coordinate_distance(p1: Point, p2: Point):
     """Calculate the distance between two points in each coordinate"""
@@ -175,9 +170,8 @@ def write_data_to_csv(path: Path, info: list) -> None:
 
 
 def write_data_to_disk(path: Path, detected_features) -> None:
-    from fibsem.detection.detection import DetectedFeatures
-
     from fibsem import utils
+    from fibsem.detection.detection import DetectedFeatures
     label = utils.current_timestamp() + "_label"
 
     # utils.save_image(
@@ -186,8 +180,9 @@ def write_data_to_disk(path: Path, detected_features) -> None:
     # label=label,
     # )
 
-    import tifffile as tf
-    import os 
+    import os
+
+    import tifffile as tf 
     os.makedirs(path, exist_ok=True)
     tf.imsave(os.path.join(path, f"{label}.tif"), detected_features.image)
 
@@ -208,3 +203,48 @@ def write_data_to_disk(path: Path, detected_features) -> None:
 
     write_data_to_csv(path, info)
 
+
+def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None) -> None:
+
+    image = det.image
+    if not isinstance(image, FibsemImage):
+        image = FibsemImage(image, None)
+    
+    if fname is None:
+        fname = f"{utils.current_timestamp()}"
+    fname = os.path.join(cfg.DATA_PATH, f"{fname}")
+    image.save(fname) # type: ignore 
+    logging.info(f"Saved image to {fname}") # TODO: handle duplicate fname
+
+    # save mask to disk
+    os.makedirs(os.path.join(cfg.DATA_PATH, "mask"), exist_ok=True)
+    mask_fname = os.path.join(cfg.DATA_PATH, "mask", os.path.basename(fname))
+    mask_fname = Path(mask_fname).with_suffix(".tif")
+    im = Image.fromarray(det.mask) 
+    im.save(mask_fname)
+
+
+    # save coordinates for testing    
+    # save the feature_type, feature_px coordinates for each feature into a pandas dataframe
+    feat_list = []
+    for i, feature in enumerate(det.features):
+
+        dat = {"feature": feature.name, 
+                        "p.x": feature.feature_px.x, 
+                        "p.y": feature.feature_px.y, 
+                    "beam_type": "ELECTRON", 
+                    "image": os.path.basename(fname), 
+                    "pixelsize": det.pixelsize,
+                    "corrected": corrected} # TODO: beamtype
+        feat_list.append(dat)
+
+    df = pd.DataFrame(feat_list)
+    
+    # save the dataframe to a csv file, append if the file already exists
+    DATAFRAME_PATH = os.path.join(cfg.DATA_PATH, "data.csv")
+    if os.path.exists(DATAFRAME_PATH):
+        df_tmp = pd.read_csv(DATAFRAME_PATH)
+        df = pd.concat([df_tmp, df], axis=0, ignore_index=True)
+    
+    logging.info(f"{df.tail(10)}")
+    df.to_csv(DATAFRAME_PATH, index=False)

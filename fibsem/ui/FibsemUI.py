@@ -1,20 +1,25 @@
 import logging
-
+import os
 import napari
+import fibsem
 import napari.utils.notifications
 from fibsem import utils
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
+
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemGISWidget import FibsemGISWidget
+
+from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
+
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
+from fibsem import config as cfg
 
 
 from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
 from fibsem.ui.qtdesigner_files import FibsemUI
-from fibsem import config as cfg
 
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
@@ -26,9 +31,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
-        self.setup_connections()
-
-
         self.microscope: FibsemMicroscope = None
         self.settings: MicroscopeSettings = None
 
@@ -38,14 +40,31 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.manipulator_widget: FibsemManipulatorWidget = None
         self.GIS_widget: FibsemGISWidget = None
 
+        CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
+        self.system_widget = FibsemSystemSetupWidget(
+                microscope=self.microscope,
+                settings=self.settings,
+                viewer=self.viewer,
+                config_path = CONFIG_PATH,
+            )
+        
+        self.setup_connections()
+        self.tabWidget.addTab(self.system_widget, "System")
 
         self.update_ui()
 
 
     def setup_connections(self):
 
-        self.pushButton.clicked.connect(self.connect_to_microscope)
-        self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
+        self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
+        self.system_widget.connected_signal.connect(self.connect_to_microscope)
+        self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
+
+    def set_stage_parameters(self):
+        if self.microscope is None:
+            return
+        self.settings.system.stage = self.system_widget.settings.system.stage   
+        logging.info("Stage parameters set")  
 
     def update_ui(self):
 
@@ -56,43 +75,21 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setTabVisible(4, _microscope_connected)
         self.tabWidget.setTabVisible(5, _microscope_connected)
 
-        if _microscope_connected:
-            self.pushButton.setStyleSheet("background-color: green")
-            self.pushButton.setText("Microscope Connected")
-
-        else:
-            self.pushButton.setStyleSheet("background-color: gray")
-            self.pushButton.setText("Connect to Microscope")
-
     def connect_to_microscope(self):
-
-        
-        # TODO: add toggle for connect / disconnect
-        
-        _microscope_connected = bool(self.microscope is not None)
-
-        if _microscope_connected:
-            self.microscope.disconnect()
-            self.microscope, self.settings = None, None
-            if self.image_widget is not None:
-                self.image_widget.clear_viewer()
-            
-        else:
-            ip_address = self.lineEdit_ip_address.text()
-            manufacturer = self.comboBox_manufacturer.currentText()
-
-            try:
-                self.microscope, self.settings = utils.setup_session(ip_address=ip_address, 
-                                                                    manufacturer=manufacturer)  # type: ignore
-            except Exception as e:
-                msg = f"Could not connect to microscope: {e}"
-                logging.exception(msg)
-                napari.utils.notifications.show_info(msg)
-                return
-
-        
+        self.microscope = self.system_widget.microscope
+        self.settings = self.system_widget.settings
         self.update_microscope_ui()
         self.update_ui()
+
+    def disconnect_from_microscope(self):
+        
+        self.microscope = None
+        self.settings = None
+        self.update_microscope_ui()
+        self.update_ui()
+        self.image_widget = None
+        self.movement_widget = None
+        self.milling_widget = None
 
     def update_microscope_ui(self):
 
@@ -149,18 +146,18 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.removeTab(1)
             
 
+            self.image_widget.clear_viewer()
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
             self.manipulator_widget.deleteLater()
             self.GIS_widget.deleteLater()
 
-
 def main():
 
     viewer = napari.Viewer(ndisplay=2)
     fibsem_ui = FibsemUI(viewer=viewer)
-    viewer.window.add_dock_widget(fibsem_ui, area="right", add_vertical_stretch=False)
+    viewer.window.add_dock_widget(fibsem_ui, area="right", add_vertical_stretch=True, name="OpenFIBSEM")
     napari.run()
 
 

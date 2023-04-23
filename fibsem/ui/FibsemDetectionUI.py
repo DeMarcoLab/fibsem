@@ -9,7 +9,7 @@ from fibsem.structures import BeamType, MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui_utils
 
 from fibsem.detection import utils as det_utils
-from fibsem.detection.utils import FeatureType, Point
+from fibsem.detection.utils import Point
 from fibsem.detection.detection import DetectedFeatures
                                      
 

@@ -71,7 +71,7 @@ def finish_milling(
 
     """
     # restore imaging current
-    logging.info(f"changing to imaging current: {imaging_current:.2e}")
+    logging.info(f"changing to imaging settings")
     microscope.finish_milling(imaging_current)
     logging.info("finished ion beam milling.")
 
@@ -154,7 +154,7 @@ def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSet
     path = convert_to_bitmap_format(path)
     microscope.draw_bitmap_pattern(pattern_settings, path)
 
-def extract_trench_parameters(protocol: dict, point: Point = Point(), scan_direction: str = "BottomToTop"):
+def extract_trench_parameters(protocol: dict, point: Point = Point()):
     
     lamella_width = protocol["lamella_width"]
     lamella_height = protocol["lamella_height"]
@@ -175,7 +175,7 @@ def extract_trench_parameters(protocol: dict, point: Point = Point(), scan_direc
         centre_x=point.x,
         centre_y=centre_lower_y,
         cleaning_cross_section=True,
-        scan_direction=scan_direction,
+        scan_direction="BottomToTop",
     )
 
     upper_pattern_settings = FibsemPatternSettings(
@@ -185,16 +185,16 @@ def extract_trench_parameters(protocol: dict, point: Point = Point(), scan_direc
         centre_x=point.x,
         centre_y=centre_upper_y,
         cleaning_cross_section=True,
-        scan_direction=scan_direction,
+        scan_direction="TopToBottom",
     )
 
     return  lower_pattern_settings, upper_pattern_settings
 
-def draw_trench(microscope: FibsemMicroscope, protocol: dict, point: Point = Point(), scan_direction: str = "BottomToTop"):
+def draw_trench(microscope: FibsemMicroscope, protocol: dict, point: Point = Point()):
     """Calculate the trench milling patterns"""
 
 
-    lower_pattern_settings, upper_pattern_settings = extract_trench_parameters(protocol, point, scan_direction)
+    lower_pattern_settings, upper_pattern_settings = extract_trench_parameters(protocol, point)
 
     # draw patterns
     lower_pattern = draw_rectangle(microscope, lower_pattern_settings)
