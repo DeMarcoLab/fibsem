@@ -108,12 +108,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self.pushButton_test_button.clicked.connect(self.test_function)
 
-        # add one milling stage by default
-        if len(self.milling_stages) == 0:
-            self.add_milling_stage()
-        else:
+        if self.milling_stages:
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
-        self.update_milling_stage_ui()
+            self.update_milling_stage_ui()
         self.comboBox_milling_stage.currentIndexChanged.connect(self.update_milling_stage_ui)
 
 
