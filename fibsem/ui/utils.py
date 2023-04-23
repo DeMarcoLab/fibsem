@@ -183,7 +183,7 @@ def set_arr_as_qlabel(
 def convert_pattern_to_napari_circle(pattern_settings: FibsemPatternSettings, image: FibsemImage):
 
     # image centre
-    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2 # TODO; this should be the actual shape of the image
 
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y

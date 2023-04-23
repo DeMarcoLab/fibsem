@@ -184,6 +184,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # get current milling stage
         current_index = self.comboBox_milling_stage.currentIndex()
+
+        if current_index == -1:
+            msg = "No milling stage selected."
+            logging.warning(msg)
+            napari.utils.notifications.show_warning(msg)
+            return
+
         milling_stage = self.milling_stages[current_index]
 
         # update milling settings
@@ -225,6 +232,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             spinbox.setValue(0)
             self.gridLayout_patterns.addWidget(label, i, 0)
             self.gridLayout_patterns.addWidget(spinbox, i, 1)
+            # spinbox.focusChanged.connect(self.update_milling_stage_from_ui)
 
             # get default values from self.protocol and set values
             if key in pattern_protocol:
@@ -321,6 +329,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
         
         try:
+            
+            from fibsem.structures import FibsemImage
+            if not isinstance(self.image_widget.ib_image, FibsemImage):
+                raise Exception(f"No Ion Image, cannot draw patterns. Please take an image.")
+            if not isinstance(self.image_widget.eb_image, FibsemImage):
+                raise Exception(f"No Electron Image, cannot draw patterns. Please take an image.") # TODO: this is unintuitive why this is required -> ui issue only
+
             # clear patterns then draw new ones
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
