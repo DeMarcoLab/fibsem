@@ -47,6 +47,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
 
     def get_stage_settings_from_ui(self):
+        if self.microscope is None:
+            return
         self.settings.system.stage.needle_stage_height_limit = (
             self.needleStageHeightLimitnMmDoubleSpinBox.value()
             * constants.MILLIMETRE_TO_METRE
