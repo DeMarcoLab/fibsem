@@ -362,19 +362,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for stage in self.milling_stages:
             yield f"Preparing: {stage.name}"
             if stage.pattern is not None:
-
-                import time, random
-                time.sleep(random.randint(1, 2))
-                
+    
                 milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
                 milling.draw_patterns(self.microscope, stage.pattern.patterns)
 
                 yield f"Running {stage.name}..."
                 milling.run_milling(self.microscope, stage.milling.milling_current)
-                
-                time.sleep(random.randint(1, 5))
-
+            
                 milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
             yield f"Milling stage complete: {stage.name}"
