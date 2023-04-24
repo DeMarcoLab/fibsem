@@ -14,51 +14,17 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="29" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="26" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton">
+     <property name="text">
+      <string>Update Pattern</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+    </widget>
    </item>
    <item row="18" column="0">
     <widget class="QCheckBox" name="checkBox_live_update">
      <property name="text">
       <string>Live Update</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="label_title">
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Milling</string>
-     </property>
-    </widget>
-   </item>
-   <item row="19" column="0" colspan="2">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="26" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton">
-     <property name="text">
-      <string>Update Pattern</string>
      </property>
     </widget>
    </item>
@@ -308,6 +274,19 @@
      </widget>
     </widget>
    </item>
+   <item row="29" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
    <item row="28" column="0" colspan="2">
     <widget class="QLabel" name="label_info">
      <property name="text">
@@ -318,6 +297,13 @@
      </property>
     </widget>
    </item>
+   <item row="19" column="0" colspan="2">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
    <item row="27" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_run_milling">
      <property name="text">
@@ -325,10 +311,17 @@
      </property>
     </widget>
    </item>
-   <item row="30" column="0">
-    <widget class="QPushButton" name="pushButton_test_button">
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label_title">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
      <property name="text">
-      <string>Test</string>
+      <string>Milling</string>
      </property>
     </widget>
    </item>

@@ -106,8 +106,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_save_milling_stage.clicked.connect(self.update_milling_stage_from_ui)
         self.pushButton_save_milling_stage.setStyleSheet("background-color: blue; color: white;")
 
-        self.pushButton_test_button.clicked.connect(self.test_function)
-
         if self.milling_stages:
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
             self.update_milling_stage_ui()
@@ -131,23 +129,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.removeItem(current_index)
         self.milling_stages.pop(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
-
-    def test_function(self):
-        millings_stages = [
-        FibsemMillingStage(
-            name="Milling Stage X",
-            num = 1,
-            milling = FibsemMillingSettings(hfw=400e-6),
-            pattern = patterning.get_pattern("Trench"),
-        ),
-            FibsemMillingStage(
-            name="Milling Stage 2",
-            num = 2,
-            milling = FibsemMillingSettings(hfw=200e-6),
-            pattern = patterning.get_pattern("Horseshoe"),
-        )
-        ]
-        self.set_milling_stages(millings_stages)
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
 
@@ -415,9 +396,20 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
 
 def main():
-
-
-
+    millings_stages = [
+    FibsemMillingStage(
+        name="Milling Stage X",
+        num = 1,
+        milling = FibsemMillingSettings(hfw=400e-6),
+        pattern = patterning.get_pattern("Trench"),
+    ),
+        FibsemMillingStage(
+        name="Milling Stage 2",
+        num = 2,
+        milling = FibsemMillingSettings(hfw=200e-6),
+        pattern = patterning.get_pattern("Horseshoe"),
+    )
+    ]
     viewer = napari.Viewer(ndisplay=2)
     movement_widget = FibsemMillingWidget()
     viewer.window.add_dock_widget(
