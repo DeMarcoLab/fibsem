@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-import numpy as np
 
-from fibsem.microscope import FibsemMicroscope
+import numpy as np
 from scipy.spatial import distance
-from skimage import feature
+from skimage import feature, measure
 
 from fibsem import conversions
 from fibsem.imaging import masks
+from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
-from abc import ABC, abstractmethod
 
 
 @dataclass
@@ -65,6 +65,7 @@ class LamellaCentre(Feature):
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
         self.feature_px = detect_lamella(mask, self)
+        return self.feature_px
 
 
 @dataclass
@@ -165,7 +166,7 @@ def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
 
         # centre coordinate as tuple
         centre_px = Point(x=x_mid, y=y_mid)
-
+    print(centre_px)
     return centre_px
 
 
@@ -202,7 +203,7 @@ def detect_corner(
 def detect_lamella(
     mask: np.ndarray,
     feature: Feature,
-    mask_radius: int = 512,
+    mask_radius: int = 1024,
     idx: int = 1,
 ) -> Point:
 
@@ -217,7 +218,6 @@ def detect_lamella(
 
     if isinstance(feature, LamellaRightEdge):
         feature_px = detect_corner(lamella_mask, left=False)
-
     return feature_px
 
 
@@ -457,14 +457,19 @@ def move_based_on_detection(
     return
 
 
-from fibsem.structures import FibsemImage, Point
-from fibsem.detection.detection import DetectedFeatures, Feature, __FEATURES__, plot_det_result_v2
-from fibsem.segmentation import utils as seg_utils
-import tifffile as tff
+import glob
+import os
 from pathlib import Path
-import pandas as pd
-import glob, os
 from typing import Optional
+
+import pandas as pd
+import tifffile as tff
+
+from fibsem.detection.detection import (__FEATURES__, DetectedFeatures,
+                                        Feature, plot_det_result_v2)
+from fibsem.segmentation import utils as seg_utils
+from fibsem.structures import FibsemImage, Point
+
 
 def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedFeatures]:
         
@@ -506,3 +511,74 @@ def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedF
                         distance=None)
     
     return det
+
+
+
+
+def mask_contours(image):
+    # Find contours
+    contours = measure.find_contours(image, 0.5)
+
+    # Create a mask with the same shape as the input image
+    mask = np.zeros_like(image, dtype=np.uint8)
+
+    # Mask the area inside each contour
+    for i, contour in enumerate(contours):
+        # Convert the contour coordinates to integers
+        contour = np.round(contour).astype(int)
+
+        # Create a polygonal mask for this contour
+        rr, cc = np.meshgrid(np.arange(mask.shape[0]), np.arange(mask.shape[1]), indexing='ij')
+        inside_contour = np.zeros_like(mask, dtype=np.uint8)
+        inside_contour[rr, cc] = 0
+        inside_contour[contour[:, 0], contour[:, 1]] = i+1
+
+        # mask the area inside the contour
+        ymin, ymax = np.min(contour[:, 0]), np.max(contour[:, 0])
+        xmin, xmax = np.min(contour[:, 1]), np.max(contour[:, 1])
+
+        inside_contour[ymin:ymax, xmin:xmax] = i+1
+
+        # Apply the mask for this contour
+        mask = mask + inside_contour
+
+    return mask
+
+from copy import deepcopy
+# TODO: need passthrough for the params
+def detect_multi_features(image: np.ndarray, feature: Feature):
+
+    mask = mask_contours(image)
+    idxs = np.unique(mask)
+
+    features = []
+    for idx in idxs:
+        if idx==0:
+            continue
+
+        # create a new image
+        new_image = np.zeros_like(image)
+        new_image[mask==idx] = 1
+
+        # detect features
+        feature.detect(None, new_image, None)
+        features.append(deepcopy(feature))
+
+    return features
+
+
+def filter_best_feature(image: np.ndarray, features: list[Feature], method: str = "closest", point: Point = None):
+    if method == "closest":
+        # plot feature closest to point
+        if point is None:
+            point = Point(image.shape[1]/2, image.shape[0]/2)
+
+        distances = []
+        for feature in features:
+            distances.append(np.linalg.norm(point - feature.feature_px))
+        idx = np.argmin(distances)
+
+        return features[idx]
+
+    else:
+        raise ValueError(f"method {method} not recognised")
