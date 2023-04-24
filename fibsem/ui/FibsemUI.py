@@ -130,7 +130,10 @@ def main():
 
     viewer = napari.Viewer(ndisplay=2)
     fibsem_ui = FibsemUI(viewer=viewer)
-    viewer.window.add_dock_widget(fibsem_ui, area="right", add_vertical_stretch=True, name="OpenFIBSEM")
+    viewer.window.add_dock_widget(fibsem_ui, 
+                                  area="right", 
+                                  add_vertical_stretch=True, 
+                                  name="OpenFIBSEM")
     napari.run()
 
 

@@ -243,6 +243,14 @@ def convert_pattern_to_napari_rect(
     shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
     return shape
 
+def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
+    # remove all shapes layers
+    layers_to_remove = []
+    for layer in viewer.layers:
+        if isinstance(layer, layer_type):
+            layers_to_remove.append(layer)
+    for layer in layers_to_remove:
+        viewer.layers.remove(layer)  # Not removing the second layer?
 
 def _draw_patterns_in_napari(
     viewer: napari.Viewer,
@@ -250,13 +258,9 @@ def _draw_patterns_in_napari(
     eb_image: FibsemImage,
     all_patterns: list[FibsemPatternSettings],
 ):
-    # remove all shapes layers
-    layers_to_remove = []
-    for layer in viewer.layers:
-        if isinstance(layer, napari.layers.shapes.shapes.Shapes):
-            layers_to_remove.append(layer)
-    for layer in layers_to_remove:
-        viewer.layers.remove(layer)  # Not removing the second layer?
+
+    _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
+    
     # colour wheel
     colour = ["yellow", "cyan", "magenta", "purple"]
     from fibsem.structures import FibsemPattern
