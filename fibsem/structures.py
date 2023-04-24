@@ -831,7 +831,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 end_x=state_dict["end_x"],
                 end_y=state_dict["end_y"],
                 depth=state_dict["depth"],
-                rotation=state_dict["rotation"],
+                rotation=state_dict.get("rotation", 0.0),
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
