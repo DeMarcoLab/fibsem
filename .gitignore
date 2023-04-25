@@ -26,3 +26,4 @@ fibsem/segmentation/training/*
 site/*
 scratch/training/*
 fibsem/_version.py
+scratch/figure/wd_*/*
