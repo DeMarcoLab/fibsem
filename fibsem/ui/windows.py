@@ -47,8 +47,8 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
         det = detection_ui.detected_features
 
     # calculate features in microscope image coords
-    det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].feature_px, image.data, pixelsize)
-    det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].feature_px, image.data, pixelsize)
+    det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].px, image.data, pixelsize)
+    det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].px, image.data, pixelsize)
 
     return det
 
