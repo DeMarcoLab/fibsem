@@ -20,7 +20,7 @@ system:
   stage:
     rotation_flat_to_electron: 49 # degrees
     rotation_flat_to_ion: 229 # degrees
-    tilt_flat_to_electron: 35 # degrees (pre-tilt)
+    tilt_flat_to_electron: 35 # degrees (pre-tilt)s
     tilt_flat_to_ion: 52 # degrees
     pre_tilt: 35
     needle_stage_height_limit: 3.7e-3

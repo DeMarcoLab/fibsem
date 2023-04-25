@@ -33,6 +33,7 @@ PATTERN_PROTOCOL_MAP = {
     MillingPattern.Polish: "polish_lamella",
     MillingPattern.Flatten: "flatten_landing",
     MillingPattern.Fiducial: "fiducial",
+    MillingPattern.SpotWeld: "spot_weld",
 }
 
 # MILLING UI
@@ -56,5 +57,6 @@ NON_SCALED_MILLING_PARAMETERS = [
     "needle_angle",
     "percentage_roi_height",
     "percentage_from_lamella_surface",
-    "cleaning_cross_section"
+    "cleaning_cross_section",
+    "number"
 ]

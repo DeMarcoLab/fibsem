@@ -27,3 +27,4 @@ site/*
 scratch/training/*
 fibsem/_version.py
 scratch/figure/wd_*/*
+demo_*/*
