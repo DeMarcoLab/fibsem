@@ -13,7 +13,7 @@ from fibsem.imaging import masks
 from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
-
+import matplotlib.pyplot as plt
 
 @dataclass
 class Feature(ABC):
@@ -166,7 +166,6 @@ def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
 
         # centre coordinate as tuple
         centre_px = Point(x=x_mid, y=y_mid)
-    print(centre_px)
     return centre_px
 
 
@@ -208,7 +207,7 @@ def detect_lamella(
 ) -> Point:
 
     lamella_mask = mask == idx
-    lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
+    # lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
 
     if isinstance(feature, LamellaCentre):
         px = detect_centre_point(lamella_mask)
@@ -337,17 +336,28 @@ class DetectedFeatures:
 
 
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature]
+    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], filter: bool = True
 ) -> list[Feature]:
 
     detection_features = []
 
     for feature in features:
         
-        feature.detect(img=img,mask=mask) 
+        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge)):
+            feature_candidates = detect_multi_features(img, mask, feature)
+            if filter:
+                feature = filter_best_feature(mask, feature_candidates, method="closest")
+            else: 
+                feature = feature_candidates
+        else:
+            feature.detect(img=img,mask=mask) 
 
-        detection_features.append(feature)
+        if isinstance(feature, list):
+            detection_features.extend(feature)
+        else:
+            detection_features.append(feature)
 
+        
     return detection_features
 
 
@@ -356,6 +366,7 @@ def locate_shift_between_features_v2(
     model: SegmentationModel,
     features: tuple[Feature],
     pixelsize: float,
+    filter: bool = True,
 ) -> DetectedFeatures:
 
     # model inference
@@ -364,34 +375,10 @@ def locate_shift_between_features_v2(
     mask = mask[0] # remove channel dim
 
     # detect features
-    features = detect_features_v2(image, mask, features)
-
-    det = DetectedFeatures(
-        features=features, # type: ignore
-        image=image,
-        mask=mask,
-        rgb=rgb,
-        pixelsize=pixelsize,
-    )
-
-    return det
-
-def locate_shift_between_features_v3(
-    image: np.ndarray,
-    model: SegmentationModel,
-    features: tuple[Feature],
-    pixelsize: float,
-    filter: bool = False,
-    multi: bool = False,
-) -> DetectedFeatures:
-
-    # model inference
-    mask = model.inference(image, rgb=False)
-    rgb = model.postprocess(mask, model.num_classes)
-    mask = mask[0] # remove channel dim
-
-    # detect features
-    features = detect_features_v2(image, mask, features)
+    features = detect_features_v2(img=image, 
+                                  mask=mask, 
+                                  features=features, 
+                                  filter=filter)
 
     det = DetectedFeatures(
         features=features, # type: ignore
@@ -576,9 +563,10 @@ def mask_contours(image):
 
 from copy import deepcopy
 # TODO: need passthrough for the params
-def detect_multi_features(image: np.ndarray, feature: Feature):
-
-    mask = mask_contours(image)
+def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature, class_idx: int = 1):
+    
+    mask = mask == class_idx # filter to class 
+    mask = mask_contours(mask)
     idxs = np.unique(mask)
 
     features = []
@@ -587,21 +575,21 @@ def detect_multi_features(image: np.ndarray, feature: Feature):
             continue
 
         # create a new image
-        new_image = np.zeros_like(image)
-        new_image[mask==idx] = 1
+        feature_mask = np.zeros_like(mask)
+        feature_mask[mask==idx] = 1
 
         # detect features
-        feature.detect(None, new_image, None)
+        feature.detect(image, feature_mask)
         features.append(deepcopy(feature))
 
     return features
 
 
-def filter_best_feature(image: np.ndarray, features: list[Feature], method: str = "closest", point: Point = None):
+def filter_best_feature(mask: np.ndarray, features: list[Feature], method: str = "closest", point: Point = None):
     if method == "closest":
         # plot feature closest to point
         if point is None:
-            point = Point(image.shape[1]/2, image.shape[0]/2)
+            point = Point(mask.shape[1]/2, mask.shape[0]/2)
 
         distances = []
         for feature in features:
