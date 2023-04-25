@@ -336,7 +336,7 @@ class DetectedFeatures:
 
 
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], filter: bool = True
+    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], filter: bool = True, point: Point = None
 ) -> list[Feature]:
 
     detection_features = []
@@ -344,11 +344,11 @@ def detect_features_v2(
     for feature in features:
         
         if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge)):
-            feature_candidates = detect_multi_features(img, mask, feature)
+            feature = detect_multi_features(img, mask, feature)
             if filter:
-                feature = filter_best_feature(mask, feature_candidates, method="closest")
-            else: 
-                feature = feature_candidates
+                feature = filter_best_feature(mask, feature, 
+                                              method="closest", 
+                                              point=point)
         else:
             feature.detect(img=img,mask=mask) 
 
@@ -367,6 +367,7 @@ def locate_shift_between_features_v2(
     features: tuple[Feature],
     pixelsize: float,
     filter: bool = True,
+    point: Point = None
 ) -> DetectedFeatures:
 
     # model inference
@@ -378,7 +379,7 @@ def locate_shift_between_features_v2(
     features = detect_features_v2(img=image, 
                                   mask=mask, 
                                   features=features, 
-                                  filter=filter)
+                                  filter=filter, point=point)
 
     det = DetectedFeatures(
         features=features, # type: ignore
