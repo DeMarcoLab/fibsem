@@ -188,8 +188,8 @@ def write_data_to_disk(path: Path, detected_features) -> None:
 
     # get scale invariant coords
     shape = detected_features.image.shape
-    scaled_p0 = get_scale_invariant_coordinates(detected_features.features[0].feature_px, shape=shape)
-    scaled_p1 = get_scale_invariant_coordinates(detected_features.features[1].feature_px, shape=shape)
+    scaled_p0 = get_scale_invariant_coordinates(detected_features.features[0].px, shape=shape)
+    scaled_p1 = get_scale_invariant_coordinates(detected_features.features[1].px, shape=shape)
 
     # get info
     info = [label, 
@@ -225,13 +225,13 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
 
 
     # save coordinates for testing    
-    # save the feature_type, feature_px coordinates for each feature into a pandas dataframe
+    # save the feature_type, px coordinates for each feature into a pandas dataframe
     feat_list = []
     for i, feature in enumerate(det.features):
 
         dat = {"feature": feature.name, 
-                        "p.x": feature.feature_px.x, 
-                        "p.y": feature.feature_px.y, 
+                        "p.x": feature.px.x, 
+                        "p.y": feature.px.y, 
                     "beam_type": "ELECTRON", 
                     "image": os.path.basename(fname), 
                     "pixelsize": det.pixelsize,
