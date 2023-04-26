@@ -231,6 +231,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
        
         arr = ui_utils._draw_crosshair(arr)
 
+        arr = ui_utils._draw_scalebar(arr)
+
         try:
             self.viewer.layers[name].data = arr
         except:    

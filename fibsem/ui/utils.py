@@ -324,6 +324,25 @@ def _draw_crosshair(arr: np.ndarray, width: float = 0.1) -> np.ndarray:
     arr = np.array(im)
     return arr
 
+
+def _draw_scalebar(arr: np.ndarray) -> np.ndarray:
+    # add scalebar
+    from PIL import Image, ImageDraw
+    im = Image.fromarray(arr).convert("RGB")
+    draw = ImageDraw.Draw(im)
+    
+    length = int(im.size[1] / 4)
+    length_bar_edge = int(length*0.1)
+    start_pix_x = int(im.size[1]*0.1)
+    start_pix_y = int(im.size[0]*0.03)
+
+
+    draw.line((length+start_pix_x, im.size[1]-start_pix_y) + (start_pix_x, im.size[1]-start_pix_y), fill="yellow", width=3)
+    draw.line((length+start_pix_x, im.size[1]-start_pix_y-length_bar_edge) + (length+start_pix_x, im.size[1]-start_pix_y+length_bar_edge), fill="yellow", width=3)
+    draw.line((start_pix_x, im.size[1]-start_pix_y-length_bar_edge) + (start_pix_x, im.size[1]-start_pix_y+length_bar_edge), fill="yellow", width=3)
+    arr = np.array(im)
+    return arr
+
 def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
     icy, icx = resolution[1] // 2, resolution[0] // 2
