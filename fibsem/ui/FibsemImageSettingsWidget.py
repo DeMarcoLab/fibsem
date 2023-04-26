@@ -231,7 +231,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
        
         arr = ui_utils._draw_crosshair(arr)
 
-        arr = ui_utils._draw_scalebar(arr)
+        
+        hfw = self.image_settings.hfw
+
+        
+
+        arr = ui_utils._draw_scalebar(arr,hfw=hfw)
 
         try:
             self.viewer.layers[name].data = arr
@@ -295,6 +300,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
+
         
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
