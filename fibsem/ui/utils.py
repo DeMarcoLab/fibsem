@@ -332,14 +332,24 @@ def _draw_scalebar(arr: np.ndarray,hfw: float = 1e-6 ) -> np.ndarray:
     im = Image.fromarray(arr).convert("RGB")
     draw = ImageDraw.Draw(im)
     
-    scale_ratio = 0.2
+
+    scale_length_value = hfw*constants.METRE_TO_MICRON*0.2
+
+    if scale_length_value > 0 and scale_length_value < 100:
+        scale_length_value = round(scale_length_value/5)*5
+    if scale_length_value > 100 and scale_length_value < 500:
+        scale_length_value = round(scale_length_value/25)*25
+    if scale_length_value > 500 and scale_length_value < 1000:
+        scale_length_value = round(scale_length_value/50)*50
+
+    scale_ratio = scale_length_value/(hfw*constants.METRE_TO_MICRON)
 
     length = int(arr.shape[1]*scale_ratio)
     length_bar_edge = int(length*0.1)
     start_pix_x = int(arr.shape[1]*0.1)
     start_pix_y = int(arr.shape[0]*0.05)
 
-    scale_length_value = hfw*constants.METRE_TO_MICRON*scale_ratio
+    
     
     scale_text = f'{scale_length_value:.2f} um'
 
@@ -347,7 +357,7 @@ def _draw_scalebar(arr: np.ndarray,hfw: float = 1e-6 ) -> np.ndarray:
     draw.line((length+start_pix_x, im.size[1]-start_pix_y) + (start_pix_x, im.size[1]-start_pix_y), fill="yellow", width=3) # main line
     draw.line((length+start_pix_x, im.size[1]-start_pix_y-length_bar_edge) + (length+start_pix_x, im.size[1]-start_pix_y+length_bar_edge), fill="yellow", width=3) # right edge
     draw.line((start_pix_x, im.size[1]-start_pix_y-length_bar_edge) + (start_pix_x, im.size[1]-start_pix_y+length_bar_edge), fill="yellow", width=3) # left edge
-    draw.text( ( int(start_pix_x+length*0.25), im.size[1]-start_pix_y-length_bar_edge-10), scale_text, fill="yellow", font=ImageFont.truetype("arial.ttf", 30))
+    draw.text( ( int(start_pix_x+length*0.25), im.size[1]-start_pix_y-length_bar_edge-10), scale_text, fill="yellow", font=ImageFont.truetype("arialbd.ttf", 30))
 
     arr = np.array(im)
     return arr
