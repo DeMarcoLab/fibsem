@@ -3668,6 +3668,9 @@ class TescanMicroscope(FibsemMicroscope):
                     logging.warning(f"Invalid contrast value: {value}, must be between 0 and 1.")
                 return 
 
+        if key == "preset":
+            beam.Preset.Activate(value)
+            logging.info(f"Preset {value} activated for {beam_type}.")
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
