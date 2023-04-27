@@ -102,10 +102,10 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
             f2 = det.features[1]
 
             # converting pixel coordinates to distance along axes, same as GT
-            convert_p1_x = f1.feature_px.x/res_x
-            convert_p1_y = f1.feature_px.y/res_y
-            convert_p2_x = f2.feature_px.x/res_x
-            convert_p2_y = f2.feature_px.y/res_y
+            convert_p1_x = f1.px.x/res_x
+            convert_p1_y = f1.px.y/res_y
+            convert_p2_x = f2.px.x/res_x
+            convert_p2_y = f2.px.y/res_y
 
             dat["ML_p1_x"] = convert_p1_x
             dat["ML_p1_y"] = convert_p1_y
@@ -137,8 +137,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 ax[1].imshow(det.mask)
 
                 ax[1].plot(
-                    f1.feature_px.x,
-                    f1.feature_px.y,
+                    f1.px.x,
+                    f1.px.y,
                     color="blue",
                     marker="x",
                     ms=20,
@@ -146,8 +146,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 )
 
                 ax[1].plot(
-                    f2.feature_px.x,
-                    f2.feature_px.y,
+                    f2.px.x,
+                    f2.px.y,
                     color="white",
                     marker="x",
                     ms=20,
@@ -165,8 +165,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 )
                 
                 ax[0].plot(
-                    f1.feature_px.x,
-                    f1.feature_px.y,
+                    f1.px.x,
+                    f1.px.y,
                     color="blue",
                     marker="x",
                     ms=20,
@@ -183,8 +183,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 )
 
                 ax[0].plot(
-                    f2.feature_px.x,
-                    f2.feature_px.y,
+                    f2.px.x,
+                    f2.px.y,
                     color="red",
                     marker="x",
                     ms=20,

@@ -3,7 +3,7 @@ import logging
 
 import napari
 import napari.utils.notifications
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from fibsem import config as cfg
 from fibsem import constants, conversions, milling, patterning, utils
@@ -15,16 +15,19 @@ from fibsem.structures import (BeamType, FibsemMillingSettings,
                                Point)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import _draw_patterns_in_napari
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers
 from napari.qt.threading import thread_worker
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number"]
+_ANGLE_KEYS = ["rotation"]
 def _scale_value(key, value, scale):
     if key not in _UNSCALED_VALUES:
-        return value * scale
+        return value * scale    
     return value
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
+    # milling_param_changed = QtCore.pyqtSignal()
+
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -54,9 +57,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.update_pattern_ui()
 
     def setup_connections(self):
-
-        self.pushButton.clicked.connect(self.update_ui)
-        self.pushButton_run_milling.clicked.connect(self.run_milling)
 
         # milling
         available_currents = self.microscope.get_available_values("current", BeamType.ION)
@@ -103,18 +103,26 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_milling_stage.clicked.connect(self.remove_milling_stage)
         self.pushButton_remove_milling_stage.setStyleSheet("background-color: red; color: white;")
         
-        self.pushButton_save_milling_stage.clicked.connect(self.update_milling_stage_from_ui)
-        self.pushButton_save_milling_stage.setStyleSheet("background-color: blue; color: white;")
 
-        self.pushButton_test_button.clicked.connect(self.test_function)
+        # update ui
+        self.pushButton.clicked.connect(lambda: self.update_ui())
+        self.pushButton.setStyleSheet("background-color: blue; color: white;")
 
-        # add one milling stage by default
-        if len(self.milling_stages) == 0:
-            self.add_milling_stage()
-        else:
+
+        # run milling
+        self.pushButton_run_milling.clicked.connect(self.run_milling)
+
+        if self.milling_stages:
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
-        self.update_milling_stage_ui()
-        self.comboBox_milling_stage.currentIndexChanged.connect(self.update_milling_stage_ui)
+            self.update_milling_stage_ui()
+        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_ui())
+
+        # last
+        self.doubleSpinBox_centre_x.setKeyboardTracking(False)
+        self.doubleSpinBox_centre_y.setKeyboardTracking(False)
+        self.doubleSpinBox_centre_x.valueChanged.connect(self.update_ui_pattern)
+        self.doubleSpinBox_centre_y.valueChanged.connect(self.update_ui_pattern)
+        self.checkBox_live_update.setChecked(True)
 
 
     def add_milling_stage(self):
@@ -131,26 +139,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.info("Removing milling stage")
 
         current_index = self.comboBox_milling_stage.currentIndex()
-        self.comboBox_milling_stage.removeItem(current_index)
         self.milling_stages.pop(current_index)
+        self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
-
-    def test_function(self):
-        millings_stages = [
-        FibsemMillingStage(
-            name="Milling Stage X",
-            num = 1,
-            milling = FibsemMillingSettings(hfw=400e-6),
-            pattern = patterning.get_pattern("Trench"),
-        ),
-            FibsemMillingStage(
-            name="Milling Stage 2",
-            num = 2,
-            milling = FibsemMillingSettings(hfw=200e-6),
-            pattern = patterning.get_pattern("Horseshoe"),
-        )
-        ]
-        self.set_milling_stages(millings_stages)
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
 
@@ -182,11 +173,23 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # set the pattern (and triggers the pattern settings)
         self.comboBox_patterns.setCurrentText(milling_stage.pattern.name)
 
+    def update_ui_pattern(self):
+
+        if self.checkBox_live_update.isChecked():
+            self.update_ui()
+
 
     def update_milling_stage_from_ui(self):
-
+                
         # get current milling stage
         current_index = self.comboBox_milling_stage.currentIndex()
+
+        if current_index == -1:
+            msg = f"No milling stages defined, cannot draw patterns."
+            logging.warning(msg)
+            napari.utils.notifications.show_warning(msg)
+            return
+
         milling_stage = self.milling_stages[current_index]
 
         # update milling settings
@@ -228,12 +231,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             spinbox.setValue(0)
             self.gridLayout_patterns.addWidget(label, i, 0)
             self.gridLayout_patterns.addWidget(spinbox, i, 1)
+            spinbox.setKeyboardTracking(False)
 
             # get default values from self.protocol and set values
             if key in pattern_protocol:
                 value = _scale_value(key, pattern_protocol[key], constants.SI_TO_MICRO)
                 spinbox.setValue(value)
+            
+            spinbox.valueChanged.connect(self.update_ui_pattern)
 
+        if self.milling_stages:
+            self.update_ui()
+    
     def get_pattern_from_ui_v2(self):
 
         # get current pattern
@@ -244,6 +253,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for i, key in enumerate(pattern.required_keys):
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
+            value = _scale_value(key, value, constants.DEGREES_TO_RADIANS) if key in _ANGLE_KEYS else value
             pattern_dict[key] = value # TODO: not everythign is in microns
 
         # define pattern
@@ -251,7 +261,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         pattern.define(protocol=pattern_dict, point=point)
         
         return pattern
-
 
     def _single_click(self, layer, event):
         """Callback for single click on image layer."""
@@ -283,7 +292,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
         self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
         
-        self.update_milling_stage_from_ui()
         
         self.update_ui()
    
@@ -313,8 +321,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
         
-        if self.sender() is self.pushButton or milling_stages is None:
-            milling_stages = self.get_milling_stages()
+        if milling_stages is None:
+            self.update_milling_stage_from_ui() # update milling stage from ui
+            milling_stages = self.get_milling_stages() # get the latest milling stages from the ui
+
+        if not milling_stages:
+            msg = f"No milling stages defined, cannot draw patterns."
+            logging.warning(msg)
+            napari.utils.notifications.show_warning(msg)
+            _remove_all_layers(self.viewer)
+            return
 
         # make milling stage a list if it is not
         if not isinstance(milling_stages, list):
@@ -324,6 +340,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
         
         try:
+            
+            from fibsem.structures import FibsemImage
+            if not isinstance(self.image_widget.ib_image, FibsemImage):
+                raise Exception(f"No Ion Image, cannot draw patterns. Please take an image.")
+            if not isinstance(self.image_widget.eb_image, FibsemImage):
+                raise Exception(f"No Electron Image, cannot draw patterns. Please take an image.") # TODO: this is unintuitive why this is required -> ui issue only
+
             # clear patterns then draw new ones
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
@@ -344,7 +367,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton.setEnabled(enabled)
         self.pushButton_add_milling_stage.setEnabled(enabled)
         self.pushButton_remove_milling_stage.setEnabled(enabled)
-        self.pushButton_save_milling_stage.setEnabled(enabled)
+        # self.pushButton_save_milling_stage.setEnabled(enabled)
         self.pushButton_run_milling.setEnabled(enabled)
 
         # change run milling to Running... and turn orange
@@ -369,19 +392,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for stage in self.milling_stages:
             yield f"Preparing: {stage.name}"
             if stage.pattern is not None:
-
-                import time, random
-                time.sleep(random.randint(1, 2))
-                
+    
                 milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
                 milling.draw_patterns(self.microscope, stage.pattern.patterns)
 
                 yield f"Running {stage.name}..."
                 milling.run_milling(self.microscope, stage.milling.milling_current)
-                
-                time.sleep(random.randint(1, 5))
-
+            
                 milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
             yield f"Milling stage complete: {stage.name}"
@@ -403,9 +421,20 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
 
 def main():
-
-
-
+    millings_stages = [
+    FibsemMillingStage(
+        name="Milling Stage X",
+        num = 1,
+        milling = FibsemMillingSettings(hfw=400e-6),
+        pattern = patterning.get_pattern("Trench"),
+    ),
+        FibsemMillingStage(
+        name="Milling Stage 2",
+        num = 2,
+        milling = FibsemMillingSettings(hfw=200e-6),
+        pattern = patterning.get_pattern("Horseshoe"),
+    )
+    ]
     viewer = napari.Viewer(ndisplay=2)
     movement_widget = FibsemMillingWidget()
     viewer.window.add_dock_widget(

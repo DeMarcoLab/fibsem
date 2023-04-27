@@ -3,27 +3,21 @@ import traceback
 
 import napari
 import napari.utils.notifications
-import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QMessageBox
+
 from fibsem import config as cfg
-
-
-from fibsem import constants, conversions
+from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (BeamType, FibsemStagePosition,
-                               MicroscopeSettings, MovementMode, Point)
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.structures import MicroscopeSettings, StageSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
-from fibsem import utils
-from fibsem.ui.utils import message_box_ui
 
 
 class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget):
     set_stage_signal = pyqtSignal()
     connected_signal = pyqtSignal()
     disconnected_signal = pyqtSignal()
+
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -38,64 +32,110 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.microscope = microscope
         self.settings = settings
         self.viewer = viewer
-        self.config_path = config_path
-        self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
+        self.config_path = config_path  # TODO: allow user to set this
 
         self.setup_connections()
+        self.update_ui()
 
     def setup_connections(self):
-        self.setStage_button.clicked.connect(self.set_stage_parameters)
-        self.microscope_button.clicked.connect(self.connect)
+        #
+        self.lineEdit_ipadress.setText("localhost")
+        self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
 
-    def set_stage_parameters(self):
-        self.settings.system.stage.needle_stage_height_limit = self.needleStageHeightLimitnMmDoubleSpinBox.value()*constants.MILLIMETRE_TO_METRE
-        self.settings.system.stage.tilt_flat_to_electron = self.tiltFlatToElectronSpinBox.value()
+        # buttons
+        self.microscope_button.clicked.connect(self.connect_to_microscope)
+        self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
+
+    def get_stage_settings_from_ui(self):
+        if self.microscope is None:
+            return
+        self.settings.system.stage.needle_stage_height_limit = (
+            self.needleStageHeightLimitnMmDoubleSpinBox.value()
+            * constants.MILLIMETRE_TO_METRE
+        )
+        self.settings.system.stage.tilt_flat_to_electron = (
+            self.tiltFlatToElectronSpinBox.value()
+        )
         self.settings.system.stage.tilt_flat_to_ion = self.tiltFlatToIonSpinBox.value()
-        self.settings.system.stage.rotation_flat_to_electron = self.rotationFlatToElectronSpinBox.value()
-        self.settings.system.stage.rotation_flat_to_ion = self.rotationFlatToIonSpinBox.value()
+        self.settings.system.stage.rotation_flat_to_electron = (
+            self.rotationFlatToElectronSpinBox.value()
+        )
+        self.settings.system.stage.rotation_flat_to_ion = (
+            self.rotationFlatToIonSpinBox.value()
+        )
         self.set_stage_signal.emit()
+
+    def set_stage_settings_to_ui(self, stage_settings: StageSettings) -> None:
+        self.needleStageHeightLimitnMmDoubleSpinBox.setValue(
+            stage_settings.needle_stage_height_limit * constants.METRE_TO_MILLIMETRE
+        )
+        self.tiltFlatToElectronSpinBox.setValue(stage_settings.tilt_flat_to_electron)
+        self.tiltFlatToIonSpinBox.setValue(stage_settings.tilt_flat_to_ion)
+        self.rotationFlatToElectronSpinBox.setValue(
+            stage_settings.rotation_flat_to_electron
+        )
+        self.rotationFlatToIonSpinBox.setValue(stage_settings.rotation_flat_to_ion)
 
     def connect(self):
         if self.lineEdit_ipadress.text() == "":
-            _ = message_box_ui(
-                title="IP adress not set.",
-                text="Please enter an IP adress before connecting to microscope.",
-                buttons=QMessageBox.Ok,
+            napari.utils.notifications.show_error(
+                f"IP address not set. Please enter an IP address before connecting to microscope."
             )
             return
+
         try:
             ip_address = self.lineEdit_ipadress.text()
             manufacturer = self.comboBox_manufacturer.currentText()
-            self.microscope, self.settings = utils.setup_session(ip_address=ip_address, manufacturer=manufacturer, config_path=self.config_path)
-            logging.info("Microscope Connected")
-            self.microscope_status.setText("Microscope Connected")
-            self.microscope_status.setStyleSheet("background-color: green")
-            self.microscope_button.clicked.disconnect()
-            self.microscope_button.clicked.connect(self.disconnect_from_microscope)
-            self.microscope_button.setText("Disconnect")
-            self.needleStageHeightLimitnMmDoubleSpinBox.setValue(self.settings.system.stage.needle_stage_height_limit*constants.METRE_TO_MILLIMETRE)
-            self.tiltFlatToElectronSpinBox.setValue(self.settings.system.stage.tilt_flat_to_electron)
-            self.tiltFlatToIonSpinBox.setValue(self.settings.system.stage.tilt_flat_to_ion)
-            self.rotationFlatToElectronSpinBox.setValue(self.settings.system.stage.rotation_flat_to_electron)
-            self.rotationFlatToIonSpinBox.setValue(self.settings.system.stage.rotation_flat_to_ion)
-            self.connected_signal.emit()
+            # user notification
+            msg = f"Connecting to microscope at {ip_address}"
+            logging.info(msg)
+            napari.utils.notifications.show_info(msg)
+
+            # connect
+            self.microscope, self.settings = utils.setup_session(
+                ip_address=ip_address,
+                manufacturer=manufacturer,
+                config_path=self.config_path,
+            )
+
+            # user notification
+            msg = f"Connected to microscope at {ip_address}"
+            logging.info(msg)
+            napari.utils.notifications.show_info(msg)
+
         except Exception as e:
-            logging.error(f"Unable to connect to the microscope: {traceback.format_exc()}")
-            self.microscope_status.setText("Microscope Disconnected")
-            self.microscope_status.setStyleSheet("background-color: red")
+            msg = f"Unable to connect to the microscope: {traceback.format_exc()}"
+            logging.error(msg)
+            napari.utils.notifications.show_error(msg)
 
+    def connect_to_microscope(self):
 
-    def disconnect_from_microscope(self):
-        self.microscope.disconnect()
-        self.microscope = None
-        self.microscope_settings = None
-        self.microscope_status.setText("Microscope Disconnected")
-        self.microscope_status.setStyleSheet("background-color: red")
-        self.microscope_button.clicked.disconnect()
-        self.microscope_button.clicked.connect(self.connect)
-        self.microscope_button.setText("Connect")
-        self.disconnected_signal.emit()
+        _microscope_connected = bool(self.microscope)
 
+        if _microscope_connected:
+            self.microscope.disconnect()
+            self.microscope, self.settings = None, None
+        else:
+            self.connect()
+
+        self.update_ui()
+
+    def update_ui(self):
+
+        _microscope_connected = bool(self.microscope)
+
+        self.setStage_button.setEnabled(_microscope_connected)
+
+        if _microscope_connected:
+            self.microscope_button.setText("Microscope Connected")
+            self.microscope_button.setStyleSheet("background-color: green")
+            self.set_stage_settings_to_ui(self.settings.system.stage)
+            self.connected_signal.emit()
+
+        else:
+            self.microscope_button.setText("Connect To Microscope")
+            self.microscope_button.setStyleSheet("background-color: gray")
+            self.disconnected_signal.emit()
 
 
 def main():

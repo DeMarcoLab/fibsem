@@ -311,7 +311,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         ):
             image = self.eb_image
             beam_type = BeamType.ELECTRON
-            # print("electron")
 
         elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (
             coords[1] > eb_shape[0] and coords[1] < ib_shape[1]
@@ -319,7 +318,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             image = self.ib_image
             coords = (coords[0], coords[1] - ib_shape[1] // 2)
             beam_type = BeamType.ION
-            # print("ion")
         else:
             beam_type, image = None, None
 

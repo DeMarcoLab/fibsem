@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-import numpy as np
 
-from fibsem.microscope import FibsemMicroscope
+import numpy as np
 from scipy.spatial import distance
-from skimage import feature
+from skimage import feature, measure
 
 from fibsem import conversions
 from fibsem.imaging import masks
+from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import BeamType, MicroscopeSettings, Point
-from abc import ABC, abstractmethod
-
+import matplotlib.pyplot as plt
 
 @dataclass
 class Feature(ABC):
-    feature_px: Point 
+    px: Point 
     feature_m: Point
     _color_UINT8: tuple = (255,255,255)
     color = "white"
@@ -30,80 +30,81 @@ class Feature(ABC):
 @dataclass
 class ImageCentre(Feature):
     feature_m: Point = None
-    feature_px: Point = None
+    px: Point = None
     _color_UINT8: tuple = (255,255,255)
     color = "white"
     name: str = "ImageCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'ImageCentre':
-        self.feature_px = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
-        return self.feature_px
+        self.px = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
+        return self.px
 
 
 
 @dataclass
 class NeedleTip(Feature):
     feature_m: Point = None
-    feature_px: Point = None
+    px: Point = None
     _color_UINT8: tuple = (0,255,0)
     color = "green"
     name: str = "NeedleTip"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-        self.feature_px = detect_needle_v4(mask)
-        return self.feature_px
+        self.px = detect_needle_v4(mask)
+        return self.px
 
 
 
 @dataclass
 class LamellaCentre(Feature):
     feature_m: Point = None
-    feature_px: Point = None
+    px: Point = None
     _color_UINT8: tuple = (255,0,0)
     color = "red"
     name: str = "LamellaCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaCentre':
-        self.feature_px = detect_lamella(mask, self)
+        self.px = detect_lamella(mask, self)
+        return self.px
 
 
 @dataclass
 class LamellaLeftEdge(Feature):
     feature_m: Point = None
-    feature_px: Point = None
+    px: Point = None
     _color_UINT8: tuple = (255,0,255)
     color = "magenta"
     name: str = "LamellaLeftEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
-        self.feature_px = detect_lamella(mask, self)
-        return self.feature_px
+        self.px = detect_lamella(mask, self)
+        return self.px
 
 
 @dataclass
 class LamellaRightEdge(Feature):
     feature_m: Point = None
-    feature_px: Point = None
+    px: Point = None
     _color_UINT8: tuple = (255,165,0)
     color = "orange"
     name: str = "LamellaRightEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
-        self.feature_px = detect_lamella(mask, self)
-        return self.feature_px
+        self.px = detect_lamella(mask, self)
+        return self.px
 
 
 @dataclass
 class LandingPost(Feature):
     feature_m: Point = None
-    feature_px: Point = None
+    px: Point = None
     _color_UINT8: tuple = (255,255,255)
     color = "cyan"
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-        self.feature_px = detect_landing_post_v3(img, point)
-        return self.feature_px
+        self.px = detect_landing_post_v3(img, point)
+        return self.px
 
 
 __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
@@ -137,8 +138,8 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     if landing_pt is None:
         landing_pt = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
     edge = edge_detection(img, sigma=sigma)
-    feature_px = detect_closest_edge_v2(edge, landing_pt)
-    return feature_px
+    px = detect_closest_edge_v2(edge, landing_pt)
+    return px
 
 
 def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
@@ -165,7 +166,6 @@ def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
 
         # centre coordinate as tuple
         centre_px = Point(x=x_mid, y=y_mid)
-
     return centre_px
 
 
@@ -202,23 +202,22 @@ def detect_corner(
 def detect_lamella(
     mask: np.ndarray,
     feature: Feature,
-    mask_radius: int = 512,
+    mask_radius: int = 1024,
     idx: int = 1,
 ) -> Point:
 
     lamella_mask = mask == idx
-    lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
+    # lamella_mask = masks.apply_circular_mask(lamella_mask, radius=mask_radius)
 
     if isinstance(feature, LamellaCentre):
-        feature_px = detect_centre_point(lamella_mask)
+        px = detect_centre_point(lamella_mask)
 
     if isinstance(feature, LamellaLeftEdge):
-        feature_px = detect_corner(lamella_mask, left=True)
+        px = detect_corner(lamella_mask, left=True)
 
     if isinstance(feature, LamellaRightEdge):
-        feature_px = detect_corner(lamella_mask, left=False)
-
-    return feature_px
+        px = detect_corner(lamella_mask, left=False)
+    return px
 
 
 def detect_needle_v4(mask: np.ndarray, idx:int=2) -> Point:
@@ -317,7 +316,6 @@ def detect_bounding_box(mask, color, threshold=25):
 
 ### v2
 
-
 @dataclass
 class DetectedFeatures:
     features: list[Feature]
@@ -325,21 +323,41 @@ class DetectedFeatures:
     mask: np.ndarray # class binary mask
     rgb: np.ndarray # rgb mask
     pixelsize: float
-    distance: Point # convert to property
+    _distance: Point = Point(x=0, y=0)
+
+    @property
+    def distance(self):
+        assert len(self.features) >= 2, "Need at least two features to calculate distance"
+        return self.features[0].px.distance(self.features[1].px)._to_metres(self.pixelsize)
+        
+    @distance.setter
+    def distance(self, value: Point) -> None:
+        self._distance = value
 
 
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature]
+    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], filter: bool = True, point: Point = None
 ) -> list[Feature]:
 
     detection_features = []
 
     for feature in features:
         
-        feature.detect(img=img,mask=mask) 
+        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge)):
+            feature = detect_multi_features(img, mask, feature)
+            if filter:
+                feature = filter_best_feature(mask, feature, 
+                                              method="closest", 
+                                              point=point)
+        else:
+            feature.detect(img=img,mask=mask) 
 
-        detection_features.append(feature)
+        if isinstance(feature, list):
+            detection_features.extend(feature)
+        else:
+            detection_features.append(feature)
 
+        
     return detection_features
 
 
@@ -348,6 +366,8 @@ def locate_shift_between_features_v2(
     model: SegmentationModel,
     features: tuple[Feature],
     pixelsize: float,
+    filter: bool = True,
+    point: Point = None
 ) -> DetectedFeatures:
 
     # model inference
@@ -356,23 +376,21 @@ def locate_shift_between_features_v2(
     mask = mask[0] # remove channel dim
 
     # detect features
-    features = detect_features_v2(image, mask, features)
-
-    # calculate distance between features (only for first two)
-    distance_px = conversions.distance_between_points(
-        features[0].feature_px, features[1].feature_px # type: ignore
-    )
+    features = detect_features_v2(img=image, 
+                                  mask=mask, 
+                                  features=features, 
+                                  filter=filter, point=point)
 
     det = DetectedFeatures(
         features=features, # type: ignore
         image=image,
         mask=mask,
         rgb=rgb,
-        distance=distance_px._to_metres(pixelsize),
         pixelsize=pixelsize,
     )
 
     return det
+
 
 
 def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
@@ -394,7 +412,7 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
     for f in det.features:
         # c = f.color
         # marker edge color = white 
-        ax[1].plot(f.feature_px.x, f.feature_px.y, 
+        ax[1].plot(f.px.x, f.px.y, 
                    "o",  color=f.color, 
                    markersize=5, markeredgecolor="w", 
                    label=f.name)
@@ -457,14 +475,19 @@ def move_based_on_detection(
     return
 
 
-from fibsem.structures import FibsemImage, Point
-from fibsem.detection.detection import DetectedFeatures, Feature, __FEATURES__, plot_det_result_v2
-from fibsem.segmentation import utils as seg_utils
-import tifffile as tff
+import glob
+import os
 from pathlib import Path
-import pandas as pd
-import glob, os
 from typing import Optional
+
+import pandas as pd
+import tifffile as tff
+
+from fibsem.detection.detection import (__FEATURES__, DetectedFeatures,
+                                        Feature, plot_det_result_v2)
+from fibsem.segmentation import utils as seg_utils
+from fibsem.structures import FibsemImage, Point
+
 
 def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedFeatures]:
         
@@ -488,7 +511,7 @@ def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedF
             # create feature from name
             idx = [i for i, feat in enumerate(__FEATURES__) if feat.__name__ == feat_name][0]
             feature = __FEATURES__[idx](
-                feature_px=Point(x=df[df["feature"] == feat_name]["p.x"].values[0],
+                px=Point(x=df[df["feature"] == feat_name]["p.x"].values[0],
                         y=df[df["feature"] == feat_name]["p.y"].values[0]),
             )
 
@@ -506,3 +529,75 @@ def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedF
                         distance=None)
     
     return det
+
+
+
+
+def mask_contours(image):
+    # Find contours
+    contours = measure.find_contours(image, 0.5)
+
+    # Create a mask with the same shape as the input image
+    mask = np.zeros_like(image, dtype=np.uint8)
+
+    # Mask the area inside each contour
+    for i, contour in enumerate(contours):
+        # Convert the contour coordinates to integers
+        contour = np.round(contour).astype(int)
+
+        # Create a polygonal mask for this contour
+        rr, cc = np.meshgrid(np.arange(mask.shape[0]), np.arange(mask.shape[1]), indexing='ij')
+        inside_contour = np.zeros_like(mask, dtype=np.uint8)
+        inside_contour[rr, cc] = 0
+        inside_contour[contour[:, 0], contour[:, 1]] = i+1
+
+        # mask the area inside the contour
+        ymin, ymax = np.min(contour[:, 0]), np.max(contour[:, 0])
+        xmin, xmax = np.min(contour[:, 1]), np.max(contour[:, 1])
+
+        inside_contour[ymin:ymax, xmin:xmax] = i+1
+
+        # Apply the mask for this contour
+        mask = mask + inside_contour
+
+    return mask
+
+from copy import deepcopy
+# TODO: need passthrough for the params
+def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature, class_idx: int = 1):
+    
+    mask = mask == class_idx # filter to class 
+    mask = mask_contours(mask)
+    idxs = np.unique(mask)
+
+    features = []
+    for idx in idxs:
+        if idx==0:
+            continue
+
+        # create a new image
+        feature_mask = np.zeros_like(mask)
+        feature_mask[mask==idx] = 1
+
+        # detect features
+        feature.detect(image, feature_mask)
+        features.append(deepcopy(feature))
+
+    return features
+
+
+def filter_best_feature(mask: np.ndarray, features: list[Feature], method: str = "closest", point: Point = None):
+    if method == "closest":
+        # plot feature closest to point
+        if point is None:
+            point = Point(mask.shape[1]/2, mask.shape[0]/2)
+
+        distances = []
+        for feature in features:
+            distances.append(np.linalg.norm(point - feature.px))
+        idx = np.argmin(distances)
+
+        return features[idx]
+
+    else:
+        raise ValueError(f"method {method} not recognised")

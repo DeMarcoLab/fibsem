@@ -9,7 +9,7 @@ from fibsem.structures import BeamType, MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui_utils
 
 from fibsem.detection import utils as det_utils
-from fibsem.detection.utils import FeatureType, Point
+from fibsem.detection.utils import Point
 from fibsem.detection.detection import DetectedFeatures
                                      
 
@@ -100,7 +100,7 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
             # update detection data
             self.detected_features.features[
                 self.selected_feature_idx
-            ].feature_px = Point(self.xclick, self.yclick)
+            ].px = Point(self.xclick, self.yclick)
 
             # logging statistics
             logging.debug(
@@ -119,8 +119,8 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
 
 
         # point position, image coordinates
-        point_1 = self.detected_features.features[0].feature_px
-        point_2 = self.detected_features.features[1].feature_px
+        point_1 = self.detected_features.features[0].px
+        point_2 = self.detected_features.features[1].px
 
         # colours
         c1 = det_utils.DETECTION_TYPE_COLOURS[

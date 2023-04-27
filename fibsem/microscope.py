@@ -3883,13 +3883,15 @@ class DemoMicroscope(FibsemMicroscope):
         if name == "EUCENTRIC":
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
-    def setup_milling(self, mill_settings: FibsemMillingSettings, preset: str = None):
+    def setup_milling(self, mill_settings: FibsemMillingSettings):
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
 
     def run_milling(self, milling_current: float, asynch: bool = False) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
+        import random
+        time.sleep(random.randint(1, 5))
 
     def finish_milling(self, imaging_current: float) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)

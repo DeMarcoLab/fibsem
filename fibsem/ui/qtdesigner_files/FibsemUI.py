@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'FibsemUi.ui'
+# Form implementation generated from reading ui file 'FibsemUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(568, 645)
+        MainWindow.resize(378, 531)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -24,14 +24,6 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabsClosable(False)
         self.tabWidget.setTabBarAutoHide(False)
         self.tabWidget.setObjectName("tabWidget")
-        self.general = QtWidgets.QWidget()
-        self.general.setObjectName("general")
-        self.gridLayout_2 = QtWidgets.QGridLayout(self.general)
-        self.gridLayout_2.setObjectName("gridLayout_2")
-        self.gridLayout_system = QtWidgets.QGridLayout()
-        self.gridLayout_system.setObjectName("gridLayout_system")
-        self.gridLayout_2.addLayout(self.gridLayout_system, 0, 0, 1, 1)
-        self.tabWidget.addTab(self.general, "")
         self.gridLayout.addWidget(self.tabWidget, 1, 0, 1, 1)
         self.label_title = QtWidgets.QLabel(self.centralwidget)
         font = QtGui.QFont()
@@ -41,9 +33,11 @@ class Ui_MainWindow(object):
         self.label_title.setFont(font)
         self.label_title.setObjectName("label_title")
         self.gridLayout.addWidget(self.label_title, 0, 0, 1, 1)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem, 2, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 568, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 378, 20))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -51,11 +45,10 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(-1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.general), _translate("MainWindow", "System"))
         self.label_title.setText(_translate("MainWindow", "OpenFIBSEM"))

@@ -42,7 +42,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
         
         self.setup_connections()
-        self.gridLayout_system.addWidget(self.system_widget)
+        self.tabWidget.addTab(self.system_widget, "System")
 
         self.update_ui()
 
@@ -54,7 +54,9 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 
     def set_stage_parameters(self):
-        self.settings.system.stage = self.system_widget.settings.system.stage   
+        if self.microscope is None:
+            return
+        self.settings.system.stage = self.system_widget.settings.system.stage   # TODO: this doesnt actually update the movement widget
         logging.info("Stage parameters set")  
 
     def update_ui(self):
@@ -118,21 +120,20 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.removeTab(2)
             self.tabWidget.removeTab(1)
 
+            self.image_widget.clear_viewer()
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
-
-            self.image_widget.eb_layer = None  
-            self.image_widget.ib_layer = None
-            self.viewer.layers.clear()
-
 
 
 def main():
 
     viewer = napari.Viewer(ndisplay=2)
     fibsem_ui = FibsemUI(viewer=viewer)
-    viewer.window.add_dock_widget(fibsem_ui, area="right", add_vertical_stretch=False)
+    viewer.window.add_dock_widget(fibsem_ui, 
+                                  area="right", 
+                                  add_vertical_stretch=True, 
+                                  name="OpenFIBSEM")
     napari.run()
 
 
