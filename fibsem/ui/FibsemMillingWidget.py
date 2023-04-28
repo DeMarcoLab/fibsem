@@ -148,7 +148,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.milling_stages = milling_stages
         self.comboBox_milling_stage.clear()
         self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
-        self.update_milling_stage_ui()
+        self.update_ui()
 
     def get_milling_stages(self):
         return self.milling_stages
