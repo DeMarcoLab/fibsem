@@ -189,12 +189,9 @@ def detect_corner(
         h_idx = np.where(edge_mask[1] == px)
         coords = edge_mask[0][h_idx], edge_mask[1][h_idx]
 
-        # get vertical index
-        v_idx = np.argmin(coords[0])
-        if bottom:
-            v_idx = np.argmax(coords[0])
-
-        edge_px = coords[0][v_idx], coords[1][v_idx]
+        # get the coordinates of the median vertical index
+        py = int(np.median(coords[0]))
+        edge_px = (py, px)
 
     return Point(x=int(edge_px[1]), y=int(edge_px[0]))
 
@@ -202,7 +199,7 @@ def detect_corner(
 def detect_lamella(
     mask: np.ndarray,
     feature: Feature,
-    mask_radius: int = 1024,
+    # mask_radius: int = 512,
     idx: int = 1,
 ) -> Point:
 
@@ -417,6 +414,13 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
                    markersize=5, markeredgecolor="w", 
                    label=f.name)
     ax[1].legend(loc="best")
+
+    if len(det.features) == 2:
+        # plot white line between features
+        ax[1].plot([det.features[0].px.x, det.features[1].px.x],
+                   [det.features[0].px.y, det.features[1].px.y], 
+                   color="w", linestyle="--")
+
     plt.show()
 
 
