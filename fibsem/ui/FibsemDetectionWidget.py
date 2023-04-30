@@ -402,13 +402,6 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
                     x=data[idx][1], y=data[idx][0]
                 )
 
-            if len(self.detected_features.features) >= 2:
-                # recalculate the distance
-                self.detected_features.distance = self.detected_features.features[0].px._distance_to(
-                    self.detected_features.features[1].px
-                )
-                self.detected_features.distance = self.detected_features.distance._to_metres(pixel_size = self.detected_features.pixelsize) # TODO: get from metadata)
-
         self._USER_CORRECTED = True
         self.update_info()
 

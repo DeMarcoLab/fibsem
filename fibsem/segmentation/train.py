@@ -178,7 +178,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("fibsem", "segmentation", "config.yml"),
+        default=os.path.join("config.yml"),
     )
     args = parser.parse_args()
     config_dir = args.config
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     print("\n----------------------- Loading Model -----------------------")
     # from smp
     model = smp.Unet(
-        encoder_name="resnet18",
+        encoder_name=config["train"]["encoder"],
         encoder_weights="imagenet",
         in_channels=1,  # grayscale images
         classes=num_classes,  # background, needle, lamella
