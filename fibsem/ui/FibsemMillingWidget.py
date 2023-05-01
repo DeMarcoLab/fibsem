@@ -144,11 +144,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         napari.utils.notifications.show_info(f"Removed milling stage.")
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
-
+        logging.info(f"Setting milling stages: {len(milling_stages)}")
         self.milling_stages = milling_stages
         self.comboBox_milling_stage.clear()
         self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
-        self.update_ui()
+        logging.info(f"Set milling stages: {len(milling_stages)}")
+        self.update_milling_stage_ui()
+        # self.update_ui()
 
     def get_milling_stages(self):
         return self.milling_stages
@@ -218,7 +220,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for i in reversed(range(self.gridLayout_patterns.count())):
             self.gridLayout_patterns.itemAt(i).widget().setParent(None)
 
+        # TODO: this doesnt update when setting from milling_stage
         pattern_protocol = self.protocol["patterns"][pattern.name]
+
+        # we want to set the protocol, not the milling stage...
+
 
         # add new widgets
         # TODO: smarter logic for which kinds of widgets to add
