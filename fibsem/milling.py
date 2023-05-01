@@ -161,7 +161,7 @@ def extract_trench_parameters(protocol: dict, point: Point = Point()):
     trench_height = protocol["trench_height"]
     upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
     offset = protocol["offset"]
-    milling_depth = protocol["milling_depth"]
+    milling_depth = protocol["depth"]
 
 
     centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
@@ -223,7 +223,7 @@ def draw_stress_relief(
     """
     width = microexpansion_protocol["width"]
     height = microexpansion_protocol["height"]
-    depth = lamella_protocol["milling_depth"]
+    depth = lamella_protocol["depth"]
     if scan_direction is None:
         scan_direction = ["LeftToRight", "RightToLeft"]
 
