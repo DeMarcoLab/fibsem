@@ -33,6 +33,7 @@ class RectanglePattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Rectangle"  # redundant now
+        protocol["rotation"] = protocol.get("rotation", 0)
         protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
@@ -691,3 +692,32 @@ class FibsemMillingStage:
     milling: FibsemMillingSettings = FibsemMillingSettings()
     pattern: BasePattern  = get_pattern("Rectangle")
     point: Point = Point()
+
+
+PROTOCOL_MILL_MAP = {"cut": RectanglePattern, 
+             "fiducial": FiducialPattern, 
+             "flatten": RectanglePattern, 
+             "undercut": UndercutPattern, 
+             "lamella": HorseshoePattern, 
+             "polish_lamella": TrenchPattern, 
+             "thin_lamella": TrenchPattern, 
+             "weld": RectanglePattern}
+
+def _get_pattern(key:str , protocol: dict) -> BasePattern:
+    pattern = PROTOCOL_MILL_MAP[key]()
+    pattern.define(protocol)
+    return pattern
+            
+def _get_stage(key, protocol: dict, i: int = 0) -> FibsemMillingStage:
+    pattern = _get_pattern(key, protocol)
+    mill_settings = FibsemMillingSettings(milling_current=protocol["milling_current"])
+
+    stage = FibsemMillingStage(name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern)
+    return stage
+
+def _get_milling_stages(key, protocol):
+    if "stages" in protocol[key]:
+        stages = [_get_stage(key, pstage, i) for i, pstage in enumerate(protocol[key]["stages"])]
+    else:
+        stages = [_get_stage(key, protocol[key])]
+    return stages
