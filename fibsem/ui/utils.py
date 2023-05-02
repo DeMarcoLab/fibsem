@@ -342,8 +342,8 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 def validate_pattern_placement(patterns: list[FibsemPatternSettings],resolution: list, shape: list[list[float]]):
 
 
-    x_lim = resolution[0]-10
-    y_lim = resolution[1]-10
+    x_lim = resolution[0]-100
+    y_lim = resolution[1]-100
 
     for coordinate in shape:
 
