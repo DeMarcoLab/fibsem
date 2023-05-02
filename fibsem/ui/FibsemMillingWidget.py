@@ -245,11 +245,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if self.milling_stages:
             self.update_ui()
     
-    def get_pattern_from_ui_v2(self):
-
-        # get current pattern
-        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
-
+    def get_pattern_settings_from_ui(self, pattern: patterning.BasePattern):
         # get pattern protocol from ui
         pattern_dict = {}
         for i, key in enumerate(pattern.required_keys):
@@ -257,7 +253,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
             value = _scale_value(key, value, constants.DEGREES_TO_RADIANS) if key in _ANGLE_KEYS else value
             pattern_dict[key] = value # TODO: not everythign is in microns
+        return pattern_dict
 
+    def get_pattern_from_ui_v2(self):
+
+        # get current pattern
+        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
+
+        pattern_dict = self.get_pattern_settings_from_ui(pattern)
         # define pattern
         point = Point(x=self.doubleSpinBox_centre_x.value() * constants.MICRO_TO_SI, y=self.doubleSpinBox_centre_y.value() * constants.MICRO_TO_SI)
         pattern.define(protocol=pattern_dict, point=point)
@@ -285,28 +288,25 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # update pattern
         current_stage_index = self.comboBox_milling_stage.currentIndex()
-        pattern = self.milling_stages[current_stage_index].pattern
+        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
+        pattern_dict = self.get_pattern_settings_from_ui(pattern)
+
+        point = conversions.image_to_microscope_image_coordinates(
+            Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+        )
+        pattern.define(protocol=pattern_dict, point=point)
         is_valid = self.valid_pattern_location(pattern)
-
         if is_valid:
-
-            point = conversions.image_to_microscope_image_coordinates(
-                Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
-            )
-            logging.info(f"Moved pattern to {point}")
-
             # update ui
             self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
-            
+            logging.info(f"Moved pattern to {point}")
             self.good_copy_pattern = deepcopy(pattern)
             
             self.update_ui()
         else:
             napari.utils.notifications.show_warning("Pattern is not within the image.")
             self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
-            
-            
 
     def valid_pattern_location(self,stage_pattern):
         
