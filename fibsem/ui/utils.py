@@ -277,11 +277,6 @@ def _draw_patterns_in_napari(
             else:
                 shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
                 shape_types.append("rectangle")
-            # is_valid = validate_pattern_placement(resolution=eb_image.metadata.image_settings.resolution,shape=shape)
-            
-            # if not is_valid:
-            #     message_box_ui(title="Invalid Pattern Placement", text="Pattern placement is invalid, please check the pattern settings.")
-                # return
 
             # offset the x coord by image width
             if eb_image is not None:
