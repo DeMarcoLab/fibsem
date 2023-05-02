@@ -262,7 +262,7 @@ def _draw_patterns_in_napari(
     _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
     
     # colour wheel
-    colour = ["yellow", "blue", "green", "orange", "purple"]
+    colour = ["orange", "yellow", "red", "green", "purple"]
     from fibsem.structures import FibsemPattern
    
     # convert fibsem patterns to napari shapes
