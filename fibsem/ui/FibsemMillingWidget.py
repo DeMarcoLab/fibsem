@@ -1,6 +1,6 @@
 
 import logging
-
+from copy import deepcopy
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets, QtCore
@@ -12,10 +12,10 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                FibsemPatternSettings, MicroscopeSettings,
-                               Point)
+                               Point, FibsemPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle,convert_pattern_to_napari_rect, validate_pattern_placement
 from napari.qt.threading import thread_worker
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number"]
@@ -55,6 +55,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.setup_connections()
 
         self.update_pattern_ui()
+
+        self.good_copy_pattern = None
 
     def setup_connections(self):
 
@@ -282,18 +284,40 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # only move the pattern if milling widget is activate and beamtype is ion?
 
         # update pattern
+        current_stage_index = self.comboBox_milling_stage.currentIndex()
+        pattern = self.milling_stages[current_stage_index].pattern
+        is_valid = self.valid_pattern_location(pattern)
 
-        point = conversions.image_to_microscope_image_coordinates(
-            Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
-        )
-        logging.info(f"Moved pattern to {point}")
+        if is_valid:
 
-        # update ui
-        self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-        self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+            point = conversions.image_to_microscope_image_coordinates(
+                Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+            )
+            logging.info(f"Moved pattern to {point}")
+
+            # update ui
+            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+            
+            self.good_copy_pattern = deepcopy(pattern)
+            
+            self.update_ui()
+        else:
+            napari.utils.notifications.show_warning("Pattern is not within the image.")
+            self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
+            
+            
+
+    def valid_pattern_location(self,stage_pattern):
         
+        for pattern_settings in stage_pattern.patterns:
+            if pattern_settings.pattern is FibsemPattern.Circle:
+                shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
+            else:
+                shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
+
+            return validate_pattern_placement(patterns=shape, resolution=self.image_widget.image_settings.resolution,shape=shape)
         
-        self.update_ui()
    
     def set_milling_settings_ui(self, milling: FibsemMillingSettings) -> None:
 
