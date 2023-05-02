@@ -351,6 +351,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if milling_stages is None:
             self.update_milling_stage_from_ui() # update milling stage from ui
             milling_stages = self.get_milling_stages() # get the latest milling stages from the ui
+            
 
         if not milling_stages:
             msg = f"No milling stages defined, cannot draw patterns."
