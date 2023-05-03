@@ -253,7 +253,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
         # detect features
         pixelsize = 25e-9 # TODO: get from metadata
-        det = detection.locate_shift_between_features_v2(
+        det = detection.detect_features(
             deepcopy(self.image.data), self.model, 
             features=features, 
             pixelsize=pixelsize,
@@ -420,7 +420,7 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
     # detect features
-    det = detection.locate_shift_between_features_v2(
+    det = detection.detect_features(
         deepcopy(image.data), model, features=features, pixelsize=pixelsize
     )
 
