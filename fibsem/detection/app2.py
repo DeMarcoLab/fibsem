@@ -79,18 +79,35 @@ fig = px.scatter(df, x="dx", y="dy", color="feature", title="Distance from GT to
 cols[1].plotly_chart(fig)
 
 
-FNAME = st.selectbox("Image", df["fname"].unique()) 
-image = FibsemImage.load(os.path.join(SAMPLE_PATH, f"{FNAME}.tif"))
-model = load_model(checkpoint=CHECKPOINT_PATH, encoder=ENCODER, nc=NUM_CLASSES)
 
-df_gt = pd.read_csv(os.path.join(SAMPLE_PATH, "data.csv"))
-gt = df_gt[df_gt["image"] == FNAME]
-features = gt["feature"].to_list()
-features = [detection.get_feature(feature) for feature in features]
-gt_det = detection._det_from_df(gt, SAMPLE_PATH, FNAME)
 
-det = detection.detect_features(image.data, model, features, pixelsize=25e-9)
+
+# Model Evaluation
+
+cols = st.columns(3)
+FEATURES = cols[0].multiselect("Features", df["feature"].unique(), default=df["feature"].unique())
+
+# filter df 
+df = df[df["feature"].isin(FEATURES)]
+
+FNAME = cols[1].selectbox("Image", df["fname"].unique()) 
+
+@st.cache_data
+def model_eval(SAMPLE_PATH, CHECKPOINT_PATH, ENCODER, NUM_CLASSES, FNAME):
+    image = FibsemImage.load(os.path.join(SAMPLE_PATH, f"{FNAME}.tif"))
+    model = load_model(checkpoint=CHECKPOINT_PATH, encoder=ENCODER, nc=NUM_CLASSES)
+
+    df_gt = pd.read_csv(os.path.join(SAMPLE_PATH, "data.csv"))
+    gt = df_gt[df_gt["image"] == FNAME]
+    features = gt["feature"].to_list()
+    features = [detection.get_feature(feature) for feature in features]
+    gt_det = detection._det_from_df(gt, SAMPLE_PATH, FNAME)
+
+    det = detection.detect_features(image.data, model, features, pixelsize=25e-9)
+
+    return gt_det, det
+
+gt_det, det = model_eval(SAMPLE_PATH, CHECKPOINT_PATH, ENCODER, NUM_CLASSES, FNAME)
 
 fig = detection.plot_detections([gt_det, det], titles=["Ground Truth", "Prediction"])
-
 st.pyplot(fig)
