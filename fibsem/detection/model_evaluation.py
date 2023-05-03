@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import pandas as pd
 
-from fibsem.detection.detection import NeedleTip, LamellaCentre, LamellaLeftEdge,LamellaRightEdge, ImageCentre, LandingPost, locate_shift_between_features_v2
+from fibsem.detection.detection import NeedleTip, LamellaCentre, LamellaLeftEdge,LamellaRightEdge, ImageCentre, LandingPost, detect_features
 from fibsem.segmentation.model import load_model
 import os
 from tqdm import tqdm
@@ -97,7 +97,7 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
             mask = model.inference(img)
             # segmenting image
             features = [detection_types[p1_type], detection_types[p2_type]]
-            det = locate_shift_between_features_v2(img, model, features=features, pixelsize=10e-9)
+            det = detect_features(img, model, features=features, pixelsize=10e-9)
             f1 = det.features[0]
             f2 = det.features[1]
 
