@@ -39,12 +39,6 @@ class Point:
     x: float = 0.0
     y: float = 0.0
 
-    # def __post_init__(self):
-
-    #     assert isinstance(self.x,float) or isinstance(self.x,int), f'Invalid type {type(self.x)} for point'
-    #     assert isinstance(self.y,float) or isinstance(self.y,int), f'Invalid type {type(self.y)} for point'
-        
-
 
     def __to_dict__(self) -> dict:
         return {"x": self.x, "y": self.y}
@@ -53,8 +47,6 @@ class Point:
     def __from_dict__(d: dict) -> "Point":
         x = float(d["x"])
         y = float(d["y"])
-        # assert isinstance(x,float) or x is None, f'Invalid type {type(x)} for point'
-        # assert isinstance(y,float) or y is None, f'Invalid type {type(y)} for point'
         return Point(x, y)
         
 
@@ -65,8 +57,6 @@ class Point:
     def __from_list__(l: list) -> "Point":
         x = float(l[0])
         y = float(l[1])
-        # assert isinstance(x,float) or x is None, f"Invalid type {type(x)} for point"
-        # assert isinstance(y,float) or y is None, f'invalid type {type(y)} for point'
         return Point(x, y)
     
     def __add__(self, other) -> 'Point':
@@ -92,8 +82,13 @@ class Point:
     def _to_pixels(self, pixel_size: float) -> 'Point':
         return Point(self.x / pixel_size, self.y / pixel_size)
 
-    def _distance_to(self, other: 'Point') -> 'Point':
+    def distance(self, other: 'Point') -> 'Point':
+        """Calculate the distance between two points. (other - self)"""
         return Point(x=(other.x - self.x), y=(other.y - self.y))
+    
+    def euclidean(self, other: 'Point') -> float:
+        """Calculate the euclidean distance between two points."""
+        return np.linalg.norm(self.distance(other).__to_list__())
 
 
 # TODO: convert these to match autoscript...
@@ -835,7 +830,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 end_x=state_dict["end_x"],
                 end_y=state_dict["end_y"],
                 depth=state_dict["depth"],
-                rotation=state_dict["rotation"],
+                rotation=state_dict.get("rotation", 0.0),
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
@@ -931,7 +926,7 @@ class FibsemMillingSettings:
         assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
         assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
         assert isinstance(self.application_file,(str)), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
-        assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
+        # assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
 
     def __to_dict__(self) -> dict:
 
@@ -1558,7 +1553,7 @@ class FibsemImage:
                 metadata = FibsemImageMetadata.__from_dict__(metadata)
             except Exception as e:
                 metadata = None
-                print(f"Error: {e}")
+                # print(f"Error: {e}")
         return cls(data=data, metadata=metadata)
 
     def save(self, save_path: Path = None) -> None:

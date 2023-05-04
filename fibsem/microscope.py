@@ -450,6 +450,10 @@ class ThermoMicroscope(FibsemMicroscope):
             reduced_area = image_settings.reduced_area.__to_FEI__()
         else:
             reduced_area = None
+            if image_settings.beam_type == BeamType.ELECTRON:
+                self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+            if image_settings.beam_type == BeamType.ION :
+                self.connection.beams.ion_beam.scanning.mode.set_full_frame()
         
         frame_settings = GrabFrameSettings(
             resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
@@ -3707,6 +3711,9 @@ class TescanMicroscope(FibsemMicroscope):
                     logging.warning(f"Invalid contrast value: {value}, must be between 0 and 1.")
                 return 
 
+        if key == "preset":
+            beam.Preset.Activate(value)
+            logging.info(f"Preset {value} activated for {beam_type}.")
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
@@ -3922,13 +3929,15 @@ class DemoMicroscope(FibsemMicroscope):
         if name == "EUCENTRIC":
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
-    def setup_milling(self, mill_settings: FibsemMillingSettings, preset: str = None):
+    def setup_milling(self, mill_settings: FibsemMillingSettings):
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
 
     def run_milling(self, milling_current: float, asynch: bool = False) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
+        import random
+        time.sleep(random.randint(1, 5))
 
     def finish_milling(self, imaging_current: float) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)

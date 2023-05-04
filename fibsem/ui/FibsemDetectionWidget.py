@@ -253,8 +253,12 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
         # detect features
         pixelsize = 25e-9 # TODO: get from metadata
-        det = detection.locate_shift_between_features_v2(
-            deepcopy(self.image.data), self.model, features=features, pixelsize=pixelsize
+        det = detection.detect_features(
+
+            deepcopy(self.image.data), self.model, 
+            features=features, 
+            pixelsize=pixelsize,
+            filter=True, point=None
         )
 
         self.set_detected_features(det)
@@ -323,7 +327,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         # add points to viewer
         data = []
         for feature in self.detected_features.features:
-            x, y = feature.feature_px
+            x, y = feature.px
             data.append([y, x])
 
 
@@ -365,8 +369,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         
         self.label_info.setText(
             f"""Moving {self.detected_features.features[0].name} to {self.detected_features.features[1].name}
-        \n{self.detected_features.features[0].name}: {self.detected_features.features[0].feature_px}
-        \n{self.detected_features.features[1].name}: {self.detected_features.features[1].feature_px}
+        \n{self.detected_features.features[0].name}: {self.detected_features.features[0].px}
+        \n{self.detected_features.features[1].name}: {self.detected_features.features[1].px}
         \ndx={self.detected_features.distance.x*1e6:.2f}um, dy={self.detected_features.distance.y*1e6:.2f}um
         User Corrected: {self._USER_CORRECTED}
         """
@@ -395,16 +399,9 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
                 logging.info(f"point moved: {self.detected_features.features[idx].name} to {data[idx]}") # TODO: fix for logging statistics
                 
                 # update the feature
-                self.detected_features.features[idx].feature_px = Point(
+                self.detected_features.features[idx].px = Point(
                     x=data[idx][1], y=data[idx][0]
                 )
-
-            if len(self.detected_features.features) >= 2:
-                # recalculate the distance
-                self.detected_features.distance = self.detected_features.features[0].feature_px._distance_to(
-                    self.detected_features.features[1].feature_px
-                )
-                self.detected_features.distance = self.detected_features.distance._to_metres(pixel_size = self.detected_features.pixelsize) # TODO: get from metadata)
 
         self._USER_CORRECTED = True
         self.update_info()
@@ -424,7 +421,7 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
     # detect features
-    det = detection.locate_shift_between_features_v2(
+    det = detection.detect_features(
         deepcopy(image.data), model, features=features, pixelsize=pixelsize
     )
 

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import pandas as pd
 
-from fibsem.detection.detection import NeedleTip, LamellaCentre, LamellaLeftEdge,LamellaRightEdge, ImageCentre, LandingPost, locate_shift_between_features_v2
+from fibsem.detection.detection import NeedleTip, LamellaCentre, LamellaLeftEdge,LamellaRightEdge, ImageCentre, LandingPost, detect_features
 from fibsem.segmentation.model import load_model
 import os
 from tqdm import tqdm
@@ -97,15 +97,15 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
             mask = model.inference(img)
             # segmenting image
             features = [detection_types[p1_type], detection_types[p2_type]]
-            det = locate_shift_between_features_v2(img, model, features=features, pixelsize=10e-9)
+            det = detect_features(img, model, features=features, pixelsize=10e-9)
             f1 = det.features[0]
             f2 = det.features[1]
 
             # converting pixel coordinates to distance along axes, same as GT
-            convert_p1_x = f1.feature_px.x/res_x
-            convert_p1_y = f1.feature_px.y/res_y
-            convert_p2_x = f2.feature_px.x/res_x
-            convert_p2_y = f2.feature_px.y/res_y
+            convert_p1_x = f1.px.x/res_x
+            convert_p1_y = f1.px.y/res_y
+            convert_p2_x = f2.px.x/res_x
+            convert_p2_y = f2.px.y/res_y
 
             dat["ML_p1_x"] = convert_p1_x
             dat["ML_p1_y"] = convert_p1_y
@@ -137,8 +137,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 ax[1].imshow(det.mask)
 
                 ax[1].plot(
-                    f1.feature_px.x,
-                    f1.feature_px.y,
+                    f1.px.x,
+                    f1.px.y,
                     color="blue",
                     marker="x",
                     ms=20,
@@ -146,8 +146,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 )
 
                 ax[1].plot(
-                    f2.feature_px.x,
-                    f2.feature_px.y,
+                    f2.px.x,
+                    f2.px.y,
                     color="white",
                     marker="x",
                     ms=20,
@@ -165,8 +165,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 )
                 
                 ax[0].plot(
-                    f1.feature_px.x,
-                    f1.feature_px.y,
+                    f1.px.x,
+                    f1.px.y,
                     color="blue",
                     marker="x",
                     ms=20,
@@ -183,8 +183,8 @@ for label_folder in tqdm(label_folders,desc=f'Evaluating folders'):
                 )
 
                 ax[0].plot(
-                    f2.feature_px.x,
-                    f2.feature_px.y,
+                    f2.px.x,
+                    f2.px.y,
                     color="red",
                     marker="x",
                     ms=20,
