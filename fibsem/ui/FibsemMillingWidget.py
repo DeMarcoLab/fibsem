@@ -75,6 +75,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_application_file.addItems(available_application_files)
         self.comboBox_preset.setVisible(_THERMO)
         self.label_preset.setVisible(_THERMO)
+        if self.comboBox_application_file.findText(self.protocol["milling"]["application_file"]) == -1:
+                napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
+                self.protocol["milling"]["application_file"] = "Si"
+        self.comboBox_application_file.setCurrentText(self.protocol["milling"]["application_file"])
         
         
         # TESCAN
