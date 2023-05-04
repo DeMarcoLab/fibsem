@@ -138,7 +138,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def update_settings(self):
         settings = self.get_milling_settings_from_ui()
         index = self.comboBox_milling_stage.currentIndex()
-        self.milling_stages[index].milling = settings
+        if index != -1:
+            self.milling_stages[index].milling = settings
 
     def add_milling_stage(self):
         logging.info("Adding milling stage")
