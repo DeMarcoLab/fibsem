@@ -1,7 +1,7 @@
-data_path: /home/patrick/github/data/liftout/active-learning/train/celegans/images
-label_path: /home/patrick/github/data/liftout/active-learning/train/celegans/labels
-save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/celegans
-checkpoint: null # /home/patrick/github/fibsem/fibsem/segmentation/models/model4.pt
+data_path: /home/patrick/github/data/liftout/training/train/images # /home/patrick/github/data/liftout/active-learning/train/dm-embryo/images
+label_path: /home/patrick/github/data/liftout/training/train/labels #/home/patrick/github/data/liftout/active-learning/train/dm-embryo/labels
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/demo
+checkpoint: null #/home/patrick/github/fibsem/fibsem/segmentation/models/model4.pt
 encoder: "resnet34" # Specify model architecture. List of available encoders in readme.
 epochs: 20 # Number of epochs to train for
 batch_size: 4 # Number of samples per batch

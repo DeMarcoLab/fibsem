@@ -188,7 +188,6 @@ def decode_output(output):
     """decodes the output of segmentation model to RGB mask"""
     output = F.softmax(output, dim=1)
     mask = torch.argmax(output, dim=1).detach().cpu().numpy()
-    mask = decode_segmap(mask)
     return mask
 
 
@@ -286,8 +285,7 @@ def validate_config(config:dict):
         raise ValueError("save_path is missing. Should point to save the model.")
     else:
         path = config["save_path"]
-        if not os.path.exists(path):
-            raise ValueError(f"{path} directory does not exist. (save_path)")
+        os.makedirs(path, exist_ok=True)
     if "wandb" not in config:
         raise ValueError("wandb is missing. Used to enable/disable wandb logging in training loop. Should be a boolean value.")
     else:

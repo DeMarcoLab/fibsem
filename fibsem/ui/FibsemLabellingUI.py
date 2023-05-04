@@ -17,7 +17,7 @@ from fibsem.segmentation.config import CLASS_COLORS
 from fibsem.segmentation import utils as seg_utils
 
 from fibsem.ui.FibsemSegmentationModelWidget import FibsemSegmentationModelWidget
-
+from fibsem.ui.FibsemModelTrainingWidget import FibsemModelTrainingWidget
 # BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
 
@@ -46,7 +46,9 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.pushButton_previous.clicked.connect(self.previous_image)
 
         self.model_widget = FibsemSegmentationModelWidget()
+        self.train_widget = FibsemModelTrainingWidget(viewer=self.viewer)
         self.tabWidget.addTab(self.model_widget, "Model")
+        self.tabWidget.addTab(self.train_widget, "Train")
 
         self.model_widget.pushButton_load_model.clicked.connect(self.load_model)
 

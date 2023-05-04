@@ -15,6 +15,8 @@ from fibsem.segmentation import train as seg_train
 
 from fibsem.ui.qtdesigner_files import FibsemModelTrainingWidget
 import yaml
+from fibsem.segmentation.config import CLASS_COLORS
+
 
 # BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 from PyQt5.QtCore import pyqtSignal
@@ -27,10 +29,12 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
 
     def __init__(
         self,
+        viewer: napari.Viewer,
         parent=None,
     ):
         super(FibsemModelTrainingWidget, self).__init__(parent=parent)
         self.setupUi(self)
+        self.viewer = viewer
 
         self.setup_connections()
 
@@ -79,12 +83,6 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
             "wandb_entity": self.lineEdit_wandb_entity.text(),
         }
 
-        print("Train Model...")
-
-        from pprint import pprint
-
-        pprint(config)
-
         self.label_info.setText("Model Training...")
         self.pushButton_train_model.setEnabled(False)
         worker = self.train_worker(config)
@@ -105,6 +103,9 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
         ################################## LOAD MODEL ##################################
 
         model, optimizer, device = seg_train._setup_model(config)
+        
+        self.viewer.layers.clear()
+        # self.viewer.grid.enabled = True
 
         seg_train.train_model(
             model,
@@ -119,11 +120,50 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
         )
 
     def train_model_yielded(self, info: dict):
-        msg = f"Model Training..."
-        msg+= f"\nEpoch {info['epoch']}/{info['epochs']}" 
-        msg+= f"\nTrain Loss:{info['train_loss']:.4f}, Val Loss:{info['val_loss']:.4f}"
 
+        if info["stage"] == "end":
+            self.epoch = info["epoch"]
+            self.epochs = info["epochs"]
+            self.train_loss = info["train_loss"]
+            self.val_loss = info["val_loss"]
+        if info["stage"] == "train":
+            self.train_loss = info["train_loss"]
+        if info["stage"] == "val":
+            self.val_loss = info["val_loss"]
+        msg = f"Epoch: {self.epoch}/{self.epochs} | Train Loss: {self.train_loss:.4f} | Val Loss: {self.val_loss:.4f}"
         self.label_info.setText(msg)
+
+        if info["stage"] in ["train", "val"]:
+            
+            try:
+                self._image_layer.data = info["image"]
+            except:
+                self._image_layer = self.viewer.add_image(
+                    info["image"],
+                    name="Image",
+                    opacity=0.7,
+                    blending="additive",
+                )
+            try:
+                self._label_layer.data = info["gt"]
+            except:
+                self._label_layer = self.viewer.add_labels(
+                    info["gt"],
+                    name="Mask",    
+                    opacity=0.7,
+                    blending="additive",
+                    color=CLASS_COLORS,
+                )
+            try:
+                self._pred_layer.data = info["pred"]
+            except:
+                self._pred_layer = self.viewer.add_labels(
+                    info["pred"],
+                    name="Prediction",
+                    opacity=0.7,
+                    blending="additive",
+                    color=CLASS_COLORS,
+                )
 
     def train_model_finished(self):
         msg = "Train Model Finished!"
@@ -137,7 +177,7 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
 
 def main():
     viewer = napari.Viewer()
-    widget = FibsemModelTrainingWidget()
+    widget = FibsemModelTrainingWidget(viewer=viewer)
     viewer.window.add_dock_widget(widget, area="right")
     napari.run()
 

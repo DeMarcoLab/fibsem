@@ -28,7 +28,7 @@ def save_model(save_dir, model, epoch):
     print(f"Model saved to {model_save_file}")
 
 
-def train(model, device, data_loader, criterion, optimizer, WANDB):
+def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
     data_loader = tqdm(data_loader)
     train_loss = 0
 
@@ -56,30 +56,31 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
         # evaluation
         train_loss += loss.item()
 
+        data_loader.set_description(f"Train Loss: {loss.item():.04f}")
+
+        idx = random.choice(np.arange(0, images.shape[0]))
+
+        output = model(images[idx][None, :, :, :])
+        output_mask = utils.decode_output(output)
+
+        img_base = images[idx].detach().cpu().squeeze().numpy()
+        gt_base = masks[idx].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
         if WANDB:
             wandb.log({"train_loss": loss.item()})
-            data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
-            idx = random.choice(np.arange(0, images.shape[0]))
-
-            output = model(images[idx][None, :, :, :])
-            output_mask = utils.decode_output(output)
-
-            img_base = images[idx].detach().cpu().squeeze().numpy()
-            img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = utils.decode_segmap(
-                masks[idx].detach().cpu()[:, :, None]
-            )  # .permute(1, 2, 0))
-
-            wb_img = wandb.Image(img_rgb, caption="Input Image")
-            wb_gt = wandb.Image(gt_base, caption="Ground Truth")
-            wb_mask = wandb.Image(output_mask, caption="Output Mask")
+            wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Input Image")
+            wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Ground Truth")
+            wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Output Mask")
             wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+
+        if ui:
+            ui.emit({"stage": "train", "train_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
+
 
     return train_loss
 
 
-def validate(model, device, data_loader, criterion, WANDB):
+def validate(model, device, data_loader, criterion, WANDB, ui):
     val_loader = tqdm(data_loader)
     val_loss = 0
 
@@ -100,22 +101,21 @@ def validate(model, device, data_loader, criterion, WANDB):
         loss = criterion(outputs, masks)
 
         val_loss += loss.item()
+
+        val_loader.set_description(f"Val Loss: {loss.item():.04f}")
+
+        output = model(images[0][None, :, :, :])
+        output_mask = utils.decode_output(output)
+
+        img_base = images[0].detach().cpu().squeeze().numpy()
+        gt_base = masks[0].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
+
         if WANDB:
             wandb.log({"val_loss": loss.item()})
-            val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
-            output = model(images[0][None, :, :, :])
-            output_mask = utils.decode_output(output)
-
-            img_base = images[0].detach().cpu().squeeze().numpy()
-            img_rgb = np.dstack((img_base, img_base, img_base))
-            gt_base = utils.decode_segmap(
-                masks[0].detach().cpu()[:, :, None]
-            )  # .permute(1, 2, 0))
-
-            wb_img = wandb.Image(img_rgb, caption="Validation Input Image")
-            wb_gt = wandb.Image(gt_base, caption="Validation Ground Truth")
-            wb_mask = wandb.Image(output_mask, caption="Validation Output Mask")
+            wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Validation Input Image")
+            wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Validation Ground Truth")
+            wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Validation Output Mask")
             wandb.log(
                 {
                     "Validation image": wb_img,
@@ -124,7 +124,19 @@ def validate(model, device, data_loader, criterion, WANDB):
                 }
             )
 
+        if ui:
+            ui.emit({"stage": "val", "val_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
+
+
     return val_loss
+
+# initialise loss function and optimizer
+def multi_loss(pred, target) -> float:
+    c_loss = torch.nn.CrossEntropyLoss()
+    d_loss = smp.losses.DiceLoss(mode="multiclass")
+    f_loss = smp.losses.FocalLoss(mode="multiclass")
+    return c_loss(pred, target) + d_loss(pred, target) + f_loss(pred, target)
+
 
 def train_model(
     model,
@@ -138,17 +150,17 @@ def train_model(
     ui = None, # pyqtSignal
 ):
     """Helper function for training the model"""
-    # initialise loss function and optimizer
-    def multi_loss(pred, target) -> float:
-        c_loss = torch.nn.CrossEntropyLoss()
-        d_loss = smp.losses.DiceLoss(mode="multiclass")
-        f_loss = smp.losses.FocalLoss(mode="multiclass")
-        return c_loss(pred, target) + d_loss(pred, target) + f_loss(pred, target)
 
     criterion = multi_loss
 
     total_steps = len(train_data_loader)
     print(f"{epochs} epochs, {total_steps} total_steps per epoch")
+
+    if ui:
+        # emit signal to update ui
+        ui.emit({"stage": "end", 
+                 "epoch": 0, "epochs": epochs, 
+                 "train_loss": 0.0, "val_loss": 0.0})
 
     train_losses = []
     val_losses = []
@@ -158,9 +170,9 @@ def train_model(
         print(f"------- Epoch {epoch+1} of {epochs}  --------")
 
         train_loss = train(
-            model, device, train_data_loader, criterion, optimizer, WANDB
+            model, device, train_data_loader, criterion, optimizer, WANDB, ui
         )
-        val_loss = validate(model, device, val_data_loader, criterion, WANDB)
+        val_loss = validate(model, device, val_data_loader, criterion, WANDB, ui)
 
         train_losses.append(train_loss / len(train_data_loader))
         val_losses.append(val_loss / len(val_data_loader))
@@ -172,7 +184,7 @@ def train_model(
         # TODO: add better ui updates
         if ui:
             # emit signal to update ui
-            ui.emit({"epoch": epoch, "n_epochs": epochs, "train_loss": train_losses[-1], "val_loss": val_losses[-1]})
+            ui.emit({"stage": "end", "epoch": epoch, "epochs": epochs, "train_loss": train_losses[-1], "val_loss": val_losses[-1]})
 
     return model
 
@@ -263,7 +275,7 @@ if __name__ == "__main__":
         help="the directory containing the config file to use",
         dest="config",
         action="store",
-        default=os.path.join("config.yml"),
+        default=os.path.join(os.path.join(os.path.dirname(__file__), "config.yml")),
     )
     args = parser.parse_args()
     config_dir = args.config
