@@ -6,20 +6,23 @@ from datetime import datetime
 import numpy as np
 import segmentation_models_pytorch as smp
 import torch
-import wandb
+
+try:
+    import wandb
+except:
+    pass
+
 import yaml
-import dataset, utils, validate_config
 from tqdm import tqdm
+
+from fibsem.segmentation import dataset, utils
 
 
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
 
-    # datetime object containing current date and time
-    now = datetime.now()
-    # format
-    dt_string = now.strftime("%d_%m_%Y_%H_%M_%S") + f"_n{epoch+1:02d}"
-    model_save_file = f"{save_dir}/{dt_string}_model.pt"
+    # dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + f"_n{epoch+1:02d}"
+    model_save_file = os.path.join(save_dir, f"model.pt")
     torch.save(model.state_dict(), model_save_file)
 
     print(f"Model saved to {model_save_file}")
@@ -57,7 +60,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB):
             wandb.log({"train_loss": loss.item()})
             data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
-            idx = random.choice(np.arange(0, batch_size))
+            idx = random.choice(np.arange(0, images.shape[0]))
 
             output = model(images[idx][None, :, :, :])
             output_mask = utils.decode_output(output)
@@ -123,7 +126,6 @@ def validate(model, device, data_loader, criterion, WANDB):
 
     return val_loss
 
-
 def train_model(
     model,
     device,
@@ -133,6 +135,7 @@ def train_model(
     epochs,
     save_dir,
     WANDB=True,
+    ui = None, # pyqtSignal
 ):
     """Helper function for training the model"""
     # initialise loss function and optimizer
@@ -143,8 +146,6 @@ def train_model(
         return c_loss(pred, target) + d_loss(pred, target) + f_loss(pred, target)
 
     criterion = multi_loss
-    # criterion = torch.nn.CrossEntropyLoss()
-    # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     total_steps = len(train_data_loader)
     print(f"{epochs} epochs, {total_steps} total_steps per epoch")
@@ -163,12 +164,96 @@ def train_model(
 
         train_losses.append(train_loss / len(train_data_loader))
         val_losses.append(val_loss / len(val_data_loader))
+        
+        # only save if val_loss is minimum
+        if val_loss / len(val_data_loader) == min(val_losses):
+            save_model(save_dir, model, epoch)
 
-        # save model checkpoint
-        save_model(save_dir, model, epoch)
+        # TODO: add better ui updates
+        if ui:
+            # emit signal to update ui
+            ui.emit({"epoch": epoch, "n_epochs": epochs, "train_loss": train_losses[-1], "val_loss": val_losses[-1]})
 
     return model
 
+
+def _setup_model(config: dict) -> tuple:
+    # from smp
+    model = smp.Unet(
+        encoder_name=config["encoder"],
+        encoder_weights="imagenet",
+        in_channels=1,  # grayscale images
+        classes=int(config["num_classes"]),  # background, needle, lamella
+    )
+
+    # Use gpu for training if available else use cpu
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    # load model checkpoint
+    if config["checkpoint"]:
+        model.load_state_dict(torch.load(config["checkpoint"], map_location=device))
+        print(f"Checkpoint file {config['checkpoint']} loaded.")
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
+
+    return model, optimizer, device
+
+def _setup_dataset(config:dict):
+
+    train_data_loader, val_data_loader = dataset.preprocess_data(
+        data_path = config["data_path"], 
+        label_path= config["label_path"], 
+        num_classes=config["num_classes"], 
+        batch_size=config["batch_size"]
+    )
+
+    return train_data_loader, val_data_loader
+
+
+def _setup_wandb(config:dict):
+    # other parameters
+    WANDB = config["wandb"]
+    if WANDB:
+        # weights and biases setup
+        wandb.init(
+            project=config["wandb_project"],
+            entity=config["wandb_entity"],
+        )
+
+        wandb.config = {
+            "epochs": config["epochs"],
+            "batch_size": config["batch_size"],
+            "num_classes": config["num_classes"],
+        }
+
+def main(config: dict):
+
+    utils.validate_config(config)
+
+    _setup_wandb(config)
+
+    ################################## LOAD DATASET ##################################
+    train_data_loader, val_data_loader = _setup_dataset(config)
+
+    ################################## LOAD MODEL ##################################
+
+    model, optimizer, device = _setup_model(config)
+        
+    ################################## TRAINING ##################################
+
+    # train model
+    model = train_model(
+        model,
+        device,
+        optimizer,
+        train_data_loader,
+        val_data_loader,
+        epochs=config["epochs"],
+        save_dir=config["save_path"],
+        WANDB=config["wandb"],
+        ui=None
+    )
 
 if __name__ == "__main__":
     # command line arguments
@@ -187,81 +272,4 @@ if __name__ == "__main__":
     with open(config_dir, "r") as f:
         config = yaml.safe_load(f)
 
-    print("Validating config file.")
-    validate_config.validate_config(config, "train")
-
-    # directories
-    data_path = config["train"]["data_dir"]
-    model_checkpoint = config["train"]["checkpoint"]
-    save_dir = config["train"]["save_dir"]
-
-    # hyper-params
-    epochs = config["train"]["epochs"]
-    num_classes = config["train"]["num_classes"]  # Includes background class
-    batch_size = config["train"]["batch_size"]
-
-    # other parameters
-    cuda = config["train"]["cuda"]
-    WANDB = config["train"]["wandb"]
-    if WANDB:
-        # weights and biases setup
-        wandb.init(
-            project=config["train"]["wandb_project"],
-            entity=config["train"]["wandb_entity"],
-        )
-
-        wandb.config = {
-            "epochs": epochs,
-            "batch_size": batch_size,
-            "num_classes": num_classes,
-        }
-
-    ################################## LOAD DATASET ##################################
-    print(
-        "\n----------------------- Loading and Preparing Data -----------------------"
-    )
-
-    train_data_loader, val_data_loader = dataset.preprocess_data(
-        data_path, num_classes=num_classes, batch_size=batch_size
-    )
-
-    print(
-        "\n----------------------- Data Preprocessing Completed -----------------------"
-    )
-
-    ################################## LOAD MODEL ##################################
-    print("\n----------------------- Loading Model -----------------------")
-    # from smp
-    model = smp.Unet(
-        encoder_name=config["train"]["encoder"],
-        encoder_weights="imagenet",
-        in_channels=1,  # grayscale images
-        classes=num_classes,  # background, needle, lamella
-    )
-
-    # Use gpu for training if available else use cpu
-    device = torch.device("cuda:0" if torch.cuda.is_available() and cuda else "cpu")
-    model.to(device)
-
-    # load model checkpoint
-    if model_checkpoint:
-        model.load_state_dict(torch.load(model_checkpoint, map_location=device))
-        print(f"Checkpoint file {model_checkpoint} loaded.")
-
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=config["train"]["learning_rate"]
-    )
-    ################################## TRAINING ##################################
-    print("\n----------------------- Begin Training -----------------------\n")
-
-    # train model
-    model = train_model(
-        model,
-        device,
-        optimizer,
-        train_data_loader,
-        val_data_loader,
-        epochs=epochs,
-        save_dir=save_dir,
-        WANDB=WANDB,
-    )
+    main(config)    

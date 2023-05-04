@@ -50,13 +50,15 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.model_widget.pushButton_load_model.clicked.connect(self.load_model)
 
-        self.checkBox_model_assist.stateChanged.connect(self.enable_model_assist)
+        self.checkBox_model_assist.stateChanged.connect(self.toggle_model_assist)
 
-    def enable_model_assist(self):
+    def toggle_model_assist(self):
         self._model_assist = self.checkBox_model_assist.isChecked()
 
         if self.model is None:
             self.label_model_info.setText(f"Please load a model.")
+        if self.DATA_LOADED:
+            self.update_image()
 
     def load_model(self):
         self.model = self.model_widget.model
@@ -147,10 +149,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.pushButton_next.setEnabled(IS_NOT_LAST_INDEX)
 
     def get_label_image(self) -> np.ndarray:
-        if self._model_assist and self.model is not None:
-            label_image = self.model.inference(self.img, rgb=False)[0]
 
-        elif os.path.basename(self.fname) in os.listdir(
+        if os.path.basename(self.fname) in os.listdir(
             os.path.join(self.save_path, "labels")
         ):
             label_fname = os.path.join(
@@ -158,6 +158,9 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             )
             label_image = tff.imread(label_fname)
             label_image = np.array(label_image, dtype=np.uint8)
+
+        elif self._model_assist and self.model is not None:
+            label_image = self.model.inference(self.img, rgb=False)[0]
         else:
             label_image = np.zeros_like(self.img)
 
@@ -177,6 +180,10 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
     # TODO: go to index
     # TODO: hotkeys
     #
+
+# TODO: add instructions
+# TODO: add hotkeys
+# TODO: add trianing
 
 
 def main():

@@ -37,3 +37,6 @@ CLASS_COLORS = {
     35: "darkgray",
     36: "darkorange",
 }
+
+import os
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.yml")
