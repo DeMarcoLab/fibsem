@@ -1549,7 +1549,7 @@ class FibsemImage:
                 metadata = FibsemImageMetadata.__from_dict__(metadata)
             except Exception as e:
                 metadata = None
-                print(f"Error: {e}")
+                # print(f"Error: {e}")
         return cls(data=data, metadata=metadata)
 
     def save(self, save_path: Path = None) -> None:

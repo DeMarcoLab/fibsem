@@ -40,3 +40,5 @@ scratch/figure/wd*/*
 fibsem/log/data/*
 test_images/test.tif
 
+fibsem/detection/notebook.ipynb
+
