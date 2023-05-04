@@ -199,7 +199,7 @@ def detect_corner(
 def detect_lamella(
     mask: np.ndarray,
     feature: Feature,
-    # mask_radius: int = 512,
+    mask_radius: int = 512,
     idx: int = 1,
 ) -> Point:
 
@@ -394,7 +394,9 @@ def detect_features(
 
 
 
+
 def plot_det_result_v2(det: DetectedFeatures):
+
     """Plotting image with detected features
 
     Args:
@@ -414,7 +416,6 @@ def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", sho
     ax.set_title(title)
     
     for f in det.features:
-
         ax.plot(f.px.x, f.px.y, 
                 "o",  color=f.color, 
                 markersize=5, markeredgecolor="w", 
@@ -632,11 +633,10 @@ def filter_best_feature(mask: np.ndarray, features: list[Feature], method: str =
     else:
         raise ValueError(f"method {method} not recognised")
 
-
-
 def get_feature(name: str) -> Feature:
 
     idx = [i for i, feat in enumerate(__FEATURES__) if feat.__name__ == name][0]
     feature = __FEATURES__[idx]()
 
     return feature
+

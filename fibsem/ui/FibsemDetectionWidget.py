@@ -254,6 +254,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         # detect features
         pixelsize = 25e-9 # TODO: get from metadata
         det = detection.detect_features(
+
             deepcopy(self.image.data), self.model, 
             features=features, 
             pixelsize=pixelsize,
