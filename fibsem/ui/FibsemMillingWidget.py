@@ -75,6 +75,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_application_file.addItems(available_application_files)
         self.comboBox_preset.setVisible(_THERMO)
         self.label_preset.setVisible(_THERMO)
+        self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
+        self.comboBox_milling_current.currentIndexChanged.connect(self.update_settings)
+        self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
         if self.comboBox_application_file.findText(self.protocol["milling"]["application_file"]) == -1:
                 napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
                 self.protocol["milling"]["application_file"] = "Si"
@@ -91,7 +94,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_preset.setVisible(_TESCAN)
         self.label_preset.setVisible(_TESCAN)
         available_presets = self.microscope.get_available_values("presets")
-        self.comboBox_preset.addItems(available_presets)    
+        self.comboBox_preset.addItems(available_presets)   
+        self.doubleSpinBox_rate.valueChanged.connect(self.update_settings)
+        self.doubleSpinBox_spot_size.valueChanged.connect(self.update_settings)
+        self.doubleSpinBox_dwell_time.valueChanged.connect(self.update_settings)  
+        self.comboBox_preset.currentIndexChanged.connect(self.update_settings)
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
@@ -119,7 +126,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if self.milling_stages:
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
             self.update_milling_stage_ui()
-        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_ui())
+        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_protocol_ui())
 
         # last
         self.doubleSpinBox_centre_x.setKeyboardTracking(False)
@@ -128,15 +135,23 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_y.valueChanged.connect(self.update_ui_pattern)
         self.checkBox_live_update.setChecked(True)
 
+    def update_settings(self):
+        settings = self.get_milling_settings_from_ui()
+        index = self.comboBox_milling_stage.currentIndex()
+        if index != -1:
+            self.milling_stages[index].milling = settings
 
     def add_milling_stage(self):
         logging.info("Adding milling stage")
 
         num = len(self.milling_stages) + 1
         name = f"Milling Stage {num}"
-        milling_stage = FibsemMillingStage(name=name, num=num)
+        pattern = patterning.RectanglePattern()
+        pattern.define(self.protocol["patterns"]["Rectangle"], Point(0,0))
+        milling_stage = FibsemMillingStage(name=name, num=num, pattern=pattern)
         self.milling_stages.append(milling_stage)
         self.comboBox_milling_stage.addItem(name)
+        self.comboBox_milling_stage.setCurrentText(name)
         napari.utils.notifications.show_info(f"Added {name}.")
 
     def remove_milling_stage(self):
@@ -146,6 +161,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
+        self.comboBox_milling_stage.clear()
+        for i, stage in enumerate(self.milling_stages):
+            stage.name = f"Milling Stage {i + 1}"
+            self.comboBox_milling_stage.addItem(stage.name)
+        
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
         logging.info(f"Setting milling stages: {len(milling_stages)}")
@@ -204,13 +224,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # update pattern and define
         milling_stage.pattern = self.get_pattern_from_ui_v2()
 
-        # update point
-        milling_stage.point = self.get_point_from_ui()
 
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
         return 
 
-    def update_pattern_ui(self):
+    def update_pattern_ui(self, pattern_protocol: dict = None, point: Point = None):
 
         # get current pattern
         pattern = patterning.__PATTERNS__[self.comboBox_patterns.currentIndex()]
@@ -224,12 +242,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for i in reversed(range(self.gridLayout_patterns.count())):
             self.gridLayout_patterns.itemAt(i).widget().setParent(None)
 
+        
         # TODO: this doesnt update when setting from milling_stage
-        pattern_protocol = self.protocol["patterns"][pattern.name]
+        if pattern_protocol is None or not isinstance(pattern_protocol, dict):
+            pattern_protocol = self.protocol["patterns"][pattern.name]
 
         # we want to set the protocol, not the milling stage...
-
-
         # add new widgets
         # TODO: smarter logic for which kinds of widgets to add
         for i, key in enumerate(pattern.required_keys):
@@ -249,6 +267,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 spinbox.setValue(value)
             
             spinbox.valueChanged.connect(self.update_ui_pattern)
+
+        if point is not None:
+            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+        index = self.comboBox_milling_stage.currentIndex()
+        if index != -1:
+            point = self.milling_stages[index].pattern.point
+            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
 
         if self.milling_stages:
             self.update_ui()
@@ -313,6 +340,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)
         self.doubleSpinBox_spot_size.setValue(milling.spot_size * constants.SI_TO_MICRO)
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
+        self.comboBox_preset.setCurrentText(str(milling.preset))
 
     def get_milling_settings_from_ui(self):
 
@@ -328,6 +356,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         return milling_settings
+
+    def update_protocol_ui(self):
+        index = self.comboBox_milling_stage.currentIndex()
+        settings = self.milling_stages[index].milling 
+        self.set_milling_settings_ui(settings)
+        self.comboBox_patterns.setCurrentText(self.milling_stages[index].pattern.name)
+        pattern_protocol = self.milling_stages[index].pattern.protocol
+        point = self.milling_stages[index].pattern.point
+        self.update_pattern_ui(pattern_protocol, point)
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
         
