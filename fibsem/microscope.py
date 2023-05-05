@@ -486,6 +486,12 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
         image = self.connection.imaging.grab_frame(frame_settings)
 
+        if image_settings.reduced_area is not None:
+            if image_settings.beam_type == BeamType.ELECTRON:
+                self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+            else:
+                self.connection.beams.ion_beam.scanning.mode.set_full_frame()
+
         state = self.get_current_microscope_state()
 
         detector = FibsemDetectorSettings(
