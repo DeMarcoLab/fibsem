@@ -46,6 +46,7 @@ class SegmentationModel:
 
     def load_weights(self, checkpoint: Optional[str]):
         if checkpoint:
+            self.checkpoint = checkpoint
             checkpoint_state = torch.load(checkpoint, map_location=self.device)
             self.model.load_state_dict(checkpoint_state)
 
