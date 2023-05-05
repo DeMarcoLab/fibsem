@@ -32,6 +32,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.image_widget = image_widget
         self.saved_positions = {}
         self.manipulator_inserted = False # TODO need to read from microscope if manipulator is inserted or not??
+        
 
 
         self.setup_connections()
@@ -52,6 +53,8 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
             self.savedPosition_combobox.addItem("PARK")
             self.savedPosition_combobox.addItem("EUCENTRIC")
+
+
             
 
     def update_ui(self):

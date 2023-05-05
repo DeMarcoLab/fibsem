@@ -2075,7 +2075,7 @@ class TescanMicroscope(FibsemMicroscope):
         import fibsem
         from fibsem.utils import load_protocol
         base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path,"fibsem","config", "model.yaml")))
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -2825,7 +2825,7 @@ class TescanMicroscope(FibsemMicroscope):
         r = (current_position.r + position.r)*constants.RADIANS_TO_DEGREES
         index = 0
 
-        self._check_manipulator_limits(x,y,z,r)
+        # self._check_manipulator_limits(x,y,z,r)
 
         logging.info(f"moving manipulator by {position}")
         try:
@@ -2847,11 +2847,16 @@ class TescanMicroscope(FibsemMicroscope):
         r = position.r*constants.RADIANS_TO_DEGREES
         index = 0
 
-        self._check_manipulator_limits(x,y,z,r)
+        # self._check_manipulator_limits(x,y,z,r)
 
         logging.info(f"moving manipulator to {position}")
 
         self.connection.Nanomanipulator.MoveTo(Index=index, X=x, Y=y, Z=z, Rot=r)
+
+    def calibrate_manipulator(self):
+        _check_needle(self.hardware_settings)
+        logging.info("Calibrating manipulator")
+        self.connection.Nanomanipulator.Calibrate(0)
 
     def _x_corrected_needle_movement(self, expected_x: float) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the x-axis.
@@ -3405,6 +3410,46 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.GIS.PrepareTemperature(self.line, False)
         self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
+
+    def GIS_available_lines(self):
+        """
+        Returns a list of available GIS lines.
+
+        Args:
+            None
+
+        Returns:
+            A list of available GIS lines.
+        """
+        _check_sputter(self.hardware_settings)
+        GIS_lines = self.connection.GIS.Enum()
+        lines = {}
+        for line in GIS_lines:
+            lines[line.name] = line
+
+        return lines
+        
+    
+    def GIS_position(self,line):
+        _check_sputter(self.hardware_settings)
+
+        position = self.connection.GIS.GetPosition(line)
+
+        return position
+    
+    def GIS_available_positions(self):
+
+        _check_sputter(self.hardware_settings)
+        self.GIS_positions = self.connection.GIS.Position
+
+        return self.GIS_positions
+    
+    def GIS_move_to(self,line,position):
+        
+        _check_sputter(self.hardware_settings)
+
+        self.connection.GIS.MoveTo(line,self.GIS_positions[position])
+
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state.
