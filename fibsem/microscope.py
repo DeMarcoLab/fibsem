@@ -799,6 +799,8 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
 
+        # TODO: does this need the perspective correction too?
+
         z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         move_settings = MoveSettings(link_z_y=True)
@@ -846,6 +848,8 @@ class ThermoMicroscope(FibsemMicroscope):
         )
         stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
 
+        stage_pretilt = np.deg2rad(settings.system.stage.pretilt)
+
         stage_rotation_flat_to_eb = np.deg2rad(
             settings.system.stage.rotation_flat_to_electron
         ) % (2 * np.pi)
@@ -868,8 +872,8 @@ class ThermoMicroscope(FibsemMicroscope):
         ):
             PRETILT_SIGN = -1.0
 
-        corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
-        # corrected_pretilt_angle = PRETILT_SIGN * settings.system.stage.pre_tilt
+        # corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_pretilt - stage_tilt_flat_to_electron)
 
         # perspective tilt adjustment (difference between perspective view and sample coordinate system)
         if beam_type == BeamType.ELECTRON:
