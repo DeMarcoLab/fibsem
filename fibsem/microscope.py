@@ -450,6 +450,10 @@ class ThermoMicroscope(FibsemMicroscope):
             reduced_area = image_settings.reduced_area.__to_FEI__()
         else:
             reduced_area = None
+            if image_settings.beam_type == BeamType.ELECTRON:
+                self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+            if image_settings.beam_type == BeamType.ION :
+                self.connection.beams.ion_beam.scanning.mode.set_full_frame()
         
         frame_settings = GrabFrameSettings(
             resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
@@ -3668,6 +3672,9 @@ class TescanMicroscope(FibsemMicroscope):
                     logging.warning(f"Invalid contrast value: {value}, must be between 0 and 1.")
                 return 
 
+        if key == "preset":
+            beam.Preset.Activate(value)
+            logging.info(f"Preset {value} activated for {beam_type}.")
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return

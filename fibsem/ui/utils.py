@@ -262,7 +262,8 @@ def _draw_patterns_in_napari(
     _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
     
     # colour wheel
-    colour = ["yellow", "cyan", "magenta", "purple"]
+    # colour = ["orange", "yellow", "red", "green", "purple"]
+    colour = ["yellow", "cyan", "magenta", "green", "orange"]
     from fibsem.structures import FibsemPattern
    
     # convert fibsem patterns to napari shapes
@@ -288,8 +289,8 @@ def _draw_patterns_in_napari(
             name=f"Stage {i+1}",
             shape_type=shape_types,
             edge_width=0.5,
-            edge_color=colour[i % 4],
-            face_color=colour[i % 4],
+            edge_color=colour[i % 5],
+            face_color=colour[i % 5],
             opacity=0.5,
         )
 

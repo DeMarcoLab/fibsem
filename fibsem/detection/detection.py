@@ -189,12 +189,9 @@ def detect_corner(
         h_idx = np.where(edge_mask[1] == px)
         coords = edge_mask[0][h_idx], edge_mask[1][h_idx]
 
-        # get vertical index
-        v_idx = np.argmin(coords[0])
-        if bottom:
-            v_idx = np.argmax(coords[0])
-
-        edge_px = coords[0][v_idx], coords[1][v_idx]
+        # get the coordinates of the median vertical index
+        py = int(np.median(coords[0]))
+        edge_px = (py, px)
 
     return Point(x=int(edge_px[1]), y=int(edge_px[0]))
 
@@ -202,7 +199,7 @@ def detect_corner(
 def detect_lamella(
     mask: np.ndarray,
     feature: Feature,
-    mask_radius: int = 1024,
+    mask_radius: int = 512,
     idx: int = 1,
 ) -> Point:
 
@@ -313,7 +310,7 @@ def detect_bounding_box(mask, color, threshold=25):
 
     return bbox
 
-
+from typing import Union
 ### v2
 
 @dataclass
@@ -334,6 +331,10 @@ class DetectedFeatures:
     def distance(self, value: Point) -> None:
         self._distance = value
 
+    def get_feature(self, ftype: Union[str, Feature]) -> Feature:
+        for feature in self.features:
+            if feature.name == ftype or isinstance(feature, type(ftype)):
+                return feature
 
 def detect_features_v2(
     img: np.ndarray, mask: np.ndarray, features: tuple[Feature], filter: bool = True, point: Point = None
@@ -361,7 +362,7 @@ def detect_features_v2(
     return detection_features
 
 
-def locate_shift_between_features_v2(
+def detect_features(
     image: np.ndarray,
     model: SegmentationModel,
     features: tuple[Feature],
@@ -393,7 +394,9 @@ def locate_shift_between_features_v2(
 
 
 
-def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
+
+def plot_det_result_v2(det: DetectedFeatures):
+
     """Plotting image with detected features
 
     Args:
@@ -402,24 +405,54 @@ def plot_det_result_v2(det: DetectedFeatures,inverse: bool = True ):
     """
     import matplotlib.pyplot as plt
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 7))
+    fig, ax = plt.subplots(1, 1, figsize=(12, 7))
 
-    ax[0].imshow(det.image, cmap="gray")
-    ax[0].set_title(f"Image")
-    ax[1].imshow(det.rgb)
-    ax[1].set_title("Prediction")
+    plot_det(det, ax)
+
+
+def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", show: bool = True):
+    ax.imshow(det.image, cmap="gray")
+    ax.imshow(det.rgb, alpha=0.3)
+    ax.set_title(title)
     
     for f in det.features:
-        # c = f.color
-        # marker edge color = white 
-        ax[1].plot(f.px.x, f.px.y, 
-                   "o",  color=f.color, 
-                   markersize=5, markeredgecolor="w", 
-                   label=f.name)
-    ax[1].legend(loc="best")
+        ax.plot(f.px.x, f.px.y, 
+                "o",  color=f.color, 
+                markersize=5, markeredgecolor="w", 
+                label=f.name)
+    ax.legend(loc="best")
+
+    if len(det.features) == 2:
+        # plot white line between features
+        ax.plot([det.features[0].px.x, det.features[1].px.x],
+                [det.features[0].px.y, det.features[1].px.y], 
+                color="w", linestyle="--")
+
+    if show:
+        plt.show()
+
+
+def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> plt.Figure:
+    """Plotting image with detected features
+
+    Args:
+        det (DetectedFeatures): detected features type
+        inverse (bool, optional): Inverses the colour of the centre crosshair of the feature. Defaults to True.
+    """
+    import matplotlib.pyplot as plt
+
+    if titles is None:
+        titles = [f"Prediction {i}" for i in range(len(dets))]
+
+    fig, ax = plt.subplots(1, len(dets), figsize=(12, 7))
+
+    for i, det in enumerate(dets):
+
+        plot_det(det, ax[i], title=titles[i], show=False)
+    
     plt.show()
 
-
+    return fig
 
 
 def move_based_on_detection(
@@ -483,8 +516,6 @@ from typing import Optional
 import pandas as pd
 import tifffile as tff
 
-from fibsem.detection.detection import (__FEATURES__, DetectedFeatures,
-                                        Feature, plot_det_result_v2)
 from fibsem.segmentation import utils as seg_utils
 from fibsem.structures import FibsemImage, Point
 
@@ -526,7 +557,7 @@ def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedF
                         mask=mask, 
                         rgb=seg_utils.decode_segmap(mask),
                         pixelsize=df_filt["pixelsize"].values[0],
-                        distance=None)
+                        )
     
     return det
 
@@ -601,3 +632,11 @@ def filter_best_feature(mask: np.ndarray, features: list[Feature], method: str =
 
     else:
         raise ValueError(f"method {method} not recognised")
+
+def get_feature(name: str) -> Feature:
+
+    idx = [i for i, feat in enumerate(__FEATURES__) if feat.__name__ == name][0]
+    feature = __FEATURES__[idx]()
+
+    return feature
+
