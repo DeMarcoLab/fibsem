@@ -1,6 +1,6 @@
 
 import logging
-
+from copy import deepcopy
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets, QtCore
@@ -12,10 +12,10 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                FibsemPatternSettings, MicroscopeSettings,
-                               Point)
+                               Point, FibsemPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle,convert_pattern_to_napari_rect, validate_pattern_placement
 from napari.qt.threading import thread_worker
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number"]
@@ -55,6 +55,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.setup_connections()
 
         self.update_pattern_ui()
+
+        self.good_copy_pattern = None
 
     def setup_connections(self):
 
@@ -280,11 +282,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if self.milling_stages:
             self.update_ui()
     
-    def get_pattern_from_ui_v2(self):
-
-        # get current pattern
-        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
-
+    def get_pattern_settings_from_ui(self, pattern: patterning.BasePattern):
         # get pattern protocol from ui
         pattern_dict = {}
         for i, key in enumerate(pattern.required_keys):
@@ -292,7 +290,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
             value = _scale_value(key, value, constants.DEGREES_TO_RADIANS) if key in _ANGLE_KEYS else value
             pattern_dict[key] = value # TODO: not everythign is in microns
+        return pattern_dict
 
+    def get_pattern_from_ui_v2(self):
+
+        # get current pattern
+        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
+
+        pattern_dict = self.get_pattern_settings_from_ui(pattern)
         # define pattern
         point = Point(x=self.doubleSpinBox_centre_x.value() * constants.MICRO_TO_SI, y=self.doubleSpinBox_centre_y.value() * constants.MICRO_TO_SI)
         pattern.define(protocol=pattern_dict, point=point)
@@ -319,18 +324,40 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # only move the pattern if milling widget is activate and beamtype is ion?
 
         # update pattern
+        current_stage_index = self.comboBox_milling_stage.currentIndex()
+        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
+        pattern_dict = self.get_pattern_settings_from_ui(pattern)
 
         point = conversions.image_to_microscope_image_coordinates(
             Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
         )
-        logging.info(f"Moved pattern to {point}")
+        pattern.define(protocol=pattern_dict, point=point)
+        is_valid = self.valid_pattern_location(pattern)
+        if is_valid:
+            # update ui
+            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+            logging.info(f"Moved pattern to {point}")
+            self.good_copy_pattern = deepcopy(pattern)
+            
+            self.update_ui()
+        else:
+            napari.utils.notifications.show_warning("Pattern is not within the image.")
+            self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
 
-        # update ui
-        self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-        self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+    def valid_pattern_location(self,stage_pattern):
         
+        for pattern_settings in stage_pattern.patterns:
+            if pattern_settings.pattern is FibsemPattern.Circle:
+                shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
+            else:
+                shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
+
+            output = validate_pattern_placement(patterns=shape, resolution=self.image_widget.image_settings.resolution,shape=shape)
+            if not output:
+                return False
         
-        self.update_ui()
+        return True
    
     def set_milling_settings_ui(self, milling: FibsemMillingSettings) -> None:
 
@@ -371,6 +398,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if milling_stages is None:
             self.update_milling_stage_from_ui() # update milling stage from ui
             milling_stages = self.get_milling_stages() # get the latest milling stages from the ui
+            
 
         if not milling_stages:
             msg = f"No milling stages defined, cannot draw patterns."

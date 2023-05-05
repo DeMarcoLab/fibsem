@@ -8,7 +8,7 @@ import numpy as np
 
 from fibsem.config import load_microscope_manufacturer
 
-from fibsem.structures import Point, FibsemImage, FibsemPatternSettings
+from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
@@ -333,3 +333,23 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
     cy = int(icy - (centre.y / pixel_size))
     
     return Point(cx, cy)
+
+
+def validate_pattern_placement(patterns: list[FibsemPatternSettings],resolution: list, shape: list[list[float]]):
+
+
+    x_lim = resolution[0]-100
+    y_lim = resolution[1]-100
+
+    for coordinate in shape:
+
+        x_coord = coordinate[1]
+        y_coord = coordinate[0]
+
+        if x_coord < 0 or x_coord > x_lim:
+            return False
+        if y_coord < 0 or y_coord > y_lim:
+            return False
+        
+    return True
+    
