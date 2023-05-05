@@ -352,8 +352,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
             else:
                 shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
-
-            output = validate_pattern_placement(patterns=shape, resolution=self.image_widget.ib_image.data.shape,shape=shape)
+            resolution = [self.image_widget.ib_image.data.shape[1], self.image_widget.ib_image.data.shape[0]]
+            output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
             if not output:
                 return False
         
