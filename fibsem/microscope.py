@@ -781,7 +781,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.electron_beam.working_distance.value = wd
         self.connection.specimen.stage.link()
 
-        return
+        return stage_position
 
     def eucentric_move(
         self,
