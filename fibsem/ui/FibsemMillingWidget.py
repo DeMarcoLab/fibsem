@@ -164,10 +164,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
         self.comboBox_milling_stage.clear()
-        for i, stage in enumerate(self.milling_stages):
-            stage.name = f"Milling Stage {i + 1}"
-            self.comboBox_milling_stage.addItem(stage.name)
-        
+        index = self.comboBox_milling_stage.currentIndex()
+        if index != -1:
+            for i, stage in enumerate(self.milling_stages):
+                stage.name = f"Milling Stage {i + 1}"
+                self.comboBox_milling_stage.addItem(stage.name)
+            
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
         logging.info(f"Setting milling stages: {len(milling_stages)}")
@@ -386,12 +388,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_protocol_ui(self):
         index = self.comboBox_milling_stage.currentIndex()
-        settings = self.milling_stages[index].milling 
-        self.set_milling_settings_ui(settings)
-        self.comboBox_patterns.setCurrentText(self.milling_stages[index].pattern.name)
-        pattern_protocol = self.milling_stages[index].pattern.protocol
-        point = self.milling_stages[index].pattern.point
-        self.update_pattern_ui(pattern_protocol, point)
+        if index != -1:
+            settings = self.milling_stages[index].milling 
+            self.set_milling_settings_ui(settings)
+            self.comboBox_patterns.setCurrentText(self.milling_stages[index].pattern.name)
+            pattern_protocol = self.milling_stages[index].pattern.protocol
+            point = self.milling_stages[index].pattern.point
+            self.update_pattern_ui(pattern_protocol, point)
+        else:
+            self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
         
