@@ -47,7 +47,23 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.gas_combobox.setCurrentText(self.current_line.name)
 
         self.available_positions = self.microscope.GIS_available_positions()
-        self.position_combobox.addItems(self.available_positions.__members__.keys())
+        self.position_combobox.addItems(self.available_positions)
+        
+        self.GIS_insert_status_label.hide()
+        self.insertGIS_button.setEnabled(False)
+        self.insertGIS_button.hide()
+
+        self.update_ui()
+
+    def thermo_setup(self):
+        self.lines = self.microscope.GIS_available_lines()
+
+        self.gas_combobox.addItems(self.lines.keys())
+        self.current_line = self.lines[list(self.lines.keys())[0]]
+        self.gas_combobox.setCurrentText(self.current_line.name)
+
+        self.available_positions = self.microscope.GIS_available_positions()
+        self.position_combobox.addItems(self.available_positions)
         
         self.update_ui()
 
@@ -76,12 +92,12 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
     def insert_retract_gis(self):
         if self.GIS_inserted:
-            # self.microscope.retract_gis()
+            self.microscope.GIS_move_to(self.current_line, "Retract")
             self.GIS_inserted = False
             self.insertGIS_button.setText("Insert GIS")
             self.GIS_insert_status_label.setText("GIS Status: retracted")
         else:
-            # self.microscope.insert_gis()
+            self.microscope.GIS_move_to(self.current_line, "Insert")
             self.GIS_inserted = True
             self.insertGIS_button.setText("Retract GIS")
             self.GIS_insert_status_label.setText("GIS Status: inserted")

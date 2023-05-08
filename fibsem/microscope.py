@@ -1504,6 +1504,49 @@ class ThermoMicroscope(FibsemMicroscope):
         # Log that the sputtering process has finished
         logging.info("Platinum sputtering process completed.")
 
+    def GIS_available_lines(self):
+        """
+        Returns a list of available GIS lines.
+
+        Args:
+            None
+
+        Returns:
+            Dictionary of available GIS lines.
+
+        Notes:
+            None
+        """
+        _check_sputter(self.hardware_settings)
+        
+        gis_list = self.connection.gas.list_all_gis_ports()
+
+        lines = {}
+
+        for line in gis_list:
+            lines[line] = self.connection.gas.get_gis_port(line)
+
+        return lines
+    
+    def GIS_available_positions(self):
+
+        _check_sputter(self.hardware_settings)
+
+        positions = ["Insert", "Retract"]
+
+        return positions
+    
+    def GIS_move_to(self,line,position):
+
+        _check_sputter(self.hardware_settings)
+
+        if position == "Insert":
+            line.insert()
+        elif position == "Retract":
+            line.retract()
+        
+
+
     def set_microscope_state(self, microscope_state: MicroscopeState) -> None:
         """Reset the microscope state to the provided state.
 
@@ -3426,7 +3469,7 @@ class TescanMicroscope(FibsemMicroscope):
             None
 
         Returns:
-            A list of available GIS lines.
+            A dictionary of available GIS lines.
         """
         _check_sputter(self.hardware_settings)
         GIS_lines = self.connection.GIS.Enum()
@@ -3449,7 +3492,7 @@ class TescanMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
         self.GIS_positions = self.connection.GIS.Position
 
-        return self.GIS_positions
+        return self.GIS_positions.__members__.keys()
     
     def GIS_move_to(self,line,position):
         
