@@ -60,8 +60,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.setup_connections()
 
         if _DEBUG:
-            self.lineEdit_raw_data.setText("/Users/patrickcleeve/Documents/fibsem/fibsem/fibsem/log/data")
-            self.lineEdit_save_path.setText("/Users/patrickcleeve/Documents/fibsem/fibsem/fibsem/log/data")
+            self.lineEdit_raw_data.setText("/home/patrick/github/data/liftout/active-learning/dm-embryo/data")
+            self.lineEdit_save_path.setText("/home/patrick/github/data/liftout/active-learning/dm-embryo/data")
             self.spinBox_num_classes.setValue(3)
 
 
