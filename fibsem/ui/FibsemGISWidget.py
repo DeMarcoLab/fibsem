@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5 import QtWidgets
 
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope
 from fibsem.structures import (MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemGISWidget
@@ -43,6 +43,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         if isinstance(self.microscope, TescanMicroscope):
             self.tescan_setup()
+        if isinstance(self.microscope, ThermoMicroscope):
+            self.thermo_setup()
 
 
         self.setup_connections()
