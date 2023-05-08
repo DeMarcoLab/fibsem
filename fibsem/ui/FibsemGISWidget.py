@@ -31,6 +31,16 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.GIS_inserted = False
         self.GIS_insert_status_label.setText(f"GIS Status: inserted" if self.GIS_inserted else "GIS Status: retracted")
 
+        self.lines = self.microscope.GIS_available_lines()
+
+        self.gas_combobox.addItems(self.lines)
+        self.current_line = self.lines[0]
+        self.gas_combobox.setCurrentText(self.current_line)
+
+        self.available_positions = self.microscope.GIS_available_positions()
+        self.position_combobox.addItems(self.available_positions)
+
+
         if isinstance(self.microscope, TescanMicroscope):
             self.tescan_setup()
 
@@ -39,15 +49,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         self.update_ui()
 
+
     def tescan_setup(self):
-        self.lines = self.microscope.GIS_available_lines()
-
-        self.gas_combobox.addItems(self.lines.keys())
-        self.current_line = self.lines[list(self.lines.keys())[0]]
-        self.gas_combobox.setCurrentText(self.current_line.name)
-
-        self.available_positions = self.microscope.GIS_available_positions()
-        self.position_combobox.addItems(self.available_positions)
         
         self.GIS_insert_status_label.hide()
         self.insertGIS_button.setEnabled(False)
@@ -56,20 +59,15 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui()
 
     def thermo_setup(self):
-        self.lines = self.microscope.GIS_available_lines()
 
-        self.gas_combobox.addItems(self.lines.keys())
-        self.current_line = self.lines[list(self.lines.keys())[0]]
-        self.gas_combobox.setCurrentText(self.current_line.name)
+        self.GIS_inserted = True
+        self.insert_retract_gis()
 
-        self.available_positions = self.microscope.GIS_available_positions()
-        self.position_combobox.addItems(self.available_positions)
-        
         self.update_ui()
 
     def change_gas(self):
         line_name = self.gas_combobox.currentText()
-        self.current_line = self.lines[line_name]
+        self.current_line = line_name
 
         self.update_ui()
 
@@ -86,8 +84,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui(self):
         current_position = self.microscope.GIS_position(self.current_line)
-        self.position_combobox.setCurrentText(current_position.name)
-        self.current_position_label.setText(f"Current Position: {current_position.name}")
+        self.position_combobox.setCurrentText(current_position)
+        self.current_position_label.setText(f"Current Position: {current_position}")
 
 
     def insert_retract_gis(self):

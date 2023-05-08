@@ -1521,12 +1521,13 @@ class ThermoMicroscope(FibsemMicroscope):
         
         gis_list = self.connection.gas.list_all_gis_ports()
 
-        lines = {}
+        self.lines = {}
 
         for line in gis_list:
-            lines[line] = self.connection.gas.get_gis_port(line)
+            self.lines[line] = self.connection.gas.get_gis_port(line)
 
-        return lines
+
+        return gis_list
     
     def GIS_available_positions(self):
 
@@ -1536,9 +1537,11 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return positions
     
-    def GIS_move_to(self,line,position):
+    def GIS_move_to(self,line_name:str,position:str):
 
         _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
 
         if position == "Insert":
             line.insert()
@@ -3473,19 +3476,22 @@ class TescanMicroscope(FibsemMicroscope):
         """
         _check_sputter(self.hardware_settings)
         GIS_lines = self.connection.GIS.Enum()
-        lines = {}
+        self.lines = {}
+        line_names = []
         for line in GIS_lines:
-            lines[line.name] = line
-
-        return lines
+            self.lines[line.name] = line
+            line_names.append(line.name)
         
+        return line_names
     
-    def GIS_position(self,line):
+    def GIS_position(self,line_name:str):
         _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
 
         position = self.connection.GIS.GetPosition(line)
 
-        return position
+        return position.name
     
     def GIS_available_positions(self):
 
@@ -3494,9 +3500,11 @@ class TescanMicroscope(FibsemMicroscope):
 
         return self.GIS_positions.__members__.keys()
     
-    def GIS_move_to(self,line,position):
+    def GIS_move_to(self,line_name,position):
         
         _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
 
         self.connection.GIS.MoveTo(line,self.GIS_positions[position])
 
