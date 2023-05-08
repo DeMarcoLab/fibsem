@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5 import QtWidgets
 
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope
 from fibsem.structures import (MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemGISWidget
@@ -33,6 +33,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         if isinstance(self.microscope, TescanMicroscope):
             self.tescan_setup()
+        if isinstance(self.microscope, ThermoMicroscope):
+            self.thermo_setup()
 
 
         self.setup_connections()
@@ -60,7 +62,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         self.gas_combobox.addItems(self.lines.keys())
         self.current_line = self.lines[list(self.lines.keys())[0]]
-        self.gas_combobox.setCurrentText(self.current_line.name)
+        self.gas_combobox.setCurrentText(list(self.lines.keys())[0])
 
         self.available_positions = self.microscope.GIS_available_positions()
         self.position_combobox.addItems(self.available_positions)
@@ -85,9 +87,10 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui()
 
     def update_ui(self):
-        current_position = self.microscope.GIS_position(self.current_line)
-        self.position_combobox.setCurrentText(current_position.name)
-        self.current_position_label.setText(f"Current Position: {current_position.name}")
+        if isinstance(self.microscope, TescanMicroscope):
+            current_position = self.microscope.GIS_position(self.current_line)
+            self.position_combobox.setCurrentText(current_position.name)
+            self.current_position_label.setText(f"Current Position: {current_position.name}")
 
 
     def insert_retract_gis(self):
