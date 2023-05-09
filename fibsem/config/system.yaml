@@ -20,9 +20,9 @@ system:
   stage:
     rotation_flat_to_electron: 49 # degrees
     rotation_flat_to_ion: 229 # degrees
-    tilt_flat_to_electron: 35 # degrees (pre-tilt)
+    tilt_flat_to_electron: 0 # degrees (pre-tilt)
     tilt_flat_to_ion: 52 # degrees
-    pre_tilt: 35
+    pre_tilt: 35.98
     needle_stage_height_limit: 3.7e-3
 # user config settings
 user:
@@ -30,9 +30,7 @@ user:
     milling_current: 2.e-9
     spot_size: 5.0e-8
     rate: 3.0e-9
-    dwell_time: 1.e-6
-
-  
+    dwell_time: 1.e-6  
   imaging: 
     imaging_current: 20.e-12
     resolution: [1536, 1024]

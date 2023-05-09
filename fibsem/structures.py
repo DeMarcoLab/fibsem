@@ -128,21 +128,21 @@ Methods:
     to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
     from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
 """
-    x: float = 0.0
-    y: float = 0.0
-    z: float = 0.0
-    r: float = 0.0
-    t: float = 0.0
+    x: float = None
+    y: float = None
+    z: float = None
+    r: float = None
+    t: float = None
     coordinate_system: str = None
 
-    def __post_init__(self):
+    # def __post_init__(self):
 
-        coordinates = ["x","y","z","r","t"]
-        for coordinate in coordinates:
-            attribute = getattr(self,coordinate)
-            assert isinstance(attribute,float) or isinstance(attribute,int)
+    #     coordinates = ["x","y","z","r","t"]
+    #     for coordinate in coordinates:
+    #         attribute = getattr(self,coordinate)
+    #         assert isinstance(attribute,float) or isinstance(attribute,int)
         
-        assert isinstance(self.coordinate_system,str) or self.coordinate_system is None
+    #     assert isinstance(self.coordinate_system,str) or self.coordinate_system is None
 
     def __to_dict__(self) -> dict:
         position_dict = {}

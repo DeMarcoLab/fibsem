@@ -848,7 +848,7 @@ class ThermoMicroscope(FibsemMicroscope):
         )
         stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
 
-        stage_pretilt = np.deg2rad(settings.system.stage.pretilt)
+        stage_pretilt = np.deg2rad(settings.system.stage.pre_tilt)
 
         stage_rotation_flat_to_eb = np.deg2rad(
             settings.system.stage.rotation_flat_to_electron
@@ -873,7 +873,7 @@ class ThermoMicroscope(FibsemMicroscope):
             PRETILT_SIGN = -1.0
 
         # corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
-        corrected_pretilt_angle = PRETILT_SIGN * (stage_pretilt - stage_tilt_flat_to_electron)
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_pretilt + stage_tilt_flat_to_electron) # electron angle = 0, ion = 52
 
         # perspective tilt adjustment (difference between perspective view and sample coordinate system)
         if beam_type == BeamType.ELECTRON:
@@ -2671,6 +2671,7 @@ class TescanMicroscope(FibsemMicroscope):
         ):
             PRETILT_SIGN = -1.0
 
+        # TODO: check this pre-tilt angle calculation
         corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
         perspective_tilt = (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
         z_perspective = - dy/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
