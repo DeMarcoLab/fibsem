@@ -1522,11 +1522,13 @@ class ThermoMicroscope(FibsemMicroscope):
         gis_list = self.connection.gas.list_all_gis_ports()
 
         self.gis_lines = {}
+        self.gis_lines = {}
 
         for line in gis_list:
             
             gis_port = ThermoGISLine(self.connection.gas.get_gis_port(line),name=line,status="Retracted")
 
+            self.gis_lines[line] = gis_port
             self.gis_lines[line] = gis_port
 
 
@@ -1545,6 +1547,7 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
 
         port = self.gis_lines[line_name]
+        port = self.gis_lines[line_name]
 
         if position == "Insert":
             port.insert()
@@ -1555,6 +1558,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         _check_sputter(self.hardware_settings)
 
+        port = self.gis_lines[line]
         port = self.gis_lines[line]
 
         return port.status

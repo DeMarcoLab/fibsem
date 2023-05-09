@@ -69,19 +69,42 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         
         checked_button = self.sender()
 
+    
         if checked_button.text() == "GIS":
             self.GIS = True
-            self.position_combobox.clear()
-            self.position_combobox.addItems(self.gis_available_positions)
             # self.position_combobox.setCurrentText(self.gis_current_line)
+            self.position_combobox.hide()
+            self.position_combobox.setEnabled(False)
+
+            self.move_GIS_button.setEnabled(False)
+            self.move_GIS_button.hide()
             
             self.gas_combobox.clear()
             self.gas_combobox.addItems(self.gis_lines)
             self.gas_combobox.setCurrentText(self.gis_current_line)
-        if checked_button.text() == "MultiChem":
-            self.GIS = False
-            self.position_combobox.clear()
-            self.position_combobox.addItems(self.mc_available_positions)
+
+            self.label_position.hide()
+            self.label_position.setEnabled(False)
+
+            self.insertGIS_button.setEnabled(True)
+            self.insertGIS_button.show()
+
+        if getattr(checked_button,'text') is not None:
+
+            if checked_button.text() == "MultiChem":
+                self.GIS = False
+                self.position_combobox.clear()
+                self.position_combobox.addItems(self.mc_available_positions)
+                self.position_combobox.setEnabled(True)
+                self.position_combobox.show()
+
+                self.move_GIS_button.setEnabled(True)
+                self.move_GIS_button.show()
+                
+                self.insertGIS_button.setEnabled(False)
+                self.insertGIS_button.hide()
+        
+            
 
     def thermo_setup(self):
 
@@ -89,6 +112,23 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.insert_retract_gis()
         self.GIS = True
         self.GIS_radioButton.setChecked(True)
+        self.GIS = True
+            # self.position_combobox.setCurrentText(self.gis_current_line)
+        self.position_combobox.hide()
+        self.position_combobox.setEnabled(False)
+
+        self.move_GIS_button.setEnabled(False)
+        self.move_GIS_button.hide()
+        
+        self.gas_combobox.clear()
+        self.gas_combobox.addItems(self.gis_lines)
+        self.gas_combobox.setCurrentText(self.gis_current_line)
+
+        self.label_position.hide()
+        self.label_position.setEnabled(False)
+
+        self.insertGIS_button.setEnabled(True)
+        self.insertGIS_button.show()
         self.update_ui()
 
     def change_gas(self):
@@ -107,26 +147,26 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
     def move_gis(self):
 
         position = self.position_combobox.currentText()
-        self.microscope.GIS_move_to(self.current_line, position)
+        self.microscope.GIS_move_to(self.gis_current_line, position)
         self.update_ui()
 
     def update_ui(self):
-        current_position = self.microscope.GIS_position(self.current_line)
+        current_position = self.microscope.GIS_position(self.gis_current_line)
         self.position_combobox.setCurrentText(current_position)
         self.current_position_label.setText(f"Current Position: {current_position}")
 
 
     def insert_retract_gis(self):
         if self.GIS_inserted:
-            self.microscope.GIS_move_to(self.current_line, "Retract")
+            self.microscope.GIS_move_to(self.gis_current_line, "Retract")
             self.GIS_inserted = False
             self.insertGIS_button.setText("Insert GIS")
-            self.GIS_insert_status_label.setText("GIS Status: retracted")
+            self.GIS_insert_status_label.setText("GIS Status: Retracted")
         else:
-            self.microscope.GIS_move_to(self.current_line, "Insert")
+            self.microscope.GIS_move_to(self.gis_current_line, "Insert")
             self.GIS_inserted = True
             self.insertGIS_button.setText("Retract GIS")
-            self.GIS_insert_status_label.setText("GIS Status: inserted")
+            self.GIS_insert_status_label.setText("GIS Status: Inserted")
 
 def main():
 
