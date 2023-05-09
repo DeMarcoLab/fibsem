@@ -32,15 +32,15 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.GIS_insert_status_label.setText(f"GIS Status: inserted" if self.GIS_inserted else "GIS Status: retracted")
 
         self.gis_lines = self.microscope.GIS_available_lines()
-        self.mc_lines = self.microscope.multichem_available_lines()
+       
 
         self.gas_combobox.addItems(self.gis_lines)
         self.gis_current_line = self.gis_lines[0]
-        self.mc_current_line = self.mc_lines[0]
+
         self.gas_combobox.setCurrentText(self.gis_current_line)
 
         self.gis_available_positions = self.microscope.GIS_available_positions()
-        self.mc_available_positions = self.microscope.multichem_available_positions()
+        
         self.position_combobox.addItems(self.gis_available_positions)
 
 
@@ -62,6 +62,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.insertGIS_button.hide()
         self.GIS_radioButton.hide()
         self.multichem_radioButton.hide()
+        self.GIS = True
+        
 
         self.update_ui()
 
@@ -108,6 +110,11 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
     def thermo_setup(self):
 
+        self.mc_lines = self.microscope.multichem_available_lines()
+        self.mc_current_line = self.mc_lines[0]
+        self.mc_available_positions = self.microscope.multichem_available_positions()
+
+
         self.GIS_inserted = True
         self.insert_retract_gis()
         self.GIS = True
@@ -151,7 +158,11 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui()
 
     def update_ui(self):
-        current_position = self.microscope.GIS_position(self.gis_current_line)
+        current_position_gis = self.microscope.GIS_position(self.gis_current_line)
+        current_position_multichem = self.microscope.multichem_position(self.mc_current_line) if isinstance(self.microscope,ThermoMicroscope) else None
+
+        current_position = current_position_gis if self.GIS else current_position_multichem
+
         self.position_combobox.setCurrentText(current_position)
         self.current_position_label.setText(f"Current Position: {current_position}")
 
