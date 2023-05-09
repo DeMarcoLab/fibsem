@@ -91,6 +91,12 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             self.insertGIS_button.setEnabled(True)
             self.insertGIS_button.show()
 
+            self.current_position_label.setEnabled(False)
+            self.current_position_label.hide()
+
+            self.GIS_insert_status_label.setEnabled(True)
+            self.GIS_insert_status_label.show()
+
         if getattr(checked_button,'text') is not None:
 
             if checked_button.text() == "MultiChem":
@@ -105,6 +111,12 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
                 
                 self.insertGIS_button.setEnabled(False)
                 self.insertGIS_button.hide()
+
+                self.current_position_label.setEnabled(True)
+                self.current_position_label.show()
+
+                self.GIS_insert_status_label.setEnabled(False)
+                self.GIS_insert_status_label.hide()
         
         self.update_ui()
             
@@ -137,6 +149,11 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         self.insertGIS_button.setEnabled(True)
         self.insertGIS_button.show()
+
+        self.current_position_label.setEnabled(False)
+        self.current_position_label.hide()
+
+
         self.update_ui()
 
     def change_gas(self):
