@@ -106,6 +106,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
                 self.insertGIS_button.setEnabled(False)
                 self.insertGIS_button.hide()
         
+        self.update_ui()
             
 
     def thermo_setup(self):
@@ -153,13 +154,17 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
     
     def move_gis(self):
 
-        position = self.position_combobox.currentText()
-        self.microscope.GIS_move_to(self.gis_current_line, position)
+        if self.GIS:
+            position = self.position_combobox.currentText()
+            self.microscope.GIS_move_to(self.gis_current_line, position)
+        else:
+            position = self.position_combobox.currentText()
+            self.microscope.multichem_move_to(position)
         self.update_ui()
 
     def update_ui(self):
         current_position_gis = self.microscope.GIS_position(self.gis_current_line)
-        current_position_multichem = self.microscope.multichem_position(self.mc_current_line) if isinstance(self.microscope,ThermoMicroscope) else None
+        current_position_multichem = self.microscope.multichem_position() if isinstance(self.microscope,ThermoMicroscope) else None
 
         current_position = current_position_gis if self.GIS else current_position_multichem
 

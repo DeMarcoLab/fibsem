@@ -1705,9 +1705,6 @@ class ThermoMultiChemLine():
         self.positions = [
             "ELECTRON_DEFAULT",
             "ION_DEFAULT",
-            "COMPUSTAGE0_DEFAULT",
-            "COMPUSTAGE90_DEFAULT",
-            "DXLARGE_DEPROCESSING",
             "Retract"
         ]
         self.current_position = "Retract"

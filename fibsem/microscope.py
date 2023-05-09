@@ -1569,7 +1569,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         self.multichem = ThermoMultiChemLine(self.connection.gas.get_multichem())
 
-        self.mc_lines = self.multichem.list_all_gases()
+        self.mc_lines = self.multichem.line.list_all_gases()
 
         return self.mc_lines
     
@@ -1587,8 +1587,10 @@ class ThermoMicroscope(FibsemMicroscope):
 
         if position == "Retract":
             self.multichem.retract()
+            self.multichem.current_position = "Retracted"
         else:
             self.multichem.insert(position=position)
+            self.multichem.current_position = position
 
     def multichem_position(self) -> str:
 
