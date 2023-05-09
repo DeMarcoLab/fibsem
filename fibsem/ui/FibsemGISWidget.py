@@ -140,7 +140,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
     def change_gas(self):
         line_name = self.gas_combobox.currentText()
-        self.current_line = line_name
+        self.gis_current_line = line_name
 
         self.update_ui()
 
