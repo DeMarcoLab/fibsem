@@ -68,6 +68,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.settings.system.stage.rotation_flat_to_ion = (
             self.rotationFlatToIonSpinBox.value()
         )
+        self.settings.system.stage.pre_tilt = self.preTiltSpinBox.value()
         self.set_stage_signal.emit()
 
     def set_stage_settings_to_ui(self, stage_settings: StageSettings) -> None:
@@ -80,6 +81,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             stage_settings.rotation_flat_to_electron
         )
         self.rotationFlatToIonSpinBox.setValue(stage_settings.rotation_flat_to_ion)
+        self.preTiltSpinBox.setValue(stage_settings.pre_tilt)
 
     def connect(self):
         if self.lineEdit_ipadress.text() == "":
