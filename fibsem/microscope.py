@@ -616,6 +616,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         _check_beam(beam_type = beam_type, hardware_settings = self.hardware_settings)
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
+        logging.debug(f"{beam_type.name} | {dx}, {dy}") 
         if beam_type == BeamType.ELECTRON:
             self.connection.beams.electron_beam.beam_shift.value += (-dx, dy)
         else:
