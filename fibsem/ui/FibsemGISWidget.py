@@ -31,14 +31,17 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.GIS_inserted = False
         self.GIS_insert_status_label.setText(f"GIS Status: inserted" if self.GIS_inserted else "GIS Status: retracted")
 
-        self.lines = self.microscope.GIS_available_lines()
+        self.gis_lines = self.microscope.GIS_available_lines()
+        self.mc_lines = self.microscope.multichem_available_lines()
 
-        self.gas_combobox.addItems(self.lines)
-        self.current_line = self.lines[0]
-        self.gas_combobox.setCurrentText(self.current_line)
+        self.gas_combobox.addItems(self.gis_lines)
+        self.gis_current_line = self.gis_lines[0]
+        self.mc_current_line = self.mc_lines[0]
+        self.gas_combobox.setCurrentText(self.gis_current_line)
 
-        self.available_positions = self.microscope.GIS_available_positions()
-        self.position_combobox.addItems(self.available_positions)
+        self.gis_available_positions = self.microscope.GIS_available_positions()
+        self.mc_available_positions = self.microscope.multichem_available_positions()
+        self.position_combobox.addItems(self.gis_available_positions)
 
 
         if isinstance(self.microscope, TescanMicroscope):
@@ -57,14 +60,35 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.GIS_insert_status_label.hide()
         self.insertGIS_button.setEnabled(False)
         self.insertGIS_button.hide()
+        self.GIS_radioButton.hide()
+        self.multichem_radioButton.hide()
 
         self.update_ui()
+
+    def change_gis_multichem(self):
+        
+        checked_button = self.sender()
+
+        if checked_button.text() == "GIS":
+            self.GIS = True
+            self.position_combobox.clear()
+            self.position_combobox.addItems(self.gis_available_positions)
+            # self.position_combobox.setCurrentText(self.gis_current_line)
+            
+            self.gas_combobox.clear()
+            self.gas_combobox.addItems(self.gis_lines)
+            self.gas_combobox.setCurrentText(self.gis_current_line)
+        if checked_button.text() == "MultiChem":
+            self.GIS = False
+            self.position_combobox.clear()
+            self.position_combobox.addItems(self.mc_available_positions)
 
     def thermo_setup(self):
 
         self.GIS_inserted = True
         self.insert_retract_gis()
-
+        self.GIS = True
+        self.GIS_radioButton.setChecked(True)
         self.update_ui()
 
     def change_gas(self):
@@ -77,6 +101,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.insertGIS_button.clicked.connect(self.insert_retract_gis)
         self.gas_combobox.currentIndexChanged.connect(self.change_gas)
         self.move_GIS_button.clicked.connect(self.move_gis)
+        self.GIS_radioButton.toggled.connect(self.change_gis_multichem)
+        self.multichem_radioButton.toggled.connect(self.change_gis_multichem)
     
     def move_gis(self):
 

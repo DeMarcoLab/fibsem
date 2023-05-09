@@ -41,7 +41,7 @@ try:
         CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem, ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition, PatterningState)
+        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 except:
@@ -1548,6 +1548,40 @@ class ThermoMicroscope(FibsemMicroscope):
         elif position == "Retract":
             line.retract()
         
+    def multichem_available_lines(self):
+
+        _check_sputter(self.hardware_settings)
+
+        multichem = self.connection.gas.get_multichem()
+
+        self.lines = multichem.list_all_gases()
+
+        return self.lines
+    
+    def multichem_available_positions(self):
+
+        _check_sputter(self.hardware_settings)
+
+        positions_enum = MultiChemInsertPosition
+
+        positions = [position.name for position in positions_enum]
+
+        positions = positions + ["Insert", "Retract"]
+
+        return positions
+    
+    def multichem_move_to(self,position:str):
+
+        _check_sputter(self.hardware_settings)
+
+        multichem = self.connection.gas.get_multichem()
+
+        if position == "Insert":
+            multichem.insert()
+        elif position == "Retract":
+            multichem.retract()
+        else:
+            multichem.insert(MultiChemInsertPosition[position])
 
 
     def set_microscope_state(self, microscope_state: MicroscopeState) -> None:
