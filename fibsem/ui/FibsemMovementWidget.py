@@ -79,7 +79,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def move_to_position(self):
         stage_position = self.get_position_from_ui()
         self.microscope.move_stage_absolute(stage_position)
-        log_status_message(f"MOVED TO {stage_position}")
+        log_status_message(f"MOVED_TO_{stage_position}")
         self.image_widget.take_reference_images()
         self.update_ui()
     
@@ -131,7 +131,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.debug(
             f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
         )
-        log_status_message(f"MOVING {self.movement_mode.name} BY {point.x:.2e}, {point.y:.2e} | {beam_type}")
+        log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
             self.microscope.eucentric_move(

@@ -157,13 +157,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.addItem(name)
         self.comboBox_milling_stage.setCurrentText(name)
         napari.utils.notifications.show_info(f"Added {name}.")
-        log_status_message(self.milling_stages[-1], "CREATED STAGE")
+        log_status_message(self.milling_stages[-1], "CREATED_STAGE")
 
     def remove_milling_stage(self):
         logging.info("Removing milling stage")
 
         current_index = self.comboBox_milling_stage.currentIndex()
-        log_status_message(self.milling_stages[current_index], "REMOVED STAGE")
+        log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
@@ -342,7 +342,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
             logging.info(f"Moved pattern to {point}")
-            log_status_message(self.milling_stages[current_stage_index], f"MOVED PATTERN TO {point}")
+            log_status_message(self.milling_stages[current_stage_index], f"MOVED_PATTERN_TO_{point}")
             self.good_copy_pattern = deepcopy(pattern)
             self.update_ui()
         else:
@@ -474,9 +474,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for stage in self.milling_stages:
             yield f"Preparing: {stage.name}"
             if stage.pattern is not None:
-                log_status_message(stage, f"RUNNING MILLING STAGE {stage.name}")
-                log_status_message(stage, f"MILLING PATTERN {stage.pattern.name}: {stage.pattern.patterns}")
-                log_status_message(stage, f"MILLING SETTINGS {stage.milling}")
+                log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
+                log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
+                log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
                 milling.draw_patterns(self.microscope, stage.pattern.patterns)
@@ -486,7 +486,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             
                 milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
-                log_status_message(stage, "MILLING COMPLETED SUCCESSFULLY")
+                log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
 
             yield f"Milling stage complete: {stage.name}"
         yield f"Milling complete. {len(self.milling_stages)} stages completed."

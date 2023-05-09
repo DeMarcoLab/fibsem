@@ -85,7 +85,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.set("detector_mode", self.detector_settings.mode, beam_type=beam)
         self.microscope.set("detector_brightness", self.detector_settings.brightness, beam_type=beam)
         self.microscope.set("detector_contrast", self.detector_settings.contrast, beam_type=beam)
-        log_status_message("SET DETECTOR PARAMETERS")
+        log_status_message("SET_DETECTOR_PARAMETERS")
         log_status_message(f"Detector Type: {self.detector_settings.type}, Mode: {self.detector_settings.mode}, Brightness: {self.detector_settings.brightness}, Contrast: {self.detector_settings.contrast}")
         
 
@@ -97,7 +97,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.set("voltage", self.beam_settings.voltage, beam_type=beam)
         self.microscope.set("stigmation", self.beam_settings.stigmation, beam_type=beam)
         self.microscope.set("shift", self.beam_settings.shift, beam_type=beam)
-        log_status_message("SET BEAM PARAMETERS")
+        log_status_message("SET_BEAM_PARAMETERS")
         log_status_message(f"Working Distance: {self.beam_settings.working_distance}, Current: {self.beam_settings.beam_current}, Voltage: {self.beam_settings.voltage}, Stigmation: {self.beam_settings.stigmation}, Shift: {self.beam_settings.shift}")
         self.set_ui_from_settings(self.image_settings,beam)
 
@@ -223,7 +223,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.update_viewer(arr.data, name)
 
-        log_status_message("IMAGE TAKEN {beam_type}".format(beam_type=self.image_settings.beam_type.name))
+        log_status_message("IMAGE_TAKEN_{beam_type}".format(beam_type=self.image_settings.beam_type.name))
         log_status_message("Settings used: {}".format(self.image_settings))
 
     def take_reference_images(self):
@@ -235,7 +235,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.update_viewer(self.ib_image.data, BeamType.ION.name)
         self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
         self.picture_signal.emit()
-        log_status_message("REFERENCE IMAGES TAKEN")
+        log_status_message("REFERENCE_IMAGES_TAKEN")
         log_status_message("Settings used: {}".format(self.image_settings))
 
     def update_viewer(self, arr: np.ndarray, name: str):
@@ -324,7 +324,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             beam_type = BeamType.ION
         else:
             beam_type, image = None, None
-        log_status_message(f"COORDS: {coords}, BEAM TYPE: {beam_type}")
+        log_status_message(f"COORDS: {coords}, BEAM_TYPE: {beam_type}")
         return coords, beam_type, image
     
     def closeEvent(self, event):
