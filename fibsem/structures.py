@@ -1714,19 +1714,17 @@ class ThermoMultiChemLine():
 
     def insert(self,position):
 
-        if self.status == "Retracted":
-            
-            position_str = getattr(MultiChemInsertPosition,position)
+        position_str = getattr(MultiChemInsertPosition,position)
 
-            self.line.insert(position_str)
-            self.current_position = position
-            self.status = "Inserted"
+        self.line.insert(position_str)
+        self.current_position = position
+        self.status = "Inserted"
 
     def retract(self):
-        if self.status == "Inserted":
-            self.line.retract()
-            self.status = "Retracted"
-            self.current_position = "Retracted"
+        
+        self.line.retract()
+        self.status = "Retracted"
+        self.current_position = "Retracted"
             
         
 

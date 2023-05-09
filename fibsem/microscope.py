@@ -1504,7 +1504,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # Log that the sputtering process has finished
         logging.info("Platinum sputtering process completed.")
 
-    def GIS_available_lines(self):
+    def GIS_available_lines(self) -> list[str]:
         """
         Returns a list of available GIS lines.
 
@@ -1534,7 +1534,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return gis_list
     
-    def GIS_available_positions(self):
+    def GIS_available_positions(self) -> list[str]:
 
         _check_sputter(self.hardware_settings)
 
@@ -1542,7 +1542,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return positions
     
-    def GIS_move_to(self,line_name:str,position:str):
+    def GIS_move_to(self,line_name:str,position:str) -> None:
 
         _check_sputter(self.hardware_settings)
 
@@ -1554,7 +1554,7 @@ class ThermoMicroscope(FibsemMicroscope):
         elif position == "Retract":
             port.retract()
 
-    def GIS_position(self,line):
+    def GIS_position(self,line) -> str:
 
         _check_sputter(self.hardware_settings)
 
@@ -1563,7 +1563,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return port.status
         
-    def multichem_available_lines(self):
+    def multichem_available_lines(self)-> list[str]:
 
         _check_sputter(self.hardware_settings)
 
@@ -1573,7 +1573,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return self.mc_lines
     
-    def multichem_available_positions(self):
+    def multichem_available_positions(self) -> list[str]:
 
         _check_sputter(self.hardware_settings)
 
@@ -1590,7 +1590,7 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             self.multichem.insert(position=position)
 
-    def multichem_position(self):
+    def multichem_position(self) -> str:
 
         _check_sputter(self.hardware_settings)
 
@@ -3510,7 +3510,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
 
-    def GIS_available_lines(self):
+    def GIS_available_lines(self) -> list[str]:
         """
         Returns a list of available GIS lines.
 
@@ -3530,7 +3530,7 @@ class TescanMicroscope(FibsemMicroscope):
         
         return line_names
     
-    def GIS_position(self,line_name:str):
+    def GIS_position(self,line_name:str) -> str:
         _check_sputter(self.hardware_settings)
 
         line = self.lines[line_name]
@@ -3539,14 +3539,14 @@ class TescanMicroscope(FibsemMicroscope):
 
         return position.name
     
-    def GIS_available_positions(self):
+    def GIS_available_positions(self) -> list[str]:
 
         _check_sputter(self.hardware_settings)
         self.GIS_positions = self.connection.GIS.Position
 
         return self.GIS_positions.__members__.keys()
     
-    def GIS_move_to(self,line_name,position):
+    def GIS_move_to(self,line_name,position) -> None:
         
         _check_sputter(self.hardware_settings)
 
@@ -4137,6 +4137,45 @@ class DemoMicroscope(FibsemMicroscope):
     def finish_sputter(self, **kwargs):
         _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
+
+    def GIS_available_lines(self) -> list[str]:
+
+        self.gis_lines = {
+            "water": ThermoGISLine(None,"Water"),
+            "Pt": ThermoGISLine(None,"Pt"),
+            "Carbon": ThermoGISLine(None,"C")
+        }
+
+        return list(self.gis_lines.keys())
+    
+    def GIS_available_positions(self) -> list[str]:
+
+        positions = ["Insert","Retract"]
+
+        return positions
+    
+    def GIS_move_to(self,line_name: str, position_name: str) -> None:
+
+
+        line = self.gis_lines[line_name]
+
+        if position_name == "Insert":
+
+            line.status = "Inserted"
+        
+        if position_name == "Retract":
+
+            line.status = "Retracted"
+    
+    def GIS_position(self,line_name):
+
+        line = self.gis_lines[line_name]
+
+        return line.status
+    
+        
+
+
 
     def set_microscope_state(self, state: MicroscopeState):
         _check_sputter(self.hardware_settings)
