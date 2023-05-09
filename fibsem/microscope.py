@@ -55,7 +55,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
-                               MicroscopeState, Point, FibsemDetectorSettings,ThermoGISLine)
+                               MicroscopeState, Point, FibsemDetectorSettings,ThermoGISLine,ThermoMultiChemLine)
 
 
 class FibsemMicroscope(ABC):
@@ -1521,13 +1521,13 @@ class ThermoMicroscope(FibsemMicroscope):
         
         gis_list = self.connection.gas.list_all_gis_ports()
 
-        self.lines = {}
+        self.gis_lines = {}
 
         for line in gis_list:
             
             gis_port = ThermoGISLine(self.connection.gas.get_gis_port(line),name=line,status="Retracted")
 
-            self.lines[line] = gis_port
+            self.gis_lines[line] = gis_port
 
 
         return gis_list
@@ -1544,7 +1544,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         _check_sputter(self.hardware_settings)
 
-        port = self.lines[line_name]
+        port = self.gis_lines[line_name]
 
         if position == "Insert":
             port.insert()
@@ -1555,7 +1555,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         _check_sputter(self.hardware_settings)
 
-        port = self.lines[line]
+        port = self.gis_lines[line]
 
         return port.status
         
@@ -1563,37 +1563,34 @@ class ThermoMicroscope(FibsemMicroscope):
 
         _check_sputter(self.hardware_settings)
 
-        multichem = self.connection.gas.get_multichem()
+        self.multichem = ThermoMultiChemLine(self.connection.gas.get_multichem())
 
-        self.lines = multichem.list_all_gases()
+        self.mc_lines = self.multichem.list_all_gases()
 
-        return self.lines
+        return self.mc_lines
     
     def multichem_available_positions(self):
 
         _check_sputter(self.hardware_settings)
 
-        positions_enum = MultiChemInsertPosition
+        positions_enum = self.multichem.positions
 
-        positions = [position.name for position in positions_enum]
-
-        positions = positions + ["Insert", "Retract"]
-
-        return positions
+        return positions_enum
     
     def multichem_move_to(self,position:str):
 
         _check_sputter(self.hardware_settings)
 
-        multichem = self.connection.gas.get_multichem()
-
-        if position == "Insert":
-            multichem.insert()
-        elif position == "Retract":
-            multichem.retract()
+        if position == "Retract":
+            self.multichem.retract()
         else:
-            multichem.insert(MultiChemInsertPosition[position])
+            self.multichem.insert(position=position)
 
+    def multichem_position(self):
+
+        _check_sputter(self.hardware_settings)
+
+        return self.multichem.current_position
 
     def set_microscope_state(self, microscope_state: MicroscopeState) -> None:
         """Reset the microscope state to the provided state.

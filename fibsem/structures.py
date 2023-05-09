@@ -23,6 +23,9 @@ except:
 try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
+    from autoscript_sdb_microscope_client.enumerations import (
+        CoordinateSystem, ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     THERMO = True
 except:
     THERMO = False
@@ -1693,7 +1696,39 @@ class ThermoGISLine():
             self.line.retract()
             self.status = "Retracted"
         
+class ThermoMultiChemLine():
 
+    def __init__(self,line,status:str = "Retracted"):
+
+        self.line = line
+        self.status = status
+        self.positions = [
+            "ELECTRON_DEFAULT",
+            "ION_DEFAULT",
+            "COMPUSTAGE0_DEFAULT",
+            "COMPUSTAGE90_DEFAULT",
+            "DXLARGE_DEPROCESSING",
+            "Retract"
+        ]
+        self.current_position = "Retract"
+
+    def insert(self,position):
+
+        if self.status == "Retracted":
+            
+            position_str = getattr(MultiChemInsertPosition,position)
+
+            self.line.insert(position_str)
+            self.current_position = position
+            self.status = "Inserted"
+
+    def retract(self):
+        if self.status == "Inserted":
+            self.line.retract()
+            self.status = "Retracted"
+            self.current_position = "Retracted"
+            
+        
 
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
