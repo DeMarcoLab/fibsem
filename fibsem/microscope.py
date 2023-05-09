@@ -55,7 +55,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
-                               MicroscopeState, Point, FibsemDetectorSettings)
+                               MicroscopeState, Point, FibsemDetectorSettings,ThermoGISLine)
 
 
 class FibsemMicroscope(ABC):
@@ -1524,7 +1524,10 @@ class ThermoMicroscope(FibsemMicroscope):
         self.lines = {}
 
         for line in gis_list:
-            self.lines[line] = self.connection.gas.get_gis_port(line)
+            
+            gis_port = ThermoGISLine(self.connection.gas.get_gis_port(line),name=line,status="Retracted")
+
+            self.lines[line] = gis_port
 
 
         return gis_list
@@ -1541,12 +1544,20 @@ class ThermoMicroscope(FibsemMicroscope):
 
         _check_sputter(self.hardware_settings)
 
-        line = self.lines[line_name]
+        port = self.lines[line_name]
 
         if position == "Insert":
-            line.insert()
+            port.insert()
         elif position == "Retract":
-            line.retract()
+            port.retract()
+
+    def GIS_position(self,line):
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.lines[line]
+
+        return port.status
         
     def multichem_available_lines(self):
 

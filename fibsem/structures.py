@@ -1673,6 +1673,28 @@ class ReferenceImages:
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
 
+class ThermoGISLine():
+
+    def __init__(self,line,name,status:str = "Retracted"):
+
+        self.line = line
+        self.name = name
+        self.status = status
+
+    def insert(self):
+
+        if self.status == "Retracted":
+            self.line.insert()
+            self.status = "Inserted"
+
+    def retract(self):
+
+        if self.status == "Inserted":
+            self.line.retract()
+            self.status = "Retracted"
+        
+
+
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
     # assert data.ndim == 2  # or data.ndim == 3
