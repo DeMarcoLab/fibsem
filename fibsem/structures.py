@@ -1678,7 +1678,7 @@ class ReferenceImages:
 
 class ThermoGISLine():
 
-    def __init__(self,line,name,status:str = "Retracted"):
+    def __init__(self,line= None,name=None,status:str = "Retracted"):
 
         self.line = line
         self.name = name
@@ -1686,19 +1686,19 @@ class ThermoGISLine():
 
     def insert(self):
 
-        if self.status == "Retracted":
+        if self.line is not None:
             self.line.insert()
-            self.status = "Inserted"
+        self.status = "Inserted"
 
     def retract(self):
 
-        if self.status == "Inserted":
+        if self.line is not None:
             self.line.retract()
-            self.status = "Retracted"
+        self.status = "Retracted"
         
 class ThermoMultiChemLine():
 
-    def __init__(self,line,status:str = "Retracted"):
+    def __init__(self,line= None,status:str = "Retracted"):
 
         self.line = line
         self.status = status
@@ -1713,13 +1713,17 @@ class ThermoMultiChemLine():
 
         position_str = getattr(MultiChemInsertPosition,position)
 
-        self.line.insert(position_str)
+        if self.line is not None:
+            self.line.insert(position_str)
+
         self.current_position = position
         self.status = "Inserted"
 
     def retract(self):
         
-        self.line.retract()
+        if self.line is not None:
+            self.line.retract()
+
         self.status = "Retracted"
         self.current_position = "Retracted"
             

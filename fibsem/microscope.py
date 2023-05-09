@@ -1587,10 +1587,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         if position == "Retract":
             self.multichem.retract()
-            self.multichem.current_position = "Retracted"
         else:
             self.multichem.insert(position=position)
-            self.multichem.current_position = position
+
 
     def multichem_position(self) -> str:
 
@@ -4143,7 +4142,7 @@ class DemoMicroscope(FibsemMicroscope):
     def GIS_available_lines(self) -> list[str]:
 
         self.gis_lines = {
-            "water": ThermoGISLine(None,"Water"),
+            "Water": ThermoGISLine(None,"Water"),
             "Pt": ThermoGISLine(None,"Pt"),
             "Carbon": ThermoGISLine(None,"C")
         }
@@ -4175,8 +4174,31 @@ class DemoMicroscope(FibsemMicroscope):
 
         return line.status
     
-        
 
+    def multichem_available_lines(self):
+
+        self.multichem = ThermoMultiChemLine()
+
+        self.mc_lines = ["mc_Water","mc_Pt","mc_C"]
+
+        return self.mc_lines
+    
+    def multichem_available_positions(self):
+
+        positions = self.multichem.positions
+
+        return positions
+    
+    def multichem_move_to(self,position):
+
+        if position == "Retract":
+            self.multichem.retract()
+        else:
+            self.multichem.insert(position)
+
+    def multichem_position(self):
+
+        return self.multichem.current_position
 
 
     def set_microscope_state(self, state: MicroscopeState):

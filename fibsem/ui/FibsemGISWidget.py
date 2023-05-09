@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5 import QtWidgets
 
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import (MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemGISWidget
@@ -46,7 +46,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         if isinstance(self.microscope, TescanMicroscope):
             self.tescan_setup()
-        if isinstance(self.microscope, ThermoMicroscope):
+        if isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope)):
             self.thermo_setup()
 
 
@@ -164,7 +164,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui(self):
         current_position_gis = self.microscope.GIS_position(self.gis_current_line)
-        current_position_multichem = self.microscope.multichem_position() if isinstance(self.microscope,ThermoMicroscope) else None
+        current_position_multichem = self.microscope.multichem_position() if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)) else None
 
         current_position = current_position_gis if self.GIS else current_position_multichem
 
