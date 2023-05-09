@@ -1521,13 +1521,13 @@ class ThermoMicroscope(FibsemMicroscope):
         
         gis_list = self.connection.gas.list_all_gis_ports()
 
-        self.lines = {}
+        self.gis_lines = {}
 
         for line in gis_list:
             
             gis_port = ThermoGISLine(self.connection.gas.get_gis_port(line),name=line,status="Retracted")
 
-            self.lines[line] = gis_port
+            self.gis_lines[line] = gis_port
 
 
         return gis_list
@@ -1544,7 +1544,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         _check_sputter(self.hardware_settings)
 
-        port = self.lines[line_name]
+        port = self.gis_lines[line_name]
 
         if position == "Insert":
             port.insert()
@@ -1555,7 +1555,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         _check_sputter(self.hardware_settings)
 
-        port = self.lines[line]
+        port = self.gis_lines[line]
 
         return port.status
         
@@ -1565,17 +1565,19 @@ class ThermoMicroscope(FibsemMicroscope):
 
         multichem = self.connection.gas.get_multichem()
 
-        self.lines = multichem.list_all_gases()
+        self.mc_lines = multichem.list_all_gases()
 
-        return self.lines
+        return self.mc_lines
     
     def multichem_available_positions(self):
 
         _check_sputter(self.hardware_settings)
 
-        positions_enum = MultiChemInsertPosition
+        # positions_enum = MultiChemInsertPosition
 
-        positions = [position.name for position in positions_enum]
+        # positions = [position.name for position in positions_enum]
+
+        positions = ['COMPUSTAGE0_DEFAULT','COMPUSTAGE90_DEFAULT','DXLARGE_DEPROCESSING','ELECTRON_DEFAULT','ION_DEFAULT']
 
         positions = positions + ["Insert", "Retract"]
 
