@@ -1,6 +1,9 @@
 
 import logging
-
+import tkinter
+from tkinter import filedialog, simpledialog
+from PIL import Image
+import numpy as np
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets, QtCore
@@ -229,6 +232,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # add new widgets
         # TODO: smarter logic for which kinds of widgets to add
         for i, key in enumerate(pattern.required_keys):
+            if key == "path":
+                continue
+
             label = QtWidgets.QLabel(key)
             spinbox = QtWidgets.QDoubleSpinBox()
             spinbox.setDecimals(3)
@@ -257,6 +263,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # get pattern protocol from ui
         pattern_dict = {}
         for i, key in enumerate(pattern.required_keys):
+            if key == "path":
+                continue
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
             value = _scale_value(key, value, constants.DEGREES_TO_RADIANS) if key in _ANGLE_KEYS else value

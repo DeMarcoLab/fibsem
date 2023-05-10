@@ -243,6 +243,20 @@ def convert_pattern_to_napari_rect(
     shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
     return shape
 
+def convert_bitmap_pattern_to_napari_shape(
+        pattern_settings: FibsemPatternSettings, image: FibsemImage
+) -> np.ndarray:
+    # image centre
+    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+    # pixel size
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
+    
+    
+    pass
+
+
+
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
     # remove all shapes layers
     layers_to_remove = []

@@ -97,6 +97,9 @@
          </property>
         </spacer>
        </item>
+       <item row="20" column="0" rowspan="2" colspan="2">
+        <layout class="QGridLayout" name="gridLayout_patterns"/>
+       </item>
        <item row="3" column="0" colspan="2">
         <widget class="Line" name="line_3">
          <property name="orientation">
@@ -161,13 +164,6 @@
          </property>
         </widget>
        </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_preset">
-         <property name="text">
-          <string>Preset</string>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="0">
         <widget class="QPushButton" name="pushButton_add_milling_stage">
          <property name="text">
@@ -175,10 +171,10 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_rate">
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_preset">
          <property name="text">
-          <string>Rate (mm3/A/s)</string>
+          <string>Preset</string>
          </property>
         </widget>
        </item>
@@ -202,11 +198,18 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="comboBox_milling_stage"/>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_rate">
+         <property name="text">
+          <string>Rate (mm3/A/s)</string>
+         </property>
+        </widget>
        </item>
        <item row="15" column="1">
         <widget class="QComboBox" name="comboBox_patterns"/>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="comboBox_milling_stage"/>
        </item>
        <item row="5" column="0">
         <widget class="QLabel" name="label_milling_current">
@@ -259,23 +262,6 @@
           <string>Live Update</string>
          </property>
         </widget>
-       </item>
-       <item row="14" column="0">
-        <widget class="QPushButton" name="pushButton_2">
-         <property name="text">
-          <string>Load Bitmap Pattern</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="1">
-        <widget class="QPushButton" name="pushButton_3">
-         <property name="text">
-          <string>Clear Bitmap Pattern</string>
-         </property>
-        </widget>
-       </item>
-       <item row="20" column="0" rowspan="2" colspan="2">
-        <layout class="QGridLayout" name="gridLayout_patterns"/>
        </item>
       </layout>
      </widget>
