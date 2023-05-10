@@ -25,6 +25,11 @@ def _scale_value(key, value, scale):
         return value * scale    
     return value
 
+def log_status_message(stage: FibsemMillingStage, step: str):
+    logging.debug(
+        f"STATUS | Milling Widget | {stage.name} | {step}"
+    )
+
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     # milling_param_changed = QtCore.pyqtSignal()
 
@@ -85,7 +90,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.protocol["milling"]["application_file"] = "Si"
         self.comboBox_application_file.setCurrentText(self.protocol["milling"]["application_file"])
         
-        
         # TESCAN
         self.label_rate.setVisible(_TESCAN)
         self.label_spot_size.setVisible(_TESCAN)
@@ -116,11 +120,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_milling_stage.clicked.connect(self.remove_milling_stage)
         self.pushButton_remove_milling_stage.setStyleSheet("background-color: red; color: white;")
         
-
         # update ui
         self.pushButton.clicked.connect(lambda: self.update_ui())
         self.pushButton.setStyleSheet("background-color: blue; color: white;")
-
 
         # run milling
         self.pushButton_run_milling.clicked.connect(self.run_milling)
@@ -155,19 +157,23 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.addItem(name)
         self.comboBox_milling_stage.setCurrentText(name)
         napari.utils.notifications.show_info(f"Added {name}.")
+        log_status_message(self.milling_stages[-1], "CREATED_STAGE")
 
     def remove_milling_stage(self):
         logging.info("Removing milling stage")
 
         current_index = self.comboBox_milling_stage.currentIndex()
+        log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
         self.comboBox_milling_stage.clear()
-        for i, stage in enumerate(self.milling_stages):
-            stage.name = f"Milling Stage {i + 1}"
-            self.comboBox_milling_stage.addItem(stage.name)
-        
+        index = self.comboBox_milling_stage.currentIndex()
+        if index != -1:
+            for i, stage in enumerate(self.milling_stages):
+                stage.name = f"Milling Stage {i + 1}"
+                self.comboBox_milling_stage.addItem(stage.name)
+            
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
         logging.info(f"Setting milling stages: {len(milling_stages)}")
@@ -188,7 +194,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         return point
 
-
     def update_milling_stage_ui(self):
 
         # get the selected milling stage
@@ -205,7 +210,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         if self.checkBox_live_update.isChecked():
             self.update_ui()
-
 
     def update_milling_stage_from_ui(self):
                 
@@ -338,8 +342,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
             logging.info(f"Moved pattern to {point}")
+            log_status_message(self.milling_stages[current_stage_index], f"MOVED_PATTERN_TO_{point}")
             self.good_copy_pattern = deepcopy(pattern)
-            
             self.update_ui()
         else:
             napari.utils.notifications.show_warning("Pattern is not within the image.")
@@ -386,12 +390,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_protocol_ui(self):
         index = self.comboBox_milling_stage.currentIndex()
-        settings = self.milling_stages[index].milling 
-        self.set_milling_settings_ui(settings)
-        self.comboBox_patterns.setCurrentText(self.milling_stages[index].pattern.name)
-        pattern_protocol = self.milling_stages[index].pattern.protocol
-        point = self.milling_stages[index].pattern.point
-        self.update_pattern_ui(pattern_protocol, point)
+        if index != -1:
+            settings = self.milling_stages[index].milling 
+            self.set_milling_settings_ui(settings)
+            self.comboBox_patterns.setCurrentText(self.milling_stages[index].pattern.name)
+            pattern_protocol = self.milling_stages[index].pattern.protocol
+            point = self.milling_stages[index].pattern.point
+            self.update_pattern_ui(pattern_protocol, point)
+        else:
+            self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
         
@@ -467,7 +474,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for stage in self.milling_stages:
             yield f"Preparing: {stage.name}"
             if stage.pattern is not None:
-    
+                log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
+                log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
+                log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
                 milling.draw_patterns(self.microscope, stage.pattern.patterns)
@@ -477,8 +486,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             
                 milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
-            yield f"Milling stage complete: {stage.name}"
+                log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
 
+            yield f"Milling stage complete: {stage.name}"
         yield f"Milling complete. {len(self.milling_stages)} stages completed."
 
     def update_milling_ui(self, msg: str):
