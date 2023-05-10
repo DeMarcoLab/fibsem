@@ -253,7 +253,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
         # detect features
         pixelsize = 25e-9 # TODO: get from metadata
-        det = detection.locate_shift_between_features_v2(
+        det = detection.detect_features(
+
             deepcopy(self.image.data), self.model, 
             features=features, 
             pixelsize=pixelsize,
@@ -402,13 +403,6 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
                     x=data[idx][1], y=data[idx][0]
                 )
 
-            if len(self.detected_features.features) >= 2:
-                # recalculate the distance
-                self.detected_features.distance = self.detected_features.features[0].px._distance_to(
-                    self.detected_features.features[1].px
-                )
-                self.detected_features.distance = self.detected_features.distance._to_metres(pixel_size = self.detected_features.pixelsize) # TODO: get from metadata)
-
         self._USER_CORRECTED = True
         self.update_info()
 
@@ -427,7 +421,7 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
     # detect features
-    det = detection.locate_shift_between_features_v2(
+    det = detection.detect_features(
         deepcopy(image.data), model, features=features, pixelsize=pixelsize
     )
 

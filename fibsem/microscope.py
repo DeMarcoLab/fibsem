@@ -450,6 +450,10 @@ class ThermoMicroscope(FibsemMicroscope):
             reduced_area = image_settings.reduced_area.__to_FEI__()
         else:
             reduced_area = None
+            if image_settings.beam_type == BeamType.ELECTRON:
+                self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+            if image_settings.beam_type == BeamType.ION :
+                self.connection.beams.ion_beam.scanning.mode.set_full_frame()
         
         frame_settings = GrabFrameSettings(
             resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
@@ -481,6 +485,12 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_view(image_settings.beam_type.value)
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
         image = self.connection.imaging.grab_frame(frame_settings)
+
+        if image_settings.reduced_area is not None:
+            if image_settings.beam_type == BeamType.ELECTRON:
+                self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+            else:
+                self.connection.beams.ion_beam.scanning.mode.set_full_frame()
 
         state = self.get_current_microscope_state()
 
@@ -606,6 +616,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         _check_beam(beam_type = beam_type, hardware_settings = self.hardware_settings)
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
+        logging.debug(f"{beam_type.name} | {dx}|{dy}") 
         if beam_type == BeamType.ELECTRON:
             self.connection.beams.electron_beam.beam_shift.value += (-dx, dy)
         else:
@@ -771,7 +782,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.electron_beam.working_distance.value = wd
         self.connection.specimen.stage.link()
 
-        return
+        return stage_position
 
     def eucentric_move(
         self,
@@ -788,6 +799,8 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
+
+        # TODO: does this need the perspective correction too?
 
         z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
@@ -836,6 +849,8 @@ class ThermoMicroscope(FibsemMicroscope):
         )
         stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
 
+        stage_pretilt = np.deg2rad(settings.system.stage.pre_tilt)
+
         stage_rotation_flat_to_eb = np.deg2rad(
             settings.system.stage.rotation_flat_to_electron
         ) % (2 * np.pi)
@@ -858,8 +873,8 @@ class ThermoMicroscope(FibsemMicroscope):
         ):
             PRETILT_SIGN = -1.0
 
-        corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
-        # corrected_pretilt_angle = PRETILT_SIGN * settings.system.stage.pre_tilt
+        # corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_pretilt + stage_tilt_flat_to_electron) # electron angle = 0, ion = 52
 
         # perspective tilt adjustment (difference between perspective view and sample coordinate system)
         if beam_type == BeamType.ELECTRON:
@@ -2657,6 +2672,7 @@ class TescanMicroscope(FibsemMicroscope):
         ):
             PRETILT_SIGN = -1.0
 
+        # TODO: check this pre-tilt angle calculation
         corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
         perspective_tilt = (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
         z_perspective = - dy/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
@@ -3668,6 +3684,9 @@ class TescanMicroscope(FibsemMicroscope):
                     logging.warning(f"Invalid contrast value: {value}, must be between 0 and 1.")
                 return 
 
+        if key == "preset":
+            beam.Preset.Activate(value)
+            logging.info(f"Preset {value} activated for {beam_type}.")
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return

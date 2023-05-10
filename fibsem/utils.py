@@ -19,6 +19,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemMillingSettings,
     FibsemHardware,
+    FibsemPatternSettings,
 )
 from fibsem.config import BASE_PATH
 from fibsem.microscope import FibsemMicroscope
@@ -348,6 +349,9 @@ def match_image_settings(
     image_settings.label = current_timestamp()
 
     return image_settings
+
+
+
 
 
 def get_params(main_str: str) -> list:
