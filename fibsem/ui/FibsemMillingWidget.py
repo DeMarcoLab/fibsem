@@ -209,6 +209,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
         return 
 
+    def open_path_dialog(self):
+        tkinter.Tk().withdraw()
+        file_path = filedialog.askopenfilename(title="Select Bitmap file")
+
+        self.path_edit.setText(file_path)
+
     def update_pattern_ui(self):
 
         # get current pattern
@@ -233,6 +239,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # TODO: smarter logic for which kinds of widgets to add
         for i, key in enumerate(pattern.required_keys):
             if key == "path":
+                label = QtWidgets.QLabel(key)
+                self.path_edit = QtWidgets.QLineEdit()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.path_edit, i, 1)
+                self.path_edit.setText(pattern_protocol[key])
+                path_explorer = QtWidgets.QPushButton("...")
+                self.gridLayout_patterns.addWidget(path_explorer, i, 2)
+                path_explorer.clicked.connect(self.open_path_dialog)
+                self.path_edit.textChanged.connect(self.update_ui_pattern)
                 continue
 
             label = QtWidgets.QLabel(key)
@@ -264,6 +279,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         pattern_dict = {}
         for i, key in enumerate(pattern.required_keys):
             if key == "path":
+                # add path in ui and get from there
+                path = self.path_edit.text()
+                pattern_dict[key] = path
                 continue
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)

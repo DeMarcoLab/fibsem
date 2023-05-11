@@ -802,6 +802,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.height = kwargs["height"]
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.depth = kwargs["depth"]
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
             self.path = kwargs["path"] 
         
     def __repr__(self) -> str:
@@ -913,6 +915,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "height": self.height,
                 "depth": self.depth,
                 "rotation": self.rotation,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
                 "path": self.path,
             }
 

@@ -251,7 +251,7 @@ def convert_bitmap_pattern_to_napari_shape(
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
-    
+
     
     pass
 
@@ -285,6 +285,13 @@ def _draw_patterns_in_napari(
         shape_patterns = []
         shape_types = []
         for pattern_settings in stage:
+            if pattern_settings.pattern is FibsemPattern.Bitmap:
+                print("hello this is bitmap")
+                print(f'width: {pattern_settings.width}')
+                print(f'height: {pattern_settings.height}')
+                print(f'rotation: {pattern_settings.rotation}')
+                print(f'path: {pattern_settings.path}')
+
             if pattern_settings.pattern is FibsemPattern.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
                 shape_types.append("ellipse")
