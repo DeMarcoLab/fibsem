@@ -1,18 +1,14 @@
-labelling:
-  raw_dir: /home/patrick/github/fibsem/example/data/
-  data_dir: /home/patrick/github/fibsem/example/data/data2
-train:
-  data_dir: /home/patrick/github/data/liftout/active-learning/train/celegans
-  save_dir: /home/patrick/github/fibsem/fibsem/segmentation/models/celegans
-  wandb: true # Logs information and plots to wandb
-  checkpoint: /home/patrick/github/fibsem/fibsem/segmentation/models/model4.pt
-  encoder: "resnet34" # Specify model architecture. List of available encoders in readme.
-  epochs: 20 # Number of epochs to train for
-  cuda: true # Enable/Disable CUDA training
-  batch_size: 4 # Number of samples per batch
-  num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
-  learning_rate: 0.0001
-  wandb_project: "fibsem_pipeline"
-  wandb_entity: "demarcolab"
+data_path: /home/patrick/github/data/liftout/training/train/images # /home/patrick/github/data/liftout/active-learning/train/dm-embryo/images
+label_path: /home/patrick/github/data/liftout/training/train/labels #/home/patrick/github/data/liftout/active-learning/train/dm-embryo/labels
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/demo
+checkpoint: null #/home/patrick/github/fibsem/fibsem/segmentation/models/model4.pt
+encoder: "resnet34" # Specify model architecture. List of available encoders in readme.
+epochs: 20 # Number of epochs to train for
+batch_size: 4 # Number of samples per batch
+num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
+lr: 0.0001
+wandb: true # Logs information and plots to wandb
+wandb_project: "fibsem_pipeline"
+wandb_entity: "demarcolab"
 
 

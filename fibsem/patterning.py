@@ -17,7 +17,7 @@ class BasePattern(ABC):
     required_keys: tuple[str] = ()
     patterns = None
     protocol = None
-
+    point = None
     @abstractmethod
     def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
         pass
@@ -50,6 +50,7 @@ class RectanglePattern(BasePattern):
     required_keys: tuple[str] = ("width", "height", "depth", "rotation")
     patterns = None
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -61,6 +62,7 @@ class RectanglePattern(BasePattern):
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
+        self.point = point
         return self.patterns 
 
 
@@ -70,6 +72,7 @@ class LinePattern(BasePattern):
     required_keys: tuple[str] = ("start_x", "end_x", "start_y", "end_y", "depth")
     patterns = None
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -80,6 +83,7 @@ class LinePattern(BasePattern):
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -89,6 +93,7 @@ class CirclePattern(BasePattern):
     required_keys: tuple[str] = ("radius", "depth")
     patterns = None
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -103,6 +108,7 @@ class CirclePattern(BasePattern):
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)] 
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -119,6 +125,7 @@ class TrenchPattern(BasePattern):
     )
     patterns = None
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -162,6 +169,7 @@ class TrenchPattern(BasePattern):
 
         self.patterns = [lower_pattern_settings, upper_pattern_settings]    
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -181,6 +189,7 @@ class HorseshoePattern(BasePattern):
     patterns = None
     # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -235,6 +244,7 @@ class HorseshoePattern(BasePattern):
 
         self.patterns = [lower_pattern, upper_pattern, side_pattern]
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 @dataclass
@@ -243,6 +253,7 @@ class FiducialPattern(BasePattern):
     required_keys: tuple[str] = ("height", "width", "depth", "rotation")
     patterns = None
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -262,6 +273,7 @@ class FiducialPattern(BasePattern):
 
         self.patterns = [left_pattern, right_pattern]
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -271,6 +283,7 @@ class UndercutPattern(BasePattern):
     required_keys: tuple[str] = ("height", "width", "depth", "trench_width", "rhs_height", "h_offset")
     patterns = None
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -344,6 +357,7 @@ class UndercutPattern(BasePattern):
 
         self.patterns = [top_pattern, rhs_pattern]
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -359,6 +373,7 @@ class MicroExpansionPattern(BasePattern):
     )
     patterns = None
     protocol = None
+    point = None
     # ref: https://www.nature.com/articles/s41467-022-29501-3
     def define(
         self, protocol: dict, point: Point = Point()
@@ -406,6 +421,7 @@ class MicroExpansionPattern(BasePattern):
 
         self.patterns = [left_pattern_settings, right_pattern_settings]
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 @dataclass
@@ -415,6 +431,7 @@ class SpotWeldPattern(BasePattern):
     patterns = None
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
     protocol = None
+    point = None
     def define(
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
@@ -442,6 +459,7 @@ class SpotWeldPattern(BasePattern):
 
         self.patterns = patterns
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 @dataclass
@@ -457,6 +475,7 @@ class WaffleNotchPattern(BasePattern):
         )
     patterns = None
     protocol = None
+    point = None
     # ref: https://www.nature.com/articles/s41467-022-29501-3
 
     def define(self, protocol: dict, point: Point = Point() ) -> list[FibsemPatternSettings]:
@@ -531,6 +550,7 @@ class WaffleNotchPattern(BasePattern):
 
         self.patterns = [top_vertical_pattern, bottom_vertical_pattern, top_horizontal_pattern, bottom_horizontal_pattern, centre_vertical_pattern]
         self.protocol = protocol
+        self.point = point
         return self.patterns 
 
 @dataclass
@@ -539,6 +559,7 @@ class CloverPattern(BasePattern):
     required_keys: tuple[str] = ("radius", "depth")
     patterns = None
     protocol = None
+    point = None
     def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
 
         check_keys(protocol, self.required_keys)
@@ -591,6 +612,7 @@ class CloverPattern(BasePattern):
 
         self.patterns = [top_pattern, right_pattern, left_pattern, stem_pattern]
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -600,6 +622,7 @@ class TriForcePattern(BasePattern):
     required_keys: tuple[str] = ("height", "width", "depth")
     patterns = None
     protocol = None
+    point = None
     def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
 
         check_keys(protocol, self.required_keys)
@@ -628,6 +651,7 @@ class TriForcePattern(BasePattern):
             self.patterns.append(right_pattern)
             self.patterns.append(bottom_pattern)
         self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -724,7 +748,6 @@ class FibsemMillingStage:
     num: int = 0
     milling: FibsemMillingSettings = FibsemMillingSettings()
     pattern: BasePattern  = get_pattern("Rectangle")
-    point: Point = Point()
 
 
 PROTOCOL_MILL_MAP = {"cut": RectanglePattern, 
