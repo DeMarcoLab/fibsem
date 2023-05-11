@@ -116,7 +116,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # new patterns
         self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
-        if _TESCAN:
+        if _TESCAN and not _THERMO:
             index = self.comboBox_patterns.findText("BitmapPattern")
             self.comboBox_patterns.removeItem(index)
         self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
@@ -247,7 +247,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self.path_edit.setText(file_path)
 
-    def update_pattern_ui(self):
+    def update_pattern_ui(self,pattern_protocol=None, point=None):
 
         # get current pattern
         pattern = patterning.__PATTERNS__[self.comboBox_patterns.currentIndex()]

@@ -3705,7 +3705,7 @@ class DemoMicroscope(FibsemMicroscope):
 
     def __init__(self):            
         self.connection = None
-        self.stage_position = FibsemStagePosition()
+        self.stage_position = FibsemStagePosition(x=0, y=0, z=0, r=0, t=0)
         self.manipulator_position = FibsemManipulatorPosition()
         self.electron_beam = BeamSettings(
             beam_type=BeamType.ELECTRON,
