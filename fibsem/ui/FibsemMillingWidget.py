@@ -98,6 +98,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # new patterns
         self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
+        if _TESCAN:
+            index = self.comboBox_patterns.findText("BitmapPattern")
+            self.comboBox_patterns.removeItem(index)
         self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
     
         # milling stages

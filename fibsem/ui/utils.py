@@ -265,8 +265,6 @@ def convert_bitmap_pattern_to_napari_shape(
     pattern_point_x = int(pattern_centre_x + pattern_settings.centre_x / pixelsize_x)
     pattern_point_y = int(pattern_centre_y - pattern_settings.centre_y / pixelsize_y)
 
-    print(f'pattern_point_x: {pattern_point_x}, pattern_point_y: {pattern_point_y}')
-
     translate_position = (pattern_point_y,pattern_point_x)
 
     
@@ -305,13 +303,8 @@ def _draw_patterns_in_napari(
         shape_types = []
         for pattern_settings in stage:
             if pattern_settings.pattern is FibsemPattern.Bitmap:
-                print("hello this is bitmap")
-                print(f'width: {pattern_settings.width}')
-                print(f'height: {pattern_settings.height}')
-                print(f'rotation: {pattern_settings.rotation}')
-                print(f'path: {pattern_settings.path}')
                 bmp_Image, translate_position = convert_bitmap_pattern_to_napari_shape(pattern_settings=pattern_settings, image=ib_image)
-                viewer.add_image(bmp_Image,translate=translate_position)
+                viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
                 shape_patterns = []
                 continue
 
