@@ -5,6 +5,7 @@ from typing import Union
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 from fibsem.config import load_microscope_manufacturer
 
@@ -251,9 +252,17 @@ def convert_bitmap_pattern_to_napari_shape(
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
+    resize_x = int(pattern_settings.width / pixelsize_x)
+    resize_y = int(pattern_settings.height / pixelsize_y)
+
+    image_bmp = Image.open(pattern_settings.path)
+    image_resized = image_bmp.resize((resize_x, resize_y))
+    img_array = np.array(image_resized)
 
     
-    pass
+    return img_array
+    
+    
 
 
 
@@ -291,8 +300,11 @@ def _draw_patterns_in_napari(
                 print(f'height: {pattern_settings.height}')
                 print(f'rotation: {pattern_settings.rotation}')
                 print(f'path: {pattern_settings.path}')
+                img_array = convert_bitmap_pattern_to_napari_shape(pattern_settings=pattern_settings, image=ib_image)
+                viewer.add_image(img_array)
 
-            if pattern_settings.pattern is FibsemPattern.Circle:
+
+            elif pattern_settings.pattern is FibsemPattern.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
                 shape_types.append("ellipse")
             else:
