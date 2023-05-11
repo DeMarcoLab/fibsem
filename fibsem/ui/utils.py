@@ -270,7 +270,7 @@ def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.
     # remove all shapes layers
     layers_to_remove = []
     for layer in viewer.layers:
-        if isinstance(layer, layer_type):
+        if isinstance(layer, layer_type) or layer.name == "bmp_Image":
             layers_to_remove.append(layer)
     for layer in layers_to_remove:
         viewer.layers.remove(layer)  # Not removing the second layer?
@@ -300,8 +300,10 @@ def _draw_patterns_in_napari(
                 print(f'height: {pattern_settings.height}')
                 print(f'rotation: {pattern_settings.rotation}')
                 print(f'path: {pattern_settings.path}')
-                img_array = convert_bitmap_pattern_to_napari_shape(pattern_settings=pattern_settings, image=ib_image)
-                viewer.add_image(img_array)
+                bmp_Image = convert_bitmap_pattern_to_napari_shape(pattern_settings=pattern_settings, image=ib_image)
+                viewer.add_image(bmp_Image)
+                shape_patterns = []
+                continue
 
 
             elif pattern_settings.pattern is FibsemPattern.Circle:
@@ -316,15 +318,17 @@ def _draw_patterns_in_napari(
                 for c in shape:
                     c[1] += eb_image.data.shape[1]
             shape_patterns.append(shape)
-        viewer.add_shapes(
-            shape_patterns,
-            name=f"Stage {i+1}",
-            shape_type=shape_types,
-            edge_width=0.5,
-            edge_color=colour[i % 5],
-            face_color=colour[i % 5],
-            opacity=0.5,
-        )
+
+        if len(shape_patterns) > 0:    
+            viewer.add_shapes(
+                shape_patterns,
+                name=f"Stage {i+1}",
+                shape_type=shape_types,
+                edge_width=0.5,
+                edge_color=colour[i % 5],
+                face_color=colour[i % 5],
+                opacity=0.5,
+            )
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
 
