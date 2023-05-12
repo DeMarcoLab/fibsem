@@ -922,7 +922,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         if beam_type is BeamType.ELECTRON:
             rotation = np.deg2rad(stage_settings.rotation_flat_to_electron)
-            tilt = np.deg2rad(stage_settings.tilt_flat_to_electron)
+            tilt = np.deg2rad(stage_settings.pre_tilt)
 
         if beam_type is BeamType.ION:
             rotation = np.deg2rad(stage_settings.rotation_flat_to_ion)
