@@ -255,9 +255,11 @@ def convert_bitmap_pattern_to_napari_shape(
     resize_x = int(pattern_settings.width / pixelsize_x)
     resize_y = int(pattern_settings.height / pixelsize_y)
 
+    
     image_bmp = Image.open(pattern_settings.path)
     image_resized = image_bmp.resize((resize_x, resize_y))
-    img_array = np.array(image_resized)
+    image_rotated = image_resized.rotate(-pattern_settings.rotation, expand=True)
+    img_array = np.array(image_rotated)
 
     pattern_centre_x = int(icx - pattern_settings.width/pixelsize_x/2) + image.data.shape[1] 
     pattern_centre_y = int(icy - pattern_settings.height/pixelsize_y/2)
@@ -304,6 +306,8 @@ def _draw_patterns_in_napari(
         shape_types = []
         for pattern_settings in stage:
             if pattern_settings.pattern is FibsemPattern.Bitmap:
+                if pattern_settings.path == None or pattern_settings.path == '':
+                    continue
                 bmp_Image, translate_position = convert_bitmap_pattern_to_napari_shape(pattern_settings=pattern_settings, image=ib_image)
                 viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
                 shape_patterns = []

@@ -244,7 +244,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def open_path_dialog(self):
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename(title="Select Bitmap file")
-
+        
         self.path_edit.setText(file_path)
 
     def update_pattern_ui(self,pattern_protocol=None, point=None):

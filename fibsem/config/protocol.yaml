@@ -85,9 +85,9 @@ patterns:
     depth: 5.0e-6 
   BitmapPattern:
     width: 10.0e-6
-    height: 5.0e-6
+    height: 10.0e-6
     depth: 1.0e-6
     rotation: 0.0
-    path: C:\Users\rkan0039\Documents\bmps\sub-um-sheet_100nm_2.bmp
+    path: 
 
   
