@@ -14,6 +14,9 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
+   <item row="10" column="1">
+    <widget class="QComboBox" name="gas_combobox"/>
+   </item>
    <item row="1" column="0">
     <widget class="QRadioButton" name="GIS_radioButton">
      <property name="text">
@@ -21,39 +24,12 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
-    <widget class="QPushButton" name="move_GIS_button">
+   <item row="13" column="0">
+    <widget class="QLabel" name="label_hfw">
      <property name="text">
-      <string>Move to Position</string>
+      <string>HFW</string>
      </property>
     </widget>
-   </item>
-   <item row="10" column="0">
-    <widget class="QLabel" name="label_gas">
-     <property name="text">
-      <string>Select Gas</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="1">
-    <widget class="QComboBox" name="gas_combobox"/>
-   </item>
-   <item row="11" column="0">
-    <widget class="QLabel" name="label_time">
-     <property name="text">
-      <string>Time Duration</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="current_position_label">
-     <property name="text">
-      <string>Current Position:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="12" column="1">
-    <widget class="QComboBox" name="beamtype_combobox"/>
    </item>
    <item row="0" column="0" colspan="2">
     <widget class="QLabel" name="label_title">
@@ -69,14 +45,48 @@
      </property>
     </widget>
    </item>
-   <item row="13" column="0">
-    <widget class="QLabel" name="label_hfw">
+   <item row="14" column="1">
+    <widget class="QCheckBox" name="checkBox">
      <property name="text">
-      <string>HFW</string>
+      <string>Blank Beam</string>
      </property>
     </widget>
    </item>
    <item row="16" column="0" colspan="2">
+    <widget class="QPushButton" name="run_button">
+     <property name="text">
+      <string>Run</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="1">
+    <widget class="QDoubleSpinBox" name="hfw_spinbox"/>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="current_position_label">
+     <property name="text">
+      <string>Current Position:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="label_gas">
+     <property name="text">
+      <string>Select Gas</string>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="0">
+    <widget class="QLabel" name="label_beam_type">
+     <property name="text">
+      <string>BeamType</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QComboBox" name="position_combobox"/>
+   </item>
+   <item row="17" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -89,10 +99,27 @@
      </property>
     </spacer>
    </item>
-   <item row="12" column="0">
-    <widget class="QLabel" name="label_beam_type">
+   <item row="12" column="1">
+    <widget class="QComboBox" name="beamtype_combobox"/>
+   </item>
+   <item row="7" column="1">
+    <widget class="QPushButton" name="move_GIS_button">
      <property name="text">
-      <string>BeamType</string>
+      <string>Move to Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QPushButton" name="insertGIS_button">
+     <property name="text">
+      <string>Insert</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <widget class="QLabel" name="label_time">
+     <property name="text">
+      <string>Time Duration</string>
      </property>
     </widget>
    </item>
@@ -103,28 +130,12 @@
      </property>
     </widget>
    </item>
-   <item row="15" column="0" colspan="2">
-    <widget class="QPushButton" name="run_button">
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_position">
      <property name="text">
-      <string>Run</string>
+      <string>Position</string>
      </property>
     </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QComboBox" name="position_combobox"/>
-   </item>
-   <item row="14" column="1">
-    <widget class="QCheckBox" name="checkBox">
-     <property name="text">
-      <string>Blank Beam</string>
-     </property>
-    </widget>
-   </item>
-   <item row="13" column="1">
-    <widget class="QDoubleSpinBox" name="hfw_spinbox"/>
-   </item>
-   <item row="11" column="1">
-    <widget class="QDoubleSpinBox" name="timeDuration_spinbox"/>
    </item>
    <item row="8" column="0">
     <widget class="QLabel" name="GIS_insert_status_label">
@@ -133,17 +144,16 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_position">
-     <property name="text">
-      <string>Position</string>
-     </property>
-    </widget>
+   <item row="11" column="1">
+    <widget class="QDoubleSpinBox" name="timeDuration_spinbox"/>
    </item>
-   <item row="3" column="1">
-    <widget class="QPushButton" name="insertGIS_button">
+   <item row="15" column="1">
+    <widget class="QLineEdit" name="app_file_lineEdit"/>
+   </item>
+   <item row="15" column="0">
+    <widget class="QLabel" name="app_file_label">
      <property name="text">
-      <string>Insert</string>
+      <string>App. File</string>
      </property>
     </widget>
    </item>

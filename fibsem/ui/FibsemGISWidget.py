@@ -1,11 +1,10 @@
 import logging
-
 import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
-
-from fibsem import constants, conversions
+from fibsem import config as cfg
+from fibsem import constants, conversions, utils
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import (MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
@@ -47,6 +46,9 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         if isinstance(self.microscope, TescanMicroscope):
             self.tescan_setup()
         if isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope)):
+            
+            protocol = utils.load_yaml(cfg.PROTOCOL_PATH)
+            self.protocol = protocol
             self.thermo_setup()
 
 
@@ -62,6 +64,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.insertGIS_button.hide()
         self.GIS_radioButton.hide()
         self.multichem_radioButton.hide()
+        self.app_file_lineEdit.hide()
+        self.app_file_label.hide()
         self.GIS = True
         
 
@@ -126,7 +130,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.mc_lines = self.microscope.multichem_available_lines()
         self.mc_current_line = self.mc_lines[0]
         self.mc_available_positions = self.microscope.multichem_available_positions()
-
+        self.app_file_lineEdit.setText(self.protocol['milling']['application_file'])
 
         self.GIS_inserted = True
         self.insert_retract_gis()
