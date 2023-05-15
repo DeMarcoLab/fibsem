@@ -112,7 +112,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         r = self.dR_spinbox.value() * constants.DEGREES_TO_RADIANS
         t = self.dT_spinbox.value() * constants.DEGREES_TO_RADIANS
 
-        position = FibsemManipulatorPosition(x=x,y=y,z=z,r=r,t=t)
+        position = FibsemManipulatorPosition(x=x,y=y,z=z,r=r,t=t, coordinate_system="STAGE")
 
         e = self.microscope.move_manipulator_relative(position=position)
         if e is not None:

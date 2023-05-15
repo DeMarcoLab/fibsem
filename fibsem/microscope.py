@@ -1091,7 +1091,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 named_position, ManipulatorCoordinateSystem.STAGE
             )
                 
-        return position
+        return FibsemManipulatorPosition.from_autoscript_position(position)
 
     def setup_milling(
         self,
@@ -1547,7 +1547,7 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
 
         port = self.gis_lines[line_name]
-        port = self.gis_lines[line_name]
+        # port = self.gis_lines[line_name]
 
         if position == "Insert":
             port.insert()
