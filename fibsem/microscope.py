@@ -3830,9 +3830,9 @@ class DemoMicroscope(FibsemMicroscope):
         pre_tilt = np.deg2rad(settings.system.stage.pre_tilt)
         
         stage_position = FibsemStagePosition(
-            x=dx,
-            y=dy*np.cos(pre_tilt),
-            z=dy*np.sin(pre_tilt),
+            x=float(dx),
+            y=float(dy*np.cos(pre_tilt)),
+            z=float(dy*np.sin(pre_tilt)),
             r=0,
             t=0,
             coordinate_system="RAW",
