@@ -38,7 +38,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
-        self.GIS_widget: FibsemGISWidget = None
+
 
         CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
         self.system_widget = FibsemSystemSetupWidget(
@@ -73,7 +73,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setTabVisible(2, _microscope_connected)
         self.tabWidget.setTabVisible(3, _microscope_connected)
         self.tabWidget.setTabVisible(4, _microscope_connected)
-        self.tabWidget.setTabVisible(5, _microscope_connected)
+
 
     def connect_to_microscope(self):
         self.microscope = self.system_widget.microscope
@@ -119,19 +119,14 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
-            self.GIS_widget = FibsemGISWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
+
 
             # add widgets to tabs
             self.tabWidget.addTab(self.image_widget, "Image")
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
-            self.tabWidget.addTab(self.GIS_widget, "GIS")
+
 
 
         else:
@@ -139,7 +134,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 return
             
             # remove tabs
-            self.tabWidget.removeTab(5)
+
             self.tabWidget.removeTab(4)
             self.tabWidget.removeTab(3)
             self.tabWidget.removeTab(2)

@@ -54,29 +54,49 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.savedPosition_combobox.addItem("PARK")
             self.savedPosition_combobox.addItem("EUCENTRIC")
 
+            self.move_type_comboBox.currentIndexChanged.connect(self.change_move_type)
+            self.move_type_comboBox.setCurrentIndex(0)
+            self.change_move_type()
+            self.dR_spinbox.setEnabled(False)
+            self.dR_spinbox.hide()
+            self.dr_label.hide()
 
+        if _TESCAN:
             
+            self.move_type_comboBox.hide()
+            self.beam_type_label.hide()
+            self.beam_type_combobox.hide()
+
+
+
+    def change_move_type(self):
+
+        if self.move_type_comboBox.currentText() == "Relative Move":
+            self.dZ_spinbox.setEnabled(True)
+            self.dZ_spinbox.show()
+            self.dz_label.show()
+            self.beam_type_label.hide()
+            self.beam_type_combobox.hide()
+        else:
+            self.dZ_spinbox.setEnabled(False)
+            self.dZ_spinbox.hide()
+            self.dz_label.hide()
+            self.beam_type_label.show()
+            self.beam_type_combobox.show()
+
+       
 
     def update_ui(self):
-
-        manipulator_position = self.microscope.get_manipulator_position()
-
-        self.xCoordinate_spinbox.setValue(manipulator_position.x * constants.SI_TO_MILLI)
-        self.yCoordinate_spinbox.setValue(manipulator_position.y * constants.SI_TO_MILLI)
-        self.zCoordinate_spinbox.setValue(manipulator_position.z * constants.SI_TO_MILLI)
-        self.rotationCoordinate_spinbox.setValue(manipulator_position.r * constants.RADIANS_TO_DEGREES)
-        self.tiltCoordinate_spinbox.setValue(manipulator_position.t * constants.RADIANS_TO_DEGREES)
 
         self.dX_spinbox.setValue(0)
         self.dY_spinbox.setValue(0)
         self.dZ_spinbox.setValue(0)
         self.dR_spinbox.setValue(0)
-        self.dT_spinbox.setValue(0)
+
 
         
     def setup_connections(self):
 
-        self.movetoposition_button.clicked.connect(self.move_to_position)
         self.insertManipulator_button.clicked.connect(self.insert_retract_manipulator)
         self.addSavedPosition_button.clicked.connect(self.add_saved_position)
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
@@ -85,30 +105,12 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")
 
 
-    def move_to_position(self):
-
-        x = self.xCoordinate_spinbox.value() * constants.MILLI_TO_SI
-        y = self.yCoordinate_spinbox.value() * constants.MILLI_TO_SI
-        z = self.zCoordinate_spinbox.value() * constants.MILLI_TO_SI
-        r = self.rotationCoordinate_spinbox.value() * constants.DEGREES_TO_RADIANS
-        t = self.tiltCoordinate_spinbox.value() * constants.DEGREES_TO_RADIANS
-
-        position = FibsemManipulatorPosition(x=x,y=y,z=z,r=r,t=t)
-
-         
-        e = self.microscope.move_manipulator_absolute(position=position)
-        if e is not None:
-            error_message = f"Error moving manipulator: {str(e)}"
-            napari.utils.notifications.show_error(error_message)
-            self.update_ui()
-
-        self.update_ui()
 
     def move_relative(self):
 
-        x = self.dX_spinbox.value() * constants.MILLI_TO_SI
-        y = self.dY_spinbox.value() * constants.MILLI_TO_SI
-        z = self.dZ_spinbox.value() * constants.MILLI_TO_SI
+        x = self.dX_spinbox.value() * constants.MICRO_TO_SI
+        y = self.dY_spinbox.value() * constants.MICRO_TO_SI
+        z = self.dZ_spinbox.value() * constants.MICRO_TO_SI
         r = self.dR_spinbox.value() * constants.DEGREES_TO_RADIANS
         t = self.dT_spinbox.value() * constants.DEGREES_TO_RADIANS
 
@@ -143,6 +145,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
 
     def add_saved_position(self):
+
         if self.savedPositionName_lineEdit.text() == "":
             _ = message_box_ui(
                 title="No name.",
@@ -151,14 +154,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             )
             return
         name = self.savedPositionName_lineEdit.text()
-        position = FibsemManipulatorPosition(
-            x=self.xCoordinate_spinbox.value() * constants.MILLI_TO_SI,
-            y=self.yCoordinate_spinbox.value() * constants.MILLI_TO_SI,
-            z=self.zCoordinate_spinbox.value() * constants.MILLI_TO_SI,
-            r=self.rotationCoordinate_spinbox.value() * constants.DEGREES_TO_RADIANS,
-            t=self.tiltCoordinate_spinbox.value() * constants.DEGREES_TO_RADIANS,
-            coordinate_system='STAGE'
-        )
+        position = self.microscope.get_manipulator_position()
         self.saved_positions[name] = position
         logging.info(f"Saved position {name} at {position}")
         self.savedPosition_combobox.addItem(name)
