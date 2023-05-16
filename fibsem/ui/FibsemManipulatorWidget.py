@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMessageBox
 
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, TescanMicroscope, DemoMicroscope
-from fibsem.structures import (MicroscopeSettings, FibsemManipulatorPosition)
+from fibsem.structures import (MicroscopeSettings, FibsemManipulatorPosition,BeamType)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemManipulatorWidget
 from fibsem.ui.utils import message_box_ui
@@ -40,7 +40,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.update_ui()
 
         _THERMO = isinstance(self.microscope, (ThermoMicroscope,DemoMicroscope))
-        _TESCAN = isinstance(self.microscope, (TescanMicroscope,DemoMicroscope))
+        _TESCAN = isinstance(self.microscope, (TescanMicroscope))
 
 
         if _THERMO:
@@ -66,6 +66,8 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.move_type_comboBox.hide()
             self.beam_type_label.hide()
             self.beam_type_combobox.hide()
+            self.insertManipulator_button.hide()
+            self.manipulatorStatus_label.hide()
 
 
 
@@ -108,21 +110,34 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
     def move_relative(self):
 
-        x = self.dX_spinbox.value() * constants.MICRO_TO_SI
-        y = self.dY_spinbox.value() * constants.MICRO_TO_SI
-        z = self.dZ_spinbox.value() * constants.MICRO_TO_SI
-        r = self.dR_spinbox.value() * constants.DEGREES_TO_RADIANS
-        t = self.dT_spinbox.value() * constants.DEGREES_TO_RADIANS
+        if self.move_type_comboBox.currentText() == "Relative Move" or isinstance(self.microscope, (TescanMicroscope)):
+            x = self.dX_spinbox.value() * constants.MICRO_TO_SI
+            y = self.dY_spinbox.value() * constants.MICRO_TO_SI
+            z = self.dZ_spinbox.value() * constants.MICRO_TO_SI
+            r = self.dR_spinbox.value() * constants.DEGREES_TO_RADIANS
 
-        position = FibsemManipulatorPosition(x=x,y=y,z=z,r=r,t=t, coordinate_system="STAGE")
 
-        e = self.microscope.move_manipulator_relative(position=position)
-        if e is not None:
-            error_message = f"Error moving manipulator: {str(e)}"
-            napari.utils.notifications.show_error(error_message)
+            position = FibsemManipulatorPosition(x=x,y=y,z=z,r=r, coordinate_system="STAGE")
+
+            e = self.microscope.move_manipulator_relative(position=position)
+            if e is not None:
+                error_message = f"Error moving manipulator (Relative): {str(e)}"
+                napari.utils.notifications.show_error(error_message)
+                self.update_ui()
+            
             self.update_ui()
+        else:
+            beam_type = getattr(BeamType,self.beam_type_combobox.currentText())
+            x = self.dX_spinbox.value() * constants.MICRO_TO_SI
+            y = self.dY_spinbox.value() * constants.MICRO_TO_SI
+            e = self.microscope.move_manipulator_corrected(x=x,y=y,beam_type=beam_type)
+            if e is not None:
+                error_message = f"Error moving manipulator (Corrected): {str(e)}"
+                napari.utils.notifications.show_error(error_message)
+                self.update_ui()
+            self.update_ui()      
+  
         
-        self.update_ui()
 
     def insert_retract_manipulator(self):
         
