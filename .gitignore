@@ -42,3 +42,5 @@ test_images/test.tif
 
 fibsem/detection/notebook.ipynb
 
+media/*
+.DS_Store
