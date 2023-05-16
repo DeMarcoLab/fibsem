@@ -1525,7 +1525,7 @@ class ThermoMicroscope(FibsemMicroscope):
             in the `MicroscopeState` object, and then restores the electron and ion beam settings to their values in the `MicroscopeState`
             object. It also logs messages indicating the progress of the operation.
         """
-
+        resolution = f"{microscope_state.eb_settings.resolution[0]}x{microscope_state.eb_settings.resolution[1]}"
         # Restore electron beam settings
         if self.hardware_settings.electron_beam is False:
             logging.warning("Electron beam is not available.")
@@ -1541,13 +1541,14 @@ class ThermoMicroscope(FibsemMicroscope):
                 microscope_state.eb_settings.hfw
             )
             self.connection.beams.electron_beam.scanning.resolution.value = (
-                microscope_state.eb_settings.resolution
+                resolution
             )
             self.connection.beams.electron_beam.scanning.dwell_time.value = (
                 microscope_state.eb_settings.dwell_time
             )
 
         # Restore ion beam settings
+        resolution = f"{microscope_state.ib_settings.resolution[0]}x{microscope_state.ib_settings.resolution[1]}"
         if self.hardware_settings.ion_beam is False:
             logging.warning("Ion beam is not available.")
         else:
@@ -1562,7 +1563,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 microscope_state.ib_settings.hfw
             )
             self.connection.beams.ion_beam.scanning.resolution.value = (
-                microscope_state.ib_settings.resolution
+                resolution
             )
             self.connection.beams.ion_beam.scanning.dwell_time.value = (
                 microscope_state.ib_settings.dwell_time
@@ -1573,6 +1574,8 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.warning("Specimen stage is not available.")
         else:
             self.connection.specimen.stage.link()
+
+        self.move_stage_absolute(microscope_state.absolute_position)
 
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
@@ -3432,7 +3435,7 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
-
+        self.move_stage_absolute(microscope_state.absolute_position)
         logging.info(f"microscope state restored")
         return
 
@@ -3979,13 +3982,15 @@ class DemoMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
 
-    def set_microscope_state(self, state: MicroscopeState):
+    def set_microscope_state(self, microscope_state: MicroscopeState):
         _check_sputter(self.hardware_settings)
         _check_needle(self.hardware_settings)
         _check_beam(BeamType.ION, self.hardware_settings)
         _check_beam(BeamType.ELECTRON, self.hardware_settings)
         _check_stage(self.hardware_settings)
+        self.move_stage_absolute(microscope_state.absolute_position)
         logging.info(f"Setting microscope state")
+        
 
     def get_available_values(self, key: str, beam_type: BeamType = None) -> list[float]:
         

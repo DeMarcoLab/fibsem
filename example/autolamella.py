@@ -52,7 +52,9 @@ def main():
             # set filepaths
             path = os.path.join(base_path, f"{lamella_no:02d}")
             settings.image.save_path = path
-            
+            settings.image.label = f"ref_lamella"
+            acquire.take_reference_images(microscope, settings.image)
+
             lamella = Lamella(
                 state=microscope.get_current_microscope_state(),
                 reference_image=acquire.new_image(microscope, settings.image),
