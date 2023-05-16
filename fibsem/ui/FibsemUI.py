@@ -5,6 +5,7 @@ import fibsem
 import napari.utils.notifications
 from fibsem import utils
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
@@ -32,6 +33,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.image_widget: FibsemImageSettingsWidget = None
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
+        self.alignment_widget: FibsemAlignmentWidget = None
 
         CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
         self.system_widget = FibsemSystemSetupWidget(
@@ -52,6 +54,12 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
+        self.actionCurrent_alignment.triggered.connect(self.align_currents)
+
+    def align_currents(self):
+        second_viewer = napari.Viewer()
+        self.alignment_widget = FibsemAlignmentWidget(settings=self.settings, microscope=self.microscope, viewer=second_viewer)
+        second_viewer.window.add_dock_widget(self.alignment_widget)
 
     def set_stage_parameters(self):
         if self.microscope is None:
