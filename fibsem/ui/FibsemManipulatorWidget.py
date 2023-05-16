@@ -128,9 +128,9 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.update_ui()
         else:
             beam_type = getattr(BeamType,self.beam_type_combobox.currentText())
-            x = self.dX_spinbox.value() * constants.MICRO_TO_SI
-            y = self.dY_spinbox.value() * constants.MICRO_TO_SI
-            e = self.microscope.move_manipulator_corrected(x=x,y=y,beam_type=beam_type)
+            dx = self.dX_spinbox.value() * constants.MICRO_TO_SI
+            dy = self.dY_spinbox.value() * constants.MICRO_TO_SI
+            e = self.microscope.move_manipulator_corrected(dx=dx,dy=dy,beam_type=beam_type)
             if e is not None:
                 error_message = f"Error moving manipulator (Corrected): {str(e)}"
                 napari.utils.notifications.show_error(error_message)
