@@ -98,12 +98,12 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_WizardPage, QtWidgets.QWid
         self.pushButton_align_beam.setEnabled(True)
 
     def update_viewer(self, arr: np.ndarray, name: str = None):
-        arr = ui_utils._draw_crosshair(arr)
+        # arr = ui_utils._draw_crosshair(arr)
 
         try:
             self.viewer.layers[name].data = arr
         except:    
-            layer = self.viewer.add_image(arr, name = name)
+            layer = self.viewer.add_image(arr, name = name, colormap= "red" if name == "Reference" else "green")
         
 
         layer = self.viewer.layers[name]
