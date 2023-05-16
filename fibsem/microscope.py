@@ -1522,14 +1522,14 @@ class ThermoMicroscope(FibsemMicroscope):
         gis_list = self.connection.gas.list_all_gis_ports()
 
         self.gis_lines = {}
-        self.gis_lines = {}
+
 
         for line in gis_list:
             
             gis_port = ThermoGISLine(self.connection.gas.get_gis_port(line),name=line,status="Retracted")
 
             self.gis_lines[line] = gis_port
-            self.gis_lines[line] = gis_port
+
 
 
         return gis_list
@@ -1559,9 +1559,31 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
 
         port = self.gis_lines[line]
-        port = self.gis_lines[line]
 
         return port.status
+    
+    def GIS_heat_up(self,line):
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line]
+
+        port.line.turn_heater_on()
+
+        time.sleep(3)
+
+        port.line.turn_heater_off()
+
+        port.temp_ready = True
+
+    def GIS_temp_ready(self,line) -> bool:
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line]
+
+        return port.temp_ready
+
         
     def multichem_available_lines(self)-> list[str]:
 
@@ -1570,6 +1592,12 @@ class ThermoMicroscope(FibsemMicroscope):
         self.multichem = ThermoMultiChemLine(self.connection.gas.get_multichem())
 
         self.mc_lines = self.multichem.line.list_all_gases()
+
+        self.mc_lines_temp ={}
+
+        for line in self.mc_lines:
+
+            self.mc_lines_temp[line] = False
 
         return self.mc_lines
     
@@ -1596,6 +1624,28 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
 
         return self.multichem.current_position
+    
+    def multichem_heat_up(self,line:str):
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        self.multichem.line.turn_heater_on(line)
+
+        time.sleep(3)
+
+        self.multichem.line.turn_heater_off(line)
+
+        self.mc_lines_temp[line] = True
+
+    def multichem_temp_ready(self,line:str) -> bool:
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        return self.mc_lines_temp[line]
 
     def set_microscope_state(self, microscope_state: MicroscopeState) -> None:
         """Reset the microscope state to the provided state.
@@ -3555,6 +3605,26 @@ class TescanMicroscope(FibsemMicroscope):
 
         self.connection.GIS.MoveTo(line,self.GIS_positions[position])
 
+    def GIS_heat_up(self,line_name):
+
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        self.connection.GIS.PrepareTemperature(line,True)
+
+        self.connection.GIS.WaitForTemperatureReady(line)
+
+        time.sleep(5)
+
+    def GIS_temp_ready(self,line_name):
+
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        return self.connection.GIS.GetTemperatureReady(line)
+
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state.
@@ -4174,6 +4244,16 @@ class DemoMicroscope(FibsemMicroscope):
 
         return line.status
     
+    def GIS_heat_up(self,line_name):
+        
+        
+        line = self.gis_lines[line_name]
+        time.sleep(5)
+        line.temp_ready = True
+
+    def GIS_temp_ready(self,line_name):
+
+        return self.gis_lines[line_name].temp_ready
 
     def multichem_available_lines(self):
 

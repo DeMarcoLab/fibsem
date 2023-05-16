@@ -27,6 +27,16 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.settings = settings
         self.viewer = viewer
         self.image_widget = image_widget
+        
+
+        self.gis_and_mc_setup()
+
+        self.setup_connections()
+
+        self.update_ui()
+
+
+    def gis_and_mc_setup(self):
         self.GIS_inserted = False
         self.GIS_insert_status_label.setText(f"GIS Status: inserted" if self.GIS_inserted else "GIS Status: retracted")
 
@@ -35,6 +45,9 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         self.gas_combobox.addItems(self.gis_lines)
         self.gis_current_line = self.gis_lines[0]
+
+        self.temp_label.setText(f"Temp: Need Warm Up")
+        self.warm_button.setEnabled(True)
 
         self.gas_combobox.setCurrentText(self.gis_current_line)
 
@@ -50,11 +63,6 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             protocol = utils.load_yaml(cfg.PROTOCOL_PATH)
             self.protocol = protocol
             self.thermo_setup()
-
-
-        self.setup_connections()
-
-        self.update_ui()
 
 
     def tescan_setup(self):
@@ -179,7 +187,17 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.move_GIS_button.clicked.connect(self.move_gis)
         self.GIS_radioButton.toggled.connect(self.change_gis_multichem)
         self.multichem_radioButton.toggled.connect(self.change_gis_multichem)
+        self.warm_button.clicked.connect(self.warm_up_gis)
     
+
+    def warm_up_gis(self):
+        
+        line_name = self.gis_current_line
+        self.microscope.GIS_heat_up(line_name)
+        self.temp_label.setText("Temp: Ready")
+        self.temp_ready = True
+        self.warm_button.setEnabled(False)
+
     def move_gis(self):
 
         if self.GIS:
@@ -197,6 +215,9 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             return
         if self.GIS:
             self.gis_current_line = line_name
+            temp_ready = "Ready" if self.microscope.GIS_temp_ready(self.gis_current_line) else "Need Warm Up"
+            self.temp_label.setText(f"Temp: {temp_ready}")
+            self.warm_button.setEnabled(not self.microscope.GIS_temp_ready(self.gis_current_line))
         else:
             self.mc_current_line = line_name
 

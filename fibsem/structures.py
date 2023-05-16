@@ -1683,6 +1683,7 @@ class ThermoGISLine():
         self.line = line
         self.name = name
         self.status = status
+        self.temp_ready = False
 
     def insert(self):
 
@@ -1708,6 +1709,7 @@ class ThermoMultiChemLine():
             "Retract"
         ]
         self.current_position = "Retract"
+        self.temp_ready = False
 
     def insert(self,position):
 
