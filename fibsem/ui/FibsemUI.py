@@ -146,7 +146,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
             self.manipulator_widget.deleteLater()
-            self.GIS_widget.deleteLater()
+
 
 def main():
 
