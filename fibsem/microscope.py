@@ -2441,6 +2441,7 @@ class TescanMicroscope(FibsemMicroscope):
         elif beam_type == BeamType.ELECTRON:
             beam = self.connection.SEM.Optics
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
+        logging.debug(f"{beam_type.name} | {dx}|{dy}") 
         x, y = beam.GetImageShift()
         dx *=  constants.METRE_TO_MILLIMETRE # Convert to mm from m.
         dy *=  constants.METRE_TO_MILLIMETRE
@@ -3800,6 +3801,7 @@ class DemoMicroscope(FibsemMicroscope):
         beam_type = BeamType.ION # TODO: add beam_type to params for ABC
         _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
+        logging.debug(f"{beam_type.name} | {dx}|{dy}") 
         if beam_type == BeamType.ELECTRON:
             self.electron_beam.shift += Point(dx, dy)
         elif beam_type == BeamType.ION:
