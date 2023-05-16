@@ -3688,6 +3688,7 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "preset":
             beam.Preset.Activate(value)
             logging.info(f"Preset {value} activated for {beam_type}.")
+            return
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return

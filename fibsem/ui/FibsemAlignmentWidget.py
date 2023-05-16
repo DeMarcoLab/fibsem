@@ -7,7 +7,7 @@ from PyQt5 import QtWidgets, QtCore
 
 import numpy as np
 from fibsem import alignment
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope, TescanMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, MicroscopeSettings)
 from fibsem.ui.qtdesigner_files import CurrentAlignmentWidget
@@ -43,11 +43,17 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_WizardPage, QtWidgets.QWid
         self.settings = settings
         self.viewer = viewer
 
-        if self.microscope is not None:
+        if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
             currents = self.microscope.get_available_values("current", BeamType.ION)
             string_list = [str(num) for num in currents]
             self.comboBox_aligned_current.addItems(string_list)
             self.comboBox_ref_current.addItems(string_list)
+        elif isinstance(self.microscope, TescanMicroscope):
+            presets = self.microscope.get_available_values("presets", BeamType.ION)
+            self.comboBox_aligned_current.addItems(presets)
+            self.comboBox_ref_current.addItems(presets)
+            self.label_2.setText("Reference Preset")
+            self.label_3.setText("Aligned Preset")
 
         self.setup_connections()
         self.ref_layer = None
@@ -69,7 +75,10 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_WizardPage, QtWidgets.QWid
                 else self.aligned_layer.data.shape[1]]
 
     def align_beam(self):
-        self.microscope.set("current", float(self.comboBox_aligned_current.currentText()))
+        if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
+            self.microscope.set("current", float(self.comboBox_aligned_current.currentText()), beam_type=BeamType.ION)
+        elif isinstance(self.microscope, TescanMicroscope):
+            self.microscope.set("preset", self.comboBox_aligned_current.currentText(), beam_type=BeamType.ION)
         alignment.beam_shift_alignment(
             microscope=self.microscope,
             image_settings=self.settings.image,
@@ -79,19 +88,26 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_WizardPage, QtWidgets.QWid
         shift = self.microscope.get("shift", BeamType.ION)
         ui_utils.message_box_ui(
             title="Beam Shift Alignment Complete",
-            text=f"Beam Shifted by {shift.x}, {shift.y}",
+            text=f"Beam Shifted by {shift.x}m, {shift.y}m",
+            buttons=QtWidgets.QMessageBox.Ok,
         )
         string = self.listdone.toPlainText()
-        string += (f"Aligned reference {self.comboBox_ref_current.currentText()}A with {self.comboBox_aligned_current.currentText()}A. Beam Shifted by {shift.x}, {shift.y} \n")
+        string += (f"Aligned reference {self.comboBox_ref_current.currentText()} with {self.comboBox_aligned_current.currentText()}. Beam Shifted by {shift.x}m, {shift.y}m \n")
         self.listdone.setPlainText(string)
         self.take_images()
 
     def take_images(self):
-        self.microscope.set("current", float(self.comboBox_ref_current.currentText()))
+        if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
+            self.microscope.set("current", float(self.comboBox_aligned_current.currentText()), beam_type=BeamType.ION)
+        elif isinstance(self.microscope, TescanMicroscope):
+            self.microscope.set("preset", self.comboBox_aligned_current.currentText(), beam_type=BeamType.ION)        
         self.settings.image.beam_type = BeamType.ION
         self.ref_image = self.microscope.acquire_image(self.settings.image)
         self.update_viewer(self.ref_image.data, "Reference")
-        self.microscope.set("current", float(self.comboBox_aligned_current.currentText()))
+        if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
+            self.microscope.set("current", float(self.comboBox_aligned_current.currentText()), beam_type=BeamType.ION)
+        elif isinstance(self.microscope, TescanMicroscope):
+            self.microscope.set("preset", self.comboBox_aligned_current.currentText(), beam_type=BeamType.ION)
         self.settings.image.beam_type = BeamType.ION
         self.aligned_image = self.microscope.acquire_image(self.settings.image)
         self.update_viewer(self.aligned_image.data, "Aligned")
@@ -131,7 +147,7 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_WizardPage, QtWidgets.QWid
 
         if self.ref_layer:
             points = np.array([[-20, 200], [-20, self.ref_layer.data.shape[1] + 150]])
-            string = ["REFERENCE CURRENT", "ALIGNED CURRENT"]
+            string = ["REFERENCE", "ALIGNED"]
             text = {
                 "string": string,
                 "color": "white"
