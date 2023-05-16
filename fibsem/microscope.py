@@ -4261,6 +4261,12 @@ class DemoMicroscope(FibsemMicroscope):
 
         self.mc_lines = ["mc_Water","mc_Pt","mc_C"]
 
+        self.mc_lines_temp ={}
+
+        for line in self.mc_lines:
+
+            self.mc_lines_temp[line] = False
+
         return self.mc_lines
     
     def multichem_available_positions(self):
@@ -4279,6 +4285,24 @@ class DemoMicroscope(FibsemMicroscope):
     def multichem_position(self):
 
         return self.multichem.current_position
+    
+    def multichem_heat_up(self,line:str):
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        time.sleep(3)
+
+        self.mc_lines_temp[line] = True
+
+    def multichem_temp_ready(self,line:str) -> bool:
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        return self.mc_lines_temp[line]
 
 
     def set_microscope_state(self, state: MicroscopeState):

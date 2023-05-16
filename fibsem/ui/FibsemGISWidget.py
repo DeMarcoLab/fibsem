@@ -192,11 +192,16 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
     def warm_up_gis(self):
         
-        line_name = self.gis_current_line
-        self.microscope.GIS_heat_up(line_name)
-        self.temp_label.setText("Temp: Ready")
-        self.temp_ready = True
-        self.warm_button.setEnabled(False)
+        if self.GIS:
+            line_name = self.gis_current_line
+            self.microscope.GIS_heat_up(line_name)
+            self.temp_label.setText("Temp: Ready")
+            self.warm_button.setEnabled(False)
+        else:
+            line_name = self.mc_current_line
+            self.microscope.multichem_heat_up(line_name)
+            self.temp_label.setText("Temp: Ready")
+            self.warm_button.setEnabled(False)
 
     def move_gis(self):
 
@@ -220,7 +225,10 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             self.warm_button.setEnabled(not self.microscope.GIS_temp_ready(self.gis_current_line))
         else:
             self.mc_current_line = line_name
-
+            temp_ready = "Ready" if self.microscope.multichem_temp_ready(self.mc_current_line) else "Need Warm Up"
+            self.temp_label.setText(f"Temp: {temp_ready}")
+            self.warm_button.setEnabled(not self.microscope.multichem_temp_ready(self.mc_current_line))
+            
         current_position_gis = self.microscope.GIS_position(self.gis_current_line)
         current_position_multichem = self.microscope.multichem_position() if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)) else None
 
