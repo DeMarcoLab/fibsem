@@ -22,6 +22,23 @@ class BasePattern(ABC):
     def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
         pass
 
+    def __to_dict__(self):
+        return {
+            "name": self.name,
+            "required_keys": self.required_keys,
+            "protocol": self.protocol,
+            "point": self.point.__to_dict__() if self.point is not None else None,
+        }
+
+    @classmethod
+    def __from_dict__(cls, data):
+        pattern = cls(
+            name=data["name"],
+            required_keys=data["required_keys"],
+        )
+        pattern.protocol=data["protocol"],
+        pattern.point=Point.__from_dict__(data["point"]) if data["point"] is not None else None,
+        return pattern
 @dataclass
 class RectanglePattern(BasePattern):
     name: str = "Rectangle"
@@ -725,6 +742,25 @@ class FibsemMillingStage:
     num: int = 0
     milling: FibsemMillingSettings = FibsemMillingSettings()
     pattern: BasePattern  = get_pattern("Rectangle")
+
+    def __to_dict__(self):
+        return {
+            "name": self.name,
+            "num": self.num,
+            "milling": self.milling.__to_dict__(),
+            "pattern": self.pattern.__to_dict__(),
+        }
+    
+    @classmethod
+    def __from_dict__(cls, data: dict):
+        return cls(
+            name=data["name"],
+            num=data["num"],
+            milling=FibsemMillingSettings.__from_dict__(data["milling"]),
+            pattern=get_pattern(data["pattern"]["name"]).__from_dict__(data["pattern"]),
+        )
+
+
 
 
 PROTOCOL_MILL_MAP = {"cut": RectanglePattern, 
