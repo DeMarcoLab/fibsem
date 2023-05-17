@@ -114,7 +114,7 @@ class CirclePattern(BasePattern):
 @dataclass
 class AnnulusPattern(BasePattern):
     name: str = "Annulus"
-    required_keys: tuple[str] = ("inner radius", "outer radius", "depth")
+    required_keys: tuple[str] = ("thickness", "outer radius", "depth")
     patterns = None
     protocol = None
     point = None
@@ -136,7 +136,7 @@ class AnnulusPattern(BasePattern):
             pattern=FibsemPattern.Circle,
             centre_x=point.x,
             centre_y=point.y,
-            radius=protocol['inner radius'],
+            radius=protocol['outer radius']-protocol['thickness'],
             depth=protocol["depth"],
             start_angle=0,
             end_angle=360,
