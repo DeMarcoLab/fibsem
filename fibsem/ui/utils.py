@@ -219,6 +219,13 @@ def convert_pattern_to_napari_rect(
         pattern_centre_x = (pattern_settings.end_x + pattern_settings.start_x) / 2
         pattern_centre_y = (pattern_settings.end_y + pattern_settings.start_y) / 2
     
+    elif pattern_settings.pattern is FibsemPattern.Annulus: #only used for out of bounds check
+        pattern_width = 2*pattern_settings.radius
+        pattern_height = 2*pattern_settings.radius
+        pattern_centre_x = pattern_settings.centre_x
+        pattern_centre_y = pattern_settings.centre_y
+        pattern_rotation = 0
+
     else:
         pattern_width = pattern_settings.width
         pattern_height = pattern_settings.height
@@ -245,7 +252,7 @@ def convert_pattern_to_napari_rect(
     shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
     return shape
 
-def convert_bitmap_pattern_to_napari_shape(
+def convert_bitmap_pattern_to_napari_image(
         pattern_settings: FibsemPatternSettings, image: FibsemImage
 ) -> np.ndarray:
     # image centre
@@ -273,15 +280,48 @@ def convert_bitmap_pattern_to_napari_shape(
     
     return img_array, translate_position
     
-    
+def convert_pattern_to_napari_image(pattern_settings: FibsemPatternSettings, image: FibsemImage) -> np.ndarray:
 
+    # image centre
+    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+    # pixel size
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
+    resize_x = int(2*pattern_settings.radius / pixelsize_x)
+    resize_y = int(2*pattern_settings.radius / pixelsize_y)
+
+    
+    inner_radius_ratio = (pattern_settings.radius - pattern_settings.thickness)/pattern_settings.radius
+
+    annulus_shape = _create_annulus_shape(width=resize_x, height=resize_y, inner_radius=inner_radius_ratio, outer_radius=1)
+    # annulus_image = np.array(image_rotated)
+
+    pattern_centre_x = int(icx - pattern_settings.radius/pixelsize_x) + image.data.shape[1] 
+    pattern_centre_y = int(icy - pattern_settings.radius/pixelsize_y)
+
+    pattern_point_x = int(pattern_centre_x + pattern_settings.centre_x / pixelsize_x)
+    pattern_point_y = int(pattern_centre_y - pattern_settings.centre_y / pixelsize_y)
+
+    translate_position = (pattern_point_y,pattern_point_x)
+
+    return annulus_shape, translate_position
+   
+def _create_annulus_shape(width, height, inner_radius, outer_radius):
+    # Create a grid of coordinates
+    x = np.linspace(-1, 1, width)
+    y = np.linspace(-1, 1, height)
+    X, Y = np.meshgrid(x, y)
+    distance = np.sqrt(X**2 + Y**2)
+    # Generate the donut shape
+    donut = np.logical_and(distance < outer_radius, distance > inner_radius).astype(int)
+    return donut
 
 
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
     # remove all shapes layers
     layers_to_remove = []
     for layer in viewer.layers:
-        if isinstance(layer, layer_type) or layer.name == "bmp_Image":
+        if isinstance(layer, layer_type) or layer.name in ["bmp_Image","annulus_Image"]:
             layers_to_remove.append(layer)
     for layer in layers_to_remove:
         viewer.layers.remove(layer)  # Not removing the second layer?
@@ -309,13 +349,15 @@ def _draw_patterns_in_napari(
             if pattern_settings.pattern is FibsemPattern.Bitmap:
                 if pattern_settings.path == None or pattern_settings.path == '':
                     continue
-                bmp_Image, translate_position = convert_bitmap_pattern_to_napari_shape(pattern_settings=pattern_settings, image=ib_image)
+                bmp_Image, translate_position = convert_bitmap_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
                 viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
                 shape_patterns = []
                 continue
             elif pattern_settings.pattern is FibsemPattern.Annulus:
-                print(pattern_settings)
-
+                annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
+                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap='yellow',opacity=0.7)
+                shape_patterns = []
+                continue
 
             elif pattern_settings.pattern is FibsemPattern.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)

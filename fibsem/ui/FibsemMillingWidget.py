@@ -428,7 +428,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             point = self.milling_stages[index].pattern.point
             self.update_pattern_ui(pattern_protocol, point)
         else:
-            self.viewer.layers.remove("Stage 1")
+            layers_to_remove = ["Stage 1","annulus_Image","bmp_Image"]
+            for layer in self.viewer.layers:
+                
+                if layer.name in layers_to_remove:
+                    self.viewer.layers.remove(layer)
+            # self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
         

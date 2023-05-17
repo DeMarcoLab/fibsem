@@ -91,7 +91,7 @@ patterns:
     path: 
   Annulus:
     thickness: 2.0e-6
-    outer radius: 10.0e-6
+    radius: 10.0e-6
     depth: 1.0e-6  
 
   

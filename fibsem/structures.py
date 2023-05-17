@@ -822,7 +822,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
         elif pattern == FibsemPattern.Annulus:
             self.centre_x = kwargs["centre_x"]
             self.centre_y = kwargs["centre_y"]
-            self.outer_radius = kwargs["outer radius"]
+            self.radius = kwargs["radius"]
             self.thickness = kwargs["thickness"]
             self.depth = kwargs["depth"]
             self.start_angle = kwargs["start_angle"] if "start_angle" in kwargs else 0.0
@@ -841,7 +841,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
         if self.pattern is FibsemPattern.Bitmap:
             return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, width={self.width}, height={self.height}, depth={self.depth}, path={self.path})"
         if self.pattern is FibsemPattern.Annulus:
-            return f'FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, outer_radius={self.outer_radius}, thickness={self.thickness}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})'
+            return f'FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, thickness={self.thickness}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})'
 
     @staticmethod
     def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
@@ -899,7 +899,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 pattern=FibsemPattern.Annulus,
                 centre_x=state_dict["centre_x"],
                 centre_y=state_dict["centre_y"],
-                outer_radius=state_dict["outer radius"],
+                radius=state_dict["radius"],
                 thickness=state_dict["thickness"],
                 depth=state_dict["depth"],
                 start_angle=state_dict["start_angle"],
@@ -965,7 +965,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "pattern": "Annulus",
                 "centre_x": self.centre_x,
                 "centre_y": self.centre_y,
-                "outer radius": self.outer_radius,
+                "radius": self.radius,
                 "thickness": self.thickness,
                 "depth": self.depth,
                 "start_angle": self.start_angle,

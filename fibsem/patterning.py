@@ -114,7 +114,7 @@ class CirclePattern(BasePattern):
 @dataclass
 class AnnulusPattern(BasePattern):
     name: str = "Annulus"
-    required_keys: tuple[str] = ("thickness", "outer radius", "depth")
+    required_keys: tuple[str] = ("thickness", "radius", "depth")
     patterns = None
     protocol = None
     point = None
@@ -129,6 +129,7 @@ class AnnulusPattern(BasePattern):
         protocol["end_angle"] = 360
         protocol["rotation"] = 0
         protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
 
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
