@@ -27,7 +27,7 @@ def log_status_message(stage: FibsemMillingStage, step: str):
         f"STATUS | Milling Widget | {stage.name} | {step}"
     )
 
-class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_WizardPage, QtWidgets.QWidget):
+class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_Form, QtWidgets.QWidget):
     # milling_param_changed = QtCore.pyqtSignal()
 
     def __init__(
@@ -59,6 +59,14 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_WizardPage, QtWidgets.QWid
         self.ref_layer = None
         self.aligned_layer = None
         
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            event.accept()
+            print('Window closed')
+        else:
+            event.ignore() 
+
     def setup_connections(self):
         self.checkBox_overlay.stateChanged.connect(self.update_overlay)
         self.pushButton_align_beam.clicked.connect(self.align_beam)

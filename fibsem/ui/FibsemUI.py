@@ -11,11 +11,14 @@ from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QMessageBox
 from fibsem import config as cfg
 
 
-from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
+from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
 from fibsem.ui.qtdesigner_files import FibsemUI
+from fibsem.structures import BeamType
 
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
@@ -48,6 +51,21 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.update_ui()
 
+    # Install event filter to capture close event
+        self.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.Close:
+            self.on_close_event(event)
+        return super().eventFilter(obj, event)
+
+    def on_close_event(self, event):
+        reply = QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            event.accept()
+            print('Window closed')
+        else:
+            event.ignore()
 
     def setup_connections(self):
 
@@ -58,6 +76,10 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def align_currents(self):
         second_viewer = napari.Viewer()
+        if isinstance(self.microscope, ThermoMicroscope)or isinstance(self.microscope, DemoMicroscope):
+            self.reset_current = self.microscope.get("current", BeamType.ION) 
+        elif isinstance(self.microscope, TescanMicroscope):
+            self.reset_current = self.microscope.get("preset", BeamType.ION)
         self.alignment_widget = FibsemAlignmentWidget(settings=self.settings, microscope=self.microscope, viewer=second_viewer)
         second_viewer.window.add_dock_widget(self.alignment_widget)
 

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>WizardPage</class>
- <widget class="QWizardPage" name="WizardPage">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>373</width>
-    <height>484</height>
+    <width>398</width>
+    <height>380</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>WizardPage</string>
+   <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="4" column="0">
@@ -21,9 +21,6 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="1">
-    <widget class="QComboBox" name="comboBox_ref_current"/>
-   </item>
    <item row="6" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_align_beam">
      <property name="text">
@@ -31,8 +28,15 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="1">
-    <widget class="QComboBox" name="comboBox_aligned_current"/>
+   <item row="2" column="1">
+    <widget class="QCheckBox" name="checkBox_overlay">
+     <property name="text">
+      <string>Overlay Images</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QPlainTextEdit" name="listdone"/>
    </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label">
@@ -48,17 +52,16 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Reference Current (Left):</string>
-     </property>
-    </widget>
+   <item row="4" column="1">
+    <widget class="QComboBox" name="comboBox_aligned_current"/>
    </item>
-   <item row="2" column="1">
-    <widget class="QCheckBox" name="checkBox_overlay">
+   <item row="3" column="1">
+    <widget class="QComboBox" name="comboBox_ref_current"/>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_take_images">
      <property name="text">
-      <string>Overlay Images</string>
+      <string>Take Images</string>
      </property>
     </widget>
    </item>
@@ -75,15 +78,12 @@
      </property>
     </spacer>
    </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_take_images">
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Take Images</string>
+      <string>Reference Current (Left):</string>
      </property>
     </widget>
-   </item>
-   <item row="7" column="0" colspan="2">
-    <widget class="QPlainTextEdit" name="listdone"/>
    </item>
    <item row="8" column="0" colspan="2">
     <spacer name="verticalSpacer">
