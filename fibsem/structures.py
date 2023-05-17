@@ -229,6 +229,10 @@ Methods:
             self.coordinate_system,
         )
 
+    def _scale_repr(self, scale: float, precision: int = 2):
+        return f"x:{self.x*scale:.{precision}f}, y:{self.y*scale:.{precision}f}, z:{self.z*scale:.{precision}f}"
+
+
 @dataclass
 class FibsemHardware:
     """Data class for storing hardware information.

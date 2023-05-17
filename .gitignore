@@ -41,4 +41,6 @@ fibsem/log/data/*
 test_images/test.tif
 
 fibsem/detection/notebook.ipynb
-*.DS_Store
+
+media/*
+.DS_Store
