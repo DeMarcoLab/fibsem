@@ -189,7 +189,7 @@ def setup_session(
         protocol_path = os.getcwd()
 
     # configure paths
-    if session_path is None:
+    if session_path is None:# change this to cfg.LOG_PATH
         session_path = os.path.join(os.path.dirname(protocol_path), session)
     os.makedirs(session_path, exist_ok=True)
 
