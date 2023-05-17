@@ -111,6 +111,42 @@ class CirclePattern(BasePattern):
         self.point = point
         return self.patterns
 
+@dataclass
+class AnnulusPattern(BasePattern):
+    name: str = "Annulus"
+    required_keys: tuple[str] = ("inner radius", "outer radius", "depth")
+    patterns = None
+    protocol = None
+    point = None
+    def define(
+            self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        
+        outer_circle = FibsemPatternSettings(
+            pattern=FibsemPattern.Circle,
+            centre_x=point.x,
+            centre_y=point.y,
+            radius=protocol['outer radius'],
+            depth=protocol['depth'],
+            start_angle=0,
+            end_angle=360,
+        )
+
+        inner_circle = FibsemPatternSettings(
+            pattern=FibsemPattern.Circle,
+            centre_x=point.x,
+            centre_y=point.y,
+            radius=protocol['inner radius'],
+            depth=protocol["depth"],
+            start_angle=0,
+            end_angle=360,
+        )
+
+        self.patterns = [outer_circle, inner_circle]
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
 
 @dataclass
 class TrenchPattern(BasePattern):
@@ -670,6 +706,7 @@ __PATTERNS__ = [
     CloverPattern,
     TriForcePattern,
     BitmapPattern,
+    AnnulusPattern,
 ]
 
 def get_pattern(name: str) -> BasePattern:

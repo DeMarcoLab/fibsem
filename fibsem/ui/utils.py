@@ -337,6 +337,7 @@ def _draw_patterns_in_napari(
                 edge_color=colour[i % 5],
                 face_color=colour[i % 5],
                 opacity=0.5,
+                blending="translucent",
             )
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
