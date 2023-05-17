@@ -81,7 +81,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         elif isinstance(self.microscope, TescanMicroscope):
             self.reset_current = self.microscope.get("preset", BeamType.ION)
         self.alignment_widget = FibsemAlignmentWidget(settings=self.settings, microscope=self.microscope, viewer=second_viewer)
-        second_viewer.window.add_dock_widget(self.alignment_widget)
+        second_viewer.window.add_dock_widget(self.alignment_widget, name='Beam Alignment', area='right')
 
     def set_stage_parameters(self):
         if self.microscope is None:

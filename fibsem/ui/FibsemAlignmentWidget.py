@@ -27,7 +27,7 @@ def log_status_message(stage: FibsemMillingStage, step: str):
         f"STATUS | Milling Widget | {stage.name} | {step}"
     )
 
-class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.QWidget):
     # milling_param_changed = QtCore.pyqtSignal()
 
     def __init__(
@@ -83,6 +83,10 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_Form, QtWidgets.QWidget):
                 else self.aligned_layer.data.shape[1]]
 
     def align_beam(self):
+        self.pushButton_align_beam.setEnabled(False)
+        self.pushButton_align_beam.setText("Aligning...")
+        self.pushButton_align_beam.setStyleSheet("color: orange")
+        
         if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
             self.microscope.set("current", float(self.comboBox_aligned_current.currentText()), beam_type=BeamType.ION)
         elif isinstance(self.microscope, TescanMicroscope):
@@ -103,6 +107,9 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_Form, QtWidgets.QWidget):
         string += (f"Aligned reference {self.comboBox_ref_current.currentText()} with {self.comboBox_aligned_current.currentText()}. Beam Shifted by {shift.x}m, {shift.y}m \n")
         self.listdone.setPlainText(string)
         self.take_images()
+        self.pushButton_align_beam.setEnabled(True)
+        self.pushButton_align_beam.setText("Align Beam")
+        self.pushButton_align_beam.setStyleSheet("color: white")
 
     def take_images(self):
         if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
