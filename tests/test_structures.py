@@ -825,17 +825,6 @@
 #     from_dict = structures.MicroscopeSettings.__from_dict__(to_dict)
 #     assert settings == from_dict
 
-# def test_default_settings():
-#     dict = {
-#         "imaging_current": 20.0e-12,
-#         "milling_current": 2.0e-9,
-#     }
-
-#     settings = structures.DefaultSettings.__from_dict__(dict)
-#     assert settings.imaging_current == 20.0e-12
-#     assert settings.milling_current == 2.0e-9
-
-
 # def test_system_settings():
 #     system = structures.SystemSettings(
 #             ip_address="localhost",

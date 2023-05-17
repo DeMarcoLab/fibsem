@@ -258,7 +258,6 @@ def load_settings_from_config(
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
-    # default_settings = DefaultSettings.__from_dict__(settings["user"])
     image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
 
     milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
@@ -271,7 +270,6 @@ def load_settings_from_config(
 
     settings = MicroscopeSettings(
         system=system_settings,
-        # default=default_settings,
         image=image_settings,
         protocol=protocol,
         milling=milling_settings,

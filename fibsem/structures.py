@@ -1204,25 +1204,6 @@ class SystemSettings:
 
         return system_settings
 
-
-@dataclass
-class DefaultSettings:
-    """
-    Default settings for the imaging and milling current 
-    """
-    imaging_current: float = 20.0e-12
-    milling_current: float = 2.0e-9
-
-    @staticmethod
-    def __from_dict__(settings: dict) -> "DefaultSettings":
-
-        default_settings = DefaultSettings(
-            imaging_current=settings["imaging_current"],
-            milling_current=settings["milling_current"],
-        )
-        return default_settings
-
-
 @dataclass
 class MicroscopeSettings:
 
