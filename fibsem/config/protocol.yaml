@@ -83,3 +83,11 @@ patterns:
     height: 10.0e-6
     width: 1.0e-6
     depth: 5.0e-6 
+  BitmapPattern:
+    width: 10.0e-6
+    height: 10.0e-6
+    depth: 1.0e-6
+    rotation: 0.0
+    path: 
+
+  

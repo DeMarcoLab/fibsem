@@ -5,6 +5,7 @@ from typing import Union
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 from fibsem.config import load_microscope_manufacturer
 from fibsem import constants
@@ -244,11 +245,43 @@ def convert_pattern_to_napari_rect(
     shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
     return shape
 
+def convert_bitmap_pattern_to_napari_shape(
+        pattern_settings: FibsemPatternSettings, image: FibsemImage
+) -> np.ndarray:
+    # image centre
+    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+    # pixel size
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
+    resize_x = int(pattern_settings.width / pixelsize_x)
+    resize_y = int(pattern_settings.height / pixelsize_y)
+
+    
+    image_bmp = Image.open(pattern_settings.path)
+    image_resized = image_bmp.resize((resize_x, resize_y))
+    image_rotated = image_resized.rotate(-pattern_settings.rotation, expand=True)
+    img_array = np.array(image_rotated)
+
+    pattern_centre_x = int(icx - pattern_settings.width/pixelsize_x/2) + image.data.shape[1] 
+    pattern_centre_y = int(icy - pattern_settings.height/pixelsize_y/2)
+
+    pattern_point_x = int(pattern_centre_x + pattern_settings.centre_x / pixelsize_x)
+    pattern_point_y = int(pattern_centre_y - pattern_settings.centre_y / pixelsize_y)
+
+    translate_position = (pattern_point_y,pattern_point_x)
+
+    
+    return img_array, translate_position
+    
+    
+
+
+
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
     # remove all shapes layers
     layers_to_remove = []
     for layer in viewer.layers:
-        if isinstance(layer, layer_type):
+        if isinstance(layer, layer_type) or layer.name == "bmp_Image":
             layers_to_remove.append(layer)
     for layer in layers_to_remove:
         viewer.layers.remove(layer)  # Not removing the second layer?
@@ -273,7 +306,16 @@ def _draw_patterns_in_napari(
         shape_patterns = []
         shape_types = []
         for pattern_settings in stage:
-            if pattern_settings.pattern is FibsemPattern.Circle:
+            if pattern_settings.pattern is FibsemPattern.Bitmap:
+                if pattern_settings.path == None or pattern_settings.path == '':
+                    continue
+                bmp_Image, translate_position = convert_bitmap_pattern_to_napari_shape(pattern_settings=pattern_settings, image=ib_image)
+                viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
+                shape_patterns = []
+                continue
+
+
+            elif pattern_settings.pattern is FibsemPattern.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
                 shape_types.append("ellipse")
             else:
@@ -285,15 +327,17 @@ def _draw_patterns_in_napari(
                 for c in shape:
                     c[1] += eb_image.data.shape[1]
             shape_patterns.append(shape)
-        viewer.add_shapes(
-            shape_patterns,
-            name=f"Stage {i+1}",
-            shape_type=shape_types,
-            edge_width=0.5,
-            edge_color=colour[i % 5],
-            face_color=colour[i % 5],
-            opacity=0.5,
-        )
+
+        if len(shape_patterns) > 0:    
+            viewer.add_shapes(
+                shape_patterns,
+                name=f"Stage {i+1}",
+                shape_type=shape_types,
+                edge_width=0.5,
+                edge_color=colour[i % 5],
+                face_color=colour[i % 5],
+                opacity=0.5,
+            )
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
 

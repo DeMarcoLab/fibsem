@@ -102,6 +102,9 @@ def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
 
     elif pattern.pattern is FibsemPattern.Circle:
         microscope.draw_circle(pattern)
+
+    elif pattern.pattern is FibsemPattern.Bitmap:
+        microscope.draw_bitmap_pattern(pattern, pattern.path)
         
 
 

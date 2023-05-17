@@ -23,6 +23,28 @@ class BasePattern(ABC):
         pass
 
 @dataclass
+class BitmapPattern(BasePattern):
+    name: str = "BitmapPattern"
+    required_keys: tuple[str] = ("width", "height", "depth", "rotation","path")
+    patterns = None
+    protocol = None
+
+    def define(
+            self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        protocol["centre_x"] = point.x
+        protocol["centre_y"] = point.y
+        protocol["pattern"] = "BitmapPattern"  
+        protocol["rotation"] = protocol.get("rotation", 0)
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        protocol["path"] = protocol.get("path", 'bmp_path')
+        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.protocol = protocol
+        return self.patterns
+
+
+@dataclass
 class RectanglePattern(BasePattern):
     name: str = "Rectangle"
     required_keys: tuple[str] = ("width", "height", "depth", "rotation")
@@ -647,6 +669,7 @@ __PATTERNS__ = [
     WaffleNotchPattern,
     CloverPattern,
     TriForcePattern,
+    BitmapPattern,
 ]
 
 def get_pattern(name: str) -> BasePattern:

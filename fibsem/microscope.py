@@ -1347,7 +1347,7 @@ class ThermoMicroscope(FibsemMicroscope):
         path: str,
     ):
 
-        bitmap_pattern = BitmapPatternDefinition().load(path)
+        bitmap_pattern = BitmapPatternDefinition.load(path)
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
