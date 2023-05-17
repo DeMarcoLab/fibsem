@@ -122,27 +122,16 @@ class AnnulusPattern(BasePattern):
             self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPatternSettings]:
         
-        outer_circle = FibsemPatternSettings(
-            pattern=FibsemPattern.Circle,
-            centre_x=point.x,
-            centre_y=point.y,
-            radius=protocol['outer radius'],
-            depth=protocol['depth'],
-            start_angle=0,
-            end_angle=360,
-        )
+        protocol["centre_x"] = point.x
+        protocol["centre_y"] = point.y
+        protocol["pattern"] = "Annulus"  # redundant now
+        protocol["start_angle"] = 0
+        protocol["end_angle"] = 360
+        protocol["rotation"] = 0
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
 
-        inner_circle = FibsemPatternSettings(
-            pattern=FibsemPattern.Circle,
-            centre_x=point.x,
-            centre_y=point.y,
-            radius=protocol['outer radius']-protocol['thickness'],
-            depth=protocol["depth"],
-            start_angle=0,
-            end_angle=360,
-        )
 
-        self.patterns = [outer_circle, inner_circle]
+        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
         self.point = point
         return self.patterns

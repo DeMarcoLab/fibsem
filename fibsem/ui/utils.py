@@ -313,6 +313,8 @@ def _draw_patterns_in_napari(
                 viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
                 shape_patterns = []
                 continue
+            elif pattern_settings.pattern is FibsemPattern.Annulus:
+                print(pattern_settings)
 
 
             elif pattern_settings.pattern is FibsemPattern.Circle:
