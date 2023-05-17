@@ -12,6 +12,11 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, StageSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 
+def log_status_message(step: str):
+    logging.debug(
+        f"STATUS | System Widget | {step}"
+    )
+
 
 class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget):
     set_stage_signal = pyqtSignal()
@@ -63,6 +68,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.settings.system.stage.rotation_flat_to_ion = (
             self.rotationFlatToIonSpinBox.value()
         )
+        self.settings.system.stage.pre_tilt = self.preTiltSpinBox.value()
         self.set_stage_signal.emit()
 
     def set_stage_settings_to_ui(self, stage_settings: StageSettings) -> None:
@@ -75,6 +81,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             stage_settings.rotation_flat_to_electron
         )
         self.rotationFlatToIonSpinBox.setValue(stage_settings.rotation_flat_to_ion)
+        self.preTiltSpinBox.setValue(stage_settings.pre_tilt)
 
     def connect(self):
         if self.lineEdit_ipadress.text() == "":
@@ -84,6 +91,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             return
 
         try:
+            log_status_message("CONNECTING")
             ip_address = self.lineEdit_ipadress.text()
             manufacturer = self.comboBox_manufacturer.currentText()
             # user notification
@@ -100,12 +108,14 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
             # user notification
             msg = f"Connected to microscope at {ip_address}"
+            log_status_message("CONNECTED_AT_" + ip_address)
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
 
         except Exception as e:
             msg = f"Unable to connect to the microscope: {traceback.format_exc()}"
             logging.error(msg)
+            log_status_message(F"CONNECTION_FAILED_{traceback.format_exc()}")
             napari.utils.notifications.show_error(msg)
 
     def connect_to_microscope(self):

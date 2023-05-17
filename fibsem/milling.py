@@ -10,6 +10,7 @@ from fibsem.structures import (
     FibsemMillingSettings,
     Point,
     ImageSettings,
+    MicroscopeSettings
 )
 from typing import Union
 from fibsem.microscope import FibsemMicroscope
@@ -71,21 +72,21 @@ def finish_milling(
 
     """
     # restore imaging current
-    logging.info(f"changing to imaging settings")
+    logging.info(f"Changing to Imaging Settings")
     microscope.finish_milling(imaging_current)
-    logging.info("finished ion beam milling.")
+    logging.info("Finished Ion Beam Milling.")
 
-def draw_patterns(microscope: FibsemMicroscope, pattern_settings_list: list[FibsemPatternSettings]) -> None:
+def draw_patterns(microscope: FibsemMicroscope, patterns: list[FibsemPatternSettings]) -> None:
     """Draw a milling pattern from settings
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
     """
 
-    for pattern_settings in pattern_settings_list:
-        draw_pattern(microscope, pattern_settings)
+    for pattern in patterns:
+        draw_pattern(microscope, pattern)
 
         
-def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
+def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
     """Draw a milling pattern from settings
 
     Args:
@@ -93,14 +94,14 @@ def draw_pattern(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSe
         pattern_settings (FibsemPatternSettings): pattern settings
         mill_settings (FibsemMillingSettings): milling settings
     """
-    if pattern_settings.pattern is FibsemPattern.Rectangle:
-        microscope.draw_rectangle(pattern_settings)
+    if pattern.pattern is FibsemPattern.Rectangle:
+        microscope.draw_rectangle(pattern)
 
-    elif pattern_settings.pattern is FibsemPattern.Line:
-        microscope.draw_line(pattern_settings)
+    elif pattern.pattern is FibsemPattern.Line:
+        microscope.draw_line(pattern)
 
-    elif pattern_settings.pattern is FibsemPattern.Circle:
-        microscope.draw_circle(pattern_settings)
+    elif pattern.pattern is FibsemPattern.Circle:
+        microscope.draw_circle(pattern)
         
 
 
@@ -161,7 +162,7 @@ def extract_trench_parameters(protocol: dict, point: Point = Point()):
     trench_height = protocol["trench_height"]
     upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
     offset = protocol["offset"]
-    milling_depth = protocol["milling_depth"]
+    milling_depth = protocol["depth"]
 
 
     centre_upper_y = point.y + (lamella_height / 2 + upper_trench_height / 2 + offset)
@@ -223,7 +224,7 @@ def draw_stress_relief(
     """
     width = microexpansion_protocol["width"]
     height = microexpansion_protocol["height"]
-    depth = lamella_protocol["milling_depth"]
+    depth = lamella_protocol["depth"]
     if scan_direction is None:
         scan_direction = ["LeftToRight", "RightToLeft"]
 
@@ -312,6 +313,31 @@ def milling_protocol(
         run_milling_drift_corrected(microscope, mill_settings.milling_current, image_settings, ref_image, reduced_area)
     else:
         run_milling(microscope, mill_settings.milling_current, asynch)
+
+    # finish milling
+    finish_milling(microscope)
+
+from fibsem.patterning import FibsemMillingStage
+
+def mill_stages(microscope: FibsemMicroscope, settings: MicroscopeSettings, stages: list[FibsemMillingStage], asynch: bool=False):
+    for stage in stages:
+        print(stage)
+        mill_stage(microscope=microscope, settings=settings, stage=stage, asynch=asynch)
+
+def mill_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings, stage: FibsemMillingStage, asynch: bool=False):
+
+    # set up milling
+    setup_milling(microscope, stage.milling)
+
+    # draw patterns
+    for pattern in stage.pattern.patterns:
+        draw_pattern(microscope, pattern)
+
+    # run milling
+    # if drift_correction:
+    #     run_milling_drift_corrected(microscope, mill_settings.milling_current, image_settings, ref_image, reduced_area)
+    # else:
+    run_milling(microscope, stage.milling.milling_current, asynch)
 
     # finish milling
     finish_milling(microscope)

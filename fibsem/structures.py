@@ -128,21 +128,21 @@ Methods:
     to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
     from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
 """
-    x: float = 0.0
-    y: float = 0.0
-    z: float = 0.0
-    r: float = 0.0
-    t: float = 0.0
+    x: float = None
+    y: float = None
+    z: float = None
+    r: float = None
+    t: float = None
     coordinate_system: str = None
 
-    def __post_init__(self):
+    # def __post_init__(self):
 
-        coordinates = ["x","y","z","r","t"]
-        for coordinate in coordinates:
-            attribute = getattr(self,coordinate)
-            assert isinstance(attribute,float) or isinstance(attribute,int)
+    #     coordinates = ["x","y","z","r","t"]
+    #     for coordinate in coordinates:
+    #         attribute = getattr(self,coordinate)
+    #         assert isinstance(attribute,float) or isinstance(attribute,int)
         
-        assert isinstance(self.coordinate_system,str) or self.coordinate_system is None
+    #     assert isinstance(self.coordinate_system,str) or self.coordinate_system is None
 
     def __to_dict__(self) -> dict:
         position_dict = {}
@@ -228,6 +228,10 @@ Methods:
             self.t - other.t,
             self.coordinate_system,
         )
+
+    def _scale_repr(self, scale: float, precision: int = 2):
+        return f"x:{self.x*scale:.{precision}f}, y:{self.y*scale:.{precision}f}, z:{self.z*scale:.{precision}f}"
+
 
 @dataclass
 class FibsemHardware:
@@ -922,7 +926,7 @@ class FibsemMillingSettings:
         assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
         assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
         assert isinstance(self.application_file,(str)), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
-        assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
+        # assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
 
     def __to_dict__(self) -> dict:
 
@@ -978,9 +982,9 @@ if THERMO:
 def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
     """Converts the FibsemStagePosition Object into a dictionary"""
 
-    attributes = ["x","y","z","r","t"]
-    for attribute in attributes:
-        assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
+    # attributes = ["x","y","z","r","t"]
+    # for attribute in attributes:
+    #     assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
 
     #assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
 
@@ -1549,7 +1553,7 @@ class FibsemImage:
                 metadata = FibsemImageMetadata.__from_dict__(metadata)
             except Exception as e:
                 metadata = None
-                print(f"Error: {e}")
+                # print(f"Error: {e}")
         return cls(data=data, metadata=metadata)
 
     def save(self, save_path: Path = None) -> None:

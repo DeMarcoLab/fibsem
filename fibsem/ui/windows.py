@@ -31,7 +31,7 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
 
     # detect features
     pixelsize = image.metadata.pixel_size.x
-    det = detection.locate_shift_between_features_v2(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
+    det = detection.detect_features(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
 
     # user validate features...
     if validate:

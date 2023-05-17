@@ -8,7 +8,7 @@ import numpy as np
 
 from fibsem.config import load_microscope_manufacturer
 from fibsem import constants
-from fibsem.structures import Point, FibsemImage, FibsemPatternSettings
+from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
@@ -263,7 +263,8 @@ def _draw_patterns_in_napari(
     _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
     
     # colour wheel
-    colour = ["yellow", "cyan", "magenta", "purple"]
+    # colour = ["orange", "yellow", "red", "green", "purple"]
+    colour = ["yellow", "cyan", "magenta", "green", "orange"]
     from fibsem.structures import FibsemPattern
    
     # convert fibsem patterns to napari shapes
@@ -289,8 +290,8 @@ def _draw_patterns_in_napari(
             name=f"Stage {i+1}",
             shape_type=shape_types,
             edge_width=0.5,
-            edge_color=colour[i % 4],
-            face_color=colour[i % 4],
+            edge_color=colour[i % 5],
+            face_color=colour[i % 5],
             opacity=0.5,
         )
 
@@ -370,3 +371,23 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
     cy = int(icy - (centre.y / pixel_size))
     
     return Point(cx, cy)
+
+
+def validate_pattern_placement(patterns: list[FibsemPatternSettings],resolution: list, shape: list[list[float]]):
+
+
+    x_lim = resolution[0]
+    y_lim = resolution[1]
+
+    for coordinate in shape:
+
+        x_coord = coordinate[1]
+        y_coord = coordinate[0]
+
+        if x_coord < 0 or x_coord > x_lim:
+            return False
+        if y_coord < 0 or y_coord > y_lim:
+            return False
+        
+    return True
+    
