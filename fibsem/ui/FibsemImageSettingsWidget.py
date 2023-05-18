@@ -35,6 +35,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
         self.eb_image, self.ib_image = None, None
+        self._features_layer = None
 
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
 
@@ -65,6 +66,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.button_set_beam_settings.clicked.connect(self.apply_beam_settings)
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
+        self.ruler_checkBox.toggled.connect(self.update_ruler)
 
         if self._TESCAN:
 
@@ -73,6 +75,40 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.stigmation_y.hide()
             self.stigmation_x.setEnabled(False)
             self.stigmation_y.setEnabled(False)
+
+    def update_ruler(self):
+        if self.ruler_checkBox.isChecked():
+            self.ruler_label.setText("Ruler: is on")
+            data = [[500,500],[500,1000]]
+            self._features_layer = self.viewer.add_points(data, size=20, face_color='red', edge_color='white', name='ruler')
+            self.viewer.add_shapes(data, shape_type='line', edge_color='red', name='ruler_line',edge_width=5)
+            self._features_layer.mode = 'select'
+            self._features_layer.events.data.connect(self.update_ruler_points)
+            self.viewer.layers.selection.active = self._features_layer
+            
+
+        else:
+            self.ruler_label.setText("Ruler: is off")
+            self.viewer.layers.remove(self._features_layer)
+            self._features_layer = None
+            ui_utils._remove_all_layers(viewer=self.viewer)
+
+    def update_ruler_points(self):
+
+        ui_utils._remove_all_layers(viewer=self.viewer)
+
+        if self._features_layer.selected_data is not None:
+            data = self._features_layer.data
+            p1 = data[0]
+            p2 = data[1]
+            dist_pix = np.linalg.norm(p1-p2)
+            self.viewer.add_shapes(data, shape_type='line', edge_color='red', name='ruler_line',edge_width=5)
+            dist_um = dist_pix * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+            self.ruler_label.setText(f"Ruler: {dist_um:.2f} um")
+            self.viewer.layers.selection.active = self._features_layer
+            
+
+
 
     def update_labels(self):
         self.detector_contrast_label.setText(f"{self.detector_contrast_slider.value()}%")
@@ -239,15 +275,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message("Settings used: {}".format(self.image_settings))
 
     def update_viewer(self, arr: np.ndarray, name: str):
+
+
        
         arr = ui_utils._draw_crosshair(arr)
 
         
         hfw = self.image_settings.hfw
-
         
-
-        # arr = ui_utils._draw_scalebar(arr,hfw=hfw)
+        arr = ui_utils._draw_scalebar(arr,hfw=hfw)
 
         try:
             self.viewer.layers[name].data = arr
@@ -261,11 +297,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
         
-        layer = self.viewer.layers[name]
-        if self.eb_layer is None and name == BeamType.ELECTRON.name:
-            self.eb_layer = layer
-        if self.ib_layer is None and name == BeamType.ION.name:
-            self.ib_layer = layer
+        # layer = self.viewer.layers[name]
+        # if self.eb_layer is None and name == BeamType.ELECTRON.name:
+        #     self.eb_layer = layer
+        # if self.ib_layer is None and name == BeamType.ION.name:
+        #     self.ib_layer = layer
         
         # centre the camera
         if self.eb_layer:
@@ -306,8 +342,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
-        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
 
+        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
+        # self.viewer.scale_bar.visible = True
+        
         
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
