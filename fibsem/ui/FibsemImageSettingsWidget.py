@@ -90,12 +90,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         else:
             self.ruler_label.setText("Ruler: is off")
             self.viewer.layers.remove(self._features_layer)
+            self.viewer.layers.remove('ruler_line')
             self._features_layer = None
-            ui_utils._remove_all_layers(viewer=self.viewer)
+            # ui_utils._remove_all_layers(viewer=self.viewer)
+
+
 
     def update_ruler_points(self):
 
-        ui_utils._remove_all_layers(viewer=self.viewer)
+        self.viewer.layers.remove('ruler_line')
 
         if self._features_layer.selected_data is not None:
             data = self._features_layer.data
