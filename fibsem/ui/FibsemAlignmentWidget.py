@@ -3,7 +3,7 @@ import logging
 from copy import deepcopy
 import napari
 import napari.utils.notifications
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 import numpy as np
 from fibsem import alignment
@@ -42,6 +42,7 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         self.microscope = microscope
         self.settings = settings
         self.viewer = viewer
+        self.parent = parent
 
         if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
             currents = self.microscope.get_available_values("current", BeamType.ION)
@@ -57,15 +58,7 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
 
         self.setup_connections()
         self.ref_layer = None
-        self.aligned_layer = None
-        
-    def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            event.accept()
-            print('Window closed')
-        else:
-            event.ignore() 
+        self.aligned_layer = None   
 
     def setup_connections(self):
         self.checkBox_overlay.stateChanged.connect(self.update_overlay)
@@ -86,7 +79,6 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         self.pushButton_align_beam.setEnabled(False)
         self.pushButton_align_beam.setText("Aligning...")
         self.pushButton_align_beam.setStyleSheet("color: orange")
-        
         if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
             self.microscope.set("current", float(self.comboBox_aligned_current.currentText()), beam_type=BeamType.ION)
         elif isinstance(self.microscope, TescanMicroscope):
@@ -107,15 +99,16 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         string += (f"Aligned reference {self.comboBox_ref_current.currentText()} with {self.comboBox_aligned_current.currentText()}. Beam Shifted by {shift.x}m, {shift.y}m \n")
         self.listdone.setPlainText(string)
         self.take_images()
+        self.parent.ref_current = self.comboBox_ref_current.currentText()
         self.pushButton_align_beam.setEnabled(True)
         self.pushButton_align_beam.setText("Align Beam")
         self.pushButton_align_beam.setStyleSheet("color: white")
 
     def take_images(self):
         if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
-            self.microscope.set("current", float(self.comboBox_aligned_current.currentText()), beam_type=BeamType.ION)
+            self.microscope.set("current", float(self.comboBox_ref_current.currentText()), beam_type=BeamType.ION)
         elif isinstance(self.microscope, TescanMicroscope):
-            self.microscope.set("preset", self.comboBox_aligned_current.currentText(), beam_type=BeamType.ION)        
+            self.microscope.set("preset", self.comboBox_ref_current.currentText(), beam_type=BeamType.ION)        
         self.settings.image.beam_type = BeamType.ION
         self.ref_image = self.microscope.acquire_image(self.settings.image)
         self.update_viewer(self.ref_image.data, "Reference")
