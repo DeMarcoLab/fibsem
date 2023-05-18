@@ -325,6 +325,11 @@ def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.
 
     return response
 
+from PyQt5 import QtGui
+def _display_logo(path, label, shape=[50, 50]):
+    label.setScaledContents(True)
+    label.setFixedSize(*shape)
+    label.setPixmap(QtGui.QPixmap(path))
 
 def _draw_crosshair(arr: np.ndarray, width: float = 0.1) -> np.ndarray:
     # add crosshair
