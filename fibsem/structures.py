@@ -1641,6 +1641,37 @@ class FibsemImage:
             
             return cls(data=np.array(image.Image), metadata=metadata)
 
+        @classmethod
+        def fromTescanFile(
+            cls,
+            image_path: str,
+            metadata_path: str,
+            beam_type: BeamType,
+        ) -> "FibsemImage":
+            
+            with tff.TiffFile(image_path) as tiff_image:
+                data = tiff_image.asarray()
+
+            with open(metadata_path, "r") as f:
+                dictionary = f.read()
+                print(dictionary)
+
+            if beam_type is BeamType.ELECTRON:  
+                image_settings = ImageSettings(
+                    resolution = data.shape,
+                    dwell_time= float(dictionary["SEM"]["DwellTime"]),
+                    hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                )
+
+
+
+    pixel_size: Point
+    microscope_state: MicroscopeState
+    detector_settings: FibsemDetectorSettings
+    version: str = METADATA_VERSION
+    
+
+
 
 @dataclass
 class ReferenceImages:
