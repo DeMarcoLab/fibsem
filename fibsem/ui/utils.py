@@ -355,7 +355,7 @@ def _draw_patterns_in_napari(
                 continue
             elif pattern_settings.pattern is FibsemPattern.Annulus:
                 annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
-                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap='yellow',opacity=0.7)
+                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap='yellow',opacity=0.4)
                 shape_patterns = []
                 continue
 
