@@ -23,7 +23,7 @@ REQUIRED_KEYS = {
         "offset",
         "depth",
     ),
-    "HorseshoePattern": (
+    "Horseshoe": (
         "lamella_width",
         "lamella_height",
         "trench_height",
