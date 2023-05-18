@@ -1340,6 +1340,21 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return pattern
 
+    def draw_annulus(self, pattern_settings: FibsemPatternSettings):
+
+        outer_diameter = 2*pattern_settings.radius
+        inner_diameter = outer_diameter - 2*pattern_settings.thickness
+
+        pattern = self.connection.patterning.create_circle(
+            center_x=pattern_settings.centre_x,
+            center_y=pattern_settings.centre_y,
+            outer_diameter=outer_diameter,
+            inner_diameter = inner_diameter,
+            depth=pattern_settings.depth,
+        )
+
+        return pattern
+    
     
     def draw_bitmap_pattern(
         self,
@@ -3207,14 +3222,38 @@ class TescanMicroscope(FibsemMicroscope):
             CirclePattern: A circle pattern object, which can be used to configure further properties or to add the
                 pattern to the milling list.
 
-        Raises:
-            autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
+            
         """
         pattern = self.layer.addAnnulusFilled(
             CenterX=pattern_settings.centre_x,
             CenterY=pattern_settings.centre_y,
             RadiusA=pattern_settings.radius,
             RadiusB=0,
+            Depth=pattern_settings.depth,
+        )
+
+        return pattern
+    
+    def draw_annulus(self,pattern_settings: FibsemPatternSettings):
+
+        """Draws an annulus (donut) pattern on the current imaging view of the microscope.
+
+        Args: 
+            pattern_settings (FibsemPatternSettings): A data class object specifying the pattern parameters,
+            including the centre point, outer radius and thickness of the annulus, and the depth of the pattern.
+
+        Returns:
+            annulus pattern object
+        """
+        outer_radius = pattern_settings.radius
+        inner_radius = pattern_settings.radius - pattern_settings.thickness
+
+
+        pattern = self.layer.addAnnulusFilled(
+            CenterX=pattern_settings.centre_x,
+            CenterY=pattern_settings.centre_y,
+            RadiusA=outer_radius,
+            RadiusB=inner_radius,
             Depth=pattern_settings.depth,
         )
 

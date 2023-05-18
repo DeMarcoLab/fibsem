@@ -247,7 +247,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         
 
-        arr = ui_utils._draw_scalebar(arr,hfw=hfw)
+        # arr = ui_utils._draw_scalebar(arr,hfw=hfw)
 
         try:
             self.viewer.layers[name].data = arr
