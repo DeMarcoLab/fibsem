@@ -251,7 +251,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def update_pattern_ui(self,pattern_protocol=None, point=None):
 
         # get current pattern
-        pattern = patterning.__PATTERNS__[self.comboBox_patterns.currentIndex()]
+
+        current_pattern_text = self.comboBox_patterns.currentText()
+        patterns_available = [pattern.name for pattern in patterning.__PATTERNS__]
+
+        pattern_available_index = patterns_available.index(current_pattern_text)
+
+        pattern = patterning.__PATTERNS__[pattern_available_index]
 
         logging.info(f"Selected pattern: {pattern.name}")
         logging.info(f"Required parameters: {pattern.required_keys}")
