@@ -66,7 +66,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.button_set_beam_settings.clicked.connect(self.apply_beam_settings)
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
-        self.ruler_checkBox.toggled.connect(self.update_ruler)
+        self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
 
         if self._TESCAN:
 
@@ -77,20 +77,20 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.stigmation_y.setEnabled(False)
 
     def update_ruler(self):
-        if self.ruler_checkBox.isChecked():
-            self.ruler_label.setText("Ruler: is on")
+        if self.ion_ruler_checkBox.isChecked():
+            self.ion_ruler_label.setText("Ruler: is on")
             data = [[500,500],[500,1000]]
             self._features_layer = self.viewer.add_points(data, size=20, face_color='red', edge_color='white', name='ruler')
-            self.viewer.add_shapes(data, shape_type='line', edge_color='red', name='ruler_line',edge_width=5)
+            self.viewer.add_shapes(data, shape_type='line', edge_color='red', name='ion_ruler_line',edge_width=5)
             self._features_layer.mode = 'select'
             self._features_layer.events.data.connect(self.update_ruler_points)
             self.viewer.layers.selection.active = self._features_layer
             
 
         else:
-            self.ruler_label.setText("Ruler: is off")
+            self.ion_ruler_label.setText("Ruler: is off")
             self.viewer.layers.remove(self._features_layer)
-            self.viewer.layers.remove('ruler_line')
+            self.viewer.layers.remove('ion_ruler_line')
             self._features_layer = None
             # ui_utils._remove_all_layers(viewer=self.viewer)
 
@@ -98,21 +98,45 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ruler_points(self):
 
-        self.viewer.layers.remove('ruler_line')
+        self.viewer.layers.remove('ion_ruler_line')
 
         if self._features_layer.selected_data is not None:
             data = self._features_layer.data
+
+            x_lim = self.image_settings.resolution[1]
+            y_lim = self.image_settings.resolution[0]
+
             p1 = data[0]
             p2 = data[1]
+
+            for point in [p1,p2]:
+                if point[0] < 0 or point[0] > x_lim:
+                    _invalid = True
+                    self.viewer.layers.remove(self._features_layer)
+                    break
+                    # self.update_ruler()
+                    
+                if point[1] < 0 or point[1] > y_lim:
+                    _invalid = True
+                    self.viewer.layers.remove(self._features_layer)
+                    break
+                    # self.update_ruler()
+                _invalid = False
+
+            if  _invalid:
+                self.update_ruler()
+                return
+
+
             dist_pix = np.linalg.norm(p1-p2)
-            self.viewer.add_shapes(data, shape_type='line', edge_color='red', name='ruler_line',edge_width=5)
+            self.viewer.add_shapes(data, shape_type='line', edge_color='red', name='ion_ruler_line',edge_width=5)
             
             dist_um = dist_pix * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
 
             dist_dx = abs(p2[1]-p1[1]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
             dist_dy = abs(p2[0]-p1[0]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
 
-            self.ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
+            self.ion_ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
             self.viewer.layers.selection.active = self._features_layer
             
 
