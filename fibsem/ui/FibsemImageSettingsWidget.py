@@ -106,8 +106,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             p2 = data[1]
             dist_pix = np.linalg.norm(p1-p2)
             self.viewer.add_shapes(data, shape_type='line', edge_color='red', name='ruler_line',edge_width=5)
+            
             dist_um = dist_pix * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
-            self.ruler_label.setText(f"Ruler: {dist_um:.2f} um")
+
+            dist_dx = abs(p2[1]-p1[1]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+            dist_dy = abs(p2[0]-p1[0]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+
+            self.ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
             self.viewer.layers.selection.active = self._features_layer
             
 
