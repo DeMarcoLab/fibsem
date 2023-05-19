@@ -321,6 +321,8 @@ def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.
     # remove all shapes layers
     layers_to_remove = []
     for layer in viewer.layers:
+        if layer.name == "ion_ruler_line":
+            continue
         if isinstance(layer, layer_type) or layer.name in ["bmp_Image","annulus_Image"]:
             layers_to_remove.append(layer)
     for layer in layers_to_remove:
