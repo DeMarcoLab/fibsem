@@ -37,7 +37,7 @@ def main():
     acquire.take_reference_images(microscope, settings.image)
 
     # select positions
-    sample: list[Lamella] = []
+    experiment: list[Lamella] = []
     lamella_no = 1
     settings.image.hfw = 80e-6
     base_path = settings.image.save_path
