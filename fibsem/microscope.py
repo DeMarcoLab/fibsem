@@ -4037,7 +4037,7 @@ class DemoMicroscope(FibsemMicroscope):
         return detector_settings
 
     def get(self, key, beam_type: BeamType = None) -> float:
-        logging.info(f"Getting {key} ({beam_type})")
+        logging.debug(f"Getting {key} ({beam_type})")
 
         # get beam
         if beam_type is not None:
