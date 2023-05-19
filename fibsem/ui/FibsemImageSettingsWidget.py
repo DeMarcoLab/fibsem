@@ -85,7 +85,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self._features_layer.mode = 'select'
             self._features_layer.events.data.connect(self.update_ruler_points)
             self.viewer.layers.selection.active = self._features_layer
-            
+            self._features_layer.mouse_drag_callbacks.append(self.click_drag)
+
+
 
         else:
             self.ion_ruler_label.setText("Ruler: is off")
@@ -94,9 +96,31 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self._features_layer = None
             # ui_utils._remove_all_layers(viewer=self.viewer)
 
+    # Handle click or drag events separately
+    def click_drag(self, layer, event):
+        print('mouse down')
+        dragged = False
+        yield
+        # on move
+        while event.type == 'mouse_move':
+            print(event.position)
+            dragged = True
+            yield
+        # on release
+        if dragged:
+            print('drag end')
+        else:
+            print('clicked!')
 
+    def update_ruler_points(self, event):
+        
+        logging.info(f"{event.source.name} changed its data!")
 
-    def update_ruler_points(self):
+        layer = self.viewer.layers[f"{event.source.name}"]  # type: ignore
+
+        # get event type, and check if it is a select event
+        
+
 
         self.viewer.layers.remove('ion_ruler_line')
 
