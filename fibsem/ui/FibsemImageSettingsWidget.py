@@ -86,8 +86,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.ion_ruler_checkBox.isChecked():
             self.ion_ruler_label.setText("Ruler: is on")
             data = [[500,500],[500,1000]]
+            p1,p2 = data[0],data[1]
             self._features_layer = self.viewer.add_points(data, size=20, face_color='green', edge_color='white', name='ruler')
             self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ion_ruler_line',edge_width=5)
+            midpoint = [np.mean([p1[0],p2[0]]),np.mean([p1[1],p2[1]])]
+            text = {
+                "string": "100um",
+                "color": "white"
+            }
+            self.viewer.add_points(midpoint,text=text, size=20, face_color='green', edge_color='white', name='ruler_value')
             self._features_layer.mode = 'select'
             # self._features_layer.events.data.connect(self.update_ruler_points)
             self.viewer.layers.selection.active = self._features_layer
@@ -99,6 +106,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.ion_ruler_label.setText("Ruler: is off")
             self.viewer.layers.remove(self._features_layer)
             self.viewer.layers.remove('ion_ruler_line')
+            self.viewer.layers.remove('ruler_value')
             self._features_layer = None
             # ui_utils._remove_all_layers(viewer=self.viewer)
 
@@ -132,6 +140,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         while event.type == 'mouse_move':
 
             self.viewer.layers.remove('ion_ruler_line')
+            self.viewer.layers.remove('ruler_value')
 
             if self._features_layer.selected_data is not None:
                 data = self._features_layer.data
@@ -163,11 +172,27 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
                 dist_pix = np.linalg.norm(p1-p2)
                 self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ion_ruler_line',edge_width=5)
+                midpoint = np.array([(np.mean([p1[0],p2[0]])),(np.mean([p1[1],p2[1]]))])
+                
+                
                 
                 dist_um = dist_pix * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+                text = {
+                "string": [f"{dist_um:.2f} um"],
+                "color": "white"
+                }
 
                 dist_dx = abs(p2[1]-p1[1]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
                 dist_dy = abs(p2[0]-p1[0]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+
+                self.viewer.add_points(
+                    midpoint,
+                    text=text, 
+                    size=20, 
+                    face_color='transparent', 
+                    edge_color='transparent', 
+                    name='ruler_value')
+
 
                 self.ion_ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
                 self.viewer.layers.selection.active = self._features_layer
