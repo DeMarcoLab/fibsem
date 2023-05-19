@@ -9,7 +9,7 @@ from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, Fibse
 from fibsem.ui import utils as ui_utils 
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
-
+from PIL import Image
 import numpy as np
 from pathlib import Path
 import logging
@@ -35,6 +35,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
         self.eb_image, self.ib_image = None, None
+
+        self.eb_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
+        self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
+
         self._features_layer = None
 
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
@@ -67,6 +71,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
         self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
+        self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
+        self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
 
         if self._TESCAN:
 
@@ -336,16 +342,31 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message("REFERENCE_IMAGES_TAKEN")
         log_status_message("Settings used: {}".format(self.image_settings))
 
+    def update_ui_tools(self):
+
+        self.update_viewer(self.eb_last, BeamType.ELECTRON.name)
+        self.update_viewer(self.ib_last, BeamType.ION.name)
+
+
+
     def update_viewer(self, arr: np.ndarray, name: str):
 
-
+        if name == BeamType.ELECTRON.name:
+            self.eb_last = arr
+        if name == BeamType.ION.name:
+            self.ib_last = arr
        
-        arr = ui_utils._draw_crosshair(arr)
+        im = Image.fromarray(arr).convert("RGB")
+        arr = np.array(im)
+
+        if self.crosshair_checkbox.isChecked():
+            arr = ui_utils._draw_crosshair(arr)
 
         
         hfw = self.image_settings.hfw
         
-        arr = ui_utils._draw_scalebar(arr,hfw=hfw)
+        if self.scalebar_checkbox.isChecked():
+            arr = ui_utils._draw_scalebar(arr,hfw=hfw)
 
         try:
             self.viewer.layers[name].data = arr
