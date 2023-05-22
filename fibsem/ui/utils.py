@@ -320,7 +320,7 @@ def _create_annulus_shape(width, height, inner_radius, outer_radius):
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
     # remove all shapes layers
     layers_to_remove = []
-    layers_to_ignore = ["ruler_line","horizontal_line_012345"]
+    layers_to_ignore = ["ruler_line","crosshair"]
     for layer in viewer.layers:
         if layer.name in layers_to_ignore:
             continue
@@ -427,7 +427,8 @@ def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, 
 
         centre_points = [ [eb_image.data.shape[0]//2, eb_image.data.shape[1]//2],[ib_image.data.shape[0]//2, eb_image.data.shape[1] + ib_image.data.shape[1]//2]]
 
-        
+        crosshairs = []
+
         for i,point in enumerate(centre_points):
             
             eb_location_r,eb_location_c = point[0], point[1]
@@ -435,24 +436,21 @@ def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, 
             horizontal_line = [ [eb_location_r, eb_location_c - crosshair_length],[eb_location_r,eb_location_c + crosshair_length] ]
             vertical_line = [ [eb_location_r - crosshair_length, eb_location_c],[eb_location_r + crosshair_length,eb_location_c] ]
 
-            if f"horizontal_line_{i}" not in layers_in_napari :
+            crosshairs.append(horizontal_line)
+            crosshairs.append(vertical_line)
 
-                viewer.add_shapes(data=horizontal_line, shape_type='line', edge_width=5, edge_color='yellow', face_color='yellow', opacity=0.8, blending='translucent', name=f'horizontal_line_{i}')
-            else:
-                viewer.layers[f"horizontal_line_{i}"].data = horizontal_line
+        if f"crosshair" not in layers_in_napari:
 
-            if f"vertical_line_{i}" not in layers_in_napari :
-                viewer.add_shapes(data=vertical_line, shape_type='line', edge_width=5, edge_color='yellow', face_color='yellow', opacity=0.8, blending='translucent', name=f'vertical_line_{i}')
-            else:
-                viewer.layers[f"vertical_line_{i}"].data = vertical_line
-
+            viewer.add_shapes(data=crosshairs, shape_type='line', edge_width=5, edge_color='yellow', face_color='yellow', opacity=0.8, blending='translucent', name=f'crosshair')
+        else:
+            viewer.layers[f"crosshair"].data = crosshairs
+            viewer.layers[f"crosshair"].opacity = 0.8
 
     else:
-        for i in range(2):
-            if f"horizontal_line_{i}" in layers_in_napari :
-                viewer.layers.remove(viewer.layers[f"horizontal_line_{i}"])
-            if f"vertical_line_{i}" in layers_in_napari :
-                viewer.layers.remove(viewer.layers[f"vertical_line_{i}"])
+        
+        if f"crosshair" in layers_in_napari :
+            viewer.layers["crosshair"].opacity = 0
+           
     return 
 
 
