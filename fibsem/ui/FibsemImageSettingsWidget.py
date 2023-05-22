@@ -82,24 +82,44 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.stigmation_x.setEnabled(False)
             self.stigmation_y.setEnabled(False)
 
+
+    def check_point_image(self,point):
+            
+            if point[1] >= 0 and point[1] <= self.eb_layer.data.shape[1]:
+                return True
+            else:
+                return False
+
     def update_ruler(self):
+
         if self.ion_ruler_checkBox.isChecked():
             self.ion_ruler_label.setText("Ruler: is on")
-            data = [[500,500],[500,1000]]
+
+            # create initial ruler
+
+            data = [[500,2000],[500,2500]]
             p1,p2 = data[0],data[1]
-            self._features_layer = self.viewer.add_points(data, size=20, face_color='green', edge_color='white', name='ruler')
-            self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ruler_line',edge_width=5)
+
+
+            hfw_scale = self.eb_image.metadata.pixel_size.x if self.check_point_image(p1) else self.ib_image.metadata.pixel_size.x
+
             midpoint = [np.mean([p1[0],p2[0]]),np.mean([p1[1],p2[1]])]
+            dist_um = 500 * hfw_scale*constants.SI_TO_MICRO
             text = {
-                "string": "100um",
+                "string": [f"{dist_um:.2f} um"],
                 "color": "white"
             }
-            self.viewer.add_points(midpoint,text=text, size=20, face_color='green', edge_color='white', name='ruler_value')
+
+            # creating initial layers 
+
+            self._features_layer = self.viewer.add_points(data, size=20, face_color='green', edge_color='white', name='ruler')
+            self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ruler_line',edge_width=5)
+            self.viewer.add_points(midpoint,text=text, size=20, face_color='transparent', edge_color='transparent', name='ruler_value')
             self._features_layer.mode = 'select'
-            # self._features_layer.events.data.connect(self.update_ruler_points)
+
+
             self.viewer.layers.selection.active = self._features_layer
             self._features_layer.mouse_drag_callbacks.append(self.update_ruler_points)
-
 
 
         else:
@@ -108,102 +128,51 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.layers.remove('ruler_line')
             self.viewer.layers.remove('ruler_value')
             self._features_layer = None
-            # ui_utils._remove_all_layers(viewer=self.viewer)
 
-    # Handle click or drag events separately
-    def click_drag(self, layer, event):
-        print('mouse down')
-        dragged = False
-        yield
-        # on move
-        while event.type == 'mouse_move':
-            print(event.position)
-            dragged = True
-            yield
-        # on release
-        if dragged:
-            print('drag end')
-        else:
-            print('clicked!')
+
+
 
     def update_ruler_points(self,layer, event):
         
-        # logging.info(f"{event.source.name} changed its data!")
-
-        # layer = self.viewer.layers[f"{event.source.name}"]  # type: ignore
-
-        # get event type, and check if it is a select event
-        
         dragged = False
         yield
 
         while event.type == 'mouse_move':
 
-            # self.viewer.layers.remove('ruler_line') # make one layer
-            # self.viewer.layers.remove('ruler_value')
-
-
-
-            ## update data in layer 
-
-            # layer shape list, get the shape, update shape.data append, same with points
 
             if self._features_layer.selected_data is not None:
                 data = self._features_layer.data
 
-                # x_lim = self.image_settings.resolution[1]
-                # y_lim = self.image_settings.resolution[0]
 
                 p1 = data[0]
                 p2 = data[1]
 
-                # for point in [p1,p2]:
-                #     if point[0] < 0 or point[0] > x_lim:
-                #         _invalid = True
-                #         self.viewer.layers.remove(self._features_layer)
-                #         break
-                #         # self.update_ruler()
-                        
-                #     if point[1] < 0 or point[1] > y_lim:
-                #         _invalid = True
-                #         self.viewer.layers.remove(self._features_layer)
-                #         break
-                #         # self.update_ruler()
-                #     _invalid = False
-
-                # if  _invalid:
-                #     self.update_ruler()
-                #     return
-
-
                 dist_pix = np.linalg.norm(p1-p2)
-                # self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ruler_line',edge_width=5)
-                self.viewer.layers['ruler_line'].data = data
-                midpoint = np.array([(np.mean([p1[0],p2[0]])),(np.mean([p1[1],p2[1]]))])
+                
+                midpoint = [(np.mean([p1[0],p2[0]])),(np.mean([p1[1],p2[1]]))]
+                
+                self.viewer.layers['ruler_line'].data = [p1,p2]
                 self.viewer.layers['ruler_value'].data = midpoint
                 
-                
-                dist_um = dist_pix * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+                hfw_scale = self.eb_image.metadata.pixel_size.x if self.check_point_image(p1) else self.ib_image.metadata.pixel_size.x
+
+                dist_um = dist_pix * hfw_scale*constants.SI_TO_MICRO
+
                 text = {
                 "string": [f"{dist_um:.2f} um"],
                 "color": "white"
                 }
+
                 self.viewer.layers['ruler_value'].text = text
                 dist_dx = abs(p2[1]-p1[1]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
                 dist_dy = abs(p2[0]-p1[0]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
-
-                # self.viewer.add_points(
-                #     midpoint,
-                #     text=text, 
-                #     size=20, 
-                #     face_color='transparent', 
-                #     edge_color='transparent', 
-                #     name='ruler_value')
 
 
                 self.ion_ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
                 self.viewer.layers.selection.active = self._features_layer
                 self.viewer.layers['ruler_line'].refresh()
+
+                
                 dragged = True
                 yield
             
