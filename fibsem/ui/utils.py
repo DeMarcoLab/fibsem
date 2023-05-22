@@ -325,8 +325,6 @@ def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.
         if layer.name in layers_to_ignore:
             continue
         if isinstance(layer, layer_type) or layer.name in ["bmp_Image","annulus_Image"]:
-            if layer.shape_type[0] == "line":
-                continue
             layers_to_remove.append(layer)
     for layer in layers_to_remove:
         viewer.layers.remove(layer)  # Not removing the second layer?
