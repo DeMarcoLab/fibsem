@@ -97,7 +97,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
             # create initial ruler
 
-            data = [[500,2000],[500,2500]]
+            data = [[500,500],[500,1000]]
             p1,p2 = data[0],data[1]
 
 
@@ -357,17 +357,17 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if name == BeamType.ION.name:
             self.ib_last = arr
        
-        im = Image.fromarray(arr).convert("RGB")
-        arr = np.array(im)
+        # im = Image.fromarray(arr).convert("RGB")
+        # arr = np.array(im)
 
-        if self.crosshair_checkbox.isChecked():
-            arr = ui_utils._draw_crosshair(arr)
+        # if self.crosshair_checkbox.isChecked():
+        #     arr = ui_utils._draw_crosshair(arr)
 
         
         hfw = self.image_settings.hfw
         
-        if self.scalebar_checkbox.isChecked():
-            arr = ui_utils._draw_scalebar(arr,hfw=hfw)
+        # if self.scalebar_checkbox.isChecked():
+        #     arr = ui_utils._draw_scalebar(arr,hfw=hfw)
 
         try:
             self.viewer.layers[name].data = arr
@@ -426,6 +426,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
+
+
+        if self.crosshair_checkbox.isChecked():
+            is_checked = True
+            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
+        else:
+            is_checked = False
+            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
 
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
         # self.viewer.scale_bar.visible = True

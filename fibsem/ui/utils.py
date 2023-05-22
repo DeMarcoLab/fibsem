@@ -320,10 +320,13 @@ def _create_annulus_shape(width, height, inner_radius, outer_radius):
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
     # remove all shapes layers
     layers_to_remove = []
+    layers_to_ignore = ["ruler_line","horizontal_line_012345"]
     for layer in viewer.layers:
-        if layer.name == "ion_ruler_line":
+        if layer.name in layers_to_ignore:
             continue
         if isinstance(layer, layer_type) or layer.name in ["bmp_Image","annulus_Image"]:
+            if layer.shape_type[0] == "line":
+                continue
             layers_to_remove.append(layer)
     for layer in layers_to_remove:
         viewer.layers.remove(layer)  # Not removing the second layer?
@@ -403,19 +406,54 @@ def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.
 
     return response
         
-def _draw_crosshair(arr: np.ndarray, width: float = 0.1) -> np.ndarray:
+def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, width: float = 0.1) -> None:
     # add crosshair
-    cy, cx = arr.shape[0] // 2, arr.shape[1] // 2
-    from PIL import Image, ImageDraw
-    im = Image.fromarray(arr).convert("RGB")
-    draw = ImageDraw.Draw(im)
-    # 10% of img width in pixels
-    length = int(im.size[0] * width / 2)
-    draw.line((cx, cy-length) + (cx, cy+length), fill="yellow", width=3)
-    draw.line((cx-length, cy) + (cx+length, cy), fill="yellow", width=3)
+    # cy, cx = arr.shape[0] // 2, arr.shape[1] // 2
+    # from PIL import Image, ImageDraw
+    # im = Image.fromarray(arr).convert("RGB")
+    # draw = ImageDraw.Draw(im)
+    # # 10% of img width in pixels
+    # length = int(im.size[0] * width / 2)
+    # draw.line((cx, cy-length) + (cx, cy+length), fill="yellow", width=3)
+    # draw.line((cx-length, cy) + (cx+length, cy), fill="yellow", width=3)
 
-    arr = np.array(im)
-    return arr
+    # arr = np.array(im)
+    layers_in_napari = []
+    for layer in viewer.layers:
+        layers_in_napari.append(layer.name)
+
+
+    if is_checked:
+
+        centre_points = [ [eb_image.data.shape[0]//2, eb_image.data.shape[1]//2],[ib_image.data.shape[0]//2, eb_image.data.shape[1] + ib_image.data.shape[1]//2]]
+
+        
+        for i,point in enumerate(centre_points):
+            
+            eb_location_r,eb_location_c = point[0], point[1]
+            crosshair_length = 0.15*point[0]
+            horizontal_line = [ [eb_location_r, eb_location_c - crosshair_length],[eb_location_r,eb_location_c + crosshair_length] ]
+            vertical_line = [ [eb_location_r - crosshair_length, eb_location_c],[eb_location_r + crosshair_length,eb_location_c] ]
+
+            if f"horizontal_line_{i}" not in layers_in_napari :
+
+                viewer.add_shapes(data=horizontal_line, shape_type='line', edge_width=5, edge_color='yellow', face_color='yellow', opacity=0.8, blending='translucent', name=f'horizontal_line_{i}')
+            else:
+                viewer.layers[f"horizontal_line_{i}"].data = horizontal_line
+
+            if f"vertical_line_{i}" not in layers_in_napari :
+                viewer.add_shapes(data=vertical_line, shape_type='line', edge_width=5, edge_color='yellow', face_color='yellow', opacity=0.8, blending='translucent', name=f'vertical_line_{i}')
+            else:
+                viewer.layers[f"vertical_line_{i}"].data = vertical_line
+
+
+    else:
+        for i in range(2):
+            if f"horizontal_line_{i}" in layers_in_napari :
+                viewer.layers.remove(viewer.layers[f"horizontal_line_{i}"])
+            if f"vertical_line_{i}" in layers_in_napari :
+                viewer.layers.remove(viewer.layers[f"vertical_line_{i}"])
+    return 
 
 
 def _draw_scalebar(arr: np.ndarray,hfw: float = 1e-6 ) -> np.ndarray:
