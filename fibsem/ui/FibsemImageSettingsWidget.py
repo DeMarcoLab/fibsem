@@ -357,18 +357,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if name == BeamType.ION.name:
             self.ib_last = arr
        
-        # im = Image.fromarray(arr).convert("RGB")
-        # arr = np.array(im)
-
-        # if self.crosshair_checkbox.isChecked():
-        #     arr = ui_utils._draw_crosshair(arr)
-
-        
-        hfw = self.image_settings.hfw
-        
-        # if self.scalebar_checkbox.isChecked():
-        #     arr = ui_utils._draw_scalebar(arr,hfw=hfw)
-
         try:
             self.viewer.layers[name].data = arr
         except:    
@@ -381,12 +369,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
         
-        # layer = self.viewer.layers[name]
-        # if self.eb_layer is None and name == BeamType.ELECTRON.name:
-        #     self.eb_layer = layer
-        # if self.ib_layer is None and name == BeamType.ION.name:
-        #     self.ib_layer = layer
-        
+
         # centre the camera
         if self.eb_layer:
             self.viewer.camera.center = [
@@ -426,17 +409,24 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
-
+        if self.scalebar_checkbox.isChecked():
+            sc_is_checked = True
+            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
+        else:
+            sc_is_checked = False
+            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
 
         if self.crosshair_checkbox.isChecked():
             is_checked = True
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
+            
         else:
             is_checked = False
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
+            
 
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
-        # self.viewer.scale_bar.visible = True
+
         
         
         # set the active layer to the electron beam (for movement)

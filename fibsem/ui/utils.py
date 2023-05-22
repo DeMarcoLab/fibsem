@@ -320,7 +320,7 @@ def _create_annulus_shape(width, height, inner_radius, outer_radius):
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
     # remove all shapes layers
     layers_to_remove = []
-    layers_to_ignore = ["ruler_line","crosshair"]
+    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value"]
     for layer in viewer.layers:
         if layer.name in layers_to_ignore:
             continue
@@ -406,18 +406,9 @@ def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.
 
     return response
         
-def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, width: float = 0.1) -> None:
-    # add crosshair
-    # cy, cx = arr.shape[0] // 2, arr.shape[1] // 2
-    # from PIL import Image, ImageDraw
-    # im = Image.fromarray(arr).convert("RGB")
-    # draw = ImageDraw.Draw(im)
-    # # 10% of img width in pixels
-    # length = int(im.size[0] * width / 2)
-    # draw.line((cx, cy-length) + (cx, cy+length), fill="yellow", width=3)
-    # draw.line((cx-length, cy) + (cx+length, cy), fill="yellow", width=3)
+def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, width: float = 0.15) -> None:
 
-    # arr = np.array(im)
+
     layers_in_napari = []
     for layer in viewer.layers:
         layers_in_napari.append(layer.name)
@@ -432,7 +423,7 @@ def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, 
         for i,point in enumerate(centre_points):
             
             eb_location_r,eb_location_c = point[0], point[1]
-            crosshair_length = 0.15*point[0]
+            crosshair_length = width*point[0]
             horizontal_line = [ [eb_location_r, eb_location_c - crosshair_length],[eb_location_r,eb_location_c + crosshair_length] ]
             vertical_line = [ [eb_location_r - crosshair_length, eb_location_c],[eb_location_r + crosshair_length,eb_location_c] ]
 
@@ -453,13 +444,7 @@ def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, 
            
     return 
 
-
-def _draw_scalebar(arr: np.ndarray,hfw: float = 1e-6 ) -> np.ndarray:
-    # add scalebar
-    from PIL import Image, ImageDraw, ImageFont
-    im = Image.fromarray(arr).convert("RGB")
-    draw = ImageDraw.Draw(im)
-    
+def _scale_length_value(hfw: float) -> float:
 
     scale_length_value = hfw*constants.METRE_TO_MICRON*0.2
 
@@ -472,23 +457,91 @@ def _draw_scalebar(arr: np.ndarray,hfw: float = 1e-6 ) -> np.ndarray:
 
     scale_ratio = scale_length_value/(hfw*constants.METRE_TO_MICRON)
 
-    length = int(arr.shape[1]*scale_ratio)
-    length_bar_edge = int(length*0.05)
-    start_pix_x = int(arr.shape[1]*0.1)
-    start_pix_y = int(arr.shape[0]*0.05)
+    return scale_ratio,scale_length_value
+
+def _draw_scalebar(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, width: float = 0.1) -> np.ndarray:
+
+    layers_in_napari = []
+    for layer in viewer.layers:
+        layers_in_napari.append(layer.name)
+
+
+    if is_checked:
+
+        location_points = [ [int(eb_image.data.shape[0]*0.9), int(eb_image.data.shape[1]*0.15)],[int(ib_image.data.shape[0]*0.9), int(eb_image.data.shape[1] + ib_image.data.shape[1]*0.15)]]
+
+        if is_checked:
+            
+            # making the scale bar line
+            scale_bar_shape = []
+
+            for i,point in enumerate(location_points):
+                
+                
+
+                if i == 0:
+                    scale_ratio,eb_scale = _scale_length_value(eb_image.metadata.image_settings.hfw)
+                    length = scale_ratio*eb_image.data.shape[1]
+                else:
+                    scale_ratio,ib_scale = _scale_length_value(ib_image.metadata.image_settings.hfw)
+                    length = scale_ratio*ib_image.data.shape[1]
+
+                main_line = [[point[0]+25, int(point[1]-0.5*length)], [point[0]+25, int(point[1]+0.5*length)]]
+        
+                left_line = [[point[0]+50, int(point[1]-0.5*length)], [point[0], int(point[1]-0.5*length)]]
+                right_line = [[point[0]+50, int(point[1]+0.5*length)], [point[0], int(point[1]+0.5*length)]]
+
+                scale_bar_shape.append(main_line)
+                scale_bar_shape.append(left_line)
+                scale_bar_shape.append(right_line)
+
+            if "scalebar" not in layers_in_napari:
+                
+                viewer.add_shapes(
+                    data=scale_bar_shape,
+                    shape_type='line',
+                    edge_width=5,
+                    edge_color='yellow',
+                    name='scalebar'
+                )
+            else:
+
+                viewer.layers["scalebar"].data = scale_bar_shape
+                viewer.layers["scalebar"].opacity = 1
+
+            ## making the scale bar value
+
+            
+
+            text = {
+                "string": [f"{eb_scale} um",f"{ib_scale} um"],
+                "color":"white"
+            }
+
+            if "scalebar" not in layers_in_napari:
+
+                viewer.add_points(
+                    data=location_points,
+                    text=text,
+                    size=20,
+                    name="scalebar_value",
+                    edge_color='transparent',
+                    face_color='transparent',
+
+                )
+            else:
+                viewer.layers["scalebar_value"].data = location_points
+                viewer.layers["scalebar_value"].text = text
+                viewer.layers["scalebar_value"].opacity = 1
+
+    else:
+
+        if "scalebar" in layers_in_napari:
+            viewer.layers["scalebar"].opacity = 0
+            viewer.layers["scalebar_value"].opacity = 0
+
 
     
-    
-    scale_text = f'{scale_length_value:.2f} um'
-
-
-    draw.line((length+start_pix_x, im.size[1]-start_pix_y) + (start_pix_x, im.size[1]-start_pix_y), fill="yellow", width=3) # main line
-    draw.line((length+start_pix_x, im.size[1]-start_pix_y-length_bar_edge) + (length+start_pix_x, im.size[1]-start_pix_y+length_bar_edge), fill="yellow", width=3) # right edge
-    draw.line((start_pix_x, im.size[1]-start_pix_y-length_bar_edge) + (start_pix_x, im.size[1]-start_pix_y+length_bar_edge), fill="yellow", width=3) # left edge
-    draw.text( ( int(start_pix_x+length*0.25), im.size[1]-start_pix_y-length_bar_edge-20), scale_text, fill="yellow", font=ImageFont.truetype("arialbd.ttf", 30))
-
-    arr = np.array(im)
-    return arr
 
 def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
