@@ -3563,21 +3563,44 @@ class TescanMicroscope(FibsemMicroscope):
 
     def run_GIS(self,protocol) -> None:
         
-        try:
-            layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
-                syncWriteField=True,
-                writeFieldSize=protocol["hfw"],
-                beamCurrent=protocol["beam_current"],
-                spotSize=protocol["spot_size"],
-                rate=3e-10, # Value for platinum
-                dwellTime=protocol["dwell_time"],
-            )
-            self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
-            self.connection.DrawBeam.LoadLayer(self.layer)
+        beam_type = protocol["beam_type"]
 
-        except:
-            defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
-            self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+        if beam_type == "ION":
+
+            try:
+                layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
+                    syncWriteField=True,
+                    writeFieldSize=protocol["hfw"],
+                    beamCurrent=protocol["beam_current"],
+                    spotSize=protocol["spot_size"],
+                    rate=3e-10, # Value for platinum
+                    dwellTime=protocol["dwell_time"],
+                )
+                self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
+                self.connection.DrawBeam.LoadLayer(self.layer)
+
+            except:
+                defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
+                self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+
+        else:
+            
+            try:
+                layerSettings = self.connection.DrawBeam.LayerSettings.EDeposition(
+                    syncWriteField=True,
+                    writeFieldSize=protocol["hfw"],
+                    beamCurrent=protocol["beam_current"],
+                    spotSize=protocol["spot_size"],
+                    rate=3e-10, # Value for platinum
+                    dwellTime=protocol["dwell_time"],
+                )
+                self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
+                self.connection.DrawBeam.LoadLayer(self.layer)
+
+            except:
+                defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
+                self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+
 
         hfw = protocol["hfw"]
         line_pattern_length = protocol["length"]

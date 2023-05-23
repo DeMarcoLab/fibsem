@@ -189,6 +189,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.multichem_radioButton.toggled.connect(self.change_gis_multichem)
         self.warm_button.clicked.connect(self.warm_up_gis)
         self.run_button.clicked.connect(self.run_gis)
+        self.beamtype_combobox.setCurrentText("ELECTRON")
     
 
     def warm_up_gis(self):
@@ -237,7 +238,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         self.position_combobox.setCurrentText(current_position)
         self.current_position_label.setText(f"Current Position: {current_position}")
-
+        self.hfw_spinbox.setValue(self.image_widget.image_settings.hfw*constants.METRE_TO_MICRON)
 
     def insert_retract_gis(self):
         if self.GIS_inserted:
@@ -252,17 +253,20 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             self.GIS_insert_status_label.setText("GIS Status: Inserted")
 
     def run_gis(self):
+        
+        hfw_value = self.hfw_spinbox.value()*constants.MICRON_TO_METRE
+        beam_type = self.beamtype_combobox.currentText()
 
         gis_protocol = {
             "application_file": "cryo_Pt_dep",
             "gas": self.gis_current_line,
             "position": "cryo",
-            "hfw":3.0e-5,
+            "hfw":hfw_value,
             "length": 7.0e-6,
             "spot_size": 1.0e-6,
             "beam_current": 0.5e-9,
             "dwell_time": 0.1e-3,
-
+            "beam_type": beam_type,
         }
         
         self.microscope.run_GIS(gis_protocol)

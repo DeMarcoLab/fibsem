@@ -29,7 +29,11 @@
     </widget>
    </item>
    <item row="15" column="1">
-    <widget class="QDoubleSpinBox" name="hfw_spinbox"/>
+    <widget class="QDoubleSpinBox" name="hfw_spinbox">
+     <property name="maximum">
+      <double>10000.000000000000000</double>
+     </property>
+    </widget>
    </item>
    <item row="1" column="0">
     <widget class="QRadioButton" name="GIS_radioButton">
@@ -44,7 +48,7 @@
    <item row="13" column="0">
     <widget class="QLabel" name="label_time">
      <property name="text">
-      <string>Time Duration</string>
+      <string>Time Duration (s)</string>
      </property>
     </widget>
    </item>
@@ -75,7 +79,18 @@
     </spacer>
    </item>
    <item row="14" column="1">
-    <widget class="QComboBox" name="beamtype_combobox"/>
+    <widget class="QComboBox" name="beamtype_combobox">
+     <item>
+      <property name="text">
+       <string>ELECTRON</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>ION</string>
+      </property>
+     </item>
+    </widget>
    </item>
    <item row="17" column="0">
     <widget class="QLabel" name="app_file_label">
@@ -125,7 +140,7 @@
    <item row="15" column="0">
     <widget class="QLabel" name="label_hfw">
      <property name="text">
-      <string>HFW</string>
+      <string>HFW (um)</string>
      </property>
     </widget>
    </item>
