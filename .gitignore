@@ -8,10 +8,10 @@ scratch/test_image.tif
 *.zarr/*
 
 fibsem/wandb/*
-fibsem/models/*
+
 *.json
 fibsem/segmentation/wandb/*
-fibsem/segmentation/models/*
+fibsem/segmentation/models/*.pt*
 wandb/*
 
 fibsem/segmentation/data/*

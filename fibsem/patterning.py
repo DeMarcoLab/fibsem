@@ -144,6 +144,8 @@ class LinePattern(BasePattern):
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
         self.point = point
+        self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -665,6 +667,8 @@ class CloverPattern(BasePattern):
         self.patterns = [top_pattern, right_pattern, left_pattern, stem_pattern]
         self.protocol = protocol
         self.point = point
+        self.protocol = protocol
+        self.point = point
         return self.patterns
 
 
@@ -698,13 +702,14 @@ class TriForcePattern(BasePattern):
         ]
 
         for point in points:
-            left_pattern, right_pattern, bottom_pattern = create_triangle_patterns(
-                width=width, height=height, depth=depth, point=point, angle=angle
-            )
+
+            left_pattern, right_pattern, bottom_pattern = create_triangle_patterns(width=width, height=height, depth=depth, point=point, angle=angle)
 
             self.patterns.append(left_pattern)
             self.patterns.append(right_pattern)
             self.patterns.append(bottom_pattern)
+        self.protocol = protocol
+        self.point = point
         self.protocol = protocol
         self.point = point
         return self.patterns
