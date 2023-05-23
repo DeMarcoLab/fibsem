@@ -188,6 +188,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.GIS_radioButton.toggled.connect(self.change_gis_multichem)
         self.multichem_radioButton.toggled.connect(self.change_gis_multichem)
         self.warm_button.clicked.connect(self.warm_up_gis)
+        self.run_button.clicked.connect(self.run_gis)
     
 
     def warm_up_gis(self):
@@ -249,6 +250,27 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             self.GIS_inserted = True
             self.insertGIS_button.setText("Retract GIS")
             self.GIS_insert_status_label.setText("GIS Status: Inserted")
+
+    def run_gis(self):
+
+        gis_protocol = {
+            "application_file": "cryo_Pt_dep",
+            "gas": self.gis_current_line,
+            "position": "cryo",
+            "hfw":3.0e-5,
+            "length": 7.0e-6,
+            "spot_size": 1.0e-6,
+            "beam_current": 0.5e-9,
+            "dwell_time": 0.1e-3,
+
+        }
+        
+        self.microscope.run_GIS(gis_protocol)
+
+
+
+
+        pass
 
 def main():
 

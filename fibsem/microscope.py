@@ -3561,6 +3561,80 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
 
+    def run_GIS(self,protocol) -> None:
+        
+        try:
+            layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
+                syncWriteField=True,
+                writeFieldSize=protocol["hfw"],
+                beamCurrent=protocol["beam_current"],
+                spotSize=protocol["spot_size"],
+                rate=3e-10, # Value for platinum
+                dwellTime=protocol["dwell_time"],
+            )
+            self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
+            self.connection.DrawBeam.LoadLayer(self.layer)
+
+        except:
+            defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
+            self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+
+        self.connection.FIB.Optics.SetViewfield(
+            hfw * constants.METRE_TO_MILLIMETRE
+        )
+
+        start_x=-line_pattern_length/2, 
+        start_y=+line_pattern_length,
+        end_x=+line_pattern_length/2,
+        end_y=+line_pattern_length,
+        depth=2e-6
+        
+        pattern = self.layer.addLine(
+            BeginX=start_x, BeginY=start_y, EndX=end_x, EndY=end_y, Depth=depth
+        )
+
+        gas_line = self.lines[protocol['gas']]
+
+        self.connection.GIS.OpenValve(gas_line)
+
+        try:
+            # Run predefined deposition process
+            self.connection.DrawBeam.Start()
+            self.connection.Progress.Show("DrawBeam", "Layer 1 in progress", False, False, 0, 100)
+            logging.info("Sputtering started.")
+            while True:
+                status = self.connection.DrawBeam.GetStatus()
+                running = status[0] == self.connection.DrawBeam.Status.ProjectLoadedExpositionInProgress
+                if running:
+                    progress = 0
+                    if status[1] > 0:
+                        progress = min(100, status[2] / status[1] * 100)
+                    printProgressBar(progress, 100)
+                    self.connection.Progress.SetPercents(progress)
+                    time.sleep(1)
+                else:
+                    if status[0] == self.connection.DrawBeam.Status.ProjectLoadedExpositionIdle:
+                        printProgressBar(100, 100, suffix='Finished')
+                        print('')
+                    break
+        finally:
+            # Close GIS Valve in both - success and failure
+            self.connection.GIS.CloseValve(gas_line)
+
+        self.connection.GIS.MoveTo(gas_line, Automation.GIS.Position.Home)
+        self.connection.GIS.PrepareTemperature(gas_line, False)
+        self.connection.DrawBeam.UnloadLayer()
+        logging.info("process completed.")
+
+        
+
+
+        
+
+
     def GIS_available_lines(self) -> list[str]:
         """
         Returns a list of available GIS lines.
