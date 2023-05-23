@@ -10,6 +10,7 @@ gis_protocol = {
     "position": "cryo",
     "hfw": 3.0e-05 ,
     "length": 7.0e-06,
+    "beam_current": 1.0e-8,
     "time": 30.0,
 }
 

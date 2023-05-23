@@ -263,9 +263,9 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             "position": "cryo",
             "hfw":hfw_value,
             "length": 7.0e-6,
-            "spot_size": 1.0e-6,
-            "beam_current": 0.5e-9,
-            "dwell_time": 0.1e-3,
+            "spot_size": 5.0e-8,
+            "beam_current": 5.0e-10,
+            "dwell_time": 1.0e-6,
             "beam_type": beam_type,
         }
         
