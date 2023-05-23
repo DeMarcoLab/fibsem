@@ -49,7 +49,7 @@ REQUIRED_KEYS = {
         "distance",
         "lamella_width",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number"),
+    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -491,6 +491,7 @@ class SpotWeldPattern(BasePattern):
         depth = protocol["depth"]
         distance = protocol["distance"]
         n_patterns = int(protocol["number"])
+        rotation = protocol["rotation"]
 
         patterns = []
         for i in range(n_patterns):
@@ -503,6 +504,7 @@ class SpotWeldPattern(BasePattern):
                 centre_y=point.y + (i - (n_patterns - 1) / 2) * distance,
                 cleaning_cross_section=True,
                 scan_direction="LeftToRight",
+                rotation=rotation,
             )
             patterns.append(pattern_settings)
 
