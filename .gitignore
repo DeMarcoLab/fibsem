@@ -44,3 +44,5 @@ fibsem/detection/notebook.ipynb
 
 media/*
 .DS_Store
+fibsem/segmentation/models/**/*.pt*
+fibsem/segmentation/models/*
