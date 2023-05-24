@@ -4166,6 +4166,9 @@ class DemoMicroscope(FibsemMicroscope):
 
     def draw_circle(self, pattern_settings: FibsemPatternSettings) -> None:
         logging.info(f"Drawing circle: {pattern_settings}")
+    
+    def draw_annulus(self, pattern_settings: FibsemPatternSettings) -> None:
+        logging.info(f"Drawing annulus: {pattern_settings}")
 
     def get_scan_directions(self) -> list:
         """
@@ -4183,7 +4186,8 @@ class DemoMicroscope(FibsemMicroscope):
                 "TopToBottom"]
         return list 
 
-    def draw_bitmap_pattern(self):
+    def draw_bitmap_pattern(self, pattern_settings: FibsemPatternSettings,
+        path: str):
         return 
     def run_milling_drift_corrected(self):
         _check_beam(BeamType.ION, self.hardware_settings)
