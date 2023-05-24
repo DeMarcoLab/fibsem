@@ -5,6 +5,7 @@ import fibsem
 import napari.utils.notifications
 from fibsem import utils
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 
@@ -15,11 +16,14 @@ from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QMessageBox
 from fibsem import config as cfg
 
 
-from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
+from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
 from fibsem.ui.qtdesigner_files import FibsemUI
+from fibsem.structures import BeamType
 
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
@@ -37,6 +41,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.image_widget: FibsemImageSettingsWidget = None
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
+        self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
 
 
@@ -50,7 +55,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         
         self.setup_connections()
         self.tabWidget.addTab(self.system_widget, "System")
-
+        self.ref_current = None
         self.update_ui()
 
 
@@ -59,6 +64,19 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
+        self.actionCurrent_alignment.triggered.connect(self.align_currents)
+
+    def align_currents(self):
+        second_viewer = napari.Viewer()
+        self.alignment_widget = FibsemAlignmentWidget(settings=self.settings, microscope=self.microscope, viewer=second_viewer, parent = self)
+        second_viewer.window.add_dock_widget(self.alignment_widget, name='Beam Alignment', area='right')
+        self.alignment_widget.destroyed.connect(self.reset_currents)
+
+    def reset_currents(self):
+        if isinstance(self.microscope, ThermoMicroscope)or isinstance(self.microscope, DemoMicroscope):
+            self.microscope.set("current", float(self.ref_current), BeamType.ION)
+        if isinstance(self.microscope, TescanMicroscope):
+            self.microscope.set("preset", self.ref_current, BeamType.ION)
 
     def set_stage_parameters(self):
         if self.microscope is None:

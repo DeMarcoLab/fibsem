@@ -351,7 +351,7 @@ def _draw_patterns_in_napari(
 
     # colour wheel
     # colour = ["orange", "yellow", "red", "green", "purple"]
-    colour = ["yellow", "cyan", "magenta", "green", "orange"]
+    colour = ["yellow", "cyan", "magenta", "lime", "orange"]
     from fibsem.structures import FibsemPattern
 
     # convert fibsem patterns to napari shapes
