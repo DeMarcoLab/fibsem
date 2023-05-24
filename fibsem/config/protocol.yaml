@@ -91,4 +91,9 @@ patterns:
     rotation: 0.0
     path: 
 
+  Annulus:
+    thickness: 2.0e-6
+    radius: 10.0e-6
+    depth: 1.0e-6  
+
   

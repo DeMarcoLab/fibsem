@@ -121,6 +121,28 @@ class BitmapPattern(BasePattern):
 
 
 @dataclass
+class BitmapPattern(BasePattern):
+    name: str = "BitmapPattern"
+    required_keys: tuple[str] = ("width", "height", "depth", "rotation","path")
+    patterns = None
+    protocol = None
+
+    def define(
+            self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        protocol["centre_x"] = point.x
+        protocol["centre_y"] = point.y
+        protocol["pattern"] = "BitmapPattern"  
+        protocol["rotation"] = protocol.get("rotation", 0)
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        protocol["path"] = protocol.get("path", 'bmp_path')
+        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.protocol = protocol
+        return self.patterns
+
+
+@dataclass
 class RectanglePattern(BasePattern):
     name: str = "Rectangle"
     required_keys: tuple[str] = REQUIRED_KEYS["Rectangle"]
@@ -192,6 +214,32 @@ class CirclePattern(BasePattern):
             "cleaning_cross_section", False
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+@dataclass
+class AnnulusPattern(BasePattern):
+    name: str = "Annulus"
+    required_keys: tuple[str] = ("thickness", "radius", "depth")
+    patterns = None
+    protocol = None
+    point = None
+    def define(
+            self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        
+        protocol["centre_x"] = point.x
+        protocol["centre_y"] = point.y
+        protocol["pattern"] = "Annulus"  # redundant now
+        protocol["start_angle"] = 0
+        protocol["end_angle"] = 360
+        protocol["rotation"] = 0
+        protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
+        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+
+
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
         self.point = point
@@ -751,6 +799,7 @@ __PATTERNS__ = [
     CloverPattern,
     TriForcePattern,
     BitmapPattern,
+    AnnulusPattern,
 ]
 
 

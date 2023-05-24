@@ -105,6 +105,9 @@ def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
 
     elif pattern.pattern is FibsemPattern.Bitmap:
         microscope.draw_bitmap_pattern(pattern, pattern.path)
+
+    elif pattern.pattern is FibsemPattern.Annulus:
+        microscope.draw_annulus(pattern)
         
 
 
