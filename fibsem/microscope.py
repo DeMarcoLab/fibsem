@@ -433,6 +433,9 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
         self.connection.connect(host=ip_address, port=port)
         logging.info(f"Microscope client connected to [{ip_address}:{port}]")
+        self.serial_number = self.connection.service.system.serial_number
+        self.model = self.connection.service.system.name
+        logging.info(f"Microscope client connected to [{self.model}] with serial number [{self.serial_number}]")
 
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
