@@ -2608,6 +2608,8 @@ class TescanMicroscope(FibsemMicroscope):
                 stigmation=image_eb.metadata.microscope_state.eb_settings.stigmation,
                 shift=image_eb.metadata.microscope_state.eb_settings.shift,
             )
+            else:
+                eb_settings = BeamSettings(BeamType.ELECTRON)
         else:
             eb_settings = BeamSettings(BeamType.ELECTRON)
         
@@ -2624,9 +2626,11 @@ class TescanMicroscope(FibsemMicroscope):
                         stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
                         shift=image_ib.metadata.microscope_state.ib_settings.shift,
                     )
+                
             else:
                 ib_settings = BeamSettings(BeamType.ION)
-
+        else:
+            ib_settings = BeamSettings(BeamType.ION)
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
