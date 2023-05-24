@@ -435,7 +435,7 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
         det_widget_ui.set_detected_features(det)
 
         viewer.window.add_dock_widget(
-            det_widget_ui, area="right", add_vertical_stretch=False
+            det_widget_ui, area="right", add_vertical_stretch=False, name="Fibsem Feature Detection"
         )
         det_widget_ui.exec_()
         # napari.run()
@@ -469,15 +469,11 @@ def detection_movement(microscope: FibsemMicroscope, settings: MicroscopeSetting
 
 def main():
 
-    # TODO: START_HERE
-    # convert / add fibsem image and binary masks for detections
-    # convert detections to use binary masks instead of rgb
-
     validate = True
     _load_image = True
 
     from fibsem import utils
-    microscope, settings = utils.setup_session()
+    microscope, settings = utils.setup_session(manufacturer="Demo")
 
     det = detection_movement(microscope, settings, validate=validate, _load_image=_load_image)
 

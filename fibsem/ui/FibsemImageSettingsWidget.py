@@ -10,6 +10,8 @@ from fibsem.ui import utils as ui_utils
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
+from scipy.ndimage import median_filter
+from PIL import Image
 import numpy as np
 from pathlib import Path
 import logging
@@ -35,6 +37,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
         self.eb_image, self.ib_image = None, None
+
+        self.eb_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
+        self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
+
+        self._features_layer = None
 
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
 
@@ -65,6 +72,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.button_set_beam_settings.clicked.connect(self.apply_beam_settings)
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
+        self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
+        self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
+        self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
 
         if self._TESCAN:
 
@@ -73,6 +83,103 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.stigmation_y.hide()
             self.stigmation_x.setEnabled(False)
             self.stigmation_y.setEnabled(False)
+
+
+    def check_point_image(self,point):
+            
+            if point[1] >= 0 and point[1] <= self.eb_layer.data.shape[1]:
+                return True
+            else:
+                return False
+
+    def update_ruler(self):
+
+        if self.ion_ruler_checkBox.isChecked():
+            self.ion_ruler_label.setText("Ruler: is on")
+
+            # create initial ruler
+
+            data = [[500,500],[500,1000]]
+            p1,p2 = data[0],data[1]
+
+
+            hfw_scale = self.eb_image.metadata.pixel_size.x if self.check_point_image(p1) else self.ib_image.metadata.pixel_size.x
+
+            midpoint = [np.mean([p1[0],p2[0]]),np.mean([p1[1],p2[1]])]
+            dist_um = 500 * hfw_scale*constants.SI_TO_MICRO
+            text = {
+                "string": [f"{dist_um:.2f} um"],
+                "color": "white"
+            }
+
+            # creating initial layers 
+
+            self._features_layer = self.viewer.add_points(data, size=20, face_color='green', edge_color='white', name='ruler')
+            self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ruler_line',edge_width=5)
+            self.viewer.add_points(midpoint,text=text, size=20, face_color='transparent', edge_color='transparent', name='ruler_value')
+            self._features_layer.mode = 'select'
+
+
+            self.viewer.layers.selection.active = self._features_layer
+            self._features_layer.mouse_drag_callbacks.append(self.update_ruler_points)
+
+
+        else:
+            self.ion_ruler_label.setText("Ruler: is off")
+            self.viewer.layers.remove(self._features_layer)
+            self.viewer.layers.remove('ruler_line')
+            self.viewer.layers.remove('ruler_value')
+            self._features_layer = None
+
+
+
+
+    def update_ruler_points(self,layer, event):
+        
+        dragged = False
+        yield
+
+        while event.type == 'mouse_move':
+
+
+            if self._features_layer.selected_data is not None:
+                data = self._features_layer.data
+
+
+                p1 = data[0]
+                p2 = data[1]
+
+                dist_pix = np.linalg.norm(p1-p2)
+                
+                midpoint = [(np.mean([p1[0],p2[0]])),(np.mean([p1[1],p2[1]]))]
+                
+                self.viewer.layers['ruler_line'].data = [p1,p2]
+                self.viewer.layers['ruler_value'].data = midpoint
+                
+                hfw_scale = self.eb_image.metadata.pixel_size.x if self.check_point_image(p1) else self.ib_image.metadata.pixel_size.x
+
+                dist_um = dist_pix * hfw_scale*constants.SI_TO_MICRO
+
+                text = {
+                "string": [f"{dist_um:.2f} um"],
+                "color": "white"
+                }
+
+                self.viewer.layers['ruler_value'].text = text
+                dist_dx = abs(p2[1]-p1[1]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+                dist_dy = abs(p2[0]-p1[0]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
+
+
+                self.ion_ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
+                self.viewer.layers.selection.active = self._features_layer
+                self.viewer.layers['ruler_line'].refresh()
+
+                
+                dragged = True
+                yield
+            
+
+
 
     def update_labels(self):
         self.detector_contrast_label.setText(f"{self.detector_contrast_slider.value()}%")
@@ -238,10 +345,21 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message("REFERENCE_IMAGES_TAKEN")
         log_status_message("Settings used: {}".format(self.image_settings))
 
-    def update_viewer(self, arr: np.ndarray, name: str):
-       
-        arr = ui_utils._draw_crosshair(arr)
+    def update_ui_tools(self):
 
+        self.update_viewer(self.eb_last, BeamType.ELECTRON.name)
+        self.update_viewer(self.ib_last, BeamType.ION.name)
+
+
+
+    def update_viewer(self, arr: np.ndarray, name: str):
+
+
+        if name == BeamType.ELECTRON.name:
+            self.eb_last = arr
+        if name == BeamType.ION.name:
+            self.ib_last = arr
+       
         try:
             self.viewer.layers[name].data = arr
         except:    
@@ -254,12 +372,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
         
-        layer = self.viewer.layers[name]
-        if self.eb_layer is None and name == BeamType.ELECTRON.name:
-            self.eb_layer = layer
-        if self.ib_layer is None and name == BeamType.ION.name:
-            self.ib_layer = layer
-        
+
         # centre the camera
         if self.eb_layer:
             self.viewer.camera.center = [
@@ -299,7 +412,25 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
+        if self.scalebar_checkbox.isChecked():
+            sc_is_checked = True
+            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
+        else:
+            sc_is_checked = False
+            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
+
+        if self.crosshair_checkbox.isChecked():
+            is_checked = True
+            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
+            
+        else:
+            is_checked = False
+            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
+            
+
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
+
+        
         
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:

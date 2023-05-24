@@ -8,10 +8,10 @@ scratch/test_image.tif
 *.zarr/*
 
 fibsem/wandb/*
-fibsem/models/*
+
 *.json
 fibsem/segmentation/wandb/*
-fibsem/segmentation/models/*
+fibsem/segmentation/models/*.pt*
 wandb/*
 
 fibsem/segmentation/data/*
@@ -41,4 +41,8 @@ fibsem/log/data/*
 test_images/test.tif
 
 fibsem/detection/notebook.ipynb
-*.DS_Store
+
+media/*
+.DS_Store
+fibsem/segmentation/models/**/*.pt*
+fibsem/segmentation/models/*

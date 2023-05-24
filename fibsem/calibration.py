@@ -139,7 +139,7 @@ def auto_charge_neutralisation(
     # use preset settings if not defined
     if discharge_settings is None:
         discharge_settings = ImageSettings(
-            resolution=(768, 512),
+            resolution=[768, 512],
             dwell_time=200e-9,
             hfw=image_settings.hfw,
             beam_type=BeamType.ELECTRON,

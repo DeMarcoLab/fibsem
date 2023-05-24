@@ -19,6 +19,8 @@ from fibsem.segmentation import utils as seg_utils
 from fibsem.ui.FibsemSegmentationModelWidget import FibsemSegmentationModelWidget
 from fibsem.ui.FibsemModelTrainingWidget import FibsemModelTrainingWidget
 
+from fibsem.ui.FibsemSegmentationModelWidget import FibsemSegmentationModelWidget
+from fibsem.ui.FibsemModelTrainingWidget import FibsemModelTrainingWidget
 # BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
 from napari.layers import Points
@@ -413,7 +415,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
     # TODO: go to index
     # TODO: hotkeys
     #
-
 
 # TODO: add instructions
 # TODO: add hotkeys
