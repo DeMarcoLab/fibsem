@@ -130,6 +130,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.layers.remove('ruler_line')
             self.viewer.layers.remove('ruler_value')
             self._features_layer = None
+            self.viewer.layers.selection.active = self.eb_layer
 
 
 
