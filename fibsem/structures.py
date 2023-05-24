@@ -1731,8 +1731,8 @@ class FibsemImage:
                 )
                 detector_settings = FibsemDetectorSettings(
                     type = dictionary["FIB"]["Detector"],
-                    brightness= float(dictionary["FIB"]["Detector0Offset"]),
-                    contrast= float(dictionary["FIB"]["Detector0Gain"]),
+                    brightness= float(dictionary["FIB"]["Detector0Offset"])/100,
+                    contrast= float(dictionary["FIB"]["Detector0Gain"])/100,
                 )
 
             metadata = FibsemImageMetadata(
