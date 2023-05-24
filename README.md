@@ -1,6 +1,6 @@
 # OpenFIBSEM
 
-A univseral API for FIBSEM Control, Development and Automation
+A universal API for FIBSEM Control, Development and Automation
 
 ## Overview
 
