@@ -10,6 +10,7 @@ from fibsem.ui import utils as ui_utils
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
+from scipy.ndimage import median_filter
 import numpy as np
 from pathlib import Path
 import logging
@@ -239,7 +240,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message("Settings used: {}".format(self.image_settings))
 
     def update_viewer(self, arr: np.ndarray, name: str):
-       
+    
+        # median fitler
+        arr = median_filter(arr, size=3)
+
         arr = ui_utils._draw_crosshair(arr)
 
         try:
