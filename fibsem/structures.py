@@ -23,6 +23,9 @@ except:
 try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
+    from autoscript_sdb_microscope_client.enumerations import (
+        CoordinateSystem, ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     THERMO = True
 except:
     THERMO = False
@@ -196,7 +199,7 @@ Methods:
                 z=position.z, # * np.cos(stage_tilt),
                 r=position.r,
                 t=position.t,
-                coordinate_system=position.coordinate_system,
+                coordinate_system=position.coordinate_system.upper(),
             )
 
     if TESCAN:
@@ -339,7 +342,7 @@ Methods:
     z: float = 0.0
     r: float = 0.0
     t: float = 0.0
-    coordinate_system: str = None
+    coordinate_system: str = "RAW"
 
     def __post_init__(self):
 
@@ -357,7 +360,7 @@ Methods:
         position_dict["z"] = self.z
         position_dict["r"] = self.r
         position_dict["t"] = self.t
-        position_dict["coordinate_system"] = self.coordinate_system
+        position_dict["coordinate_system"] = self.coordinate_system.upper()
 
         return position_dict
     
@@ -385,11 +388,15 @@ Methods:
     if THERMO:
             
             def to_autoscript_position(self) -> ManipulatorPosition:
+                if self.coordinate_system == "RAW":
+                    coordinate_system = "Raw"
+                elif self.coordinate_system == "STAGE":
+                    coordinate_system = "Stage"
                 return ManipulatorPosition(
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    coordinate_system=self.coordinate_system,
+                    coordinate_system=coordinate_system,
                 )
     
             @classmethod
@@ -398,7 +405,7 @@ Methods:
                     x=position.x,
                     y=position.y,
                     z=position.z,
-                    coordinate_system=position.coordinate_system,
+                    coordinate_system=position.coordinate_system.upper(),
                 )
             
 
@@ -1653,6 +1660,59 @@ class ReferenceImages:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
+
+class ThermoGISLine():
+
+    def __init__(self,line= None,name=None,status:str = "Retracted"):
+
+        self.line = line
+        self.name = name
+        self.status = status
+
+    def insert(self):
+
+        if self.line is not None:
+            self.line.insert()
+        self.status = "Inserted"
+
+    def retract(self):
+
+        if self.line is not None:
+            self.line.retract()
+        self.status = "Retracted"
+        
+class ThermoMultiChemLine():
+
+    def __init__(self,line= None,status:str = "Retracted"):
+
+        self.line = line
+        self.status = status
+        self.positions = [
+            "ELECTRON_DEFAULT",
+            "ION_DEFAULT",
+            "Retract"
+        ]
+        self.current_position = "Retract"
+
+    def insert(self,position):
+
+        position_str = getattr(MultiChemInsertPosition,position)
+
+        if self.line is not None:
+            self.line.insert(position_str)
+
+        self.current_position = position
+        self.status = "Inserted"
+
+    def retract(self):
+        
+        if self.line is not None:
+            self.line.retract()
+
+        self.status = "Retracted"
+        self.current_position = "Retracted"
+            
+        
 
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
