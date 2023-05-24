@@ -1735,6 +1735,110 @@ class FibsemImage:
             
             return cls(data=np.array(image.Image), metadata=metadata)
 
+        @classmethod
+        def fromTescanFile(
+            cls,
+            image_path: str,
+            metadata_path: str,
+            beam_type: BeamType,
+        ) -> "FibsemImage":
+            
+            with tff.TiffFile(image_path) as tiff_image:
+                data = tiff_image.asarray()
+
+            stage = 0
+            dictionary = {"MAIN": {}, "SEM": {}, "FIB": {}}
+            with open(metadata_path, "r") as file:
+                for line in file:
+                    if line.startswith('['):
+                        stage +=1 
+                        continue 
+
+                    line = line.strip()
+                    if not line:
+                        continue  # Skip empty lines
+
+                    key, value = line.split('=')
+                    key = key.strip()
+                    value = value.strip()
+                    if stage == 1:
+                        dictionary["MAIN"][key] = value
+                    if stage == 2 and beam_type.name == "ELECTRON":
+                        dictionary["SEM"][key] = value
+                    if stage == 2 and beam_type.name == "ION":
+                        dictionary["FIB"][key] = value
+
+            if beam_type.name == "ELECTRON":  
+                image_settings = ImageSettings(
+                    resolution = [data.shape[0], data.shape[1]],
+                    dwell_time= float(dictionary["SEM"]["DwellTime"]),
+                    hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                    beam_type=BeamType.ELECTRON,
+                    label=Path(image_path).stem,
+                    save_path=Path(image_path).parent,
+                )
+                pixel_size = Point(float(dictionary["MAIN"]["PixelSizeX"]), float(dictionary["MAIN"]["PixelSizeY"]))
+                microscope_state = MicroscopeState(
+                    timestamp= datetime.strptime(dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"], "%Y-%m-%d %H:%M:%S"),
+                    eb_settings=BeamSettings(
+                        beam_type=BeamType.ELECTRON,
+                        working_distance= float(dictionary["SEM"]["WD"]),
+                        beam_current= float(dictionary["SEM"]["PredictedBeamCurrent"]),
+                        voltage= float(dictionary["SEM"]["TubeVoltage"]),
+                        hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                        resolution= [data.shape[0], data.shape[1]],
+                        dwell_time= float(dictionary["SEM"]["DwellTime"]),
+                        shift = Point(float(dictionary["SEM"]["ImageShiftX"]), float(dictionary["SEM"]["ImageShiftY"])),
+                        stigmation= Point(float(dictionary["SEM"]["StigmatorX"]), float(dictionary["SEM"]["StigmatorY"])),
+                        ),
+                    ib_settings = BeamSettings(beam_type = BeamType.ION)
+                )
+                detector_settings = FibsemDetectorSettings(
+                    type = dictionary["SEM"]["Detector"],
+                    brightness= float(dictionary["SEM"]["Detector0Offset"]),
+                    contrast= float(dictionary["SEM"]["Detector0Gain"]),
+                )
+
+            if beam_type.name == "ION":
+                image_settings = ImageSettings(
+                    resolution = [data.shape[0], data.shape[1]],
+                    dwell_time= float(dictionary["FIB"]["DwellTime"]),
+                    hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                    beam_type=BeamType.ELECTRON,
+                    label=Path(image_path).stem,
+                    save_path=Path(image_path).parent,
+                )
+                pixel_size = Point(float(dictionary["MAIN"]["PixelSizeX"]), float(dictionary["MAIN"]["PixelSizeY"]))
+                microscope_state = MicroscopeState(
+                    timestamp= datetime.strptime(dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"], "%Y-%m-%d %H:%M:%S"),
+                    eb_settings = BeamSettings(beam_type = BeamType.ELECTRON),
+                    ib_settings = BeamSettings(
+                        beam_type=BeamType.ION,
+                        working_distance= float(dictionary["FIB"]["WD"]),
+                        beam_current= float(dictionary["FIB"]["PredictedBeamCurrent"]),
+                        hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                        resolution= [data.shape[0], data.shape[1]],
+                        dwell_time= float(dictionary["FIB"]["DwellTime"]),
+                        shift = Point(float(dictionary["FIB"]["ImageShiftX"]), float(dictionary["FIB"]["ImageShiftY"])),
+                        stigmation= Point(float(dictionary["FIB"]["StigmatorX"]), float(dictionary["FIB"]["StigmatorY"])),
+                        ),
+                )
+                detector_settings = FibsemDetectorSettings(
+                    type = dictionary["FIB"]["Detector"],
+                    brightness= float(dictionary["FIB"]["Detector0Offset"])/100,
+                    contrast= float(dictionary["FIB"]["Detector0Gain"])/100,
+                )
+
+            metadata = FibsemImageMetadata(
+                image_settings=image_settings,
+                pixel_size=pixel_size,
+                microscope_state=microscope_state,
+                detector_settings= detector_settings,
+                version=METADATA_VERSION,
+            )
+            return cls(data=data, metadata=metadata)
+
+
 
 @dataclass
 class ReferenceImages:
