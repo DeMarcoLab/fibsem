@@ -23,7 +23,7 @@ $ git checkout origin/v0.2-stable
 Install dependencies and package
 ```bash
 $ cd fibsem
-$ conda env create -f environment.yml
+$ conda create -n fibsem python=3.9 pip
 $ conda activate fibsem
 $ pip install -e .
 
