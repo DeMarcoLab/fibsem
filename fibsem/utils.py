@@ -19,6 +19,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemMillingSettings,
     FibsemHardware,
+    FibsemPatternSettings,
 )
 from fibsem.config import BASE_PATH
 from fibsem.microscope import FibsemMicroscope
@@ -188,7 +189,7 @@ def setup_session(
         protocol_path = os.getcwd()
 
     # configure paths
-    if session_path is None:
+    if session_path is None:# change this to cfg.LOG_PATH
         session_path = os.path.join(os.path.dirname(protocol_path), session)
     os.makedirs(session_path, exist_ok=True)
 
@@ -257,7 +258,6 @@ def load_settings_from_config(
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
-    # default_settings = DefaultSettings.__from_dict__(settings["user"])
     image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
 
     milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
@@ -270,7 +270,6 @@ def load_settings_from_config(
 
     settings = MicroscopeSettings(
         system=system_settings,
-        # default=default_settings,
         image=image_settings,
         protocol=protocol,
         milling=milling_settings,
@@ -348,6 +347,9 @@ def match_image_settings(
     image_settings.label = current_timestamp()
 
     return image_settings
+
+
+
 
 
 def get_params(main_str: str) -> list:

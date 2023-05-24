@@ -64,6 +64,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if self.microscope is None:
             return
         self.settings.system.stage = self.system_widget.settings.system.stage   # TODO: this doesnt actually update the movement widget
+        logging.debug(f"Stage parameters set to {self.settings.system.stage}")
         logging.info("Stage parameters set")  
 
     def update_ui(self):

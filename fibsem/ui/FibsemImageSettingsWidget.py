@@ -10,9 +10,15 @@ from fibsem.ui import utils as ui_utils
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
+from scipy.ndimage import median_filter
 import numpy as np
 from pathlib import Path
+import logging
 
+def log_status_message(step: str):
+    logging.debug(
+        f"STATUS | Image Widget | {step}"
+    )
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
@@ -80,6 +86,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.set("detector_mode", self.detector_settings.mode, beam_type=beam)
         self.microscope.set("detector_brightness", self.detector_settings.brightness, beam_type=beam)
         self.microscope.set("detector_contrast", self.detector_settings.contrast, beam_type=beam)
+        log_status_message("SET_DETECTOR_PARAMETERS")
+        log_status_message(f"Detector Type: {self.detector_settings.type}, Mode: {self.detector_settings.mode}, Brightness: {self.detector_settings.brightness}, Contrast: {self.detector_settings.contrast}")
+        
 
     def apply_beam_settings(self):
         beam = BeamType[self.selected_beam.currentText()]
@@ -89,7 +98,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.set("voltage", self.beam_settings.voltage, beam_type=beam)
         self.microscope.set("stigmation", self.beam_settings.stigmation, beam_type=beam)
         self.microscope.set("shift", self.beam_settings.shift, beam_type=beam)
-
+        log_status_message("SET_BEAM_PARAMETERS")
+        log_status_message(f"Working Distance: {self.beam_settings.working_distance}, Current: {self.beam_settings.beam_current}, Voltage: {self.beam_settings.voltage}, Stigmation: {self.beam_settings.stigmation}, Shift: {self.beam_settings.shift}")
         self.set_ui_from_settings(self.image_settings,beam)
 
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
@@ -143,18 +153,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             stigmation = Point(self.stigmation_x.value(), self.stigmation_y.value()),
             shift = Point(self.shift_x.value() * constants.MICRO_TO_SI, self.shift_y.value()*constants.MICRO_TO_SI),
         )
-
         return self.image_settings, self.detector_settings, self.beam_settings
 
     def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType):
-
 
         beam_settings = self.get_beam_settings(beam_type)
         detector_settings = self.get_detector_settings(beam_type)
 
         self.spinBox_resolution_x.setValue(image_settings.resolution[0])
         self.spinBox_resolution_y.setValue(image_settings.resolution[1])
-
 
         self.doubleSpinBox_image_dwell_time.setValue(image_settings.dwell_time * constants.SI_TO_MICRO)
         self.doubleSpinBox_image_hfw.setValue(image_settings.hfw * constants.SI_TO_MICRO)
@@ -217,6 +224,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.update_viewer(arr.data, name)
 
+        log_status_message("IMAGE_TAKEN_{beam_type}".format(beam_type=self.image_settings.beam_type.name))
+        log_status_message("Settings used: {}".format(self.image_settings))
+
     def take_reference_images(self):
 
         self.image_settings = self.get_settings_from_ui()[0]
@@ -226,9 +236,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.update_viewer(self.ib_image.data, BeamType.ION.name)
         self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
         self.picture_signal.emit()
+        log_status_message("REFERENCE_IMAGES_TAKEN")
+        log_status_message("Settings used: {}".format(self.image_settings))
 
     def update_viewer(self, arr: np.ndarray, name: str):
-       
+    
+        # median fitler
+        arr = median_filter(arr, size=3)
+
         arr = ui_utils._draw_crosshair(arr)
 
         try:
@@ -243,15 +258,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
         
-
         layer = self.viewer.layers[name]
         if self.eb_layer is None and name == BeamType.ELECTRON.name:
             self.eb_layer = layer
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
         
-
-
         # centre the camera
         if self.eb_layer:
             self.viewer.camera.center = [
@@ -291,15 +303,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
-        
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
         
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
             self.viewer.layers.selection.active = self.eb_layer
-
-    
-
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
@@ -320,13 +328,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             beam_type = BeamType.ION
         else:
             beam_type, image = None, None
-
+        log_status_message(f"COORDS: {coords}, BEAM_TYPE: {beam_type}")
         return coords, beam_type, image
     
     def closeEvent(self, event):
         self.viewer.layers.clear()
         event.accept()
-
 
     def clear_viewer(self):
         self.viewer.layers.clear()
@@ -340,7 +347,6 @@ def main():
     autocontrast=True, beam_type=BeamType.ION, 
     save=True, label="my_label", save_path="path/to/save", 
     gamma_enabled=True)
-
 
     viewer = napari.Viewer(ndisplay=2)
     image_settings_ui = FibsemImageSettingsWidget(image_settings=image_settings)

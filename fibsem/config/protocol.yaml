@@ -12,6 +12,7 @@ milling:
     spot_size: 5.0e-8
     rate: 3.0e-3
     dwell_time: 1.e-6
+    preset: "30 keV; 2.5 nA" # TESCAN only
 
 patterns:
   Rectangle:
@@ -62,6 +63,7 @@ patterns:
     depth: 5.0e-6
     distance: 2.0e-6
     number: 3
+    rotation: 0.0
   MicroExpansion:
     height: 1.0e-6
     width: 5.0e-6
