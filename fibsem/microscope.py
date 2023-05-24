@@ -1349,12 +1349,6 @@ class ThermoMicroscope(FibsemMicroscope):
 
         bitmap_pattern = BitmapPatternDefinition.load(path)
 
-        image = np.array(bitmap_pattern.points).astype(np.uint8)
-
-        from matplotlib import pyplot as plt 
-        plt.imshow(image[:,:,0])
-        plt.colorbar()
-        plt.show()
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,

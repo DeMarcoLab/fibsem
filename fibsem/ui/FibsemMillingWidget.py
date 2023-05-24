@@ -1,5 +1,9 @@
 
 import logging
+import tkinter
+from tkinter import filedialog, simpledialog
+from PIL import Image
+import numpy as np
 from copy import deepcopy
 import napari
 import napari.utils.notifications
@@ -112,6 +116,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # new patterns
         self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
+        if _TESCAN and not _THERMO:
+            index = self.comboBox_patterns.findText("BitmapPattern")
+            self.comboBox_patterns.removeItem(index)
         self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
     
         # milling stages
@@ -234,7 +241,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
         return 
 
-    def update_pattern_ui(self, pattern_protocol: dict = None, point: Point = None):
+    def open_path_dialog(self):
+        tkinter.Tk().withdraw()
+        file_path = filedialog.askopenfilename(title="Select Bitmap file")
+        
+        self.path_edit.setText(file_path)
+
+    def update_pattern_ui(self,pattern_protocol=None, point=None):
 
         # get current pattern
         pattern = patterning.__PATTERNS__[self.comboBox_patterns.currentIndex()]
@@ -257,6 +270,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # add new widgets
         # TODO: smarter logic for which kinds of widgets to add
         for i, key in enumerate(pattern.required_keys):
+            if key == "path":
+                label = QtWidgets.QLabel(key)
+                self.path_edit = QtWidgets.QLineEdit()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.path_edit, i, 1)
+                self.path_edit.setText(pattern_protocol[key])
+                path_explorer = QtWidgets.QPushButton("...")
+                self.gridLayout_patterns.addWidget(path_explorer, i, 2)
+                path_explorer.clicked.connect(self.open_path_dialog)
+                self.path_edit.textChanged.connect(self.update_ui_pattern)
+                continue
+
             label = QtWidgets.QLabel(key)
             spinbox = QtWidgets.QDoubleSpinBox()
             spinbox.setDecimals(3)
@@ -290,6 +315,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # get pattern protocol from ui
         pattern_dict = {}
         for i, key in enumerate(pattern.required_keys):
+            if key == "path":
+                # add path in ui and get from there
+                path = self.path_edit.text()
+                pattern_dict[key] = path
+                continue
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
             value = value * constants.DEGREES_TO_RADIANS if key in _ANGLE_KEYS else value

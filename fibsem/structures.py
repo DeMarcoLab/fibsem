@@ -744,6 +744,7 @@ class FibsemPattern(Enum): # TODO: reanme to FibsemPatternType
     Rectangle = 1
     Line = 2
     Circle = 3
+    Bitmap = 4
 
 # TODO: convert this to a dataclass, rename to FibsemPattern
 class FibsemPatternSettings:  # FibsemBasePattern
@@ -805,6 +806,17 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+        elif pattern == FibsemPattern.Bitmap:
+            self.centre_x = kwargs["centre_x"]
+            self.centre_y = kwargs["centre_y"]
+            self.width = kwargs["width"]
+            self.height = kwargs["height"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.depth = kwargs["depth"]
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+            self.path = kwargs["path"] 
+        
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
             return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
@@ -812,7 +824,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
         if self.pattern is FibsemPattern.Circle:
             return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-
+        if self.pattern is FibsemPattern.Bitmap:
+            return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, width={self.width}, height={self.height}, depth={self.depth}, path={self.path})"
 
     @staticmethod
     def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
@@ -854,6 +867,17 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
+        elif state_dict["pattern"] == "BitmapPattern":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Bitmap,
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
+                width=state_dict["width"],
+                height=state_dict["height"],
+                depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
+                path=state_dict["path"],
+            )
 
     def __to_dict__(self) -> dict:
         if self.pattern == FibsemPattern.Rectangle:
@@ -892,6 +916,19 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "rotation": self.rotation,
                 "scan_direction": self.scan_direction,
                 "cleaning_cross_section": self.cleaning_cross_section,
+            }
+        elif self.pattern == FibsemPattern.Bitmap:
+            return {
+                "pattern": "BitmapPattern",
+                "centre_x": self.centre_x,
+                "centre_y": self.centre_y,
+                "width": self.width,
+                "height": self.height,
+                "depth": self.depth,
+                "rotation": self.rotation,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+                "path": self.path,
             }
 
 
