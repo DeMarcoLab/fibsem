@@ -41,7 +41,7 @@ try:
         CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem, ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition, PatterningState)
+        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 except:
@@ -55,7 +55,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
-                               MicroscopeState, Point, FibsemDetectorSettings)
+                               MicroscopeState, Point, FibsemDetectorSettings,ThermoGISLine,ThermoMultiChemLine)
 
 
 class FibsemMicroscope(ABC):
@@ -1102,7 +1102,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 named_position, ManipulatorCoordinateSystem.STAGE
             )
                 
-        return position
+        return FibsemManipulatorPosition.from_autoscript_position(position)
 
     def setup_milling(
         self,
@@ -1363,6 +1363,7 @@ class ThermoMicroscope(FibsemMicroscope):
     ):
 
         bitmap_pattern = BitmapPatternDefinition.load(path)
+
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
@@ -1522,6 +1523,99 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # Log that the sputtering process has finished
         logging.info("Platinum sputtering process completed.")
+
+    def GIS_available_lines(self) -> list[str]:
+        """
+        Returns a list of available GIS lines.
+
+        Args:
+            None
+
+        Returns:
+            Dictionary of available GIS lines.
+
+        Notes:
+            None
+        """
+        _check_sputter(self.hardware_settings)
+        
+        gis_list = self.connection.gas.list_all_gis_ports()
+
+        self.gis_lines = {}
+        self.gis_lines = {}
+
+        for line in gis_list:
+            
+            gis_port = ThermoGISLine(self.connection.gas.get_gis_port(line),name=line,status="Retracted")
+
+            self.gis_lines[line] = gis_port
+            self.gis_lines[line] = gis_port
+
+
+        return gis_list
+    
+    def GIS_available_positions(self) -> list[str]:
+
+        _check_sputter(self.hardware_settings)
+
+        positions = ["Insert", "Retract"]
+
+        return positions
+    
+    def GIS_move_to(self,line_name:str,position:str) -> None:
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line_name]
+        # port = self.gis_lines[line_name]
+
+        if position == "Insert":
+            port.insert()
+        elif position == "Retract":
+            port.retract()
+
+    def GIS_position(self,line) -> str:
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line]
+        port = self.gis_lines[line]
+
+        return port.status
+        
+    def multichem_available_lines(self)-> list[str]:
+
+        _check_sputter(self.hardware_settings)
+
+        self.multichem = ThermoMultiChemLine(self.connection.gas.get_multichem())
+
+        self.mc_lines = self.multichem.line.list_all_gases()
+
+        return self.mc_lines
+    
+    def multichem_available_positions(self) -> list[str]:
+
+        _check_sputter(self.hardware_settings)
+
+        positions_enum = self.multichem.positions
+
+        return positions_enum
+    
+    def multichem_move_to(self,position:str):
+
+        _check_sputter(self.hardware_settings)
+
+        if position == "Retract":
+            self.multichem.retract()
+        else:
+            self.multichem.insert(position=position)
+
+
+    def multichem_position(self) -> str:
+
+        _check_sputter(self.hardware_settings)
+
+        return self.multichem.current_position
 
     def set_microscope_state(self, microscope_state: MicroscopeState) -> None:
         """Reset the microscope state to the provided state.
@@ -2104,7 +2198,7 @@ class TescanMicroscope(FibsemMicroscope):
         import fibsem
         from fibsem.utils import load_protocol
         base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path,"fibsem","config", "model.yaml")))
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -2811,19 +2905,43 @@ class TescanMicroscope(FibsemMicroscope):
 
 
 
-
     def insert_manipulator(self, name: str = "PARK"):
         _check_needle(self.hardware_settings)
+        raise NotImplementedError("TESCAN API does not support manipulator insertion.")
         pass
 
     
     def retract_manipulator(self):
         _check_needle(self.hardware_settings)
+        raise NotImplementedError("TESCAN API does not support manipulator retraction.")
         pass
-
     
+    def _check_manipulator_limits(self,x,y,z,r):
+
+        limits = self.connection.Nanomanipulator.GetLimits(Index=0,Type=0)
+
+        xmin = limits[0]
+        xmax = limits[1]
+        ymin = limits[2]
+        ymax = limits[3]
+        zmin = limits[4]
+        zmax = limits[5]
+        rmin = limits[6]
+        rmax = limits[7]
+
+        assert x >= xmin and x <= xmax, f"X position {x} is outside of manipulator limits {xmin} to {xmax}"
+        assert y >= ymin and y <= ymax, f"Y position {y} is outside of manipulator limits {ymin} to {ymax}"
+        assert z >= zmin and z <= zmax, f"Z position {z} is outside of manipulator limits {zmin} to {zmax}"
+        assert r >= rmin and r <= rmax, f"R position {r} is outside of manipulator limits {rmin} to {rmax}"
+
+
+
     def move_manipulator_relative(self,position: FibsemManipulatorPosition, name: str = None):
         _check_needle(self.hardware_settings)
+        if self.connection.Nanomanipulator.IsCalibrated(0) == False:
+            logging.info("Calibrating manipulator")
+            self.connection.Nanomanipulator.Calibrate(0)
+
         current_position = self.get_manipulator_position()
         
         x = (current_position.x + position.x)*constants.METRE_TO_MILLIMETRE
@@ -2832,14 +2950,21 @@ class TescanMicroscope(FibsemMicroscope):
         r = (current_position.r + position.r)*constants.RADIANS_TO_DEGREES
         index = 0
 
+        # self._check_manipulator_limits(x,y,z,r)
+
         logging.info(f"moving manipulator by {position}")
-
-        self.connection.Nanomanipulator.MoveTo(Index=index,X=x, Y=y, Z=z, Rot=r)
-
+        try:
+            self.connection.Nanomanipulator.MoveTo(Index=index,X=x, Y=y, Z=z, Rot=r)
+        except Exception as e:
+            logging.error(e)
+            return e
 
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition, name: str = None):
         _check_needle(self.hardware_settings)
+        if self.connection.Nanomanipulator.IsCalibrated(0) == False:
+            logging.info("Calibrating manipulator")
+            self.connection.Nanomanipulator.Calibrate(0)
         
         x = position.x*constants.METRE_TO_MILLIMETRE
         y = position.y*constants.METRE_TO_MILLIMETRE
@@ -2847,9 +2972,16 @@ class TescanMicroscope(FibsemMicroscope):
         r = position.r*constants.RADIANS_TO_DEGREES
         index = 0
 
+        # self._check_manipulator_limits(x,y,z,r)
+
         logging.info(f"moving manipulator to {position}")
 
         self.connection.Nanomanipulator.MoveTo(Index=index, X=x, Y=y, Z=z, Rot=r)
+
+    def calibrate_manipulator(self):
+        _check_needle(self.hardware_settings)
+        logging.info("Calibrating manipulator")
+        self.connection.Nanomanipulator.Calibrate(0)
 
     def _x_corrected_needle_movement(self, expected_x: float) -> FibsemManipulatorPosition:
         """Calculate the corrected needle movement to move in the x-axis.
@@ -2913,7 +3045,12 @@ class TescanMicroscope(FibsemMicroscope):
             beam_type (BeamType, optional): the beam type to move in. Defaults to BeamType.ELECTRON.
         """
         _check_needle(self.hardware_settings)
-        # stage_tilt = self.get_stage_position().t
+
+        if self.connection.Nanomanipulator.IsCalibrated(0) == False:
+            logging.info("Calibrating manipulator")
+            self.connection.Nanomanipulator.Calibrate(0)
+        stage_tilt = self.get_stage_position().t
+
 
         # # xy
         # if beam_type is BeamType.ELECTRON:
@@ -2934,6 +3071,7 @@ class TescanMicroscope(FibsemMicroscope):
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
         _check_needle(self.hardware_settings)
+        raise NotImplementedError("Not supported by TESCAN API")
         pass
 
     def _get_saved_manipulator_position(self):
@@ -3421,6 +3559,51 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.GIS.PrepareTemperature(self.line, False)
         self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
+
+    def GIS_available_lines(self) -> list[str]:
+        """
+        Returns a list of available GIS lines.
+
+        Args:
+            None
+
+        Returns:
+            A dictionary of available GIS lines.
+        """
+        _check_sputter(self.hardware_settings)
+        GIS_lines = self.connection.GIS.Enum()
+        self.lines = {}
+        line_names = []
+        for line in GIS_lines:
+            self.lines[line.name] = line
+            line_names.append(line.name)
+        
+        return line_names
+    
+    def GIS_position(self,line_name:str) -> str:
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        position = self.connection.GIS.GetPosition(line)
+
+        return position.name
+    
+    def GIS_available_positions(self) -> list[str]:
+
+        _check_sputter(self.hardware_settings)
+        self.GIS_positions = self.connection.GIS.Position
+
+        return self.GIS_positions.__members__.keys()
+    
+    def GIS_move_to(self,line_name,position) -> None:
+        
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        self.connection.GIS.MoveTo(line,self.GIS_positions[position])
+
 
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state.
@@ -4021,7 +4204,70 @@ class DemoMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
 
-    def set_microscope_state(self, microscope_state: MicroscopeState):
+    def GIS_available_lines(self) -> list[str]:
+
+        self.gis_lines = {
+            "Water": ThermoGISLine(None,"Water"),
+            "Pt": ThermoGISLine(None,"Pt"),
+            "Carbon": ThermoGISLine(None,"C")
+        }
+
+        return list(self.gis_lines.keys())
+    
+    def GIS_available_positions(self) -> list[str]:
+
+        positions = ["Insert","Retract"]
+
+        return positions
+    
+    def GIS_move_to(self,line_name: str, position_name: str) -> None:
+
+
+        line = self.gis_lines[line_name]
+
+        if position_name == "Insert":
+
+            line.status = "Inserted"
+        
+        if position_name == "Retract":
+
+            line.status = "Retracted"
+    
+    def GIS_position(self,line_name):
+
+        line = self.gis_lines[line_name]
+
+        return line.status
+    
+
+    def multichem_available_lines(self):
+
+        self.multichem = ThermoMultiChemLine()
+
+        self.mc_lines = ["mc_Water","mc_Pt","mc_C"]
+
+        return self.mc_lines
+    
+    def multichem_available_positions(self):
+
+        positions = self.multichem.positions
+
+        return positions
+    
+    def multichem_move_to(self,position):
+
+        if position == "Retract":
+            self.multichem.retract()
+        else:
+            self.multichem.insert(position)
+
+    def multichem_position(self):
+
+        return self.multichem.current_position
+
+
+    def set_microscope_state(self, state: MicroscopeState):
+
         _check_sputter(self.hardware_settings)
         _check_needle(self.hardware_settings)
         _check_beam(BeamType.ION, self.hardware_settings)
@@ -4076,7 +4322,7 @@ class DemoMicroscope(FibsemMicroscope):
         return detector_settings
 
     def get(self, key, beam_type: BeamType = None) -> float:
-        logging.info(f"Getting {key} ({beam_type})")
+        logging.debug(f"Getting {key} ({beam_type})")
 
         # get beam
         if beam_type is not None:
@@ -4255,3 +4501,4 @@ def _check_sputter(hardware_settings: FibsemHardware):
         raise NotImplementedError("The microscope does not have a GIS system.")
     if hardware_settings.gis_multichem == False:
         raise NotImplementedError("The microscope does not have a multichem system.")
+    

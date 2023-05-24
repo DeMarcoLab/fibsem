@@ -23,6 +23,9 @@ except:
 try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
+    from autoscript_sdb_microscope_client.enumerations import (
+        CoordinateSystem, ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     THERMO = True
 except:
     THERMO = False
@@ -196,7 +199,7 @@ Methods:
                 z=position.z, # * np.cos(stage_tilt),
                 r=position.r,
                 t=position.t,
-                coordinate_system=position.coordinate_system,
+                coordinate_system=position.coordinate_system.upper(),
             )
 
     if TESCAN:
@@ -339,7 +342,7 @@ Methods:
     z: float = 0.0
     r: float = 0.0
     t: float = 0.0
-    coordinate_system: str = None
+    coordinate_system: str = "RAW"
 
     def __post_init__(self):
 
@@ -357,7 +360,7 @@ Methods:
         position_dict["z"] = self.z
         position_dict["r"] = self.r
         position_dict["t"] = self.t
-        position_dict["coordinate_system"] = self.coordinate_system
+        position_dict["coordinate_system"] = self.coordinate_system.upper()
 
         return position_dict
     
@@ -385,11 +388,15 @@ Methods:
     if THERMO:
             
             def to_autoscript_position(self) -> ManipulatorPosition:
+                if self.coordinate_system == "RAW":
+                    coordinate_system = "Raw"
+                elif self.coordinate_system == "STAGE":
+                    coordinate_system = "Stage"
                 return ManipulatorPosition(
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    coordinate_system=self.coordinate_system,
+                    coordinate_system=coordinate_system,
                 )
     
             @classmethod
@@ -398,7 +405,7 @@ Methods:
                     x=position.x,
                     y=position.y,
                     z=position.z,
-                    coordinate_system=position.coordinate_system,
+                    coordinate_system=position.coordinate_system.upper(),
                 )
             
 
@@ -740,6 +747,7 @@ class FibsemPattern(Enum): # TODO: reanme to FibsemPatternType
     Bitmap = 4
     Annulus = 5
 
+
 # TODO: convert this to a dataclass, rename to FibsemPattern
 class FibsemPatternSettings:  # FibsemBasePattern
     '''
@@ -829,7 +837,6 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.end_angle = kwargs["end_angle"] if "end_angle" in kwargs else 360.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
-
         
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
@@ -908,7 +915,6 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
 
-
     def __to_dict__(self) -> dict:
         if self.pattern == FibsemPattern.Rectangle:
             return {
@@ -975,7 +981,6 @@ class FibsemPatternSettings:  # FibsemBasePattern
             }
 
             
-
 
 
 
@@ -1292,25 +1297,6 @@ class SystemSettings:
         )
 
         return system_settings
-
-
-@dataclass
-class DefaultSettings:
-    """
-    Default settings for the imaging and milling current 
-    """
-    imaging_current: float = 20.0e-12
-    milling_current: float = 2.0e-9
-
-    @staticmethod
-    def __from_dict__(settings: dict) -> "DefaultSettings":
-
-        default_settings = DefaultSettings(
-            imaging_current=settings["imaging_current"],
-            milling_current=settings["milling_current"],
-        )
-        return default_settings
-
 
 @dataclass
 class MicroscopeSettings:
@@ -1761,6 +1747,59 @@ class ReferenceImages:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
+
+class ThermoGISLine():
+
+    def __init__(self,line= None,name=None,status:str = "Retracted"):
+
+        self.line = line
+        self.name = name
+        self.status = status
+
+    def insert(self):
+
+        if self.line is not None:
+            self.line.insert()
+        self.status = "Inserted"
+
+    def retract(self):
+
+        if self.line is not None:
+            self.line.retract()
+        self.status = "Retracted"
+        
+class ThermoMultiChemLine():
+
+    def __init__(self,line= None,status:str = "Retracted"):
+
+        self.line = line
+        self.status = status
+        self.positions = [
+            "ELECTRON_DEFAULT",
+            "ION_DEFAULT",
+            "Retract"
+        ]
+        self.current_position = "Retract"
+
+    def insert(self,position):
+
+        position_str = getattr(MultiChemInsertPosition,position)
+
+        if self.line is not None:
+            self.line.insert(position_str)
+
+        self.current_position = position
+        self.status = "Inserted"
+
+    def retract(self):
+        
+        if self.line is not None:
+            self.line.retract()
+
+        self.status = "Retracted"
+        self.current_position = "Retracted"
+            
+        
 
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""

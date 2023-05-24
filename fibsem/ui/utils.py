@@ -93,8 +93,6 @@ import napari
 #     rectangle_vertical: plt.Rectangle
 
 
-
-
 # # TODO update with Point
 # def draw_crosshair(image, canvas, x: float = None, y: float = None, colour: str ="yellow"):
 #     # draw crosshairs
@@ -113,7 +111,6 @@ import napari
 #     # draw line
 #     canvas.ax11.add_patch(line)
 #     return
-
 
 
 # def display_error_message(message, title="Error"):
@@ -136,13 +133,10 @@ import napari
 #     msg.setText(text)
 #     msg.setStandardButtons(buttons)
 #     msg.exec_()
-    
+
 #     response = True if (msg.clickedButton() == msg.button(QMessageBox.Yes)) or (msg.clickedButton() == msg.button(QMessageBox.Ok) ) else False
 
 #     return response
-
-
-
 
 
 from PyQt5 import QtWidgets
@@ -150,12 +144,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QGridLayout, QLabel
 
+
 def set_arr_as_qlabel(
     arr: np.ndarray,
     label: QLabel,
-    shape: tuple = (1536//4, 1024//4),
+    shape: tuple = (1536 // 4, 1024 // 4),
 ) -> QLabel:
-
     image = QImage(
         arr.data,
         arr.shape[1],
@@ -165,6 +159,7 @@ def set_arr_as_qlabel(
     label.setPixmap(QPixmap.fromImage(image).scaled(*shape))
 
     return label
+
 
 # def set_arr_as_qlabel_8(
 #     arr: np.ndarray,
@@ -182,10 +177,15 @@ def set_arr_as_qlabel(
 
 #     return label
 
-def convert_pattern_to_napari_circle(pattern_settings: FibsemPatternSettings, image: FibsemImage):
 
+def convert_pattern_to_napari_circle(
+    pattern_settings: FibsemPatternSettings, image: FibsemImage
+):
     # image centre
-    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2 # TODO; this should be the actual shape of the image
+    icy, icx = (
+        image.metadata.image_settings.resolution[1] // 2,
+        image.metadata.image_settings.resolution[0] // 2,
+    )  # TODO; this should be the actual shape of the image
 
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
@@ -200,24 +200,32 @@ def convert_pattern_to_napari_circle(pattern_settings: FibsemPatternSettings, im
     xmax, ymax = cx + r, cy + r
 
     # create circle
-    shape = [[ymin, xmin], [ymin, xmax], [ymax, xmax], [ymax, xmin]] #??
+    shape = [[ymin, xmin], [ymin, xmax], [ymax, xmax], [ymax, xmin]]  # ??
     return shape
+
 
 def convert_pattern_to_napari_rect(
     pattern_settings: FibsemPatternSettings, image: FibsemImage
 ) -> np.ndarray:
     # image centre
-    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+    icy, icx = (
+        image.metadata.image_settings.resolution[1] // 2,
+        image.metadata.image_settings.resolution[0] // 2,
+    )
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
     # extract pattern information from settings
     from fibsem.structures import FibsemPattern
+
     if pattern_settings.pattern is FibsemPattern.Line:
         pattern_width = pattern_settings.end_x - pattern_settings.start_x
         pattern_height = max(pattern_settings.end_y - pattern_settings.start_y, 0.5e-6)
-        pattern_rotation = np.arctan2(pattern_height, pattern_width) # TODO: line rotation doesnt work correctly, fix
+        pattern_rotation = np.arctan2(
+            pattern_height, pattern_width
+        )  # TODO: line rotation doesnt work correctly, fix
         pattern_centre_x = (pattern_settings.end_x + pattern_settings.start_x) / 2
         pattern_centre_y = (pattern_settings.end_y + pattern_settings.start_y) / 2
+
     
     elif pattern_settings.pattern is FibsemPattern.Annulus: #only used for out of bounds check
         pattern_width = 2*pattern_settings.radius
@@ -252,6 +260,7 @@ def convert_pattern_to_napari_rect(
     shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
     return shape
 
+
 def convert_bitmap_pattern_to_napari_image(
         pattern_settings: FibsemPatternSettings, image: FibsemImage
 ) -> np.ndarray:
@@ -279,7 +288,7 @@ def convert_bitmap_pattern_to_napari_image(
 
     
     return img_array, translate_position
-    
+
 def convert_pattern_to_napari_image(pattern_settings: FibsemPatternSettings, image: FibsemImage) -> np.ndarray:
 
     # image centre
@@ -318,10 +327,12 @@ def _create_annulus_shape(width, height, inner_radius, outer_radius):
 
 
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
+
     # remove all shapes layers
     layers_to_remove = []
     layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value"]
     for layer in viewer.layers:
+
         if layer.name in layers_to_ignore:
             continue
         if isinstance(layer, layer_type) or layer.name in ["bmp_Image","annulus_Image"]:
@@ -329,20 +340,20 @@ def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.
     for layer in layers_to_remove:
         viewer.layers.remove(layer)  # Not removing the second layer?
 
+
 def _draw_patterns_in_napari(
     viewer: napari.Viewer,
     ib_image: FibsemImage,
     eb_image: FibsemImage,
     all_patterns: list[FibsemPatternSettings],
 ):
-
     _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
-    
+
     # colour wheel
     # colour = ["orange", "yellow", "red", "green", "purple"]
     colour = ["yellow", "cyan", "magenta", "green", "orange"]
     from fibsem.structures import FibsemPattern
-   
+
     # convert fibsem patterns to napari shapes
 
     for i, stage in enumerate(all_patterns):
@@ -352,6 +363,7 @@ def _draw_patterns_in_napari(
             if pattern_settings.pattern is FibsemPattern.Bitmap:
                 if pattern_settings.path == None or pattern_settings.path == '':
                     continue
+
                 bmp_Image, translate_position = convert_bitmap_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
                 viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
                 shape_patterns = []
@@ -364,9 +376,12 @@ def _draw_patterns_in_napari(
 
             elif pattern_settings.pattern is FibsemPattern.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
+
                 shape_types.append("ellipse")
             else:
-                shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+                shape = convert_pattern_to_napari_rect(
+                    pattern_settings=pattern_settings, image=ib_image
+                )
                 shape_types.append("rectangle")
 
             # offset the x coord by image width
@@ -374,6 +389,7 @@ def _draw_patterns_in_napari(
                 for c in shape:
                     c[1] += eb_image.data.shape[1]
             shape_patterns.append(shape)
+
 
         if len(shape_patterns) > 0:    
             viewer.add_shapes(
@@ -387,8 +403,19 @@ def _draw_patterns_in_napari(
                 blending="translucent",
             )
 
-def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
+        if len(shape_patterns) > 0:    
+            viewer.add_shapes(
+                shape_patterns,
+                name=f"Stage {i+1}",
+                shape_type=shape_types,
+                edge_width=0.5,
+                edge_color=colour[i % 5],
+                face_color=colour[i % 5],
+                opacity=0.5,
+            )
 
+
+def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()
     msg.setWindowTitle(title)
     msg.setText(text)
@@ -403,6 +430,14 @@ def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.
     )
 
     return response
+
+from PyQt5 import QtGui
+def _display_logo(path, label, shape=[50, 50]):
+    label.setScaledContents(True)
+    label.setFixedSize(*shape)
+    label.setPixmap(QtGui.QPixmap(path))
+
+
         
 def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, width: float = 0.15) -> None:
 
@@ -541,24 +576,23 @@ def _draw_scalebar(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, w
 
     
 
-def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
+def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
     icy, icx = resolution[1] // 2, resolution[0] // 2
 
     cx = int(icx + (centre.x / pixel_size))
     cy = int(icy - (centre.y / pixel_size))
-    
+
     return Point(cx, cy)
 
 
-def validate_pattern_placement(patterns: list[FibsemPatternSettings],resolution: list, shape: list[list[float]]):
-
-
+def validate_pattern_placement(
+    patterns: list[FibsemPatternSettings], resolution: list, shape: list[list[float]]
+):
     x_lim = resolution[0]
     y_lim = resolution[1]
 
     for coordinate in shape:
-
         x_coord = coordinate[1]
         y_coord = coordinate[0]
 
@@ -566,6 +600,63 @@ def validate_pattern_placement(patterns: list[FibsemPatternSettings],resolution:
             return False
         if y_coord < 0 or y_coord > y_lim:
             return False
-        
+
     return True
-    
+
+
+from fibsem import config as cfg
+from pathlib import Path
+
+
+# TODO: add filters for file types
+
+
+def _get_directory_ui(
+    msg: str = "Select a directory", path: Path = cfg.LOG_PATH, parent=None
+) -> Path:
+    path = QtWidgets.QFileDialog.getExistingDirectory(parent, msg, directory=path)
+    return path
+
+
+def _get_file_ui(
+    msg: str = "Select a file",
+    path: Path = cfg.LOG_PATH,
+    _filter: str = "*yaml",
+    parent=None,
+) -> Path:
+    path, _ = QtWidgets.QFileDialog.getOpenFileName(
+        parent, msg, directory=path, filter=_filter
+    )
+    return path
+
+
+def _get_save_file_ui(
+    msg: str = "Select a file",
+    path: Path = cfg.LOG_PATH,
+    _filter: str = "*yaml",
+    parent=None,
+) -> Path:
+    path, _ = QtWidgets.QFileDialog.getSaveFileName(
+        parent,
+        msg,
+        directory=path,
+        filter=_filter,
+    )
+    return path
+
+
+def _get_text_ui(
+    msg: str = "Enter text",
+    title: str = "Text Entry",
+    default: str = "UserText",
+    parent=None,
+) -> tuple[str, bool]:
+    text, okPressed = QtWidgets.QInputDialog.getText(
+        parent,
+        title,
+        msg,
+        QtWidgets.QLineEdit.Normal,
+        default,
+    )
+
+    return text, okPressed

@@ -9,6 +9,8 @@ from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, Fibse
 from fibsem.ui import utils as ui_utils 
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
+
+from scipy.ndimage import median_filter
 from PIL import Image
 import numpy as np
 from pathlib import Path
@@ -351,6 +353,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
 
     def update_viewer(self, arr: np.ndarray, name: str):
+
 
         if name == BeamType.ELECTRON.name:
             self.eb_last = arr

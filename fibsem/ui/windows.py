@@ -77,7 +77,7 @@ def run_validation_ui(
 
     # reminders
     reminder_str = """Please check that the following steps have been completed:
-    \n - Sample is inserted
+    \n - Experiment is inserted
     \n - Confirm Operating Temperature
     \n - Needle Calibration
     \n - Ion Column Calibration
