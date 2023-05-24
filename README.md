@@ -128,7 +128,7 @@ microscope, settings = utils.setup_session(ip_address="localhost", manufacturer=
 # set imaging settings
 image_settings = ImageSettings(
         hfw=150e-6, 
-        resolution=(1536, 1024),
+        resolution=[1536, 1024],
         dwell_time=1e-6, 
         autocontrast=True, 
         beam_type=BeamType.ELECTRON)
