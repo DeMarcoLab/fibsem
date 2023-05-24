@@ -63,6 +63,7 @@ patterns:
     depth: 5.0e-6
     distance: 2.0e-6
     number: 3
+    rotation: 0.0
   MicroExpansion:
     height: 1.0e-6
     width: 5.0e-6
@@ -83,3 +84,16 @@ patterns:
     height: 10.0e-6
     width: 1.0e-6
     depth: 5.0e-6 
+  BitmapPattern:
+    width: 10.0e-6
+    height: 10.0e-6
+    depth: 1.0e-6
+    rotation: 0.0
+    path: 
+
+  Annulus:
+    thickness: 2.0e-6
+    radius: 10.0e-6
+    depth: 1.0e-6  
+
+  

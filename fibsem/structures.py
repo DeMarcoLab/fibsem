@@ -23,6 +23,9 @@ except:
 try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
+    from autoscript_sdb_microscope_client.enumerations import (
+        CoordinateSystem, ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     THERMO = True
 except:
     THERMO = False
@@ -196,7 +199,7 @@ Methods:
                 z=position.z, # * np.cos(stage_tilt),
                 r=position.r,
                 t=position.t,
-                coordinate_system=position.coordinate_system,
+                coordinate_system=position.coordinate_system.upper(),
             )
 
     if TESCAN:
@@ -228,6 +231,10 @@ Methods:
             self.t - other.t,
             self.coordinate_system,
         )
+
+    def _scale_repr(self, scale: float, precision: int = 2):
+        return f"x:{self.x*scale:.{precision}f}, y:{self.y*scale:.{precision}f}, z:{self.z*scale:.{precision}f}"
+
 
 @dataclass
 class FibsemHardware:
@@ -335,7 +342,7 @@ Methods:
     z: float = 0.0
     r: float = 0.0
     t: float = 0.0
-    coordinate_system: str = None
+    coordinate_system: str = "RAW"
 
     def __post_init__(self):
 
@@ -353,7 +360,7 @@ Methods:
         position_dict["z"] = self.z
         position_dict["r"] = self.r
         position_dict["t"] = self.t
-        position_dict["coordinate_system"] = self.coordinate_system
+        position_dict["coordinate_system"] = self.coordinate_system.upper()
 
         return position_dict
     
@@ -381,11 +388,15 @@ Methods:
     if THERMO:
             
             def to_autoscript_position(self) -> ManipulatorPosition:
+                if self.coordinate_system == "RAW":
+                    coordinate_system = "Raw"
+                elif self.coordinate_system == "STAGE":
+                    coordinate_system = "Stage"
                 return ManipulatorPosition(
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    coordinate_system=self.coordinate_system,
+                    coordinate_system=coordinate_system,
                 )
     
             @classmethod
@@ -394,7 +405,7 @@ Methods:
                     x=position.x,
                     y=position.y,
                     z=position.z,
-                    coordinate_system=position.coordinate_system,
+                    coordinate_system=position.coordinate_system.upper(),
                 )
             
 
@@ -733,6 +744,9 @@ class FibsemPattern(Enum): # TODO: reanme to FibsemPatternType
     Rectangle = 1
     Line = 2
     Circle = 3
+    Bitmap = 4
+    Annulus = 5
+
 
 # TODO: convert this to a dataclass, rename to FibsemPattern
 class FibsemPatternSettings:  # FibsemBasePattern
@@ -763,6 +777,15 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     depth: float (m),
                     start_angle: float = 0.0 (degrees),
                     end_angle: float = 360.0 (degrees),
+
+                if FibsemPattern.Bitmap
+                    centre_x: float (m),
+                    centre_y: float (m),
+                    width: float (m),
+                    height: float (m),
+                    rotation: float = 0.0 (degrees),
+                    depth: float (m),
+                    path: str = path to image,
     '''
     def __init__(self, pattern: FibsemPattern = FibsemPattern.Rectangle, **kwargs):
         self.pattern = pattern
@@ -794,6 +817,27 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+        elif pattern == FibsemPattern.Bitmap:
+            self.centre_x = kwargs["centre_x"]
+            self.centre_y = kwargs["centre_y"]
+            self.width = kwargs["width"]
+            self.height = kwargs["height"]
+            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
+            self.depth = kwargs["depth"]
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+            self.path = kwargs["path"]
+        elif pattern == FibsemPattern.Annulus:
+            self.centre_x = kwargs["centre_x"]
+            self.centre_y = kwargs["centre_y"]
+            self.radius = kwargs["radius"]
+            self.thickness = kwargs["thickness"]
+            self.depth = kwargs["depth"]
+            self.start_angle = kwargs["start_angle"] if "start_angle" in kwargs else 0.0
+            self.end_angle = kwargs["end_angle"] if "end_angle" in kwargs else 360.0
+            self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
+            self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+        
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
             return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
@@ -801,7 +845,10 @@ class FibsemPatternSettings:  # FibsemBasePattern
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
         if self.pattern is FibsemPattern.Circle:
             return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-
+        if self.pattern is FibsemPattern.Bitmap:
+            return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, width={self.width}, height={self.height}, depth={self.depth}, path={self.path})"
+        if self.pattern is FibsemPattern.Annulus:
+            return f'FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, thickness={self.thickness}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})'
 
     @staticmethod
     def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
@@ -840,6 +887,30 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 start_angle=state_dict["start_angle"],
                 end_angle=state_dict["end_angle"],
                 rotation=state_dict["rotation"],
+                scan_direction=state_dict["scan_direction"],
+                cleaning_cross_section=state_dict["cleaning_cross_section"],
+            )
+        elif state_dict["pattern"] == "BitmapPattern":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Bitmap,
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
+                width=state_dict["width"],
+                height=state_dict["height"],
+                depth=state_dict["depth"],
+                rotation=state_dict["rotation"],
+                path=state_dict["path"],
+            )
+        elif state_dict["pattern"] == "Annulus":
+            return FibsemPatternSettings(
+                pattern=FibsemPattern.Annulus,
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
+                radius=state_dict["radius"],
+                thickness=state_dict["thickness"],
+                depth=state_dict["depth"],
+                start_angle=state_dict["start_angle"],
+                end_angle=state_dict["end_angle"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
@@ -882,7 +953,34 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "scan_direction": self.scan_direction,
                 "cleaning_cross_section": self.cleaning_cross_section,
             }
+        elif self.pattern == FibsemPattern.Bitmap:
+            return {
+                "pattern": "BitmapPattern",
+                "centre_x": self.centre_x,
+                "centre_y": self.centre_y,
+                "width": self.width,
+                "height": self.height,
+                "depth": self.depth,
+                "rotation": self.rotation,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+                "path": self.path,
+            }
+        elif self.pattern == FibsemPattern.Annulus:
+            return {
+                "pattern": "Annulus",
+                "centre_x": self.centre_x,
+                "centre_y": self.centre_y,
+                "radius": self.radius,
+                "thickness": self.thickness,
+                "depth": self.depth,
+                "start_angle": self.start_angle,
+                "end_angle": self.end_angle,
+                "scan_direction": self.scan_direction,
+                "cleaning_cross_section": self.cleaning_cross_section,
+            }
 
+            
 
 
 
@@ -1199,25 +1297,6 @@ class SystemSettings:
         )
 
         return system_settings
-
-
-@dataclass
-class DefaultSettings:
-    """
-    Default settings for the imaging and milling current 
-    """
-    imaging_current: float = 20.0e-12
-    milling_current: float = 2.0e-9
-
-    @staticmethod
-    def __from_dict__(settings: dict) -> "DefaultSettings":
-
-        default_settings = DefaultSettings(
-            imaging_current=settings["imaging_current"],
-            milling_current=settings["milling_current"],
-        )
-        return default_settings
-
 
 @dataclass
 class MicroscopeSettings:
@@ -1656,6 +1735,110 @@ class FibsemImage:
             
             return cls(data=np.array(image.Image), metadata=metadata)
 
+        @classmethod
+        def fromTescanFile(
+            cls,
+            image_path: str,
+            metadata_path: str,
+            beam_type: BeamType,
+        ) -> "FibsemImage":
+            
+            with tff.TiffFile(image_path) as tiff_image:
+                data = tiff_image.asarray()
+
+            stage = 0
+            dictionary = {"MAIN": {}, "SEM": {}, "FIB": {}}
+            with open(metadata_path, "r") as file:
+                for line in file:
+                    if line.startswith('['):
+                        stage +=1 
+                        continue 
+
+                    line = line.strip()
+                    if not line:
+                        continue  # Skip empty lines
+
+                    key, value = line.split('=')
+                    key = key.strip()
+                    value = value.strip()
+                    if stage == 1:
+                        dictionary["MAIN"][key] = value
+                    if stage == 2 and beam_type.name == "ELECTRON":
+                        dictionary["SEM"][key] = value
+                    if stage == 2 and beam_type.name == "ION":
+                        dictionary["FIB"][key] = value
+
+            if beam_type.name == "ELECTRON":  
+                image_settings = ImageSettings(
+                    resolution = [data.shape[0], data.shape[1]],
+                    dwell_time= float(dictionary["SEM"]["DwellTime"]),
+                    hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                    beam_type=BeamType.ELECTRON,
+                    label=Path(image_path).stem,
+                    save_path=Path(image_path).parent,
+                )
+                pixel_size = Point(float(dictionary["MAIN"]["PixelSizeX"]), float(dictionary["MAIN"]["PixelSizeY"]))
+                microscope_state = MicroscopeState(
+                    timestamp= datetime.strptime(dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"], "%Y-%m-%d %H:%M:%S"),
+                    eb_settings=BeamSettings(
+                        beam_type=BeamType.ELECTRON,
+                        working_distance= float(dictionary["SEM"]["WD"]),
+                        beam_current= float(dictionary["SEM"]["PredictedBeamCurrent"]),
+                        voltage= float(dictionary["SEM"]["TubeVoltage"]),
+                        hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                        resolution= [data.shape[0], data.shape[1]],
+                        dwell_time= float(dictionary["SEM"]["DwellTime"]),
+                        shift = Point(float(dictionary["SEM"]["ImageShiftX"]), float(dictionary["SEM"]["ImageShiftY"])),
+                        stigmation= Point(float(dictionary["SEM"]["StigmatorX"]), float(dictionary["SEM"]["StigmatorY"])),
+                        ),
+                    ib_settings = BeamSettings(beam_type = BeamType.ION)
+                )
+                detector_settings = FibsemDetectorSettings(
+                    type = dictionary["SEM"]["Detector"],
+                    brightness= float(dictionary["SEM"]["Detector0Offset"]),
+                    contrast= float(dictionary["SEM"]["Detector0Gain"]),
+                )
+
+            if beam_type.name == "ION":
+                image_settings = ImageSettings(
+                    resolution = [data.shape[0], data.shape[1]],
+                    dwell_time= float(dictionary["FIB"]["DwellTime"]),
+                    hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                    beam_type=BeamType.ELECTRON,
+                    label=Path(image_path).stem,
+                    save_path=Path(image_path).parent,
+                )
+                pixel_size = Point(float(dictionary["MAIN"]["PixelSizeX"]), float(dictionary["MAIN"]["PixelSizeY"]))
+                microscope_state = MicroscopeState(
+                    timestamp= datetime.strptime(dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"], "%Y-%m-%d %H:%M:%S"),
+                    eb_settings = BeamSettings(beam_type = BeamType.ELECTRON),
+                    ib_settings = BeamSettings(
+                        beam_type=BeamType.ION,
+                        working_distance= float(dictionary["FIB"]["WD"]),
+                        beam_current= float(dictionary["FIB"]["PredictedBeamCurrent"]),
+                        hfw= data.shape[0]*float(dictionary["MAIN"]["PixelSizeX"]),
+                        resolution= [data.shape[0], data.shape[1]],
+                        dwell_time= float(dictionary["FIB"]["DwellTime"]),
+                        shift = Point(float(dictionary["FIB"]["ImageShiftX"]), float(dictionary["FIB"]["ImageShiftY"])),
+                        stigmation= Point(float(dictionary["FIB"]["StigmatorX"]), float(dictionary["FIB"]["StigmatorY"])),
+                        ),
+                )
+                detector_settings = FibsemDetectorSettings(
+                    type = dictionary["FIB"]["Detector"],
+                    brightness= float(dictionary["FIB"]["Detector0Offset"])/100,
+                    contrast= float(dictionary["FIB"]["Detector0Gain"])/100,
+                )
+
+            metadata = FibsemImageMetadata(
+                image_settings=image_settings,
+                pixel_size=pixel_size,
+                microscope_state=microscope_state,
+                detector_settings= detector_settings,
+                version=METADATA_VERSION,
+            )
+            return cls(data=data, metadata=metadata)
+
+
 
 @dataclass
 class ReferenceImages:
@@ -1668,6 +1851,59 @@ class ReferenceImages:
 
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
+
+class ThermoGISLine():
+
+    def __init__(self,line= None,name=None,status:str = "Retracted"):
+
+        self.line = line
+        self.name = name
+        self.status = status
+
+    def insert(self):
+
+        if self.line is not None:
+            self.line.insert()
+        self.status = "Inserted"
+
+    def retract(self):
+
+        if self.line is not None:
+            self.line.retract()
+        self.status = "Retracted"
+        
+class ThermoMultiChemLine():
+
+    def __init__(self,line= None,status:str = "Retracted"):
+
+        self.line = line
+        self.status = status
+        self.positions = [
+            "ELECTRON_DEFAULT",
+            "ION_DEFAULT",
+            "Retract"
+        ]
+        self.current_position = "Retract"
+
+    def insert(self,position):
+
+        position_str = getattr(MultiChemInsertPosition,position)
+
+        if self.line is not None:
+            self.line.insert(position_str)
+
+        self.current_position = position
+        self.status = "Inserted"
+
+    def retract(self):
+        
+        if self.line is not None:
+            self.line.retract()
+
+        self.status = "Retracted"
+        self.current_position = "Retracted"
+            
+        
 
 def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
