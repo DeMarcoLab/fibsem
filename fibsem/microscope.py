@@ -4278,7 +4278,7 @@ class DemoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.hardware_settings)
         _check_beam(BeamType.ELECTRON, self.hardware_settings)
         _check_stage(self.hardware_settings)
-        self.move_stage_absolute(microscope_state.absolute_position)
+        self.move_stage_absolute(state.absolute_position)
         logging.info(f"Setting microscope state")
         
 

@@ -44,7 +44,7 @@ def main():
 
     while True:
         response = input(f"""Move to the desired position. 
-        Do you want to select another lamella? [y]/n {len(sample)} selected so far.""")
+        Do you want to select another lamella? [y]/n {len(experiment)} selected so far.""")
 
         # store lamella information
         if response.lower() in ["", "y", "yes"]:
@@ -60,13 +60,13 @@ def main():
                 reference_image=acquire.new_image(microscope, settings.image),
                 path = path
             )
-            sample.append(lamella)
+            experiment.append(lamella)
             lamella_no += 1
         else:
             break
 
     # sanity check
-    if len(sample) == 0:
+    if len(experiment) == 0:
         logging.info(f"No lamella positions selected. Exiting.")
         return
 
@@ -81,7 +81,7 @@ def main():
         logging.info(f"Starting milling stage {stage_no}")
 
         lamella: Lamella
-        for lamella_no, lamella in enumerate(sample):
+        for lamella_no, lamella in enumerate(experiment):
 
             logging.info(f"Starting lamella {lamella_no:02d}")
 
