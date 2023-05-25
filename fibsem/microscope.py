@@ -435,7 +435,8 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"Microscope client connected to [{ip_address}:{port}]")
         self.serial_number = self.connection.service.system.serial_number
         self.model = self.connection.service.system.name
-        logging.info(f"Microscope client connected to [{self.model}] with serial number [{self.serial_number}]")
+        self.software_version = self.connection.service.system.version
+        logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
 
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
@@ -2223,6 +2224,12 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
         self.connection = Automation(ip_address, port)
         logging.info(f"Microscope client connected to [{ip_address}:{port}]")
+        self.connection.SEM.Detector.Set(0, self.electron_detector_active, Bpp.Grayscale_8_bit)
+        image = self.connection.SEM.Scan.AcquireImageFromChannel(0, 1, 1, 100)
+        self.serial_number = image.Header["MAIN"]["SerialNumber"]
+        self.model = image.Header["MAIN"]["DeviceModel"]
+        self.software_version = image.Header["MAIN"]["SoftwareVersion"]
+        logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
         """
@@ -3986,6 +3993,7 @@ class DemoMicroscope(FibsemMicroscope):
 
     def connect_to_microscope(self):
         logging.info(f"Connected to Demo Microscope")
+        logging.info(f"Microscope client connected to model Demo with serial number 666 and software version 0.1")
         return
 
     def disconnect(self):
