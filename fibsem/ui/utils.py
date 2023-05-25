@@ -403,17 +403,6 @@ def _draw_patterns_in_napari(
                 blending="translucent",
             )
 
-        if len(shape_patterns) > 0:    
-            viewer.add_shapes(
-                shape_patterns,
-                name=f"Stage {i+1}",
-                shape_type=shape_types,
-                edge_width=0.5,
-                edge_color=colour[i % 5],
-                face_color=colour[i % 5],
-                opacity=0.5,
-            )
-
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()
