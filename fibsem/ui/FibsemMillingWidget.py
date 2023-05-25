@@ -1,7 +1,5 @@
 
 import logging
-import tkinter
-from tkinter import filedialog, simpledialog
 from PIL import Image
 import numpy as np
 from copy import deepcopy
@@ -19,7 +17,7 @@ from fibsem.structures import (BeamType, FibsemMillingSettings,
                                Point, FibsemPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle,convert_pattern_to_napari_rect, validate_pattern_placement
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle,convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui
 from napari.qt.threading import thread_worker
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number"]
@@ -243,8 +241,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         return 
 
     def open_path_dialog(self):
-        tkinter.Tk().withdraw()
-        file_path = filedialog.askopenfilename(title="Select Bitmap file")
+
+        file_path = _get_file_ui(msg="Select Bitmap File",_filter= "*bmp")
         
         self.path_edit.setText(file_path)
 
