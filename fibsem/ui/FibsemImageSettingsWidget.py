@@ -12,6 +12,8 @@ from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
 from scipy.ndimage import median_filter
 from PIL import Image
+from scipy.ndimage import median_filter
+from PIL import Image
 import numpy as np
 from pathlib import Path
 import logging

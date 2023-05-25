@@ -46,3 +46,4 @@ media/*
 .DS_Store
 fibsem/segmentation/models/**/*.pt*
 fibsem/segmentation/models/*
+example/**/*.tif
