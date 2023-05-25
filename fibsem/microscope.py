@@ -1513,7 +1513,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.set_default_application_file(protocol["application_file"])
         self.connection.patterning.set_default_beam_type(BeamType.ELECTRON.value)
 
-        gis_line = protocol["line"]
+        gis_line = protocol["gas"]
         port = self.gis_lines[gis_line]
         if self.GIS_position(gis_line) == "Retracted":
             port.insert()
@@ -1536,7 +1536,7 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.time = sputter_time + 0.1
         
         self.connection.beams.electron_beam.blank()
-        port.open()
+        # port.line.open()
         if self.connection.patterning.state == "Idle":
             logging.info(f"Sputtering with {gis_line} for {sputter_time} seconds...")
             self.connection.patterning.start()  # asynchronous patterning
@@ -1548,9 +1548,55 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             logging.warning(f"Patterning state is {self.connection.patterning.state}")
             logging.warning("Consider adjusting the patterning line depth.")
-        port.close()
+        # port.line.close()
 
         
+    def run_Multichem(self,protocol):
+
+        _check_sputter(self.hardware_settings)
+        self.original_active_view = self.connection.imaging.get_active_view()
+        self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
+        self.connection.patterning.clear_patterns()
+        self.connection.patterning.set_default_application_file(protocol["application_file"])
+        self.connection.patterning.set_default_beam_type(BeamType.ELECTRON.value)
+
+        mc_line = protocol["gas"]
+        port = self.multichem
+        if self.multichem_position() == "Retracted":
+            port.insert()
+        
+        if self.multichem_temp_ready(mc_line) == False:
+            self.multichem_heat_up(mc_line)
+
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+        sputter_time = protocol["sputter_time"]
+
+        self.connection.beams.electron_beam.horizontal_field_width.value = hfw
+        pattern = self.connection.patterning.create_line(
+            -line_pattern_length / 2,  # x_start
+            +line_pattern_length,  # y_start
+            +line_pattern_length / 2,  # x_end
+            +line_pattern_length,  # y_end
+            2e-6,
+        )  # milling depth
+        pattern.time = sputter_time + 0.1
+        
+        self.connection.beams.electron_beam.blank()
+        port.line.open()
+        if self.connection.patterning.state == "Idle":
+            logging.info(f"Sputtering with {mc_line} for {sputter_time} seconds...")
+            self.connection.patterning.start()  # asynchronous patterning
+            time.sleep(sputter_time + 5)
+        else:
+            raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
+        if self.connection.patterning.state == "Running":
+            self.connection.patterning.stop()
+        else:
+            logging.warning(f"Patterning state is {self.connection.patterning.state}")
+            logging.warning("Consider adjusting the patterning line depth.")
+        port.line.close()
+
         
 
 

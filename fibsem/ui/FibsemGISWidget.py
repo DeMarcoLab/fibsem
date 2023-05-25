@@ -257,9 +257,9 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         
         hfw_value = self.hfw_spinbox.value()*constants.MICRON_TO_METRE
         beam_type = self.beamtype_combobox.currentText()
-
+        application_file = self.microscope.get_available_values(key="application_file")[2]
         gis_protocol = {
-            "application_file": "cryo_Pt_dep",
+            "application_file": application_file,
             "gas": self.gis_current_line,
             "position": "cryo",
             "hfw":hfw_value,
@@ -268,13 +268,12 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             "beam_current": 5.0e-10,
             "dwell_time": 1.0e-6,
             "beam_type": beam_type,
+            "sputter_time": 1.0e-6,
         }
         
-        self.microscope.run_GIS(gis_protocol)
-
-
-
-
+        # self.microscope.run_GIS(gis_protocol)
+        self.microscope.run_Multichem(gis_protocol)
+        
         pass
 
 def main():
