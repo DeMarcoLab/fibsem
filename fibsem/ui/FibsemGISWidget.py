@@ -74,6 +74,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.multichem_radioButton.hide()
         self.app_file_lineEdit.hide()
         self.app_file_label.hide()
+        self.blankBeamcheckbox.hide()
         self.GIS = True
         
 

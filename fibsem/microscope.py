@@ -1504,6 +1504,57 @@ class ThermoMicroscope(FibsemMicroscope):
         # Log that the sputtering process has finished
         logging.info("Platinum sputtering process completed.")
 
+    def run_GIS(self,protocol):
+
+        _check_sputter(self.hardware_settings)
+        self.original_active_view = self.connection.imaging.get_active_view()
+        self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
+        self.connection.patterning.clear_patterns()
+        self.connection.patterning.set_default_application_file(protocol["application_file"])
+        self.connection.patterning.set_default_beam_type(BeamType.ELECTRON.value)
+
+        gis_line = protocol["line"]
+        port = self.gis_lines[gis_line]
+        if self.GIS_position(gis_line) == "Retracted":
+            port.insert()
+        
+        if self.GIS_temp_ready(gis_line) == False:
+            self.GIS_heat_up(gis_line)
+
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+        sputter_time = protocol["sputter_time"]
+
+        self.connection.beams.electron_beam.horizontal_field_width.value = hfw
+        pattern = self.connection.patterning.create_line(
+            -line_pattern_length / 2,  # x_start
+            +line_pattern_length,  # y_start
+            +line_pattern_length / 2,  # x_end
+            +line_pattern_length,  # y_end
+            2e-6,
+        )  # milling depth
+        pattern.time = sputter_time + 0.1
+        
+        self.connection.beams.electron_beam.blank()
+        port.open()
+        if self.connection.patterning.state == "Idle":
+            logging.info(f"Sputtering with {gis_line} for {sputter_time} seconds...")
+            self.connection.patterning.start()  # asynchronous patterning
+            time.sleep(sputter_time + 5)
+        else:
+            raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
+        if self.connection.patterning.state == "Running":
+            self.connection.patterning.stop()
+        else:
+            logging.warning(f"Patterning state is {self.connection.patterning.state}")
+            logging.warning("Consider adjusting the patterning line depth.")
+        port.close()
+
+        
+        
+
+
+
     def GIS_available_lines(self) -> list[str]:
         """
         Returns a list of available GIS lines.
@@ -1535,6 +1586,11 @@ class ThermoMicroscope(FibsemMicroscope):
         return gis_list
     
     def GIS_available_positions(self) -> list[str]:
+        """Returns a list of available positions the GIS can move to.
+
+        Returns:
+            list[str]: positions
+        """
 
         _check_sputter(self.hardware_settings)
 
@@ -1544,10 +1600,13 @@ class ThermoMicroscope(FibsemMicroscope):
     
     def GIS_move_to(self,line_name:str,position:str) -> None:
 
+        """Moves the GIS to a specified position.
+        Need to specify the line name and position to move to. Each GIS line is a seperate python object
+        """
+
         _check_sputter(self.hardware_settings)
 
         port = self.gis_lines[line_name]
-        # port = self.gis_lines[line_name]
 
         if position == "Insert":
             port.insert()
@@ -1555,6 +1614,9 @@ class ThermoMicroscope(FibsemMicroscope):
             port.retract()
 
     def GIS_position(self,line) -> str:
+        """
+        Returns the current position of the GIS line.
+        """
 
         _check_sputter(self.hardware_settings)
 
@@ -1563,6 +1625,11 @@ class ThermoMicroscope(FibsemMicroscope):
         return port.status
     
     def GIS_heat_up(self,line):
+
+        """Heats up the specified GIS line
+        Does this by turning the heater on for 3 seconds and then off.
+        If this procedure has been done once, it is considered temp_ready
+        """
 
         _check_sputter(self.hardware_settings)
 
@@ -1578,6 +1645,13 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def GIS_temp_ready(self,line) -> bool:
 
+        """Returns if the heat up procedure has been done. Internal function, not polled information
+            from the hardware
+
+        Returns:
+            True if the heat up procedure has been done, False if not
+        """
+
         _check_sputter(self.hardware_settings)
 
         port = self.gis_lines[line]
@@ -1586,6 +1660,10 @@ class ThermoMicroscope(FibsemMicroscope):
 
         
     def multichem_available_lines(self)-> list[str]:
+
+        """
+        Returns a list of available multichem lines.
+        List is a str of names of the lines"""
 
         _check_sputter(self.hardware_settings)
 
@@ -1603,6 +1681,12 @@ class ThermoMicroscope(FibsemMicroscope):
     
     def multichem_available_positions(self) -> list[str]:
 
+        """Available positions the multichem object can move to
+
+        Returns:
+            _type_: list of str of position names
+        """
+
         _check_sputter(self.hardware_settings)
 
         positions_enum = self.multichem.positions
@@ -1610,6 +1694,10 @@ class ThermoMicroscope(FibsemMicroscope):
         return positions_enum
     
     def multichem_move_to(self,position:str):
+
+        """
+        Moves the multichem object to a specified position.
+        """
 
         _check_sputter(self.hardware_settings)
 
@@ -1621,11 +1709,22 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def multichem_position(self) -> str:
 
+        """Current position of the multichem object
+
+        Returns:
+            _type_: str name of the current position
+        """
+
         _check_sputter(self.hardware_settings)
 
         return self.multichem.current_position
     
     def multichem_heat_up(self,line:str):
+
+        """Heat up procedure of the multichem object, if this procedure has been done once,
+        it is considered temp_ready. Procedure is turning the heater on for 3 seconds and then off
+        Must specify the line to heat up
+        """
 
         _check_sputter(self.hardware_settings)
 
@@ -1640,6 +1739,13 @@ class ThermoMicroscope(FibsemMicroscope):
         self.mc_lines_temp[line] = True
 
     def multichem_temp_ready(self,line:str) -> bool:
+
+        """Checks if the heat up procedure for a line in the multichem object has been done,
+        
+
+        Returns:
+            _type_: Returns true if done, false if not
+        """
 
         _check_sputter(self.hardware_settings)
 
@@ -3573,15 +3679,23 @@ class TescanMicroscope(FibsemMicroscope):
                     writeFieldSize=protocol["hfw"],
                     beamCurrent=protocol["beam_current"],
                     spotSize=protocol["spot_size"],
-                    rate=3e-10, # Value for platinum
+                    # rate=3e-10, # Value for platinum
                     dwellTime=protocol["dwell_time"],
                 )
-                self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
-                self.connection.DrawBeam.LoadLayer(self.layer)
+                
 
             except:
-                defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
-                self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+                default_layer = self.connection.DrawBeam.LayerSettings.IDeposition(
+                    syncWriteField=True,
+                    writeFieldSize=0.0005,
+                    beamCurrent=5e-10,
+                    spotSize=5.0e-8,
+                    spacing=1.0,
+                    rate=3e-10,
+                    dwellTime=1.0e-6,
+                )
+                layerSettings = default_layer
+                
 
         else:
             
@@ -3591,15 +3705,25 @@ class TescanMicroscope(FibsemMicroscope):
                     writeFieldSize=protocol["hfw"],
                     beamCurrent=protocol["beam_current"],
                     spotSize=protocol["spot_size"],
-                    rate=3e-10, # Value for platinum
+                    # rate=3e-10, # Value for platinum
                     dwellTime=protocol["dwell_time"],
                 )
-                self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
-                self.connection.DrawBeam.LoadLayer(self.layer)
 
             except:
-                defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
-                self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+                default_layer = self.connection.DrawBeam.LayerSettings.IDeposition(
+                    syncWriteField=True,
+                    writeFieldSize=0.0005,
+                    beamCurrent=5e-10,
+                    spotSize=5.0e-8,
+                    spacing=1.0,
+                    rate=3e-10,
+                    dwellTime=1.0e-6,
+                )
+                layerSettings = default_layer
+
+        self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
+        self.connection.DrawBeam.LoadLayer(self.layer)
+
 
 
         hfw = protocol["hfw"]
@@ -3621,7 +3745,17 @@ class TescanMicroscope(FibsemMicroscope):
 
         gas_line = self.lines[protocol['gas']]
 
-        self.connection.GIS.OpenValve(gas_line)
+        try:
+
+            self.connection.GIS.OpenValve(gas_line)
+
+        except Exception as e:
+            if e.args[0] == 'Error.OutgasRequired':
+                logging.info("Outgassing required.")
+                logging.info(f"Outgassing {protocol['gas']} Line")
+                self.connection.GIS.Outgas(gas_line)
+                self.connection.GIS.OpenValve(gas_line)
+            
 
         try:
             # Run predefined deposition process
