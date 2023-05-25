@@ -114,8 +114,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
             # creating initial layers 
 
-            self._features_layer = self.viewer.add_points(data, size=20, face_color='green', edge_color='white', name='ruler')
-            self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ruler_line',edge_width=5)
+            self._features_layer = self.viewer.add_points(data, size=20, face_color='lime', edge_color='white', name='ruler')
+            self.viewer.add_shapes(data, shape_type='line', edge_color='lime', name='ruler_line',edge_width=5)
             self.viewer.add_points(midpoint,text=text, size=20, face_color='transparent', edge_color='transparent', name='ruler_value')
             self._features_layer.mode = 'select'
 
