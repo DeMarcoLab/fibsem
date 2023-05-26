@@ -53,7 +53,7 @@ We have developed an integrated labelling tool for segmentation dataset.
 
 ### Labelling UI
 
-The Labelling UI allows users to draw the labels (masks) for training a segmentation model.
+The Labelling UI allows users to draw the labels (masks) for training a segmentation model. To see more detailed instructions, see the guide on labelling and detection widgets [here](ml_details.md)
 
 ### Model Assisted Labelling
 
