@@ -42,8 +42,8 @@ SAMPLE_PATH = os.path.join(DATA_PATH, SAMPLE_NAME)
 SAMPLE_PATH = st.text_input("Data Path", SAMPLE_PATH)
 
 CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
-CHECKPOINT_PATH = "/home/patrick/github/fibsem/fibsem/segmentation/models/dm-embryo/30_04_2023_18_42_40_n20_model.pt"
-CHECKPOINT_PATH = "/home/patrick/github/fibsem/fibsem/segmentation/models/celegans/30_04_2023_19_01_11_n20_model.pt"
+# CHECKPOINT_PATH = "/home/patrick/github/fibsem/fibsem/segmentation/models/dm-embryo/30_04_2023_18_42_40_n20_model.pt"
+# CHECKPOINT_PATH = "/home/patrick/github/fibsem/fibsem/segmentation/models/celegans/30_04_2023_19_01_11_n20_model.pt"
 
 cols = st.columns(3)
 CHECKPOINT_PATH = cols[0].text_input("Checkpoint Path", CHECKPOINT_PATH)
