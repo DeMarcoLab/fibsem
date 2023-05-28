@@ -3993,7 +3993,7 @@ class DemoMicroscope(FibsemMicroscope):
 
     def connect_to_microscope(self):
         logging.info(f"Connected to Demo Microscope")
-        logging.info(f"Microscope client connected to model Demo with serial number 666 and software version 0.1")
+        logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")
         return
 
     def disconnect(self):
@@ -4005,6 +4005,7 @@ class DemoMicroscope(FibsemMicroscope):
         pixelsize = Point(image_settings.hfw / image_settings.resolution[0], 
                           vfw / image_settings.resolution[1])
         
+        logging.info(f"Acquiring image: {image_settings.beam_type}")
         image = FibsemImage(
             data=np.random.randint(low=0, high=256, 
                 size=(image_settings.resolution[1],image_settings.resolution[0]), 

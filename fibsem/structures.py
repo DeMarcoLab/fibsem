@@ -214,11 +214,11 @@ Methods:
 
     def __add__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
         return FibsemStagePosition(
-            self.x + other.x,
-            self.y + other.y,
-            self.z + other.z,
-            self.r + other.r,
-            self.t + other.t,
+            self.x + other.x if other.x is not None else self.x,
+            self.y + other.y if other.y is not None else self.y,
+            self.z + other.z if other.z is not None else self.z,
+            self.r + other.r if other.r is not None else self.r,
+            self.t + other.t if other.t is not None else self.t,
             self.coordinate_system,
         )
 
