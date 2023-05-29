@@ -44,15 +44,25 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
 
         if _THERMO:
-
-            # park_position = self.microscope._get_saved_manipulator_position("PARK")
-            # eucentric_position = self.microscope._get_saved_manipulator_position("EUCENTRIC")
             
-            # self.saved_positions["PARK"] = park_position
-            # self.saved_positions["EUCENTRIC"] = eucentric_position
+            try:
+                park_position = self.microscope._get_saved_manipulator_position("PARL")
+                eucentric_position = self.microscope._get_saved_manipulator_position("EUCENTRIC")
+                self.saved_positions["PARK"] = park_position
+                self.saved_positions["EUCENTRIC"] = eucentric_position
+                self.savedPosition_combobox.addItem("PARK")
+                self.savedPosition_combobox.addItem("EUCENTRIC")
+                
+            except :
+                
+                message_box_ui(title="Error loading positions",
+                    text="Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.",
+                    buttons=QMessageBox.Ok)
+                
+            
 
-            self.savedPosition_combobox.addItem("PARK")
-            self.savedPosition_combobox.addItem("EUCENTRIC")
+
+
 
             self.move_type_comboBox.currentIndexChanged.connect(self.change_move_type)
             self.move_type_comboBox.setCurrentIndex(0)
