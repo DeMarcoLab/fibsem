@@ -87,9 +87,6 @@ class Ui_Form(object):
         self.spinBox_num_classes = QtWidgets.QSpinBox(self.tab_2)
         self.spinBox_num_classes.setObjectName("spinBox_num_classes")
         self.gridLayout_3.addWidget(self.spinBox_num_classes, 2, 1, 1, 1)
-        self.checkpoint_button = QtWidgets.QToolButton(self.tab_2)
-        self.checkpoint_button.setObjectName("checkpoint_button")
-        self.gridLayout_3.addWidget(self.checkpoint_button, 1, 2, 1, 1)
         self.tabWidget.addTab(self.tab_2, "")
         self.tab_3 = QtWidgets.QWidget()
         self.tab_3.setObjectName("tab_3")
@@ -145,7 +142,7 @@ class Ui_Form(object):
         self.gridLayout.addWidget(self.tabWidget, 1, 0, 1, 3)
 
         self.retranslateUi(Form)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
@@ -164,7 +161,6 @@ class Ui_Form(object):
         self.label_checkpoint.setText(_translate("Form", "Checkpoint"))
         self.label_num_classes.setText(_translate("Form", "Num Classes"))
         self.label_encoder.setText(_translate("Form", "Encoder"))
-        self.checkpoint_button.setText(_translate("Form", "..."))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("Form", "Model"))
         self.label_batch_size.setText(_translate("Form", "Batch Size"))
         self.label_epochs.setText(_translate("Form", "Epochs"))
