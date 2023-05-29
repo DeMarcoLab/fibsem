@@ -28,6 +28,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.image_widget = image_widget
 
+        self.gas_protocol = {}
+
         self.gis_and_mc_setup()
 
         self.initial_gas_setup()
@@ -137,6 +139,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             self.app_file_combobox.setCurrentText(self.protocol['milling']['application_file'])
         else:
             self.app_file_combobox.setCurrentText(app_files[0])
+            self.gas_protocol['application_file'] = app_files[0]
             logging.info(f"Application file {self.protocol['milling']['application_file']} not found in microscope")
             logging.info(f'Application file set to {app_files[0]}')
 

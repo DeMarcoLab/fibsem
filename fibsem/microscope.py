@@ -1533,7 +1533,7 @@ class ThermoMicroscope(FibsemMicroscope):
             +line_pattern_length,  # y_end
             2e-6,
         )  # milling depth
-        pattern.time = sputter_time + 0.1
+        pattern.time = sputter_time 
         
         self.connection.beams.electron_beam.blank()
         # port.line.open()
@@ -1545,6 +1545,7 @@ class ThermoMicroscope(FibsemMicroscope):
             raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
         if self.connection.patterning.state == "Running":
             self.connection.patterning.stop()
+            logging.info(f"Finished sputtering with {gis_line}")
         else:
             logging.warning(f"Patterning state is {self.connection.patterning.state}")
             logging.warning("Consider adjusting the patterning line depth.")
