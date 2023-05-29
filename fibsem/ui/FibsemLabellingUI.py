@@ -21,6 +21,7 @@ from fibsem.ui.FibsemModelTrainingWidget import FibsemModelTrainingWidget
 
 from fibsem.ui.FibsemSegmentationModelWidget import FibsemSegmentationModelWidget
 from fibsem.ui.FibsemModelTrainingWidget import FibsemModelTrainingWidget
+from fibsem.ui.utils import _get_directory_ui,_get_file_ui
 # BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
 from napari.layers import Points
@@ -78,6 +79,18 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.model_widget = FibsemSegmentationModelWidget()
         self.train_widget = FibsemModelTrainingWidget(viewer=self.viewer)
+
+         # save path buttons
+
+        self.rawData_button.clicked.connect(self.select_filepath)
+        self.savePath_button.clicked.connect(self.select_filepath)
+        self.train_widget.dataPath_button.clicked.connect(self.select_filepath)
+        self.train_widget.labelPath_button.clicked.connect(self.select_filepath)
+        self.train_widget.outputPath_button.clicked.connect(self.select_filepath)
+        self.model_widget.checkpoint_seg_button.clicked.connect(self.select_filepath)
+
+
+
         self.tabWidget.addTab(self.model_widget, "Model")
         self.tabWidget.addTab(self.train_widget, "Train")
 
@@ -95,6 +108,37 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.pushButton_model_clear.setVisible(False)
 
         self._update_instructions()
+
+    def select_filepath(self):
+
+        if self.sender() == self.rawData_button:
+            path = _get_directory_ui(msg="Select Raw Data Directory")
+            if path is not None and path != "":
+                self.lineEdit_raw_data.setText(path)
+        elif self.sender() == self.savePath_button:
+            path = _get_directory_ui(msg="Select Labels Directory")
+            if path is not None and path != "":
+                self.lineEdit_save_path.setText(path)
+
+        elif self.sender() == self.train_widget.dataPath_button:
+            path = _get_directory_ui(msg="Select Data Path Directory")
+            if path is not None and path != "":
+                self.train_widget.lineEdit_data_path.setText(path)
+
+        elif self.sender() == self.train_widget.labelPath_button:
+            path = _get_directory_ui(msg="Select Label Path Directory")
+            if path is not None and path != "":
+                self.train_widget.lineEdit_label_path.setText(path)
+
+        elif self.sender() == self.train_widget.outputPath_button:
+            path = _get_directory_ui(msg="Select Output Path Directory")
+            if path is not None and path != "":
+                self.train_widget.lineEdit_save_path.setText(path)
+
+        elif self.sender() == self.model_widget.checkpoint_seg_button:
+            path = _get_file_ui(msg="Select Checkpoint File")
+            if path is not None and path != "":
+                self.model_widget.lineEdit_checkpoint.setText(path)
 
     def load_data(self):
         # read raw data
