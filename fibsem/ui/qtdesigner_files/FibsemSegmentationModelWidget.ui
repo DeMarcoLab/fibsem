@@ -14,15 +14,18 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="1">
-    <widget class="QLineEdit" name="lineEdit_checkpoint"/>
+   <item row="4" column="1">
+    <widget class="QSpinBox" name="spinBox_num_classes"/>
    </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_num_classes">
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_model_type">
      <property name="text">
-      <string>No. Classes</string>
+      <string>Model</string>
      </property>
     </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="lineEdit_checkpoint"/>
    </item>
    <item row="3" column="0">
     <widget class="QLabel" name="label_checkpoint">
@@ -31,19 +34,10 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="1">
-    <widget class="QSpinBox" name="spinBox_num_classes"/>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="label_header_model">
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_num_classes">
      <property name="text">
-      <string>Segmentation Model</string>
+      <string>No. Classes</string>
      </property>
     </widget>
    </item>
@@ -67,6 +61,22 @@
      </property>
     </widget>
    </item>
+   <item row="2" column="1">
+    <widget class="QLineEdit" name="lineEdit_encoder"/>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label_header_model">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Segmentation Model</string>
+     </property>
+    </widget>
+   </item>
    <item row="5" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_load_model">
      <property name="text">
@@ -74,16 +84,13 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
-    <widget class="QLineEdit" name="lineEdit_encoder"/>
-   </item>
    <item row="1" column="1">
     <widget class="QComboBox" name="comboBox_model_type"/>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_model_type">
+   <item row="3" column="2">
+    <widget class="QToolButton" name="checkpoint_seg_button">
      <property name="text">
-      <string>Model</string>
+      <string>...</string>
      </property>
     </widget>
    </item>
