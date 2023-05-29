@@ -45,11 +45,11 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
         if _THERMO:
 
-            park_position = self.microscope._get_saved_manipulator_position("PARK")
-            eucentric_position = self.microscope._get_saved_manipulator_position("EUCENTRIC")
+            # park_position = self.microscope._get_saved_manipulator_position("PARK")
+            # eucentric_position = self.microscope._get_saved_manipulator_position("EUCENTRIC")
             
-            self.saved_positions["PARK"] = park_position
-            self.saved_positions["EUCENTRIC"] = eucentric_position
+            # self.saved_positions["PARK"] = park_position
+            # self.saved_positions["EUCENTRIC"] = eucentric_position
 
             self.savedPosition_combobox.addItem("PARK")
             self.savedPosition_combobox.addItem("EUCENTRIC")
