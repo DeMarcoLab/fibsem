@@ -48,12 +48,9 @@
    <item row="13" column="0">
     <widget class="QLabel" name="label_time">
      <property name="text">
-      <string>Time Duration (s)</string>
+      <string>Time Duration (us)</string>
      </property>
     </widget>
-   </item>
-   <item row="17" column="1">
-    <widget class="QLineEdit" name="app_file_lineEdit"/>
    </item>
    <item row="13" column="1">
     <widget class="QDoubleSpinBox" name="timeDuration_spinbox"/>
@@ -185,6 +182,9 @@
       <string>Temp: </string>
      </property>
     </widget>
+   </item>
+   <item row="17" column="1">
+    <widget class="QComboBox" name="app_file_combobox"/>
    </item>
   </layout>
  </widget>

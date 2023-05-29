@@ -27,9 +27,10 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.settings = settings
         self.viewer = viewer
         self.image_widget = image_widget
-        
 
         self.gis_and_mc_setup()
+
+        self.initial_gas_setup()
 
         self.setup_connections()
 
@@ -55,15 +56,31 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         
         self.position_combobox.addItems(self.gis_available_positions)
 
+        protocol = utils.load_yaml(cfg.PROTOCOL_PATH)
+        self.protocol = protocol
 
         if isinstance(self.microscope, TescanMicroscope):
             self.tescan_setup()
         if isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope)):
-            
-            protocol = utils.load_yaml(cfg.PROTOCOL_PATH)
-            self.protocol = protocol
             self.thermo_setup()
 
+
+    def initial_gas_setup(self):
+
+        self.gas_protocol = {
+            "application_file": self.protocol["milling"]["application_file"],
+            "gas": self.gis_current_line,
+            "position": "cryo",
+            "hfw":self.image_widget.image_settings.hfw,
+            "length": 7.0e-6,
+            "spot_size": 5.0e-8,
+            "beam_current": 5.0e-10,
+            "dwell_time": 1.0e-6,
+            "beam_type": "ELECTRON",
+            "sputter_time": 1.0e-6,
+        }
+
+        self.timeDuration_spinbox.setValue(self.gas_protocol["sputter_time"]*constants.SI_TO_MICRO)
 
     def tescan_setup(self):
         
@@ -72,11 +89,56 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.insertGIS_button.hide()
         self.GIS_radioButton.hide()
         self.multichem_radioButton.hide()
-        self.app_file_lineEdit.hide()
+        self.app_file_combobox.hide()
         self.app_file_label.hide()
         self.blankBeamcheckbox.hide()
+        self.timeDuration_spinbox.setValue(1)
         self.GIS = True
         
+
+        self.update_ui()
+
+    def thermo_setup(self):
+
+        self.mc_lines = self.microscope.multichem_available_lines()
+        self.mc_current_line = self.mc_lines[0]
+        self.mc_available_positions = self.microscope.multichem_available_positions()
+        
+
+        self.GIS_inserted = True
+        self.insert_retract_gis()
+        self.GIS = True
+        self.GIS_radioButton.setChecked(True)
+        self.GIS = True
+        self.position_combobox.hide()
+        self.position_combobox.setEnabled(False)
+
+        self.move_GIS_button.setEnabled(False)
+        self.move_GIS_button.hide()
+        
+        self.gas_combobox.clear()
+        self.gas_combobox.addItems(self.gis_lines)
+        self.gas_combobox.setCurrentText(self.gis_current_line)
+
+        self.label_position.hide()
+        self.label_position.setEnabled(False)
+
+        self.insertGIS_button.setEnabled(True)
+        self.insertGIS_button.show()
+
+        self.current_position_label.setEnabled(False)
+        self.current_position_label.hide()
+
+        app_files =  self.microscope.get_available_values(key="application_file")
+
+        self.app_file_combobox.addItems(app_files)
+
+        if self.protocol['milling']['application_file'] in app_files:
+            self.app_file_combobox.setCurrentText(self.protocol['milling']['application_file'])
+        else:
+            self.app_file_combobox.setCurrentText(app_files[0])
+            logging.info(f"Application file {self.protocol['milling']['application_file']} not found in microscope")
+            logging.info(f'Application file set to {app_files[0]}')
 
         self.update_ui()
 
@@ -138,49 +200,12 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui()
             
 
-    def thermo_setup(self):
+    def update_gas_protocol(self):
 
-        self.mc_lines = self.microscope.multichem_available_lines()
-        self.mc_current_line = self.mc_lines[0]
-        self.mc_available_positions = self.microscope.multichem_available_positions()
-        self.app_file_lineEdit.setText(self.protocol['milling']['application_file'])
-
-        self.GIS_inserted = True
-        self.insert_retract_gis()
-        self.GIS = True
-        self.GIS_radioButton.setChecked(True)
-        self.GIS = True
-            # self.position_combobox.setCurrentText(self.gis_current_line)
-        self.position_combobox.hide()
-        self.position_combobox.setEnabled(False)
-
-        self.move_GIS_button.setEnabled(False)
-        self.move_GIS_button.hide()
-        
-        self.gas_combobox.clear()
-        self.gas_combobox.addItems(self.gis_lines)
-        self.gas_combobox.setCurrentText(self.gis_current_line)
-
-        self.label_position.hide()
-        self.label_position.setEnabled(False)
-
-        self.insertGIS_button.setEnabled(True)
-        self.insertGIS_button.show()
-
-        self.current_position_label.setEnabled(False)
-        self.current_position_label.hide()
-
-
-        self.update_ui()
-
-    # def change_gas(self):
-    #     line_name = self.gas_combobox.currentText()
-    #     if self.GIS:
-    #         self.gis_current_line = line_name
-    #     else:
-    #         self.mc_current_line = line_name
-
-    #     self.update_ui()
+        self.gas_protocol["application_file"] = self.app_file_combobox.currentText()
+        self.gas_protocol["beam_type"] = self.beamtype_combobox.currentText()
+        self.gas_protocol["hfw"] = self.hfw_spinbox.value()*constants.MICRON_TO_METRE
+        self.gas_protocol["spuuter_time"] = self.timeDuration_spinbox.value()*constants.MICRO_TO_SI
 
     def setup_connections(self):
         self.insertGIS_button.clicked.connect(self.insert_retract_gis)
@@ -191,6 +216,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.warm_button.clicked.connect(self.warm_up_gis)
         self.run_button.clicked.connect(self.run_gis)
         self.beamtype_combobox.setCurrentText("ELECTRON")
+        self.app_file_combobox.currentIndexChanged.connect(self.update_gas_protocol)
     
 
     def warm_up_gis(self):
@@ -199,12 +225,10 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             line_name = self.gis_current_line
             self.microscope.GIS_heat_up(line_name)
             self.temp_label.setText("Temp: Ready")
-            self.warm_button.setEnabled(False)
         else:
             line_name = self.mc_current_line
             self.microscope.multichem_heat_up(line_name)
             self.temp_label.setText("Temp: Ready")
-            self.warm_button.setEnabled(False)
 
     def move_gis(self):
 
@@ -225,12 +249,10 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             self.gis_current_line = line_name
             temp_ready = "Ready" if self.microscope.GIS_temp_ready(self.gis_current_line) else "Need Warm Up"
             self.temp_label.setText(f"Temp: {temp_ready}")
-            self.warm_button.setEnabled(not self.microscope.GIS_temp_ready(self.gis_current_line))
         else:
             self.mc_current_line = line_name
             temp_ready = "Ready" if self.microscope.multichem_temp_ready(self.mc_current_line) else "Need Warm Up"
             self.temp_label.setText(f"Temp: {temp_ready}")
-            self.warm_button.setEnabled(not self.microscope.multichem_temp_ready(self.mc_current_line))
             
         current_position_gis = self.microscope.GIS_position(self.gis_current_line)
         current_position_multichem = self.microscope.multichem_position() if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)) else None
@@ -254,27 +276,15 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             self.GIS_insert_status_label.setText("GIS Status: Inserted")
 
     def run_gis(self):
+
+        if self.GIS:
+            self.gas_protocol["gas"] = self.gis_current_line
+            self.microscope.run_GIS(self.gas_protocol)
+        else:
+            self.gas_protocol["gas"] = self.mc_current_line
+            self.microscope.run_Multichem(self.gas_protocol)
         
-        hfw_value = self.hfw_spinbox.value()*constants.MICRON_TO_METRE
-        beam_type = self.beamtype_combobox.currentText()
-        application_file = self.microscope.get_available_values(key="application_file")[2]
-        gis_protocol = {
-            "application_file": application_file,
-            "gas": self.gis_current_line,
-            "position": "cryo",
-            "hfw":hfw_value,
-            "length": 7.0e-6,
-            "spot_size": 5.0e-8,
-            "beam_current": 5.0e-10,
-            "dwell_time": 1.0e-6,
-            "beam_type": beam_type,
-            "sputter_time": 1.0e-6,
-        }
-        
-        # self.microscope.run_GIS(gis_protocol)
-        self.microscope.run_Multichem(gis_protocol)
-        
-        pass
+
 
 def main():
 
