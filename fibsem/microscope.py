@@ -2585,12 +2585,12 @@ class TescanMicroscope(FibsemMicroscope):
             raise NotImplementedError("Stage is not enabled.")
         x, y, z, r, t = self.connection.Stage.GetPosition()
         stage_position = FibsemStagePosition(
-            x * constants.MILLIMETRE_TO_METRE,
-            y * constants.MILLIMETRE_TO_METRE,
-            z * constants.MILLIMETRE_TO_METRE,
-            r * constants.DEGREES_TO_RADIANS,
-            t * constants.DEGREES_TO_RADIANS,
-            "RAW",
+            x = x * constants.MILLIMETRE_TO_METRE,
+            y = y * constants.MILLIMETRE_TO_METRE,
+            z = z * constants.MILLIMETRE_TO_METRE,
+            r = r * constants.DEGREES_TO_RADIANS,
+            t = t * constants.DEGREES_TO_RADIANS,
+            coordinate_system= "RAW",
         )
         return stage_position
 

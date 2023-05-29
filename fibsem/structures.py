@@ -131,6 +131,7 @@ Methods:
     to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
     from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
 """
+    name: str = None
     x: float = None
     y: float = None
     z: float = None
@@ -149,6 +150,7 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
+        position_dict["name"] = self.name
         position_dict["x"] = self.x
         position_dict["y"] = self.y
         position_dict["z"] = self.z
@@ -171,6 +173,7 @@ Methods:
 
 
         return cls(
+            name=data["name"],
             x=data["x"],
             y=data["y"],
             z=data["z"],

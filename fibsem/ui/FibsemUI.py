@@ -14,6 +14,8 @@ from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 
+from fibsem.ui.FibsemPositionsWidget import FibsemPositionsWidget
+
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -43,6 +45,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.milling_widget: FibsemMillingWidget = None
         self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
+        self.positions_widget: FibsemPositionsWidget = None
 
 
         CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
@@ -139,14 +142,19 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 image_widget=self.image_widget,
             )
 
+            self.positions_widget = FibsemPositionsWidget(
+                microscope=self.microscope,
+                movement_widget=self.movement_widget,
+                parent = self,
+            )
+
 
             # add widgets to tabs
             self.tabWidget.addTab(self.image_widget, "Image")
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
-
-
+            self.tabWidget.addTab(self.positions_widget, "Positions")
 
         else:
             if self.image_widget is None:
