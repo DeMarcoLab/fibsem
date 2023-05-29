@@ -36,7 +36,7 @@ Once the model is loaded, click the Model Assisted checkbox if it is not already
 
 ![Labelling UI](img/ml/model_assissted_label.png)
 
-### Training a new model
+## Training a new model
 
 A new model can also be trained based on the images and labels created within this UI itself. To train a new model, ensure you have a image set with labels. The models are created and trained using PyTorch. The models are saved as .pt files and can be loaded in to the UI for model assisted labelling or for any other purpose.
 
