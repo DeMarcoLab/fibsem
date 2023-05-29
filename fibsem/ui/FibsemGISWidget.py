@@ -259,8 +259,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         beam_type = self.beamtype_combobox.currentText()
         application_file = self.microscope.get_available_values(key="application_file")[2]
         gis_protocol = {
-            "application_file": application_file,
-            "gas": self.gis_current_line,
+            "application_file": "Pt_M e",
+            "gas": self.mc_current_line,
             "position": "cryo",
             "hfw":hfw_value,
             "length": 7.0e-6,

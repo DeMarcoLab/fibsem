@@ -1580,10 +1580,11 @@ class ThermoMicroscope(FibsemMicroscope):
             +line_pattern_length,  # y_end
             2e-6,
         )  # milling depth
-        pattern.time = sputter_time + 0.1
+        # pattern.time = sputter_time + 0.1
+        pattern.time = sputter_time
         
         self.connection.beams.electron_beam.blank()
-        port.line.open()
+        # port.line.open()
         if self.connection.patterning.state == "Idle":
             logging.info(f"Sputtering with {mc_line} for {sputter_time} seconds...")
             self.connection.patterning.start()  # asynchronous patterning
@@ -1595,7 +1596,9 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             logging.warning(f"Patterning state is {self.connection.patterning.state}")
             logging.warning("Consider adjusting the patterning line depth.")
-        port.line.close()
+        # port.line.close()
+
+        self.multichem.line.turn_heater_off(mc_line)
 
         
 
@@ -1780,7 +1783,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         time.sleep(3)
 
-        self.multichem.line.turn_heater_off(line)
+        # self.multichem.line.turn_heater_off(line)
 
         self.mc_lines_temp[line] = True
 
