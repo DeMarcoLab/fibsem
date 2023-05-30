@@ -153,6 +153,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         self.image_widget.take_reference_images()
         self.update_ui()
+        self.move_signal.emit()
 
 
 def main():

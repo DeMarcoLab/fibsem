@@ -8,7 +8,7 @@ import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPixmap, QImage
-
+from copy import deepcopy
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (BeamType, FibsemStagePosition,
@@ -111,28 +111,22 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         y = []
         labels = []
         for position in self.positions:
-            x.append(position.x)
-            y.append(position.y)
-            labels.append(position.name)
+            x.append(deepcopy(position.x)*constants.SI_TO_MICRO)
+            y.append(deepcopy(position.y)*constants.SI_TO_MICRO)
+            labels.append(deepcopy(position.name))
         current_position = self.microscope.get_stage_position()
-        x.append(current_position.x)
-        y.append(current_position.y)
+        x.append(deepcopy(current_position.x)*constants.SI_TO_MICRO)
+        y.append(deepcopy(current_position.y)*constants.SI_TO_MICRO)
         labels.append("Current Position")
 
-        import matplotlib.pyplot as plt
-        plt.scatter(x, y, color="blue")
-        # plt.scatter(x[-1], y[-1], color="red")
-        plt.xlabel('X-axis')
-        plt.ylabel('Y-axis')
-        plt.title('Saved Positions')
-        for i in range(len(x)):
-            plt.text(x[i], y[i], labels[i], ha='center', va='bottom')
-        fig = plt.gcf()
-        import streamlit as st
-        import cv2
-        st.pyplot(fig)
-        fig.savefig('streamlit_figure.png', format='png')
-        image_from_plot = cv2.imread('streamlit_figure.png')
+        import plotly.express as px
+        import plotly.io as pio
+        fig = px.scatter(x, y, color=labels, labels={'color': 'Position'}, width=800, height=800)
+
+        fig.update_layout(title='Positions', xaxis_title='x (um)', yaxis_title='y (um)')
+
+        image_from_plot = pio.to_image(fig, format='png')
+
         # Create a QImage from the NumPy array
         height, width, channels = image_from_plot.shape
         bytes_per_line = channels * width
