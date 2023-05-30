@@ -1504,6 +1504,9 @@ class ThermoMicroscope(FibsemMicroscope):
         # Log that the sputtering process has finished
         logging.info("Platinum sputtering process completed.")
 
+
+    def setup_GIS
+
     def run_GIS(self,protocol):
 
         _check_sputter(self.hardware_settings)
@@ -3717,64 +3720,41 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
 
-    def run_GIS(self,protocol) -> None:
-        
+
+    def setup_GIS(self,protocol) -> None:
+
         beam_type = protocol["beam_type"]
 
         if beam_type == "ION":
 
-            try:
-                layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
-                    syncWriteField=True,
-                    writeFieldSize=protocol["hfw"],
-                    beamCurrent=protocol["beam_current"],
-                    spotSize=protocol["spot_size"],
-                    rate=3e-10, # Value for platinum
-                    dwellTime=protocol["dwell_time"],
-                )
-                
-
-            except:
-                default_layer = self.connection.DrawBeam.LayerSettings.IDeposition(
-                    syncWriteField=True,
-                    writeFieldSize=0.0005,
-                    beamCurrent=5e-10,
-                    spotSize=5.0e-8,
-                    spacing=1.0,
-                    rate=3e-10,
-                    dwellTime=1.0e-6,
-                )
-                layerSettings = default_layer
-                
-
+            
+            layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
+                syncWriteField=True,
+                writeFieldSize=protocol.get("hfw",0.0005),
+                beamCurrent=protocol.get("beam_current",5e-10),
+                spotSize=protocol.get("spot_size",5.0e-8),
+                spacing=1.0,
+                rate=3e-10, # Value for platinum
+                dwellTime=protocol.get("dwell_time",1.0e-6),
+            )
+            
         else:
             
-            try:
-                layerSettings = self.connection.DrawBeam.LayerSettings.EDeposition(
-                    syncWriteField=True,
-                    writeFieldSize=protocol["hfw"],
-                    beamCurrent=protocol["beam_current"],
-                    spotSize=protocol["spot_size"],
-                    rate=3e-10, # Value for platinum
-                    dwellTime=protocol["dwell_time"],
-                )
+            
+            layerSettings = self.connection.DrawBeam.LayerSettings.EDeposition(
+                syncWriteField=True,
+                writeFieldSize=protocol.get("hfw",0.0005),
+                beamCurrent=protocol.get("beam_current",5e-10),
+                spotSize=protocol.get("spot_size",5.0e-8),
+                rate=3e-10, # Value for platinum
+                spacing=1.0,
+                dwellTime=protocol.get("dwell_time",1.0e-6)
+            )
 
-            except:
-                default_layer = self.connection.DrawBeam.LayerSettings.IDeposition(
-                    syncWriteField=True,
-                    writeFieldSize=0.0005,
-                    beamCurrent=5e-10,
-                    spotSize=5.0e-8,
-                    spacing=1.0,
-                    rate=3e-10,
-                    dwellTime=1.0e-6,
-                )
-                layerSettings = default_layer
+        self.gis_layer = self.connection.DrawBeam.Layer("Layer_GIS", layerSettings)
+        self.connection.DrawBeam.LoadLayer(self.gis_layer)
 
-        self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
-        self.connection.DrawBeam.LoadLayer(self.layer)
-
-
+    def setup_GIS_pattern(self,protocol):
 
         hfw = protocol["hfw"]
         line_pattern_length = protocol["length"]
@@ -3789,9 +3769,12 @@ class TescanMicroscope(FibsemMicroscope):
         end_y=+line_pattern_length,
         depth=2e-6
         
-        pattern = self.layer.addLine(
+        pattern = self.gis_layer.addLine(
             BeginX=start_x, BeginY=start_y, EndX=end_x, EndY=end_y, Depth=depth
         )
+
+    def run_GIS(self,protocol) -> None:
+        
 
         gas_line = self.lines[protocol['gas']]
 
@@ -3834,16 +3817,11 @@ class TescanMicroscope(FibsemMicroscope):
                 self.connection.GIS.CloseValve(gas_line)
 
         self.connection.GIS.MoveTo(gas_line, Automation.GIS.Position.Home)
-        self.connection.GIS.PrepareTemperature(gas_line, False)
+        # self.connection.GIS.PrepareTemperature(gas_line, False)
         self.connection.DrawBeam.UnloadLayer()
         logging.info("process completed.")
 
         
-
-
-        
-
-
     def GIS_available_lines(self) -> list[str]:
         """
         Returns a list of available GIS lines.
