@@ -126,11 +126,10 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         fig.update_layout(title='Positions', xaxis_title='x (um)', yaxis_title='y (um)')
 
         image_from_plot = pio.to_image(fig, format='png')
-
-        # Create a QImage from the NumPy array
-        height, width, channels = image_from_plot.shape
-        bytes_per_line = channels * width
-        qimage = QImage(image_from_plot.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        from PIL import Image
+        import io
+        pil_image = Image.open(io.BytesIO(image_from_plot))
+        qimage = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGB888)
         pixmap = QPixmap(qimage)
         self.label_minimap.setPixmap(pixmap)
 
