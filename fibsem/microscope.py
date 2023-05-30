@@ -1505,25 +1505,28 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info("Platinum sputtering process completed.")
 
 
-    def setup_GIS
-
-    def run_GIS(self,protocol):
-
+    def setup_GIS(self,protocol):
+        
+        beamtype_value = BeamType.ELECTRON.value if protocol["beam_type"] == "electron" else BeamType.ION.value
+        
         _check_sputter(self.hardware_settings)
         self.original_active_view = self.connection.imaging.get_active_view()
-        self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
+        self.connection.imaging.set_active_view(beamtype_value)
         self.connection.patterning.clear_patterns()
         self.connection.patterning.set_default_application_file(protocol["application_file"])
-        self.connection.patterning.set_default_beam_type(BeamType.ELECTRON.value)
+        self.connection.patterning.set_default_beam_type(beamtype_value)
 
         gis_line = protocol["gas"]
         port = self.gis_lines[gis_line]
         if self.GIS_position(gis_line) == "Retracted":
             port.insert()
-        
+
         if self.GIS_temp_ready(gis_line) == False:
             self.GIS_heat_up(gis_line)
+        
 
+    def setup_GIS_pattern(self,protocol):
+        
         hfw = protocol["hfw"]
         line_pattern_length = protocol["length"]
         sputter_time = protocol["sputter_time"]
@@ -1537,22 +1540,26 @@ class ThermoMicroscope(FibsemMicroscope):
             2e-6,
         )  # milling depth
         pattern.time = sputter_time 
+
+    def run_GIS(self,protocol):
+
+        gis_line = protocol["gas"]
+        sputter_time = protocol["sputter_time"]
+
         
         self.connection.beams.electron_beam.blank()
-        # port.line.open()
         if self.connection.patterning.state == "Idle":
             logging.info(f"Sputtering with {gis_line} for {sputter_time} seconds...")
             self.connection.patterning.start()  # asynchronous patterning
             time.sleep(sputter_time + 5)
         else:
-            raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
+            raise RuntimeError("Can't sputter, patterning state is not ready.")
         if self.connection.patterning.state == "Running":
             self.connection.patterning.stop()
             logging.info(f"Finished sputtering with {gis_line}")
         else:
             logging.warning(f"Patterning state is {self.connection.patterning.state}")
             logging.warning("Consider adjusting the patterning line depth.")
-        # port.line.close()
 
         
     def run_Multichem(self,protocol):
