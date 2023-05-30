@@ -208,7 +208,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.gas_protocol["application_file"] = self.app_file_combobox.currentText()
         self.gas_protocol["beam_type"] = self.beamtype_combobox.currentText()
         self.gas_protocol["hfw"] = self.hfw_spinbox.value()*constants.MICRON_TO_METRE
-        self.gas_protocol["spuuter_time"] = self.timeDuration_spinbox.value()*constants.MICRO_TO_SI
+        self.gas_protocol["sputter_time"] = self.timeDuration_spinbox.value()*constants.MICRO_TO_SI
 
     def setup_connections(self):
         self.insertGIS_button.clicked.connect(self.insert_retract_gis)
@@ -219,6 +219,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.warm_button.clicked.connect(self.warm_up_gis)
         self.run_button.clicked.connect(self.run_gis)
         self.beamtype_combobox.setCurrentText("ELECTRON")
+        self.beamtype_combobox.currentIndexChanged.connect(self.update_gas_protocol)
         self.app_file_combobox.currentIndexChanged.connect(self.update_gas_protocol)
     
 
