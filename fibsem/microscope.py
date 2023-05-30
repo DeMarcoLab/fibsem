@@ -3729,7 +3729,7 @@ class TescanMicroscope(FibsemMicroscope):
                     writeFieldSize=protocol["hfw"],
                     beamCurrent=protocol["beam_current"],
                     spotSize=protocol["spot_size"],
-                    # rate=3e-10, # Value for platinum
+                    rate=3e-10, # Value for platinum
                     dwellTime=protocol["dwell_time"],
                 )
                 
@@ -3755,7 +3755,7 @@ class TescanMicroscope(FibsemMicroscope):
                     writeFieldSize=protocol["hfw"],
                     beamCurrent=protocol["beam_current"],
                     spotSize=protocol["spot_size"],
-                    # rate=3e-10, # Value for platinum
+                    rate=3e-10, # Value for platinum
                     dwellTime=protocol["dwell_time"],
                 )
 
@@ -3806,6 +3806,7 @@ class TescanMicroscope(FibsemMicroscope):
                 self.connection.GIS.Outgas(gas_line)
                 self.connection.GIS.OpenValve(gas_line)
             
+        valve_open = self.connection.GIS.GetValveStatus(gas_line)
 
         try:
             # Run predefined deposition process
@@ -3829,7 +3830,8 @@ class TescanMicroscope(FibsemMicroscope):
                     break
         finally:
             # Close GIS Valve in both - success and failure
-            self.connection.GIS.CloseValve(gas_line)
+            if valve_open:
+                self.connection.GIS.CloseValve(gas_line)
 
         self.connection.GIS.MoveTo(gas_line, Automation.GIS.Position.Home)
         self.connection.GIS.PrepareTemperature(gas_line, False)
