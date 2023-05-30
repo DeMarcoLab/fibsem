@@ -282,6 +282,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         if self.GIS:
             self.gas_protocol["gas"] = self.gis_current_line
+            self.microscope.setup_GIS(self.gas_protocol)
+            self.microscope.setup_GIS_pattern(self.gas_protocol)
             self.microscope.run_GIS(self.gas_protocol)
         else:
             self.gas_protocol["gas"] = self.mc_current_line
