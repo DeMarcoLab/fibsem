@@ -15,7 +15,7 @@ from fibsem.structures import (BeamType, FibsemStagePosition,
                                MicroscopeSettings, MovementMode, Point)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemPositionsWidget, FibsemMovementWidget
-from fibsem.ui.utils import _get_save_file_ui
+from fibsem.ui.utils import _get_save_file_ui, _get_file_ui
 
 def log_status_message(step: str):
     logging.debug(
@@ -28,6 +28,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         self,
         microscope: FibsemMicroscope = None,
         movement_widget: FibsemMovementWidget = None,
+        image_widget: FibsemImageSettingsWidget = None,
         parent=None,
     ):
         super(FibsemPositionsWidget, self).__init__(parent=parent)
@@ -35,6 +36,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.microscope = microscope
         self.movement_widget = movement_widget
+        self.image_widget = image_widget
         self.setup_connections()
 
         self.positions = []
@@ -45,6 +47,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_position.clicked.connect(self.delete_position)
         self.pushButton_go_to.clicked.connect(self.go_to_position)
         self.pushButton_export.clicked.connect(self.export_positions)
+        self.pushButton_import.clicked.connect(self.import_positions)
 
     def select_position(self):
         if self.comboBox_positions.currentIndex() != -1:
@@ -55,11 +58,13 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         position = self.microscope.get_stage_position()
         name = self.lineEdit_position_name.text()
         if name == "":
-            name = f"Position {self.comboBox_positions.count() + 1}"
+            napari.utils.notifications.show_warning("Please enter a name for the position")
+            return
         position.name = name
         self.positions.append(position)
         self.comboBox_positions.addItem(name)
         self.comboBox_positions.setCurrentIndex(self.comboBox_positions.count() - 1)
+        self.lineEdit_position_name.setText("")
         logging.info(f"Added position {name}")
 
     def delete_position(self):
@@ -71,6 +76,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
     def go_to_position(self):
         self.microscope.move_stage_absolute(self.positions[self.comboBox_positions.currentIndex()])
         self.movement_widget.update_ui()
+        self.image_widget.take_reference_images()
         logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
 
     def export_positions(self):
@@ -79,15 +85,24 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
             return
         dict_position = []
         for position in self.positions:
-            dict_position.append(f"{position.__to_dict__()}")
-        with open(os.path.join(Path(protocol_path).with_suffix(".yaml")), "w+") as f:
-            yaml.safe_dump(dict_position, f, indent=4)
+            dict_position.append(position.__to_dict__())
+        with open(os.path.join(Path(protocol_path).with_suffix(".yaml")), "w") as f:
+            yaml.safe_dump(dict_position, f, indent=4, default_flow_style=False)
 
         logging.info("Positions saved to file")
 
 
-
-    
+    def import_positions(self):
+        protocol_path = _get_file_ui(msg="Select or create file")
+        if protocol_path == '':
+            napari.utils.notifications.show_info("No file selected, positions not loaded")
+            return
+        with open(protocol_path, "r") as f:
+            dict_positions = yaml.safe_load(f)
+        for dict_position in dict_positions:
+            position = FibsemStagePosition.__from_dict__(dict_position)
+            self.positions.append(position)
+            self.comboBox_positions.addItem(position.name)
 
 def main():
 

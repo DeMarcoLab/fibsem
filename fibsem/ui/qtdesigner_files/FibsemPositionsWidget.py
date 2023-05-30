@@ -55,6 +55,9 @@ class Ui_Form(object):
         self.label_3 = QtWidgets.QLabel(Form)
         self.label_3.setObjectName("label_3")
         self.gridLayout.addWidget(self.label_3, 1, 0, 1, 1)
+        self.pushButton_import = QtWidgets.QPushButton(Form)
+        self.pushButton_import.setObjectName("pushButton_import")
+        self.gridLayout.addWidget(self.pushButton_import, 7, 0, 1, 3)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -69,3 +72,4 @@ class Ui_Form(object):
         self.pushButton_export.setText(_translate("Form", "Export positions"))
         self.pushButton_go_to.setText(_translate("Form", "Go To"))
         self.label_3.setText(_translate("Form", "All positions in mm and degrees"))
+        self.pushButton_import.setText(_translate("Form", "Import Positions"))
