@@ -3752,7 +3752,7 @@ class TescanMicroscope(FibsemMicroscope):
             try:
                 layerSettings = self.connection.DrawBeam.LayerSettings.EDeposition(
                     syncWriteField=True,
-                    writeFieldSize=protocol["hfw"],
+                    writeFieldSize=protocol.get("hfw", 0.0005),
                     beamCurrent=protocol["beam_current"],
                     spotSize=protocol["spot_size"],
                     rate=3e-10, # Value for platinum
