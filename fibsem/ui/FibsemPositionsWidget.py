@@ -7,7 +7,7 @@ import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QTimer
-
+from PyQt5.QtGui import QPixmap, QImage
 
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
@@ -48,11 +48,13 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_go_to.clicked.connect(self.go_to_position)
         self.pushButton_export.clicked.connect(self.export_positions)
         self.pushButton_import.clicked.connect(self.import_positions)
+        self.movement_widget.move_signal.connect(self.minimap)
 
     def select_position(self):
         if self.comboBox_positions.currentIndex() != -1:
             position = self.positions[self.comboBox_positions.currentIndex()]
             self.label_current_position.setText(f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}, y={position.y*constants.METRE_TO_MILLIMETRE:.3f}, z={position.z*constants.METRE_TO_MILLIMETRE:.3f}, r={position.r*constants.RADIANS_TO_DEGREES:.1f}, t={position.t*constants.RADIANS_TO_DEGREES:.1f}")
+            self.minimap()
 
     def add_position(self):
         position = self.microscope.get_stage_position()
@@ -103,6 +105,40 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
             position = FibsemStagePosition.__from_dict__(dict_position)
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
+
+    def minimap(self):
+        x = []
+        y = []
+        labels = []
+        for position in self.positions:
+            x.append(position.x)
+            y.append(position.y)
+            labels.append(position.name)
+        current_position = self.microscope.get_stage_position()
+        x.append(current_position.x)
+        y.append(current_position.y)
+        labels.append("Current Position")
+
+        import matplotlib.pyplot as plt
+        plt.scatter(x, y, color="blue")
+        # plt.scatter(x[-1], y[-1], color="red")
+        plt.xlabel('X-axis')
+        plt.ylabel('Y-axis')
+        plt.title('Saved Positions')
+        for i in range(len(x)):
+            plt.text(x[i], y[i], labels[i], ha='center', va='bottom')
+        fig = plt.gcf()
+        import streamlit as st
+        import cv2
+        st.pyplot(fig)
+        fig.savefig('streamlit_figure.png', format='png')
+        image_from_plot = cv2.imread('streamlit_figure.png')
+        # Create a QImage from the NumPy array
+        height, width, channels = image_from_plot.shape
+        bytes_per_line = channels * width
+        qimage = QImage(image_from_plot.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        pixmap = QPixmap(qimage)
+        self.label_minimap.setPixmap(pixmap)
 
 def main():
 
