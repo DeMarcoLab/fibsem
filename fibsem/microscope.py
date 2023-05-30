@@ -3758,17 +3758,48 @@ class TescanMicroscope(FibsemMicroscope):
                 dwellTime=protocol.get("dwell_time",1.0e-6)
             )
 
-        self.gis_layer = self.connection.DrawBeam.Layer("Layer_GIS", layerSettings)
-        self.connection.DrawBeam.LoadLayer(self.gis_layer)
+        # self.gis_layer = self.connection.DrawBeam.Layer("Layer_GIS", layerSettings)
+        layerSettings = self.connection.DrawBeam.Layer.fromDbp(r'C:\Tescan\AutomationSDK\examples\data\12-deposition.dbp')
+
+        trial_layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
+            syncWriteField=True,
+            writeFieldSize=0.0005,
+            spotSize=5e-8,
+            spacing=1.0,
+            rate=3e-10,
+            preset=None,
+            parallel=False,
+            material='Default Material',
+            gisPrecursor = None,
+            dwellTime=1e-06,
+            beamCurrent=5e-10
+        )
+
+        trial_layer = self.connection.DrawBeam.Layer("Layer_GIS", trial_layerSettings)
+
+        trial_layer.addRectangleFilled(
+            CenterX=0,
+            CenterY=0,
+            Depth=3e-06,
+            Height=3e-06,
+            Width =1.5e-05,
+            ScanningPath=self.connection.DrawBeam.ScanningPath.RLE,
+        )
+
+        guide_layer = layerSettings[0]
+
+
+        self.connection.DrawBeam.LoadLayer(trial_layer)
+        logging.info(f"GIS Setup Complete, {beam_type} layer settings loaded")
 
     def setup_GIS_pattern(self,protocol):
 
         hfw = protocol["hfw"]
         line_pattern_length = protocol["length"]
 
-        self.connection.FIB.Optics.SetViewfield(
-            hfw * constants.METRE_TO_MILLIMETRE
-        )
+        # self.connection.FIB.Optics.SetViewfield(
+        #     hfw * constants.METRE_TO_MILLIMETRE
+        # )
 
         start_x=-line_pattern_length/2, 
         start_y=+line_pattern_length,
@@ -3776,9 +3807,15 @@ class TescanMicroscope(FibsemMicroscope):
         end_y=+line_pattern_length,
         depth=2e-6
         
-        pattern = self.gis_layer.addLine(
-            BeginX=start_x, BeginY=start_y, EndX=end_x, EndY=end_y, Depth=depth
-        )
+        # self.gis_layer.addRectangleFilled(
+        #     CenterX=0,
+        #     CenterY=0,
+        #     Depth=depth,
+        #     Width=1.5e-5,
+        #     Height=3.0e-6
+        # )
+
+        logging.info(f"GIS Pattern Setup Complete")
 
     def run_GIS(self,protocol) -> None:
         

@@ -218,7 +218,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.multichem_radioButton.toggled.connect(self.change_gis_multichem)
         self.warm_button.clicked.connect(self.warm_up_gis)
         self.run_button.clicked.connect(self.run_gis)
-        self.beamtype_combobox.setCurrentText("ELECTRON")
+        self.beamtype_combobox.setCurrentText("ION")
         self.beamtype_combobox.currentIndexChanged.connect(self.update_gas_protocol)
         self.app_file_combobox.currentIndexChanged.connect(self.update_gas_protocol)
     
