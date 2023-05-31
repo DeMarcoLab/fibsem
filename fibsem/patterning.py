@@ -392,7 +392,7 @@ class FiducialPattern(BasePattern):
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
         left_pattern = FibsemPatternSettings.__from_dict__(protocol)
-        left_pattern.rotation = np.deg2rad(protocol["rotation"])
+        left_pattern.rotation = protocol["rotation"]
         right_pattern = FibsemPatternSettings.__from_dict__(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
