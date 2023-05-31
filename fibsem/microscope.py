@@ -2921,13 +2921,13 @@ class TescanMicroscope(FibsemMicroscope):
 
     def insert_manipulator(self, name: str = "PARK"):
         _check_needle(self.hardware_settings)
-        raise NotImplementedError("TESCAN API does not support manipulator insertion.")
+        logging.warning("TESCAN API does not support manipulator insertion. PLEASE MANUALLY INSERT NEEDLE WITH GUI")
         pass
 
     
     def retract_manipulator(self):
         _check_needle(self.hardware_settings)
-        raise NotImplementedError("TESCAN API does not support manipulator retraction.")
+        logging.warning("TESCAN API does not support manipulator retraction. PLEASE MANUALLY RETRACT NEEDLE WITH GUI")
         pass
     
     def _check_manipulator_limits(self,x,y,z,r):

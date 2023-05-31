@@ -51,7 +51,7 @@ def get_lamella_size_in_pixels(
 
     total_height = lamella_height
     if use_trench_height:
-        trench_height = protocol["protocol_stages"][0]["trench_height"]
+        trench_height = protocol["stages"][0]["trench_height"]
         total_height += 2 * trench_height
 
     # convert to m
