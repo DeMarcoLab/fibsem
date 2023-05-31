@@ -103,10 +103,10 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="2">
+   <item row="8" column="0" colspan="3">
     <widget class="QLabel" name="label_minimap">
      <property name="text">
-      <string>TextLabel</string>
+      <string/>
      </property>
     </widget>
    </item>
