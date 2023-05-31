@@ -1074,7 +1074,7 @@ class ThermoMicroscope(FibsemMicroscope):
             yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
 
         # move needle (relative)
-        needle_position = ManipulatorPosition(x=x_move.x, y=yz_move.y, z=yz_move.z)
+        needle_position = ManipulatorPosition(x=x_move.x, y=yz_move.y, z=yz_move.z, r = None ,coordinate_system=ManipulatorCoordinateSystem.RAW)
         logging.info(f"Moving manipulator: {needle_position}.")
         needle.relative_move(needle_position)
 
@@ -1094,7 +1094,8 @@ class ThermoMicroscope(FibsemMicroscope):
         position.y += yz_move.y + offset.y
         position.z += yz_move.z  # RAW, up = negative, STAGE: down = negative
         position.r = None  # rotation is not supported
-        self.connection.specimen.manipulator.absolute_move(position)
+        thermo_position = position.to_autoscript_position()
+        self.connection.specimen.manipulator.absolute_move(thermo_position)
 
     def _get_saved_manipulator_position(self, name: str = "PARK"):
         

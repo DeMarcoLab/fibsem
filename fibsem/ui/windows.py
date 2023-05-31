@@ -35,16 +35,17 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
 
     # user validate features...
     if validate:
-        # user validates detection result
-        detection_ui = FibsemDetectionUI(
-            microscope=microscope,
-            settings=settings,
-            detected_features=det,
-        )
-        detection_ui.show()
-        detection_ui.exec_()
+        # # user validates detection result
+        # detection_ui = FibsemDetectionUI(
+        #     microscope=microscope,
+        #     settings=settings,
+        #     detected_features=det,
+        # )
+        # detection_ui.show()
+        # detection_ui.exec_()
 
-        det = detection_ui.detected_features
+        # det = detection_ui.detected_features
+        input("Ensure features are correct, then press enter to continue...")
 
     # calculate features in microscope image coords
     det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].px, image.data, pixelsize)
