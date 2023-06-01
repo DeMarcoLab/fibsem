@@ -2671,11 +2671,11 @@ class TescanMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage to {position}.")
         self.connection.Stage.MoveTo(
-            position.x * constants.METRE_TO_MILLIMETRE,
-            position.y * constants.METRE_TO_MILLIMETRE,
-            position.z * constants.METRE_TO_MILLIMETRE,
-            position.r * constants.RADIANS_TO_DEGREES,
-            position.t * constants.RADIANS_TO_DEGREES,
+            position.x * constants.METRE_TO_MILLIMETRE if position.x is not None else 0.0,
+            position.y * constants.METRE_TO_MILLIMETRE if position.y is not None else 0.0,
+            position.z * constants.METRE_TO_MILLIMETRE if position.z is not None else 0.0,
+            position.r * constants.RADIANS_TO_DEGREES if position.r is not None else 0.0,
+            position.t * constants.RADIANS_TO_DEGREES if position.t is not None else 0.0,
         )
 
     def move_stage_relative(
@@ -3086,7 +3086,8 @@ class TescanMicroscope(FibsemMicroscope):
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
         _check_needle(self.hardware_settings)
-        raise NotImplementedError("Not supported by TESCAN API")
+        logging.warning("Not supported by TESCAN API")
+        # raise NotImplementedError("Not supported by TESCAN API")
         pass
 
     def _get_saved_manipulator_position(self):
