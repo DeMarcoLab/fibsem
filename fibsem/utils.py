@@ -293,7 +293,7 @@ def load_protocol(protocol_path: Path = None) -> dict:
     else:
         protocol = {"name": "demo"}
 
-    protocol = _format_dictionary(protocol)
+    #protocol = _format_dictionary(protocol)
 
     return protocol
 
