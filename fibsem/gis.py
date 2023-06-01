@@ -35,9 +35,9 @@ def sputter_platinum(
     if protocol is None:
         protocol = gis_protocol
 
-    hfw = protocol["hfw"]
-    line_pattern_length = protocol["length"]
-    sputter_time = protocol["time"]
+    hfw = protocol["weld"]["hfw"]
+    line_pattern_length = protocol["weld"]["length"]
+    sputter_time = protocol["weld"]["time"]
     
 
     # Setup

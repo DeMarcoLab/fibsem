@@ -18,6 +18,10 @@ from fibsem.microscope import FibsemMicroscope
 
 def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
 
+    if settings.image.reduced_area is not None:
+        logging.info(f"Reduced area is not compatible with model detection, disabling...")
+        settings.image.reduced_area = None
+
     # take new image
     image = acquire.new_image(microscope, settings.image)
 
