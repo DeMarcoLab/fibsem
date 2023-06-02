@@ -2671,11 +2671,11 @@ class TescanMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage to {position}.")
         self.connection.Stage.MoveTo(
-            position.x * constants.METRE_TO_MILLIMETRE if position.x is not None else 0.0,
-            position.y * constants.METRE_TO_MILLIMETRE if position.y is not None else 0.0,
-            position.z * constants.METRE_TO_MILLIMETRE if position.z is not None else 0.0,
-            position.r * constants.RADIANS_TO_DEGREES if position.r is not None else 0.0,
-            position.t * constants.RADIANS_TO_DEGREES if position.t is not None else 0.0,
+            position.x * constants.METRE_TO_MILLIMETRE if position.x is not None else None,
+            position.y * constants.METRE_TO_MILLIMETRE if position.y is not None else None,
+            position.z * constants.METRE_TO_MILLIMETRE if position.z is not None else None,
+            position.r * constants.RADIANS_TO_DEGREES if position.r is not None else None,
+            position.t * constants.RADIANS_TO_DEGREES if position.t is not None else None,
         )
 
     def move_stage_relative(

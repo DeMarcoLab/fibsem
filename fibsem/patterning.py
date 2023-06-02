@@ -914,6 +914,7 @@ PROTOCOL_MILL_MAP = {
     "thin_lamella": TrenchPattern,
     "weld": RectanglePattern,
     "sever": RectanglePattern,
+    "sharpen": RectanglePattern,
 }
 
 
