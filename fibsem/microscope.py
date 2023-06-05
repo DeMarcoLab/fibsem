@@ -1042,8 +1042,8 @@ class ThermoMicroscope(FibsemMicroscope):
         return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
 
     def move_manipulator_corrected(self, 
-        dx: float,
-        dy: float,
+        dx: float = 0,
+        dy: float = 0,
         beam_type: BeamType = BeamType.ELECTRON,
     ) -> None:
         """Calculate the required corrected needle movements based on the BeamType to move in the desired image coordinates.
@@ -3043,8 +3043,8 @@ class TescanMicroscope(FibsemMicroscope):
         return FibsemManipulatorPosition(x=0, y=y_move, z=z_move)
 
     def move_manipulator_corrected(self, 
-        dx: float,
-        dy: float,
+        dx: float = 0,
+        dy: float = 0,
         beam_type: BeamType = BeamType.ELECTRON,
     ) -> None:
         """Calculate the required corrected needle movements based on the BeamType to move in the desired image coordinates.
@@ -3479,8 +3479,11 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.DrawBeam.LoadLayer(self.layer)
 
         except:
-            defaultLayerSettings = self.connection.DrawBeam.Layer.fromDbp('.\\fibsem\\config\\deposition.dbp')
-            self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
+            import fibsem
+            base_path = os.path.dirname(fibsem.__path__[0])
+            layer_path = os.path.join(base_path,"fibsem", "config", "deposition.dbp")
+            self.layer = self.connection.DrawBeam.Layer.fromDbp(layer_path)[0]
+            # self.layer = self.connection.DrawBeam.LoadLayer(defaultLayerSettings[0])
 
     def draw_sputter_pattern(self, hfw, line_pattern_length, *args, **kwargs):
         """
