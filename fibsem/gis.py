@@ -35,8 +35,11 @@ def sputter_platinum(
 
     if protocol is None:
         protocol = gis_protocol
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+        sputter_time = protocol["time"]
 
-    if whole_grid:
+    elif whole_grid:
         hfw = protocol["whole_grid"]["hfw"]
         line_pattern_length = protocol["whole_grid"]["length"]
         sputter_time = protocol["whole_grid"]["time"]

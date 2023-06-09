@@ -78,13 +78,13 @@ def make_logging_directory(path: Path = None, name="run"):
 
 # TODO: better logs: https://www.toptal.com/python/in-depth-python-logging
 # https://stackoverflow.com/questions/61483056/save-logging-debug-and-show-only-logging-info-python
-def configure_logging(path: Path = "", log_filename="logfile", log_level=logging.DEBUG):
+def configure_logging(path: Path = "", log_filename="logfile", log_level=logging.DEBUG, _DEBUG: bool = False):
     """Log to the terminal and to file simultaneously."""
     logfile = os.path.join(path, f"{log_filename}.log")
 
     file_handler = logging.FileHandler(logfile)
     stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setLevel(logging.INFO)
+    stream_handler.setLevel(logging.INFO if _DEBUG is False else logging.DEBUG)
 
     logging.basicConfig(
         format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s",

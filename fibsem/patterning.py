@@ -915,6 +915,16 @@ PROTOCOL_MILL_MAP = {
     "weld": RectanglePattern,
     "sever": RectanglePattern,
     "sharpen": RectanglePattern,
+    "needle": RectanglePattern,
+    "copper_weld": SpotWeldPattern,
+    "copper_release": HorseshoePattern,
+    "serial_trench": HorseshoePattern,
+    "serial_undercut": RectanglePattern,
+    "serial_weld": SpotWeldPattern,
+    "serial_sever": RectanglePattern,
+    "lamella_weld": SpotWeldPattern,
+    "lamella_sever": RectanglePattern,
+    "lamella_polish": TrenchPattern,
 }
 
 
