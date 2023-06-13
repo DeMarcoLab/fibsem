@@ -124,6 +124,21 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         import plotly.express as px
         import plotly.io as pio
         fig = px.scatter(df, color="labels", labels={'color': 'Position'}, title="Positions (um)", x = 'x', y = 'y')
+
+        # miminum graph zoom 
+        if len(self.positions) > 0:
+            flag = False
+            for i in range(len(self.positions)):
+                if (x[i] - x[0]) < 150 or (y[i] - y[0]) < 150:
+                    flag = True
+            if flag:
+                range_x = [min(x) - 75, max(x) + 75]
+                range_y = [min(y) - 75, max(y) + 75]
+                fig.update_layout(
+                    xaxis=dict(range=range_x),
+                    yaxis=dict(range=range_y)
+                )
+
         image_from_plot = fig.to_image(format="png", engine="kaleido")
 
         from PIL import Image
