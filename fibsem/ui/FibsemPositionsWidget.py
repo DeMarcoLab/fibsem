@@ -110,28 +110,30 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         x = []
         y = []
         labels = []
-        for position in self.positions:
-            x.append(deepcopy(position.x)*constants.SI_TO_MICRO)
-            y.append(deepcopy(position.y)*constants.SI_TO_MICRO)
-            labels.append(deepcopy(position.name))
+        pil_image = None
         current_position = self.microscope.get_stage_position()
         x.append(deepcopy(current_position.x)*constants.SI_TO_MICRO)
         y.append(deepcopy(current_position.y)*constants.SI_TO_MICRO)
         labels.append("Current Position")
-
+        for position in self.positions:
+            x.append(deepcopy(position.x)*constants.SI_TO_MICRO)
+            y.append(deepcopy(position.y)*constants.SI_TO_MICRO)
+            labels.append(deepcopy(position.name))
+        import pandas as pd
+        df = pd.DataFrame({'x': x, 'y': y, 'labels': labels})
         import plotly.express as px
         import plotly.io as pio
-        fig = px.scatter(x, y, color=labels, labels={'color': 'Position'}, width=800, height=800)
+        fig = px.scatter(df, color="labels", labels={'color': 'Position'}, title="Positions (um)", x = 'x', y = 'y')
+        image_from_plot = fig.to_image(format="png", engine="kaleido")
 
-        fig.update_layout(title='Positions', xaxis_title='x (um)', yaxis_title='y (um)')
-
-        image_from_plot = pio.to_image(fig, format='png')
         from PIL import Image
         import io
         pil_image = Image.open(io.BytesIO(image_from_plot))
-        qimage = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGB888)
-        pixmap = QPixmap(qimage)
-        self.label_minimap.setPixmap(pixmap)
+        # Convert the PIL image to a QImage
+        image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
+        # Convert the QImage to a QPixmap
+        qpixmap = QPixmap.fromImage(image_qt)
+        self.label_minimap.setPixmap(qpixmap)
 
 def main():
 

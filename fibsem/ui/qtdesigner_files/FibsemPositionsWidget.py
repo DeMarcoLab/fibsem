@@ -59,8 +59,9 @@ class Ui_Form(object):
         self.pushButton_go_to.setObjectName("pushButton_go_to")
         self.gridLayout.addWidget(self.pushButton_go_to, 3, 0, 1, 1)
         self.label_minimap = QtWidgets.QLabel(Form)
+        self.label_minimap.setText("")
         self.label_minimap.setObjectName("label_minimap")
-        self.gridLayout.addWidget(self.label_minimap, 8, 0, 1, 2)
+        self.gridLayout.addWidget(self.label_minimap, 8, 0, 1, 3)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -76,4 +77,3 @@ class Ui_Form(object):
         self.pushButton_export.setText(_translate("Form", "Export positions"))
         self.pushButton_import.setText(_translate("Form", "Import Positions"))
         self.pushButton_go_to.setText(_translate("Form", "Go To"))
-        self.label_minimap.setText(_translate("Form", "TextLabel"))

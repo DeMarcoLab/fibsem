@@ -217,22 +217,22 @@ Methods:
 
     def __add__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
         return FibsemStagePosition(
-            self.x + other.x if other.x is not None else self.x,
-            self.y + other.y if other.y is not None else self.y,
-            self.z + other.z if other.z is not None else self.z,
-            self.r + other.r if other.r is not None else self.r,
-            self.t + other.t if other.t is not None else self.t,
-            self.coordinate_system,
+            x = self.x + other.x if other.x is not None else self.x,
+            y = self.y + other.y if other.y is not None else self.y,
+            z = self.z + other.z if other.z is not None else self.z,
+            r = self.r + other.r if other.r is not None else self.r,
+            t = self.t + other.t if other.t is not None else self.t,
+            coordinate_sysetm = self.coordinate_system,
         )
 
     def __sub__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
         return FibsemStagePosition(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z,
-            self.r - other.r,
-            self.t - other.t,
-            self.coordinate_system,
+            x = self.x - other.x,
+            y = self.y - other.y,
+            z = self.z - other.z,
+            r = self.r - other.r,
+            t = self.t - other.t,
+            coordinate_system = self.coordinate_system,
         )
 
     def _scale_repr(self, scale: float, precision: int = 2):

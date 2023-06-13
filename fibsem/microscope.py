@@ -2715,12 +2715,12 @@ class TescanMicroscope(FibsemMicroscope):
         y_m = current_position.y
         z_m = current_position.z
         new_position = FibsemStagePosition(
-            x_m + position.x if position.x is not None else x_m,
-            y_m + position.y if position.y is not None else y_m,
-            z_m + position.z if position.z is not None else z_m,
-            current_position.r + position.r if position.r is not None else current_position.r,
-            current_position.t + position.t if position.t is not None else current_position.t,
-            "RAW",
+            x = x_m + position.x if position.x is not None else x_m,
+            y = y_m + position.y if position.y is not None else y_m,
+            z = z_m + position.z if position.z is not None else z_m,
+            r = current_position.r + position.r if position.r is not None else current_position.r,
+            t = current_position.t + position.t if position.t is not None else current_position.t,
+            coordinate_system =  "RAW",
         )
         self.move_stage_absolute(new_position)
 
