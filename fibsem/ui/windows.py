@@ -8,8 +8,9 @@ import numpy as np
 from fibsem import acquire, conversions, validation
 from fibsem.detection import detection
 from fibsem.detection.detection import (DetectedFeatures,Feature)
+from fibsem.detection.detection import ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, detect_features, LandingPost
 from fibsem.segmentation.model import load_model
-from fibsem.structures import MicroscopeSettings, Point
+from fibsem.structures import MicroscopeSettings, Point, FibsemStagePosition, BeamType
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
 from fibsem.ui.FibsemDetectionWidget import detection_ui
@@ -65,7 +66,9 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
     #     input("Ensure features are correct, then press enter to continue...")
 
     # calculate features in microscope image coords
-    pixelsize = image.metadata.pixel_size.x
+    hfw = settings.image.hfw
+    pixelsize = hfw/settings.image.resolution[0]
+    # pixelsize = image.metadata.pixel_size.x
     det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].px, image.data, pixelsize)
     det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].px, image.data, pixelsize)
 
@@ -138,3 +141,44 @@ def run_validation_ui(
         )
 
     logging.info(f"INIT | PRE_RUN_VALIDATION | FINISHED")
+
+
+def move_feature_to_image_centre(microscope: FibsemMicroscope, settings: MicroscopeSettings, feature: Feature, validate: bool = True,detection_text: str=None):
+
+    features = [feature,ImageCentre()]
+
+    settings.image.beam_type = BeamType.ION
+
+
+    det = detect_features_v2(microscope, settings, features, validate)
+
+    feature_centre = det.features[0]
+
+    # move stage to centre of lamella
+
+    is_centred = fibsem_ui.message_box_ui(
+        title="Check Feature Location",
+        text=detection_text,
+
+    )
+
+    if is_centred is False:
+
+
+        microscope.stable_move(
+            settings=settings,
+            dx=feature_centre.feature_m.x,
+            dy=feature_centre.feature_m.y,
+            beam_type=BeamType.ION)
+        
+
+        move_feature_to_image_centre(microscope, settings, feature, validate,detection_text=detection_text)
+
+    
+
+
+
+
+
+
+
