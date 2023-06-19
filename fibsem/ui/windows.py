@@ -12,6 +12,7 @@ from fibsem.segmentation.model import load_model
 from fibsem.structures import MicroscopeSettings, Point
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
+from fibsem.ui.FibsemDetectionWidget import detection_ui
 from PyQt5.QtWidgets import QMessageBox
 from fibsem.microscope import FibsemMicroscope
 
@@ -33,25 +34,38 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
     cuda = ml_protocol.get("cuda", False)
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
+    det = detection_ui(image=image,model=model,features=features,validate=True)
+
+
+    ## old code
+
     # detect features
-    pixelsize = image.metadata.pixel_size.x
-    det = detection.detect_features(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
+    # pixelsize = image.metadata.pixel_size.x
+
+
+    
+
+    # det = detection.detect_features(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
 
     # user validate features...
-    if validate:
-        # # user validates detection result
-        # detection_ui = FibsemDetectionUI(
-        #     microscope=microscope,
-        #     settings=settings,
-        #     detected_features=det,
-        # )
-        # detection_ui.show()
-        # detection_ui.exec_()
+    # if validate:
+    #     # # user validates detection result
+    #     # detection_ui = FibsemDetectionUI(
+    #     #     microscope=microscope,
+    #     #     settings=settings,
+    #     #     detected_features=det,
+    #     # )
+    #     # detection_ui.show()
+    #     # detection_ui.exec_()
 
-        # det = detection_ui.detected_features
-        input("Ensure features are correct, then press enter to continue...")
+    #     # det = detection_ui.detected_features
+
+    #     # det = detection_ui(image=image,model=model,features=features,validate=validate)
+
+    #     input("Ensure features are correct, then press enter to continue...")
 
     # calculate features in microscope image coords
+    pixelsize = image.metadata.pixel_size.x
     det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].px, image.data, pixelsize)
     det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].px, image.data, pixelsize)
 
