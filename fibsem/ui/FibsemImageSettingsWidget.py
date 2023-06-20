@@ -85,8 +85,16 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.stigmation_y.hide()
             self.stigmation_x.setEnabled(False)
             self.stigmation_y.setEnabled(False)
-
-
+            available_presets = self.microscope.get_available_values("presets")
+            self.comboBox_presets.addItems(available_presets)   
+            self.comboBox_presets.currentTextChanged.connect(self.update_presets)
+        else:
+            self.comboBox_presets.hide()
+            self.label_presets.hide()
+  
+    def update_presets(self):
+        beam_type = BeamType[self.selected_beam.currentText()]
+        self.microscope.set("preset", self.comboBox_presets.currentText(), beam_type)
     def check_point_image(self,point):
             
             if point[1] >= 0 and point[1] <= self.eb_layer.data.shape[1]:
@@ -306,6 +314,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
   
     def update_detector_ui(self):
         beam_type = BeamType[self.selected_beam.currentText()]
+        if beam_type == BeamType.ELECTRON:
+            self.comboBox_presets.hide()
+            self.label_presets.hide()
+        else:
+            self.comboBox_presets.show()
+            self.label_presets.show()
+        
         self.detector_type = self.microscope.get_available_values("detector_type", beam_type=beam_type)
         self.detector_type_combobox.clear()
         self.detector_type_combobox.addItems(self.detector_type)
