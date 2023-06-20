@@ -3325,6 +3325,7 @@ class TescanMicroscope(FibsemMicroscope):
                 CenterX=centre_x,
                 CenterY=centre_y,
                 Depth=depth,
+                DepthUnit='m',
                 Width=width,
                 Height=height,
                 Angle=rotation,
@@ -3335,6 +3336,7 @@ class TescanMicroscope(FibsemMicroscope):
                 CenterX=centre_x,
                 CenterY=centre_y,
                 Depth=depth,
+                DepthUnit='m',
                 Width=width,
                 Height=height,
                 Angle=rotation,
@@ -3364,7 +3366,7 @@ class TescanMicroscope(FibsemMicroscope):
         depth = pattern_settings.depth
 
         self.layer.addLine(
-            BeginX=start_x, BeginY=start_y, EndX=end_x, EndY=end_y, Depth=depth
+            BeginX=start_x, BeginY=start_y, EndX=end_x, EndY=end_y, Depth=depth, DepthUnit='m',
         )
 
         pattern = self.layer
@@ -3390,6 +3392,7 @@ class TescanMicroscope(FibsemMicroscope):
             RadiusA=pattern_settings.radius,
             RadiusB=0,
             Depth=pattern_settings.depth,
+            DepthUnit='m',
         )
 
         return pattern
@@ -3415,6 +3418,7 @@ class TescanMicroscope(FibsemMicroscope):
             RadiusA=outer_radius,
             RadiusB=inner_radius,
             Depth=pattern_settings.depth,
+            DepthUnit='m',
         )
 
         return pattern
