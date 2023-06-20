@@ -2743,11 +2743,17 @@ class TescanMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
 
+        if self.connection.SEM.Optics.GetImageRotation() == 0:
+            dx_move = -dx
+            dy_move = dy
+        elif self.connection.SEM.Optics.GetImageRotation() == 180:
+            dx_move = dx
+            dy_move = -dy
         # calculate stage movement
-        x_move = FibsemStagePosition(x=dx, y=0, z=0) 
+        x_move = FibsemStagePosition(x=dx_move, y=0, z=0) 
         yz_move = self._y_corrected_stage_movement(
             settings=settings,
-            expected_y=-dy,
+            expected_y=dy_move,
             beam_type=beam_type,
         )
 
