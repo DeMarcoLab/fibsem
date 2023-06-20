@@ -149,11 +149,11 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
-        position_dict["x"] = float(self.x)
-        position_dict["y"] = float(self.y)
-        position_dict["z"] = float(self.z)
-        position_dict["r"] = float(self.r)
-        position_dict["t"] = float(self.t)
+        position_dict["x"] = float(self.x) if self.x is not None else None
+        position_dict["y"] = float(self.y) if self.y is not None else None
+        position_dict["z"] = float(self.z) if self.z is not None else None
+        position_dict["r"] = float(self.r) if self.r is not None else None
+        position_dict["t"] = float(self.t) if self.t is not None else None
         position_dict["coordinate_system"] = self.coordinate_system
 
         return position_dict
