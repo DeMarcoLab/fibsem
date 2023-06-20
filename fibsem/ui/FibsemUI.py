@@ -145,8 +145,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
 
-
-
         else:
             if self.image_widget is None:
                 return

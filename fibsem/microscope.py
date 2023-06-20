@@ -2743,12 +2743,22 @@ class TescanMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
 
-        if self.connection.SEM.Optics.GetImageRotation() == 0:
+        if beam_type == BeamType.ELECTRON:
+            image_rotation = self.connection.SEM.Optics.GetImageRotation()
+        else:
+            image_rotation = self.connection.FIB.Optics.GetImageRotation()
+
+        if image_rotation == 0:
             dx_move = -dx
             dy_move = dy
-        elif self.connection.SEM.Optics.GetImageRotation() == 180:
+        elif image_rotation == 180:
             dx_move = dx
             dy_move = -dy
+        # image_rotation = self.connection.SEM.Optics.GetImageRotation()
+
+        # dx_move =  dx*np.cos(image_rotation*np.pi/180) 
+        # dy_move = dy*np.cos(image_rotation*np.pi/180)
+
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx_move, y=0, z=0) 
         yz_move = self._y_corrected_stage_movement(
@@ -2785,7 +2795,13 @@ class TescanMicroscope(FibsemMicroscope):
         """
         _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
-
+        image_rotation = self.connection.FIB.Optics.GetImageRotation()
+            
+        if image_rotation == 0:
+            dy_move = dy
+        elif image_rotation == 180:
+            dy_move = -dy
+            
         PRETILT_SIGN = 1.0
         from fibsem import movement
         # current stage position
@@ -2809,7 +2825,7 @@ class TescanMicroscope(FibsemMicroscope):
         # TODO: check this pre-tilt angle calculation
         corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
         perspective_tilt = (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
-        z_perspective = - dy/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
+        z_perspective = - dy_move/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
         z_move = z_perspective*np.sin(90*constants.DEGREES_TO_RADIANS - stage_tilt_flat_to_ion) 
         # z_move = dy / np.cos(
         #     np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion + settings.system.stage.pre_tilt)
