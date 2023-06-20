@@ -149,11 +149,11 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
-        position_dict["x"] = self.x
-        position_dict["y"] = self.y
-        position_dict["z"] = self.z
-        position_dict["r"] = self.r
-        position_dict["t"] = self.t
+        position_dict["x"] = float(self.x)
+        position_dict["y"] = float(self.y)
+        position_dict["z"] = float(self.z)
+        position_dict["r"] = float(self.r)
+        position_dict["t"] = float(self.t)
         position_dict["coordinate_system"] = self.coordinate_system
 
         return position_dict
@@ -722,7 +722,7 @@ class MicroscopeState:
 
         state_dict = {
             "timestamp": self.timestamp,
-            "absolute_position": stage_position_to_dict(self.absolute_position) if self.absolute_position is not None else "Not defined",
+            "absolute_position": self.absolute_position.__to_dict__() if self.absolute_position is not None else "Not defined",
             "eb_settings": self.eb_settings.__to_dict__() if self.eb_settings is not None else "Not defined",
             "ib_settings": self.ib_settings.__to_dict__() if self.ib_settings is not None else "Not defined",
         }
