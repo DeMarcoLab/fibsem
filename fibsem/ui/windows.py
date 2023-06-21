@@ -16,6 +16,7 @@ from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
 from fibsem.ui.FibsemDetectionWidget import detection_ui
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
+from fibsem.acquire import take_reference_images
 from PyQt5.QtWidgets import QMessageBox
 from fibsem.microscope import FibsemMicroscope
 
@@ -177,30 +178,7 @@ def move_feature_to_image_centre(microscope: FibsemMicroscope, settings: Microsc
         move_feature_to_image_centre(microscope, settings, feature, validate,detection_text=detection_text)
 
 
-def milling_widget_pop_up(microscope: FibsemMicroscope,settings:MicroscopeSettings ):
 
-    viewer = napari.Viewer(ndisplay=2)
-
-    image_widget = FibsemImageSettingsWidget(
-        microscope=microscope, 
-        image_settings=settings.image, 
-        viewer=viewer
-    )
-    
-    milling_widget = FibsemMillingWidget(
-        microscope=microscope,
-        settings=settings,
-        viewer=viewer,
-        image_widget=image_widget
-        )
-
-    viewer.window.add_dock_widget(
-        milling_widget, area="right", add_vertical_stretch=False, name="Milling Evaluation"
-    )
-    milling_widget.show()
-    napari.run()
-
-    
 
 
 
