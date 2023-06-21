@@ -90,3 +90,4 @@ def load_microscope_manufacturer(config_path=None) -> str:
 
 
 __SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
+__DEFAULT_IP_ADDRESS__ = "192.168.0.1"
