@@ -146,8 +146,17 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 dy=point.y,
                 beam_type=beam_type,
             )
+        
+        # disable taking images after movement here
+        _TAKE_ELECTRON = False
+        _TAKE_ION = True
+        
+        if _TAKE_ELECTRON:
+            self.image_widget.take_image(BeamType.ELECTRON)
+        if _TAKE_ION:
+            self.image_widget.take_image(BeamType.ION)
 
-        self.image_widget.take_reference_images()
+        # self.image_widget.take_reference_images()
         self.update_ui()
 
 

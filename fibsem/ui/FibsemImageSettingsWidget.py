@@ -333,8 +333,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.set_ui_from_settings(self.image_settings, beam_type)
 
-    def take_image(self):
+    def take_image(self, beam_type: BeamType = None):
         self.image_settings = self.get_settings_from_ui()[0]
+        
+        if beam_type is not None:
+            self.image_settings.beam_type = beam_type
 
         arr =  acquire.new_image(self.microscope, self.image_settings)
         name = f"{self.image_settings.beam_type.name}"
