@@ -39,11 +39,11 @@ try:
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
-    from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+    from autoscript_sdb_microscope_client.enumerations import PatterningState, CoordinateSystem 
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
+
+    # from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition, ,MultiChemInsertPosition 
 except:
     logging.debug("Autoscript (ThermoFisher) not installed.")
 

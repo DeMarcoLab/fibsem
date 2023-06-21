@@ -24,9 +24,9 @@ try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
     from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+        CoordinateSystem, PatterningState)
     THERMO = True
+    # from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition, MultiChemInsertPosition
 except:
     THERMO = False
 
