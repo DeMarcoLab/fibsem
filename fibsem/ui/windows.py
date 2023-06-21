@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import QMessageBox
 from fibsem.microscope import FibsemMicroscope
 
 
-def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
+def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True,end_response:str = None) -> DetectedFeatures:
 
     if settings.image.reduced_area is not None:
         logging.info(f"Reduced area is not compatible with model detection, disabling...")
@@ -38,8 +38,10 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
     cuda = ml_protocol.get("cuda", False)
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
-    det = detection_ui(image=image,model=model,features=features,validate=True)
-
+    output = detection_ui(image=image,model=model,features=features,validate=True,end_response=end_response)
+    
+    det = output[0]
+    response = output[1]
 
     ## old code
 
@@ -75,7 +77,7 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
     det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].px, image.data, pixelsize)
     det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].px, image.data, pixelsize)
 
-    return det
+    return [det,response]
 
 
 def run_validation_ui(
@@ -152,18 +154,17 @@ def move_feature_to_image_centre(microscope: FibsemMicroscope, settings: Microsc
 
     settings.image.beam_type = BeamType.ION
 
+    end_response = f"Is {feature.name} centred?"
 
-    det = detect_features_v2(microscope, settings, features, validate)
+    output = detect_features_v2(microscope, settings, features, validate,end_response=end_response)
+
+    det = output[0]
+    is_centred = output[1]
 
     feature_centre = det.features[0]
 
     # move stage to centre of lamella
 
-    is_centred = fibsem_ui.message_box_ui(
-        title="Check Feature Location",
-        text=detection_text,
-
-    )
 
     if is_centred is False:
 

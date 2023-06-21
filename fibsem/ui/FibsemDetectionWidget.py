@@ -12,6 +12,7 @@ from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.segmentation import model as fibsem_model
+from fibsem.ui.utils import message_box_ui
 from fibsem.segmentation.model import load_model
 from fibsem.structures import (
     BeamType,
@@ -37,6 +38,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         _SEG_MODE: bool = True,
         _DET_MODE: bool = True,
         _EVAL_MODE: bool = False,
+        end_response:str = None,
         parent=None,
     ):
         super(FibsemDetectionWidgetUI, self).__init__(parent=parent)
@@ -63,12 +65,17 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.checkBox_use_segmentation.setVisible(False)
         self.checkBox_use_feature_detection.setChecked(self.USE_FEATURE_DETECTION)
         self.checkBox_use_evaluation.setChecked(self.USE_EVALUATION)
+        
+        self.end_response_string = end_response
+        self.end_response = None
 
         self.setup_connections()
 
         # set detected features
         if detected_features is not None:
             self.set_detected_features(detected_features)
+
+        message_box_ui(title="Feature Detection Validation",text="Ensure that the features detected are located accurately, if not, please manually correct the locations by dragging. Once locations are valid, click continue",buttons=QtWidgets.QMessageBox.Ok)
 
     def setup_connections(self):
         self.label_instructions.setText(
@@ -278,9 +285,15 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         # save current data
         self.save_data()
 
+        if self.end_response_string is not None:
+
+            self.end_response = message_box_ui(title="End Response",text=self.end_response_string)
+
         # emit signal
         self.continue_signal.emit(self.detected_features)
         print("continue signal emitted")
+
+        
 
         if not self._EVAL_MODE:
             self.close()
@@ -416,7 +429,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings
 from fibsem.detection.detection import Feature, DetectedFeatures
 from fibsem import acquire
-def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: list[Feature], validate: bool = True) -> DetectedFeatures:
+def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: list[Feature], validate: bool = True,end_response:str = None) -> [DetectedFeatures,bool]:
 
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
@@ -430,7 +443,8 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
         det_widget_ui = FibsemDetectionWidgetUI(
             viewer=viewer, 
             image = image, 
-            _EVAL_MODE=False)
+            _EVAL_MODE=False,
+            end_response=end_response)
         
         det_widget_ui.set_detected_features(det)
 
@@ -441,8 +455,9 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
         # napari.run()
 
         det = det_widget_ui.detected_features
+        end_response = det_widget_ui.end_response
     
-    return det
+    return [det,end_response]
 
 
 
