@@ -933,15 +933,15 @@ PROTOCOL_MILL_MAP = {
 }
 
 
-def _get_pattern(key: str, protocol: dict) -> BasePattern:
+def _get_pattern(key: str, protocol: dict, point: Point = Point()) -> BasePattern:
     pattern = PROTOCOL_MILL_MAP[key]()
-    pattern.define(protocol)
+    pattern.define(protocol, point=point)
     return pattern
 
 
-def _get_stage(key, protocol: dict, i: int = 0) -> FibsemMillingStage:
-    pattern = _get_pattern(key, protocol)
-    mill_settings = FibsemMillingSettings(milling_current=protocol["milling_current"])
+def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> FibsemMillingStage:
+    pattern = _get_pattern(key, protocol, point=point)
+    mill_settings = FibsemMillingSettings(milling_current=protocol["milling_current"], hfw=float(protocol["hfw"]))
 
     stage = FibsemMillingStage(
         name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
@@ -949,12 +949,15 @@ def _get_stage(key, protocol: dict, i: int = 0) -> FibsemMillingStage:
     return stage
 
 
-def _get_milling_stages(key, protocol):
+def _get_milling_stages(key, protocol, point: Point = Point()):
+    
+    # TODO: maybe add support for defining point per stages?
+    
     if "stages" in protocol[key]:
         stages = [
-            _get_stage(key, pstage, i)
+            _get_stage(key, pstage, point=point, i=i)
             for i, pstage in enumerate(protocol[key]["stages"])
         ]
     else:
-        stages = [_get_stage(key, protocol[key])]
+        stages = [_get_stage(key, protocol[key], point=point)]
     return stages
