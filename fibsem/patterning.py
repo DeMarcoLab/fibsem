@@ -926,6 +926,10 @@ PROTOCOL_MILL_MAP = {
     "lamella_sever": RectanglePattern,
     "lamella_polish": TrenchPattern,
     "trench": TrenchPattern,
+    "notch": WaffleNotchPattern,
+    "microexpansion": MicroExpansionPattern,
+    "clover": CloverPattern,
+    "autolamella": TrenchPattern,
 }
 
 
