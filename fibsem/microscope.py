@@ -2748,16 +2748,16 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             image_rotation = self.connection.FIB.Optics.GetImageRotation()
 
-        if image_rotation == 0:
-            dx_move = -dx
-            dy_move = dy
-        elif image_rotation == 180:
-            dx_move = dx
-            dy_move = -dy
-        # image_rotation = self.connection.SEM.Optics.GetImageRotation()
+        # if image_rotation == 0:
+        #     dx_move = -dx
+        #     dy_move = dy
+        # elif image_rotation == 180:
+        #     dx_move = dx
+        #     dy_move = -dy
+        image_rotation = self.connection.SEM.Optics.GetImageRotation()
 
-        # dx_move =  dx*np.cos(image_rotation*np.pi/180) 
-        # dy_move = dy*np.cos(image_rotation*np.pi/180)
+        dx_move =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
+        dy_move = (dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
 
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx_move, y=0, z=0) 
