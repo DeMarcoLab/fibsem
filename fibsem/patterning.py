@@ -263,6 +263,7 @@ class TrenchPattern(BasePattern):
         lamella_height = protocol["lamella_height"]
         trench_height = protocol["trench_height"]
         upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
+        lower_trench_height = trench_height * min(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
         use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
@@ -270,13 +271,13 @@ class TrenchPattern(BasePattern):
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
         )
-        centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
+        centre_lower_y = point.y - (lamella_height / 2 + lower_trench_height / 2 + offset)
 
         # mill settings
         lower_pattern_settings = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
             width=lamella_width,
-            height=trench_height,
+            height=lower_trench_height,
             depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
