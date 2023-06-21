@@ -265,6 +265,7 @@ class TrenchPattern(BasePattern):
         upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
+        use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
@@ -279,7 +280,7 @@ class TrenchPattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="BottomToTop",
         )
 
@@ -290,7 +291,7 @@ class TrenchPattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_upper_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
         )
 
