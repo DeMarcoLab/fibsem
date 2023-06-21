@@ -767,12 +767,12 @@ class ThermoMicroscope(FibsemMicroscope):
         elif beam_type == BeamType.ION:
             image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
 
-        if image_rotation == 0:
-            dx = dx,
-            dy = dy,
-        elif image_rotation == np.pi:
-            dx = -dx,
-            dy = -dy,
+        if np.isclose(image_rotation, 0):
+            dx = dx
+            dy = dy
+        elif np.isclose(image_rotation, np.pi):
+            dx *= -1.0
+            dy *= -1.0
         
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx, y=0, z=0)
@@ -817,9 +817,9 @@ class ThermoMicroscope(FibsemMicroscope):
         wd = self.connection.beams.electron_beam.working_distance.value
         image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
         if image_rotation == 0:
-            dy = dy,
+            dy = dy
         elif image_rotation == np.pi:
-            dy = -dy,
+            dy = -dy
         # TODO: does this need the perspective correction too?
 
         z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
