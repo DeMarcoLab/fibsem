@@ -7,7 +7,8 @@ import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Union
-
+from queue import Queue
+import threading
 import numpy as np
 
 # for easier usage
@@ -4056,6 +4057,37 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Getting last image: {beam_type}")
         return self._eb_image if beam_type is BeamType.ELECTRON else self._ib_image
     
+
+    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
+        self.image_queue = image_queue
+        self.stop_event = stop_event
+        _check_beam(image_settings.beam_type, self.hardware_settings)
+        logging.info(f"Live imaging: {image_settings.beam_type}")
+        while not stop_event.is_set():
+            image = self.acquire_image(image_settings)
+            image_queue.put(image)
+            time.sleep(image_settings.dwell_time)
+
+    def consume_image_queue(self):
+        
+        logging.info("Consuming image queue")
+
+        try:
+            while not self.stop_event.is_set():
+                image = self.image_queue.get(timeout=1)
+                if image.metadata.image_settings.save:
+                    filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
+                    image.save(save_path=filename)
+                    logging.info(f"Saved image to {filename}")
+
+                logging.info(f"Image: {image.data.shape} {image.metadata.time}")
+                logging.info(f"-" * 50)
+
+                if parent_ui is not None:
+                        parent_ui.image_signal.emit({"image": image})
+
+
+
     def autocontrast(self, beam_type: BeamType) -> None:
         _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Autocontrast: {beam_type}")
