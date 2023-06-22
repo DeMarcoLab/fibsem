@@ -103,6 +103,9 @@
      <property name="text">
       <string>ION</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item row="15" column="0" colspan="2">
@@ -172,6 +175,9 @@
     <widget class="QCheckBox" name="checkBox_movement_acquire_electron">
      <property name="text">
       <string>ELECTRON</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
