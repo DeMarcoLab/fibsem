@@ -2958,16 +2958,34 @@ class TescanMicroscope(FibsemMicroscope):
 
 
 
-    def insert_manipulator(self, name: str = "PARK"):
+    def insert_manipulator(self, name: str = "Working"):
         _check_needle(self.hardware_settings)
-        logging.warning("TESCAN API does not support manipulator insertion. PLEASE MANUALLY INSERT NEEDLE WITH GUI")
-        pass
+        preset_positions = ["Parking","Standby","Working",]
+
+        if name == "PARK":
+            name = "Parking"
+
+        if name not in preset_positions:
+            raise ValueError(f"Position {name} is not a valid preset position. Valid positions are {preset_positions}.")
+
+
+        insert_position = getattr(self.connection.Nanomanipulator.Position,name)
+
+        index = 0
+
+        self.connection.Nanomanipulator.MoveToPosition(Index=index,Position=insert_position)
+
 
     
     def retract_manipulator(self):
         _check_needle(self.hardware_settings)
-        logging.warning("TESCAN API does not support manipulator retraction. PLEASE MANUALLY RETRACT NEEDLE WITH GUI")
-        pass
+
+        retract_position = self.connection.Nanomanipulator.Position.Parking
+
+        index = 0
+
+        self.connection.Nanomanipulator.MoveToPosition(Index=index,Position=retract_position)
+
     
     def _check_manipulator_limits(self,x,y,z,r):
 
