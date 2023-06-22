@@ -66,7 +66,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.selected_beam.addItems([beam.name for beam in BeamType])
 
-        self.pushButton_take_image.clicked.connect(self.take_image)
+        self.pushButton_take_image.clicked.connect(lambda: self.take_image(None))
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
@@ -380,6 +380,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_last = arr
         if name == BeamType.ION.name:
             self.ib_last = arr
+
+        # median filter for display
+        arr = median_filter(arr, size=3)
        
         try:
             self.viewer.layers[name].data = arr
