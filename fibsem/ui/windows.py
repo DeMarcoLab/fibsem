@@ -154,7 +154,7 @@ def move_feature_to_image_centre(microscope: FibsemMicroscope, settings: Microsc
 
     settings.image.beam_type = BeamType.ION
 
-    end_response = f"Is {feature.name} centred?"
+    end_response = f"Is {feature.name} centred in Ion Beam Image?"
 
     output = detect_features_v2(microscope, settings, features, validate,end_response=end_response)
 
@@ -164,7 +164,6 @@ def move_feature_to_image_centre(microscope: FibsemMicroscope, settings: Microsc
     feature_centre = det.features[0]
 
     # move stage to centre of lamella
-
 
     if is_centred is False:
 
