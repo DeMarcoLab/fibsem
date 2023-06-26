@@ -81,6 +81,15 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
+        pass
+
+    @abstractmethod
+    @thread_worker
+    def consume_image_queue(self, parent_ui = None, sleep: float = 0.1):
+        pass
+
+    @abstractmethod
     def autocontrast(self, beam_type: BeamType) -> None:
         pass
 
@@ -551,6 +560,47 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state, detector = detector) 
 
         return fibsem_image
+
+    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
+            self.image_queue = image_queue
+            self.stop_event = stop_event
+            _check_beam(image_settings.beam_type, self.hardware_settings)
+            logging.info(f"Live imaging: {image_settings.beam_type}")
+            while not self.stop_event.is_set():
+                image = self.acquire_image(deepcopy(image_settings))
+                image_queue.put(image)
+
+
+
+    @thread_worker
+    def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+        
+        logging.info("Consuming image queue")
+
+        while not self.stop_event.is_set():
+            try:
+                time.sleep(sleep)
+                if not self.image_queue.empty():
+                    image = self.image_queue.get(timeout=1)
+                    if image.metadata.image_settings.save:
+                        filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
+                        image.save(save_path=filename)
+                        logging.info(f"Saved image to {filename}")
+
+                    logging.info(f"Image: {image.data.shape}")
+                    logging.info(f"-" * 50)
+
+                    if parent_ui is not None:
+                            parent_ui.live_imaging_signal.emit({"image": image})
+
+    
+            except KeyboardInterrupt:
+                self.stop_event
+                logging.info("Keyboard interrupt, stopping live imaging")
+            except Exception as e:
+                self.stop_event.set()
+                import traceback
+                logging.error(traceback.format_exc())
 
     def autocontrast(self, beam_type=BeamType.ELECTRON) -> None:
         """
