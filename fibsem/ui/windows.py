@@ -130,9 +130,7 @@ def move_feature_to_image_centre(microscope: FibsemMicroscope, settings: Microsc
 
     settings.image.beam_type = BeamType.ION
 
-    end_response = f"Is {feature.name} centred in Ion Beam Image?"
-
-    det = detect_features_v2(microscope, settings, features, validate,end_response=end_response)
+    det = detect_features_v2(microscope, settings, features, validate)
 
     is_centred = message_box_ui(title="Feature Centring", text=detection_text, buttons=QMessageBox.Yes | QMessageBox.No)
 
