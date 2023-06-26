@@ -3,6 +3,7 @@ import os
 import napari
 import fibsem
 import napari.utils.notifications
+from napari.qt.threading import thread_worker
 from fibsem import utils
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
@@ -14,7 +15,7 @@ from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 
-from napari.qt.threading import thread_worker
+
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox

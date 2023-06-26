@@ -9,7 +9,8 @@ from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, Fibse
 from fibsem.ui import utils as ui_utils 
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
-
+from queue import Queue
+import threading 
 from scipy.ndimage import median_filter
 from PIL import Image
 from scipy.ndimage import median_filter
@@ -25,6 +26,7 @@ def log_status_message(step: str):
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
+    live_imaging_signal = pyqtSignal(dict)
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -39,6 +41,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
         self.eb_image, self.ib_image = None, None
+
+        self.stop_event = threading.Event()
+        self.stop_event.set()
+        self.image_queue = Queue()
 
         self.eb_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
         self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
@@ -59,6 +65,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # register initial images
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ELECTRON.name)
+        self.live_imaging_signal.connect(self.live_update)
 
     def setup_connections(self):
 
@@ -77,6 +84,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
+        self.pushButton_live_imaging.clicked.connect(self.live_imaging)
 
         if self._TESCAN:
 
@@ -363,6 +371,49 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message("REFERENCE_IMAGES_TAKEN")
         log_status_message("Settings used: {}".format(self.image_settings))
 
+    def live_imaging(self):
+        if self.stop_event.is_set():
+            self.pushButton_take_all_images.setEnabled(False)
+            self.pushButton_take_image.setEnabled(False)
+            self.pushButton_live_imaging.setText("Stop live imaging")
+            
+            self.stop_event.clear()
+            self.image_queue.queue.clear()
+            image_settings = self.get_settings_from_ui()[0]
+            image_settings.autocontrast = False
+            from copy import deepcopy
+            _thread = threading.Thread(
+                target=self.microscope.live_imaging,
+                args=(deepcopy(image_settings), self.image_queue, self.stop_event),
+            )
+            _thread.start()
+            sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
+            worker = self.microscope.consume_image_queue(parent_ui = self, sleep = sleep_time)
+            worker.returned.connect(self.update_live_finished)
+            import time
+            time.sleep(1)
+            worker.start()  
+
+            
+        else:
+            self.stop_event.set()
+        
+
+    def update_live_finished(self):
+        self.pushButton_live_imaging.setText("Live imaging")
+        self.pushButton_take_all_images.setEnabled(True)
+        self.pushButton_take_image.setEnabled(True)
+
+    def live_update(self, dict):
+        arr = dict["image"].data
+        name = BeamType[self.selected_beam.currentText()].name
+
+        try:
+            self.viewer.layers[name].data = arr
+        except:    
+            layer = self.viewer.add_image(arr, name = name)
+
+        
     def update_ui_tools(self):
 
         self.update_viewer(self.eb_last, BeamType.ELECTRON.name)
