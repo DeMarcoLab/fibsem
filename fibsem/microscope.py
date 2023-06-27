@@ -3190,6 +3190,8 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             parallel_mode = True
 
+        print(f"spacing: {mill_settings.spacing}")
+
         layer_settings = IEtching(
             syncWriteField=False,
             writeFieldSize=mill_settings.hfw,
@@ -3199,7 +3201,9 @@ class TescanMicroscope(FibsemMicroscope):
             dwellTime=dwell_time,
             parallel=parallel_mode,
             preset = mill_settings.preset,
+            spacing = mill_settings.spacing,
         )
+
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
         
 

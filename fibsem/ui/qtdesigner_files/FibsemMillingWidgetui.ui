@@ -263,6 +263,20 @@
          </property>
         </widget>
        </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_spacing">
+         <property name="text">
+          <string>Spacing</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_spacing">
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>
