@@ -413,6 +413,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         except:    
             layer = self.viewer.add_image(arr, name = name)
 
+        if name == BeamType.ELECTRON.name:
+            self.eb_image = dict["image"]
+        if name == BeamType.ION.name:
+            self.ib_image = dict["image"]
+
         
     def update_ui_tools(self):
 
