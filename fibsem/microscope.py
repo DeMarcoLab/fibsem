@@ -4813,7 +4813,7 @@ def printProgressBar(
     percent = ("{0:." + str(decimals) + "f}").format(100 * (value / float(total)))
     filled_length = int(length * value // total)
     bar = fill * filled_length + "-" * (length - filled_length)
-    print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\n")
+    print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\r")
 
 def _check_beam(beam_type: BeamType, hardware_settings: FibsemHardware):
     """
