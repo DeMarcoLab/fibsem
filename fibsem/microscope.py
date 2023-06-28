@@ -3805,19 +3805,19 @@ class TescanMicroscope(FibsemMicroscope):
         #     hfw * constants.METRE_TO_MILLIMETRE
         # )
 
-        start_x=-line_pattern_length/2, 
-        start_y=+line_pattern_length,
-        end_x=+line_pattern_length/2,
-        end_y=+line_pattern_length,
+        start_x=-line_pattern_length/2 
+        start_y=+line_pattern_length
+        end_x=+line_pattern_length/2
+        end_y=+line_pattern_length
         depth=2e-6
         
-        self.gis_layer.addRectangleFilled(
-            CenterX=0,
-            CenterY=0,
+        self.gis_layer.addLine(
+            BeginX=start_x,
+            BeginY=start_y,
+            EndX=end_x,
+            EndY=end_y,
             Depth=3e-06,
-            Height=3e-06,
-            Width =1.5e-05,
-            ScanningPath=self.connection.DrawBeam.ScanningPath.RLE,
+     
         )
         # self.gis_layer.addRectangleFilled(
         #     CenterX=0,
