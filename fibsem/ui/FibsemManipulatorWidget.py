@@ -78,9 +78,9 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.beam_type_combobox.hide()
             # self.insertManipulator_button.hide()
             # self.manipulatorStatus_label.hide()
-            self.savedPosition_combobox.addItem("PARK")
-            self.savedPosition_combobox.addItem("STANDBY")
-            self.savedPosition_combobox.addItem("WORKING")
+            self.savedPosition_combobox.addItem("Parking")
+            self.savedPosition_combobox.addItem("Standby")
+            self.savedPosition_combobox.addItem("Working")
 
 
 
@@ -191,7 +191,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
     def move_to_saved_position(self):
         name = self.savedPosition_combobox.currentText()
 
-        if name in ["PARK","STANDBY","WORKING"] and isinstance(self.microscope, (TescanMicroscope)):
+        if name in ["Parking","Standby","Working"] and isinstance(self.microscope, (TescanMicroscope)):
             self.microscope.insert_manipulator(name=name)
             position = self.microscope.get_manipulator_position()
             logging.info(f"Moved to saved position {name} at {position}")
