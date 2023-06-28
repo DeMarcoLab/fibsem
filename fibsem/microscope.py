@@ -2219,7 +2219,7 @@ class TescanMicroscope(FibsemMicroscope):
         import fibsem
         from fibsem.utils import load_protocol
         base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path,"config", "model.yaml")))
+        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path,"fibsem", "config", "model.yaml")))
 
     def disconnect(self):
         self.connection.Disconnect()
