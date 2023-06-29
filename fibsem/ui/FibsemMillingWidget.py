@@ -84,6 +84,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_application_file.addItems(available_application_files)
         self.comboBox_preset.setVisible(_THERMO)
         self.label_preset.setVisible(_THERMO)
+        self.comboBox_milling_current.setVisible(_THERMO)
+        self.label_milling_current.setVisible(_THERMO)
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.comboBox_milling_current.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
@@ -417,7 +419,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         milling_settings = FibsemMillingSettings(
             milling_current=float(self.comboBox_milling_current.currentText()),
             application_file=self.comboBox_application_file.currentText(),
-            rate=self.doubleSpinBox_rate.value(),
+            rate=self.doubleSpinBox_rate.value()*1e-9,
             dwell_time = self.doubleSpinBox_dwell_time.value() * constants.MICRO_TO_SI,
             spot_size=self.doubleSpinBox_spot_size.value() * constants.MICRO_TO_SI,
             hfw=self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI,
