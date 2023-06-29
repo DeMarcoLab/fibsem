@@ -24,7 +24,9 @@ try:
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
     from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, PatterningState)
+        CoordinateSystem, ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+
     THERMO = True
     # from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition, MultiChemInsertPosition
 except:
@@ -131,6 +133,7 @@ Methods:
     to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
     from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
 """
+    name: str = None
     x: float = None
     y: float = None
     z: float = None
@@ -149,6 +152,7 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
+        position_dict["name"] = self.name
         position_dict["x"] = float(self.x) if self.x is not None else None
         position_dict["y"] = float(self.y) if self.y is not None else None
         position_dict["z"] = float(self.z) if self.z is not None else None
@@ -171,6 +175,7 @@ Methods:
 
 
         return cls(
+            name=data["name"],
             x=data["x"],
             y=data["y"],
             z=data["z"],
@@ -214,22 +219,22 @@ Methods:
 
     def __add__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
         return FibsemStagePosition(
-            self.x + other.x if other.x is not None else self.x,
-            self.y + other.y if other.y is not None else self.y,
-            self.z + other.z if other.z is not None else self.z,
-            self.r + other.r if other.r is not None else self.r,
-            self.t + other.t if other.t is not None else self.t,
-            self.coordinate_system,
+            x = self.x + other.x if other.x is not None else self.x,
+            y = self.y + other.y if other.y is not None else self.y,
+            z = self.z + other.z if other.z is not None else self.z,
+            r = self.r + other.r if other.r is not None else self.r,
+            t = self.t + other.t if other.t is not None else self.t,
+            coordinate_system = self.coordinate_system,
         )
 
     def __sub__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
         return FibsemStagePosition(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z,
-            self.r - other.r,
-            self.t - other.t,
-            self.coordinate_system,
+            x = self.x - other.x,
+            y = self.y - other.y,
+            z = self.z - other.z,
+            r = self.r - other.r,
+            t = self.t - other.t,
+            coordinate_system = self.coordinate_system,
         )
 
     def _scale_repr(self, scale: float, precision: int = 2):
@@ -1010,6 +1015,7 @@ class FibsemMillingSettings:
     patterning_mode: str = "Serial" 
     application_file: str = "Si"
     preset: str = "30 keV; UHR imaging"
+    spacing: float = 1.0
 
     def __post_init__(self):
 
@@ -1020,6 +1026,7 @@ class FibsemMillingSettings:
         assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
         assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
         assert isinstance(self.application_file,(str)), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
+        assert isinstance(self.spacing,(float,int)), f"invalid type for value for spacing, must be int or float, currently {type(self.spacing)}"
         # assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
 
     def __to_dict__(self) -> dict:
@@ -1049,6 +1056,7 @@ class FibsemMillingSettings:
             patterning_mode=settings.get("patterning_mode", "Serial"),
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; UHR imaging"),
+            spacing=settings.get("spacing", 1.0),
         )
 
         return milling_settings
@@ -1859,6 +1867,7 @@ class ThermoGISLine():
         self.line = line
         self.name = name
         self.status = status
+        self.temp_ready = False
 
     def insert(self):
 
@@ -1884,6 +1893,7 @@ class ThermoMultiChemLine():
             "Retract"
         ]
         self.current_position = "Retract"
+        self.temp_ready = False
 
     def insert(self,position):
 

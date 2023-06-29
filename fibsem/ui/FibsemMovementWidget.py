@@ -6,7 +6,7 @@ import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QTimer
-
+from PyQt5 import QtCore
 
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
@@ -15,6 +15,7 @@ from fibsem.structures import (BeamType, FibsemStagePosition,
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
 
+
 def log_status_message(step: str):
     logging.debug(
         f"STATUS | Movement Widget | {step}"
@@ -22,6 +23,7 @@ def log_status_message(step: str):
 
 
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
+    move_signal = QtCore.pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -81,6 +83,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.move_stage_absolute(stage_position)
         log_status_message(f"MOVED_TO_{stage_position}")
         self.update_ui_after_movement()
+        self.move_signal.emit()
     
     def update_ui(self):
 
@@ -91,6 +94,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_movement_stage_z.setValue(stage_position.z * constants.SI_TO_MILLI)
         self.doubleSpinBox_movement_stage_rotation.setValue(np.rad2deg(stage_position.r))
         self.doubleSpinBox_movement_stage_tilt.setValue(np.rad2deg(stage_position.t))
+
     
     def get_position_from_ui(self):
 
@@ -150,6 +154,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             )
         
         self.update_ui_after_movement()
+        self.move_signal.emit()
 
     def update_ui_after_movement(self):
         # disable taking images after movement here
