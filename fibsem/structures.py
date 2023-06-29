@@ -223,7 +223,7 @@ Methods:
             z = self.z + other.z if other.z is not None else self.z,
             r = self.r + other.r if other.r is not None else self.r,
             t = self.t + other.t if other.t is not None else self.t,
-            coordinate_sysetm = self.coordinate_system,
+            coordinate_system = self.coordinate_system,
         )
 
     def __sub__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
