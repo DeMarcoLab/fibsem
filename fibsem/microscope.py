@@ -3182,7 +3182,23 @@ class TescanMicroscope(FibsemMicroscope):
 
         self.connection.Nanomanipulator.MoveToPosition(Index=index,Position=insert_position)
 
+    def _check_manipulator_limits(self,x,y,z,r):
 
+        limits = self.connection.Nanomanipulator.GetLimits(Index=0,Type=0)
+
+        xmin = limits[0]
+        xmax = limits[1]
+        ymin = limits[2]
+        ymax = limits[3]
+        zmin = limits[4]
+        zmax = limits[5]
+        rmin = limits[6]
+        rmax = limits[7]
+
+        assert x >= xmin and x <= xmax, f"X position {x} is outside of manipulator limits {xmin} to {xmax}"
+        assert y >= ymin and y <= ymax, f"Y position {y} is outside of manipulator limits {ymin} to {ymax}"
+        assert z >= zmin and z <= zmax, f"Z position {z} is outside of manipulator limits {zmin} to {zmax}"
+        assert r >= rmin and r <= rmax, f"R position {r} is outside of manipulator limits {rmin} to {rmax}"
     
     def retract_manipulator(self):
         retract_position = getattr(self.connection.Nanomanipulator.Position,"Parking")
