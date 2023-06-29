@@ -424,7 +424,7 @@ from fibsem.structures import MicroscopeSettings
 from fibsem.detection.detection import Feature, DetectedFeatures
 from fibsem import acquire
 def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: list[Feature], validate: bool = True) -> DetectedFeatures:
-
+    print("GOT TO DETECTION UI")
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
     # detect features
