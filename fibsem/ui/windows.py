@@ -5,18 +5,29 @@ from pathlib import Path
 
 import napari
 import numpy as np
+from PyQt5.QtWidgets import QMessageBox
+
 from fibsem import acquire, conversions, validation
+from fibsem.acquire import take_reference_images
 from fibsem.detection import detection
-from fibsem.detection.detection import (DetectedFeatures,Feature)
+from fibsem.detection.detection import (DetectedFeatures, Feature, ImageCentre,
+                                        LamellaCentre, LamellaLeftEdge,
+                                        LamellaRightEdge, LandingPost,
+                                        NeedleTip, detect_features)
+from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation.model import load_model
-from fibsem.structures import MicroscopeSettings, Point
+from fibsem.structures import (BeamType, FibsemStagePosition,
+                               MicroscopeSettings, Point)
 from fibsem.ui import utils as fibsem_ui
 from fibsem.ui.FibsemDetectionUI import FibsemDetectionUI
-from PyQt5.QtWidgets import QMessageBox
-from fibsem.microscope import FibsemMicroscope
+from fibsem.ui.FibsemDetectionWidget import detection_ui
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
+from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
+from fibsem.ui.utils import message_box_ui
 
 
-def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True) -> DetectedFeatures:
+def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSettings, features: tuple[Feature], validate: bool = True,end_response:str = None) -> DetectedFeatures:
 
     if settings.image.reduced_area is not None:
         logging.info(f"Reduced area is not compatible with model detection, disabling...")
@@ -33,25 +44,12 @@ def detect_features_v2(microscope: FibsemMicroscope, settings: MicroscopeSetting
     cuda = ml_protocol.get("cuda", False)
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
-    # detect features
-    pixelsize = image.metadata.pixel_size.x
-    det = detection.detect_features(deepcopy(image.data), model, features=features, pixelsize=pixelsize)
-
-    # user validate features...
-    if validate:
-        # # user validates detection result
-        # detection_ui = FibsemDetectionUI(
-        #     microscope=microscope,
-        #     settings=settings,
-        #     detected_features=det,
-        # )
-        # detection_ui.show()
-        # detection_ui.exec_()
-
-        # det = detection_ui.detected_features
-        input("Ensure features are correct, then press enter to continue...")
-
+    det = detection_ui(image=image,model=model,features=features,validate=True)
+    
     # calculate features in microscope image coords
+    hfw = settings.image.hfw
+    pixelsize = hfw/settings.image.resolution[0]
+    # pixelsize = image.metadata.pixel_size.x
     det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(det.features[0].px, image.data, pixelsize)
     det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(det.features[1].px, image.data, pixelsize)
 
@@ -124,3 +122,61 @@ def run_validation_ui(
         )
 
     logging.info(f"INIT | PRE_RUN_VALIDATION | FINISHED")
+
+
+def move_feature_to_image_centre(microscope: FibsemMicroscope, settings: MicroscopeSettings, feature: Feature, validate: bool = True,detection_text: str=None):
+
+    features = [feature,ImageCentre()]
+
+    settings.image.beam_type = BeamType.ION
+
+    det = detect_features_v2(microscope, settings, features, validate)
+
+    is_centred = message_box_ui(title="Feature Centring", text=detection_text, buttons=QMessageBox.Yes | QMessageBox.No)
+
+    feature_centre = det.features[0]
+
+    # move stage to centre of lamella
+
+    if is_centred is False:
+
+
+        microscope.stable_move(
+            settings=settings,
+            dx=feature_centre.feature_m.x,
+            dy=feature_centre.feature_m.y,
+            beam_type=BeamType.ION)
+        
+
+        move_feature_to_image_centre(microscope, settings, feature, validate,detection_text=detection_text)
+
+
+def needle_position_validate(microscope: FibsemMicroscope, settings: MicroscopeSettings):
+
+    ref_images = acquire.take_reference_images(microscope=microscope,image_settings=settings.image)
+
+    viewer = napari.Viewer(ndisplay=2)
+    image_widget = FibsemImageSettingsWidget(
+        microscope=microscope, 
+        image_settings=settings.image,
+        viewer=viewer)
+    
+
+
+    image_widget.eb_image = ref_images[0]
+    image_widget.ib_image = ref_images[1] 
+    
+    needle_widget = FibsemManipulatorWidget(
+        microscope=microscope,
+        settings=settings,
+        viewer=viewer,
+        image_widget=image_widget,
+    )
+
+    viewer.window.add_dock_widget(needle_widget, area="right")
+
+    napari.run()
+
+
+
+
