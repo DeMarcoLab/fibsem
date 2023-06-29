@@ -1545,6 +1545,306 @@ class ThermoMicroscope(FibsemMicroscope):
         # Log that the sputtering process has finished
         logging.info("Platinum sputtering process completed.")
 
+    def setup_GIS(self,protocol):
+
+        beamtype_value = BeamType.ELECTRON.value if protocol["beam_type"] == "electron" else BeamType.ION.value
+
+        _check_sputter(self.hardware_settings)
+        self.original_active_view = self.connection.imaging.get_active_view()
+        self.connection.imaging.set_active_view(beamtype_value)
+        self.connection.patterning.clear_patterns()
+        self.connection.patterning.set_default_application_file(protocol["application_file"])
+        self.connection.patterning.set_default_beam_type(beamtype_value)
+
+        gis_line = protocol["gas"]
+        port = self.gis_lines[gis_line]
+        if self.GIS_position(gis_line) == "Retracted":
+            port.insert()
+
+        if self.GIS_temp_ready(gis_line) == False:
+            self.GIS_heat_up(gis_line)
+
+
+    def setup_GIS_pattern(self,protocol):
+
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+        sputter_time = protocol["sputter_time"]
+
+        self.connection.beams.electron_beam.horizontal_field_width.value = hfw
+        pattern = self.connection.patterning.create_line(
+            -line_pattern_length / 2,  # x_start
+            +line_pattern_length,  # y_start
+            +line_pattern_length / 2,  # x_end
+            +line_pattern_length,  # y_end
+            2e-6,
+        )  # milling depth
+        pattern.time = sputter_time 
+
+    def run_GIS(self,protocol):
+
+        gis_line = protocol["gas"]
+        sputter_time = protocol["sputter_time"]
+
+
+        self.connection.beams.electron_beam.blank()
+        if self.connection.patterning.state == "Idle":
+            logging.info(f"Sputtering with {gis_line} for {sputter_time} seconds...")
+            self.connection.patterning.start()  # asynchronous patterning
+            time.sleep(sputter_time + 5)
+        else:
+            raise RuntimeError("Can't sputter, patterning state is not ready.")
+        if self.connection.patterning.state == "Running":
+            self.connection.patterning.stop()
+            logging.info(f"Finished sputtering with {gis_line}")
+        else:
+            logging.warning(f"Patterning state is {self.connection.patterning.state}")
+            logging.warning("Consider adjusting the patterning line depth.")
+
+
+    def run_Multichem(self,protocol):
+
+        _check_sputter(self.hardware_settings)
+        self.original_active_view = self.connection.imaging.get_active_view()
+        self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
+        self.connection.patterning.clear_patterns()
+        self.connection.patterning.set_default_application_file(protocol["application_file"])
+        self.connection.patterning.set_default_beam_type(BeamType.ELECTRON.value)
+
+        mc_line = protocol["gas"]
+        port = self.multichem
+        if self.multichem_position() == "Retracted":
+            port.insert()
+
+        if self.multichem_temp_ready(mc_line) == False:
+            self.multichem_heat_up(mc_line)
+
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+        sputter_time = protocol["sputter_time"]
+
+        self.connection.beams.electron_beam.horizontal_field_width.value = hfw
+        pattern = self.connection.patterning.create_line(
+            -line_pattern_length / 2,  # x_start
+            +line_pattern_length,  # y_start
+            +line_pattern_length / 2,  # x_end
+            +line_pattern_length,  # y_end
+            2e-6,
+        )  # milling depth
+        # pattern.time = sputter_time + 0.1
+        pattern.time = sputter_time
+
+        self.connection.beams.electron_beam.blank()
+        # port.line.open()
+        if self.connection.patterning.state == "Idle":
+            logging.info(f"Sputtering with {mc_line} for {sputter_time} seconds...")
+            self.connection.patterning.start()  # asynchronous patterning
+            time.sleep(sputter_time + 5)
+        else:
+            raise RuntimeError("Can't sputter platinum, patterning state is not ready.")
+        if self.connection.patterning.state == "Running":
+            self.connection.patterning.stop()
+        else:
+            logging.warning(f"Patterning state is {self.connection.patterning.state}")
+            logging.warning("Consider adjusting the patterning line depth.")
+        # port.line.close()
+
+        self.multichem.line.turn_heater_off(mc_line)
+
+
+
+
+
+    def GIS_available_lines(self) -> list[str]:
+        """
+        Returns a list of available GIS lines.
+        Args:
+            None
+        Returns:
+            Dictionary of available GIS lines.
+        Notes:
+            None
+        """
+        _check_sputter(self.hardware_settings)
+
+        gis_list = self.connection.gas.list_all_gis_ports()
+
+        self.gis_lines = {}
+
+
+        for line in gis_list:
+
+            gis_port = ThermoGISLine(self.connection.gas.get_gis_port(line),name=line,status="Retracted")
+
+            self.gis_lines[line] = gis_port
+
+
+
+        return gis_list
+
+    def GIS_available_positions(self) -> list[str]:
+        """Returns a list of available positions the GIS can move to.
+        Returns:
+            list[str]: positions
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        positions = ["Insert", "Retract"]
+
+        return positions
+
+    def GIS_move_to(self,line_name:str,position:str) -> None:
+
+        """Moves the GIS to a specified position.
+        Need to specify the line name and position to move to. Each GIS line is a seperate python object
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line_name]
+
+        if position == "Insert":
+            port.insert()
+        elif position == "Retract":
+            port.retract()
+
+    def GIS_position(self,line) -> str:
+        """
+        Returns the current position of the GIS line.
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line]
+
+        return port.status
+
+    def GIS_heat_up(self,line):
+
+        """Heats up the specified GIS line
+        Does this by turning the heater on for 3 seconds and then off.
+        If this procedure has been done once, it is considered temp_ready
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line]
+
+        port.line.turn_heater_on()
+
+        time.sleep(3)
+
+        port.line.turn_heater_off()
+
+        port.temp_ready = True
+
+    def GIS_temp_ready(self,line) -> bool:
+
+        """Returns if the heat up procedure has been done. Internal function, not polled information
+            from the hardware
+        Returns:
+            True if the heat up procedure has been done, False if not
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        port = self.gis_lines[line]
+
+        return port.temp_ready
+
+
+    def multichem_available_lines(self)-> list[str]:
+
+        """
+        Returns a list of available multichem lines.
+        List is a str of names of the lines"""
+
+        _check_sputter(self.hardware_settings)
+
+        self.multichem = ThermoMultiChemLine(self.connection.gas.get_multichem())
+
+        self.mc_lines = self.multichem.line.list_all_gases()
+
+        self.mc_lines_temp ={}
+
+        for line in self.mc_lines:
+
+            self.mc_lines_temp[line] = False
+
+        return self.mc_lines
+
+    def multichem_available_positions(self) -> list[str]:
+
+        """Available positions the multichem object can move to
+        Returns:
+            _type_: list of str of position names
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        positions_enum = self.multichem.positions
+
+        return positions_enum
+
+    def multichem_move_to(self,position:str):
+
+        """
+        Moves the multichem object to a specified position.
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        if position == "Retract":
+            self.multichem.retract()
+        else:
+            self.multichem.insert(position=position)
+
+
+    def multichem_position(self) -> str:
+
+        """Current position of the multichem object
+        Returns:
+            _type_: str name of the current position
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        return self.multichem.current_position
+
+    def multichem_heat_up(self,line:str):
+
+        """Heat up procedure of the multichem object, if this procedure has been done once,
+        it is considered temp_ready. Procedure is turning the heater on for 3 seconds and then off
+        Must specify the line to heat up
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        self.multichem.line.turn_heater_on(line)
+
+        time.sleep(3)
+
+        # self.multichem.line.turn_heater_off(line)
+
+        self.mc_lines_temp[line] = True
+
+    def multichem_temp_ready(self,line:str) -> bool:
+
+        """Checks if the heat up procedure for a line in the multichem object has been done,
+        
+        Returns:
+            _type_: Returns true if done, false if not
+        """
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        return self.mc_lines_temp[line]
+
     def set_microscope_state(self, microscope_state: MicroscopeState) -> None:
         """Reset the microscope state to the provided state.
 
@@ -2885,8 +3185,10 @@ class TescanMicroscope(FibsemMicroscope):
 
     
     def retract_manipulator(self):
-        _check_needle(self.hardware_settings)
-        pass
+        retract_position = getattr(self.connection.Nanomanipulator.Position,"Parking")
+        index = 0
+        self.connection.Nanomanipulator.MoveToPosition(Index=index,Position=retract_position)
+        
 
     
     def move_manipulator_relative(self,position: FibsemManipulatorPosition, name: str = None):
@@ -3525,6 +3827,218 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.DrawBeam.UnloadLayer()
         logging.info("Platinum sputtering process completed.")
 
+    def setup_GIS(self,protocol) -> None:
+
+        beam_type = protocol["beam_type"]
+
+        if beam_type == "ION":
+
+
+            layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
+                syncWriteField=True,
+                writeFieldSize=protocol.get("hfw",0.0005),
+                beamCurrent=protocol.get("beam_current",5e-10),
+                spotSize=protocol.get("spot_size",5.0e-8),
+                spacing=1.0,
+                rate=3e-10, # Value for platinum
+                dwellTime=protocol.get("dwell_time",1.0e-6),
+                preset=None,
+                parallel=False,
+                material='Default Material',
+                gisPrecursor=None,
+
+            )
+
+        else:
+
+
+            layerSettings = self.connection.DrawBeam.LayerSettings.EDeposition(
+                syncWriteField=True,
+                writeFieldSize=protocol.get("hfw",0.0005),
+                beamCurrent=protocol.get("beam_current",5e-10),
+                spotSize=protocol.get("spot_size",5.0e-8),
+                rate=3e-10, # Value for platinum
+                spacing=1.0,
+                dwellTime=protocol.get("dwell_time",1.0e-6),
+                preset=None,
+                parallel=False,
+                material='Default Material',
+                gisPrecursor=None,
+            )
+
+        # self.gis_layer = self.connection.DrawBeam.Layer("Layer_GIS", layerSettings)
+        # layerSettings = self.connection.DrawBeam.Layer.fromDbp(r'C:\Tescan\AutomationSDK\examples\data\12-deposition.dbp')
+
+        # trial_layerSettings = self.connection.DrawBeam.LayerSettings.IDeposition(
+        #     syncWriteField=True,
+        #     writeFieldSize=0.0005,
+        #     spotSize=5e-8,
+        #     spacing=1.0,
+        #     rate=3e-10,
+        #     preset=None,
+        #     parallel=False,
+        #     material='Default Material',
+        #     gisPrecursor = None,
+        #     dwellTime=1e-06,
+        #     beamCurrent=5e-10
+        # )
+
+        # trial_layer = self.connection.DrawBeam.Layer("Layer_GIS", trial_layerSettings)
+
+        self.gis_layer = self.connection.DrawBeam.Layer("Layer_GIS", layerSettings)
+
+
+
+        # guide_layer = layerSettings[0]
+
+
+
+        logging.info(f"GIS Setup Complete, {beam_type} layer settings loaded")
+
+    def setup_GIS_pattern(self,protocol):
+
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+
+        # self.connection.FIB.Optics.SetViewfield(
+        #     hfw * constants.METRE_TO_MILLIMETRE
+        # )
+
+        start_x=-line_pattern_length/2 
+        start_y=+line_pattern_length
+        end_x=+line_pattern_length/2
+        end_y=+line_pattern_length
+        depth=2e-6
+
+        self.gis_layer.addLine(
+            BeginX=start_x,
+            BeginY=start_y,
+            EndX=end_x,
+            EndY=end_y,
+            Depth=3e-06,
+
+        )
+        # self.gis_layer.addRectangleFilled(
+        #     CenterX=0,
+        #     CenterY=0,
+        #     Depth=depth,
+        #     Width=1.5e-5,
+        #     Height=3.0e-6
+        # )
+        self.connection.DrawBeam.LoadLayer(self.gis_layer)
+        logging.info(f"GIS Pattern Setup Complete")
+
+    def run_GIS(self,protocol) -> None:
+
+
+        gas_line = self.lines[protocol['gas']]
+
+        try:
+
+            self.connection.GIS.OpenValve(gas_line)
+
+        except Exception as e:
+            if e.args[0] == 'Error.OutgasRequired':
+                logging.info("Outgassing required.")
+                logging.info(f"Outgassing {protocol['gas']} Line")
+                self.connection.GIS.Outgas(gas_line)
+                self.connection.GIS.OpenValve(gas_line)
+
+        valve_open = self.connection.GIS.GetValveStatus(gas_line)
+
+        try:
+            # Run predefined deposition process
+            self.connection.DrawBeam.Start()
+            self.connection.Progress.Show("DrawBeam", "Layer 1 in progress", False, False, 0, 100)
+            logging.info("Sputtering started.")
+            while True:
+                status = self.connection.DrawBeam.GetStatus()
+                running = status[0] == self.connection.DrawBeam.Status.ProjectLoadedExpositionInProgress
+                if running:
+                    progress = 0
+                    if status[1] > 0:
+                        progress = min(100, status[2] / status[1] * 100)
+                    printProgressBar(progress, 100)
+                    self.connection.Progress.SetPercents(progress)
+                    time.sleep(1)
+                else:
+                    if status[0] == self.connection.DrawBeam.Status.ProjectLoadedExpositionIdle:
+                        printProgressBar(100, 100, suffix='Finished')
+                        print('')
+                    break
+        finally:
+            # Close GIS Valve in both - success and failure
+            if valve_open:
+                self.connection.GIS.CloseValve(gas_line)
+
+        self.connection.GIS.MoveTo(gas_line, Automation.GIS.Position.Home)
+        # self.connection.GIS.PrepareTemperature(gas_line, False)
+        self.connection.DrawBeam.UnloadLayer()
+        logging.info("process completed.")
+
+
+    def GIS_available_lines(self) -> list[str]:
+        """
+        Returns a list of available GIS lines.
+        Args:
+            None
+        Returns:
+            A dictionary of available GIS lines.
+        """
+        _check_sputter(self.hardware_settings)
+        GIS_lines = self.connection.GIS.Enum()
+        self.lines = {}
+        line_names = []
+        for line in GIS_lines:
+            self.lines[line.name] = line
+            line_names.append(line.name)
+
+        return line_names
+
+    def GIS_position(self,line_name:str) -> str:
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        position = self.connection.GIS.GetPosition(line)
+
+        return position.name
+
+    def GIS_available_positions(self) -> list[str]:
+
+        _check_sputter(self.hardware_settings)
+        self.GIS_positions = self.connection.GIS.Position
+
+        return self.GIS_positions.__members__.keys()
+
+    def GIS_move_to(self,line_name,position) -> None:
+
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        self.connection.GIS.MoveTo(line,self.GIS_positions[position])
+
+    def GIS_heat_up(self,line_name):
+
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        self.connection.GIS.PrepareTemperature(line,True)
+
+        self.connection.GIS.WaitForTemperatureReady(line)
+
+        time.sleep(5)
+
+    def GIS_temp_ready(self,line_name):
+
+        _check_sputter(self.hardware_settings)
+
+        line = self.lines[line_name]
+
+        return self.connection.GIS.GetTemperatureReady(line)
+
     def set_microscope_state(self, microscope_state: MicroscopeState):
         """Reset the microscope state to the provided state.
 
@@ -4130,6 +4644,101 @@ class DemoMicroscope(FibsemMicroscope):
     def finish_sputter(self, **kwargs):
         _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
+
+    def GIS_available_lines(self) -> list[str]:
+
+        self.gis_lines = {
+            "Water": ThermoGISLine(None,"Water"),
+            "Pt": ThermoGISLine(None,"Pt"),
+            "Carbon": ThermoGISLine(None,"C")
+        }
+
+        return list(self.gis_lines.keys())
+
+    def GIS_available_positions(self) -> list[str]:
+
+        positions = ["Insert","Retract"]
+
+        return positions
+
+    def GIS_move_to(self,line_name: str, position_name: str) -> None:
+
+
+        line = self.gis_lines[line_name]
+
+        if position_name == "Insert":
+
+            line.status = "Inserted"
+
+        if position_name == "Retract":
+
+            line.status = "Retracted"
+
+    def GIS_position(self,line_name):
+
+        line = self.gis_lines[line_name]
+
+        return line.status
+
+    def GIS_heat_up(self,line_name):
+
+
+        line = self.gis_lines[line_name]
+        time.sleep(5)
+        line.temp_ready = True
+
+    def GIS_temp_ready(self,line_name):
+
+        return self.gis_lines[line_name].temp_ready
+
+    def multichem_available_lines(self):
+
+        self.multichem = ThermoMultiChemLine()
+
+        self.mc_lines = ["mc_Water","mc_Pt","mc_C"]
+
+        self.mc_lines_temp ={}
+
+        for line in self.mc_lines:
+
+            self.mc_lines_temp[line] = False
+
+        return self.mc_lines
+
+    def multichem_available_positions(self):
+
+        positions = self.multichem.positions
+
+        return positions
+
+    def multichem_move_to(self,position):
+
+        if position == "Retract":
+            self.multichem.retract()
+        else:
+            self.multichem.insert(position)
+
+    def multichem_position(self):
+
+        return self.multichem.current_position
+
+    def multichem_heat_up(self,line:str):
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        time.sleep(3)
+
+        self.mc_lines_temp[line] = True
+
+    def multichem_temp_ready(self,line:str) -> bool:
+
+        _check_sputter(self.hardware_settings)
+
+        assert line in self.mc_lines, "Line not available"
+
+        return self.mc_lines_temp[line]
 
     def set_microscope_state(self, state: MicroscopeState):
 
