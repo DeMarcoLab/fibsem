@@ -16,7 +16,14 @@ MILLING_SPUTTER_RATE = {
 SUPPORTED_COORDINATE_SYSTEMS = [
     "RAW",
     "SPECIMEN", 
-    "STAGE"
+    "STAGE",
+    "Raw",
+    "raw",
+    "specimen",
+    "Specimen",
+    "Stage",
+    "stage"
+
 ] 
 
 
@@ -26,6 +33,7 @@ import fibsem
 BASE_PATH = os.path.dirname(fibsem.__path__[0]) # TODO: figure out a more stable way to do this
 CONFIG_PATH = os.path.join(BASE_PATH, "fibsem", "config")
 PROTOCOL_PATH = os.path.join(CONFIG_PATH, "protocol.yaml")
+LOG_PATH = os.path.join(BASE_PATH, "fibsem", "log")
 DATA_PATH = os.path.join(BASE_PATH, "fibsem", "log", "data") 
 
 os.makedirs(DATA_PATH, exist_ok=True)

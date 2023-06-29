@@ -37,14 +37,14 @@ def main():
     acquire.take_reference_images(microscope, settings.image)
 
     # select positions
-    sample: list[Lamella] = []
+    experiment: list[Lamella] = []
     lamella_no = 1
     settings.image.hfw = 80e-6
     base_path = settings.image.save_path
 
     while True:
         response = input(f"""Move to the desired position. 
-        Do you want to select another lamella? [y]/n {len(sample)} selected so far.""")
+        Do you want to select another lamella? [y]/n {len(experiment)} selected so far.""")
 
         # store lamella information
         if response.lower() in ["", "y", "yes"]:
@@ -52,19 +52,21 @@ def main():
             # set filepaths
             path = os.path.join(base_path, f"{lamella_no:02d}")
             settings.image.save_path = path
-            
+            settings.image.label = f"ref_lamella"
+            acquire.take_reference_images(microscope, settings.image)
+
             lamella = Lamella(
                 state=microscope.get_current_microscope_state(),
                 reference_image=acquire.new_image(microscope, settings.image),
                 path = path
             )
-            sample.append(lamella)
+            experiment.append(lamella)
             lamella_no += 1
         else:
             break
 
     # sanity check
-    if len(sample) == 0:
+    if len(experiment) == 0:
         logging.info(f"No lamella positions selected. Exiting.")
         return
 
@@ -79,7 +81,7 @@ def main():
         logging.info(f"Starting milling stage {stage_no}")
 
         lamella: Lamella
-        for lamella_no, lamella in enumerate(sample):
+        for lamella_no, lamella in enumerate(experiment):
 
             logging.info(f"Starting lamella {lamella_no:02d}")
 

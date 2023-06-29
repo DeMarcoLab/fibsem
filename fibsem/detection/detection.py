@@ -395,7 +395,7 @@ def detect_features(
 
 
 
-def plot_det_result_v2(det: DetectedFeatures):
+def plot_detection(det: DetectedFeatures):
 
     """Plotting image with detected features
 

@@ -44,3 +44,37 @@ The generation of microscopy data is a time-consuming and expensive process. To 
 The active learning pipeline is activated when the user uses the "validate" flag in the detect_features_v2 function. When this flag is enabled, the user will be prompted to validate the features detected by the model. If the user finds any errors in the detection, they can correct it, and a copy of the image will be saved along with the flags for labelling. These error cases can then be labelled using the labelling tools provided, and the model can be re-trained and deployed, improving its performance over time. This process has been used internally to achieve significant improvements in the performance of the segmentation models for Fibsem workflows.
 
 ![Active Learning Pipeline](img/ml/ui_supervision_det.gif)
+
+
+
+## Labelling
+
+We have developed an integrated labelling tool for segmentation dataset.
+
+### Labelling UI
+
+The Labelling UI allows users to draw the labels (masks) for training a segmentation model. To see more detailed instructions, see the guide on labelling and detection widgets [here](ml_details.md)
+
+### Model Assisted Labelling
+
+The model assisted labelling tool allows you to use a trained model to assist in the labelling of new data. This is useful for labelling large datasets. The model will make a prediction and the user can correct the prediction using the same drawing tools.
+
+To use, go to the Model tab and load your model, and then tick 'model assisted' to enable the model assisted labelling.
+
+
+### Experimental
+
+We have implemented the Segment Anything Model from MetaAI. This model is trained to segment any object. Here we use it as part of the model assisted labelling 
+
+
+For more detailed about SAM see: https://github.com/facebookresearch/segment-anything
+
+To use SAM:
+  
+  ```python
+pip install git+https://github.com/facebookresearch/segment-anything.git
+pip install opencv-python pycocotools matplotlib onnxruntime onnx
+
+```
+
+Download weights: [SAM ViT-H](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth)

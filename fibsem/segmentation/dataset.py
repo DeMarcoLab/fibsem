@@ -41,13 +41,13 @@ class SegmentationDataset(Dataset):
     def __len__(self):
         return len(self.images)
 
+from pathlib import Path
+def load_dask_dataset(data_path: Path, label_path: Path):
+    
+    sorted_img_filenames = sorted(glob.glob(os.path.join(data_path, "*.tif*")))
+    sorted_mask_filenames = sorted(glob.glob(os.path.join(label_path, "*.tif*")))
 
-def load_dask_dataset(data_dir: str):
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_dir, "images", "*.tif*")))
-    sorted_mask_filenames = sorted(
-        glob.glob(os.path.join(data_dir, "labels", "*.tif*"))
-    )
-
+    # TODO: change to dask-image
     img_arr = tff.imread(sorted_img_filenames, aszarr=True)
     mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
 
@@ -60,11 +60,10 @@ def load_dask_dataset(data_dir: str):
     return images, masks
 
 
-def preprocess_data(
-    data_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2
-):
-    validate_dataset(data_path)
-    images, masks = load_dask_dataset(data_path)
+def preprocess_data(data_path: str, label_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
+    
+    validate_dataset(data_path, label_path)
+    images, masks = load_dask_dataset(data_path, label_path)
 
     print(f"Loading dataset from {data_path} of length {images.shape[0]}")
 
@@ -99,11 +98,11 @@ def preprocess_data(
 # ref: https://towardsdatascience.com/pytorch-basics-sampling-samplers-2a0f29f0bf2a
 
 # Helper functions
-def validate_dataset(data_path):
+def validate_dataset(data_path: str, label_path: str):
     print("validating dataset...")
     # get data
-    filenames = sorted(glob.glob(os.path.join(data_path, "images", "*.tif*")))
-    labels = sorted(glob.glob(os.path.join(data_path, "labels", "*.tif*")))
+    filenames = sorted(glob.glob(os.path.join(data_path, "*.tif*")))
+    labels = sorted(glob.glob(os.path.join(label_path,  "*.tif*")))
 
     # check length
     assert len(filenames) == len(labels), "Images and labels are not the same length"

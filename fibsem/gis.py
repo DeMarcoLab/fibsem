@@ -18,6 +18,7 @@ def sputter_platinum(
     microscope: FibsemMicroscope,
     protocol: dict = None,
     default_application_file: str = "Si",
+    whole_grid: bool = False,
 ):
     """Sputter platinum over the sample.
 
@@ -35,11 +36,19 @@ def sputter_platinum(
 
     if protocol is None:
         protocol = gis_protocol
+        hfw = protocol["hfw"]
+        line_pattern_length = protocol["length"]
+        sputter_time = protocol["time"]
 
-    hfw = protocol["hfw"]
-    line_pattern_length = protocol["length"]
-    sputter_time = protocol["time"]
-    
+    elif whole_grid:
+        hfw = protocol["whole_grid"]["hfw"]
+        line_pattern_length = protocol["whole_grid"]["length"]
+        sputter_time = protocol["whole_grid"]["time"]
+    else:
+        hfw = protocol["weld"]["hfw"]
+        line_pattern_length = protocol["weld"]["length"]
+        sputter_time = protocol["weld"]["time"]
+        
 
     # Setup
     microscope.setup_sputter(protocol=protocol)

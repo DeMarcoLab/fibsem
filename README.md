@@ -1,6 +1,6 @@
 # OpenFIBSEM
 
-A univseral API for FIBSEM Control, Development and Automation
+A universal API for FIBSEM Control, Development and Automation
 
 ## Overview
 
@@ -23,7 +23,7 @@ $ git checkout origin/v0.2-stable
 Install dependencies and package
 ```bash
 $ cd fibsem
-$ conda env create -f environment.yml
+$ conda create -n fibsem python=3.9 pip
 $ conda activate fibsem
 $ pip install -e .
 
@@ -128,7 +128,7 @@ microscope, settings = utils.setup_session(ip_address="localhost", manufacturer=
 # set imaging settings
 image_settings = ImageSettings(
         hfw=150e-6, 
-        resolution=(1536, 1024),
+        resolution=[1536, 1024],
         dwell_time=1e-6, 
         autocontrast=True, 
         beam_type=BeamType.ELECTRON)
@@ -173,18 +173,20 @@ OpenFIBSEM is a large package with many features. For more detailed documentatio
 
 ## Citation
 
-```
-@article {Cleeve2022.11.01.514681,
- author = {Cleeve, Patrick and Dierickx, David and Buckley, Genevieve and Gorelick, Sergey and Naegele, Lucile and Burne, Lachlan and Whisstock, James C and de Marco, Alex},
- title = {OpenFIBSEM: an application programming interface for easy FIB/SEM automation},
- elocation-id = {2022.11.01.514681},
- year = {2022},
- doi = {10.1101/2022.11.01.514681},
- publisher = {Cold Spring Harbor Laboratory},
- abstract = {Automation in microscopy is the key to success in long and complex experiments. Most microscopy manufacturers provide Application Programming Interfaces (API) to enable communication between a user-defined program and the hardware. Although APIs effectively allow the development of complex routines involving hardware control, the developers need to build the applications from basic commands. Here we present a Software Development Kit (SDK) for easy control of Focussed Ion Beam Scanning Electron Microscopes (FIB/SEM) microscopes. The SDK, which we named OpenFIBSEM consists of a suite of building blocks for easy control that simplify the development of complex automated workflows.Competing Interest StatementThe authors have declared no competing interest.},
- URL = {https://www.biorxiv.org/content/early/2022/11/06/2022.11.01.514681},
- eprint = {https://www.biorxiv.org/content/early/2022/11/06/2022.11.01.514681.full.pdf},
- journal = {bioRxiv}
+```bibtex
+@article{CLEEVE2023107967,
+title = {OpenFIBSEM: A universal API for FIBSEM control},
+journal = {Journal of Structural Biology},
+volume = {215},
+number = {3},
+pages = {107967},
+year = {2023},
+issn = {1047-8477},
+doi = {https://doi.org/10.1016/j.jsb.2023.107967},
+url = {https://www.sciencedirect.com/science/article/pii/S1047847723000308},
+author = {Patrick Cleeve and David Dierickx and Lucile Naegele and Rohit Kannachel and Lachlan Burne and Genevieve Buckley and Sergey Gorelick and James C. Whisstock and Alex {de Marco}},
+keywords = {Focused Ion Beam microscopy, Automation, Python, API, Microscopy, Controller},
+abstract = {This paper introduces OpenFIBSEM, a universal API to control Focused Ion Beam Scanning Electron Microscopes (FIBSEM). OpenFIBSEM aims to improve the programmability and automation of electron microscopy workflows in structural biology research. The API is designed to be cross-platform, composable, and extendable: allowing users to use any portion of OpenFIBSEM to develop or integrate with other software tools. The package provides core functionality such as imaging, movement, milling, and manipulator control, as well as system calibration, alignment, and image analysis modules. Further, a library of reusable user interface components integrated with napari is provided, ensuring easy and efficient application development. OpenFIBSEM currently supports ThermoFisher and TESCAN hardware, with support for other manufacturers planned. To demonstrate the improved automation capabilities enabled by OpenFIBSEM, several example applications that are compatible with multiple hardware manufacturers are discussed. We argue that OpenFIBSEM provides the foundation for a cross-platform operating system and development ecosystem for FIBSEM systems. The API and applications are open-source and available on GitHub (https://github.com/DeMarcoLab/fibsem).}
 }
 ```
 

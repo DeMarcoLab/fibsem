@@ -21,16 +21,6 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
-    <widget class="QSpinBox" name="rotationFlatToElectronSpinBox">
-     <property name="minimum">
-      <number>-360</number>
-     </property>
-     <property name="maximum">
-      <number>360</number>
-     </property>
-    </widget>
-   </item>
    <item row="7" column="0">
     <widget class="QLabel" name="rotationFlatToIonLabel">
      <property name="text">
@@ -69,30 +59,10 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="1">
-    <widget class="QSpinBox" name="preTiltSpinBox">
-     <property name="minimum">
-      <number>-360</number>
-     </property>
-     <property name="maximum">
-      <number>360</number>
-     </property>
-    </widget>
-   </item>
    <item row="4" column="0" colspan="2">
     <widget class="QPushButton" name="microscope_button">
      <property name="text">
       <string>Connect to Microscope</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="1">
-    <widget class="QSpinBox" name="tiltFlatToIonSpinBox">
-     <property name="minimum">
-      <number>-360</number>
-     </property>
-     <property name="maximum">
-      <number>360</number>
      </property>
     </widget>
    </item>
@@ -114,16 +84,6 @@
     <widget class="QLabel" name="rotationFlatToElectronLabel">
      <property name="text">
       <string>Rotation Flat To Electron (deg)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="1">
-    <widget class="QSpinBox" name="tiltFlatToElectronSpinBox">
-     <property name="minimum">
-      <number>-360</number>
-     </property>
-     <property name="maximum">
-      <number>360</number>
      </property>
     </widget>
    </item>
@@ -154,16 +114,6 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
-    <widget class="QSpinBox" name="rotationFlatToIonSpinBox">
-     <property name="minimum">
-      <number>-360</number>
-     </property>
-     <property name="maximum">
-      <number>360</number>
-     </property>
-    </widget>
-   </item>
    <item row="2" column="1">
     <widget class="QLineEdit" name="lineEdit_ipadress"/>
    </item>
@@ -187,6 +137,49 @@
       <string>System</string>
      </property>
     </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QDoubleSpinBox" name="rotationFlatToElectronSpinBox">
+     <property name="minimum">
+      <double>-360.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>360.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QDoubleSpinBox" name="rotationFlatToIonSpinBox">
+     <property name="minimum">
+      <double>-360.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>360.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1">
+    <widget class="QDoubleSpinBox" name="tiltFlatToElectronSpinBox">
+     <property name="minimum">
+      <double>-360.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>360.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="1">
+    <widget class="QDoubleSpinBox" name="tiltFlatToIonSpinBox">
+     <property name="minimum">
+      <double>-360.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>360.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="1">
+    <widget class="QDoubleSpinBox" name="preTiltSpinBox"/>
    </item>
   </layout>
  </widget>

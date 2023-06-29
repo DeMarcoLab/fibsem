@@ -19,6 +19,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemMillingSettings,
     FibsemHardware,
+    FibsemPatternSettings,
 )
 from fibsem.config import BASE_PATH
 from fibsem.microscope import FibsemMicroscope
@@ -77,13 +78,13 @@ def make_logging_directory(path: Path = None, name="run"):
 
 # TODO: better logs: https://www.toptal.com/python/in-depth-python-logging
 # https://stackoverflow.com/questions/61483056/save-logging-debug-and-show-only-logging-info-python
-def configure_logging(path: Path = "", log_filename="logfile", log_level=logging.DEBUG):
+def configure_logging(path: Path = "", log_filename="logfile", log_level=logging.DEBUG, _DEBUG: bool = False):
     """Log to the terminal and to file simultaneously."""
     logfile = os.path.join(path, f"{log_filename}.log")
 
     file_handler = logging.FileHandler(logfile)
     stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setLevel(logging.INFO)
+    stream_handler.setLevel(logging.INFO if _DEBUG is False else logging.DEBUG)
 
     logging.basicConfig(
         format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s",
@@ -188,7 +189,7 @@ def setup_session(
         protocol_path = os.getcwd()
 
     # configure paths
-    if session_path is None:
+    if session_path is None:# change this to cfg.LOG_PATH
         session_path = os.path.join(os.path.dirname(protocol_path), session)
     os.makedirs(session_path, exist_ok=True)
 
@@ -257,7 +258,6 @@ def load_settings_from_config(
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
-    # default_settings = DefaultSettings.__from_dict__(settings["user"])
     image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
 
     milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
@@ -270,7 +270,6 @@ def load_settings_from_config(
 
     settings = MicroscopeSettings(
         system=system_settings,
-        # default=default_settings,
         image=image_settings,
         protocol=protocol,
         milling=milling_settings,
@@ -294,7 +293,7 @@ def load_protocol(protocol_path: Path = None) -> dict:
     else:
         protocol = {"name": "demo"}
 
-    protocol = _format_dictionary(protocol)
+    #protocol = _format_dictionary(protocol)
 
     return protocol
 
@@ -348,6 +347,9 @@ def match_image_settings(
     image_settings.label = current_timestamp()
 
     return image_settings
+
+
+
 
 
 def get_params(main_str: str) -> list:
