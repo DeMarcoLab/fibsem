@@ -14,6 +14,8 @@ from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 
+from fibsem.ui.FibsemPositionsWidget import FibsemPositionsWidget
+
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -43,6 +45,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.milling_widget: FibsemMillingWidget = None
         self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
+        self.positions_widget: FibsemPositionsWidget = None
 
 
         CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
@@ -145,12 +148,20 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 image_widget=self.image_widget,
             )
 
+            self.positions_widget = FibsemPositionsWidget(
+                microscope=self.microscope,
+                movement_widget=self.movement_widget,
+                image_widget=self.image_widget,
+                parent = self,
+            )
+
 
             # add widgets to tabs
             self.tabWidget.addTab(self.image_widget, "Image")
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
+            self.tabWidget.addTab(self.positions_widget, "Positions")
             self.tabWidget.addTab(self.GIS_widget, "GIS")
 
 
@@ -165,13 +176,13 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.removeTab(3)
             self.tabWidget.removeTab(2)
             self.tabWidget.removeTab(1)
-            
-
+            self.tabWidget.removeTab(5)
             self.image_widget.clear_viewer()
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
             self.manipulator_widget.deleteLater()
+            self.positions_widget.deleteLater()
             self.GIS_widget.deleteLater()
 
 

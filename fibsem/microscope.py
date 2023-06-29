@@ -817,9 +817,9 @@ class ThermoMicroscope(FibsemMicroscope):
         wd = self.connection.beams.electron_beam.working_distance.value
         image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
         if np.isclose(image_rotation, 0):
-            dy = dy,
+            dy = dy
         elif np.isclose(image_rotation, np.pi):
-            dy = -dy,
+            dy = -dy
         # TODO: does this need the perspective correction too?
 
         z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
@@ -2809,12 +2809,12 @@ class TescanMicroscope(FibsemMicroscope):
             raise NotImplementedError("Stage is not enabled.")
         x, y, z, r, t = self.connection.Stage.GetPosition()
         stage_position = FibsemStagePosition(
-            x * constants.MILLIMETRE_TO_METRE,
-            y * constants.MILLIMETRE_TO_METRE,
-            z * constants.MILLIMETRE_TO_METRE,
-            r * constants.DEGREES_TO_RADIANS,
-            t * constants.DEGREES_TO_RADIANS,
-            "RAW",
+            x = x * constants.MILLIMETRE_TO_METRE,
+            y = y * constants.MILLIMETRE_TO_METRE,
+            z = z * constants.MILLIMETRE_TO_METRE,
+            r = r * constants.DEGREES_TO_RADIANS,
+            t = t * constants.DEGREES_TO_RADIANS,
+            coordinate_system= "RAW",
         )
         return stage_position
 
@@ -2939,12 +2939,12 @@ class TescanMicroscope(FibsemMicroscope):
         y_m = current_position.y
         z_m = current_position.z
         new_position = FibsemStagePosition(
-            (x_m + position.x) if position.x is not None else x_m,
-            (y_m + position.y )if position.y is not None else y_m,
-            (z_m + position.z )if position.z is not None else z_m,
-            (current_position.r + position.r) if position.r is not None else current_position.r,
-            (current_position.t + position.t) if position.t is not None else current_position.t,
-            "RAW",
+            x = (x_m + position.x) if position.x is not None else x_m,
+            y = (y_m + position.y )if position.y is not None else y_m,
+            z = (z_m + position.z )if position.z is not None else z_m,
+            r = (current_position.r + position.r) if position.r is not None else current_position.r,
+            t = (current_position.t + position.t) if position.t is not None else current_position.t,
+            coordinate_system =  "RAW",
         )
         self.move_stage_absolute(new_position)
 
