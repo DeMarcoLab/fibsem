@@ -26,6 +26,7 @@ try:
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem, ManipulatorCoordinateSystem,
         ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+
     THERMO = True
 except:
     THERMO = False
@@ -1862,6 +1863,7 @@ class ThermoGISLine():
         self.line = line
         self.name = name
         self.status = status
+        self.temp_ready = False
 
     def insert(self):
 
@@ -1887,6 +1889,7 @@ class ThermoMultiChemLine():
             "Retract"
         ]
         self.current_position = "Retract"
+        self.temp_ready = False
 
     def insert(self,position):
 
