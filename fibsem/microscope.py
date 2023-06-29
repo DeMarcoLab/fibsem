@@ -2814,9 +2814,9 @@ class TescanMicroscope(FibsemMicroscope):
         image_rotation = self.connection.FIB.Optics.GetImageRotation()
             
         if np.isclose(image_rotation, 0):
-            dy_move = dy
-        elif np.isclose(image_rotation, 180):
             dy_move = -dy
+        elif np.isclose(image_rotation, 180):
+            dy_move = dy
             
         PRETILT_SIGN = 1.0
         from fibsem import movement
@@ -2849,7 +2849,6 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"eucentric movement: {z_move}")
         z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
-        logging.info(f"eucentric movement: {z_move}")
 
         self.connection.SEM.Optics.SetWD(wd)
 
