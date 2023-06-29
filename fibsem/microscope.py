@@ -768,11 +768,11 @@ class ThermoMicroscope(FibsemMicroscope):
             image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
 
         if np.isclose(image_rotation, 0):
-            dx = dx,
-            dy = dy,
+            dx = dx
+            dy = dy
         elif np.isclose(image_rotation, np.pi):
-            dx = -dx,
-            dy = -dy,
+            dx = -dx
+            dy = -dy
         
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx, y=0, z=0)
