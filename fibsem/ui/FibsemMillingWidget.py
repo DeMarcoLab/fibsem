@@ -101,12 +101,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_dwell_time.setVisible(_TESCAN)   
         self.comboBox_preset.setVisible(_TESCAN)
         self.label_preset.setVisible(_TESCAN)
+        self.label_spacing.setVisible(_TESCAN)
+        self.doubleSpinBox_spacing.setVisible(_TESCAN)
         available_presets = self.microscope.get_available_values("presets")
         self.comboBox_preset.addItems(available_presets)   
         self.doubleSpinBox_rate.valueChanged.connect(self.update_settings)
         self.doubleSpinBox_spot_size.valueChanged.connect(self.update_settings)
         self.doubleSpinBox_dwell_time.valueChanged.connect(self.update_settings)  
         self.comboBox_preset.currentIndexChanged.connect(self.update_settings)
+        self.doubleSpinBox_spacing.valueChanged.connect(self.update_settings)
+        
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
@@ -418,6 +422,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             spot_size=self.doubleSpinBox_spot_size.value() * constants.MICRO_TO_SI,
             hfw=self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI,
             preset= self.comboBox_preset.currentText(),
+            spacing=self.doubleSpinBox_spacing.value(),
 
         )
 

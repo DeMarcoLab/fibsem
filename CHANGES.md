@@ -18,4 +18,11 @@
       - Import TESCAN image files 
 
 
+### 29/06/2023
 
+- New features
+      - Positions widget 
+      - Minimap 
+      - Live chat (experimental)
+      - Autoliftout utils
+      - GIS Widget 

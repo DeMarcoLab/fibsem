@@ -1,0 +1,6 @@
+secret.txt
+documents/*
+.chroma/*
+*.pdf
+*.mp4
+*.docx

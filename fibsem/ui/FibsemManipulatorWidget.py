@@ -46,7 +46,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         if _THERMO:
             
             try:
-                park_position = self.microscope._get_saved_manipulator_position("PARL")
+                park_position = self.microscope._get_saved_manipulator_position("PARK")
                 eucentric_position = self.microscope._get_saved_manipulator_position("EUCENTRIC")
                 self.saved_positions["PARK"] = park_position
                 self.saved_positions["EUCENTRIC"] = eucentric_position
@@ -76,8 +76,11 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.move_type_comboBox.hide()
             self.beam_type_label.hide()
             self.beam_type_combobox.hide()
-            self.insertManipulator_button.hide()
-            self.manipulatorStatus_label.hide()
+            # self.insertManipulator_button.hide()
+            # self.manipulatorStatus_label.hide()
+            self.savedPosition_combobox.addItem("Parking")
+            self.savedPosition_combobox.addItem("Standby")
+            self.savedPosition_combobox.addItem("Working")
 
 
 
@@ -187,6 +190,14 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
     def move_to_saved_position(self):
         name = self.savedPosition_combobox.currentText()
+
+        if name in ["Parking","Standby","Working"] and isinstance(self.microscope, (TescanMicroscope)):
+            self.microscope.insert_manipulator(name=name)
+            position = self.microscope.get_manipulator_position()
+            logging.info(f"Moved to saved position {name} at {position}")
+            self.update_ui()
+            return
+
         position = self.saved_positions[name]
         logging.info(f"Moving to saved position {name} at {position}")
         self.microscope.move_manipulator_absolute(position=position)

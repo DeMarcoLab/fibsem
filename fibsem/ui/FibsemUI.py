@@ -14,6 +14,8 @@ from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 
+from fibsem.ui.FibsemPositionsWidget import FibsemPositionsWidget
+
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -43,6 +45,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.milling_widget: FibsemMillingWidget = None
         self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
+        self.positions_widget: FibsemPositionsWidget = None
 
 
         CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
@@ -81,7 +84,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def set_stage_parameters(self):
         if self.microscope is None:
             return
-        self.settings.system.stage = self.system_widget.settings.system.stage   # TODO: this doesnt actually update the movement widget
+        self.settings.system.stage = self.system_widget.settings.system.stage  
+        self.movement_widget.settings = self.settings
         logging.debug(f"Stage parameters set to {self.settings.system.stage}")
         logging.info("Stage parameters set")  
 
@@ -137,6 +141,19 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
+            self.GIS_widget = FibsemGISWidget(
+                microscope=self.microscope,
+                settings=self.settings,
+                viewer=self.viewer,
+                image_widget=self.image_widget,
+            )
+
+            self.positions_widget = FibsemPositionsWidget(
+                microscope=self.microscope,
+                movement_widget=self.movement_widget,
+                image_widget=self.image_widget,
+                parent = self,
+            )
 
 
             # add widgets to tabs
@@ -144,6 +161,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
+            self.tabWidget.addTab(self.positions_widget, "Positions")
+            self.tabWidget.addTab(self.GIS_widget, "GIS")
 
 
 
@@ -152,18 +171,19 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 return
             
             # remove tabs
-
+            self.tabWidget.removeTab(5)
             self.tabWidget.removeTab(4)
             self.tabWidget.removeTab(3)
             self.tabWidget.removeTab(2)
             self.tabWidget.removeTab(1)
-            
-
+            self.tabWidget.removeTab(5)
             self.image_widget.clear_viewer()
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
             self.manipulator_widget.deleteLater()
+            self.positions_widget.deleteLater()
+            self.GIS_widget.deleteLater()
 
 
 def main():
