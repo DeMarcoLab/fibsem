@@ -85,17 +85,20 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.savedPosition_combobox.addItem("Standby")
             self.savedPosition_combobox.addItem("Working")
 
-    def _check_manipulator_positions_setup(self,config_path):
+    def _check_manipulator_positions_setup(self):
 
         positions = self.settings.hardware.manipulator_positions
 
-        print(positions)
+        is_calibrated = positions["calibrated"]
 
-        positions["parking"]["x"] = 3.14
+        if is_calibrated:
+            response = message_box_ui(title="Manipulator Positions Already Calibrated", text="Manipulator Positions are already calibrated, would you like to recalibrate?")
+            response = not response
+        else:
+            response = True
 
-        hardware_dict = self.settings.hardware.__to_dict__()
-
-        save_yaml(os.path.join(config_path,"model.yaml"), hardware_dict)
+        return response
+        
 
     def manipulator_position_calibration(self,config_path):
 
@@ -103,7 +106,34 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
             message_box_ui(title="Not Available", text="Manipulator Position Calibration is only available for Tescan Microscopes", buttons=QMessageBox.Ok)
 
-        self._check_manipulator_positions_setup(config_path=config_path)
+        
+        response = self._check_manipulator_positions_setup()
+
+        if not response:
+            
+            ok_to_cal =message_box_ui(title="Manipulator Position calibration",text="This tool calibrates the positions of the manipulator, it will switch between the parking, standby and working positions rapidly, please ensure it is safe to do so. If not please click no, otherwise press yes to continue")
+                                      
+            if ok_to_cal:
+
+                positions = self.settings.hardware.manipulator_positions
+
+                for position in positions:
+                    if position == "calibrated":
+                        continue
+                    logging.info(f"Calibrating Manipulator {position} position")
+                    self.microscope.insert_manipulator(position)
+                    manipulator_loc = self.microscope.get_manipulator_position()
+                    positions[position]["x"] = manipulator_loc.x
+                    positions[position]["y"] = manipulator_loc.y
+                    positions[position]["z"] = manipulator_loc.z
+                
+                positions["calibrated"] = True
+
+                hardware_dict = self.settings.hardware.__to_dict__()
+
+                save_yaml(os.path.join(config_path,"model.yaml"), hardware_dict)
+
+                message_box_ui(title="Manipulator Position calibration",text="Manipulator Positions calibrated successfully", buttons=QMessageBox.Ok)
 
 
 

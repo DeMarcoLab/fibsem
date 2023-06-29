@@ -298,16 +298,17 @@ Attributes:
             manipulator_positions={
                 "parking":{"x":hardware_dict["manipulator"]["positions"]["parking"]["x"],
                            "y":hardware_dict["manipulator"]["positions"]["parking"]["y"],
-                            "z":hardware_dict["manipulator"]["positions"]["parking"]["z"],
+                           "z":hardware_dict["manipulator"]["positions"]["parking"]["z"],
                 },
-                "standby":{"x":hardware_dict["manipulator"]["positions"]["standby"]["x"],
+                "standby":{ "x":hardware_dict["manipulator"]["positions"]["standby"]["x"],
                             "y":hardware_dict["manipulator"]["positions"]["standby"]["y"],
                             "z":hardware_dict["manipulator"]["positions"]["standby"]["z"],
                 },
-                "working":{"x":hardware_dict["manipulator"]["positions"]["working"]["x"],
+                "working":{ "x":hardware_dict["manipulator"]["positions"]["working"]["x"],
                             "y":hardware_dict["manipulator"]["positions"]["working"]["y"],
                             "z":hardware_dict["manipulator"]["positions"]["working"]["z"],
-                }
+                },
+                "calibrated":hardware_dict["manipulator"]["positions"]["calibrated"],
             },
             system = {
                 "name":hardware_dict["system"]["name"],
@@ -351,6 +352,8 @@ Attributes:
             hardware_dict["gis"]["multichem"] = self.gis_multichem
 
             hardware_dict["manipulator"]["positions"] = {}
+
+            hardware_dict["manipulator"]["positions"]["calibrated"] = self.manipulator_positions["calibrated"]
 
             hardware_dict["manipulator"]["positions"]["parking"] = {}
             hardware_dict["manipulator"]["positions"]["parking"]["x"] = self.manipulator_positions["parking"]["x"]

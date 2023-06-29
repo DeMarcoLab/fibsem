@@ -3171,6 +3171,11 @@ class TescanMicroscope(FibsemMicroscope):
         if name == "PARK":
             name = "Parking"
 
+        for position in preset_positions:
+            if name.lower() == position.lower():
+                name = position
+    
+
         if name not in preset_positions:
             raise ValueError(f"Position {name} is not a valid preset position. Valid positions are {preset_positions}.")
 
@@ -3178,7 +3183,7 @@ class TescanMicroscope(FibsemMicroscope):
         insert_position = getattr(self.connection.Nanomanipulator.Position,name)
 
         index = 0
-
+        logging.info(f"Inserting Nanomanipulator to {name} position")
         self.connection.Nanomanipulator.MoveToPosition(Index=index,Position=insert_position)
 
     def _check_manipulator_limits(self,x,y,z,r):
