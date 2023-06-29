@@ -1,4 +1,5 @@
 import logging
+import os
 
 import napari
 import napari.utils.notifications
@@ -7,11 +8,14 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, TescanMicroscope, DemoMicroscope
-from fibsem.structures import (MicroscopeSettings, FibsemManipulatorPosition,BeamType)
+from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
+                               TescanMicroscope, ThermoMicroscope)
+from fibsem.structures import (BeamType, FibsemManipulatorPosition,
+                               MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemManipulatorWidget
 from fibsem.ui.utils import message_box_ui
+from fibsem.utils import save_yaml
 
 
 class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget):
@@ -78,9 +82,30 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.beam_type_combobox.hide()
             # self.insertManipulator_button.hide()
             # self.manipulatorStatus_label.hide()
-            self.savedPosition_combobox.addItem("Parking")
             self.savedPosition_combobox.addItem("Standby")
             self.savedPosition_combobox.addItem("Working")
+
+    def _check_manipulator_positions_setup(self,config_path):
+
+        positions = self.settings.hardware.manipulator_positions
+
+        print(positions)
+
+        positions["parking"]["x"] = 3.14
+
+        hardware_dict = self.settings.hardware.__to_dict__()
+
+        save_yaml(os.path.join(config_path,"model.yaml"), hardware_dict)
+
+    def manipulator_position_calibration(self,config_path):
+
+        if not isinstance(self.microscope,TescanMicroscope):
+
+            message_box_ui(title="Not Available", text="Manipulator Position Calibration is only available for Tescan Microscopes", buttons=QMessageBox.Ok)
+
+        self._check_manipulator_positions_setup(config_path=config_path)
+
+
 
 
 

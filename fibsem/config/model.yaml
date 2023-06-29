@@ -1,25 +1,34 @@
-# this file is used to define the microscope model, and enabled components
-
-system:
-  name: "FIBSEM"
-  manufacturer: "Demo"
-  description: "FIBSEM"
-  version: "0.1"
-  id: 00000
-
-# define the microscope model
 electron:
-  enabled: True
-ion:
-  enabled: True
-stage:
-  enabled: True
-  rotation: True
-  tilt: True
-manipulator:
-  enabled: True
-  rotation: True
-  tilt: True
+    enabled: true
 gis:
-  enabled: True
-  multichem: True
+    enabled: true
+    multichem: true
+ion:
+    enabled: true
+manipulator:
+    enabled: true
+    positions:
+        parking:
+            x: 3.14
+            y: 2
+            z: 3
+        standby:
+            x: 4
+            y: 5
+            z: 6
+        working:
+            x: 7
+            y: 8
+            z: 9
+    rotation: true
+    tilt: true
+stage:
+    enabled: true
+    rotation: true
+    tilt: true
+system:
+    description: FIBSEM
+    id: 0
+    manufacturer: Demo
+    name: FIBSEM
+    version: '0.1'
