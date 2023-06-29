@@ -1013,6 +1013,7 @@ class FibsemMillingSettings:
     patterning_mode: str = "Serial" 
     application_file: str = "Si"
     preset: str = "30 keV; UHR imaging"
+    spacing: float = 1.0
 
     def __post_init__(self):
 
@@ -1023,6 +1024,7 @@ class FibsemMillingSettings:
         assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
         assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
         assert isinstance(self.application_file,(str)), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
+        assert isinstance(self.spacing,(float,int)), f"invalid type for value for spacing, must be int or float, currently {type(self.spacing)}"
         # assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
 
     def __to_dict__(self) -> dict:
@@ -1052,6 +1054,7 @@ class FibsemMillingSettings:
             patterning_mode=settings.get("patterning_mode", "Serial"),
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; UHR imaging"),
+            spacing=settings.get("spacing", 1.0),
         )
 
         return milling_settings

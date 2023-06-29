@@ -16,7 +16,14 @@ MILLING_SPUTTER_RATE = {
 SUPPORTED_COORDINATE_SYSTEMS = [
     "RAW",
     "SPECIMEN", 
-    "STAGE"
+    "STAGE",
+    "Raw",
+    "raw",
+    "specimen",
+    "Specimen",
+    "Stage",
+    "stage"
+
 ] 
 
 

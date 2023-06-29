@@ -84,7 +84,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def set_stage_parameters(self):
         if self.microscope is None:
             return
-        self.settings.system.stage = self.system_widget.settings.system.stage   # TODO: this doesnt actually update the movement widget
+        self.settings.system.stage = self.system_widget.settings.system.stage  
+        self.movement_widget.settings = self.settings
         logging.debug(f"Stage parameters set to {self.settings.system.stage}")
         logging.info("Stage parameters set")  
 
@@ -122,7 +123,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 image_settings=self.settings.image,
                 viewer=self.viewer,
             )
-            # self.image_widget.setMinimumWidth(500)
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
                 settings=self.settings,
