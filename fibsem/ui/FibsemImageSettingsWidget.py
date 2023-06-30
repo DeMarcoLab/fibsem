@@ -485,6 +485,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.eb_layer = None
         self.ib_layer = None
 
+    def _set_active_layer(self):
+        if self.eb_layer:
+            self.viewer.layers.selection.active = self.eb_layer
 
 def main():
 
