@@ -395,10 +395,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             log_status_message(self.milling_stages[current_stage_index], f"MOVED_PATTERN_TO_{point}")
             self.good_copy_pattern = deepcopy(pattern)
             self.update_ui()
+            self.milling_position_changed.emit()
         else:
             napari.utils.notifications.show_warning("Pattern is not within the image.")
             self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
-        self.milling_position_changed.emit()
+        
 
     def valid_pattern_location(self,stage_pattern):
         
