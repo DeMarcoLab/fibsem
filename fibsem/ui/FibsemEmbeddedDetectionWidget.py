@@ -233,12 +233,6 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             feature.feature_m = conversions.image_to_microscope_image_coordinates(
                 feature.px, self.det.image.data, self.det.pixelsize
             )
-        # self.det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(
-        # self.det.features[0].px, self.det.image.data, self.det.pixelsize
-        # )
-        # self.det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(
-        #     self.det.features[1].px, self.det.image.data, self.det.pixelsize
-        # )
 
         return self.det
 
@@ -280,8 +274,6 @@ def main():
     napari.run()
 
     det = det_widget_ui.det
-
-    # print(det)
 
 
 if __name__ == "__main__":
