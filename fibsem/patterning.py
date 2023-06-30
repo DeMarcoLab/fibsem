@@ -911,6 +911,7 @@ PROTOCOL_MILL_MAP = {
     "fiducial": FiducialPattern,
     "flatten": RectanglePattern,
     "undercut": UndercutPattern,
+    "horseshoe": HorseshoePattern,
     "lamella": TrenchPattern,
     "polish_lamella": TrenchPattern,
     "thin_lamella": TrenchPattern,
