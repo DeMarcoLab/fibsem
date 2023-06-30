@@ -151,12 +151,12 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
-        position_dict["name"] = self.name
-        position_dict["x"] = self.x
-        position_dict["y"] = self.y
-        position_dict["z"] = self.z
-        position_dict["r"] = self.r
-        position_dict["t"] = self.t
+        position_dict["name"] = self.name if self.name is not None else None
+        position_dict["x"] = float(self.x) if self.x is not None else None
+        position_dict["y"] = float(self.y) if self.y is not None else None
+        position_dict["z"] = float(self.z) if self.z is not None else None
+        position_dict["r"] = float(self.r) if self.r is not None else None
+        position_dict["t"] = float(self.t) if self.t is not None else None
         position_dict["coordinate_system"] = self.coordinate_system
 
         return position_dict
@@ -174,7 +174,7 @@ Methods:
 
 
         return cls(
-            name=data["name"],
+            name=data.get("name", None),
             x=data["x"],
             y=data["y"],
             z=data["z"],
@@ -726,7 +726,7 @@ class MicroscopeState:
 
         state_dict = {
             "timestamp": self.timestamp,
-            "absolute_position": stage_position_to_dict(self.absolute_position) if self.absolute_position is not None else "Not defined",
+            "absolute_position": self.absolute_position.__to_dict__() if self.absolute_position is not None else "Not defined",
             "eb_settings": self.eb_settings.__to_dict__() if self.eb_settings is not None else "Not defined",
             "ib_settings": self.ib_settings.__to_dict__() if self.ib_settings is not None else "Not defined",
         }
@@ -737,7 +737,7 @@ class MicroscopeState:
     def __from_dict__(state_dict: dict) -> "MicroscopeState":
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
-            absolute_position=stage_position_from_dict(state_dict["absolute_position"]),
+            absolute_position=FibsemStagePosition.__from_dict__(state_dict["absolute_position"]),
             eb_settings=BeamSettings.__from_dict__(state_dict["eb_settings"]),
             ib_settings=BeamSettings.__from_dict__(state_dict["ib_settings"]),
         )

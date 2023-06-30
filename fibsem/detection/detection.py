@@ -393,6 +393,38 @@ def detect_features(
     return det
 
 
+def take_image_and_detect_features(
+    microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    features: tuple[Feature],
+) -> DetectedFeatures:
+    
+    from fibsem import acquire
+    from fibsem.segmentation.model import load_model
+
+    if settings.image.reduced_area is not None:
+        logging.info(
+            f"Reduced area is not compatible with model detection, disabling..."
+        )
+        settings.image.reduced_area = None
+    
+
+    # take new image
+    image = acquire.new_image(microscope, settings.image)
+
+    # load model
+    ml_protocol = settings.protocol.get("ml", {})
+    checkpoint = ml_protocol.get("weights", None)
+    encoder = ml_protocol.get("encoder", "resnet34")
+    num_classes = int(ml_protocol.get("num_classes", 3))
+    model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
+
+    # detect features
+    det = detect_features(
+        deepcopy(image.data), model, features=features, pixelsize=image.metadata.pixel_size.x
+    )
+    return det
+
 
 
 def plot_detection(det: DetectedFeatures):
