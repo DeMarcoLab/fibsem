@@ -17,7 +17,7 @@
    <item row="4" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_movement">
       <attribute name="title">
@@ -267,7 +267,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Grid size (um)</string>
+          <string>Grid radius (um)</string>
          </property>
         </widget>
        </item>
@@ -314,7 +314,14 @@
         </widget>
        </item>
        <item row="7" column="2">
-        <widget class="QSpinBox" name="spinBox_x_lower"/>
+        <widget class="QSpinBox" name="spinBox_grid_radius">
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>500</number>
+         </property>
+        </widget>
        </item>
        <item row="5" column="3">
         <widget class="QPushButton" name="pushButton_remove_position">
@@ -327,7 +334,7 @@
         </widget>
        </item>
        <item row="7" column="3">
-        <widget class="QCheckBox" name="checkBox">
+        <widget class="QCheckBox" name="checkBox_auto_scaling">
          <property name="text">
           <string>Auto scaling</string>
          </property>

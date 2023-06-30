@@ -79,7 +79,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_export.clicked.connect(self.export_positions)
         self.pushButton_import.clicked.connect(self.import_positions)
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
-
+        self.checkBox_auto_scaling.stateChanged.connect(self.minimap)
+        self.spinBox_grid_radius.valueChanged.connect(self.minimap)
     def auto_eucentric_correction(self):
 
         print("auto eucentric")
@@ -249,31 +250,37 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 marker=dict(size=8, symbol="cross"),
                 selector=dict(mode="markers"),
             )
-        fig.update_layout(legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        ),
-         margin=dict(l=5, r=5, t=5, b=5),
-         legend_title_text=None,
-         xaxis_title=None,
-            yaxis_title=None,
+        
+        if self.checkBox_auto_scaling.isChecked():
+            fig.update_layout(legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            margin=dict(l=5, r=5, t=5, b=5),
+            legend_title_text=None,
+            xaxis_title=None,
+                yaxis_title=None,
             )
-        # miminum graph zoom 
-        if len(self.positions) > 0:
-            flag = False
-            for i in range(len(self.positions)):
-                if (x[i] - x[0]) < 150 or (y[i] - y[0]) < 150:
-                    flag = True
-            if flag:
-                range_x = [min(x) - 75, max(x) + 75]
-                range_y = [min(y) - 75, max(y) + 75]
-                fig.update_layout(
-                    xaxis=dict(range=range_x),
-                    yaxis=dict(range=range_y)
-                )
+            
+        else:
+            range = [-self.spinBox_grid_radius.value(), self.spinBox_grid_radius.value()]
+            fig.update_layout(legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            margin=dict(l=5, r=5, t=5, b=5),
+            legend_title_text=None,
+            xaxis_title=None,
+            yaxis_title=None,
+            xaxis=dict(range=range),
+            yaxis=dict(range=range)
+            )
 
         image_from_plot = fig.to_image(format="png", engine="kaleido")
 
