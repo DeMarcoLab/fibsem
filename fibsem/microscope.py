@@ -45,7 +45,7 @@ try:
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 
-    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition, ,MultiChemInsertPosition 
+    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
 except:
     logging.debug("Autoscript (ThermoFisher) not installed.")
 
