@@ -35,7 +35,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.viewer = viewer
         self.image_widget = image_widget
         self.saved_positions = {}
-        self.manipulator_inserted = False # TODO need to read from microscope if manipulator is inserted or not??
+        self.manipulator_inserted = None
         
 
 
@@ -56,6 +56,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 self.saved_positions["EUCENTRIC"] = eucentric_position
                 self.savedPosition_combobox.addItem("PARK")
                 self.savedPosition_combobox.addItem("EUCENTRIC")
+                self.microscope.get_manipulator_state(settings=self.settings)
                 
             except :
                 
@@ -77,6 +78,8 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
         if _TESCAN:
             
+            
+            self._initialise_calibration()
             self.move_type_comboBox.hide()
             self.beam_type_label.hide()
             self.beam_type_combobox.hide()
@@ -84,6 +87,20 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             # self.manipulatorStatus_label.hide()
             self.savedPosition_combobox.addItem("Standby")
             self.savedPosition_combobox.addItem("Working")
+            self.microscope.get_manipulator_state(settings=self.settings)
+
+
+    def _initialise_calibration(self):
+
+        is_calibrated = self.settings.hardware.manipulator_positions["calibrated"]
+
+        if not is_calibrated:
+
+            self.manipulatorStatus_label.setText("Not Calibrated, Please run the calibration tool from the tool menu")
+            self.insertManipulator_button.setEnabled(False)
+            self.moveRelative_button.setEnabled(False)
+            self.addSavedPosition_button.setEnabled(False)
+            self.goToPosition_button.setEnabled(False)
 
     def _check_manipulator_positions_setup(self):
 
@@ -95,7 +112,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             response = message_box_ui(title="Manipulator Positions Already Calibrated", text="Manipulator Positions are already calibrated, would you like to recalibrate?")
             response = not response
         else:
-            response = True
+            response = False
 
         return response
         
@@ -105,6 +122,8 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         if not isinstance(self.microscope,TescanMicroscope):
 
             message_box_ui(title="Not Available", text="Manipulator Position Calibration is only available for Tescan Microscopes", buttons=QMessageBox.Ok)
+
+            return
 
         
         response = self._check_manipulator_positions_setup()
@@ -134,6 +153,16 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 save_yaml(os.path.join(config_path,"model.yaml"), hardware_dict)
 
                 message_box_ui(title="Manipulator Position calibration",text="Manipulator Positions calibrated successfully", buttons=QMessageBox.Ok)
+
+                
+                self.insertManipulator_button.setEnabled(True)
+                self.moveRelative_button.setEnabled(True)
+                self.addSavedPosition_button.setEnabled(True)
+                self.goToPosition_button.setEnabled(True)
+                self.manipulator_inserted = self.microscope.get_manipulator_state(settings=self.settings)
+                self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")
+                self.insertManipulator_button.setText("Insert" if not self.manipulator_inserted else "Retract")
+
 
 
 

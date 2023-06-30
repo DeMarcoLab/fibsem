@@ -40,7 +40,7 @@ try:
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
     from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem,
+        CoordinateSystem, ManipulatorCoordinateSystem,ManipulatorState,
         ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
@@ -250,6 +250,10 @@ class FibsemMicroscope(ABC):
     @abstractmethod
 
     def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
+        pass
+
+    @abstractmethod
+    def get_manipulator_state(self, settings: MicroscopeSettings) -> bool:
         pass
 
     @abstractmethod
@@ -956,6 +960,12 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"moving flat to {beam_type.name}")
         stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
         self.move_stage_absolute(stage_position)
+
+    def get_manipulator_state(self,settings:MicroscopeSettings=None):
+
+        state = self.connection.specimen.manipulator.state
+
+        return True if state == ManipulatorState.INSERTED else False
 
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
         if self.hardware_settings.manipulator_enabled is False:
@@ -3145,6 +3155,36 @@ class TescanMicroscope(FibsemMicroscope):
 
         logging.info(f"Moving Stage Flat to {beam_type.name} Beam")
         self.connection.Stage.MoveTo(tiltx=tilt)
+
+
+    def get_manipulator_state(self,settings=MicroscopeSettings) -> bool:
+
+        """returns true if nanomanipulator is inserted. Manipulator positions must be calibrated and stored in model.yaml file if not done so
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            _type_: True if Inserted, False if retracted
+        """
+
+        manipulator_positions = settings.hardware.manipulator_positions
+
+        if not manipulator_positions["calibrated"]:
+            logging.warning("Manipulator positions not calibrated, cannot get state")
+
+        retracted_position_x = manipulator_positions["parking"]["x"]*constants.METRE_TO_MILLIMETRE
+        retracted_position_y = manipulator_positions["parking"]["y"]*constants.METRE_TO_MILLIMETRE
+        retracted_position_z = manipulator_positions["parking"]["z"]*constants.METRE_TO_MILLIMETRE
+
+        current_position = self.get_manipulator_position()
+
+        current_position_array = [current_position.x*constants.METRE_TO_MILLIMETRE, current_position.y*constants.METRE_TO_MILLIMETRE, current_position.z*constants.METRE_TO_MILLIMETRE]
+
+        check_compare = np.isclose(current_position_array, [retracted_position_x, retracted_position_y, retracted_position_z], atol=0.1)
+
+        return True if False in check_compare else False
+            
 
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
         # pass
