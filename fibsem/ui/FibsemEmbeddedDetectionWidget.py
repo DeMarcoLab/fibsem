@@ -60,9 +60,10 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
 
     def setup_connections(self):
         self.label_instructions.setText(
-            """Drag the detected feature positions to move them. Press continue when finished."""
+            """Drag the detected feature positions to move them. Press Continue when finished."""
         )
         self.pushButton_continue.clicked.connect(self.confirm_button_clicked)
+        self.pushButton_continue.setVisible(False)
 
     def save_data(self):
         
@@ -73,27 +74,28 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=None)
     
 
-    def confirm_button_clicked(self):
+    def confirm_button_clicked(self, reset_camera=False):
         
         # save current data
-        self.save_data()
-
-        # emit signal
-        self.continue_signal.emit(self.det)
-        print("continue signal emitted")        
+        try:
+            self.save_data()
+        except Exception as e:
+            logging.error(f"Error saving data: {e}")
+    
 
         # remove det layers
-        if self._image_layer in self.viewer.layers:
-            self.viewer.layers.remove(self._image_layer)
-        if self._mask_layer in self.viewer.layers:
-            self.viewer.layers.remove(self._mask_layer)
-        if self._features_layer in self.viewer.layers:
-            self.viewer.layers.remove(self._features_layer)
-        
+        if self._image_layer is not None:
+            if self._image_layer in self.viewer.layers:
+                self.viewer.layers.remove(self._image_layer)
+            if self._mask_layer in self.viewer.layers:
+                self.viewer.layers.remove(self._mask_layer)
+            if self._features_layer in self.viewer.layers:
+                self.viewer.layers.remove(self._features_layer)
+
         # reshow all other layers
         for layer in self.viewer.layers:
             layer.visible = True
-
+        
         # reset camera
         self.viewer.camera.center = self.prev_camera.center
         self.viewer.camera.zoom = self.prev_camera.zoom
