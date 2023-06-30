@@ -107,7 +107,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.update_features_ui()
 
     def update_features_ui(self):
-        
+
         # hide all other layers?
         for layer in self.viewer.layers:
             layer.visible = False
@@ -147,13 +147,11 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             face_color=[feature.color for feature in self.det.features],
             blending="translucent",
         )
-
         # set points layer to select mode and active
         self._features_layer.mode = "select"
-
+        
         # when the point is moved update the feature
         self._features_layer.events.data.connect(self.update_point)
-
         self.update_info()
         
         # set camera
@@ -169,18 +167,27 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
 
     def update_info(self):
         
-        if len(self.det.features) != 2:
-            self.label_info.setText("Info only available for 2 features")
+        if len(self.det.features) > 2:
+            self.label_info.setText("Info not available.")
             return
         
-        self.label_info.setText(
-            f"""Moving {self.det.features[0].name} to {self.det.features[1].name}
-        \n{self.det.features[0].name}: {self.det.features[0].px}
-        \n{self.det.features[1].name}: {self.det.features[1].px}
-        \ndx={self.det.distance.x*1e6:.2f}um, dy={self.det.distance.y*1e6:.2f}um
-        User Corrected: {self._USER_CORRECTED}
-        """
-        )
+        if len(self.det.features) == 1:
+            self.label_info.setText(
+            f"""{self.det.features[0].name}: {self.det.features[0].px}
+            \nUser Corrected: {self._USER_CORRECTED}
+            """)
+            return
+        if len(self.det.features) == 2:
+            self.label_info.setText(
+                f"""Moving 
+                \n{self.det.features[0].name}: {self.det.features[0].px}
+                \nto 
+                \n{self.det.features[1].name}: {self.det.features[1].px}
+                \ndx={self.det.distance.x*1e6:.2f}um, dy={self.det.distance.y*1e6:.2f}um
+                \nUser Corrected: {self._USER_CORRECTED}
+                """
+                )
+            return
 
     def update_point(self, event):
         logging.info(f"{event.source.name} changed its data!")
@@ -219,6 +226,20 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.label_model.setText(f"Model: {self.model.model.name}, Checkpont: {self.model.checkpoint}")
 
     def _get_detected_features(self):
+
+        from fibsem import conversions
+
+        for feature in self.det.features:
+            feature.feature_m = conversions.image_to_microscope_image_coordinates(
+                feature.px, self.det.image.data, self.det.pixelsize
+            )
+        # self.det.features[0].feature_m = conversions.image_to_microscope_image_coordinates(
+        # self.det.features[0].px, self.det.image.data, self.det.pixelsize
+        # )
+        # self.det.features[1].feature_m = conversions.image_to_microscope_image_coordinates(
+        #     self.det.features[1].px, self.det.image.data, self.det.pixelsize
+        # )
+
         return self.det
 
 
