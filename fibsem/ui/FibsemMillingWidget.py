@@ -187,6 +187,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.comboBox_milling_stage.addItem(stage.name)
             
 
+    def _remove_all_stages(self):
+
+        while len(self.milling_stages) > 0:
+            self.remove_milling_stage()
+        _remove_all_layers(self.viewer) # remove all shape layers
+
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
         logging.info(f"Setting milling stages: {len(milling_stages)}")
         self.milling_stages = milling_stages
@@ -210,6 +216,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # get the selected milling stage
         current_index = self.comboBox_milling_stage.currentIndex()
+        if current_index == -1:
+            return
+
         milling_stage: FibsemMillingStage = self.milling_stages[current_index]
 
         # set the milling settings
