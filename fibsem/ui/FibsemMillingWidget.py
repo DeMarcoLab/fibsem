@@ -33,7 +33,7 @@ def log_status_message(stage: FibsemMillingStage, step: str):
     )
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
-    # milling_param_changed = QtCore.pyqtSignal()
+    milling_position_changed = QtCore.pyqtSignal()
 
     def __init__(
         self,
@@ -389,6 +389,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         else:
             napari.utils.notifications.show_warning("Pattern is not within the image.")
             self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
+        self.milling_position_changed.emit()
 
     def valid_pattern_location(self,stage_pattern):
         
