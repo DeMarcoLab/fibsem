@@ -82,8 +82,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         stage_position = self.get_position_from_ui()
         self.microscope.move_stage_absolute(stage_position)
         log_status_message(f"MOVED_TO_{stage_position}")
-        self.image_widget.take_reference_images()
-        self.update_ui()
+        self.update_ui_after_movement()
         self.move_signal.emit()
     
     def update_ui(self):
@@ -112,6 +111,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         return stage_position
 
     def _double_click(self, layer, event):
+        
+        if event.button != 1:
+            return
 
         # get coords
         coords = layer.world_to_data(event.position)
@@ -150,11 +152,17 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 dy=point.y,
                 beam_type=beam_type,
             )
-
-        self.image_widget.take_reference_images()
-        self.update_ui()
+        
+        self.update_ui_after_movement()
         self.move_signal.emit()
 
+    def update_ui_after_movement(self):
+        # disable taking images after movement here
+        if self.checkBox_movement_acquire_electron.isChecked():
+            self.image_widget.take_image(BeamType.ELECTRON)
+        if self.checkBox_movement_acquire_ion.isChecked():
+            self.image_widget.take_image(BeamType.ION)
+        self.update_ui()
 
 def main():
 

@@ -14,6 +14,37 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="7" column="0">
+    <widget class="QLabel" name="label_movement_stage_tilt">
+     <property name="text">
+      <string>Tilt (deg)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_move">
+     <property name="text">
+      <string>Move to Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_movement_stage_z">
+     <property name="text">
+      <string>Z Coordinate (mm)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_movement_stage_rotation">
+     <property name="text">
+      <string>Rotation (deg)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1">
+    <widget class="QComboBox" name="comboBox_movement_stage_coordinate_system"/>
+   </item>
    <item row="3" column="1">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_x">
      <property name="decimals">
@@ -27,60 +58,20 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_rotation">
-     <property name="minimum">
-      <double>-360.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>360.000000000000000</double>
-     </property>
-    </widget>
+   <item row="7" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_tilt"/>
    </item>
-   <item row="8" column="1">
-    <widget class="QComboBox" name="comboBox_movement_stage_coordinate_system"/>
-   </item>
-   <item row="5" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z">
-     <property name="decimals">
-      <number>5</number>
-     </property>
-     <property name="minimum">
-      <double>-100000000000000000.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>99999999999999991611392.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_movement_stage_z">
+   <item row="8" column="0">
+    <widget class="QLabel" name="label_movement_stage_coordinate_system">
      <property name="text">
-      <string>Z Coordinate (mm)</string>
+      <string>Coordinate System</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="comboBox_movement_mode"/>
-   </item>
-   <item row="10" column="1">
-    <widget class="QPushButton" name="pushButton_auto_eucentric">
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_movement_mode">
      <property name="text">
-      <string>Auto Eucentric</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_movement_stage_y">
-     <property name="text">
-      <string>Y Coordinate (mm)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="12" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_continue">
-     <property name="text">
-      <string>Continue</string>
+      <string>Mode</string>
      </property>
     </widget>
    </item>
@@ -97,10 +88,110 @@
      </property>
     </widget>
    </item>
+   <item row="6" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_rotation">
+     <property name="minimum">
+      <double>-360.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>360.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="1">
+    <widget class="QCheckBox" name="checkBox_movement_acquire_ion">
+     <property name="text">
+      <string>ION</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_movement_stage_y">
+     <property name="text">
+      <string>Y Coordinate (mm)</string>
+     </property>
+    </widget>
+   </item>
    <item row="10" column="0">
     <widget class="QPushButton" name="pushButton_save_position">
      <property name="text">
       <string>Save Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="2">
+    <widget class="QLabel" name="label_movement_instructions">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Double click to move. Press continue when complete.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="14" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_continue">
+     <property name="text">
+      <string>Continue</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z">
+     <property name="decimals">
+      <number>5</number>
+     </property>
+     <property name="minimum">
+      <double>-100000000000000000.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>99999999999999991611392.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="0">
+    <widget class="QCheckBox" name="checkBox_movement_acquire_electron">
+     <property name="text">
+      <string>ELECTRON</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="1">
+    <widget class="QPushButton" name="pushButton_auto_eucentric">
+     <property name="text">
+      <string>Auto Eucentric</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_movement_stage_x">
+     <property name="text">
+      <string>X Coordinate (mm)</string>
      </property>
     </widget>
    </item>
@@ -118,79 +209,15 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_movement_stage_x">
-     <property name="text">
-      <string>X Coordinate (mm)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_move">
-     <property name="text">
-      <string>Move to Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="label_movement_stage_rotation">
-     <property name="text">
-      <string>Rotation (deg)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_tilt"/>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_movement_mode">
-     <property name="text">
-      <string>Mode</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="label_movement_stage_coordinate_system">
-     <property name="text">
-      <string>Coordinate System</string>
-     </property>
-    </widget>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="comboBox_movement_mode"/>
    </item>
    <item row="11" column="0" colspan="2">
-    <widget class="QLabel" name="label_movement_instructions">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>50</height>
-      </size>
-     </property>
+    <widget class="QLabel" name="label_movement_acquire">
      <property name="text">
-      <string>Double click to move. Press continue when complete.</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
+      <string>Acquire Images after movement</string>
      </property>
     </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="label_movement_stage_tilt">
-     <property name="text">
-      <string>Tilt (deg)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="13" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>

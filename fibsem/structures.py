@@ -153,6 +153,8 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
+
+        position_dict["name"] = self.name
         position_dict["name"] = self.name if self.name is not None else None
         position_dict["x"] = float(self.x) if self.x is not None else None
         position_dict["y"] = float(self.y) if self.y is not None else None
