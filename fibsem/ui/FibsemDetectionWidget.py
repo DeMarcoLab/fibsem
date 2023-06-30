@@ -73,7 +73,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         if detected_features is not None:
             self.set_detected_features(detected_features)
 
-        message_box_ui(title="Feature Detection Validation",text="Ensure that the features detected are located accurately, if not, please manually correct the locations by dragging. Once locations are valid, click continue",buttons=QtWidgets.QMessageBox.Ok)
+        # message_box_ui(title="Feature Detection Validation",text="Ensure that the features detected are located accurately, if not, please manually correct the locations by dragging. Once locations are valid, click continue",buttons=QtWidgets.QMessageBox.Ok)
 
     def setup_connections(self):
         self.label_instructions.setText(
@@ -424,7 +424,7 @@ from fibsem.structures import MicroscopeSettings
 from fibsem.detection.detection import Feature, DetectedFeatures
 from fibsem import acquire
 def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: list[Feature], validate: bool = True) -> DetectedFeatures:
-
+    print("GOT TO DETECTION UI")
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
     # detect features

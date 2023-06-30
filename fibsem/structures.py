@@ -21,6 +21,8 @@ except:
     TESCAN = False
 
 try:
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript')
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
     from autoscript_sdb_microscope_client.enumerations import (
@@ -152,7 +154,9 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
+
         position_dict["name"] = self.name
+        position_dict["name"] = self.name if self.name is not None else None
         position_dict["x"] = float(self.x) if self.x is not None else None
         position_dict["y"] = float(self.y) if self.y is not None else None
         position_dict["z"] = float(self.z) if self.z is not None else None
@@ -175,7 +179,7 @@ Methods:
 
 
         return cls(
-            name=data["name"],
+            name=data.get("name", None),
             x=data["x"],
             y=data["y"],
             z=data["z"],
@@ -738,7 +742,7 @@ class MicroscopeState:
     def __from_dict__(state_dict: dict) -> "MicroscopeState":
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
-            absolute_position=stage_position_from_dict(state_dict["absolute_position"]),
+            absolute_position=FibsemStagePosition.__from_dict__(state_dict["absolute_position"]),
             eb_settings=BeamSettings.__from_dict__(state_dict["eb_settings"]),
             ib_settings=BeamSettings.__from_dict__(state_dict["ib_settings"]),
         )

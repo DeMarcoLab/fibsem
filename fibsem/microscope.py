@@ -34,6 +34,8 @@ except:
     logging.debug("Automation (TESCAN) not installed.")
 
 try:
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript')
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
@@ -3376,10 +3378,7 @@ class TescanMicroscope(FibsemMicroscope):
             The method does not start the milling process.
         """
         _check_beam(BeamType.ION, self.hardware_settings)
-        fieldsize = (
-            self.connection.SEM.Optics.GetViewfield()
-        )  # application_file.ajhsd or mill settings
-        beam_current = mill_settings.milling_current
+
         spot_size = mill_settings.spot_size  # application_file
         rate = mill_settings.rate  ## in application file called Volume per Dose (m3/C)
         dwell_time = mill_settings.dwell_time  # in seconds ## in application file
@@ -3391,6 +3390,9 @@ class TescanMicroscope(FibsemMicroscope):
 
         print(f"spacing: {mill_settings.spacing}")
 
+        self.set("preset", mill_settings.preset, BeamType.ION)
+        beam_current = self.connection.FIB.Beam.ReadProbeCurrent()
+        print(f"beam_current: {beam_current}")
         layer_settings = IEtching(
             syncWriteField=False,
             writeFieldSize=mill_settings.hfw,
