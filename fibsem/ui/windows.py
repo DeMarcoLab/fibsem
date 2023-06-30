@@ -70,7 +70,6 @@ def detect_features_v2(
 
     return det
 
-
 def run_validation_ui(
     microscope: FibsemMicroscope, settings: MicroscopeSettings, log_path: Path
 ):

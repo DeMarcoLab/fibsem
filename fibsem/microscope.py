@@ -34,16 +34,18 @@ except:
     logging.debug("Automation (TESCAN) not installed.")
 
 try:
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript')
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
-    from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+    from autoscript_sdb_microscope_client.enumerations import PatterningState, CoordinateSystem 
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
+
+    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
 except:
     logging.debug("Autoscript (ThermoFisher) not installed.")
 
@@ -771,8 +773,8 @@ class ThermoMicroscope(FibsemMicroscope):
             dx = dx
             dy = dy
         elif np.isclose(image_rotation, np.pi):
-            dx = -dx
-            dy = -dy
+            dx *= -1.0
+            dy *= -1.0
         
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx, y=0, z=0)

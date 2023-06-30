@@ -73,7 +73,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         if detected_features is not None:
             self.set_detected_features(detected_features)
 
-        message_box_ui(title="Feature Detection Validation",text="Ensure that the features detected are located accurately, if not, please manually correct the locations by dragging. Once locations are valid, click continue",buttons=QtWidgets.QMessageBox.Ok)
+        # message_box_ui(title="Feature Detection Validation",text="Ensure that the features detected are located accurately, if not, please manually correct the locations by dragging. Once locations are valid, click continue",buttons=QtWidgets.QMessageBox.Ok)
 
     def setup_connections(self):
         self.label_instructions.setText(

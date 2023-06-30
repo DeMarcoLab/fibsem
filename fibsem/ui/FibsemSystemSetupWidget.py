@@ -44,7 +44,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def setup_connections(self):
         #
-        self.lineEdit_ipadress.setText("localhost")
+        self.lineEdit_ipadress.setText(cfg.__DEFAULT_IP_ADDRESS__)
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
 
         # buttons

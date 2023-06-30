@@ -27,6 +27,15 @@ SUPPORTED_COORDINATE_SYSTEMS = [
 ] 
 
 
+
+REFERENCE_HFW_WIDE = 2750e-6
+REFERENCE_HFW_LOW = 900e-6
+REFERENCE_HFW_MEDIUM = 400e-6
+REFERENCE_HFW_HIGH = 150e-6
+REFERENCE_HFW_SUPER = 80e-6
+REFERENCE_HFW_ULTRA = 50e-6
+
+
 import os
 import fibsem
 
@@ -90,3 +99,4 @@ def load_microscope_manufacturer(config_path=None) -> str:
 
 
 __SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
+__DEFAULT_IP_ADDRESS__ = "192.168.0.1"
