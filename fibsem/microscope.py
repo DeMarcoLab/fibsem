@@ -45,7 +45,7 @@ try:
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 
-    # from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition, ,MultiChemInsertPosition 
+    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition, ,MultiChemInsertPosition 
 except:
     logging.debug("Autoscript (ThermoFisher) not installed.")
 
@@ -818,9 +818,9 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
         image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
-        if image_rotation == 0:
+        if np.isclose(image_rotation, 0):
             dy = dy
-        elif image_rotation == np.pi:
+        elif np.isclose(image_rotation, np.pi):
             dy = -dy
         # TODO: does this need the perspective correction too?
 

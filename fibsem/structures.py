@@ -30,7 +30,6 @@ try:
         ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
 
     THERMO = True
-    # from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition, MultiChemInsertPosition
 except:
     THERMO = False
 
