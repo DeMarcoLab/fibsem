@@ -441,11 +441,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             point = self.milling_stages[index].pattern.point
             self.update_pattern_ui(pattern_protocol, point)
         else:
-            layers_to_remove = ["Stage 1","annulus_Image","bmp_Image"]
+            layer_names_to_remove = ["Stage 1","annulus_Image","bmp_Image","pattern_crosshair"]
+            layers_to_remove = []
             for layer in self.viewer.layers:
                 
-                if layer.name in layers_to_remove:
-                    self.viewer.layers.remove(layer)
+                if layer.name in layer_names_to_remove:
+                    layers_to_remove.append(layer)
+
+            for layer in layers_to_remove:
+                self.viewer.layers.remove(layer)
             # self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
@@ -468,7 +472,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # get all patterns (2D list, one list of pattern settings per stage)
         patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
-        
+        pattern_centres: list[Point] = [stage.pattern.point for stage in milling_stages if stage.pattern is not None]
+
         try:
             
             from fibsem.structures import FibsemImage
@@ -481,7 +486,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
                 eb_image=self.image_widget.eb_image, 
-                all_patterns=patterns,) # TODO: add names and legend for this
+                all_patterns=patterns,
+                stage_centres=pattern_centres) # TODO: add names and legend for this
             
         except Exception as e:
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
