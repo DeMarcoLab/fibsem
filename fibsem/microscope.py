@@ -3204,7 +3204,7 @@ class TescanMicroscope(FibsemMicroscope):
 
 
 
-    def insert_manipulator(self, name: str = "Working"):
+    def insert_manipulator(self, name: str = "Standby"):
         _check_needle(self.hardware_settings)
         preset_positions = ["Parking","Standby","Working",]
 
