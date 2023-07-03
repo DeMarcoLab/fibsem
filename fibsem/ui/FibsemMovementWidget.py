@@ -47,7 +47,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.positions = []
    
         self.update_ui()
-        self.minimap()
+        # self.minimap()
 
     def setup_connections(self):
 
