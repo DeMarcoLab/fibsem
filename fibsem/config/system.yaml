@@ -1,7 +1,7 @@
 # system
 system:
-  ip_address: "192.168.0.1"
-  manufacturer: "Thermo" # either Tescan, Thermo or Demo
+  ip_address: "localhost"
+  manufacturer: "Demo" # either Tescan, Thermo or Demo
   # beams
   ion:
     voltage: 30000

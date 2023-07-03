@@ -30,6 +30,19 @@
        <string>Patterns</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
+       <item row="1" column="1">
+        <widget class="QComboBox" name="comboBox_milling_stage"/>
+       </item>
+       <item row="5" column="1">
+        <widget class="QComboBox" name="comboBox_milling_current"/>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QLabel" name="label_milling_header">
+         <property name="text">
+          <string>Milling</string>
+         </property>
+        </widget>
+       </item>
        <item row="23" column="0" colspan="2">
         <spacer name="verticalSpacer_2">
          <property name="orientation">
@@ -43,70 +56,12 @@
          </property>
         </spacer>
        </item>
-       <item row="19" column="0">
-        <widget class="QLabel" name="label_centre_y">
-         <property name="text">
-          <string>Centre Y (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QPushButton" name="pushButton_remove_milling_stage">
-         <property name="text">
-          <string>Remove</string>
-         </property>
-        </widget>
-       </item>
-       <item row="18" column="0">
-        <widget class="QLabel" name="label_centre_x">
-         <property name="text">
-          <string>Centre X (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0" colspan="2">
-        <widget class="QLabel" name="label_patterns_header">
-         <property name="text">
-          <string>Patterns</string>
-         </property>
-        </widget>
-       </item>
        <item row="12" column="0">
         <widget class="QLabel" name="label_preset">
          <property name="text">
           <string>Preset</string>
          </property>
         </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QComboBox" name="comboBox_milling_current"/>
-       </item>
-       <item row="21" column="0" rowspan="2" colspan="2">
-        <layout class="QGridLayout" name="gridLayout_patterns"/>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="label_application_file">
-         <property name="text">
-          <string>Application File</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0" colspan="2">
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_milling_current">
-         <property name="text">
-          <string>Current (nA)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="comboBox_milling_stage"/>
        </item>
        <item row="19" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_y">
@@ -121,23 +76,24 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="Line" name="line_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_spacing">
+         <property name="text">
+          <string>Spacing</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
-         <property name="minimum">
-          <double>10.000000000000000</double>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_hfw">
+         <property name="text">
+          <string>Horizontal Field Width (um)</string>
          </property>
-         <property name="maximum">
-          <double>2700.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>150.000000000000000</double>
+        </widget>
+       </item>
+       <item row="13" column="0" colspan="2">
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -154,10 +110,96 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_hfw">
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_rate">
          <property name="text">
-          <string>Horizontal Field Width (um)</string>
+          <string>Rate (mm3/A/s)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="24" column="0">
+        <widget class="QCheckBox" name="checkBox_live_update">
+         <property name="text">
+          <string>Live Update</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_milling_current">
+         <property name="text">
+          <string>Current (nA)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="label_dwell_time">
+         <property name="text">
+          <string>Dwell Time (us)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="pushButton_add_milling_stage">
+         <property name="text">
+          <string>Add</string>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="1">
+        <widget class="QComboBox" name="comboBox_patterns"/>
+       </item>
+       <item row="3" column="0" colspan="2">
+        <widget class="Line" name="line_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="18" column="0">
+        <widget class="QLabel" name="label_centre_x">
+         <property name="text">
+          <string>Centre X (um)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_application_file">
+         <property name="text">
+          <string>Application File</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_spot_size">
+         <property name="minimum">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.010000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="label_spot_size">
+         <property name="text">
+          <string>Spot Size (um)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_rate">
+         <property name="minimum">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.010000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="0">
+        <widget class="QLabel" name="label_centre_y">
+         <property name="text">
+          <string>Centre Y (um)</string>
          </property>
         </widget>
        </item>
@@ -168,13 +210,36 @@
          </property>
         </widget>
        </item>
+       <item row="21" column="0" rowspan="2" colspan="2">
+        <layout class="QGridLayout" name="gridLayout_patterns"/>
+       </item>
        <item row="12" column="1">
         <widget class="QComboBox" name="comboBox_preset"/>
        </item>
-       <item row="16" column="0">
-        <widget class="QLabel" name="label_pattern_set">
+       <item row="2" column="1">
+        <widget class="QPushButton" name="pushButton_remove_milling_stage">
          <property name="text">
-          <string>Pattern</string>
+          <string>Remove</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_spacing">
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
+         <property name="minimum">
+          <double>10.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>2700.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>150.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -191,89 +256,31 @@
        <item row="7" column="1">
         <widget class="QComboBox" name="comboBox_application_file"/>
        </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="pushButton_add_milling_stage">
-         <property name="text">
-          <string>Add</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_rate">
-         <property name="minimum">
-          <double>0.010000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.010000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_rate">
-         <property name="text">
-          <string>Rate (mm3/A/s)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_spot_size">
-         <property name="minimum">
-          <double>0.010000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.010000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="25" column="0" colspan="2">
+       <item row="26" column="0" colspan="2">
         <widget class="QPushButton" name="pushButton">
          <property name="text">
           <string>Update Pattern</string>
          </property>
         </widget>
        </item>
-       <item row="16" column="1">
-        <widget class="QComboBox" name="comboBox_patterns"/>
-       </item>
-       <item row="24" column="0">
-        <widget class="QCheckBox" name="checkBox_live_update">
+       <item row="14" column="0" colspan="2">
+        <widget class="QLabel" name="label_patterns_header">
          <property name="text">
-          <string>Live Update</string>
+          <string>Patterns</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QLabel" name="label_milling_header">
+       <item row="16" column="0">
+        <widget class="QLabel" name="label_pattern_set">
          <property name="text">
-          <string>Milling</string>
+          <string>Pattern</string>
          </property>
         </widget>
        </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_dwell_time">
+       <item row="25" column="0">
+        <widget class="QCheckBox" name="checkBox_move_all_patterns">
          <property name="text">
-          <string>Dwell Time (us)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="label_spot_size">
-         <property name="text">
-          <string>Spot Size (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_spacing">
-         <property name="text">
-          <string>Spacing</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_spacing">
-         <property name="value">
-          <double>1.000000000000000</double>
+          <string>Move All Patterns Together</string>
          </property>
         </widget>
        </item>
