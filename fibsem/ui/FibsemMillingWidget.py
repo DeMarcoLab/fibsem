@@ -388,11 +388,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 pattern_name = milling_stage.pattern.name
                 pattern_renew = patterning.get_pattern(pattern_name)
                 pattern_renew.define(protocol=pattern_dict_existing, point=point)
-                
-                milling_stage.pattern = pattern_renew
-                milling_stage.pattern.point = point
+                pattern_is_valid = self.valid_pattern_location(pattern_renew)
+                if not pattern_is_valid:
+                    logging.info(f"Could not move Pattern {pattern_name}, out of bounds at at {point}")
+                    napari.utils.notifications.show_warning(f"Pattern {pattern_name} is not within the image.")
+                else:
+                    milling_stage.pattern = pattern_renew
+                    milling_stage.pattern.point = point
             
-            logging.info(f"Moved all patterns to {point} ")
+            logging.info(f"Moved patterns to {point} ")
             self.update_ui(milling_stages=self.milling_stages)
             self.milling_position_changed.emit()
 
