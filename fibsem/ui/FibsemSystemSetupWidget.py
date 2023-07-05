@@ -1,6 +1,7 @@
 import logging
 import traceback
-
+import yaml
+import os 
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets
@@ -11,6 +12,8 @@ from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
+from fibsem.ui.utils import _get_file_ui
+
 
 def log_status_message(step: str):
     logging.debug(
@@ -50,6 +53,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         # buttons
         self.microscope_button.clicked.connect(self.connect_to_microscope)
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
+        self.pushButton_save_defaults.connect(self.save_defaults)
 
         #checkboxes
         self.checkBox_eb.stateChanged.connect(self.get_model_from_ui)
@@ -62,6 +66,55 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_needle_tilt.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_gis_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
+
+    def save_defaults(self):
+        system_dict = {}
+
+        system_dict["system"]["ip_address"] = self.lineEdit_ipadress.text()
+        system_dict["system"]["manufacturer"] = self.comboBox_manufacturer.currentText()
+        system_dict["system"]["ion"]["voltage"] = self.spinBox_ion_voltage.value()
+        system_dict["system"]["ion"]["current"] = self.spinBox_ion_current.value()
+        system_dict["system"]["ion"]["plasma_gas"] = self.lineEdit_plasma_gas.text().capitalize()
+        system_dict["system"]["ion"]["eucentric_height"] = self.doubleSpinBox_height_ion.value()
+        system_dict["system"]["ion"]["detector_type"] = self.lineEdit_detector_type_ion.text()
+        system_dict["system"]["ion"]["detector_mode"] = self.lineEdit_detector_mode_ion.text()
+        system_dict["system"]["electron"]["voltage"] = self.spinBox_voltage_eb.value()
+        system_dict["system"]["electron"]["current"] = self.spinBox_current_eb.value()
+        system_dict["system"]["electron"]["eucentric_height"] = self.doubleSpinBox_height_eb.value()
+        system_dict["system"]["electron"]["detector_type"] = self.lineEdit_detector_type_eb.text()
+        system_dict["system"]["electron"]["detector_mode"] = self.lineEdit_detector_mode_eb.text()
+
+        system_dict["stage"]["rotation_flat_to_electron"] = self.spinBox_rotation_eb.value()
+        system_dict["stage"]["rotation_flat_to_ion"] = self.spinBox_rotation_ib.value()
+        system_dict["stage"]["tilt_flat_to_electron"] = self.spinBox_tilt_eb.value()
+        system_dict["stage"]["tilt_flat_to_ion"] = self.spinBox_tilt_ib.value()
+        system_dict["stage"]["pre_tilt"] = self.spinBox_pretilt.value()
+        system_dict["stage"]["needle_stage_height_limit"] = self.doubleSpinBox_needle_height.value()
+
+        system_dict["user"]["milling"]["milling_current"] = self.doubleSpinBox_milling_current.value()*constants.NANO_TO_SI,
+        system_dict["user"]["milling"]["spot_size"] = self.doubleSpinBox_spotsize.value()*constants.NANO_TO_SI,
+        system_dict["user"]["milling"]["rate"] = self.doubleSpinBox_rate.value()*constants.NANO_TO_SI,
+        system_dict["user"]["milling"]["dwell_time"] = self.doubleSpinBox_dwell_time_milling.value()*constants.MICRO_TO_SI,
+    
+        system_dict["user"]["imaging"]["imaging_current"] = self.doubleSpinBox_imaging_current.value()*constants.NANO_TO_SI,
+        system_dict["user"]["imaging"]["resolution"] = [self.spinBox_res_width.value(), self.spinBox_res_height.value()],
+        system_dict["user"]["imaging"]["hfw"] = self.spinBox_hfw.value()*constants.MICRO_TO_SI,
+        system_dict["user"]["imaging"]["beam_type"] = self.lineEdit_beam_type.text(),
+        system_dict["user"]["imaging"]["autocontrast"] = self.checkBox_autocontrast.isChecked(),
+        system_dict["user"]["imaging"]["dwell_time"] = self.doubleSpinBox_dwell_time_imaging.value()*constants.MICRO_TO_SI,
+        system_dict["user"]["imaging"]["save"] = self.checkBox_save.isChecked(),
+        system_dict["user"]["imaging"]["gamma"] = self.checkBox_gamma.isChecked(),
+    
+        protocol_path = _get_file_ui(msg="Select protocol file")
+        if protocol_path == '':
+            return
+        with open(os.path.join(protocol_path), "w") as f:
+            yaml.safe_dump(system_dict, f, indent=4)
+
+        logging.info("Protocol saved to file")
+
+    def set_defaults_to_ui(self):
+        pass
 
     def get_stage_settings_from_ui(self):
         if self.microscope is None:

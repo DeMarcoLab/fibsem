@@ -6,9 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>560</width>
-    <height>494</height>
+    <width>543</width>
+    <height>734</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>10</pointsize>
+   </font>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -18,18 +23,39 @@
     <widget class="QLineEdit" name="lineEdit_ipadress"/>
    </item>
    <item row="3" column="1">
-    <widget class="QComboBox" name="comboBox_manufacturer"/>
+    <widget class="QComboBox" name="comboBox_manufacturer">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+      </font>
+     </property>
+    </widget>
    </item>
    <item row="13" column="0" colspan="2">
     <widget class="QTabWidget" name="tabWidget">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+      </font>
+     </property>
      <property name="currentIndex">
       <number>0</number>
+     </property>
+     <property name="tabBarAutoHide">
+      <bool>false</bool>
      </property>
      <widget class="QWidget" name="stage_tab">
       <attribute name="title">
        <string>Stage</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
+       <item row="6" column="1">
+        <widget class="QDoubleSpinBox" name="needleStageHeightLimitnMmDoubleSpinBox">
+         <property name="minimum">
+          <double>-99.000000000000000</double>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="rotationFlatToIonLabel">
          <property name="text">
@@ -48,6 +74,13 @@
          </property>
          <property name="text">
           <string>Stage </string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="needleStageHeightLimitnMmLabel">
+         <property name="text">
+          <string>Needle Stage Height Limit (mm)</string>
          </property>
         </widget>
        </item>
@@ -129,19 +162,18 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="needleStageHeightLimitnMmLabel">
-         <property name="text">
-          <string>Needle Stage Height Limit (mm)</string>
+       <item row="7" column="0">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="needleStageHeightLimitnMmDoubleSpinBox">
-         <property name="minimum">
-          <double>-99.000000000000000</double>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
          </property>
-        </widget>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -164,6 +196,7 @@
         <widget class="QLabel" name="label_5">
          <property name="font">
           <font>
+           <pointsize>8</pointsize>
            <underline>true</underline>
           </font>
          </property>
@@ -193,6 +226,7 @@
         <widget class="QLabel" name="label_3">
          <property name="font">
           <font>
+           <pointsize>8</pointsize>
            <underline>true</underline>
           </font>
          </property>
@@ -275,6 +309,13 @@
          </property>
         </widget>
        </item>
+       <item row="12" column="0" colspan="2">
+        <widget class="Line" name="line_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="0" colspan="2">
         <widget class="Line" name="line">
          <property name="orientation">
@@ -306,6 +347,7 @@
         <widget class="QLabel" name="label_4">
          <property name="font">
           <font>
+           <pointsize>8</pointsize>
            <underline>true</underline>
           </font>
          </property>
@@ -318,6 +360,7 @@
         <widget class="QLabel" name="label_2">
          <property name="font">
           <font>
+           <pointsize>8</pointsize>
            <underline>true</underline>
           </font>
          </property>
@@ -330,6 +373,7 @@
         <widget class="QLabel" name="label_6">
          <property name="font">
           <font>
+           <pointsize>8</pointsize>
            <underline>true</underline>
           </font>
          </property>
@@ -358,10 +402,512 @@
          </property>
         </widget>
        </item>
-       <item row="12" column="0" colspan="2">
-        <widget class="Line" name="line_4">
+       <item row="15" column="1">
+        <spacer name="verticalSpacer_2">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Defaults</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="1" column="0">
+        <widget class="QTabWidget" name="tabWidget_2">
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+          </font>
+         </property>
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
+         <widget class="QWidget" name="tab_2">
+          <attribute name="title">
+           <string>System</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="spinBox_ion_voltage"/>
+           </item>
+           <item row="14" column="0">
+            <widget class="QLabel" name="label_21">
+             <property name="text">
+              <string>Rotation Flat To Electron (°)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="16" column="0">
+            <widget class="QLabel" name="label_23">
+             <property name="text">
+              <string>Tilt Flat To Electron (°)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="1">
+            <widget class="QLineEdit" name="lineEdit_detector_type_eb"/>
+           </item>
+           <item row="8" column="1">
+            <widget class="QSpinBox" name="spinBox_voltage_eb"/>
+           </item>
+           <item row="12" column="1">
+            <widget class="QLineEdit" name="lineEdit_detector_mode_eb"/>
+           </item>
+           <item row="4" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_height_ion"/>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>Current (nA)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="0" colspan="2">
+            <widget class="QLabel" name="label_20">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+               <underline>true</underline>
+              </font>
+             </property>
+             <property name="text">
+              <string>Stage</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_heigh_eb"/>
+           </item>
+           <item row="12" column="0">
+            <widget class="QLabel" name="label_19">
+             <property name="text">
+              <string>Detector Mode</string>
+             </property>
+            </widget>
+           </item>
+           <item row="18" column="0">
+            <widget class="QLabel" name="label_25">
+             <property name="text">
+              <string>Shuttle  Pretilt (°)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="lineEdit_plasma_gas"/>
+           </item>
+           <item row="0" column="0" colspan="2">
+            <widget class="QLabel" name="label_7">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+               <underline>true</underline>
+              </font>
+             </property>
+             <property name="text">
+              <string>Ion Beam</string>
+             </property>
+            </widget>
+           </item>
+           <item row="20" column="1">
+            <spacer name="verticalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="7" column="0" colspan="2">
+            <widget class="QLabel" name="label_14">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+               <underline>true</underline>
+              </font>
+             </property>
+             <property name="text">
+              <string>Electron Beam</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>Detector Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="17" column="0">
+            <widget class="QLabel" name="label_24">
+             <property name="text">
+              <string>Tilt Flat To Ion (°)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>Eucentric Height  (m)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string>Voltage (V)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QLineEdit" name="lineEdit_detector_type_ion"/>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string>Detector Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_current_eb"/>
+           </item>
+           <item row="15" column="0">
+            <widget class="QLabel" name="label_22">
+             <property name="text">
+              <string>Rotation Flat To Ion (°)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>Eucentric Height (m)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Detector Mode</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>Plasma Gas</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>Current (nA)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_ion_current"/>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLineEdit" name="lineEdit_detector_mode_ion"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Voltage (V)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="19" column="0">
+            <widget class="QLabel" name="label_26">
+             <property name="text">
+              <string>Needle Stage Hieght Limit (m)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="14" column="1">
+            <widget class="QSpinBox" name="spinBox_rotation_eb"/>
+           </item>
+           <item row="15" column="1">
+            <widget class="QSpinBox" name="spinBox_rotation_ib"/>
+           </item>
+           <item row="16" column="1">
+            <widget class="QSpinBox" name="spinBox_tilt_eb"/>
+           </item>
+           <item row="17" column="1">
+            <widget class="QSpinBox" name="spinBox_tilt_ib"/>
+           </item>
+           <item row="18" column="1">
+            <widget class="QSpinBox" name="spinBox_pretilt"/>
+           </item>
+           <item row="19" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_needle_height"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab_3">
+          <attribute name="title">
+           <string>User</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_6">
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_33">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Imaging Current (nA)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_30">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Rate (mm3/A/s)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="label_38">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Dwell Time (µs)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QLabel" name="label_37">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Autocontrast</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_34">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Resolution</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_29">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Spot Size (nm)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="14" column="0" colspan="2">
+            <spacer name="verticalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="12" column="0">
+            <widget class="QLabel" name="label_39">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Save</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_27">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+               <underline>true</underline>
+              </font>
+             </property>
+             <property name="text">
+              <string>Milling</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="1">
+            <widget class="QCheckBox" name="checkBox_gamma">
+             <property name="text">
+              <string>Enabled</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QCheckBox" name="checkBox_autocontrast">
+             <property name="text">
+              <string>Enabled</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="label_35">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Horizontal Field Width (µm)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="label_36">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Beam</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="0">
+            <widget class="QLabel" name="label_40">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Gamma </string>
+             </property>
+            </widget>
+           </item>
+           <item row="12" column="1">
+            <widget class="QCheckBox" name="checkBox_save">
+             <property name="text">
+              <string>Enabled</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_32">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+               <underline>true</underline>
+              </font>
+             </property>
+             <property name="text">
+              <string>imaging</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_31">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Dwell time (µs)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_28">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Milling Current (nA)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QSpinBox" name="spinBox_res_width"/>
+           </item>
+           <item row="7" column="2">
+            <widget class="QSpinBox" name="spinBox_res_height"/>
+           </item>
+           <item row="6" column="1" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_current"/>
+           </item>
+           <item row="8" column="1" colspan="2">
+            <widget class="QSpinBox" name="spinBox_hfw"/>
+           </item>
+           <item row="9" column="1" colspan="2">
+            <widget class="QLineEdit" name="lineEdit_beam_type"/>
+           </item>
+           <item row="11" column="1" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time_imaging"/>
+           </item>
+           <item row="4" column="1" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time_milling"/>
+           </item>
+           <item row="3" column="1" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_rate"/>
+           </item>
+           <item row="2" column="1" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_spotsize"/>
+           </item>
+           <item row="1" column="1" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="pushButton_save_defaults">
+         <property name="text">
+          <string>Save Defaults To Yaml</string>
          </property>
         </widget>
        </item>
@@ -371,6 +917,11 @@
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="label_ip_address">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>IP address</string>
      </property>
@@ -378,6 +929,11 @@
    </item>
    <item row="3" column="0">
     <widget class="QLabel" name="label_manufacturer">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>Manufacturer </string>
      </property>
@@ -385,6 +941,11 @@
    </item>
    <item row="4" column="0" colspan="2">
     <widget class="QPushButton" name="microscope_button">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>Connect to Microscope</string>
      </property>
@@ -403,19 +964,6 @@
       <string>System</string>
      </property>
     </widget>
-   </item>
-   <item row="14" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>
