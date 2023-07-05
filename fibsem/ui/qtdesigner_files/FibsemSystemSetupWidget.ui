@@ -438,7 +438,11 @@
           </attribute>
           <layout class="QGridLayout" name="gridLayout_5">
            <item row="1" column="1">
-            <widget class="QSpinBox" name="spinBox_ion_voltage"/>
+            <widget class="QSpinBox" name="spinBox_ion_voltage">
+             <property name="maximum">
+              <number>100000</number>
+             </property>
+            </widget>
            </item>
            <item row="14" column="0">
             <widget class="QLabel" name="label_21">
@@ -458,13 +462,21 @@
             <widget class="QLineEdit" name="lineEdit_detector_type_eb"/>
            </item>
            <item row="8" column="1">
-            <widget class="QSpinBox" name="spinBox_voltage_eb"/>
+            <widget class="QSpinBox" name="spinBox_voltage_eb">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+            </widget>
            </item>
            <item row="12" column="1">
             <widget class="QLineEdit" name="lineEdit_detector_mode_eb"/>
            </item>
            <item row="4" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_height_ion"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_height_ion">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+            </widget>
            </item>
            <item row="9" column="0">
             <widget class="QLabel" name="label_16">
@@ -487,7 +499,11 @@
             </widget>
            </item>
            <item row="10" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_heigh_eb"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_height_eb">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+            </widget>
            </item>
            <item row="12" column="0">
             <widget class="QLabel" name="label_19">
@@ -584,7 +600,14 @@
             </widget>
            </item>
            <item row="9" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_current_eb"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_current_eb">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
            </item>
            <item row="15" column="0">
             <widget class="QLabel" name="label_22">
@@ -622,7 +645,14 @@
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_ion_current"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_ion_current">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
+             </property>
+            </widget>
            </item>
            <item row="6" column="1">
             <widget class="QLineEdit" name="lineEdit_detector_mode_ion"/>
@@ -642,22 +672,46 @@
             </widget>
            </item>
            <item row="14" column="1">
-            <widget class="QSpinBox" name="spinBox_rotation_eb"/>
+            <widget class="QSpinBox" name="spinBox_rotation_eb">
+             <property name="maximum">
+              <number>360</number>
+             </property>
+            </widget>
            </item>
            <item row="15" column="1">
-            <widget class="QSpinBox" name="spinBox_rotation_ib"/>
+            <widget class="QSpinBox" name="spinBox_rotation_ib">
+             <property name="maximum">
+              <number>360</number>
+             </property>
+            </widget>
            </item>
            <item row="16" column="1">
-            <widget class="QSpinBox" name="spinBox_tilt_eb"/>
+            <widget class="QSpinBox" name="spinBox_tilt_eb">
+             <property name="maximum">
+              <number>360</number>
+             </property>
+            </widget>
            </item>
            <item row="17" column="1">
-            <widget class="QSpinBox" name="spinBox_tilt_ib"/>
+            <widget class="QSpinBox" name="spinBox_tilt_ib">
+             <property name="maximum">
+              <number>360</number>
+             </property>
+            </widget>
            </item>
            <item row="18" column="1">
-            <widget class="QSpinBox" name="spinBox_pretilt"/>
+            <widget class="QSpinBox" name="spinBox_pretilt">
+             <property name="maximum">
+              <number>360</number>
+             </property>
+            </widget>
            </item>
            <item row="19" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_needle_height"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_needle_height">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -871,34 +925,85 @@
             </widget>
            </item>
            <item row="7" column="1">
-            <widget class="QSpinBox" name="spinBox_res_width"/>
+            <widget class="QSpinBox" name="spinBox_res_width">
+             <property name="maximum">
+              <number>100000</number>
+             </property>
+            </widget>
            </item>
            <item row="7" column="2">
-            <widget class="QSpinBox" name="spinBox_res_height"/>
+            <widget class="QSpinBox" name="spinBox_res_height">
+             <property name="maximum">
+              <number>100000</number>
+             </property>
+            </widget>
            </item>
            <item row="6" column="1" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_current"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_current">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
+             </property>
+            </widget>
            </item>
            <item row="8" column="1" colspan="2">
-            <widget class="QSpinBox" name="spinBox_hfw"/>
+            <widget class="QSpinBox" name="spinBox_hfw">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+            </widget>
            </item>
            <item row="9" column="1" colspan="2">
             <widget class="QLineEdit" name="lineEdit_beam_type"/>
            </item>
            <item row="11" column="1" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time_imaging"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time_imaging">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
+             </property>
+            </widget>
            </item>
            <item row="4" column="1" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time_milling"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time_milling">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
            </item>
            <item row="3" column="1" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_rate"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_rate">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+            </widget>
            </item>
            <item row="2" column="1" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_spotsize"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_spotsize">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
            </item>
            <item row="1" column="1" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
