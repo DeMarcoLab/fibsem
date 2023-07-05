@@ -637,6 +637,7 @@ class BeamSettings:
     dwell_time: float = None
     stigmation: Point = None # should be list of points?
     shift: Point = None # same? it is being turned to fibsem rectangle? needs 4 points?
+    scan_rotation: float = None
 
     ## FROM DICT AND TO DICT DOES NOT HAVE VOLTAGE (ADDED IN)
 

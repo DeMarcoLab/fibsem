@@ -675,6 +675,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 hfw=self.connection.beams.electron_beam.horizontal_field_width.value,
                 resolution=[width_eb, height_eb],
                 dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value,
+                scan_rotation=self.connection.beams.electron_beam.scanning.rotation.value,
             )
         else:
             eb_settings=None
@@ -687,6 +688,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 hfw=self.connection.beams.ion_beam.horizontal_field_width.value,
                 resolution=[width_ib, height_ib],
                 dwell_time=self.connection.beams.ion_beam.scanning.dwell_time.value,
+                scan_rotation=self.connection.beams.ion_beam.scanning.rotation.value,
             )
         else:
             ib_settings=None
@@ -1969,6 +1971,7 @@ class ThermoMicroscope(FibsemMicroscope):
             dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.dwell_time.value,
             stigmation=self.get("stigmation", beam_type),
             beam_shift=self.get("shift", beam_type),
+            scan_rotation=self.get("scan_rotation", beam_type),
         )
 
         return beam_settings
@@ -2568,6 +2571,7 @@ class TescanMicroscope(FibsemMicroscope):
                     float(image.Header["SEM"]["ImageShiftX"]),
                     float(image.Header["SEM"]["ImageShiftY"]),
                 ),
+                scan_rotation=self.connection.SEM.Optics.GetImageRotation(),
             ),
             ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
@@ -2674,6 +2678,7 @@ class TescanMicroscope(FibsemMicroscope):
                     float(image.Header["FIB"]["ImageShiftX"]),
                     float(image.Header["FIB"]["ImageShiftY"]),
                 ),
+                scan_rotation=self.connection.FIB.Optics.GetImageRotation(),
             ),
         )
 
@@ -2843,6 +2848,7 @@ class TescanMicroscope(FibsemMicroscope):
                 dwell_time=image_eb.metadata.image_settings.dwell_time,
                 stigmation=image_eb.metadata.microscope_state.eb_settings.stigmation,
                 shift=image_eb.metadata.microscope_state.eb_settings.shift,
+                scan_rotation=self.connection.SEM.Optics.GetImageRotation()
             )
             else:
                 eb_settings = BeamSettings(BeamType.ELECTRON)
@@ -2861,6 +2867,7 @@ class TescanMicroscope(FibsemMicroscope):
                         dwell_time=image_ib.metadata.image_settings.dwell_time,
                         stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
                         shift=image_ib.metadata.microscope_state.ib_settings.shift,
+                        scan_rotation=self.connection.FIB.Optics.GetImageRotation()
                     )
                 
             else:
@@ -4124,6 +4131,7 @@ class TescanMicroscope(FibsemMicroscope):
             resolution=self.last_image(beam_type).metadata.image_settings.resolution,
             voltage=self.get("voltage", beam_type),
             dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time
+            scan_rotation=self.get("scan_rotation", beam_type), 
         )
 
         return beam_settings
@@ -4361,6 +4369,7 @@ class DemoMicroscope(FibsemMicroscope):
             dwell_time=1e-6,
             stigmation=Point(0, 0),
             shift=Point(0, 0),
+            scan_rotation=0,
         )
         self.ion_beam = BeamSettings(
             beam_type=BeamType.ION,
@@ -4372,6 +4381,7 @@ class DemoMicroscope(FibsemMicroscope):
             dwell_time=1e-6,
             stigmation=Point(0, 0),
             shift=Point(0, 0),
+            scan_rotation=0,
         )
 
         self.electron_detector_settings = FibsemDetectorSettings(
@@ -4806,6 +4816,10 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "shift":
             _check_beam(beam_type, self.hardware_settings)
             return Point(beam.shift.x, beam.shift.y)
+
+        if key == "scan_rotation":
+            _check_beam(beam_type, self.hardware_settings)
+            return beam.scan_rotation
 
         if key == "detector_type":
             return detector.type
