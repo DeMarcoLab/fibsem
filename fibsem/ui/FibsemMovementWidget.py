@@ -1,22 +1,26 @@
+import io
 import logging
-import traceback
 import os
-import yaml
+import traceback
+from copy import deepcopy
 from pathlib import Path
+
 import napari
 import napari.utils.notifications
 import numpy as np
-from PyQt5 import QtWidgets
-from PyQt5 import QtCore
-from PyQt5.QtGui import QPixmap, QImage
-from copy import deepcopy
+import yaml
+from PIL import Image
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtGui import QImage, QPixmap
+
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (BeamType, FibsemStagePosition,
                                MicroscopeSettings, MovementMode, Point)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
-from fibsem.ui.utils import _get_save_file_ui, _get_file_ui
+from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
+
 
 def log_status_message(step: str):
     logging.debug(
@@ -283,8 +287,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         image_from_plot = fig.to_image(format="png", engine="kaleido")
 
-        from PIL import Image
-        import io
+
         pil_image = Image.open(io.BytesIO(image_from_plot))
         # Convert the PIL image to a QImage
         image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
