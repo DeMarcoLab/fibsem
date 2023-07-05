@@ -4130,7 +4130,7 @@ class TescanMicroscope(FibsemMicroscope):
             shift=self.get("shift", beam_type),
             resolution=self.last_image(beam_type).metadata.image_settings.resolution,
             voltage=self.get("voltage", beam_type),
-            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time
+            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time,
             scan_rotation=self.get("scan_rotation", beam_type), 
         )
 

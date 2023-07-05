@@ -9,7 +9,7 @@ from PyQt5.QtCore import pyqtSignal
 from fibsem import config as cfg
 from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings, StageSettings
+from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 
 def log_status_message(step: str):
@@ -51,6 +51,18 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.microscope_button.clicked.connect(self.connect_to_microscope)
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
 
+        #checkboxes
+        self.checkBox_eb.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_ib.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_stage_enabled.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_stage_rotation.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_stage_tilt.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_needle_enabled.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_needle_rotation.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_needle_tilt.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_gis_enabled.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
+
     def get_stage_settings_from_ui(self):
         if self.microscope is None:
             return
@@ -82,6 +94,35 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         )
         self.rotationFlatToIonSpinBox.setValue(stage_settings.rotation_flat_to_ion)
         self.preTiltSpinBox.setValue(stage_settings.pre_tilt)
+
+    def set_model_to_ui(self, hardware_settings: FibsemHardware) -> None:
+        self.checkBox_eb.setChecked(hardware_settings.electron_beam)
+        self.checkBox_ib.setChecked(hardware_settings.ion_beam)
+        self.checkBox_stage_enabled.setChecked(hardware_settings.stage_rotation)
+        self.checkBox_stage_rotation.setChecked(hardware_settings.stage_rotation)
+        self.checkBox_stage_tilt.setChecked(hardware_settings.stage_tilt)
+        self.checkBox_needle_enabled.setChecked(hardware_settings.manipulator_enabled)
+        self.checkBox_needle_rotation.setChecked(hardware_settings.manipulator_rotation)
+        self.checkBox_needle_tilt.setChecked(hardware_settings.manipulator_tilt)
+        self.checkBox_gis_enabled.setChecked(hardware_settings.gis_enabled)
+        self.checkBox_multichem.setChecked(hardware_settings.gis_multichem)
+
+    def get_model_from_ui(self) -> FibsemHardware:
+        hardware_settings = FibsemHardware()
+        hardware_settings.electron_beam = self.checkBox_eb.isChecked()
+        hardware_settings.ion_beam = self.checkBox_ib.isChecked()
+        hardware_settings.stage_rotation = self.checkBox_stage_rotation.isChecked()
+        hardware_settings.stage_tilt = self.checkBox_stage_tilt.isChecked()
+        hardware_settings.manipulator_enabled = self.checkBox_needle_enabled.isChecked()
+        hardware_settings.manipulator_rotation = self.checkBox_needle_rotation.isChecked()
+        hardware_settings.manipulator_tilt = self.checkBox_needle_tilt.isChecked()
+        hardware_settings.gis_enabled = self.checkBox_gis_enabled.isChecked()
+        hardware_settings.gis_multichem = self.checkBox_multichem.isChecked()
+
+        self.settings.hardware = hardware_settings
+        self.microscope.hardware_settings = hardware_settings
+        logging.info(f"Updated hardware settings: {hardware_settings}")
+
 
     def connect(self):
         if self.lineEdit_ipadress.text() == "":
@@ -141,6 +182,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.microscope_button.setText("Microscope Connected")
             self.microscope_button.setStyleSheet("background-color: green")
             self.set_stage_settings_to_ui(self.settings.system.stage)
+            self.set_model_to_ui(self.settings.hardware)
             self.connected_signal.emit()
 
         else:
