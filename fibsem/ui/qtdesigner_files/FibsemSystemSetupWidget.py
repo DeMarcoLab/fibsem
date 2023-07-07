@@ -425,6 +425,7 @@ class Ui_Form(object):
         self.checkBox_gamma.setObjectName("checkBox_gamma")
         self.gridLayout_6.addWidget(self.checkBox_gamma, 13, 1, 1, 1)
         self.checkBox_autocontrast = QtWidgets.QCheckBox(self.tab_3)
+        self.checkBox_autocontrast.setTristate(False)
         self.checkBox_autocontrast.setObjectName("checkBox_autocontrast")
         self.gridLayout_6.addWidget(self.checkBox_autocontrast, 10, 1, 1, 1)
         self.label_35 = QtWidgets.QLabel(self.tab_3)
@@ -547,7 +548,7 @@ class Ui_Form(object):
 
         self.retranslateUi(Form)
         self.tabWidget.setCurrentIndex(0)
-        self.tabWidget_2.setCurrentIndex(1)
+        self.tabWidget_2.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
