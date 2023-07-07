@@ -7,6 +7,7 @@ import napari.utils.notifications
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
+import fibsem
 from fibsem import config as cfg
 from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
@@ -54,6 +55,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.microscope_button.clicked.connect(self.connect_to_microscope)
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
         self.pushButton_save_defaults.clicked.connect(self.save_defaults)
+        self.pushButton_save_model.clicked.connect(self.save_model)
 
         #checkboxes
         self.checkBox_eb.stateChanged.connect(self.get_model_from_ui)
@@ -192,7 +194,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def set_model_to_ui(self, hardware_settings: FibsemHardware) -> None:
         self.checkBox_eb.setChecked(hardware_settings.electron_beam)
         self.checkBox_ib.setChecked(hardware_settings.ion_beam)
-        self.checkBox_stage_enabled.setChecked(hardware_settings.stage_rotation)
+        self.checkBox_stage_enabled.setChecked(hardware_settings.stage_enabled)
         self.checkBox_stage_rotation.setChecked(hardware_settings.stage_rotation)
         self.checkBox_stage_tilt.setChecked(hardware_settings.stage_tilt)
         self.checkBox_needle_enabled.setChecked(hardware_settings.manipulator_enabled)
@@ -216,6 +218,26 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.settings.hardware = hardware_settings
         self.microscope.hardware_settings = hardware_settings
         logging.info(f"Updated hardware settings: {hardware_settings}")
+        return hardware_settings
+
+    def save_model(self) -> None:
+        hardware_settings = self.get_model_from_ui()
+
+        hardware_dict = hardware_settings.__to_dict__()
+        hardware_dict["system"] = {}
+        hardware_dict["system"]["name"] = self.microscope.model
+        hardware_dict["system"]["manufacturer"] = self.comboBox_manufacturer.currentText()
+        hardware_dict["system"]["description"] = ""
+        hardware_dict["system"]["version"] = fibsem.__version__
+        from PyQt5.QtWidgets import QInputDialog
+        hardware_dict["system"]["id"] = QInputDialog.getText(self, "Microscope ID", "Please enter ID of microscope")[0]
+        
+        from fibsem import config as cfg
+        protocol_path = os.path.join(cfg.BASE_PATH, "fibsem", "config", "model.yaml")
+        with open(os.path.join(protocol_path), "w") as f:
+            yaml.safe_dump(hardware_dict, f, indent=4)
+
+        logging.info("Model saved to file")
 
 
     def connect(self):

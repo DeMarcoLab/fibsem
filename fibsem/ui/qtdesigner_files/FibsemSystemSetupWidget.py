@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(543, 734)
+        Form.resize(543, 753)
         font = QtGui.QFont()
         font.setPointSize(10)
         Form.setFont(font)
@@ -209,6 +209,9 @@ class Ui_Form(object):
         self.gridLayout_3.addWidget(self.checkBox_multichem, 14, 1, 1, 1)
         spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.gridLayout_3.addItem(spacerItem2, 15, 1, 1, 1)
+        self.pushButton_save_model = QtWidgets.QPushButton(self.tab_microscope)
+        self.pushButton_save_model.setObjectName("pushButton_save_model")
+        self.gridLayout_3.addWidget(self.pushButton_save_model, 0, 2, 1, 1)
         self.tabWidget.addTab(self.tab_microscope, "")
         self.tab = QtWidgets.QWidget()
         self.tab.setObjectName("tab")
@@ -575,6 +578,7 @@ class Ui_Form(object):
         self.label_6.setText(_translate("Form", "GIS"))
         self.checkBox_needle_enabled.setText(_translate("Form", "Enabled"))
         self.checkBox_multichem.setText(_translate("Form", "MultiChem"))
+        self.pushButton_save_model.setText(_translate("Form", "Save Model"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_microscope), _translate("Form", "Microscope Model"))
         self.label_21.setText(_translate("Form", "Rotation Flat To Electron (°)"))
         self.label_23.setText(_translate("Form", "Tilt Flat To Electron (°)"))
