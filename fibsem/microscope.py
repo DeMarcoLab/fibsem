@@ -585,6 +585,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 if not self.image_queue.empty():
                     image = self.image_queue.get(timeout=1)
                     if image.metadata.image_settings.save:
+                        image.metadata.image_settings.label = f"{image.metadata.image_settings.label}_{utils.current_timestamp()}"
                         filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
                         image.save(save_path=filename)
                         logging.info(f"Saved image to {filename}")
@@ -2834,6 +2835,7 @@ class TescanMicroscope(FibsemMicroscope):
                 if not self.image_queue.empty():
                     image = self.image_queue.get(timeout=1)
                     if image.metadata.image_settings.save:
+                        image.metadata.image_settings.label = f"{image.metadata.image_settings.label}_{utils.current_timestamp()}"                        
                         filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
                         image.save(save_path=filename)
                         logging.info(f"Saved image to {filename}")
@@ -4634,6 +4636,7 @@ class DemoMicroscope(FibsemMicroscope):
             while not self.stop_event.is_set():
                 image = self.image_queue.get(timeout=1)
                 if image.metadata.image_settings.save:
+                    image.metadata.image_settings.label = f"{image.metadata.image_settings.label}_{utils.current_timestamp()}"
                     filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
                     image.save(save_path=filename)
                     logging.info(f"Saved image to {filename}")
