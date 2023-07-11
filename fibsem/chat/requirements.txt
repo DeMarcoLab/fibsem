@@ -1,0 +1,8 @@
+langchain
+openai
+jupyter
+unstructured 
+chromadb 
+Cython 
+tiktoken
+pdf2image

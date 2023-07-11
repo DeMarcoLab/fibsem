@@ -246,5 +246,5 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
         df_tmp = pd.read_csv(DATAFRAME_PATH)
         df = pd.concat([df_tmp, df], axis=0, ignore_index=True)
     
-    logging.info(f"{df.tail(10)}")
+    # logging.info(f"{df.tail(10)}")
     df.to_csv(DATAFRAME_PATH, index=False)

@@ -260,6 +260,50 @@ def convert_pattern_to_napari_rect(
     shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
     return shape
 
+def create_crosshair_shape(centre_point: Point, image: FibsemImage,eb_image: FibsemImage):
+
+    icy, icx = (
+        image.metadata.image_settings.resolution[1] // 2,
+        image.metadata.image_settings.resolution[0] // 2,
+    )
+
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
+    pattern_centre_x = centre_point.x
+    pattern_centre_y = centre_point.y
+
+    cx = int(icx + (pattern_centre_x / pixelsize_y))
+    cy = int(icy - (pattern_centre_y / pixelsize_y))
+
+    r_angles = [0,np.deg2rad(90)] #
+    w = 40
+    h = 5
+    crosshair_shapes = []
+
+    for r in r_angles:
+        xmin, xmax = -w / 2, w / 2
+        ymin, ymax = -h / 2, h / 2
+        px0 = cx + (xmin * np.cos(r) - ymin * np.sin(r))
+        py0 = cy + (xmin * np.sin(r) + ymin * np.cos(r))
+        px1 = cx + (xmax * np.cos(r) - ymin * np.sin(r))
+        py1 = cy + (xmax * np.sin(r) + ymin * np.cos(r))
+        px2 = cx + (xmax * np.cos(r) - ymax * np.sin(r))
+        py2 = cy + (xmax * np.sin(r) + ymax * np.cos(r))
+        px3 = cx + (xmin * np.cos(r) - ymax * np.sin(r))
+        py3 = cy + (xmin * np.sin(r) + ymax * np.cos(r))
+        # napari shape format
+        shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
+        if eb_image is not None:
+                for c in shape:
+                    c[1] += eb_image.data.shape[1]
+        crosshair_shapes.append(shape)
+
+    return crosshair_shapes
+
+
+
+
+
 
 def convert_bitmap_pattern_to_napari_image(
         pattern_settings: FibsemPatternSettings, image: FibsemImage
@@ -346,6 +390,7 @@ def _draw_patterns_in_napari(
     ib_image: FibsemImage,
     eb_image: FibsemImage,
     all_patterns: list[FibsemPatternSettings],
+    stage_centres: list[Point] = None,
 ):
     _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
 
@@ -370,7 +415,7 @@ def _draw_patterns_in_napari(
                 continue
             elif pattern_settings.pattern is FibsemPattern.Annulus:
                 annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
-                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap='yellow',opacity=0.4)
+                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=colour[i % 5],opacity=0.4)
                 shape_patterns = []
                 continue
 
@@ -396,6 +441,21 @@ def _draw_patterns_in_napari(
                 shape_patterns,
                 name=f"Stage {i+1}",
                 shape_type=shape_types,
+                edge_width=0.5,
+                edge_color=colour[i % 5],
+                face_color=colour[i % 5],
+                opacity=0.5,
+                blending="translucent",
+            )
+        
+        if stage_centres is not None:
+            crosshair_point = stage_centres[i]
+
+            crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
+            viewer.add_shapes(
+                crosshair_shapes,
+                name="pattern_crosshair",
+                shape_type=["rectangle","rectangle"],
                 edge_width=0.5,
                 edge_color=colour[i % 5],
                 face_color=colour[i % 5],

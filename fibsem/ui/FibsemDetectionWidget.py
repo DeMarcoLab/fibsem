@@ -12,6 +12,7 @@ from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.segmentation import model as fibsem_model
+from fibsem.ui.utils import message_box_ui
 from fibsem.segmentation.model import load_model
 from fibsem.structures import (
     BeamType,
@@ -63,12 +64,16 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.checkBox_use_segmentation.setVisible(False)
         self.checkBox_use_feature_detection.setChecked(self.USE_FEATURE_DETECTION)
         self.checkBox_use_evaluation.setChecked(self.USE_EVALUATION)
+        
+
 
         self.setup_connections()
 
         # set detected features
         if detected_features is not None:
             self.set_detected_features(detected_features)
+
+        # message_box_ui(title="Feature Detection Validation",text="Ensure that the features detected are located accurately, if not, please manually correct the locations by dragging. Once locations are valid, click continue",buttons=QtWidgets.QMessageBox.Ok)
 
     def setup_connections(self):
         self.label_instructions.setText(
@@ -282,6 +287,8 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.continue_signal.emit(self.detected_features)
         print("continue signal emitted")
 
+        
+
         if not self._EVAL_MODE:
             self.close()
             self.viewer.close()
@@ -417,7 +424,7 @@ from fibsem.structures import MicroscopeSettings
 from fibsem.detection.detection import Feature, DetectedFeatures
 from fibsem import acquire
 def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: list[Feature], validate: bool = True) -> DetectedFeatures:
-
+    print("GOT TO DETECTION UI")
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
     # detect features
@@ -430,7 +437,7 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
         det_widget_ui = FibsemDetectionWidgetUI(
             viewer=viewer, 
             image = image, 
-            _EVAL_MODE=False)
+            _EVAL_MODE=False,)
         
         det_widget_ui.set_detected_features(det)
 
@@ -441,6 +448,7 @@ def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, feat
         # napari.run()
 
         det = det_widget_ui.detected_features
+
     
     return det
 
