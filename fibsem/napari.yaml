@@ -1,0 +1,13 @@
+name: fibsem
+display_name: OpenFIBSEM
+contributions:
+  commands:
+
+      # Widgets
+    - id: fibsem.viewer
+      python_name: fibsem.ui.FibsemUI:FibsemUI
+      title: OpenFIBSEM UI
+
+  widgets:
+    - command: fibsem.viewer
+      display_name: OpenFIBSEM
