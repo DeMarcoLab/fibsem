@@ -23,7 +23,25 @@ cd fibsem
 conda env create -f environment.yml
 conda activate fibsem
 pip install -e .
-``` 
+```
+
+### Installation through Python virtualenv
+
+Alternatively to using Conda, you may use the Python virtualenv tool to create a virtual environment for the project.
+
+Firstly, install python 3.9+ on your system.
+In a terminal window, move to a directory where you would like to place the virtual environment and then create a virtual environment using the following command
+```
+python -m venv fibsem
+```
+Once the environment is created, activate the environment using the following command
+```
+fibsem\Scripts\activate.bat
+```
+Once activated, move to the fibsem root directory and install fibsem like so
+```
+pip install -e .
+```
 
 ## Installing Microscope Hardware APIs
 
@@ -58,6 +76,8 @@ Typically, you can expect the environment is named 'Autoscript', and its install
 
 2. Find the conda environment location you just made called `fibsem`.
 `...conda/envs/fibsem/Lib/site-packages/`
+
+*Note: if you used python virtual env to create a virtual environment, the location of the fibsem/Lib/site-packages will be where the virtual environment was created. Where this document mentions the site-packages directory, it is referring to the site-packages directory of the virtual environment.*
 
 ***Troubleshooting:** If you're having trouble finding the conda environment location for `fibsem`*
 *you can open the *Anaconda terminal* on your machine and type `where python` (Windows) or `which python` (Unix).*

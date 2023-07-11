@@ -34,6 +34,8 @@ except:
     logging.debug("Automation (TESCAN) not installed.")
 
 try:
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript')
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
@@ -44,6 +46,8 @@ try:
         ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
+
+    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
 except:
     logging.debug("Autoscript (ThermoFisher) not installed.")
 
@@ -677,6 +681,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 hfw=self.connection.beams.electron_beam.horizontal_field_width.value,
                 resolution=[width_eb, height_eb],
                 dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value,
+                scan_rotation=self.connection.beams.electron_beam.scanning.rotation.value,
             )
         else:
             eb_settings=None
@@ -689,6 +694,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 hfw=self.connection.beams.ion_beam.horizontal_field_width.value,
                 resolution=[width_ib, height_ib],
                 dwell_time=self.connection.beams.ion_beam.scanning.dwell_time.value,
+                scan_rotation=self.connection.beams.ion_beam.scanning.rotation.value,
             )
         else:
             ib_settings=None
@@ -775,8 +781,8 @@ class ThermoMicroscope(FibsemMicroscope):
             dx = dx
             dy = dy
         elif np.isclose(image_rotation, np.pi):
-            dx = -dx
-            dy = -dy
+            dx *= -1.0
+            dy *= -1.0
         
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx, y=0, z=0)
@@ -1977,6 +1983,7 @@ class ThermoMicroscope(FibsemMicroscope):
             dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.dwell_time.value,
             stigmation=self.get("stigmation", beam_type),
             beam_shift=self.get("shift", beam_type),
+            scan_rotation=self.get("scan_rotation", beam_type),
         )
 
         return beam_settings
@@ -2576,6 +2583,7 @@ class TescanMicroscope(FibsemMicroscope):
                     float(image.Header["SEM"]["ImageShiftX"]),
                     float(image.Header["SEM"]["ImageShiftY"]),
                 ),
+                scan_rotation=self.connection.SEM.Optics.GetImageRotation(),
             ),
             ib_settings=BeamSettings(beam_type=BeamType.ION),
         )
@@ -2682,6 +2690,7 @@ class TescanMicroscope(FibsemMicroscope):
                     float(image.Header["FIB"]["ImageShiftX"]),
                     float(image.Header["FIB"]["ImageShiftY"]),
                 ),
+                scan_rotation=self.connection.FIB.Optics.GetImageRotation(),
             ),
         )
 
@@ -2851,6 +2860,7 @@ class TescanMicroscope(FibsemMicroscope):
                 dwell_time=image_eb.metadata.image_settings.dwell_time,
                 stigmation=image_eb.metadata.microscope_state.eb_settings.stigmation,
                 shift=image_eb.metadata.microscope_state.eb_settings.shift,
+                scan_rotation=self.connection.SEM.Optics.GetImageRotation()
             )
             else:
                 eb_settings = BeamSettings(BeamType.ELECTRON)
@@ -2869,6 +2879,7 @@ class TescanMicroscope(FibsemMicroscope):
                         dwell_time=image_ib.metadata.image_settings.dwell_time,
                         stigmation=image_ib.metadata.microscope_state.ib_settings.stigmation,
                         shift=image_ib.metadata.microscope_state.ib_settings.shift,
+                        scan_rotation=self.connection.FIB.Optics.GetImageRotation()
                     )
                 
             else:
@@ -3422,10 +3433,7 @@ class TescanMicroscope(FibsemMicroscope):
             The method does not start the milling process.
         """
         _check_beam(BeamType.ION, self.hardware_settings)
-        fieldsize = (
-            self.connection.SEM.Optics.GetViewfield()
-        )  # application_file.ajhsd or mill settings
-        beam_current = mill_settings.milling_current
+
         spot_size = mill_settings.spot_size  # application_file
         rate = mill_settings.rate  ## in application file called Volume per Dose (m3/C)
         dwell_time = mill_settings.dwell_time  # in seconds ## in application file
@@ -3437,6 +3445,9 @@ class TescanMicroscope(FibsemMicroscope):
 
         print(f"spacing: {mill_settings.spacing}")
 
+        self.set("preset", mill_settings.preset, BeamType.ION)
+        beam_current = self.connection.FIB.Beam.ReadProbeCurrent()
+        print(f"beam_current: {beam_current}")
         layer_settings = IEtching(
             syncWriteField=False,
             writeFieldSize=mill_settings.hfw,
@@ -4167,7 +4178,8 @@ class TescanMicroscope(FibsemMicroscope):
             shift=self.get("shift", beam_type),
             resolution=self.last_image(beam_type).metadata.image_settings.resolution,
             voltage=self.get("voltage", beam_type),
-            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time
+            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time,
+            scan_rotation=self.get("scan_rotation", beam_type), 
         )
 
         return beam_settings
@@ -4405,6 +4417,7 @@ class DemoMicroscope(FibsemMicroscope):
             dwell_time=1e-6,
             stigmation=Point(0, 0),
             shift=Point(0, 0),
+            scan_rotation=0,
         )
         self.ion_beam = BeamSettings(
             beam_type=BeamType.ION,
@@ -4416,6 +4429,7 @@ class DemoMicroscope(FibsemMicroscope):
             dwell_time=1e-6,
             stigmation=Point(0, 0),
             shift=Point(0, 0),
+            scan_rotation=0,
         )
 
         self.electron_detector_settings = FibsemDetectorSettings(
@@ -4860,6 +4874,10 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "shift":
             _check_beam(beam_type, self.hardware_settings)
             return Point(beam.shift.x, beam.shift.y)
+
+        if key == "scan_rotation":
+            _check_beam(beam_type, self.hardware_settings)
+            return beam.scan_rotation
 
         if key == "detector_type":
             return detector.type

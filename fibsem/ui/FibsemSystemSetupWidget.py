@@ -44,7 +44,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def setup_connections(self):
         #
-        self.lineEdit_ipadress.setText("localhost")
+        self.lineEdit_ipadress.setText(cfg.__DEFAULT_IP_ADDRESS__)
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
 
         # buttons
@@ -111,6 +111,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             log_status_message("CONNECTED_AT_" + ip_address)
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
+            # self.connected_signal.emit()
 
         except Exception as e:
             msg = f"Unable to connect to the microscope: {traceback.format_exc()}"

@@ -327,7 +327,6 @@ from fibsem.patterning import FibsemMillingStage
 
 def mill_stages(microscope: FibsemMicroscope, settings: MicroscopeSettings, stages: list[FibsemMillingStage], asynch: bool=False):
     for stage in stages:
-        print(stage)
         mill_stage(microscope=microscope, settings=settings, stage=stage, asynch=asynch)
 
 def mill_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings, stage: FibsemMillingStage, asynch: bool=False):
