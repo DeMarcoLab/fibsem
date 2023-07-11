@@ -719,11 +719,11 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0.0):
+        if position.r is not None:
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0.0):
+        if position.t is not None:
             tilt = True
         else:
             tilt = False
@@ -748,11 +748,11 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0.0):
+        if position.r is not None:
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0.0):
+        if position.t is not None:
             tilt = True
         else:
             tilt = False
@@ -2940,11 +2940,11 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0.0):
+        if position.r is not None:
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0.0):
+        if position.t is not None:
             tilt = True
         else:
             tilt = False
@@ -2975,11 +2975,11 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0.0):
+        if position.r is not None:
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0.0):
+        if position.t is not None:
             tilt = True
         else:
             tilt = False
@@ -4553,11 +4553,11 @@ class DemoMicroscope(FibsemMicroscope):
         return MicroscopeState(absolute_position=self.stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
-        if not np.isclose(position.r, 0.0):
+        if position.r is None:
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0.0):
+        if position.t is None:
             tilt = True
         else:
             tilt = False
@@ -4566,11 +4566,11 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position = position
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
-        if not np.isclose(position.r, 0.0):
+        if position.r is not None:
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0.0):
+        if position.t is not None:
             tilt = True
         else:
             tilt = False
