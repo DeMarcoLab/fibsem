@@ -152,7 +152,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.doubleSpinBox_imaging_current.setValue( 20.e-12 * constants.SI_TO_NANO )
         self.spinBox_res_width.setValue( self.settings.image.resolution[0] )
         self.spinBox_res_height.setValue( self.settings.image.resolution[1] )
-        self.spinBox_hfw.setValue( self.settings.image.hfw *constants.SI_TO_MICRO )
+        self.spinBox_hfw.setValue( int(self.settings.image.hfw *constants.SI_TO_MICRO ))
         self.lineEdit_beam_type.setText( self.settings.image.beam_type.name )
         self.checkBox_autocontrast.setCheckState( self.settings.image.autocontrast )
         self.doubleSpinBox_dwell_time_imaging.setValue( self.settings.image.dwell_time *constants.SI_TO_MICRO )
