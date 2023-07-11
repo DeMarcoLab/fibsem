@@ -72,6 +72,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.dR_spinbox.setEnabled(False)
             self.dR_spinbox.hide()
             self.dr_label.hide()
+            self.calibrated_status_label.hide()
 
         if _TESCAN:
             
@@ -98,7 +99,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
         if not is_calibrated:
 
-            self.manipulatorStatus_label.setText("Not Calibrated, Please run the calibration tool from the tool menu")
+            self.calibrated_status_label.setText("Not Calibrated, Please run the calibration tool from the tool menu")
             self.insertManipulator_button.setEnabled(False)
             self._hide_show_buttons(show=False)
 
@@ -163,7 +164,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 self._hide_show_buttons(show=self.manipulator_inserted)
                 self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")
                 self.insertManipulator_button.setText("Insert" if not self.manipulator_inserted else "Retract")
-
+                self.calibrated_status_label.setText("Calibrated")
 
 
 

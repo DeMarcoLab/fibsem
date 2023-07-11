@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>286</width>
+    <width>350</width>
     <height>489</height>
    </rect>
   </property>
@@ -182,6 +182,13 @@
     <widget class="QLabel" name="beam_type_label">
      <property name="text">
       <string>Beam Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="calibrated_status_label">
+     <property name="text">
+      <string/>
      </property>
     </widget>
    </item>
