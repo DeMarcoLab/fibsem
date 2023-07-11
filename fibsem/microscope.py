@@ -3172,6 +3172,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         if not manipulator_positions["calibrated"]:
             logging.warning("Manipulator positions not calibrated, cannot get state")
+            return False
 
         retracted_position_x = manipulator_positions["parking"]["x"]*constants.METRE_TO_MILLIMETRE
         retracted_position_y = manipulator_positions["parking"]["y"]*constants.METRE_TO_MILLIMETRE
@@ -4561,6 +4562,16 @@ class DemoMicroscope(FibsemMicroscope):
         _check_needle(self.hardware_settings)
         logging.info(f"Getting manipulator position: {self.manipulator_position}")
         return self.manipulator_position
+
+    def get_manipulator_state(self,settings:MicroscopeSettings=None) -> bool:
+        _check_needle(self.hardware_settings)
+        if self.manipulator_position.x == 0 and self.manipulator_position.y == 0 and self.manipulator_position.z == 0:
+            self.manipulator_state = False
+        else:
+            self.manipulator_state = True
+        
+        logging.info(f"Getting manipulator state: {self.manipulator_state}")
+        return self.manipulator_state
 
     def insert_manipulator(self, name: str = "PARK"):
         _check_needle(self.hardware_settings)

@@ -35,7 +35,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.viewer = viewer
         self.image_widget = image_widget
         self.saved_positions = {}
-        self.manipulator_inserted = None
+        self.manipulator_inserted = False
         
 
 
@@ -56,19 +56,16 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 self.saved_positions["EUCENTRIC"] = eucentric_position
                 self.savedPosition_combobox.addItem("PARK")
                 self.savedPosition_combobox.addItem("EUCENTRIC")
-                self.microscope.get_manipulator_state(settings=self.settings)
+                
                 
             except :
                 
                 message_box_ui(title="Error loading positions",
                     text="Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.",
                     buttons=QMessageBox.Ok)
-                
             
-
-
-
-
+            self.manipulator_inserted = self.microscope.get_manipulator_state(settings=self.settings)
+                
             self.move_type_comboBox.currentIndexChanged.connect(self.change_move_type)
             self.move_type_comboBox.setCurrentIndex(0)
             self.change_move_type()
@@ -78,7 +75,6 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
         if _TESCAN:
             
-            
             self._initialise_calibration()
             self.move_type_comboBox.hide()
             self.beam_type_label.hide()
@@ -87,7 +83,13 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             # self.manipulatorStatus_label.hide()
             self.savedPosition_combobox.addItem("Standby")
             self.savedPosition_combobox.addItem("Working")
-            self.microscope.get_manipulator_state(settings=self.settings)
+            self.manipulator_inserted = self.microscope.get_manipulator_state(settings=self.settings)
+
+
+        
+        self._hide_show_buttons(self.manipulator_inserted)
+        self.insertManipulator_button.setText("Retract" if self.manipulator_inserted else "Insert")
+        self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")
 
 
     def _initialise_calibration(self):
@@ -98,9 +100,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
             self.manipulatorStatus_label.setText("Not Calibrated, Please run the calibration tool from the tool menu")
             self.insertManipulator_button.setEnabled(False)
-            self.moveRelative_button.setEnabled(False)
-            self.addSavedPosition_button.setEnabled(False)
-            self.goToPosition_button.setEnabled(False)
+            self._hide_show_buttons(show=False)
 
     def _check_manipulator_positions_setup(self):
 
@@ -160,6 +160,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 self.addSavedPosition_button.setEnabled(True)
                 self.goToPosition_button.setEnabled(True)
                 self.manipulator_inserted = self.microscope.get_manipulator_state(settings=self.settings)
+                self._hide_show_buttons(show=self.manipulator_inserted)
                 self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")
                 self.insertManipulator_button.setText("Insert" if not self.manipulator_inserted else "Retract")
 
@@ -200,8 +201,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.addSavedPosition_button.clicked.connect(self.add_saved_position)
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
         self.moveRelative_button.clicked.connect(self.move_relative)
-        self.insertManipulator_button.setText("Insert")
-        self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")
+
 
 
 
@@ -234,7 +234,29 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 self.update_ui()
             self.update_ui()      
   
-        
+    def _hide_show_buttons(self,show:bool = True):
+
+        # show = False
+
+        self.move_type_comboBox.setVisible(show)
+        self.dX_spinbox.setVisible(show)
+        self.dY_spinbox.setVisible(show)
+        self.dZ_spinbox.setVisible(show)
+        self.dR_spinbox.setVisible(show)
+        self.dz_label.setVisible(show)
+        self.dx_label.setVisible(show)
+        self.dy_label.setVisible(show)
+        self.dr_label.setVisible(show)
+        self.beam_type_combobox.setVisible(show)
+        self.beam_type_label.setVisible(show)
+        self.moveRelative_button.setVisible(show)
+        self.addSavedPosition_button.setVisible(show)
+        self.goToPosition_button.setVisible(show)
+        self.savedPositionName_lineEdit.setVisible(show)
+        self.savedPosition_combobox.setVisible(show)
+
+
+
 
     def insert_retract_manipulator(self):
         
@@ -245,6 +267,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.manipulatorStatus_label.setText("Manipulator Status: Retracted")
             self.update_ui()
             self.manipulator_inserted = False
+            self._hide_show_buttons(show=False)
         
         else:
 
@@ -253,6 +276,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.manipulatorStatus_label.setText("Manipulator Status: Inserted")
             self.update_ui()
             self.manipulator_inserted = True
+            self._hide_show_buttons(show=True)
 
 
 
