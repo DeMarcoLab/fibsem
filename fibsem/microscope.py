@@ -2192,7 +2192,7 @@ class ThermoMicroscope(FibsemMicroscope):
             _check_needle(self.hardware_settings)
             return self.connection.specimen.manipulator.state
         
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        logging.debug(f"Unknown key: {key} ({beam_type})")
         return None    
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -2342,7 +2342,7 @@ class ThermoMicroscope(FibsemMicroscope):
             return
 
         
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        logging.debug(f"Unknown key: {key} ({beam_type})")
         return
     
     def check_available_values(self, key:str, values: list, beam_type: BeamType = None) -> bool:
@@ -4413,7 +4413,7 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "presets":
             return self._get_presets()
 
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        logging.debug(f"Unknown key: {key} ({beam_type})")
         return None   
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -4515,7 +4515,7 @@ class TescanMicroscope(FibsemMicroscope):
             logging.info(f"Preset {value} activated for {beam_type}.")
             return
 
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        logging.debug(f"Unknown key: {key} ({beam_type})")
         return
 
     def check_available_values(self, key: str, beam_type: BeamType = None) -> bool:
@@ -5071,7 +5071,7 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "detector_contrast":
             return detector.contrast
 
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        logging.debug(f"Unknown key: {key} ({beam_type})")
         return NotImplemented
 
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
@@ -5120,7 +5120,7 @@ class DemoMicroscope(FibsemMicroscope):
             detector.brightness = value
             return
 
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        logging.debug(f"Unknown key: {key} ({beam_type})")
         return NotImplemented
 
     def get_beam_system_state(self, beam_type: BeamType) -> BeamSystemSettings:

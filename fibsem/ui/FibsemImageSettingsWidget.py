@@ -379,6 +379,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_all_images.setEnabled(False)
             self.pushButton_take_image.setEnabled(False)
             self.pushButton_live_imaging.setText("Stop live imaging")
+            self.pushButton_live_imaging.setStyleSheet("background-color: orange")
             
             self.stop_event.clear()
             self.image_queue.queue.clear()
@@ -400,6 +401,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             
         else:
             self.stop_event.set()
+            self.pushButton_live_imaging.setStyleSheet("background-color: green")
         
 
     def update_live_finished(self):
