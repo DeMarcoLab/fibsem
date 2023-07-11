@@ -33,7 +33,7 @@ def log_status_message(stage: FibsemMillingStage, step: str):
     )
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
-    # milling_param_changed = QtCore.pyqtSignal()
+    milling_position_changed = QtCore.pyqtSignal()
 
     def __init__(
         self,
@@ -84,6 +84,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_application_file.addItems(available_application_files)
         self.comboBox_preset.setVisible(_THERMO)
         self.label_preset.setVisible(_THERMO)
+        self.comboBox_milling_current.setVisible(_THERMO)
+        self.label_milling_current.setVisible(_THERMO)
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.comboBox_milling_current.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
@@ -185,6 +187,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.comboBox_milling_stage.addItem(stage.name)
             
 
+    def _remove_all_stages(self):
+
+        while len(self.milling_stages) > 0:
+            self.remove_milling_stage()
+        _remove_all_layers(self.viewer) # remove all shape layers
+
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
         logging.info(f"Setting milling stages: {len(milling_stages)}")
         self.milling_stages = milling_stages
@@ -208,6 +216,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # get the selected milling stage
         current_index = self.comboBox_milling_stage.currentIndex()
+        if current_index == -1:
+            return
+
         milling_stage: FibsemMillingStage = self.milling_stages[current_index]
 
         # set the milling settings
@@ -363,30 +374,64 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 f"Please right click on the {BeamType.ION.name} image to move pattern."
             )
             return
+        
+        point = conversions.image_to_microscope_image_coordinates(
+                Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+            )
 
         # only move the pattern if milling widget is activate and beamtype is ion?
+        if self.checkBox_move_all_patterns.isChecked():
+            renewed_patterns = []
+            for milling_stage in self.milling_stages:
+                # loop to check through all patterns to see if they are in bounds
+                pattern_dict_existing = milling_stage.pattern.protocol
+                pattern_name = milling_stage.pattern.name
+                pattern_renew = patterning.get_pattern(pattern_name)
+                pattern_renew.define(protocol=pattern_dict_existing, point=point)
 
-        # update pattern
-        current_stage_index = self.comboBox_milling_stage.currentIndex()
-        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
-        pattern_dict = self.get_pattern_settings_from_ui(pattern)
+                pattern_is_valid = self.valid_pattern_location(pattern_renew)
 
-        point = conversions.image_to_microscope_image_coordinates(
-            Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
-        )
-        pattern.define(protocol=pattern_dict, point=point)
-        is_valid = self.valid_pattern_location(pattern)
-        if is_valid:
-            # update ui
-            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
-            logging.info(f"Moved pattern to {point}")
-            log_status_message(self.milling_stages[current_stage_index], f"MOVED_PATTERN_TO_{point}")
-            self.good_copy_pattern = deepcopy(pattern)
-            self.update_ui()
+                if not pattern_is_valid:
+                    logging.info(f"Could not move Patterns, out of bounds at at {point}")
+                    napari.utils.notifications.show_warning(f"Patterns is not within the image.")
+                    break
+                else:
+                    renewed_patterns.append(pattern_renew)
+
+            if len(renewed_patterns) == len(self.milling_stages):
+                for milling_stage, pattern_renew in zip(self.milling_stages, renewed_patterns):
+
+                    milling_stage.pattern = pattern_renew
+                    milling_stage.pattern.point = point
+
+                self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+                self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+                logging.info(f"Moved patterns to {point} ")
+                self.update_ui(milling_stages=self.milling_stages)
+                self.milling_position_changed.emit()
+
+                
         else:
-            napari.utils.notifications.show_warning("Pattern is not within the image.")
-            self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
+        # update pattern
+            current_stage_index = self.comboBox_milling_stage.currentIndex()
+            pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
+            pattern_dict = self.milling_stages[current_stage_index].pattern.protocol
+            pattern.define(protocol=pattern_dict, point=point)
+            is_valid = self.valid_pattern_location(pattern)
+
+            if is_valid:
+                # update ui
+                self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+                self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+                logging.info(f"Moved pattern to {point}")
+                log_status_message(self.milling_stages[current_stage_index], f"MOVED_PATTERN_TO_{point}")
+                self.good_copy_pattern = deepcopy(pattern)
+                self.update_ui()
+                self.milling_position_changed.emit()
+            else:
+                napari.utils.notifications.show_warning("Pattern is not within the image.")
+                self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
+        
 
     def valid_pattern_location(self,stage_pattern):
         
@@ -417,7 +462,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         milling_settings = FibsemMillingSettings(
             milling_current=float(self.comboBox_milling_current.currentText()),
             application_file=self.comboBox_application_file.currentText(),
-            rate=self.doubleSpinBox_rate.value(),
+            rate=self.doubleSpinBox_rate.value()*1e-9,
             dwell_time = self.doubleSpinBox_dwell_time.value() * constants.MICRO_TO_SI,
             spot_size=self.doubleSpinBox_spot_size.value() * constants.MICRO_TO_SI,
             hfw=self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI,
@@ -438,11 +483,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             point = self.milling_stages[index].pattern.point
             self.update_pattern_ui(pattern_protocol, point)
         else:
-            layers_to_remove = ["Stage 1","annulus_Image","bmp_Image"]
+            layer_names_to_remove = ["Stage 1","annulus_Image","bmp_Image","pattern_crosshair"]
+            layers_to_remove = []
             for layer in self.viewer.layers:
                 
-                if layer.name in layers_to_remove:
-                    self.viewer.layers.remove(layer)
+                if layer.name in layer_names_to_remove:
+                    layers_to_remove.append(layer)
+
+            for layer in layers_to_remove:
+                self.viewer.layers.remove(layer)
             # self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
@@ -465,7 +514,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # get all patterns (2D list, one list of pattern settings per stage)
         patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
-        
+        pattern_centres: list[Point] = [stage.pattern.point for stage in milling_stages if stage.pattern is not None]
+
         try:
             
             from fibsem.structures import FibsemImage
@@ -478,7 +528,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
                 eb_image=self.image_widget.eb_image, 
-                all_patterns=patterns,) # TODO: add names and legend for this
+                all_patterns=patterns,
+                stage_centres=pattern_centres) # TODO: add names and legend for this
             
         except Exception as e:
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")

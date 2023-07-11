@@ -190,7 +190,7 @@ def setup_session(
 
     # configure paths
     if session_path is None:# change this to cfg.LOG_PATH
-        session_path = os.path.join(os.path.dirname(protocol_path), session)
+        session_path = os.path.join(BASE_PATH, "fibsem", "log", session)
     os.makedirs(session_path, exist_ok=True)
 
     # configure logging
