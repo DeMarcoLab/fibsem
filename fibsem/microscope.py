@@ -719,11 +719,11 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -748,11 +748,11 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -787,7 +787,7 @@ class ThermoMicroscope(FibsemMicroscope):
         elif beam_type == BeamType.ION:
             image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
 
-        if np.isclose(image_rotation, 0):
+        if np.isclose(image_rotation, 0.0):
             dx = dx
             dy = dy
         elif np.isclose(image_rotation, np.pi):
@@ -836,7 +836,7 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
         image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
-        if np.isclose(image_rotation, 0):
+        if np.isclose(image_rotation, 0.0):
             dy = dy
         elif np.isclose(image_rotation, np.pi):
             dy = -dy
@@ -1019,11 +1019,11 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"retract needle complete")
     
     def move_manipulator_relative(self, position: FibsemManipulatorPosition):
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -1034,11 +1034,11 @@ class ThermoMicroscope(FibsemMicroscope):
         needle.relative_move(position)
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition):
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -1135,11 +1135,11 @@ class ThermoMicroscope(FibsemMicroscope):
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
 
         # TODO: resolve Fibsem Positions and Thermo Positions
-        if not np.isclose(offset.r, 0):
+        if not np.isclose(offset.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(offset.t, 0):
+        if not np.isclose(offset.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -2940,11 +2940,11 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -2975,11 +2975,11 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             None
         """
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -3085,7 +3085,7 @@ class TescanMicroscope(FibsemMicroscope):
         wd = self.connection.SEM.Optics.GetWD()
         image_rotation = self.connection.FIB.Optics.GetImageRotation()
             
-        if np.isclose(image_rotation, 0):
+        if np.isclose(image_rotation, 0.0):
             dy_move = -dy
         elif np.isclose(image_rotation, 180):
             dy_move = dy
@@ -3272,11 +3272,11 @@ class TescanMicroscope(FibsemMicroscope):
 
     
     def move_manipulator_relative(self,position: FibsemManipulatorPosition, name: str = None):
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -3304,11 +3304,11 @@ class TescanMicroscope(FibsemMicroscope):
 
     
     def move_manipulator_absolute(self, position: FibsemManipulatorPosition, name: str = None):
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -3421,11 +3421,11 @@ class TescanMicroscope(FibsemMicroscope):
         return
 
     def move_manipulator_to_position_offset(self, offset: FibsemManipulatorPosition, name: str = None) -> None:
-        if not np.isclose(offset.r, 0):
+        if not np.isclose(offset.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(offset.t, 0):
+        if not np.isclose(offset.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -4553,11 +4553,11 @@ class DemoMicroscope(FibsemMicroscope):
         return MicroscopeState(absolute_position=self.stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -4566,11 +4566,11 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position = position
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
@@ -4634,11 +4634,11 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Retracting manipulator")
     
     def move_manipulator_relative(self, position: FibsemManipulatorPosition):
-        if not np.isclose(position.r, 0):
+        if not np.isclose(position.r, 0.0):
             rotation = True
         else:
             rotation = False
-        if not np.isclose(position.t, 0):
+        if not np.isclose(position.t, 0.0):
             tilt = True
         else:
             tilt = False
