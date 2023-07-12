@@ -148,7 +148,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                     positions[position]["z"] = manipulator_loc.z
                 
                 positions["calibrated"] = True
-
+                self.settings.hardware.manipulator_positions = positions
                 hardware_dict = self.settings.hardware.__to_dict__()
 
                 save_yaml(os.path.join(config_path,"model.yaml"), hardware_dict)

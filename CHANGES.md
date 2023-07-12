@@ -9,9 +9,13 @@
 - New features
       - Installation and Running .bat scripts
       - Manipulator positions calibration for TESCAN
-      - Microscope positions available in the positions widget
+      - Microscope positions available in the movement widget
       - Added minimap of microscope positions
       - Added a fibsem version number for development tracking
+      - Live chat (experimental)
+      - Autoliftout utils
+      - GIS Widget for cryo-control of gas injection 
+      - Embedded detection widget
 
 - Fixed bugs
       - fixed issue where parameters were passed incorrectly for milling
@@ -23,20 +27,11 @@
       - scan/image rotation now saved to microscope state
       - An option to click to move multiple milling stages together is now available
       - Added a crosshair to the images
-      - General backend UI refactor
       - movement of milling pattern now emits a pyqt signal (backend)
       - Manufacturer / model /serial no info can now be accessed/saved 
       - Manipulator UI adaptive based on if manipulator is retracted or inserted 
+      - Enabled granular hardware control for stage and manipulator (backend), eg: disable rotation only 
 
-
-### 29/06/2023
-
-- New features
-      - Positions widget 
-      - Minimap 
-      - Live chat (experimental)
-      - Autoliftout utils
-      - GIS Widget 
 
 ### 24/05/2023
 
