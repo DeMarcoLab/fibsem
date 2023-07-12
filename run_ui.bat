@@ -1,4 +1,4 @@
 @echo off
-CALL conda.bat activate fibsem2
+CALL conda.bat activate fibsem
 fibsem_ui
 pause

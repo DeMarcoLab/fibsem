@@ -1,3 +1,3 @@
-CALL conda.bat create -n fibsem2 python=3.9 pip
-CALL activate fibsem2
+CALL conda.bat create -n fibsem python=3.9 pip
+CALL activate fibsem
 pip install -e .
