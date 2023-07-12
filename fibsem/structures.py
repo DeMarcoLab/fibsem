@@ -312,8 +312,7 @@ Attributes:
                             "y":hardware_dict["manipulator"]["positions"]["working"]["y"],
                             "z":hardware_dict["manipulator"]["positions"]["working"]["z"],
                 },
-                "calibrated":hardware_dict["manipulator"]["positions"]["calibrated"],
-            },
+                "calibrated":hardware_dict["manipulator"]["positions"]["calibrated"]}, 
             system = {
                 "name":hardware_dict["system"]["name"],
                 "manufacturer":hardware_dict["system"]["manufacturer"],

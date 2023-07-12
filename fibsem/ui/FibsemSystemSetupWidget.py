@@ -214,6 +214,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         hardware_settings.manipulator_tilt = self.checkBox_needle_tilt.isChecked()
         hardware_settings.gis_enabled = self.checkBox_gis_enabled.isChecked()
         hardware_settings.gis_multichem = self.checkBox_multichem.isChecked()
+        hardware_settings.manipulator_positions = self.settings.hardware.manipulator_positions
+        hardware_settings.system = self.settings.hardware.system
 
         self.settings.hardware = hardware_settings
         self.microscope.hardware_settings = hardware_settings
@@ -227,11 +229,10 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         hardware_dict["system"] = {}
         hardware_dict["system"]["name"] = self.microscope.model
         hardware_dict["system"]["manufacturer"] = self.comboBox_manufacturer.currentText()
-        hardware_dict["system"]["description"] = ""
         hardware_dict["system"]["version"] = fibsem.__version__
         from PyQt5.QtWidgets import QInputDialog
         hardware_dict["system"]["id"] = QInputDialog.getText(self, "Microscope ID", "Please enter ID of microscope")[0]
-        
+        hardware_dict["system"]["description"] = QInputDialog.getText(self, "Description", "Please enter system description")[0]
         from fibsem import config as cfg
         protocol_path = os.path.join(cfg.BASE_PATH, "fibsem", "config", "model.yaml")
         with open(os.path.join(protocol_path), "w") as f:
