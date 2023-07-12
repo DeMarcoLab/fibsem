@@ -67,6 +67,11 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
         self.actionCurrent_alignment.triggered.connect(self.align_currents)
+        self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
+
+    def calibrate_manipulator_positions(self):
+
+        self.manipulator_widget.manipulator_position_calibration(config_path =os.path.join(cfg.CONFIG_PATH) )
 
     def align_currents(self):
         second_viewer = napari.Viewer()

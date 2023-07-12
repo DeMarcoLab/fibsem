@@ -74,6 +74,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionCurrent_alignment"/>
+    <addaction name="actionManipulator_Positions_Calibration"/>
    </widget>
    <addaction name="menuTools"/>
   </widget>
@@ -81,6 +82,11 @@
   <action name="actionCurrent_alignment">
    <property name="text">
     <string>Current alignment</string>
+   </property>
+  </action>
+  <action name="actionManipulator_Positions_Calibration">
+   <property name="text">
+    <string>Manipulator Positions Calibration</string>
    </property>
   </action>
  </widget>

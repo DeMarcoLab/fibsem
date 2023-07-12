@@ -260,6 +260,8 @@ Attributes:
     manipulator_tilt: bool = True
     gis_enabled: bool = True
     gis_multichem: bool = True
+    manipulator_positions: dict = None
+    system: dict = None
 
     def __post_init__(self):
         attributes = [
@@ -272,11 +274,15 @@ Attributes:
             "manipulator_rotation",
             "manipulator_tilt",
             "gis_enabled",
-            "gis_multichem"
+            "gis_multichem",
+            "manipulator_positions",
+            "system"
         ]
 
         for attribute in attributes:
             object_attribute = getattr(self,attribute)
+            if attribute in ["manipulator_positions","system"]:
+                continue
             assert isinstance(object_attribute,bool)
 
     @classmethod
@@ -293,11 +299,41 @@ Attributes:
             manipulator_tilt=bool(hardware_dict["manipulator"]["tilt"]),
             gis_enabled=bool(hardware_dict["gis"]["enabled"]),
             gis_multichem=bool(hardware_dict["gis"]["multichem"]),
+            manipulator_positions={
+                "parking":{"x":hardware_dict["manipulator"]["positions"]["parking"]["x"],
+                           "y":hardware_dict["manipulator"]["positions"]["parking"]["y"],
+                           "z":hardware_dict["manipulator"]["positions"]["parking"]["z"],
+                },
+                "standby":{ "x":hardware_dict["manipulator"]["positions"]["standby"]["x"],
+                            "y":hardware_dict["manipulator"]["positions"]["standby"]["y"],
+                            "z":hardware_dict["manipulator"]["positions"]["standby"]["z"],
+                },
+                "working":{ "x":hardware_dict["manipulator"]["positions"]["working"]["x"],
+                            "y":hardware_dict["manipulator"]["positions"]["working"]["y"],
+                            "z":hardware_dict["manipulator"]["positions"]["working"]["z"],
+                },
+                "calibrated":hardware_dict["manipulator"]["positions"]["calibrated"],
+            },
+            system = {
+                "name":hardware_dict["system"]["name"],
+                "manufacturer":hardware_dict["system"]["manufacturer"],
+                "description":hardware_dict["system"]["description"],
+                "version":hardware_dict["system"]["version"],
+                "id":hardware_dict["system"]["id"],
+            }
         )
 
     def __to_dict__(self) -> dict:
             
             hardware_dict = {}
+
+            hardware_dict["system"] = {}
+            hardware_dict["system"]["name"] = self.system["name"]
+            hardware_dict["system"]["manufacturer"] = self.system["manufacturer"]
+            hardware_dict["system"]["description"] = self.system["description"]
+            hardware_dict["system"]["version"] = self.system["version"]
+            hardware_dict["system"]["id"] = self.system["id"]
+
     
             hardware_dict["electron"] = {}
             hardware_dict["electron"]["enabled"] = self.electron_beam
@@ -318,6 +354,26 @@ Attributes:
             hardware_dict["gis"] = {}
             hardware_dict["gis"]["enabled"] = self.gis_enabled
             hardware_dict["gis"]["multichem"] = self.gis_multichem
+
+            hardware_dict["manipulator"]["positions"] = {}
+
+            hardware_dict["manipulator"]["positions"]["calibrated"] = self.manipulator_positions["calibrated"]
+
+            hardware_dict["manipulator"]["positions"]["parking"] = {}
+            hardware_dict["manipulator"]["positions"]["parking"]["x"] = self.manipulator_positions["parking"]["x"]
+            hardware_dict["manipulator"]["positions"]["parking"]["y"] = self.manipulator_positions["parking"]["y"]
+            hardware_dict["manipulator"]["positions"]["parking"]["z"] = self.manipulator_positions["parking"]["z"]
+
+            hardware_dict["manipulator"]["positions"]["standby"] = {}
+            hardware_dict["manipulator"]["positions"]["standby"]["x"] = self.manipulator_positions["standby"]["x"]
+            hardware_dict["manipulator"]["positions"]["standby"]["y"] = self.manipulator_positions["standby"]["y"] 
+            hardware_dict["manipulator"]["positions"]["standby"]["z"] = self.manipulator_positions["standby"]["z"]
+
+            hardware_dict["manipulator"]["positions"]["working"] = {}
+            hardware_dict["manipulator"]["positions"]["working"]["x"] = self.manipulator_positions["working"]["x"]
+            hardware_dict["manipulator"]["positions"]["working"]["y"] = self.manipulator_positions["working"]["y"]
+            hardware_dict["manipulator"]["positions"]["working"]["z"] = self.manipulator_positions["working"]["z"]
+
     
             return hardware_dict
 
