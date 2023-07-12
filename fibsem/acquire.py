@@ -18,7 +18,7 @@ from fibsem.microscope import FibsemMicroscope
 
 def take_reference_images(
     microscope: FibsemMicroscope, image_settings: ImageSettings
-) -> list[FibsemImage]:
+) -> tuple[FibsemImage, FibsemImage]:
     """
     Acquires a pair of electron and ion reference images using the specified imaging settings and
     a FibsemMicroscope instance.
@@ -28,23 +28,21 @@ def take_reference_images(
         image_settings (ImageSettings): An ImageSettings object with the desired imaging parameters.
 
     Returns:
-        A list containing a pair of FibsemImage objects, representing the electron and ion reference
+        A tuple containing a pair of FibsemImage objects, representing the electron and ion reference
         images acquired using the specified microscope and image settings.
 
     Notes:
         - This function temporarily changes the `image_settings.beam_type` to `BeamType.ELECTRON`
           and then `BeamType.ION` to acquire the electron and ion reference images, respectively.
           It resets the `image_settings.beam_type` to the original value after acquiring the images.
-        - The `FibsemImage` objects in the returned list contain the image data as numpy arrays,
+        - The `FibsemImage` objects in the returned tuple contain the image data as numpy arrays,
           as well as other image metadata.
     """
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
     eb_image = new_image(microscope, image_settings)
-    # state_eb = calibration.get_current_microscope_state(microscope)
     image_settings.beam_type = BeamType.ION
     ib_image = new_image(microscope, image_settings)
-    # state_ib = calibration.get_current_microscope_state(microscope)
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
 
     return eb_image, ib_image

@@ -1,43 +1,40 @@
-# system
 system:
-  ip_address: "10.0.0.1"
-  manufacturer: "Thermo" # either Tescan, Thermo or Demo
-  # beams
-  ion:
-    voltage: 30000
-    current: 20.e-12
-    plasma_gas: "Argon" # proper case, e.g. Argon, Oxygen
-    eucentric_height: 16.5e-3
-    detector_type: ETD
-    detector_mode: SecondaryElectrons
-  electron:
-    voltage: 2000
-    current: 1.0e-12
-    eucentric_height: 3.91e-3
-    detector_type: ETD
-    detector_mode: SecondaryElectrons
-  # stage
-  stage:
-    rotation_flat_to_electron: 49 # degrees
-    rotation_flat_to_ion: 229 # degrees
-    tilt_flat_to_electron: 0 # degrees (pre-tilt)
-    tilt_flat_to_ion: 52 # degrees
-    pre_tilt: 35.98
-    needle_stage_height_limit: 3.7e-3
-# user config settings
+    electron:
+        current: 1.0000000000000002e-12
+        detector_mode: SecondaryElectrons
+        detector_type: ETD
+        eucentric_height: 0.0039
+        voltage: 2000
+    ion:
+        current: 2.0000000000000002e-11
+        detector_mode: SecondaryElectrons
+        detector_type: ETD
+        eucentric_height: 0.0165
+        plasma_gas: Argon
+        voltage: 30000
+    ip_address: localhost
+    manufacturer: Thermo
+    stage:
+        needle_stage_height_limit: 0.0037
+        pre_tilt: 27
+        rotation_flat_to_electron: 49
+        rotation_flat_to_ion: 229
+        tilt_flat_to_electron: 0
+        tilt_flat_to_ion: 52
 user:
-  milling: 
-    milling_current: 2.e-9
-    spot_size: 5.0e-8
-    rate: 3.0e-9
-    dwell_time: 1.e-6  
-  imaging: 
-    imaging_current: 20.e-12
-    resolution: [1536, 1024]
-    hfw: 150.e-6  
-    beam_type: "Electron"
-    autocontrast: True
-    dwell_time: 1.e-6
-    save: False
-    gamma_enabled: False 
-
+    imaging:
+        autocontrast: true
+        beam_type: ELECTRON
+        dwell_time: 1.0e-06
+        gamma: false
+        hfw: 0.00015
+        imaging_current: 2.0000000000000002e-11
+        resolution:
+        - 1536
+        - 1024
+        save: false
+    milling:
+        dwell_time: 1.0e-06
+        milling_current: 2.0e-09
+        rate: 3.0000000000000004e-09
+        spot_size: 5.0000000000000004e-08

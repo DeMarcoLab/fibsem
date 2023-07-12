@@ -12,6 +12,8 @@ from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
 from scipy.ndimage import median_filter
 from PIL import Image
+from scipy.ndimage import median_filter
+from PIL import Image
 import numpy as np
 from pathlib import Path
 import logging
@@ -23,6 +25,7 @@ def log_status_message(step: str):
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
+    viewer_update_signal = pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -64,7 +67,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.selected_beam.addItems([beam.name for beam in BeamType])
 
-        self.pushButton_take_image.clicked.connect(self.take_image)
+        self.pushButton_take_image.clicked.connect(lambda: self.take_image(None))
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
@@ -83,8 +86,16 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.stigmation_y.hide()
             self.stigmation_x.setEnabled(False)
             self.stigmation_y.setEnabled(False)
-
-
+            available_presets = self.microscope.get_available_values("presets")
+            self.comboBox_presets.addItems(available_presets)   
+            self.comboBox_presets.currentTextChanged.connect(self.update_presets)
+        else:
+            self.comboBox_presets.hide()
+            self.label_presets.hide()
+  
+    def update_presets(self):
+        beam_type = BeamType[self.selected_beam.currentText()]
+        self.microscope.set("preset", self.comboBox_presets.currentText(), beam_type)
     def check_point_image(self,point):
             
             if point[1] >= 0 and point[1] <= self.eb_layer.data.shape[1]:
@@ -114,8 +125,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
             # creating initial layers 
 
-            self._features_layer = self.viewer.add_points(data, size=20, face_color='green', edge_color='white', name='ruler')
-            self.viewer.add_shapes(data, shape_type='line', edge_color='green', name='ruler_line',edge_width=5)
+            self._features_layer = self.viewer.add_points(data, size=20, face_color='lime', edge_color='white', name='ruler')
+            self.viewer.add_shapes(data, shape_type='line', edge_color='lime', name='ruler_line',edge_width=5)
             self.viewer.add_points(midpoint,text=text, size=20, face_color='transparent', edge_color='transparent', name='ruler_value')
             self._features_layer.mode = 'select'
 
@@ -304,6 +315,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
   
     def update_detector_ui(self):
         beam_type = BeamType[self.selected_beam.currentText()]
+        if beam_type == BeamType.ELECTRON:
+            self.comboBox_presets.hide()
+            self.label_presets.hide()
+        else:
+            self.comboBox_presets.show()
+            self.label_presets.show()
+        
         self.detector_type = self.microscope.get_available_values("detector_type", beam_type=beam_type)
         self.detector_type_combobox.clear()
         self.detector_type_combobox.addItems(self.detector_type)
@@ -316,8 +334,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.set_ui_from_settings(self.image_settings, beam_type)
 
-    def take_image(self):
+    def take_image(self, beam_type: BeamType = None):
         self.image_settings = self.get_settings_from_ui()[0]
+        
+        if beam_type is not None:
+            self.image_settings.beam_type = beam_type
 
         arr =  acquire.new_image(self.microscope, self.image_settings)
         name = f"{self.image_settings.beam_type.name}"
@@ -360,6 +381,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_last = arr
         if name == BeamType.ION.name:
             self.ib_last = arr
+
+        # median filter for display
+        arr = median_filter(arr, size=3)
        
         try:
             self.viewer.layers[name].data = arr
@@ -437,6 +461,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.eb_layer:
             self.viewer.layers.selection.active = self.eb_layer
 
+        self.viewer_update_signal.emit()
+
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
         eb_shape = self.eb_image.data.shape[0], self.eb_image.data.shape[1]
@@ -468,6 +494,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.eb_layer = None
         self.ib_layer = None
 
+    def _set_active_layer(self):
+        if self.eb_layer:
+            self.viewer.layers.selection.active = self.eb_layer
 
 def main():
 

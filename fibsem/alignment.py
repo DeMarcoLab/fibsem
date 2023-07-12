@@ -210,8 +210,8 @@ def align_using_reference_images(
         A boolean indicating whether the alignment was successful. True if the alignment was successful, False otherwise.
     """
     # get beam type
-    ref_beam_type = BeamType[ref_image.metadata.image_settings.beam_type.upper()]
-    new_beam_type = BeamType[new_image.metadata.image_settings.beam_type.upper()]
+    ref_beam_type = BeamType[ref_image.metadata.image_settings.beam_type.name.upper()]
+    new_beam_type = BeamType[new_image.metadata.image_settings.beam_type.name.upper()]
 
     logging.info(
         f"aligning {ref_beam_type.name} reference image to {new_beam_type.name}."

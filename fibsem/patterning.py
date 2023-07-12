@@ -263,23 +263,25 @@ class TrenchPattern(BasePattern):
         lamella_height = protocol["lamella_height"]
         trench_height = protocol["trench_height"]
         upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
+        lower_trench_height = trench_height * min(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
+        use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
         )
-        centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
+        centre_lower_y = point.y - (lamella_height / 2 + lower_trench_height / 2 + offset)
 
         # mill settings
         lower_pattern_settings = FibsemPatternSettings(
             pattern=FibsemPattern.Rectangle,
             width=lamella_width,
-            height=trench_height,
+            height=lower_trench_height,
             depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="BottomToTop",
         )
 
@@ -290,7 +292,7 @@ class TrenchPattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_upper_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
         )
 
@@ -392,7 +394,8 @@ class FiducialPattern(BasePattern):
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
         left_pattern = FibsemPatternSettings.__from_dict__(protocol)
-        left_pattern.rotation = np.deg2rad(protocol["rotation"])
+        from fibsem import constants 
+        left_pattern.rotation = protocol["rotation"]*constants.DEGREES_TO_RADIANS
         right_pattern = FibsemPatternSettings.__from_dict__(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
@@ -909,22 +912,40 @@ PROTOCOL_MILL_MAP = {
     "fiducial": FiducialPattern,
     "flatten": RectanglePattern,
     "undercut": UndercutPattern,
-    "lamella": HorseshoePattern,
+    "horseshoe": HorseshoePattern,
+    "lamella": TrenchPattern,
     "polish_lamella": TrenchPattern,
     "thin_lamella": TrenchPattern,
     "weld": RectanglePattern,
+    "sever": RectanglePattern,
+    "sharpen": RectanglePattern,
+    "needle": RectanglePattern,
+    "copper_weld": SpotWeldPattern,
+    "copper_release": HorseshoePattern,
+    "serial_trench": HorseshoePattern,
+    "serial_undercut": RectanglePattern,
+    "serial_weld": SpotWeldPattern,
+    "serial_sever": RectanglePattern,
+    "lamella_weld": SpotWeldPattern,
+    "lamella_sever": RectanglePattern,
+    "lamella_polish": TrenchPattern,
+    "trench": TrenchPattern,
+    "notch": WaffleNotchPattern,
+    "microexpansion": MicroExpansionPattern,
+    "clover": CloverPattern,
+    "autolamella": TrenchPattern,
 }
 
 
-def _get_pattern(key: str, protocol: dict) -> BasePattern:
+def _get_pattern(key: str, protocol: dict, point: Point = Point()) -> BasePattern:
     pattern = PROTOCOL_MILL_MAP[key]()
-    pattern.define(protocol)
+    pattern.define(protocol, point=point)
     return pattern
 
 
-def _get_stage(key, protocol: dict, i: int = 0) -> FibsemMillingStage:
-    pattern = _get_pattern(key, protocol)
-    mill_settings = FibsemMillingSettings(milling_current=protocol["milling_current"])
+def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> FibsemMillingStage:
+    pattern = _get_pattern(key, protocol, point=point)
+    mill_settings = FibsemMillingSettings(milling_current=protocol["milling_current"], hfw=float(protocol["hfw"]))
 
     stage = FibsemMillingStage(
         name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
@@ -932,12 +953,15 @@ def _get_stage(key, protocol: dict, i: int = 0) -> FibsemMillingStage:
     return stage
 
 
-def _get_milling_stages(key, protocol):
+def _get_milling_stages(key, protocol, point: Point = Point()):
+    
+    # TODO: maybe add support for defining point per stages?
+    
     if "stages" in protocol[key]:
         stages = [
-            _get_stage(key, pstage, i)
+            _get_stage(key, pstage, point=point, i=i)
             for i, pstage in enumerate(protocol[key]["stages"])
         ]
     else:
-        stages = [_get_stage(key, protocol[key])]
+        stages = [_get_stage(key, protocol[key], point=point)]
     return stages

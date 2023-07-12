@@ -21,11 +21,14 @@ except:
     TESCAN = False
 
 try:
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript')
+    sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem, ManipulatorCoordinateSystem,
         ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+
     THERMO = True
 except:
     THERMO = False
@@ -131,6 +134,7 @@ Methods:
     to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
     from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
 """
+    name: str = None
     x: float = None
     y: float = None
     z: float = None
@@ -149,11 +153,14 @@ Methods:
 
     def __to_dict__(self) -> dict:
         position_dict = {}
-        position_dict["x"] = self.x
-        position_dict["y"] = self.y
-        position_dict["z"] = self.z
-        position_dict["r"] = self.r
-        position_dict["t"] = self.t
+
+        position_dict["name"] = self.name
+        position_dict["name"] = self.name if self.name is not None else None
+        position_dict["x"] = float(self.x) if self.x is not None else None
+        position_dict["y"] = float(self.y) if self.y is not None else None
+        position_dict["z"] = float(self.z) if self.z is not None else None
+        position_dict["r"] = float(self.r) if self.r is not None else None
+        position_dict["t"] = float(self.t) if self.t is not None else None
         position_dict["coordinate_system"] = self.coordinate_system
 
         return position_dict
@@ -171,6 +178,7 @@ Methods:
 
 
         return cls(
+            name=data.get("name", None),
             x=data["x"],
             y=data["y"],
             z=data["z"],
@@ -214,22 +222,22 @@ Methods:
 
     def __add__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
         return FibsemStagePosition(
-            self.x + other.x,
-            self.y + other.y,
-            self.z + other.z,
-            self.r + other.r,
-            self.t + other.t,
-            self.coordinate_system,
+            x = self.x + other.x if other.x is not None else self.x,
+            y = self.y + other.y if other.y is not None else self.y,
+            z = self.z + other.z if other.z is not None else self.z,
+            r = self.r + other.r if other.r is not None else self.r,
+            t = self.t + other.t if other.t is not None else self.t,
+            coordinate_system = self.coordinate_system,
         )
 
     def __sub__(self, other:'FibsemStagePosition') -> 'FibsemStagePosition':
         return FibsemStagePosition(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z,
-            self.r - other.r,
-            self.t - other.t,
-            self.coordinate_system,
+            x = self.x - other.x,
+            y = self.y - other.y,
+            z = self.z - other.z,
+            r = self.r - other.r,
+            t = self.t - other.t,
+            coordinate_system = self.coordinate_system,
         )
 
     def _scale_repr(self, scale: float, precision: int = 2):
@@ -252,6 +260,8 @@ Attributes:
     manipulator_tilt: bool = True
     gis_enabled: bool = True
     gis_multichem: bool = True
+    manipulator_positions: dict = None
+    system: dict = None
 
     def __post_init__(self):
         attributes = [
@@ -264,11 +274,15 @@ Attributes:
             "manipulator_rotation",
             "manipulator_tilt",
             "gis_enabled",
-            "gis_multichem"
+            "gis_multichem",
+            "manipulator_positions",
+            "system"
         ]
 
         for attribute in attributes:
             object_attribute = getattr(self,attribute)
+            if attribute in ["manipulator_positions","system"]:
+                continue
             assert isinstance(object_attribute,bool)
 
     @classmethod
@@ -285,11 +299,40 @@ Attributes:
             manipulator_tilt=bool(hardware_dict["manipulator"]["tilt"]),
             gis_enabled=bool(hardware_dict["gis"]["enabled"]),
             gis_multichem=bool(hardware_dict["gis"]["multichem"]),
+            manipulator_positions={
+                "parking":{"x":hardware_dict["manipulator"]["positions"]["parking"]["x"],
+                           "y":hardware_dict["manipulator"]["positions"]["parking"]["y"],
+                           "z":hardware_dict["manipulator"]["positions"]["parking"]["z"],
+                },
+                "standby":{ "x":hardware_dict["manipulator"]["positions"]["standby"]["x"],
+                            "y":hardware_dict["manipulator"]["positions"]["standby"]["y"],
+                            "z":hardware_dict["manipulator"]["positions"]["standby"]["z"],
+                },
+                "working":{ "x":hardware_dict["manipulator"]["positions"]["working"]["x"],
+                            "y":hardware_dict["manipulator"]["positions"]["working"]["y"],
+                            "z":hardware_dict["manipulator"]["positions"]["working"]["z"],
+                },
+                "calibrated":hardware_dict["manipulator"]["positions"]["calibrated"]}, 
+            system = {
+                "name":hardware_dict["system"]["name"],
+                "manufacturer":hardware_dict["system"]["manufacturer"],
+                "description":hardware_dict["system"]["description"],
+                "version":hardware_dict["system"]["version"],
+                "id":hardware_dict["system"]["id"],
+            }
         )
 
     def __to_dict__(self) -> dict:
             
             hardware_dict = {}
+
+            hardware_dict["system"] = {}
+            hardware_dict["system"]["name"] = self.system["name"]
+            hardware_dict["system"]["manufacturer"] = self.system["manufacturer"]
+            hardware_dict["system"]["description"] = self.system["description"]
+            hardware_dict["system"]["version"] = self.system["version"]
+            hardware_dict["system"]["id"] = self.system["id"]
+
     
             hardware_dict["electron"] = {}
             hardware_dict["electron"]["enabled"] = self.electron_beam
@@ -310,6 +353,26 @@ Attributes:
             hardware_dict["gis"] = {}
             hardware_dict["gis"]["enabled"] = self.gis_enabled
             hardware_dict["gis"]["multichem"] = self.gis_multichem
+
+            hardware_dict["manipulator"]["positions"] = {}
+
+            hardware_dict["manipulator"]["positions"]["calibrated"] = self.manipulator_positions["calibrated"]
+
+            hardware_dict["manipulator"]["positions"]["parking"] = {}
+            hardware_dict["manipulator"]["positions"]["parking"]["x"] = self.manipulator_positions["parking"]["x"]
+            hardware_dict["manipulator"]["positions"]["parking"]["y"] = self.manipulator_positions["parking"]["y"]
+            hardware_dict["manipulator"]["positions"]["parking"]["z"] = self.manipulator_positions["parking"]["z"]
+
+            hardware_dict["manipulator"]["positions"]["standby"] = {}
+            hardware_dict["manipulator"]["positions"]["standby"]["x"] = self.manipulator_positions["standby"]["x"]
+            hardware_dict["manipulator"]["positions"]["standby"]["y"] = self.manipulator_positions["standby"]["y"] 
+            hardware_dict["manipulator"]["positions"]["standby"]["z"] = self.manipulator_positions["standby"]["z"]
+
+            hardware_dict["manipulator"]["positions"]["working"] = {}
+            hardware_dict["manipulator"]["positions"]["working"]["x"] = self.manipulator_positions["working"]["x"]
+            hardware_dict["manipulator"]["positions"]["working"]["y"] = self.manipulator_positions["working"]["y"]
+            hardware_dict["manipulator"]["positions"]["working"]["z"] = self.manipulator_positions["working"]["z"]
+
     
             return hardware_dict
 
@@ -629,6 +692,7 @@ class BeamSettings:
     dwell_time: float = None
     stigmation: Point = None # should be list of points?
     shift: Point = None # same? it is being turned to fibsem rectangle? needs 4 points?
+    scan_rotation: float = None
 
     ## FROM DICT AND TO DICT DOES NOT HAVE VOLTAGE (ADDED IN)
 
@@ -722,7 +786,7 @@ class MicroscopeState:
 
         state_dict = {
             "timestamp": self.timestamp,
-            "absolute_position": stage_position_to_dict(self.absolute_position) if self.absolute_position is not None else "Not defined",
+            "absolute_position": self.absolute_position.__to_dict__() if self.absolute_position is not None else "Not defined",
             "eb_settings": self.eb_settings.__to_dict__() if self.eb_settings is not None else "Not defined",
             "ib_settings": self.ib_settings.__to_dict__() if self.ib_settings is not None else "Not defined",
         }
@@ -733,7 +797,7 @@ class MicroscopeState:
     def __from_dict__(state_dict: dict) -> "MicroscopeState":
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
-            absolute_position=stage_position_from_dict(state_dict["absolute_position"]),
+            absolute_position=FibsemStagePosition.__from_dict__(state_dict["absolute_position"]),
             eb_settings=BeamSettings.__from_dict__(state_dict["eb_settings"]),
             ib_settings=BeamSettings.__from_dict__(state_dict["ib_settings"]),
         )
@@ -1010,6 +1074,7 @@ class FibsemMillingSettings:
     patterning_mode: str = "Serial" 
     application_file: str = "Si"
     preset: str = "30 keV; UHR imaging"
+    spacing: float = 1.0
 
     def __post_init__(self):
 
@@ -1020,6 +1085,7 @@ class FibsemMillingSettings:
         assert isinstance(self.hfw,(float,int)), f"invalid type for hfw, must be int or float, currently {type(self.hfw)}"
         assert isinstance(self.patterning_mode,str), f"invalid type for value for patterning_mode, must be str, currently {type(self.patterning_mode)}"
         assert isinstance(self.application_file,(str)), f"invalid type for value for application_file, must be str, currently {type(self.application_file)}"
+        assert isinstance(self.spacing,(float,int)), f"invalid type for value for spacing, must be int or float, currently {type(self.spacing)}"
         # assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
 
     def __to_dict__(self) -> dict:
@@ -1049,6 +1115,7 @@ class FibsemMillingSettings:
             patterning_mode=settings.get("patterning_mode", "Serial"),
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; UHR imaging"),
+            spacing=settings.get("spacing", 1.0),
         )
 
         return milling_settings
@@ -1859,6 +1926,7 @@ class ThermoGISLine():
         self.line = line
         self.name = name
         self.status = status
+        self.temp_ready = False
 
     def insert(self):
 
@@ -1884,6 +1952,7 @@ class ThermoMultiChemLine():
             "Retract"
         ]
         self.current_position = "Retract"
+        self.temp_ready = False
 
     def insert(self,position):
 

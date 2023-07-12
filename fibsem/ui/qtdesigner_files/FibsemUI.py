@@ -47,7 +47,10 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.actionCurrent_alignment = QtWidgets.QAction(MainWindow)
         self.actionCurrent_alignment.setObjectName("actionCurrent_alignment")
+        self.actionManipulator_Positions_Calibration = QtWidgets.QAction(MainWindow)
+        self.actionManipulator_Positions_Calibration.setObjectName("actionManipulator_Positions_Calibration")
         self.menuTools.addAction(self.actionCurrent_alignment)
+        self.menuTools.addAction(self.actionManipulator_Positions_Calibration)
         self.menubar.addAction(self.menuTools.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -60,3 +63,4 @@ class Ui_MainWindow(object):
         self.label_title.setText(_translate("MainWindow", "OpenFIBSEM"))
         self.menuTools.setTitle(_translate("MainWindow", "Tools"))
         self.actionCurrent_alignment.setText(_translate("MainWindow", "Current alignment"))
+        self.actionManipulator_Positions_Calibration.setText(_translate("MainWindow", "Manipulator Positions Calibration"))

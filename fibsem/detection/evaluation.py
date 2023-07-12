@@ -85,7 +85,7 @@ def run_eval(path: Path, checkpoint:str, encoder:str = "resnet34", num_classes: 
                 "dy": sub.y,
                 "distance": dist,
                 "checkpoint": os.path.basename(checkpoint),
-                    "encoder": encoder, 
+                "encoder": encoder, 
                 }
 
             data_list.append(dat)

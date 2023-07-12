@@ -11,6 +11,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemRectangle, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemImage,
                                MicroscopeState)
+from fibsem.detection.detection import NeedleTip, ImageCentre
 def auto_focus_beam(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -194,64 +195,60 @@ def auto_charge_neutralisation(
 #     logging.info(f"Finished automatic needle calibration.")
 
 
-# def align_needle_to_eucentric_position(
-#     microscope: FibsemMicroscope,
-#     settings: MicroscopeSettings,
-#     validate: bool = False,
-# ) -> None:
-#     """Move the needle to the eucentric position, and save the updated position to disk
+def align_needle_to_eucentric_position(
+    microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    validate: bool = False,
+) -> None:
+    """Move the needle to the eucentric position, and save the updated position to disk
 
-#     Args:
-#         microscope (FibsemMicroscope): OpenFIBSEM microscope instance
-#         settings (MicroscopeSettings): microscope settings
-#         validate (bool, optional): validate the alignment. Defaults to False.
-#     """
+    Args:
+        microscope (FibsemMicroscope): OpenFIBSEM microscope instance
+        settings (MicroscopeSettings): microscope settings
+        validate (bool, optional): validate the alignment. Defaults to False.
+    """
 
-#     if TESCAN:
-#         raise NotImplementedError
+    from fibsem.ui import windows as fibsem_ui_windows
+    from fibsem.detection import detection
 
-#     from fibsem.ui import windows as fibsem_ui_windows
-#     from fibsem.detection.utils import FeatureType, Feature
-#     from fibsem.detection import detection
+    # take reference images
+    settings.image.save = False
+    settings.image.beam_type = BeamType.ELECTRON
 
-#     # take reference images
-#     settings.image.save = False
-#     settings.image.beam_type = BeamType.ELECTRON
+    det = fibsem_ui_windows.detect_features_v2(
+        microscope=microscope,
+        settings=settings,
+        features=[
+            NeedleTip(),
+            ImageCentre(),
+        ],
+        validate=validate,
+    )
+    detection.move_based_on_detection(
+        microscope, settings, det, beam_type=settings.image.beam_type
+    )
 
-#     det = fibsem_ui_windows.detect_features_v2(
-#         microscope=microscope.connection,
-#         settings=settings,
-#         features=[
-#             Feature(FeatureType.NeedleTip, None),
-#             Feature(FeatureType.ImageCentre, None),
-#         ],
-#         validate=validate,
-#     )
-#     detection.move_based_on_detection(
-#         microscope.connection, settings, det, beam_type=settings.image.beam_type
-#     )
+    # take reference images
+    settings.image.save = False
+    settings.image.beam_type = BeamType.ION
 
-#     # take reference images
-#     settings.image.save = False
-#     settings.image.beam_type = BeamType.ION
+    image = acquire.new_image(microscope, settings.image)
 
-#     image = acquire.new_image(microscope, settings.image)
+    det = fibsem_ui_windows.detect_features_v2(
+        microscope=microscope,
+        settings=settings,
+        features=[
+            NeedleTip(),
+            ImageCentre(),
+        ],
+        validate=validate,
+    )
+    detection.move_based_on_detection(
+        microscope, settings, det, beam_type=settings.image.beam_type, move_x=False
+    )
 
-#     det = fibsem_ui_windows.detect_features_v2(
-#         microscope=microscope.connection,
-#         settings=settings,
-#         features=[
-#             Feature(FeatureType.NeedleTip, None),
-#             Feature(FeatureType.ImageCentre, None),
-#         ],
-#         validate=validate,
-#     )
-#     detection.move_based_on_detection(
-#         microscope.connection, settings, det, beam_type=settings.image.beam_type, move_x=False
-#     )
-
-#     # take image
-#     acquire.take_reference_images(microscope, settings.image)
+    # take image
+    acquire.take_reference_images(microscope, settings.image)
 
 
 def auto_home_and_link_v2(
