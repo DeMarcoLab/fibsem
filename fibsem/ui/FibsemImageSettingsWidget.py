@@ -27,6 +27,8 @@ def log_status_message(step: str):
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
     live_imaging_signal = pyqtSignal(dict)
+    live_imaging_stop_signal = pyqtSignal()
+    start_live_signal = pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -398,9 +400,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             import time
             time.sleep(1)
             worker.start()  
-
+            self.live_imaging = True
+            self.start_live_signal.emit()
             
         else:
+            self.live_imaging = False
+            self.live_imaging_stop_signal.emit()
             self.stop_event.set()
             self.pushButton_live_imaging.setStyleSheet("""
 

@@ -68,6 +68,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
         self.actionCurrent_alignment.triggered.connect(self.align_currents)
+        
 
     def align_currents(self):
         second_viewer = napari.Viewer()
@@ -155,6 +156,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
             self.tabWidget.addTab(self.GIS_widget, "GIS")
+            self.image_widget.start_live_signal.connect(self.toggle_live_imaging)
+            self.image_widget.live_imaging_stop_signal.connect(self.toggle_live_imaging)
 
 
 
@@ -175,6 +178,17 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.manipulator_widget.deleteLater()
             self.GIS_widget.deleteLater()
 
+    def toggle_live_imaging(self):
+        if self.image_widget.live_imaging:
+            self.tabWidget.setTabVisible(2, False)
+            self.tabWidget.setTabVisible(3, False)
+            self.tabWidget.setTabVisible(4, False)
+            self.tabWidget.setTabVisible(5, False)
+        else:
+            self.tabWidget.setTabVisible(2, True)
+            self.tabWidget.setTabVisible(3, True)
+            self.tabWidget.setTabVisible(4, True)
+            self.tabWidget.setTabVisible(5, True)
 
 def main():
 
