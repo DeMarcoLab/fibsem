@@ -174,28 +174,4 @@ def move_feature_to_image_centre(
         )
 
 
-def needle_position_validate(
-    microscope: FibsemMicroscope, settings: MicroscopeSettings
-):
-    ref_images = acquire.take_reference_images(
-        microscope=microscope, image_settings=settings.image
-    )
 
-    viewer = napari.Viewer(ndisplay=2)
-    image_widget = FibsemImageSettingsWidget(
-        microscope=microscope, image_settings=settings.image, viewer=viewer
-    )
-
-    image_widget.eb_image = ref_images[0]
-    image_widget.ib_image = ref_images[1]
-
-    needle_widget = FibsemManipulatorWidget(
-        microscope=microscope,
-        settings=settings,
-        viewer=viewer,
-        image_widget=image_widget,
-    )
-
-    viewer.window.add_dock_widget(needle_widget, area="right")
-
-    napari.run()
