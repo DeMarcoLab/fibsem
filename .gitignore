@@ -49,3 +49,5 @@ fibsem/segmentation/models/*
 example/**/*.tif
 example/demo/*
 fibsem/chat/secret.txt
+
+dist/*
