@@ -67,6 +67,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def setup_connections(self):
 
+        self.image_widget.viewer_update_signal.connect(self.update_pattern_ui)
+
         # milling
         available_currents = self.microscope.get_available_values("current", BeamType.ION)
         self.comboBox_milling_current.addItems([str(current) for current in available_currents])

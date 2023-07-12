@@ -25,6 +25,7 @@ def log_status_message(step: str):
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
+    viewer_update_signal = pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -459,6 +460,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
             self.viewer.layers.selection.active = self.eb_layer
+
+        self.viewer_update_signal.emit()
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)

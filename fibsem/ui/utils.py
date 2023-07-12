@@ -390,7 +390,7 @@ def _draw_patterns_in_napari(
     ib_image: FibsemImage,
     eb_image: FibsemImage,
     all_patterns: list[FibsemPatternSettings],
-    stage_centres: list[Point],
+    stage_centres: list[Point] = None,
 ):
     _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
 
@@ -448,19 +448,20 @@ def _draw_patterns_in_napari(
                 blending="translucent",
             )
         
-        crosshair_point = stage_centres[i]
+        if stage_centres is not None:
+            crosshair_point = stage_centres[i]
 
-        crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
-        viewer.add_shapes(
-            crosshair_shapes,
-            name="pattern_crosshair",
-            shape_type=["rectangle","rectangle"],
-            edge_width=0.5,
-            edge_color=colour[i % 5],
-            face_color=colour[i % 5],
-            opacity=0.5,
-            blending="translucent",
-        )
+            crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
+            viewer.add_shapes(
+                crosshair_shapes,
+                name="pattern_crosshair",
+                shape_type=["rectangle","rectangle"],
+                edge_width=0.5,
+                edge_color=colour[i % 5],
+                face_color=colour[i % 5],
+                opacity=0.5,
+                blending="translucent",
+            )
 
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):

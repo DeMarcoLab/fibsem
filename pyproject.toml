@@ -2,9 +2,6 @@
 requires = ["wheel", "setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
-write_to = "fibsem/_version.py"
-
 [project]
 name = "fibsem"
 authors = [
@@ -27,3 +24,6 @@ testpaths = [
 ]
 filterwarnings = "ignore::pytest.PytestCacheWarning"
 
+[tool.black]
+line-length = 120
+target_version = ['py39']
