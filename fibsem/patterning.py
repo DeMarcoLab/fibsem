@@ -431,7 +431,7 @@ class UndercutPattern(BasePattern):
         jcut_half_width = jcut_width - jcut_trench_thickness / 2
         jcut_half_height = jcut_lamella_height / 2
 
-        use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
+        use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
 
         # top_jcut
         jcut_top_centre_x = point.x + jcut_width / 2 - jcut_h_offset

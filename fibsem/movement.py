@@ -86,72 +86,72 @@ if THERMO:
     #     return min((large_angle - small_angle), ((2 * np.pi + small_angle - large_angle)))
 
 
-    def safe_rotation_movement(
-        microscope: SdbMicroscopeClient, stage_position: StagePosition
-    ):
-        """Tilt the stage flat when performing a large rotation to prevent collision.
+    # def safe_rotation_movement(
+    #     microscope: SdbMicroscopeClient, stage_position: StagePosition
+    # ):
+    #     """Tilt the stage flat when performing a large rotation to prevent collision.
 
-        Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
-            stage_position (StagePosition): desired stage position.
-        """
-        stage = microscope.specimen.stage
-        stage_settings = MoveSettings(rotate_compucentric=True)
+    #     Args:
+    #         microscope (SdbMicroscopeClient): autoscript microscope instance
+    #         stage_position (StagePosition): desired stage position.
+    #     """
+    #     stage = microscope.specimen.stage
+    #     stage_settings = MoveSettings(rotate_compucentric=True)
 
-        # tilt flat for large rotations to prevent collisions
-        if rotation_angle_is_larger(stage_position.r, stage.current_position.r):
+    #     # tilt flat for large rotations to prevent collisions
+    #     if rotation_angle_is_larger(stage_position.r, stage.current_position.r):
 
-            stage.absolute_move(
-                StagePosition(
-                    t=np.deg2rad(0), coordinate_system=stage_position.coordinate_system
-                ),
-                stage_settings,
-            )
-            logging.info(f"tilting to flat for large rotation.")
+    #         stage.absolute_move(
+    #             StagePosition(
+    #                 t=np.deg2rad(0), coordinate_system=stage_position.coordinate_system
+    #             ),
+    #             stage_settings,
+    #         )
+    #         logging.info(f"tilting to flat for large rotation.")
 
-        return
+    #     return
 
 
-    def safe_absolute_stage_movement(
-        microscope: SdbMicroscopeClient, stage_position: StagePosition
-    ) -> None:
-        """Move the stage to the desired position in a safe manner, using compucentric rotation.
-        Supports movements in the stage_position coordinate system
+    # def safe_absolute_stage_movement(
+    #     microscope: SdbMicroscopeClient, stage_position: StagePosition
+    # ) -> None:
+    #     """Move the stage to the desired position in a safe manner, using compucentric rotation.
+    #     Supports movements in the stage_position coordinate system
 
-        Args:
-            microscope (SdbMicroscopeClient): autoscript microscope instance
-            stage_position (StagePosition): desired stage position
+    #     Args:
+    #         microscope (SdbMicroscopeClient): autoscript microscope instance
+    #         stage_position (StagePosition): desired stage position
 
-        Returns:
-            StagePosition: _description_
-        """
+    #     Returns:
+    #         StagePosition: _description_
+    #     """
 
-        # tilt flat for large rotations to prevent collisions
-        safe_rotation_movement(microscope, stage_position)
+    #     # tilt flat for large rotations to prevent collisions
+    #     safe_rotation_movement(microscope, stage_position)
 
-        stage = microscope.specimen.stage
-        stage_settings = MoveSettings(rotate_compucentric=True)
+    #     stage = microscope.specimen.stage
+    #     stage_settings = MoveSettings(rotate_compucentric=True)
 
-        stage.absolute_move(
-            StagePosition(
-                r=stage_position.r, coordinate_system=stage_position.coordinate_system
-            ),
-            stage_settings,
-        )
-        logging.info(f"safe moving to {stage_position}")
-        stage.absolute_move(stage_position, stage_settings)
+    #     stage.absolute_move(
+    #         StagePosition(
+    #             r=stage_position.r, coordinate_system=stage_position.coordinate_system
+    #         ),
+    #         stage_settings,
+    #     )
+    #     logging.info(f"safe moving to {stage_position}")
+    #     stage.absolute_move(stage_position, stage_settings)
 
-        # # rotation check
-        # while rotation_angle_is_larger(stage_position.r, stage.current_position.r, 0.5):
+    #     # # rotation check
+    #     # while rotation_angle_is_larger(stage_position.r, stage.current_position.r, 0.5):
 
-        #     # rotate the difference
-        #     diff = stage_position.r - stage.current_position.r
-        #     logging.info(f"rotation angle is larger ({np.rad2deg(diff):.2f} deg) than desired, moving again.")
-        #     stage.relative_move(StagePosition(r=diff), stage_settings)
+    #     #     # rotate the difference
+    #     #     diff = stage_position.r - stage.current_position.r
+    #     #     logging.info(f"rotation angle is larger ({np.rad2deg(diff):.2f} deg) than desired, moving again.")
+    #     #     stage.relative_move(StagePosition(r=diff), stage_settings)
 
-        logging.info(f"safe movement complete.")
+    #     logging.info(f"safe movement complete.")
 
-        return
+    #     return
 
 
 

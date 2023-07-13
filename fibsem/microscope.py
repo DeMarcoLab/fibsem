@@ -412,8 +412,6 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.disconnect()
         del self.connection
         self.connection = None
-        del self.connection
-        self.connection = None
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 7520) -> None:
@@ -738,7 +736,7 @@ class ThermoMicroscope(FibsemMicroscope):
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
-        stage.absolute_move(thermo_position) # TODO: This needs at least an optional safe move to prevent collision?
+        stage.absolute_move(thermo_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
 
     def move_stage_relative(self, position: FibsemStagePosition):
         """
@@ -980,8 +978,49 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
-        stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
+        stage_position = FibsemStagePosition(r=rotation, t=tilt)
+        self._safe_absolute_stage_movement(stage_position)
+
+    
+    def _safe_rotation_movement(
+        self, stage_position: FibsemStagePosition
+    ):
+        """Tilt the stage flat when performing a large rotation to prevent collision.
+
+        Args:
+            stage_position (StagePosition): desired stage position.
+        """
+        current_position = self.get_stage_position()
+
+        # tilt flat for large rotations to prevent collisions
+        from fibsem import movement
+        if movement.rotation_angle_is_larger(stage_position.r, current_position.r):
+
+            self.move_stage_absolute(FibsemStagePosition(t=0))
+            logging.info(f"tilting to flat for large rotation.")
+
+        return
+
+
+    def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition
+    ) -> None:
+        """Move the stage to the desired position in a safe manner, using compucentric rotation.
+        Supports movements in the stage_position coordinate system
+
+        """
+
+        # tilt flat for large rotations to prevent collisions
+        self._safe_rotation_movement(stage_position)
+
+        # move to compucentric rotation
+        self.move_stage_absolute(FibsemStagePosition(r=stage_position.r))
+
+        logging.info(f"safe moving to {stage_position}")
         self.move_stage_absolute(stage_position)
+
+        logging.info(f"safe movement complete.")
+
+        return
 
     def get_manipulator_state(self,settings:MicroscopeSettings=None):
 
@@ -1968,7 +2007,7 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             self.connection.specimen.stage.link()
 
-        self.move_stage_absolute(microscope_state.absolute_position)
+        self._safe_absolute_stage_movement(microscope_state.absolute_position)
 
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
@@ -2937,6 +2976,12 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         return current_microscope_state
+
+    def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition
+        ) -> None:
+
+        # TODO: implement if required.
+        self.move_stage_absolute(stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition):
         """
@@ -4600,6 +4645,10 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Getting microscope state")
         return MicroscopeState(absolute_position=self.stage_position)
 
+    def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
+
+        self.move_stage_absolute(stage_position)
+
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         if position.r is None:
             rotation = True
@@ -5134,4 +5183,3 @@ def _check_sputter(hardware_settings: FibsemHardware):
         raise NotImplementedError("The microscope does not have a GIS system.")
     if hardware_settings.gis_multichem == False:
         raise NotImplementedError("The microscope does not have a multichem system.")
-    

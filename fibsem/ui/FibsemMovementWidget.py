@@ -202,8 +202,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def go_to_saved_position(self):
         self.microscope.move_stage_absolute(self.positions[self.comboBox_positions.currentIndex()])
-        self.movement_widget.update_ui()
-        self.image_widget.take_reference_images()
+        self.update_ui_after_movement()
         logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
 
     def export_positions(self):
