@@ -337,7 +337,7 @@ class HorseshoePattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=False,
             scan_direction="BottomToTop",
         )
 
@@ -348,7 +348,7 @@ class HorseshoePattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_upper_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=False,
             scan_direction="TopToBottom",
         )
 
@@ -361,7 +361,7 @@ class HorseshoePattern(BasePattern):
             - protocol["side_offset"]
             + (lamella_width / 2 - protocol["side_width"] / 2),
             centre_y=point.y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=False,
             scan_direction="TopToBottom",
         )
 
