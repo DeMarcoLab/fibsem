@@ -187,7 +187,7 @@ class Ui_Form(object):
         self.label_hfw.setText(_translate("Form", "Horizontal Field Width (um)"))
         self.label_rate.setText(_translate("Form", "Rate (mm3/A/s)"))
         self.checkBox_live_update.setText(_translate("Form", "Live Update"))
-        self.label_milling_current.setText(_translate("Form", "Current (nA)"))
+        self.label_milling_current.setText(_translate("Form", "Current (A)"))
         self.label_dwell_time.setText(_translate("Form", "Dwell Time (us)"))
         self.pushButton_add_milling_stage.setText(_translate("Form", "Add"))
         self.label_centre_x.setText(_translate("Form", "Centre X (um)"))
