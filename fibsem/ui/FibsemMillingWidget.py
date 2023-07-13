@@ -67,7 +67,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def setup_connections(self):
 
-        self.image_widget.viewer_update_signal.connect(self.update_pattern_ui)
+        self.image_widget.viewer_update_signal.connect(self.update_ui) # this happens after every time the viewer is updated
 
         # milling
         available_currents = self.microscope.get_available_values("current", BeamType.ION)
@@ -226,6 +226,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # set the milling settings
         self.set_milling_settings_ui(milling_stage.milling)
 
+        # set the pattern protcol
+        self.update_pattern_ui(milling_stage.pattern.protocol, milling_stage.pattern.point)
+        print("UPDATE_MILLING_STAGE PROTOCOL: ", milling_stage.pattern.protocol)
+
         # set the pattern (and triggers the pattern settings)
         self.comboBox_patterns.setCurrentText(milling_stage.pattern.name)
 
@@ -274,8 +278,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         pattern = patterning.__PATTERNS__[pattern_available_index]
 
+        logging.info(f"Current Stage: {self.comboBox_milling_stage.currentIndex()}")
         logging.info(f"Selected pattern: {pattern.name}")
         logging.info(f"Required parameters: {pattern.required_keys}")
+        logging.info(f"Protocol: {pattern_protocol}")
 
         # create a label and double spinbox for each required keys and add it to the layout
 
@@ -568,8 +574,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     @thread_worker
     def run_milling_step(self):
 
+        milling_stages = self.get_milling_stages()
         self._toggle_interaction(enabled=False)
-        for stage in self.milling_stages:
+        for stage in milling_stages:
             yield f"Preparing: {stage.name}"
             if stage.pattern is not None:
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
