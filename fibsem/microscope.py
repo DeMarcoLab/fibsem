@@ -979,8 +979,6 @@ class ThermoMicroscope(FibsemMicroscope):
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
         stage_position = FibsemStagePosition(r=rotation, t=tilt)
-        # stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
-        # self.move_stage_absolute(stage_position)
         self._safe_absolute_stage_movement(stage_position)
 
     
@@ -2011,7 +2009,7 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             self.connection.specimen.stage.link()
 
-        self.move_stage_absolute(microscope_state.absolute_position)
+        self._safe_absolute_stage_movement(microscope_state.absolute_position)
 
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
@@ -2980,6 +2978,12 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         return current_microscope_state
+
+    def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition
+        ) -> None:
+
+        # TODO: implement if required.
+        self.move_stage_absolute(stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition):
         """
@@ -4642,6 +4646,10 @@ class DemoMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         logging.info(f"Getting microscope state")
         return MicroscopeState(absolute_position=self.stage_position)
+
+    def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
+
+        self.move_stage_absolute(stage_position)
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         if position.r is None:
