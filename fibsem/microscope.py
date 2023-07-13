@@ -412,8 +412,6 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.disconnect()
         del self.connection
         self.connection = None
-        del self.connection
-        self.connection = None
 
     # @classmethod
     def connect_to_microscope(self, ip_address: str, port: int = 7520) -> None:
@@ -738,7 +736,7 @@ class ThermoMicroscope(FibsemMicroscope):
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
-        stage.absolute_move(thermo_position) # TODO: This needs at least an optional safe move to prevent collision?
+        stage.absolute_move(thermo_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
 
     def move_stage_relative(self, position: FibsemStagePosition):
         """
@@ -980,8 +978,53 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
-        stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
+        stage_position = FibsemStagePosition(r=rotation, t=tilt)
+        # stage_position = FibsemStagePosition(x = position.x, y = position.y, z=position.z, r=rotation, t=tilt)
+        # self.move_stage_absolute(stage_position)
+        self._safe_absolute_stage_movement(stage_position)
+
+    
+    def _safe_rotation_movement(
+        self, stage_position: FibsemStagePosition
+    ):
+        """Tilt the stage flat when performing a large rotation to prevent collision.
+
+        Args:
+            stage_position (StagePosition): desired stage position.
+        """
+        current_position = self.get_stage_position()
+
+        # tilt flat for large rotations to prevent collisions
+        if rotation_angle_is_larger(stage_position.r, current_position.r):
+
+            self.move_stage_absolute(FibsemStagePosition(t=0))
+            logging.info(f"tilting to flat for large rotation.")
+
+        return
+
+
+    def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition
+    ) -> None:
+        """Move the stage to the desired position in a safe manner, using compucentric rotation.
+        Supports movements in the stage_position coordinate system
+
+        """
+
+        # tilt flat for large rotations to prevent collisions
+        self._safe_rotation_movement(stage_position)
+
+        # move to compucentric rotation
+        self.move_stage_absolute(FibsemStagePosition(r=stage_position.r))
+
+        logging.info(f"safe moving to {stage_position}")
         self.move_stage_absolute(stage_position)
+
+        logging.info(f"safe movement complete.")
+
+        return
+
+
+
 
     def get_manipulator_state(self,settings:MicroscopeSettings=None):
 
@@ -5135,3 +5178,55 @@ def _check_sputter(hardware_settings: FibsemHardware):
     if hardware_settings.gis_multichem == False:
         raise NotImplementedError("The microscope does not have a multichem system.")
     
+
+
+# TODO: MOVE THIS SOMEWHERE ELSE
+
+
+def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
+    """Check the rotation angles are large
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+        atol : tolerance (degrees)
+
+    Returns:
+        bool: rotation angle is larger than atol
+    """
+
+    return angle_difference(angle1, angle2) > (np.deg2rad(atol))
+
+
+def rotation_angle_is_smaller(angle1: float, angle2: float, atol: float = 5) -> bool:
+    """Check the rotation angles are large
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+        atol : tolerance (degrees)
+
+    Returns:
+        bool: rotation angle is smaller than atol
+    """
+
+    return angle_difference(angle1, angle2) < (np.deg2rad(atol))
+
+
+def angle_difference(angle1: float, angle2: float) -> float:
+    """Return the difference between two angles, accounting for greater than 360, less than 0 angles
+
+    Args:
+        angle1 (float): angle1 (radians)
+        angle2 (float): angle2 (radians)
+
+    Returns:
+        float: _description_
+    """
+    angle1 %= 2 * np.pi
+    angle2 %= 2 * np.pi
+
+    large_angle = np.max([angle1, angle2])
+    small_angle = np.min([angle1, angle2])
+
+    return min((large_angle - small_angle), ((2 * np.pi + small_angle - large_angle)))
