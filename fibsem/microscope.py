@@ -993,6 +993,7 @@ class ThermoMicroscope(FibsemMicroscope):
         current_position = self.get_stage_position()
 
         # tilt flat for large rotations to prevent collisions
+        from fibsem import movement
         if movement.rotation_angle_is_larger(stage_position.r, current_position.r):
 
             self.move_stage_absolute(FibsemStagePosition(t=0))
@@ -1020,9 +1021,6 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"safe movement complete.")
 
         return
-
-
-
 
     def get_manipulator_state(self,settings:MicroscopeSettings=None):
 
