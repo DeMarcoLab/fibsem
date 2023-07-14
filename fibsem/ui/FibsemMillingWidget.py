@@ -504,7 +504,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
 
-        # self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
+        self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
 
         if milling_stages is None and len(self.milling_stages) < 1:
             return
