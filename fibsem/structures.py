@@ -459,6 +459,7 @@ Methods:
                     x=self.x,
                     y=self.y,
                     z=self.z,
+                    r=0.0 if self.r is None else self.r,
                     coordinate_system=coordinate_system,
                 )
     
