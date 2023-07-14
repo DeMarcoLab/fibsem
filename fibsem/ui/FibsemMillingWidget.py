@@ -153,6 +153,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.checkBox_live_update.setChecked(True)
 
     def update_settings(self):
+        # link hfw to image widget
+        self.image_widget.doubleSpinBox_image_hfw.setValue(self.doubleSpinBox_hfw.value())
+        self.image_widget.image_settings.hfw = self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI
+
         settings = self.get_milling_settings_from_ui()
         index = self.comboBox_milling_stage.currentIndex()
         if index != -1:
@@ -504,7 +508,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
 
-        self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw * constants.SI_TO_MICRO)
+        self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
 
         if milling_stages is None and len(self.milling_stages) < 1:
             return
