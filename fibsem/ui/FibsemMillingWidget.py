@@ -194,7 +194,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         while len(self.milling_stages) > 0:
             self.remove_milling_stage()
         _remove_all_layers(self.viewer) # remove all shape layers
-        self.comboBox_milling_stage.clear()
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
         logging.info(f"Setting milling stages: {len(milling_stages)}")
@@ -505,7 +504,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
 
-        self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
+        # self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
 
         if milling_stages is None and len(self.milling_stages) < 1:
             return
@@ -534,7 +533,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 raise Exception(f"No Ion Image, cannot draw patterns. Please take an image.")
             if not isinstance(self.image_widget.eb_image, FibsemImage):
                 raise Exception(f"No Electron Image, cannot draw patterns. Please take an image.") # TODO: this is unintuitive why this is required -> ui issue only
-            _remove_all_layers(self.viewer)
             # clear patterns then draw new ones
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
