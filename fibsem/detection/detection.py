@@ -390,6 +390,12 @@ def detect_features(
         pixelsize=pixelsize,
     )
 
+    # distance in metres (from centre)
+    for feature in det.features:
+        feature.feature_m = conversions.image_to_microscope_image_coordinates(
+            feature.px, det.image.data, det.pixelsize
+        )
+
     return det
 
 
