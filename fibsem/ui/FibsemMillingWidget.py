@@ -519,9 +519,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             
 
         if not milling_stages:
-            msg = f"No milling stages defined, cannot draw patterns."
-            logging.warning(msg)
-            napari.utils.notifications.show_warning(msg)
             _remove_all_layers(self.viewer)
             return
 

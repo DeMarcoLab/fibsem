@@ -516,7 +516,7 @@ def move_based_on_detection(
     if isinstance(f1, NeedleTip) or isinstance(f1, LamellaRightEdge):
 
         # electron: neg = down, ion: neg = up
-        if beam_type is BeamType.ELECTRON:
+        if beam_type is BeamType.ION:
             det.distance.y *= -1
 
         microscope.move_manipulator_corrected(
