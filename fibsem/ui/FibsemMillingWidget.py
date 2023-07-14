@@ -153,10 +153,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.checkBox_live_update.setChecked(True)
 
     def update_settings(self):
-        # link hfw to image widget
-        self.image_widget.doubleSpinBox_image_hfw.setValue(self.doubleSpinBox_hfw.value())
-        self.image_widget.image_settings.hfw = self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI
-
         settings = self.get_milling_settings_from_ui()
         index = self.comboBox_milling_stage.currentIndex()
         if index != -1:
@@ -538,7 +534,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 raise Exception(f"No Ion Image, cannot draw patterns. Please take an image.")
             if not isinstance(self.image_widget.eb_image, FibsemImage):
                 raise Exception(f"No Electron Image, cannot draw patterns. Please take an image.") # TODO: this is unintuitive why this is required -> ui issue only
-
+            _remove_all_layers(self.viewer)
             # clear patterns then draw new ones
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
