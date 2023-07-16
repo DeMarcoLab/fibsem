@@ -212,7 +212,7 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
     
     if fname is None:
         fname = f"{utils.current_timestamp_v2()}"
-    fname = os.path.join(cfg.DATA_PATH, f"{fname}")
+    fname = os.path.join(cfg.DATA_ML_PATH, f"{fname}")
 
     idx = 1
     while os.path.exists(fname):
@@ -223,8 +223,8 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
     logging.info(f"Saved image to {fname}")
 
     # save mask to disk
-    os.makedirs(os.path.join(cfg.DATA_PATH, "mask"), exist_ok=True)
-    mask_fname = os.path.join(cfg.DATA_PATH, "mask", os.path.basename(fname))
+    os.makedirs(os.path.join(cfg.DATA_ML_PATH, "mask"), exist_ok=True)
+    mask_fname = os.path.join(cfg.DATA_ML_PATH, "mask", os.path.basename(fname))
     mask_fname = Path(mask_fname).with_suffix(".tif")
     im = Image.fromarray(det.mask) 
     im.save(mask_fname)
@@ -247,7 +247,7 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
     df = pd.DataFrame(feat_list)
     
     # save the dataframe to a csv file, append if the file already exists
-    DATAFRAME_PATH = os.path.join(cfg.DATA_PATH, "data.csv")
+    DATAFRAME_PATH = os.path.join(cfg.DATA_ML_PATH, "data.csv")
     if os.path.exists(DATAFRAME_PATH):
         df_tmp = pd.read_csv(DATAFRAME_PATH)
         df = pd.concat([df_tmp, df], axis=0, ignore_index=True)

@@ -43,9 +43,14 @@ BASE_PATH = os.path.dirname(fibsem.__path__[0]) # TODO: figure out a more stable
 CONFIG_PATH = os.path.join(BASE_PATH, "fibsem", "config")
 PROTOCOL_PATH = os.path.join(CONFIG_PATH, "protocol.yaml")
 LOG_PATH = os.path.join(BASE_PATH, "fibsem", "log")
-DATA_PATH = os.path.join(BASE_PATH, "fibsem", "log", "data") 
+DATA_PATH = os.path.join(BASE_PATH, "fibsem", "log", "data")
+DATA_ML_PATH:str = os.path.join(BASE_PATH, "fibsem", "log", "data", "ml")
+DATA_CC_PATH:str = os.path.join(BASE_PATH, "fibsem", "log", "data", "crosscorrelation")   
 
+os.makedirs(LOG_PATH, exist_ok=True)
 os.makedirs(DATA_PATH, exist_ok=True)
+os.makedirs(DATA_ML_PATH, exist_ok=True)
+os.makedirs(DATA_CC_PATH, exist_ok=True)
 
 import yaml
 
