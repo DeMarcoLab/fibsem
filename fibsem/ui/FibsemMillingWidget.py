@@ -77,7 +77,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         _TESCAN = isinstance(self.microscope, TescanMicroscope)
 
         if isinstance(self.microscope, DemoMicroscope):
-            _THERMO, _TESCAN = True, True
+            _THERMO, _TESCAN = True, False
         
         # THERMO 
         self.label_application_file.setVisible(_THERMO)
