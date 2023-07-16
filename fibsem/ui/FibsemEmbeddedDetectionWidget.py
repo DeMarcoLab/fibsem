@@ -163,7 +163,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         ]
         self.viewer.camera.zoom = 0.7
 
-        napari.utils.notifications.show_info(f"Features Detected")
+        napari.utils.notifications.show_info(f"Features ({', '.join([f.name for f in self.det.features])}) Detected")
 
     def update_info(self):
         

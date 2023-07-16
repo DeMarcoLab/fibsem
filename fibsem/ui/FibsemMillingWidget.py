@@ -20,7 +20,7 @@ from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle,convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui
 from napari.qt.threading import thread_worker
 
-_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number"]
+_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes"]
 _ANGLE_KEYS = ["rotation"]
 def _scale_value(key, value, scale):
     if key not in _UNSCALED_VALUES:

@@ -49,7 +49,7 @@ REQUIRED_KEYS = {
         "distance",
         "lamella_width",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation"),
+    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -567,6 +567,7 @@ class SpotWeldPattern(BasePattern):
         distance = protocol["distance"]
         n_patterns = int(protocol["number"])
         rotation = protocol["rotation"]
+        passes = protocol.get("passes", 1)
 
         patterns = []
         for i in range(n_patterns):
@@ -916,7 +917,7 @@ PROTOCOL_MILL_MAP = {
     "lamella": TrenchPattern,
     "polish_lamella": TrenchPattern,
     "thin_lamella": TrenchPattern,
-    "weld": RectanglePattern,
+    "weld": SpotWeldPattern,
     "sever": RectanglePattern,
     "sharpen": RectanglePattern,
     "needle": RectanglePattern,
