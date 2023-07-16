@@ -25,24 +25,6 @@ from fibsem.config import BASE_PATH
 from fibsem.microscope import FibsemMicroscope
 
 
-def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
-    """
-    Save the given FibsemImage object as a TIFF file with the specified label at the specified file path.
-
-        Args:
-        image (FibsemImage): The FibsemImage object to save.
-        save_path (Path): The file path to save the image at.
-        label (str, optional): The label to use for the saved image file. Default is "image".
-
-        Returns:
-        None
-   
-    """
-    os.makedirs(save_path, exist_ok=True)
-    path = os.path.join(save_path, f"{label}.tif")
-    image.save(path)
-
-
 def current_timestamp():
     """Returns current time in a specific string format
 
@@ -51,6 +33,14 @@ def current_timestamp():
     """
     return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%I-%M-%S%p") #PM/AM doesnt work?
 
+
+def current_timestamp_v2():
+    """Returns current time in a specific string format
+
+    Returns:
+        String: Current time
+    """
+    return str(time.time()).replace(".", "_")
 
 def _format_time_seconds(seconds: float) -> str:
     """Format a time delta in seconds to proper string format."""
@@ -243,7 +233,6 @@ def load_settings_from_config(
     Returns:
         MicroscopeSettings: microscope settings
     """
-    # print("HELLO")
     # TODO: this should just be system.yaml path, not directory
     if config_path is None:
         from fibsem.config import CONFIG_PATH
@@ -327,30 +316,6 @@ def _format_dictionary(dictionary: dict) -> dict:
                 except ValueError:
                     pass
     return dictionary
-
-
-def match_image_settings(
-    ref_image: FibsemImage,
-    image_settings: ImageSettings,
-    beam_type: BeamType = BeamType.ELECTRON,
-) -> ImageSettings:
-    
-    
-    """Generate matching image settings from an image."""
-
-
-    image_settings.resolution = (ref_image.data.shape[1], ref_image.data.shape[0])
-    # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
-    image_settings.hfw = ref_image.data.shape[1] * ref_image.metadata.pixel_size.x
-    image_settings.beam_type = beam_type
-    image_settings.save = True
-    image_settings.label = current_timestamp()
-
-    return image_settings
-
-
-
-
 
 def get_params(main_str: str) -> list:
     """Helper function to access relevant metadata parameters from sub field

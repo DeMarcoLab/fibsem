@@ -405,7 +405,7 @@ def take_image_and_detect_features(
     features: tuple[Feature],
 ) -> DetectedFeatures:
     
-    from fibsem import acquire
+    from fibsem import acquire, utils
     from fibsem.segmentation.model import load_model
 
     if settings.image.reduced_area is not None:
@@ -414,6 +414,8 @@ def take_image_and_detect_features(
         )
         settings.image.reduced_area = None
     
+    settings.image.label = utils.current_timestamp_v2()
+    settings.image.save = True
 
     # take new image
     image = acquire.new_image(microscope, settings.image)

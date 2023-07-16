@@ -278,21 +278,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# DONE
-# - convert to use binary masks instead of rgb - DOne
-# - add mask, rgb to detected features + save to file  # DONE
-# - convert mask layer to label not image # DONE
-# - save detected features to file on prev / save image # DONE
-# - add n detections, not just two.. if no features are passed... use all?
-# - add toggles for seg / feature detection / eval
-# - maybe integrate as labelling ui? -> assisted labelling
-# - toggle show info checkbox
-
-# TODO:
-# - convert detected features / detection to take in Union[FibsemImage, np.ndarray]
-# - edittable mask -> rerun detection 
-# - abstract segmentation model widget
-# - need to ensure feature det is only enabled if seg is enabled
-# - need seg to be enabled if feature det is enabled same for eval

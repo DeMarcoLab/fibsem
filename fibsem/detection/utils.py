@@ -211,10 +211,16 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
         image = FibsemImage(image, None)
     
     if fname is None:
-        fname = f"{utils.current_timestamp()}"
+        fname = f"{utils.current_timestamp_v2()}"
     fname = os.path.join(cfg.DATA_PATH, f"{fname}")
+
+    idx = 1
+    while os.path.exists(fname):
+        fname = f"{fname}_{idx}"
+        idx += 1
+
     image.save(fname) # type: ignore 
-    logging.info(f"Saved image to {fname}") # TODO: handle duplicate fname
+    logging.info(f"Saved image to {fname}")
 
     # save mask to disk
     os.makedirs(os.path.join(cfg.DATA_PATH, "mask"), exist_ok=True)
