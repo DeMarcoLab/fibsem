@@ -1177,7 +1177,8 @@ class ThermoMicroscope(FibsemMicroscope):
             yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
 
         # move needle (relative)
-        needle_position = ManipulatorPosition(x=x_move.x, y=yz_move.y, z=yz_move.z, r = None ,coordinate_system=ManipulatorCoordinateSystem.RAW)
+        needle_position = FibsemManipulatorPosition(x=x_move.x, y=yz_move.y, z=yz_move.z, r = 0.0 ,coordinate_system="RAW")
+        needle_position = needle_position.to_autoscript_position()
         logging.info(f"Moving manipulator: {needle_position}.")
         needle.relative_move(needle_position)
 
@@ -4222,8 +4223,8 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"restoring microscope state...")
 
         # move to position
-        _check_stage(self.hardware_settings)
-        self.move_stage_absolute(position=microscope_state.absolute_position)
+        # _check_stage(self.hardware_settings)
+        # self.move_stage_absolute(position=microscope_state.absolute_position)
 
         # restore electron beam
         _check_beam(BeamType.ELECTRON, self.hardware_settings)
