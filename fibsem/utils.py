@@ -342,3 +342,17 @@ def get_params(main_str: str) -> list:
 
         i += 1
     return cats
+
+
+def _get_position(name: str):
+    
+    from fibsem import config as cfg
+    from fibsem.structures import FibsemStagePosition
+    import os
+
+    ddict = load_yaml(fname=os.path.join(cfg.CONFIG_PATH, "positions.yaml"))
+    # get position from save positions?
+    for d in ddict:
+        if d["name"] == name:
+            return FibsemStagePosition.__from_dict__(d)
+    return None
