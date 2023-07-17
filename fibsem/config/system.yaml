@@ -12,11 +12,11 @@ system:
         eucentric_height: 0.0165
         plasma_gas: Argon
         voltage: 30000
-    ip_address: localhost
+    ip_address: 10.0.0.1
     manufacturer: Thermo
     stage:
         needle_stage_height_limit: 0.0037
-        pre_tilt: 27
+        pre_tilt: 35
         rotation_flat_to_electron: 49
         rotation_flat_to_ion: 229
         tilt_flat_to_electron: 0

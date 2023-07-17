@@ -24,8 +24,7 @@ def sputter_platinum(
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope instance
         protocol (dict): platinum protcol dictionary
-        whole_grid (bool, optional): sputtering protocol. Defaults to False.
-
+        default_application_file (str): application file to use if none is specified
     Returns:
         None
 
