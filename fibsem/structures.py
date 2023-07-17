@@ -409,10 +409,10 @@ Methods:
 
     def __post_init__(self):
 
-        attributes = ["x","y","z","r","t"]
-        for attribute in attributes:
-            output = getattr(self,attribute)
-            assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
+        # attributes = ["x","y","z","r","t"]
+        # for attribute in attributes:
+            # output = getattr(self,attribute)
+            # assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
         assert isinstance(self.coordinate_system,str) or self.coordinate_system is None, f"unsupported type {type(self.coordinate_system)} for coorindate system"
         assert self.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or self.coordinate_system is None, f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
 
@@ -459,7 +459,8 @@ Methods:
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    r=0.0 if self.r is None else self.r,
+                    # r=0.0 if self.r is None else self.r,
+                    r=None,
                     coordinate_system=coordinate_system,
                 )
     
