@@ -935,6 +935,7 @@ PROTOCOL_MILL_MAP = {
     "microexpansion": MicroExpansionPattern,
     "clover": CloverPattern,
     "autolamella": TrenchPattern,
+    "autolamella_undercut": RectanglePattern,
 }
 
 

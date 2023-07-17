@@ -198,8 +198,17 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
         logging.info(f"Setting milling stages: {len(milling_stages)}")
         self.milling_stages = milling_stages
+        
+        # very explicitly set what is happening
+        self.comboBox_milling_stage.currentIndexChanged.disconnect()
         self.comboBox_milling_stage.clear()
         self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
+        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_protocol_ui())
+        
+        self.comboBox_patterns.currentIndexChanged.disconnect()
+        self.comboBox_patterns.setCurrentText(self.milling_stages[0].pattern.name)
+        self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
+        
         logging.info(f"Set milling stages: {len(milling_stages)}")
         self.update_milling_stage_ui()
         # self.update_ui()
