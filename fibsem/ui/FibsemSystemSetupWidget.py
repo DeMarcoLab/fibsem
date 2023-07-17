@@ -50,6 +50,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         #
         self.lineEdit_ipadress.setText(cfg.__DEFAULT_IP_ADDRESS__)
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
+        self.comboBox_manufacturer.setCurrentText(cfg.__DEFAULT_MANUFACTURER__)
 
         # buttons
         self.microscope_button.clicked.connect(self.connect_to_microscope)

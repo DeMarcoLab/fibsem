@@ -143,7 +143,7 @@ def correct_stage_drift(
     # align lowres, then highres
     for i, ref_image in enumerate([ref_lowres, ref_highres]):
 
-        ref_mask = masks.create_circle_mask(ref_image.data, ref_mask_rad)
+        ref_mask = masks.create_circle_mask(ref_image.data.shape, ref_mask_rad)
 
         # take new images
         # set new image settings (same as reference)

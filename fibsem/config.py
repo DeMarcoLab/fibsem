@@ -104,4 +104,5 @@ def load_microscope_manufacturer(config_path=None) -> str:
 
 
 __SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
+__DEFAULT_MANUFACTURER__ = "Demo"
 __DEFAULT_IP_ADDRESS__ = "localhost"
