@@ -18,7 +18,6 @@ def sputter_platinum(
     microscope: FibsemMicroscope,
     protocol: dict = None,
     default_application_file: str = "Si",
-    whole_grid: bool = False,
 ):
     """Sputter platinum over the sample.
 
@@ -36,19 +35,11 @@ def sputter_platinum(
 
     if protocol is None:
         protocol = gis_protocol
-        hfw = protocol["hfw"]
-        line_pattern_length = protocol["length"]
-        sputter_time = protocol["time"]
 
-    elif whole_grid:
-        hfw = protocol["whole_grid"]["hfw"]
-        line_pattern_length = protocol["whole_grid"]["length"]
-        sputter_time = protocol["whole_grid"]["time"]
-    else:
-        hfw = protocol["weld"]["hfw"]
-        line_pattern_length = protocol["weld"]["length"]
-        sputter_time = protocol["weld"]["time"]
-        
+    hfw = protocol["hfw"]
+    line_pattern_length = protocol["length"]
+    sputter_time = protocol["time"]
+            
 
     # Setup
     microscope.setup_sputter(protocol=protocol)
@@ -61,4 +52,33 @@ def sputter_platinum(
 
     # Cleanup
     microscope.finish_sputter(application_file=default_application_file)
-    
+
+
+def cryo_sputter(microscope: FibsemMicroscope, protocol: dict = None, name: str = None):
+
+    # get current position
+    position = microscope.get_current_microscope_state().absolute_position
+
+    # move to sputter position
+    if name is not None:
+        
+        # move to position
+        from fibsem import utils
+        sputter_position = utils._get_position(name)
+        
+        if sputter_position is None:
+            raise RuntimeError(f"Position {name} requested but not found")
+        
+        logging.info(f"Moving to sputter position: {name}")
+        microscope._safe_absolute_stage_movement(sputter_position)
+
+
+    # move down
+    from fibsem.structures import FibsemStagePosition
+    microscope.move_stage_relative(FibsemStagePosition(z=-1e-3))
+
+    # sputter
+    sputter_platinum(microscope, protocol)
+
+    # return to previous position
+    microscope._safe_absolute_stage_movement(position)
