@@ -445,10 +445,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
             
-
-        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
-
-        
+        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])      
         
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
