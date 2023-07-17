@@ -304,6 +304,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if beam_settings.stigmation is not None:
             self.stigmation_x.setValue(beam_settings.stigmation.x)
             self.stigmation_y.setValue(beam_settings.stigmation.y)
+        
+        self.update_ui_saving_settings()
 
     def update_ui_saving_settings(self):
 
@@ -437,20 +439,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
-        if self.scalebar_checkbox.isChecked():
-            sc_is_checked = True
-            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
-        else:
-            sc_is_checked = False
-            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
 
-        if self.crosshair_checkbox.isChecked():
-            is_checked = True
-            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
-            
-        else:
-            is_checked = False
-            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
+        # draw scalebar and crosshair
+        if self.eb_image is not None and self.ib_image is not None:
+            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
+            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
             
 
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
