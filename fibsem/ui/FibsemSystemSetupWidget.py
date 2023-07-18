@@ -220,7 +220,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         self.settings.hardware = hardware_settings
         self.microscope.hardware_settings = hardware_settings
-        logging.info(f"Updated hardware settings: {hardware_settings}")
+        logging.debug(f"Updated hardware settings: {hardware_settings}")
         return hardware_settings
 
     def save_model(self) -> None:

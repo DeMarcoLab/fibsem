@@ -8,6 +8,8 @@ import segmentation_models_pytorch as smp
 from fibsem.segmentation.utils import decode_segmap
 
 from pathlib import Path
+from fibsem import config as cfg
+import os
 
 
 class SegmentationModel:
@@ -46,6 +48,8 @@ class SegmentationModel:
 
     def load_weights(self, checkpoint: Optional[str]):
         if checkpoint:
+            
+            checkpoint = os.path.join(cfg.MODELS_PATH, checkpoint)
             self.checkpoint = checkpoint
             checkpoint_state = torch.load(checkpoint, map_location=self.device)
             self.model.load_state_dict(checkpoint_state)
