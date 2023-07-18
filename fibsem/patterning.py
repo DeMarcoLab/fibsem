@@ -947,7 +947,10 @@ def _get_pattern(key: str, protocol: dict, point: Point = Point()) -> BasePatter
 
 def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> FibsemMillingStage:
     pattern = _get_pattern(key, protocol, point=point)
-    mill_settings = FibsemMillingSettings(milling_current=protocol["milling_current"], hfw=float(protocol["hfw"]))
+    mill_settings = FibsemMillingSettings(
+        milling_current=protocol["milling_current"], 
+        hfw=float(protocol["hfw"]),
+        application_file=protocol.get("application_file", "Si"))
 
     stage = FibsemMillingStage(
         name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
@@ -958,7 +961,7 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
 def _get_milling_stages(key, protocol, point: Point = Point()):
     
     # TODO: maybe add support for defining point per stages?
-    
+
     if "stages" in protocol[key]:
         stages = [
             _get_stage(key, pstage, point=point, i=i)
