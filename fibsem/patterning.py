@@ -967,3 +967,19 @@ def _get_milling_stages(key, protocol, point: Point = Point()):
     else:
         stages = [_get_stage(key, protocol[key], point=point)]
     return stages
+
+
+from copy import deepcopy
+def _get_protocol_from_stages(stages: list):
+    protocol = {}  
+    protocol["stages"] = []
+
+    if not isinstance(stages, list):
+        stages = [stages]
+
+    for stage in stages:
+        # join two dicts union
+        ddict = {**stage.__to_dict__()["milling"], **stage.__to_dict__()["pattern"]["protocol"]}
+        protocol["stages"].append(deepcopy(ddict))
+
+    return protocol
