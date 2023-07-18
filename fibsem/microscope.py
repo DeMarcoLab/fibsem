@@ -1177,6 +1177,10 @@ class ThermoMicroscope(FibsemMicroscope):
             yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
 
         # move needle (relative)
+        # explicitly set the coordinate system
+        self.connection.specimen.manipulator.set_default_coordinate_system(
+            ManipulatorCoordinateSystem.STAGE
+        )
         needle_position = FibsemManipulatorPosition(x=x_move.x, y=yz_move.y, z=yz_move.z, r = 0.0 ,coordinate_system="STAGE")
         needle_position = needle_position.to_autoscript_position()
         logging.info(f"Moving manipulator: {needle_position}.")

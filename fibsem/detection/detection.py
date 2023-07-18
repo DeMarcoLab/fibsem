@@ -540,7 +540,7 @@ def move_based_on_detection(
             microscope.stable_move(
                 settings=settings,
                 dx=-det.distance.x,
-                dy=-det.distance.y,
+                dy=det.distance.y,
                 beam_type=beam_type,
             )
 
