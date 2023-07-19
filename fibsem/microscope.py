@@ -496,7 +496,6 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
         image = self.connection.imaging.grab_frame(frame_settings)
 
-        print("new image: ", image.data.dtype)
         if image_settings.reduced_area is not None:
             if image_settings.beam_type == BeamType.ELECTRON:
                 self.connection.beams.electron_beam.scanning.mode.set_full_frame()
