@@ -232,11 +232,17 @@
        </item>
        <item row="6" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
          <property name="minimum">
           <double>10.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>2700.000000000000000</double>
+          <double>1000000000.000000000000000</double>
          </property>
          <property name="value">
           <double>150.000000000000000</double>

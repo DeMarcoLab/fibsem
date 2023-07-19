@@ -187,7 +187,7 @@ class Ui_Form(object):
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 12, 0, 1, 1)
         self.doubleSpinBox_image_hfw = QtWidgets.QDoubleSpinBox(Form)
-        self.doubleSpinBox_image_hfw.setMaximum(2700.0)
+        self.doubleSpinBox_image_hfw.setMaximum(100000000.0)
         self.doubleSpinBox_image_hfw.setSingleStep(0.1)
         self.doubleSpinBox_image_hfw.setProperty("value", 150.0)
         self.doubleSpinBox_image_hfw.setObjectName("doubleSpinBox_image_hfw")
