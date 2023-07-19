@@ -143,7 +143,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         logging.info(f"BASE: {_base_position}")
         logging.info(f"POINT: {point}")
-        logging.info(f"dx: {dx}, dy: {dy}, dz: {dz}")
+        logging.info(f"dx: {dx*1e6}, dy: {dy*1e6}, dz: {dz*1e6}")
         logging.info(f"NEW POSITION: {_new_position}")
 
         # now should be able to just move to _new_position

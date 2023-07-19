@@ -16,8 +16,7 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     # TODO: OVERLAP + STITCH
     dx, dy = settings.image.hfw, settings.image.hfw 
 
-    if settings.image.beam_type is BeamType.ELECTRON:
-        dy *= -1
+    dy *= -1 # need to invert y-axis
 
     print(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
     print(f"dx: {dx*1e6} um, dy: {dy*1e6} um")
@@ -31,8 +30,7 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     settings.image.hfw = tile_size
     start_move = grid_size / 2 - tile_size / 2
     dxg, dyg = start_move, start_move
-    if settings.image.beam_type is BeamType.ELECTRON:
-        dyg *= -1
+    dyg *= -1
 
     microscope.stable_move(settings=settings, dx=-dxg, dy=-dyg, beam_type=settings.image.beam_type)
     state = microscope.get_current_microscope_state()
