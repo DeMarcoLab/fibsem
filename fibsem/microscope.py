@@ -496,6 +496,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
         image = self.connection.imaging.grab_frame(frame_settings)
 
+        print("new image: ", image.data.dtype)
         if image_settings.reduced_area is not None:
             if image_settings.beam_type == BeamType.ELECTRON:
                 self.connection.beams.electron_beam.scanning.mode.set_full_frame()
@@ -536,6 +537,9 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.imaging.set_active_device(beam_type.value)
         image = self.connection.imaging.get_image()
+
+        from autoscript_sdb_microscope_client.structures import AdornedImage
+        image = AdornedImage(data=image.data.astype(np.uint8), metadata=image.metadata)
 
         state = self.get_current_microscope_state()
 
