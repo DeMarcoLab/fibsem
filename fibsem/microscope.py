@@ -4257,7 +4257,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(
             microscope_state.ib_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-
+        time.sleep(3)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
         self.move_stage_absolute(microscope_state.absolute_position)
         logging.info(f"microscope state restored")
