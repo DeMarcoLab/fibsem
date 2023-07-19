@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="8" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_tile_overlap">
+     <property name="text">
+      <string>Overlap (%)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_tile_grid_size">
+     <property name="text">
+      <string>Grid Size (um)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_run_tile_collection">
+     <property name="text">
+      <string>Run Tile Collection</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="comboBox_tile_beam_type"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_tile_beam_type">
+     <property name="text">
+      <string>Beam Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label_title">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Tile Grid</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QLineEdit" name="lineEdit_tile_image_path"/>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_tile_tile_size">
+     <property name="text">
+      <string>Tile Size (um)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_grid_size">
+     <property name="maximum">
+      <double>1000000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>400.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_tile_size">
+     <property name="maximum">
+      <double>100000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>100.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_load_image">
+     <property name="text">
+      <string>Load Image</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

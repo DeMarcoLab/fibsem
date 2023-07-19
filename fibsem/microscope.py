@@ -822,7 +822,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.move_stage_relative(stage_position)
 
         # adjust working distance to compensate for stage movement
-        self.connection.beams.electron_beam.working_distance.value = wd
+        self.connection.beams.electron_beam.working_distance.value = 3.91e-3 if beam_type == BeamType.ELECTRON else 16.5e-3
         self.connection.specimen.stage.link()
 
         return stage_position
