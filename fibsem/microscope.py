@@ -2044,6 +2044,18 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if key == "detector_mode":
             values = self.connection.detector.mode.available_values
+        
+        if key == "scan_direction":
+            values = ["BottomToTop", 
+                "DynamicAllDirections", 
+                "DynamicInnerToOuter", 
+                "DynamicLeftToRight", 
+                "DynamicTopToBottom", 
+                "InnerToOuter", 	
+                "LeftToRight", 	
+                "OuterToInner", 
+                "RightToLeft", 	
+                "TopToBottom"]
 
         return values
 
@@ -4997,6 +5009,13 @@ class DemoMicroscope(FibsemMicroscope):
             values = ["ETD", "TLD", "EDS"]
         if key == "detector_mode":
             values = ["SecondaryElectrons", "BackscatteredElectrons", "EDS"]
+        
+        if key == "scan_direction":
+            values = ["BottomToTop", 
+                "LeftToRight", 	
+                "RightToLeft", 	
+                "TopToBottom"]
+         
 
         return values
 

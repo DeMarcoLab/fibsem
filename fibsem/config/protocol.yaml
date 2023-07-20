@@ -68,6 +68,7 @@ patterns:
     number: 3
     rotation: 0.0
     passes: 1.0
+    scan_direction: "ToptoBottom"
   MicroExpansion:
     height: 1.0e-6
     width: 5.0e-6
