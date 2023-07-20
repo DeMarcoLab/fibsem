@@ -70,12 +70,6 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.settings.image.label = "stitched_image.tif"
 
         image = _tile._tile_image_collection_stitch(self.microscope, self.settings, grid_size, tile_size, overlap=0)
-        
-        # images = ddict["images"]
-        # big_image = ddict["big_image"]
-
-        # image = _tile._stitch_images(images=images, ddict=ddict, overlap=0)
-
 
         self._update_viewer(image)
 
