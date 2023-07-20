@@ -1025,6 +1025,23 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return
 
+    def _calculate_new_position(self, settings: MicroscopeSettings, 
+        dx:float, dy:float, 
+        beam_type:BeamType, 
+        base_position:FibsemStagePosition) -> FibsemStagePosition:
+
+        # stable-move-projection
+        point_yz = self._y_corrected_stage_movement(settings, dy, beam_type)
+        dy, dz = point_yz.y, point_yz.z
+
+        # calculate the corrected move to reach that point from base-state?
+        _new_position = deepcopy(base_position)
+        _new_position.x += dx
+        _new_position.y += dy
+        _new_position.z += dz
+
+        return _new_position
+
     def get_manipulator_state(self,settings:MicroscopeSettings=None):
 
         state = self.connection.specimen.manipulator.state
@@ -2990,6 +3007,10 @@ class TescanMicroscope(FibsemMicroscope):
 
         # TODO: implement if required.
         self.move_stage_absolute(stage_position)
+    
+    def _calculate_new_position(self, settings: MicroscopeSettings, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
+
+        return base_position # TODO: implement
 
     def move_stage_absolute(self, position: FibsemStagePosition):
         """
@@ -4656,6 +4677,10 @@ class DemoMicroscope(FibsemMicroscope):
     def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
 
         self.move_stage_absolute(stage_position)
+
+    def _calculate_new_position(self, settings: MicroscopeSettings, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
+
+        return base_position + FibsemStagePosition(x=dx, y=dy) # TODO: implement
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         if position.r is None:

@@ -5,8 +5,8 @@ import numpy as np
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
-from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import FibsemTileWidget
 import os
 
@@ -40,6 +40,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.viewer = viewer
 
+        self.image = None
         self._image_layer = None
         self._features_layer = None
 
@@ -48,6 +49,8 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.setup_connections()
 
+        self._update_ui()
+
     def setup_connections(self):
 
         self.pushButton_run_tile_collection.clicked.connect(self.run_tile_collection)
@@ -55,8 +58,13 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
 
-        self.pushButton_move_to_position.clicked.connect(self._move_to_position)
+        self.pushButton_move_to_position.clicked.connect(self._move_position_pressed)
 
+
+        self.pushButton_add_position.clicked.connect(self._add_position_pressed)
+        self.pushButton_add_position.setStyleSheet("background-color: green")
+        self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
+        self.pushButton_remove_position.setStyleSheet("background-color: red")
 
 
     def run_tile_collection(self):
@@ -93,6 +101,21 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self._update_viewer(image)
 
+    def _update_ui(self):
+
+        _image_loaded = self.image is not None
+        self.pushButton_add_position.setEnabled(_image_loaded)
+        self.pushButton_remove_position.setEnabled(_image_loaded)
+        self.pushButton_move_to_position.setEnabled(_image_loaded)
+
+        if _image_loaded:
+            self.label_instructions.setText("Alt+Click to add a position, Double Click to Move the Stage...")
+        else:
+            self.label_instructions.setText("Please take or load an overview image...")
+
+        _positions_loaded = len(self.positions) > 0
+        self.pushButton_move_to_position.setEnabled(_positions_loaded)
+
 
     def _update_viewer(self, image: FibsemImage =  None):
 
@@ -105,13 +128,13 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             # draw a point on the image at center
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
 
-            # attached click callback to image
+
             self._image_layer.mouse_drag_callbacks.append(self._on_click)
+            self._image_layer.mouse_double_click_callbacks.append(self._on_double_click)
         
         if self.image_coords:
 
             # TODO:probably a better way to do this
-        
 
             text = {
                 "string": [pos.name for pos in self.positions],
@@ -138,6 +161,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.viewer.layers.selection.active = self._image_layer
 
+        self._update_ui()
+
+
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
         shape = self.image.data.shape[0], self.image.data.shape[1]
@@ -150,11 +176,8 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             return False
 
 
-    def _on_click(self, layer, event):
-        
-        if event.button != 1:
-            return
-
+    def _validate_mouse_click(self, layer, event):
+        """validate if click is inside image, and convert to microscope coords"""                
         # get coords
         coords = layer.world_to_data(event.position)
 
@@ -170,34 +193,45 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x,
         )
 
-        dx = point.x
-        point_yz = self.microscope._y_corrected_stage_movement(self.settings, point.y, self.image.metadata.image_settings.beam_type)
-        dy, dz = point_yz.y, point_yz.z
+        return coords, point
 
-        _base_position = self.image.metadata.microscope_state.absolute_position
+    def _on_click(self, layer, event):
+        
+        if event.button != 1 or 'Alt' not in event.modifiers:
+            return 
 
-        # calculate the corrected move to reach that point from base-state?
-        _new_position = deepcopy(_base_position)
-        _new_position.x += dx
-        _new_position.y += dy
-        _new_position.z += dz
+        coords, point = self._validate_mouse_click(layer, event)
+
+        _new_position = self.microscope._calculate_new_position( 
+                    settings=self.settings, 
+                    dx=point.x, dy=point.y, 
+                    beam_type=self.image.metadata.image_settings.beam_type, 
+                    base_position=self.image.metadata.microscope_state.absolute_position)            
         _new_position.name = f"Position {len(self.positions):02d}"
-
-        logging.info(f"BASE: {_base_position}")
-        logging.info(f"POINT: {point}")
-        logging.info(f"dx: {dx*1e6}, dy: {dy*1e6}, dz: {dz*1e6}")
-        logging.info(f"NEW POSITION: {_new_position}")
 
         # now should be able to just move to _new_position
         self.positions.append(_new_position)
 
         # draw the point on the image
-        self.image_coords.append(coords)
+        self.image_coords.append(coords) # TODO: we should calc this from the positions too? rather than relying only on click need to back-project the positions to the image
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
-
         self._update_position_info()
         self._update_viewer()
+
+    def _on_double_click(self, layer, event):
+        
+        if event.button !=1:
+            return
+        coords, point = self._validate_mouse_click(layer, event)
+
+        _new_position = self.microscope._calculate_new_position( 
+            settings=self.settings, 
+            dx=point.x, dy=point.y, 
+            beam_type=self.image.metadata.image_settings.beam_type, 
+            base_position=self.image.metadata.microscope_state.absolute_position)   
+
+        self._move_to_position(_new_position)
 
     def _update_position_info(self):
 
@@ -209,16 +243,28 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             msg += f"{pos.name} - x:{pos.x*1e3:.3f}mm, y:{pos.y*1e3:.3f}mm, z:{pos.z*1e3:.3f}m\n"
         self.label_position_info.setText(msg)
 
+    def _add_position_pressed(self):
+        print("add_position")
 
-    def _move_to_position(self):
+    def _remove_position_pressed(self):
+        print("remove_position")
+        _position = self.positions[self.comboBox_tile_position.currentIndex()]
+        self.positions.remove(_position)
+        self.image_coords.pop(self.comboBox_tile_position.currentIndex())
+        self._update_position_info()
+        self._update_viewer()
+
+
+    def _move_position_pressed(self):
 
         print("move_to_position")
         _position = self.positions[self.comboBox_tile_position.currentIndex()]
         logging.info(f"Moving To: {_position}")
+        self._move_to_position(_position)
+
+    def _move_to_position(self, _position:FibsemStagePosition)->None:
         self.microscope._safe_absolute_stage_movement(_position)
-
         self._position_changed.emit()
-
 
 
 def main():
