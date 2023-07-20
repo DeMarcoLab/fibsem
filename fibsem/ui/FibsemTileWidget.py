@@ -19,9 +19,12 @@ PATH = os.path.join(cfg.DATA_PATH, "tile")
 os.makedirs(PATH, exist_ok=True)
 from fibsem.ui import utils as ui_utils 
 
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 
 class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
+    _position_changed = pyqtSignal()
+    
     def __init__(
         self,
         microscope: FibsemMicroscope,
@@ -37,6 +40,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.viewer = viewer
 
+        self._image_layer = None
+        self._features_layer = None
+
         self.positions = []
         self.image_coords = []
 
@@ -50,6 +56,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
 
         self.pushButton_move_to_position.clicked.connect(self._move_to_position)
+
 
 
     def run_tile_collection(self):
@@ -76,9 +83,13 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
     def load_image(self):
 
-        print("load_image")
+        path = ui_utils._get_file_ui( msg="Select image to load", path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
 
-        image = FibsemImage.load(os.path.join(PATH, "stitched_image.tif")) # TODO: make this actually load from path
+        if path == "":
+            napari.utils.notifications.show_info(f"No file selected..")
+            return
+
+        image = FibsemImage.load(path)
 
         self._update_viewer(image)
 
@@ -88,35 +99,42 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         if image is not None:
             self.image = image
         
-        
-        self.viewer.layers.clear()
-        arr = median_filter(self.image.data, size=3)
-        self._image_layer = self.viewer.add_image(arr, name="tile", colormap="gray", blending="additive")
+            arr = median_filter(self.image.data, size=3)
+            self._image_layer = self.viewer.add_image(arr, name="tile", colormap="gray", blending="additive")
 
-        # draw a point on the image at center
-        ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
+            # draw a point on the image at center
+            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
 
-        # attached click callback to image
-        self._image_layer.mouse_drag_callbacks.append(self._on_click)
+            # attached click callback to image
+            self._image_layer.mouse_drag_callbacks.append(self._on_click)
         
         if self.image_coords:
+
+            # TODO:probably a better way to do this
+        
+
             text = {
                 "string": [pos.name for pos in self.positions],
                 "color": "white",
-                "translation": np.array([-30, 0]),
+                "translation": np.array([-50, 0]),
             }
-
-            self._features_layer = self.viewer.add_points(
-                self.image_coords,
-                name="Positions",
-                text=text,
-                size=20,
-                edge_width=7,
-                edge_width_is_relative=False,
-                edge_color="transparent",
-                face_color="blue",
-                blending="translucent",
-            )
+            if self._features_layer is None:
+            
+                 self._features_layer = self.viewer.add_points(
+                    self.image_coords,
+                    name="Positions",
+                    text=text,
+                    size=60,
+                    edge_width=7,
+                    edge_width_is_relative=False,
+                    edge_color="transparent",
+                    face_color="lime",
+                    blending="translucent",
+                    symbol="cross",
+                )
+            else:
+                self._features_layer.data = self.image_coords
+                self._features_layer.text = text
 
         self.viewer.layers.selection.active = self._image_layer
 
@@ -198,6 +216,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         _position = self.positions[self.comboBox_tile_position.currentIndex()]
         logging.info(f"Moving To: {_position}")
         self.microscope._safe_absolute_stage_movement(_position)
+
+        self._position_changed.emit()
+
 
 
 def main():

@@ -14,27 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="label_title">
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Tile Grid</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_run_tile_collection">
-     <property name="text">
-      <string>Run Tile Collection</string>
-     </property>
-    </widget>
-   </item>
    <item row="3" column="1">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_tile_size">
      <property name="maximum">
@@ -45,10 +24,17 @@
      </property>
     </widget>
    </item>
-   <item row="11" column="0" colspan="2">
-    <widget class="QLabel" name="label_position_info">
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_tile_overlap">
      <property name="text">
-      <string>TextLabel</string>
+      <string>Overlap (%)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QPushButton" name="pushButton_add_position">
+     <property name="text">
+      <string>Add Position</string>
      </property>
     </widget>
    </item>
@@ -59,10 +45,57 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
+   <item row="6" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_load_image">
      <property name="text">
       <string>Load Image</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="2">
+    <widget class="QLabel" name="label_instructions">
+     <property name="text">
+      <string>Please take or load an overview image.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="1">
+    <widget class="QComboBox" name="comboBox_tile_position"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_tile_grid_size">
+     <property name="text">
+      <string>Grid Size (um)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="1">
+    <widget class="QPushButton" name="pushButton_remove_position">
+     <property name="text">
+      <string>Remove Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="comboBox_tile_beam_type"/>
+   </item>
+   <item row="11" column="0" colspan="2">
+    <widget class="QLabel" name="label_position_info">
+     <property name="text">
+      <string>No Positions saved.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLabel" name="label_position_header">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Saved Positions</string>
      </property>
     </widget>
    </item>
@@ -76,6 +109,34 @@
      </property>
     </widget>
    </item>
+   <item row="12" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_move_to_position">
+     <property name="text">
+      <string>Move to Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_run_tile_collection">
+     <property name="text">
+      <string>Run Tile Collection</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label_title">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Minimap </string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label_tile_beam_type">
      <property name="text">
@@ -83,10 +144,7 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QLineEdit" name="lineEdit_tile_image_path"/>
-   </item>
-   <item row="8" column="0" colspan="2">
+   <item row="7" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -99,46 +157,18 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="comboBox_tile_beam_type"/>
-   </item>
-   <item row="10" column="1">
-    <widget class="QComboBox" name="comboBox_tile_position"/>
-   </item>
-   <item row="9" column="0" colspan="2">
-    <widget class="QLabel" name="label_position_header">
-     <property name="text">
-      <string>TextLabel</string>
+   <item row="14" column="0" colspan="2">
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-    </widget>
-   </item>
-   <item row="10" column="0">
-    <widget class="QLabel" name="label_tile_position">
-     <property name="text">
-      <string>TextLabel</string>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
      </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_tile_overlap">
-     <property name="text">
-      <string>Overlap (%)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_tile_grid_size">
-     <property name="text">
-      <string>Grid Size (um)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="12" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_move_to_position">
-     <property name="text">
-      <string>Move to Position</string>
-     </property>
-    </widget>
+    </spacer>
    </item>
   </layout>
  </widget>

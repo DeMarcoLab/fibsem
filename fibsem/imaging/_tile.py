@@ -24,10 +24,13 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     # start in the middle of the grid
     start_state = microscope.get_current_microscope_state()
     settings.image.hfw = grid_size
+    prev_label = settings.image.label
+    settings.image.label = "big_image"
     big_image = acquire.new_image(microscope, settings.image)
-
+    
     # TOP LEFT CORNER START
     settings.image.hfw = tile_size
+    settings.image.label = prev_label
     start_move = grid_size / 2 - tile_size / 2
     dxg, dyg = start_move, start_move
     dyg *= -1
@@ -64,7 +67,7 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     ddict = {"grid_size": grid_size, "tile_size": tile_size, "n_rows": n_rows, "n_cols": n_cols, 
             "image_settings": settings.image, 
             "dx": dx, "dy": dy, 
-            "start_state": start_state, 
+            "start_state": start_state, "prev-label": prev_label, "start_move": start_move, "dxg": dxg, "dyg": dyg,
             "images": images, "big_image": big_image }
     # from pprint import pprint
     # pprint(ddict)
@@ -95,11 +98,12 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     image.metadata.image_settings.hfw = ddict["grid_size"]
     image.metadata.image_settings = ddict["image_settings"]
 
-    image.save(os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label))
+    image.save(os.path.join(image.metadata.image_settings.save_path, 
+        f"stitched_image-{settings.image.beam_type.name.lower()}.tif"))
 
     # save ddict as yaml
     # utils.save_yaml(os.path.join(image.metadata.image_settings.save_path, 
-                                #  f"{image.metadata.image_settings.label.replace('.tif', '')}.yaml"), ddict)
+                                #  f"{image.metadata.image_settings.label.replace('.tif', '')}.yaml"), ddict) # TODO: remove images from dict
 
     return image
 

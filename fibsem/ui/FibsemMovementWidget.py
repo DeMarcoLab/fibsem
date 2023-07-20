@@ -83,6 +83,10 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
         self.checkBox_auto_scaling.stateChanged.connect(self.minimap)
         self.spinBox_grid_radius.valueChanged.connect(self.minimap)
+
+        # tile manager
+        self.pushButton_tile_manager.clicked.connect(self.open_tile_manager)
+
     def auto_eucentric_correction(self):
 
         print("auto eucentric")
@@ -302,6 +306,19 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_image(BeamType.ION)
         self.update_ui()
+
+
+    def open_tile_manager(self):
+        
+        from fibsem.ui.FibsemTileWidget import FibsemTileWidget
+        self.viewer2 = napari.Viewer(ndisplay=2)
+        self.tile_widget = FibsemTileWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
+        self.viewer2.window.add_dock_widget(
+            self.tile_widget, area="right", add_vertical_stretch=False
+        )
+        self.tile_widget._position_changed.connect(self.update_ui_after_movement)
+        napari.run(max_loop_level=2)
+
 
 def main():
 
