@@ -1411,7 +1411,8 @@ class ThermoMicroscope(FibsemMicroscope):
             pattern.scan_direction = "TopToBottom"
             logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
-
+        if pattern_settings.passes is not None:
+            pattern.pass_count = pattern_settings.passes
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
@@ -3755,6 +3756,7 @@ class TescanMicroscope(FibsemMicroscope):
         height = pattern_settings.height
         rotation = pattern_settings.rotation * constants.RADIANS_TO_DEGREES # CHECK UNITS (TESCAN Takes Degrees)
         paths = self.get_scan_directions()
+        passes = pattern_settings.passes if pattern_settings.passes is not None else 1.0
         if pattern_settings.scan_direction in paths:
             path = pattern_settings.scan_direction
         else:
@@ -3772,7 +3774,8 @@ class TescanMicroscope(FibsemMicroscope):
                 Width=width,
                 Height=height,
                 Angle=rotation,
-                ScanningPath=path
+                ScanningPath=path,
+                ExpositionFactor=passes
             )
         else:
             self.layer.addRectangleFilled(
@@ -3783,7 +3786,8 @@ class TescanMicroscope(FibsemMicroscope):
                 Width=width,
                 Height=height,
                 Angle=rotation,
-                ScanningPath=path
+                ScanningPath=path,
+                ExpositionFactor=passes
             )
 
         pattern = self.layer

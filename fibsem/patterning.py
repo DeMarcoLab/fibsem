@@ -12,7 +12,7 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 
 
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation"),
+    "Rectangle": ("width", "height", "depth", "rotation", "passes"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
     "Circle": ("radius", "depth"),
     "Trench": (
@@ -161,6 +161,7 @@ class RectanglePattern(BasePattern):
             "cleaning_cross_section", False
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        protocol["passes"] = protocol.get("passes", None)
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
         self.point = point
@@ -581,6 +582,7 @@ class SpotWeldPattern(BasePattern):
                 cleaning_cross_section=True,
                 scan_direction="LeftToRight",
                 rotation=rotation,
+                passes=passes,
             )
             patterns.append(pattern_settings)
 

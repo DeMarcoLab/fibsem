@@ -319,6 +319,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.path_edit.textChanged.connect(self.update_ui_pattern)
                 continue
 
+            if key == "passes":
+                label = QtWidgets.QLabel(key)
+                self.passes_comboBox = QtWidgets.QComboBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.passes_comboBox, i, 1)
+                self.passes_comboBox.addItem("N/A")
+                self.passes_comboBox.addItems([str(i) for i in range(1, 20)])
+                self.passes_comboBox.currentIndexChanged.connect(self.update_ui_pattern)
+                continue
             label = QtWidgets.QLabel(key)
             spinbox = QtWidgets.QDoubleSpinBox()
             spinbox.setDecimals(3)
@@ -356,6 +365,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 # add path in ui and get from there
                 path = self.path_edit.text()
                 pattern_dict[key] = path
+                continue
+            if key == "passes":
+                pattern_dict[key] = self.passes_comboBox.currentText() if self.passes_comboBox.currentText() != "N/A" else None
                 continue
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
