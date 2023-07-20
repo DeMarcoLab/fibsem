@@ -39,6 +39,7 @@ patterns:
     offset: 1.0e-6
     size_ratio: 1.0
     depth: 10.0e-6
+    cleaning_cross_section: False
   Horseshoe:
     lamella_width: 40.0e-6
     lamella_height: 10.0e-6
@@ -55,11 +56,13 @@ patterns:
     trench_width: 2.0e-6
     rhs_height: 10.0e-6
     h_offset: 5.0e-6
+    cleaning_cross_section: True
   Fiducial:
     height: 10.0e-6
     width: 1.0e-6
     depth: 5.0e-6
     rotation: 0.0
+    cleaning_cross_section: True
   SpotWeld:
     height: 1.0e-6
     width: 5.0e-6

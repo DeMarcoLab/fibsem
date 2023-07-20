@@ -22,6 +22,7 @@ REQUIRED_KEYS = {
         "size_ratio",
         "offset",
         "depth",
+        "cleaning_cross_section",
     ),
     "Horseshoe": (
         "lamella_width",
@@ -33,7 +34,7 @@ REQUIRED_KEYS = {
         "side_width",
         "depth",
     ),
-    "Fiducial": ("height", "width", "depth", "rotation"),
+    "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
     "Undercut": (
         "height",
         "width",
@@ -41,6 +42,7 @@ REQUIRED_KEYS = {
         "trench_width",
         "rhs_height",
         "h_offset",
+        "cleaning_cross_section",
     ),
     "MicroExpansion": (
         "height",

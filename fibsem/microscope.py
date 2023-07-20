@@ -4321,7 +4321,7 @@ class TescanMicroscope(FibsemMicroscope):
             return self._get_presets()
 
         if key == "scan_direction":
-            values = [e.name for e in self.connection.DrawBeam.ScanningPath]
+            values = ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]
             
 
         return values
