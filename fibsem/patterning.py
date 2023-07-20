@@ -569,6 +569,7 @@ class SpotWeldPattern(BasePattern):
         n_patterns = int(protocol["number"])
         rotation = protocol["rotation"]
         passes = protocol.get("passes", 1)
+        passes = int(passes) if passes is not None else None
 
         patterns = []
         for i in range(n_patterns):
@@ -579,7 +580,7 @@ class SpotWeldPattern(BasePattern):
                 depth=depth,
                 centre_x=point.x,
                 centre_y=point.y + (i - (n_patterns - 1) / 2) * distance,
-                cleaning_cross_section=True,
+                cleaning_cross_section=False,
                 scan_direction="LeftToRight",
                 rotation=rotation,
                 passes=passes,
