@@ -110,23 +110,10 @@ def save_yaml(path: Path, data: dict) -> None:
         path (Path): path location to save yaml file
         data (dict): dictionary object
     """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    path = Path(path).with_suffix(".yaml")
     with open(path, "w") as f:
         yaml.dump(data, f, indent=4)
-
-
-from fibsem.structures import MicroscopeState
-
-
-def save_state_yaml(path: Path, state: MicroscopeState) -> None:
-    """Saves microscope state as a yaml file
-
-    Args:
-        path (Path): path location to save file
-        state (MicroscopeState): MicroscopeState
-    """
-    state_dict = state.__to_dict__()
-
-    save_yaml(path, state_dict)
 
 
 def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:

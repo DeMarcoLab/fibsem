@@ -82,7 +82,11 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.settings.image.resolution = [1024, 1024]
         self.settings.image.dwell_time = 1e-6
         self.settings.image.autocontrast = False
-        self.settings.image.label = "stitched_image.tif"
+        self.settings.image.label = self.lineEdit_tile_label.text() 
+
+        if self.settings.image.label == "":
+            napari.utils.notifications.show_error(f"Please enter a filename for the image")
+            return
 
         image = _tile._tile_image_collection_stitch(self.microscope, self.settings, grid_size, tile_size, overlap=0)
 
@@ -123,7 +127,10 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             self.image = image
         
             arr = median_filter(self.image.data, size=3)
-            self._image_layer = self.viewer.add_image(arr, name="tile", colormap="gray", blending="additive")
+            try:
+                self._image_layer.data = arr
+            else:
+                self._image_layer = self.viewer.add_image(arr, name="tile", colormap="gray", blending="additive")
 
             # draw a point on the image at center
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
@@ -138,7 +145,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
             text = {
                 "string": [pos.name for pos in self.positions],
-                "color": "white",
+                "color": "lime",
                 "translation": np.array([-50, 0]),
             }
             if self._features_layer is None:

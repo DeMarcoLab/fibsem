@@ -95,15 +95,19 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     # convert to fibsem image
     image = FibsemImage(data=arr, metadata=images[0][0].metadata)
     image.metadata.microscope_state = deepcopy(ddict["start_state"])
-    image.metadata.image_settings.hfw = ddict["grid_size"]
     image.metadata.image_settings = ddict["image_settings"]
+    image.metadata.image_settings.hfw = deepcopy(float(ddict["grid_size"]))
 
-    image.save(os.path.join(image.metadata.image_settings.save_path, 
-        f"stitched_image-{settings.image.beam_type.name.lower()}.tif"))
+    filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}')
+    image.save(filename)
 
     # save ddict as yaml
-    # utils.save_yaml(os.path.join(image.metadata.image_settings.save_path, 
-                                #  f"{image.metadata.image_settings.label.replace('.tif', '')}.yaml"), ddict) # TODO: remove images from dict
+    del ddict["images"]
+    del ddict["big_image"]
+
+    ddict["image_settings"] = ddict["image_settings"].__to_dict__()
+    ddict["start_state"] = ddict["start_state"].__to_dict__()
+    utils.save_yaml(filename, ddict) 
 
     return image
 
