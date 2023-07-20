@@ -20,6 +20,8 @@ patterns:
     height: 5.0e-6
     depth: 1.0e-6
     rotation: 0.0
+    cleaning_cross_section: False
+    scan_direction: "ToptoBottom"
   Line:
     start_x: 0.0
     start_y: 0.0
@@ -29,6 +31,7 @@ patterns:
   Circle:
     radius: 5.0e-6
     depth: 1.0e-6
+    cleaning_cross_section: False
   Trench:
     lamella_width: 40.0e-6
     lamella_height: 10.0e-6

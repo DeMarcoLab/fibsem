@@ -12,9 +12,9 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 
 
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation"),
+    "Rectangle": ("width", "height", "depth", "rotation","cleaning_cross_section","scan_direction"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-    "Circle": ("radius", "depth"),
+    "Circle": ("radius", "depth","cleaning_cross_section"),
     "Trench": (
         "lamella_width",
         "lamella_height",

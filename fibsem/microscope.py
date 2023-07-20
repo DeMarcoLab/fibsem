@@ -3754,7 +3754,9 @@ class TescanMicroscope(FibsemMicroscope):
         width = pattern_settings.width
         height = pattern_settings.height
         rotation = pattern_settings.rotation * constants.RADIANS_TO_DEGREES # CHECK UNITS (TESCAN Takes Degrees)
-        paths = self.get_scan_directions()
+        paths = self.get_available_values(key="scan_direction")
+        print(f"pattern settings scan direction: {pattern_settings.scan_direction}")
+        print(f'Pattern settings cleaning cross section: {pattern_settings.cleaning_cross_section}')
         if pattern_settings.scan_direction in paths:
             path = pattern_settings.scan_direction
         else:
@@ -3829,6 +3831,16 @@ class TescanMicroscope(FibsemMicroscope):
 
             
         """
+        if pattern_settings.cleaning_cross_section:
+            self.layer.addAnnulusPolish(
+                CenterX=pattern_settings.centre_x,
+                CenterY=pattern_settings.centre_y,
+                RadiusA=pattern_settings.radius,
+                RadiusB=0,
+                Depth=pattern_settings.depth,
+                DepthUnit='m',
+            )
+
         pattern = self.layer.addAnnulusFilled(
             CenterX=pattern_settings.centre_x,
             CenterY=pattern_settings.centre_y,
@@ -4295,6 +4307,10 @@ class TescanMicroscope(FibsemMicroscope):
 
         if key == "presets":
             return self._get_presets()
+
+        if key == "scan_direction":
+            values = [e.name for e in self.connection.DrawBeam.ScanningPath]
+            
 
         return values
 
