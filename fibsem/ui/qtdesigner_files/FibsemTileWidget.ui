@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="15" column="0" colspan="2">
+   <item row="17" column="0" colspan="2">
     <spacer name="verticalSpacer_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -65,7 +65,14 @@
      </property>
     </widget>
    </item>
-   <item row="14" column="0" colspan="2">
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_tile_label">
+     <property name="text">
+      <string>Tile Filename</string>
+     </property>
+    </widget>
+   </item>
+   <item row="16" column="0" colspan="2">
     <widget class="QLabel" name="label_instructions">
      <property name="text">
       <string>Please take or load an overview image.</string>
@@ -136,6 +143,19 @@
      </property>
     </widget>
    </item>
+   <item row="5" column="1">
+    <widget class="QLineEdit" name="lineEdit_tile_label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>stitched-image</string>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0" colspan="2">
     <widget class="QLabel" name="label_title">
      <property name="font">
@@ -170,23 +190,17 @@
      </property>
     </spacer>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_tile_label">
+   <item row="15" column="0">
+    <widget class="QPushButton" name="pushButton_load_positions">
      <property name="text">
-      <string>Tile Filename</string>
+      <string>Load Positions from File</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="1">
-    <widget class="QLineEdit" name="lineEdit_tile_label">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
+   <item row="15" column="1">
+    <widget class="QPushButton" name="pushButton_save_positions">
      <property name="text">
-      <string>stitched-image</string>
+      <string>Save Positions to File</string>
      </property>
     </widget>
    </item>

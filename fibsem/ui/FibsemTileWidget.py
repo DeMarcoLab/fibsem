@@ -67,6 +67,8 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
         self.pushButton_remove_position.setStyleSheet("background-color: red")
 
+        self.pushButton_save_positions.clicked.connect(self._save_positions_pressed)
+
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
@@ -278,6 +280,31 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
     def _move_to_position(self, _position:FibsemStagePosition)->None:
         self.microscope._safe_absolute_stage_movement(_position)
         self._stage_position_moved.emit(_position)
+
+
+    def _load_positions(self):
+
+        print("load_positions")
+
+    def _save_positions_pressed(self):
+
+        print("save_positions")
+
+        path = ui_utils._get_save_file_ui(msg = "Select a file to save the positions to",
+            path = self.settings.image.save_path,
+            _filter= "*yaml",
+            parent=self,
+        )
+
+        if path == "":
+            napari.utils.notifications.show_info(f"No file selected, not saving.")
+            return
+
+        # save the positions
+        pdict = [p.__to_dict__() for p in self.positions]
+        utils.save_yaml(path, pdict)
+
+        napari.utils.notifications.show_info(f"Saved positions to {path}")
 
 
 def main():
