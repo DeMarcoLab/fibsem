@@ -332,6 +332,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 continue
 
             if key == "cleaning_cross_section":
+                if isinstance(self.microscope, ThermoMicroscope) and pattern.name == "Circle":
+                    continue
                 label = QtWidgets.QLabel(key)
                 self.checkbox_cleaning_cross_section = QtWidgets.QCheckBox()
                 self.gridLayout_patterns.addWidget(label, i, 0)
@@ -382,6 +384,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 pattern_dict[key] = self.comboBox_scan_direction.currentText()
                 continue
             if key == "cleaning_cross_section":
+                if isinstance(self.microscope, ThermoMicroscope) and pattern.name == "Circle":
+                    continue
                 pattern_dict[key] = self.checkbox_cleaning_cross_section.isChecked()
                 continue
 
