@@ -237,7 +237,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # set the pattern protcol
         self.update_pattern_ui(milling_stage.pattern.protocol, milling_stage.pattern.point)
-        print("UPDATE_MILLING_STAGE PROTOCOL: ", milling_stage.pattern.protocol)
 
         # set the pattern (and triggers the pattern settings)
         self.comboBox_patterns.setCurrentText(milling_stage.pattern.name)

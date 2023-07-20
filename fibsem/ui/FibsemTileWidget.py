@@ -23,7 +23,8 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 
 class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
-    _position_changed = pyqtSignal()
+    _stage_position_moved = pyqtSignal(FibsemStagePosition)
+    _stage_position_added = pyqtSignal(FibsemStagePosition)
     
     def __init__(
         self,
@@ -66,6 +67,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
         self.pushButton_remove_position.setStyleSheet("background-color: red")
 
+
+        # signals
+        # self._stage_position_added.connect(self._position_added_callback)
 
     def run_tile_collection(self):
 
@@ -129,7 +133,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             arr = median_filter(self.image.data, size=3)
             try:
                 self._image_layer.data = arr
-            else:
+            except:
                 self._image_layer = self.viewer.add_image(arr, name="tile", colormap="gray", blending="additive")
 
             # draw a point on the image at center
@@ -214,7 +218,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
                     dx=point.x, dy=point.y, 
                     beam_type=self.image.metadata.image_settings.beam_type, 
                     base_position=self.image.metadata.microscope_state.absolute_position)            
-        _new_position.name = f"Position {len(self.positions):02d}"
+        _new_position.name = f"Position {len(self.positions)+1:02d}"
 
         # now should be able to just move to _new_position
         self.positions.append(_new_position)
@@ -225,6 +229,8 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
         self._update_position_info()
         self._update_viewer()
+
+        self._stage_position_added.emit(_new_position)
 
     def _on_double_click(self, layer, event):
         
@@ -271,7 +277,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
     def _move_to_position(self, _position:FibsemStagePosition)->None:
         self.microscope._safe_absolute_stage_movement(_position)
-        self._position_changed.emit()
+        self._stage_position_moved.emit(_position)
 
 
 def main():
