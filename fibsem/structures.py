@@ -828,6 +828,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     rotation: float = 0.0 (m), 
                     centre_x: float = 0.0 (m), 
                     centre_y: float = 0.0 (m),
+                    passes: float = 1.0,
 
                 If FibsemPattern.Line
                     start_x: float (m), 
@@ -864,6 +865,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.centre_y = kwargs["centre_y"] if "centre_y" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+            self.passes = kwargs["passes"] if "passes" in kwargs else None
         elif pattern == FibsemPattern.Line:
             self.start_x = kwargs["start_x"]
             self.start_y = kwargs["start_y"]
@@ -906,7 +908,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
         
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
-            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section}, passes={self.passes})"
         if self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
         if self.pattern is FibsemPattern.Circle:
@@ -930,6 +932,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 centre_y=state_dict["centre_y"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
+                passes=int(state_dict["passes"]) if state_dict["passes"] is not None else None,
             )
         elif state_dict["pattern"] == "Line":
             return FibsemPatternSettings(
@@ -993,6 +996,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "centre_y": self.centre_y,
                 "scan_direction": self.scan_direction,
                 "cleaning_cross_section": self.cleaning_cross_section,
+                "passes": self.passes,
             }
         elif self.pattern == FibsemPattern.Line:
             return {
