@@ -37,6 +37,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.viewer = viewer
 
+        self.positions = []
+        self.image_coords = []
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -45,6 +48,8 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_load_image.clicked.connect(self.load_image)
 
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
+
+        self.pushButton_move_to_position.clicked.connect(self._move_to_position)
 
 
     def run_tile_collection(self):
@@ -62,13 +67,15 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.settings.image.resolution = [1024, 1024]
         self.settings.image.dwell_time = 1e-6
         self.settings.image.autocontrast = False
+        self.settings.image.label = "stitched_image.tif"
 
-        ddict = _tile._tile_image_collection(self.microscope, self.settings, grid_size, tile_size)
-        images = ddict["images"]
-        big_image = ddict["big_image"]
+        image = _tile._tile_image_collection_stitch(self.microscope, self.settings, grid_size, tile_size, overlap=0)
+        
+        # images = ddict["images"]
+        # big_image = ddict["big_image"]
 
-        image = _tile._stitch_images(images=images, ddict=ddict, overlap=0)
-        image.save(os.path.join(PATH, "stitched_image.tif"))
+        # image = _tile._stitch_images(images=images, ddict=ddict, overlap=0)
+
 
         self._update_viewer(image)
 
@@ -77,24 +84,47 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         print("load_image")
 
-        image = FibsemImage.load(os.path.join(PATH, "stitched_image.tif"))
+        image = FibsemImage.load(os.path.join(PATH, "stitched_image.tif")) # TODO: make this actually load from path
 
         self._update_viewer(image)
 
-    def _update_viewer(self, image: FibsemImage):
 
-        self.image = image
-        arr = median_filter(image.data, size=3)
+    def _update_viewer(self, image: FibsemImage =  None):
+
+        if image is not None:
+            self.image = image
+        
+        
         self.viewer.layers.clear()
-        self._image_layer = self.viewer.add_image(image.data, name="tile", colormap="gray", blending="additive")
+        arr = median_filter(self.image.data, size=3)
+        self._image_layer = self.viewer.add_image(arr, name="tile", colormap="gray", blending="additive")
 
         # draw a point on the image at center
         ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
 
-
         # attached click callback to image
-        self._image_layer.mouse_double_click_callbacks.append(self._on_click)
+        self._image_layer.mouse_drag_callbacks.append(self._on_click)
+        
+        if self.image_coords:
+            text = {
+                "string": [pos.name for pos in self.positions],
+                "color": "white",
+                "translation": np.array([-30, 0]),
+            }
 
+            self._features_layer = self.viewer.add_points(
+                self.image_coords,
+                name="Positions",
+                text=text,
+                size=20,
+                edge_width=7,
+                edge_width_is_relative=False,
+                edge_color="transparent",
+                face_color="blue",
+                blending="translucent",
+            )
+
+        self.viewer.layers.selection.active = self._image_layer
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
@@ -139,7 +169,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         _new_position.x += dx
         _new_position.y += dy
         _new_position.z += dz
-
+        _new_position.name = f"Position {len(self.positions):02d}"
 
         logging.info(f"BASE: {_base_position}")
         logging.info(f"POINT: {point}")
@@ -147,9 +177,33 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         logging.info(f"NEW POSITION: {_new_position}")
 
         # now should be able to just move to _new_position
-        self.microscope._safe_absolute_stage_movement(_new_position)
+        self.positions.append(_new_position)
+
+        # draw the point on the image
+        self.image_coords.append(coords)
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
+
+        self._update_position_info()
+        self._update_viewer()
+
+    def _update_position_info(self):
+
+        self.comboBox_tile_position.clear()
+        self.comboBox_tile_position.addItems([pos.name for pos in self.positions])
+
+        msg = ""
+        for pos in self.positions:
+            msg += f"{pos.name} - x:{pos.x*1e3:.3f}mm, y:{pos.y*1e3:.3f}mm, z:{pos.z*1e3:.3f}m\n"
+        self.label_position_info.setText(msg)
+
+
+    def _move_to_position(self):
+
+        print("move_to_position")
+        _position = self.positions[self.comboBox_tile_position.currentIndex()]
+        logging.info(f"Moving To: {_position}")
+        self.microscope._safe_absolute_stage_movement(_position)
 
 
 def main():

@@ -66,8 +66,8 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
             "dx": dx, "dy": dy, 
             "start_state": start_state, 
             "images": images, "big_image": big_image }
-    from pprint import pprint
-    pprint(ddict)
+    # from pprint import pprint
+    # pprint(ddict)
 
     return ddict
 
@@ -92,7 +92,21 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     # convert to fibsem image
     image = FibsemImage(data=arr, metadata=images[0][0].metadata)
     image.metadata.microscope_state = deepcopy(ddict["start_state"])
+    image.metadata.image_settings.hfw = ddict["grid_size"]
     image.metadata.image_settings = ddict["image_settings"]
-    image.metadata.image_settings.label = f"stitched-grid" 
+
+    image.save(os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label))
+
+    # save ddict as yaml
+    # utils.save_yaml(os.path.join(image.metadata.image_settings.save_path, 
+                                #  f"{image.metadata.image_settings.label.replace('.tif', '')}.yaml"), ddict)
+
+    return image
+
+
+def _tile_image_collection_stitch(microscope, settings, grid_size, tile_size, overlap=0) -> FibsemImage:
+
+    ddict = _tile_image_collection(microscope, settings, grid_size, tile_size)
+    image = _stitch_images(ddict["images"], ddict, overlap=overlap)
 
     return image
