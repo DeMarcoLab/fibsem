@@ -62,6 +62,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # buttons
         self.pushButton_move.clicked.connect(self.move_to_position)
         self.pushButton_continue.clicked.connect(self.continue_pressed)
+        self.pushButton_move_flat_ion.clicked.connect(self.move_flat_to_beam)
+        self.pushButton_move_flat_electron.clicked.connect(self.move_flat_to_beam)
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_double_click_callbacks.append(self._double_click)
@@ -302,6 +304,16 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_image(BeamType.ION)
         self.update_ui()
+
+    def move_flat_to_beam(self):
+
+        beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON
+
+        self.microscope.move_flat_to_beam(settings=self.settings, beam_type=beam_type)
+
+        self.update_ui_after_movement()
+
+
 
 def main():
 
