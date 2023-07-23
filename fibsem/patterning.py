@@ -939,6 +939,7 @@ PROTOCOL_MILL_MAP = {
     "clover": CloverPattern,
     "autolamella": TrenchPattern,
     "autolamella_undercut": RectanglePattern,
+    "rectangle": RectanglePattern,
 }
 
 
