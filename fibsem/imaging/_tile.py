@@ -186,8 +186,6 @@ def _reproject_positions(image, positions):
     
     points = []
     for pos in positions:
-        print("reprojecting position: ", pos.name)
         points.append(_calculate_repojection(image, pos))
     
-    print(points)
     return points

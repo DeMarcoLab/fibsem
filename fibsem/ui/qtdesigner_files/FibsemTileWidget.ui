@@ -14,7 +14,62 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_tile_label">
+     <property name="text">
+      <string>Tile Filename</string>
+     </property>
+    </widget>
+   </item>
    <item row="17" column="0" colspan="2">
+    <widget class="QLabel" name="label_instructions">
+     <property name="text">
+      <string>Please take or load an overview image.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="comboBox_tile_beam_type"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_tile_beam_type">
+     <property name="text">
+      <string>Beam Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="0">
+    <widget class="QPushButton" name="pushButton_update_position">
+     <property name="text">
+      <string>Update Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_tile_size">
+     <property name="maximum">
+      <double>100000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>100.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="14" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_move_to_position">
+     <property name="text">
+      <string>Move to Position</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_tile_overlap">
+     <property name="text">
+      <string>Overlap (%)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="18" column="0" colspan="2">
     <spacer name="verticalSpacer_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -27,27 +82,60 @@
      </property>
     </spacer>
    </item>
-   <item row="3" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_tile_size">
+   <item row="16" column="0">
+    <widget class="QPushButton" name="pushButton_load_positions">
+     <property name="text">
+      <string>Load Positions from File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_grid_size">
      <property name="maximum">
-      <double>100000.000000000000000</double>
+      <double>1000000.000000000000000</double>
      </property>
      <property name="value">
-      <double>100.000000000000000</double>
+      <double>400.000000000000000</double>
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_tile_overlap">
+   <item row="16" column="1">
+    <widget class="QPushButton" name="pushButton_save_positions">
      <property name="text">
-      <string>Overlap (%)</string>
+      <string>Save Positions to File</string>
      </property>
     </widget>
    </item>
-   <item row="11" column="0">
-    <widget class="QPushButton" name="pushButton_add_position">
+   <item row="5" column="1">
+    <widget class="QLineEdit" name="lineEdit_tile_label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="text">
-      <string>Add Position</string>
+      <string>stitched-image</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_load_image">
+     <property name="text">
+      <string>Load Image</string>
      </property>
     </widget>
    </item>
@@ -58,51 +146,17 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_load_image">
+   <item row="13" column="0" colspan="2">
+    <widget class="QLabel" name="label_position_info">
      <property name="text">
-      <string>Load Image</string>
+      <string>No Positions saved.</string>
      </property>
     </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_tile_label">
-     <property name="text">
-      <string>Tile Filename</string>
-     </property>
-    </widget>
-   </item>
-   <item row="16" column="0" colspan="2">
-    <widget class="QLabel" name="label_instructions">
-     <property name="text">
-      <string>Please take or load an overview image.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="1">
-    <widget class="QComboBox" name="comboBox_tile_position"/>
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="label_tile_grid_size">
      <property name="text">
       <string>Grid Size (um)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="1">
-    <widget class="QPushButton" name="pushButton_remove_position">
-     <property name="text">
-      <string>Remove Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="comboBox_tile_beam_type"/>
-   </item>
-   <item row="12" column="0" colspan="2">
-    <widget class="QLabel" name="label_position_info">
-     <property name="text">
-      <string>No Positions saved.</string>
      </property>
     </widget>
    </item>
@@ -119,40 +173,10 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_grid_size">
-     <property name="maximum">
-      <double>1000000.000000000000000</double>
-     </property>
-     <property name="value">
-      <double>400.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="13" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_move_to_position">
+   <item row="12" column="1">
+    <widget class="QPushButton" name="pushButton_remove_position">
      <property name="text">
-      <string>Move to Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_run_tile_collection">
-     <property name="text">
-      <string>Run Tile Collection</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QLineEdit" name="lineEdit_tile_label">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string>stitched-image</string>
+      <string>Remove Position</string>
      </property>
     </widget>
    </item>
@@ -170,37 +194,30 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_tile_beam_type">
+   <item row="6" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_run_tile_collection">
      <property name="text">
-      <string>Beam Type</string>
+      <string>Run Tile Collection</string>
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+   <item row="10" column="1">
+    <widget class="QComboBox" name="comboBox_tile_position"/>
    </item>
-   <item row="15" column="0">
-    <widget class="QPushButton" name="pushButton_load_positions">
-     <property name="text">
-      <string>Load Positions from File</string>
+   <item row="11" column="1">
+    <widget class="QLineEdit" name="lineEdit_tile_position_name">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
     </widget>
    </item>
-   <item row="15" column="1">
-    <widget class="QPushButton" name="pushButton_save_positions">
+   <item row="11" column="0">
+    <widget class="QLabel" name="label_position_name">
      <property name="text">
-      <string>Save Positions to File</string>
+      <string>Position Name</string>
      </property>
     </widget>
    </item>

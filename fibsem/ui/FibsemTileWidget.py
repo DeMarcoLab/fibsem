@@ -43,7 +43,6 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.image = None
         self._image_layer = None
-        self._features_layer = None
         self._reprojection_layer = None
 
         self.positions = []
@@ -61,9 +60,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         self.pushButton_move_to_position.clicked.connect(self._move_position_pressed)
 
-
-        self.pushButton_add_position.clicked.connect(self._add_position_pressed)
-        self.pushButton_add_position.setStyleSheet("background-color: green")
+        self.comboBox_tile_position.currentIndexChanged.connect(self._update_current_position_info)
+        self.pushButton_update_position.clicked.connect(self._update_position_pressed)
+        self.pushButton_update_position.setStyleSheet("background-color: blue")
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
         self.pushButton_remove_position.setStyleSheet("background-color: red")
 
@@ -111,7 +110,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
     def _update_ui(self):
 
         _image_loaded = self.image is not None
-        self.pushButton_add_position.setEnabled(_image_loaded)
+        self.pushButton_update_position.setEnabled(_image_loaded)
         self.pushButton_remove_position.setEnabled(_image_loaded)
         self.pushButton_move_to_position.setEnabled(_image_loaded)
 
@@ -141,33 +140,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
             self._image_layer.mouse_drag_callbacks.append(self._on_click)
             self._image_layer.mouse_double_click_callbacks.append(self._on_double_click)
-        
-        # if self.image_coords:
-
-        #     # TODO:probably a better way to do this
-
-        #     text = {
-        #         "string": [pos.name for pos in self.positions],
-        #         "color": "lime",
-        #         "translation": np.array([-50, 0]),
-        #     }
-        #     if self._features_layer is None:
-            
-        #          self._features_layer = self.viewer.add_points(
-        #             self.image_coords,
-        #             name="Positions",
-        #             text=text,
-        #             size=60,
-        #             edge_width=7,
-        #             edge_width_is_relative=False,
-        #             edge_color="transparent",
-        #             face_color="lime",
-        #             blending="translucent",
-        #             symbol="cross",
-        #         )
-        #     else:
-        #         self._features_layer.data = self.image_coords
-        #         self._features_layer.text = text
+    
 
         self._draw_positions() # draw the reprojected positions on the image
 
@@ -219,13 +192,10 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
                     dx=point.x, dy=point.y, 
                     beam_type=self.image.metadata.image_settings.beam_type, 
                     base_position=self.image.metadata.microscope_state.absolute_position)            
-        _new_position.name = f"Position {len(self.positions)+1:02d}"
+        _new_position.name = f"Position {len(self.positions)+1:02d}" # TODO: allow user to edit this
 
         # now should be able to just move to _new_position
         self.positions.append(_new_position)
-
-        # draw the point on the image
-        # self.image_coords.append(coords) # TODO: we should calc this from the positions too? rather than relying only on click need to back-project the positions to the image
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
         self._update_position_info()
@@ -248,21 +218,42 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self._move_to_position(_new_position)
         self._update_viewer()
 
-    def _update_position_info(self):
+    def _update_current_position_info(self):
 
+        idx = self.comboBox_tile_position.currentIndex()
+        if idx != -1:
+            self.lineEdit_tile_position_name.setText(self.positions[idx].name)
+        else:
+            self.lineEdit_tile_position_name.setText("")
+
+    def _update_position_info(self):
+        idx = self.comboBox_tile_position.currentIndex()
         self.comboBox_tile_position.clear()
         self.comboBox_tile_position.addItems([pos.name for pos in self.positions])
+        if idx != -1:
+            self.comboBox_tile_position.setCurrentIndex(idx)
 
         msg = ""
         for pos in self.positions:
-            msg += f"{pos.name} - x:{pos.x*1e3:.3f}mm, y:{pos.y*1e3:.3f}mm, z:{pos.z*1e3:.3f}m\n"
+            msg += f"{pos.name}:\t x:{pos.x*1e3:.2f}mm, y:{pos.y*1e3:.2f}mm, z:{pos.z*1e3:.2f}m\n"
         self.label_position_info.setText(msg)
 
-    def _add_position_pressed(self):
-        print("add_position")
+
+    def _update_position_pressed(self):
+        logging.info(f"Updating position...")
+        _position = self.positions[self.comboBox_tile_position.currentIndex()]
+        
+        name = self.lineEdit_tile_position_name.text()
+        if name == "":
+            napari.utils.notifications.show_info(f"Please enter a name for the position")
+            return
+
+        _position.name = name 
+        self._update_position_info()
+        self._update_viewer()
 
     def _remove_position_pressed(self):
-        print("remove_position")
+        logging.info(f"Removing position...")
         _position = self.positions[self.comboBox_tile_position.currentIndex()]
         self.positions.remove(_position)
         self._update_position_info()
@@ -271,7 +262,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
     def _move_position_pressed(self):
 
-        print("move_to_position")
+        logging.info(f"Moving to position...")
         _position = self.positions[self.comboBox_tile_position.currentIndex()]
         logging.info(f"Moving To: {_position}")
         self._move_to_position(_position)
@@ -284,6 +275,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
     def _load_positions(self):
 
+        logging.info(f"Loading Positions...")
         path = ui_utils._get_file_ui( msg="Select a position file to load", 
             path=self.settings.image.save_path, 
             _filter= "*yaml", 
@@ -302,9 +294,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self._update_viewer()
 
     def _save_positions_pressed(self):
-
-        print("save_positions")
-
+        
+        logging.info(f"Saving Positions...")
+        
         path = ui_utils._get_save_file_ui(msg = "Select a file to save the positions to",
             path = self.settings.image.save_path,
             _filter= "*yaml",
@@ -324,8 +316,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
     def _draw_positions(self):
         
-
-        print("drawing positions")
+        logging.info(f"Drawing Reprojected Positions...")
         current_position = self.microscope.get_stage_position()
         current_position.name = f"Current Position"
 
@@ -348,7 +339,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             
                  self._reprojection_layer = self.viewer.add_points(
                     data,
-                    name="Reprojected Positions",
+                    name="Positions",
                     text=text,
                     size=60,
                     edge_width=7,
@@ -361,6 +352,23 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             else:
                 self._reprojection_layer.data = data
                 self._reprojection_layer.text = text
+
+    def _align_image(self):
+
+        # load another image
+
+        # select layer
+
+        # allow translation, rotation, scaling of image
+
+        pass
+
+
+
+
+
+
+
 
 def main():
 
