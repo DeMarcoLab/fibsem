@@ -154,7 +154,6 @@ Methods:
     def __to_dict__(self) -> dict:
         position_dict = {}
 
-        position_dict["name"] = self.name
         position_dict["name"] = self.name if self.name is not None else None
         position_dict["x"] = float(self.x) if self.x is not None else None
         position_dict["y"] = float(self.y) if self.y is not None else None
@@ -1556,16 +1555,7 @@ class FibsemImageMetadata:
         if settings["pixel_size"] is not None:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
         if settings["microscope_state"] is not None:
-            microscope_state = MicroscopeState(
-                timestamp=settings["microscope_state"]["timestamp"],
-                absolute_position=FibsemStagePosition(),
-                eb_settings=BeamSettings.__from_dict__(
-                    settings["microscope_state"]["eb_settings"]
-                ),
-                ib_settings=BeamSettings.__from_dict__(
-                    settings["microscope_state"]["ib_settings"]
-                ),
-            )
+            microscope_state = MicroscopeState.__from_dict__(settings["microscope_state"])
         
         detector_dict = settings.get("detector_settings", {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0})
         detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
@@ -1710,7 +1700,6 @@ class FibsemImage:
         Inputs:
             save_path (path): path to save directory and filename
         """
-        # self.metadata.image_settings.save_path = str(self.metadata.image_settings.save_path)
         if save_path is None:
             save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)

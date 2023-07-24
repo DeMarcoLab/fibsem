@@ -83,6 +83,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
         self.checkBox_auto_scaling.stateChanged.connect(self.minimap)
         self.spinBox_grid_radius.valueChanged.connect(self.minimap)
+
     def auto_eucentric_correction(self):
 
         print("auto eucentric")
@@ -302,6 +303,12 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_image(BeamType.ION)
         self.update_ui()
+    
+    def _stage_position_moved(self, pos: FibsemStagePosition):
+        self.update_ui_after_movement()
+
+
+
 
 def main():
 
