@@ -216,3 +216,32 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
         plt.show()
 
     return fig
+
+
+from fibsem import conversions
+# TODO: these probs should be somewhere else
+def _convert_image_coord_to_position(microscope, settings, image, coords) -> FibsemStagePosition:
+
+
+
+    # microscope coordinates
+    point = conversions.image_to_microscope_image_coordinates(
+        Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+    )
+
+    _new_position = microscope._calculate_new_position( 
+            settings=settings, 
+            dx=point.x, dy=point.y, 
+            beam_type=image.metadata.image_settings.beam_type, 
+            base_position=image.metadata.microscope_state.absolute_position)
+
+    return _new_position
+
+
+def _convert_image_coords_to_positions(microscope, settings, image, coords) -> list[FibsemStagePosition]:
+
+    positions = []
+    for i, coord in enumerate(coords):
+        positions.append(_convert_image_coord_to_position(microscope, settings, image, coord))
+        positions[i].name = f"Position {i:02d}"
+    return positions
