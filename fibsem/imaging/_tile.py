@@ -1,7 +1,7 @@
 
 
 from fibsem import utils, acquire
-from fibsem.structures import BeamType, FibsemStagePosition
+from fibsem.structures import BeamType, FibsemStagePosition, Point
 
 import matplotlib.pyplot as plt
 import os
@@ -18,6 +18,11 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     dx, dy = settings.image.hfw, settings.image.hfw 
 
     dy *= -1 # need to invert y-axis
+
+    # fixed image settings
+    settings.image.resolution = [1024, 1024]
+    settings.image.dwell_time = 1e-6
+    settings.image.autocontrast = False
 
     print(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
     print(f"dx: {dx*1e6} um, dy: {dy*1e6} um")
@@ -153,3 +158,36 @@ def _create_tiles(image: np.ndarray, n_rows, n_cols, tile_size, overlap=0):
     tiles = np.array(tiles)
 
     return tiles
+
+
+
+def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
+
+    # difference between current position and image position
+    delta = pos - image.metadata.microscope_state.absolute_position
+
+    # projection of the positions onto the image
+    dx = delta.x
+    dy = np.sqrt(delta.y**2 + delta.z**2) 
+    dy = dy if (delta.y<0) else -dy
+
+    pt_delta = Point(dx, dy)
+    px_delta = pt_delta._to_pixels(image.metadata.pixel_size.x)
+
+    image_centre = Point(x=image.data.shape[1]/2, y=image.data.shape[0]/2)
+    point = image_centre + px_delta
+
+    # NB: there is a small reprojection error that grows with distance from centre
+
+    return point
+
+
+def _reproject_positions(image, positions):
+    
+    points = []
+    for pos in positions:
+        print("reprojecting position: ", pos.name)
+        points.append(_calculate_repojection(image, pos))
+    
+    print(points)
+    return points

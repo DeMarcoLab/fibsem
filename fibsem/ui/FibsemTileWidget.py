@@ -44,9 +44,9 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.image = None
         self._image_layer = None
         self._features_layer = None
+        self._reprojection_layer = None
 
         self.positions = []
-        self.image_coords = []
 
         self.setup_connections()
 
@@ -68,7 +68,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_position.setStyleSheet("background-color: red")
 
         self.pushButton_save_positions.clicked.connect(self._save_positions_pressed)
-
+        self.pushButton_load_positions.clicked.connect(self._load_positions)
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
@@ -85,9 +85,6 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.settings.image.beam_type = beam_type
         self.settings.image.save = True
         self.settings.image.save_path = PATH
-        self.settings.image.resolution = [1024, 1024]
-        self.settings.image.dwell_time = 1e-6
-        self.settings.image.autocontrast = False
         self.settings.image.label = self.lineEdit_tile_label.text() 
 
         if self.settings.image.label == "":
@@ -145,32 +142,34 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             self._image_layer.mouse_drag_callbacks.append(self._on_click)
             self._image_layer.mouse_double_click_callbacks.append(self._on_double_click)
         
-        if self.image_coords:
+        # if self.image_coords:
 
-            # TODO:probably a better way to do this
+        #     # TODO:probably a better way to do this
 
-            text = {
-                "string": [pos.name for pos in self.positions],
-                "color": "lime",
-                "translation": np.array([-50, 0]),
-            }
-            if self._features_layer is None:
+        #     text = {
+        #         "string": [pos.name for pos in self.positions],
+        #         "color": "lime",
+        #         "translation": np.array([-50, 0]),
+        #     }
+        #     if self._features_layer is None:
             
-                 self._features_layer = self.viewer.add_points(
-                    self.image_coords,
-                    name="Positions",
-                    text=text,
-                    size=60,
-                    edge_width=7,
-                    edge_width_is_relative=False,
-                    edge_color="transparent",
-                    face_color="lime",
-                    blending="translucent",
-                    symbol="cross",
-                )
-            else:
-                self._features_layer.data = self.image_coords
-                self._features_layer.text = text
+        #          self._features_layer = self.viewer.add_points(
+        #             self.image_coords,
+        #             name="Positions",
+        #             text=text,
+        #             size=60,
+        #             edge_width=7,
+        #             edge_width_is_relative=False,
+        #             edge_color="transparent",
+        #             face_color="lime",
+        #             blending="translucent",
+        #             symbol="cross",
+        #         )
+        #     else:
+        #         self._features_layer.data = self.image_coords
+        #         self._features_layer.text = text
+
+        self._draw_positions() # draw the reprojected positions on the image
 
         self.viewer.layers.selection.active = self._image_layer
 
@@ -226,7 +225,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.positions.append(_new_position)
 
         # draw the point on the image
-        self.image_coords.append(coords) # TODO: we should calc this from the positions too? rather than relying only on click need to back-project the positions to the image
+        # self.image_coords.append(coords) # TODO: we should calc this from the positions too? rather than relying only on click need to back-project the positions to the image
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
         self._update_position_info()
@@ -247,6 +246,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
             base_position=self.image.metadata.microscope_state.absolute_position)   
 
         self._move_to_position(_new_position)
+        self._update_viewer()
 
     def _update_position_info(self):
 
@@ -265,7 +265,6 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         print("remove_position")
         _position = self.positions[self.comboBox_tile_position.currentIndex()]
         self.positions.remove(_position)
-        self.image_coords.pop(self.comboBox_tile_position.currentIndex())
         self._update_position_info()
         self._update_viewer()
 
@@ -280,11 +279,27 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
     def _move_to_position(self, _position:FibsemStagePosition)->None:
         self.microscope._safe_absolute_stage_movement(_position)
         self._stage_position_moved.emit(_position)
+        self._update_viewer()
 
 
     def _load_positions(self):
 
-        print("load_positions")
+        path = ui_utils._get_file_ui( msg="Select a position file to load", 
+            path=self.settings.image.save_path, 
+            _filter= "*yaml", 
+            parent=self)
+
+        if path == "":
+            napari.utils.notifications.show_info(f"No file selected..")
+            return
+
+        pdict = utils.load_yaml(path)
+        
+        positions = [FibsemStagePosition.__from_dict__(p) for p in pdict]
+        self.positions = self.positions + positions # append? or overwrite
+
+        self._update_position_info()
+        self._update_viewer()
 
     def _save_positions_pressed(self):
 
@@ -306,6 +321,46 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         napari.utils.notifications.show_info(f"Saved positions to {path}")
 
+
+    def _draw_positions(self):
+        
+
+        print("drawing positions")
+        current_position = self.microscope.get_stage_position()
+        current_position.name = f"Current Position"
+
+        if self.image:
+            
+            drawn_positions = self.positions + [current_position]
+            points = _tile._reproject_positions(self.image, drawn_positions)
+
+            data = []
+            for pt in points:
+                # reverse to list
+                data.append([pt.y, pt.x])
+
+            text = {
+                "string": [pos.name for pos in drawn_positions],
+                "color": "lime", # TODO: separate colour for current position
+                "translation": np.array([-50, 0]),
+            }
+            if self._reprojection_layer is None:
+            
+                 self._reprojection_layer = self.viewer.add_points(
+                    data,
+                    name="Reprojected Positions",
+                    text=text,
+                    size=60,
+                    edge_width=7,
+                    edge_width_is_relative=False,
+                    edge_color="transparent",
+                    face_color="lime",
+                    blending="translucent",
+                    symbol="cross",
+                )
+            else:
+                self._reprojection_layer.data = data
+                self._reprojection_layer.text = text
 
 def main():
 
