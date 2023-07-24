@@ -178,6 +178,7 @@ def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
     point = image_centre + px_delta
 
     # NB: there is a small reprojection error that grows with distance from centre
+    print(f"ERROR: dy: {dy}, delta_y: {delta.y}, delta_z: {delta.z}")
 
     return point
 
