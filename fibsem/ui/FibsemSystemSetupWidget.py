@@ -72,6 +72,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         #checkboxes
         self.checkBox_eb.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_ib.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_select_plasma_gas.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_stage_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_stage_rotation.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_stage_tilt.stateChanged.connect(self.get_model_from_ui)
@@ -137,7 +138,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         self.microscope.set("current", microscope_settings.system.ion.current, BeamType.ION)
         self.microscope.set("voltage", microscope_settings.system.ion.voltage, BeamType.ION)
-        # self.microscope.set("plasma_gas", microscope_settings.system.ion.plasma_gas, BeamType.ION)
+        self.microscope.set("plasma_gas", microscope_settings.system.ion.plasma_gas, BeamType.ION)
         self.microscope.set("working_distance", microscope_settings.system.ion.eucentric_height, BeamType.ION)
         self.microscope.set("current", microscope_settings.system.electron.current, BeamType.ELECTRON)
         self.microscope.set("voltage", microscope_settings.system.electron.voltage, BeamType.ELECTRON)
@@ -295,6 +296,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def set_model_to_ui(self, hardware_settings: FibsemHardware) -> None:
         self.checkBox_eb.setChecked(hardware_settings.electron_beam)
         self.checkBox_ib.setChecked(hardware_settings.ion_beam)
+        self.checkBox_select_plasma_gas.setChecked(hardware_settings.can_select_plasma_gas)
         self.checkBox_stage_enabled.setChecked(hardware_settings.stage_enabled)
         self.checkBox_stage_rotation.setChecked(hardware_settings.stage_rotation)
         self.checkBox_stage_tilt.setChecked(hardware_settings.stage_tilt)
@@ -308,6 +310,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         hardware_settings = FibsemHardware()
         hardware_settings.electron_beam = self.checkBox_eb.isChecked()
         hardware_settings.ion_beam = self.checkBox_ib.isChecked()
+        hardware_settings.can_select_plasma_gas = self.checkBox_select_plasma_gas.isChecked()
         hardware_settings.stage_rotation = self.checkBox_stage_rotation.isChecked()
         hardware_settings.stage_tilt = self.checkBox_stage_tilt.isChecked()
         hardware_settings.manipulator_enabled = self.checkBox_needle_enabled.isChecked()

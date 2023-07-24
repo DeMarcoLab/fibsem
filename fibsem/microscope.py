@@ -2321,7 +2321,7 @@ class ThermoMicroscope(FibsemMicroscope):
             if key == "plasma_gas":
                 _check_beam(beam_type, self.hardware_settings)
                 _check_sputter(self.hardware_settings)
-                if self.hardware_settings.can_set_plasma_gas:
+                if self.hardware_settings.can_select_plasma_gas:
                     beam.source.plasma_gas.value = value
                     logging.info(f"Plasma gas set to {value}.")
                 else:
