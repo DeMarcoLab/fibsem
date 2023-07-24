@@ -93,6 +93,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.doubleSpinBox_correlation_scale_y.setKeyboardTracking(False)
         self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
 
+        self.lineEdit_tile_path.setText(self.settings.image.save_path)
 
 
     def run_tile_collection(self):
@@ -106,7 +107,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.settings.image.hfw = tile_size
         self.settings.image.beam_type = beam_type
         self.settings.image.save = True
-        self.settings.image.save_path = PATH
+        self.settings.image.save_path = self.lineEdit_tile_path.text()
         self.settings.image.label = self.lineEdit_tile_label.text() 
 
         if self.settings.image.label == "":
@@ -160,7 +161,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             # draw a point on the image at center
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
 
-
+            self._image_layer.mouse_drag_callbacks.clear()
+            self._image_layer.mouse_double_click_callbacks.clear()
             self._image_layer.mouse_drag_callbacks.append(self._on_click)
             self._image_layer.mouse_double_click_callbacks.append(self._on_double_click)
     
@@ -245,7 +247,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             base_position=self.image.metadata.microscope_state.absolute_position)   
 
         self._move_to_position(_new_position)
-        self._update_viewer()
 
     def _update_current_position_info(self):
 

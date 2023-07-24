@@ -683,7 +683,8 @@ class ThermoMicroscope(FibsemMicroscope):
                 resolution=[width_eb, height_eb],
                 dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value,
                 scan_rotation=self.connection.beams.electron_beam.scanning.rotation.value,
-            )
+            )  
+            # eb_settings = self.get_beam_settings(beam_type=BeamType.ELECTRON) # TODO: CHANGE_THIS_OVER
         else:
             eb_settings=None
         
@@ -697,6 +698,8 @@ class ThermoMicroscope(FibsemMicroscope):
                 dwell_time=self.connection.beams.ion_beam.scanning.dwell_time.value,
                 scan_rotation=self.connection.beams.ion_beam.scanning.rotation.value,
             )
+            # ib_settings = self.get_beam_settings(beam_type=BeamType.ION) # TODO: CHANGE_THIS_OVER
+
         else:
             ib_settings=None
 
@@ -776,6 +779,7 @@ class ThermoMicroscope(FibsemMicroscope):
         dx: float,
         dy: float,
         beam_type: BeamType,
+        _fixed: bool = False, 
     ) -> None:
         """
         Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
@@ -785,6 +789,7 @@ class ThermoMicroscope(FibsemMicroscope):
             dx (float): distance along the x-axis (image coordinates)
             dy (float): distance along the y-axis (image coordinates)
             beam_type (BeamType): beam type to move in
+            _fixed (bool, optional): whether to fix the working distance. Defaults to False.
         """
         _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
@@ -822,7 +827,10 @@ class ThermoMicroscope(FibsemMicroscope):
         self.move_stage_relative(stage_position)
 
         # adjust working distance to compensate for stage movement
-        self.connection.beams.electron_beam.working_distance.value = 3.91e-3 if beam_type == BeamType.ELECTRON else 16.5e-3
+        if _fixed:
+            wd = settings.system.electron.eucentric_height
+        
+        self.connection.beams.electron_beam.working_distance.value = wd
         self.connection.specimen.stage.link()
 
         return stage_position
@@ -2077,6 +2085,10 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             None.
         """
+
+        resolution = self.connection.beams.electron_beam.scanning.resolution.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.resolution.value
+        width, height = int(resolution.split("x")[0]), int(resolution.split("x")[-1])
+
         logging.info(f"Getting {beam_type.value} beam settings...")
         beam_settings = BeamSettings(
             beam_type=beam_type,
@@ -2084,7 +2096,7 @@ class ThermoMicroscope(FibsemMicroscope):
             beam_current=self.get("current", beam_type),
             voltage=self.get("voltage", beam_type),
             hfw=self.get("hfw", beam_type),
-            resolution=self.connection.beams.electron_beam.scanning.resolution.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.resolution.value,
+            resolution=[width, height],
             dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.dwell_time.value,
             stigmation=self.get("stigmation", beam_type),
             beam_shift=self.get("shift", beam_type),

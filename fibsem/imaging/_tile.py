@@ -24,13 +24,22 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     settings.image.dwell_time = 1e-6
     settings.image.autocontrast = False
 
-    print(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
-    print(f"dx: {dx*1e6} um, dy: {dy*1e6} um")
+    logging.info(f"TILE COLLECTION: {settings.image.label}")
+    logging.info(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
+    logging.info(f"dx: {dx*1e6} um, dy: {dy*1e6} um")
 
     # start in the middle of the grid
+
     start_state = microscope.get_current_microscope_state()
-    settings.image.hfw = grid_size
+    
+    # we save all intermediates into a folder with the same name as the label, then save the stitched image into the parent folder
+    prev_path = settings.image.save_path
+    settings.image.save_path = os.path.join(settings.image.save_path, settings.image.label)
+    os.makedirs(settings.image.save_path, exist_ok=True)
     prev_label = settings.image.label
+    
+    # BIG_IMAGE FOR DEBUGGING ONLY
+    settings.image.hfw = grid_size
     settings.image.label = "big_image"
     big_image = acquire.new_image(microscope, settings.image)
     
@@ -41,7 +50,7 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     dxg, dyg = start_move, start_move
     dyg *= -1
 
-    microscope.stable_move(settings=settings, dx=-dxg, dy=-dyg, beam_type=settings.image.beam_type)
+    microscope.stable_move(settings=settings, dx=-dxg, dy=-dyg, beam_type=settings.image.beam_type, _fixed=True)
     state = microscope.get_current_microscope_state()
     images = []
 
@@ -54,7 +63,8 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
             settings=settings,
             dx=0,
             dy=i*dy, 
-            beam_type=settings.image.beam_type)
+            beam_type=settings.image.beam_type, 
+            _fixed=True)
 
 
         for j in range(n_cols):
@@ -69,14 +79,13 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
 
     # restore initial state
     microscope.set_microscope_state(start_state)
+    settings.image.save_path = prev_path
 
     ddict = {"grid_size": grid_size, "tile_size": tile_size, "n_rows": n_rows, "n_cols": n_cols, 
             "image_settings": settings.image, 
             "dx": dx, "dy": dy, 
             "start_state": start_state, "prev-label": prev_label, "start_move": start_move, "dxg": dxg, "dyg": dyg,
             "images": images, "big_image": big_image }
-    # from pprint import pprint
-    # pprint(ddict)
 
     return ddict
 
@@ -113,6 +122,7 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
 
     ddict["image_settings"] = ddict["image_settings"].__to_dict__()
     ddict["start_state"] = ddict["start_state"].__to_dict__()
+    filename = os.path.join(filename, f'{ddict["prev-label"]}') # subdir
     utils.save_yaml(filename, ddict) 
 
     return image
