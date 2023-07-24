@@ -136,18 +136,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def apply_defaults_settings(self):
         microscope_settings = self.get_default_settings_from_ui()
 
-        self.microscope.set("current", microscope_settings.system.ion.current, BeamType.ION)
-        self.microscope.set("voltage", microscope_settings.system.ion.voltage, BeamType.ION)
-        self.microscope.set("plasma_gas", microscope_settings.system.ion.plasma_gas, BeamType.ION)
-        self.microscope.set("working_distance", microscope_settings.system.ion.eucentric_height, BeamType.ION)
-        self.microscope.set("current", microscope_settings.system.electron.current, BeamType.ELECTRON)
-        self.microscope.set("voltage", microscope_settings.system.electron.voltage, BeamType.ELECTRON)
-        self.microscope.set("working_distance", microscope_settings.system.electron.eucentric_height, BeamType.ELECTRON)
-        self.microscope.set("detector_type", microscope_settings.system.ion.detector_type, BeamType.ION)
-        self.microscope.set("detector_mode", microscope_settings.system.ion.detector_mode, BeamType.ION)
-        self.microscope.set("detector_type", microscope_settings.system.electron.detector_type, BeamType.ELECTRON)
-        self.microscope.set("detector_mode", microscope_settings.system.electron.detector_mode, BeamType.ELECTRON)
-
+        self.microscope.set_beam_settings(microscope_settings.system.ion)
+        self.microscope.set_beam_settings(microscope_settings.system.electron)
+        
         self.image_widget.set_ui_from_settings(microscope_settings.image, beam_type=microscope_settings.image.beam_type)
 
         self.get_stage_settings_from_ui()

@@ -477,7 +477,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
    
     def set_milling_settings_ui(self, milling: FibsemMillingSettings) -> None:
 
-        self.comboBox_milling_current.setCurrentText(str(milling.milling_current))
+        if self.comboBox_milling_current.findText(str(milling.milling_current)) == -1:
+            napari.utils.notifications.show_warning(f"Could not find milling current {milling.milling_current} in list of available currents.")
+        else:
+            self.comboBox_milling_current.setCurrentText(str(milling.milling_current))
         self.comboBox_application_file.setCurrentText(milling.application_file)
         self.doubleSpinBox_rate.setValue(milling.rate*constants.SI_TO_NANO)
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)
