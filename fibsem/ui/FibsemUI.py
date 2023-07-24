@@ -47,7 +47,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.manipulator_widget: FibsemManipulatorWidget = None
 
 
-        CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
+        CONFIG_PATH = os.path.join(cfg.CONFIG_PATH, "system.yaml")
         self.system_widget = FibsemSystemSetupWidget(
                 microscope=self.microscope,
                 settings=self.settings,

@@ -45,7 +45,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.viewer = viewer
         self.config_path = config_path  # TODO: allow user to set this
 
-        settings_dict = load_yaml(os.path.join(self.config_path, "system.yaml"))
+        settings_dict = load_yaml(os.path.join(self.config_path))
         
         self.auto_connect = False
         self.apply_settings = False
@@ -68,6 +68,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
         self.pushButton_save_yaml.clicked.connect(self.save_defaults)
         self.pushButton_apply_settings.clicked.connect(self.apply_defaults_settings)
+        self.pushButton_import_yaml.clicked.connect(self.import_yaml)
 
         #checkboxes
         self.checkBox_eb.stateChanged.connect(self.get_model_from_ui)
@@ -81,6 +82,15 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_needle_tilt.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_gis_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
+
+    def import_yaml(self):
+        protocol_path = _get_file_ui(msg="Select protocol file")
+        if protocol_path == "":
+            return
+        self.settings = utils.load_settings_from_config(protocol_path)
+        self.set_defaults_to_ui()
+        self.set_stage_settings_to_ui(self.settings.system.stage)
+        self.set_model_to_ui(self.settings.hardware)
 
     def get_default_settings_from_ui(self):
         microscope_settings = MicroscopeSettings(
@@ -175,7 +185,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["system"]["stage"]["tilt_flat_to_electron"] = self.tiltFlatToElectronSpinBox.value()
         system_dict["system"]["stage"]["tilt_flat_to_ion"] = self.tiltFlatToIonSpinBox.value()
         system_dict["system"]["stage"]["pre_tilt"] = self.preTiltSpinBox.value()
-        system_dict["system"]["stage"]["needle_stage_height_limit"] = self.needleStageHeightLimitnMmDoubleSpinBox.value()
+        system_dict["system"]["stage"]["needle_stage_height_limit"] = self.needleStageHeightLimitnMmDoubleSpinBox.value()*constants.MILLIMETRE_TO_METRE
 
         system_dict["user"]["milling"]["milling_current"] = self.doubleSpinBox_milling_current.value()*constants.NANO_TO_SI
         system_dict["user"]["milling"]["spot_size"] = self.doubleSpinBox_spotsize.value()*constants.NANO_TO_SI
@@ -232,7 +242,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.tiltFlatToElectronSpinBox.setValue( self.settings.system.stage.tilt_flat_to_electron )
         self.tiltFlatToIonSpinBox.setValue( self.settings.system.stage.tilt_flat_to_ion )
         self.preTiltSpinBox.setValue( self.settings.system.stage.pre_tilt )
-        self.needleStageHeightLimitnMmDoubleSpinBox.setValue( self.settings.system.stage.needle_stage_height_limit )
+        self.needleStageHeightLimitnMmDoubleSpinBox.setValue( self.settings.system.stage.needle_stage_height_limit * constants.METRE_TO_MILLIMETRE )
 
         self.doubleSpinBox_milling_current.setValue( self.settings.milling.milling_current *constants.SI_TO_NANO )
         self.doubleSpinBox_spotsize.setValue( self.settings.milling.spot_size *constants.SI_TO_NANO )

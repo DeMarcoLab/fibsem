@@ -237,10 +237,10 @@ def load_settings_from_config(
     if config_path is None:
         from fibsem.config import CONFIG_PATH
 
-        config_path = CONFIG_PATH
+        config_path = os.path.join(CONFIG_PATH, "system.yaml")
     
     # system settings
-    settings = load_yaml(os.path.join(config_path, "system.yaml"))
+    settings = load_yaml(os.path.join(config_path))
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
