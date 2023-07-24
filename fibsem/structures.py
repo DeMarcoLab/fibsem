@@ -1555,16 +1555,6 @@ class FibsemImageMetadata:
         if settings["pixel_size"] is not None:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
         if settings["microscope_state"] is not None:
-            # microscope_state = MicroscopeState(
-            #     timestamp=settings["microscope_state"]["timestamp"],
-            #     absolute_position=settings["microscope_state"]["absolute_position"].__from_dict__(),
-            #     eb_settings=BeamSettings.__from_dict__(
-            #         settings["microscope_state"]["eb_settings"]
-            #     ),
-            #     ib_settings=BeamSettings.__from_dict__(
-            #         settings["microscope_state"]["ib_settings"]
-            #     ),
-            # )
             microscope_state = MicroscopeState.__from_dict__(settings["microscope_state"])
         
         detector_dict = settings.get("detector_settings", {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0})

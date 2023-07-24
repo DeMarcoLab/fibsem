@@ -1,20 +1,21 @@
-
-
-from fibsem import utils, acquire
-from fibsem.structures import BeamType, FibsemStagePosition, Point, FibsemImage
-
-import matplotlib.pyplot as plt
-import os
 import glob
 import logging
+import os
 from copy import deepcopy
+
+import matplotlib.pyplot as plt
 import numpy as np
+from skimage import transform
+
+from fibsem import acquire, conversions, utils
+from fibsem.structures import (BeamType, FibsemImage, FibsemImageMetadata,
+                               FibsemStagePosition, Point)
 
 
 def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict: 
 
-    n_rows, n_cols = int(grid_size // tile_size), int(grid_size // tile_size)
     # TODO: OVERLAP + STITCH
+    n_rows, n_cols = int(grid_size // tile_size), int(grid_size // tile_size)
     dx, dy = settings.image.hfw, settings.image.hfw 
 
     dy *= -1 # need to invert y-axis
@@ -56,7 +57,7 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
 
     for i in range(n_rows):
 
-        microscope._safe_absolute_stage_movement(state.absolute_position) # TODO: change this to absolute move, should be faster
+        microscope._safe_absolute_stage_movement(state.absolute_position)
         
         img_row = []
         microscope.stable_move(
@@ -89,10 +90,6 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
 
     return ddict
 
-
-import numpy as np
-from skimage import transform
-from fibsem.structures import FibsemImage, FibsemImageMetadata
 
 
 def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
@@ -204,7 +201,6 @@ def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition]
 
 
 
-import  matplotlib.pyplot as plt
 def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], show:bool=False) -> plt.Figure:
 
     points = _reproject_positions(image, positions)
@@ -228,7 +224,6 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
     return fig
 
 
-from fibsem import conversions
 # TODO: these probs should be somewhere else
 def _convert_image_coord_to_position(microscope, settings, image, coords) -> FibsemStagePosition:
 
