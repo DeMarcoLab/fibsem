@@ -2092,7 +2092,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             None.
         """
-        logging.info(f"Setting {beam_settings.beam_type.value} beam settings...")
+        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
         self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
         self.set("current", beam_settings.current, beam_settings.beam_type)
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
@@ -4361,7 +4361,7 @@ class TescanMicroscope(FibsemMicroscope):
         Raises:
             None.
         """
-        logging.info(f"Setting {beam_settings.beam_type.value} beam settings...")
+        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
         self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
         self.set("current", beam_settings.current, beam_settings.beam_type)
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
@@ -5064,7 +5064,7 @@ class DemoMicroscope(FibsemMicroscope):
         Raises:
             None.
         """
-        logging.info(f"Setting {beam_settings.beam_type.value} beam settings...")
+        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
         self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
         self.set("current", beam_settings.beam_current, beam_settings.beam_type)
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
