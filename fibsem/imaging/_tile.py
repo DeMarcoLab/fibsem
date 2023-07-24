@@ -8,6 +8,7 @@ import os
 import glob
 import logging
 from copy import deepcopy
+import numpy as np
 
 
 def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict: 
@@ -133,3 +134,22 @@ def _stitch_arr(images, dtype=np.uint8):
             arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = images[i][j].data  
 
     return arr
+
+
+
+def _create_tiles(image: np.ndarray, n_rows, n_cols, tile_size, overlap=0):
+    # create tiles
+    tiles = []
+    for i in range(n_rows):
+
+        for j in range(n_cols):
+
+            # get tile
+            tile = image[i*tile_size:(i+1)*tile_size, j*tile_size:(j+1)*tile_size]
+
+            # append to list
+            tiles.append(tile)
+
+    tiles = np.array(tiles)
+
+    return tiles
