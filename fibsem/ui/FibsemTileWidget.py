@@ -1,26 +1,26 @@
 import logging
+import os
+from copy import deepcopy
+
 import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
-from fibsem import config as cfg
-from fibsem import constants, conversions, utils
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point, FibsemStagePosition
-from fibsem.ui.qtdesigner_files import FibsemTileWidget
-import os
-
-from fibsem.imaging import _tile
 from scipy.ndimage import median_filter
 
-from copy import deepcopy
+from fibsem import config as cfg
+from fibsem import constants, conversions, utils
+from fibsem.imaging import _tile
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import (BeamType, FibsemImage, FibsemStagePosition,
+                               MicroscopeSettings, Point)
+from fibsem.ui.qtdesigner_files import FibsemTileWidget
+from fibsem.ui import utils as ui_utils
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
+
 
 PATH = os.path.join(cfg.DATA_PATH, "tile")
 os.makedirs(PATH, exist_ok=True)
-from fibsem.ui import utils as ui_utils 
-
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
-
 
 class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
     _stage_position_moved = pyqtSignal(FibsemStagePosition)
