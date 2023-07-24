@@ -44,9 +44,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.image = None
         self._image_layer = None
         self._reprojection_layer = None
-        self._corr_image_layer = None
+        self._corr_image_layers = []
 
         self.positions = []
+        self._correlation = {}
 
         self.setup_connections()
 
@@ -77,13 +78,14 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # correlation
         self.actionLoad_Correlation_Image.triggered.connect(self._load_correlation_image)
         self.pushButton_update_correlation_image.clicked.connect(lambda: self._update_correlation_image(None))
+        self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
 
         # auto update correlation image
-        self.doubleSpinBox_correlation_translation_x.valueChanged.connect(lambda: self._update_correlation_image(None))
-        self.doubleSpinBox_correlation_translation_y.valueChanged.connect(lambda: self._update_correlation_image(None))
-        self.doubleSpinBox_correlation_scale_x.valueChanged.connect(lambda: self._update_correlation_image(None)) 
-        self.doubleSpinBox_correlation_scale_y.valueChanged.connect(lambda: self._update_correlation_image(None))
-        self.doubleSpinBox_correlation_rotation.valueChanged.connect(lambda: self._update_correlation_image(None))
+        self.doubleSpinBox_correlation_translation_x.valueChanged.connect(self._update_correlation_data)
+        self.doubleSpinBox_correlation_translation_y.valueChanged.connect(self._update_correlation_data)
+        self.doubleSpinBox_correlation_scale_x.valueChanged.connect(self._update_correlation_data) 
+        self.doubleSpinBox_correlation_scale_y.valueChanged.connect(self._update_correlation_data)
+        self.doubleSpinBox_correlation_rotation.valueChanged.connect(self._update_correlation_data)
 
         self.doubleSpinBox_correlation_translation_x.setKeyboardTracking(False)
         self.doubleSpinBox_correlation_translation_y.setKeyboardTracking(False)
@@ -153,7 +155,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             try:
                 self._image_layer.data = arr
             except:
-                self._image_layer = self.viewer.add_image(arr, name="tile", colormap="gray", blending="additive")
+                self._image_layer = self.viewer.add_image(arr, name="overview-image", colormap="gray", blending="additive")
 
             # draw a point on the image at center
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
@@ -405,14 +407,58 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _update_correlation_image(self, image: FibsemImage = None):
 
         if image is not None:
-            self.corr_image = image
-            self._corr_image_layer = self.viewer.add_image(self.corr_image.data, 
-                name="corr_image", colormap="green", blending="translucent", opacity=0.5)
-            self.comboBox_correlation_selected_layer.addItems(["corr_image"])
+            
+            _basename = f"correlation-image" 
+            idx = 1
+            _name = f"{_basename}-{idx:02d}"
+            while _name in self.viewer.layers:
+                idx+=1
+                _name = f"{_basename}-{idx:02d}"
 
+
+            COLOURS = ["green", "cyan", "magenta", "red", "yellow"]
+
+            self._corr_image_layers.append(
+                self.viewer.add_image(image.data, 
+                name=_name, colormap=COLOURS[idx%len(COLOURS)], 
+                blending="translucent", opacity=0.5)
+            )
+
+            self._correlation[_name] = deepcopy([0, 0, 1.0, 1.0, 0])
+
+
+            self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
+            idx = self.comboBox_correlation_selected_layer.currentIndex()
+            self.comboBox_correlation_selected_layer.clear()
+            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name])
+            if idx != -1:
+                self.comboBox_correlation_selected_layer.setCurrentIndex(idx)
+            self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
+            
             self.viewer.layers.selection.active = self._image_layer
-        
-        
+    
+    # do this when image selected is changed
+    def _update_correlation_ui(self):
+
+        # set ui
+        layer_name = self.comboBox_correlation_selected_layer.currentText()
+        if layer_name == "":
+            napari.utils.notifications.show_info(f"Please select a layer to correlate with...")
+            return
+
+        tx, ty, sx, sy, r = self._correlation[layer_name]
+
+        self.doubleSpinBox_correlation_translation_x.setValue(tx)
+        self.doubleSpinBox_correlation_translation_y.setValue(ty)
+        self.doubleSpinBox_correlation_scale_x.setValue(sx)
+        self.doubleSpinBox_correlation_scale_y.setValue(sy)
+        self.doubleSpinBox_correlation_rotation.setValue(r)
+
+        self._update_correlation_data()
+
+    # do this when parameters change
+    def _update_correlation_data(self):
+
         # select layer
         layer_name = self.comboBox_correlation_selected_layer.currentText()
         if layer_name == "":
@@ -423,9 +469,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         sx, sy = self.doubleSpinBox_correlation_scale_x.value(), self.doubleSpinBox_correlation_scale_y.value()
         r = self.doubleSpinBox_correlation_rotation.value()
 
+        self._correlation[layer_name] = deepcopy([tx, ty, sx, sy, r])
+
         # apply to selected layer
-        self.viewer.layers[layer_name].translate = [tx, ty]
-        self.viewer.layers[layer_name].scale = [sx, sy]
+        self.viewer.layers[layer_name].translate = [ty, tx]
+        self.viewer.layers[layer_name].scale = [sy, sx]
         self.viewer.layers[layer_name].rotate = r
 
 
