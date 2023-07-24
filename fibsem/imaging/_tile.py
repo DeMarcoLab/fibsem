@@ -118,3 +118,18 @@ def _tile_image_collection_stitch(microscope, settings, grid_size, tile_size, ov
     image = _stitch_images(ddict["images"], ddict, overlap=overlap)
 
     return image
+
+
+def _stitch_arr(images, dtype=np.uint8):
+
+    arr = np.array(images)
+    n_rows, n_cols = arr.shape[0], arr.shape[1]
+    shape = arr[0, 0].data.shape
+
+    arr = np.zeros(shape=(n_rows*shape[0], n_cols*shape[1]), dtype=dtype)
+
+    for i in range(n_rows):
+        for j in range(n_cols):
+            arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = images[i][j].data  
+
+    return arr
