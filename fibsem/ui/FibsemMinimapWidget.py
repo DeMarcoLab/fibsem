@@ -253,7 +253,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         else:
             self.lineEdit_tile_position_name.setText("")
         
-        self.pushButton_move_to_position.setEnabled(idx != -1)
         self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
 
     def _update_position_info(self):
@@ -262,6 +261,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.comboBox_tile_position.addItems([pos.name for pos in self.positions])
         if idx != -1:
             self.comboBox_tile_position.setCurrentIndex(idx)
+
+        _positions_added = len(self.positions) > 0
+        self.pushButton_move_to_position.setEnabled(_positions_added)
+        self.pushButton_remove_position.setEnabled(_positions_added)
+        self.pushButton_update_position.setEnabled(_positions_added)
 
         msg = ""
         for pos in self.positions:
