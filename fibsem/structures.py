@@ -252,6 +252,7 @@ Attributes:
     """
     electron_beam: bool = True
     ion_beam: bool = True
+    can_select_plasma_gas: bool = True
     stage_enabled: bool = True
     stage_rotation: bool = True
     stage_tilt: bool = True
@@ -261,12 +262,12 @@ Attributes:
     gis_enabled: bool = True
     gis_multichem: bool = True
     manipulator_positions: dict = None
-    system: dict = None
 
     def __post_init__(self):
         attributes = [
             "electron_beam",
             "ion_beam",
+            "can_select_plasma_gas",
             "stage_enabled",
             "stage_rotation",
             "stage_tilt",
@@ -276,12 +277,11 @@ Attributes:
             "gis_enabled",
             "gis_multichem",
             "manipulator_positions",
-            "system"
         ]
 
         for attribute in attributes:
             object_attribute = getattr(self,attribute)
-            if attribute in ["manipulator_positions","system"]:
+            if attribute in ["manipulator_positions"]:
                 continue
             assert isinstance(object_attribute,bool)
 
@@ -291,6 +291,7 @@ Attributes:
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
             ion_beam=bool(hardware_dict["ion"]["enabled"]),
+            can_select_plasma_gas=bool(hardware_dict["ion"]["can_select_plasma_gas"]),
             stage_enabled=bool(hardware_dict["stage"]["enabled"]),
             stage_rotation=bool(hardware_dict["stage"]["rotation"]),
             stage_tilt=bool(hardware_dict["stage"]["tilt"]),
@@ -313,32 +314,18 @@ Attributes:
                             "z":hardware_dict["manipulator"]["positions"]["working"]["z"],
                 },
                 "calibrated":hardware_dict["manipulator"]["positions"]["calibrated"]}, 
-            system = {
-                "name":hardware_dict["system"]["name"],
-                "manufacturer":hardware_dict["system"]["manufacturer"],
-                "description":hardware_dict["system"]["description"],
-                "version":hardware_dict["system"]["version"],
-                "id":hardware_dict["system"]["id"],
-            }
         )
 
     def __to_dict__(self) -> dict:
             
             hardware_dict = {}
-
-            hardware_dict["system"] = {}
-            hardware_dict["system"]["name"] = self.system["name"]
-            hardware_dict["system"]["manufacturer"] = self.system["manufacturer"]
-            hardware_dict["system"]["description"] = self.system["description"]
-            hardware_dict["system"]["version"] = self.system["version"]
-            hardware_dict["system"]["id"] = self.system["id"]
-
     
             hardware_dict["electron"] = {}
             hardware_dict["electron"]["enabled"] = self.electron_beam
     
             hardware_dict["ion"] = {}
             hardware_dict["ion"]["enabled"] = self.ion_beam
+            hardware_dict["ion"]["can_select_plasma_gas"] = self.can_select_plasma_gas
     
             hardware_dict["stage"] = {}
             hardware_dict["stage"]["enabled"] = self.stage_enabled
@@ -1343,6 +1330,7 @@ class SystemSettings:
     ion: BeamSystemSettings = None
     electron: BeamSystemSettings = None
     manufacturer: str = None
+    system_info: dict = None
 
     def __to_dict__(self) -> dict:
 
@@ -1353,6 +1341,11 @@ class SystemSettings:
             "electron": self.electron.__to_dict__(),
             "manufacturer": self.manufacturer,
         }
+        settings_dict["name"] = self.system_info["name"]
+        settings_dict["manufacturer"] = self.system_info["manufacturer"]
+        settings_dict["description"] = self.system_info["description"]
+        settings_dict["version"] = self.system_info["version"]
+        settings_dict["id"] = self.system_info["id"]
 
         return settings_dict
 
@@ -1367,6 +1360,13 @@ class SystemSettings:
                 settings["electron"], BeamType.ELECTRON
             ),
             manufacturer=settings["manufacturer"],
+            system_info = {
+                "name":settings["name"],
+                "manufacturer":settings["manufacturer"],
+                "description":settings["description"],
+                "version":settings["version"],
+                "id":settings["id"],
+            }
         )
 
         return system_settings

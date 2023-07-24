@@ -479,7 +479,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self.comboBox_milling_current.setCurrentText(str(milling.milling_current))
         self.comboBox_application_file.setCurrentText(milling.application_file)
-        self.doubleSpinBox_rate.setValue(milling.rate)
+        self.doubleSpinBox_rate.setValue(milling.rate*constants.SI_TO_NANO)
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)
         self.doubleSpinBox_spot_size.setValue(milling.spot_size * constants.SI_TO_MICRO)
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)

@@ -11,10 +11,10 @@ import fibsem
 from fibsem import config as cfg
 from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware
+from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui
-
+from fibsem.utils import load_yaml
 
 def log_status_message(step: str):
     logging.debug(
@@ -32,6 +32,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         microscope: FibsemMicroscope = None,
         settings: MicroscopeSettings = None,
         viewer: napari.Viewer = None,
+        image_widget: QtWidgets.QWidget = None,
+        milling_widget: QtWidgets.QWidget = None,
         parent=None,
         config_path: str = None,
     ):
@@ -43,20 +45,29 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.viewer = viewer
         self.config_path = config_path  # TODO: allow user to set this
 
-        self.setup_connections()
-        self.update_ui()
+        settings_dict = load_yaml(os.path.join(self.config_path, "system.yaml"))
+        
+        self.auto_connect = False
+        self.apply_settings = False
+        if bool(settings_dict["connect_to_microscope_on_startup"]):
+            self.auto_connect = True
+            self.connect_to_microscope(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
 
-    def setup_connections(self):
+        self.setup_connections(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
+        self.update_ui()
+        
+
+    def setup_connections(self, ip_address: str, manufacturer: str):
         #
-        self.lineEdit_ipadress.setText(cfg.__DEFAULT_IP_ADDRESS__)
+        self.lineEdit_ipadress.setText(ip_address)
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
-        self.comboBox_manufacturer.setCurrentText(cfg.__DEFAULT_MANUFACTURER__)
+        self.comboBox_manufacturer.setCurrentText(manufacturer)
 
         # buttons
         self.microscope_button.clicked.connect(self.connect_to_microscope)
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
-        self.pushButton_save_defaults.clicked.connect(self.save_defaults)
-        self.pushButton_save_model.clicked.connect(self.save_model)
+        self.pushButton_save_yaml.clicked.connect(self.save_defaults)
+        self.pushButton_apply_settings.clicked.connect(self.apply_defaults_settings)
 
         #checkboxes
         self.checkBox_eb.stateChanged.connect(self.get_model_from_ui)
@@ -69,6 +80,79 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_needle_tilt.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_gis_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
+
+    def get_default_settings_from_ui(self):
+        microscope_settings = MicroscopeSettings(
+            system=SystemSettings(
+                ip_address=self.lineEdit_ipadress.text(),
+                manufacturer=self.comboBox_manufacturer.currentText(),
+                stage=StageSettings(
+                    rotation_flat_to_electron=self.rotationFlatToElectronSpinBox.value(),
+                    rotation_flat_to_ion=self.rotationFlatToIonSpinBox.value(),
+                    tilt_flat_to_electron=self.tiltFlatToElectronSpinBox.value(),
+                    tilt_flat_to_ion=self.tiltFlatToIonSpinBox.value(),
+                    pre_tilt=self.preTiltSpinBox.value(),
+                    needle_stage_height_limit=self.needleStageHeightLimitnMmDoubleSpinBox.value(),                    
+                ),
+                ion=BeamSystemSettings(
+                    beam_type=BeamType.ION,
+                    voltage=self.spinBox_ion_voltage.value(),
+                    current=self.doubleSpinBox_ion_current.value() * constants.NANO_TO_SI,
+                    plasma_gas=self.lineEdit_plasma_gas.text().capitalize(),
+                    eucentric_height=self.doubleSpinBox_height_ion.value(),
+                    detector_type=self.lineEdit_detector_type_ion.text(),
+                    detector_mode=self.lineEdit_detector_mode_ion.text(),
+                ),
+                electron=BeamSystemSettings(
+                    beam_type=BeamType.ELECTRON,
+                    voltage=self.spinBox_voltage_eb.value(),
+                    current=self.doubleSpinBox_current_eb.value() * constants.NANO_TO_SI,
+                    eucentric_height=self.doubleSpinBox_height_eb.value(),
+                    detector_type=self.lineEdit_detector_type_eb.text(),
+                    detector_mode=self.lineEdit_detector_mode_eb.text(),
+                ),
+            ),
+            image=ImageSettings(
+                resolution=[self.spinBox_res_width.value(), self.spinBox_res_height.value()],
+                dwell_time=self.doubleSpinBox_dwell_time_imaging.value()*constants.MICRO_TO_SI,
+                hfw=self.spinBox_hfw.value()*constants.MICRO_TO_SI,
+                beam_type = BeamType[self.lineEdit_beam_type.text().upper()],
+                autocontrast=self.checkBox_autocontrast.isChecked(),
+                save=self.checkBox_save.isChecked(),
+                gamma_enabled=self.checkBox_gamma.isChecked(),
+            ),
+            milling=FibsemMillingSettings(
+                dwell_time=self.doubleSpinBox_dwell_time_milling.value()*constants.MICRO_TO_SI,
+                rate=self.doubleSpinBox_rate.value()*constants.NANO_TO_SI,
+                spot_size=self.doubleSpinBox_spotsize.value()*constants.MICRO_TO_SI,
+                milling_current=self.doubleSpinBox_milling_current.value()*constants.NANO_TO_SI,
+            ),
+            hardware=self.get_model_from_ui(),
+        )
+
+        return microscope_settings
+
+    def apply_defaults_settings(self):
+        microscope_settings = self.get_default_settings_from_ui()
+
+        self.microscope.set("current", microscope_settings.system.ion.current, BeamType.ION)
+        self.microscope.set("voltage", microscope_settings.system.ion.voltage, BeamType.ION)
+        # self.microscope.set("plasma_gas", microscope_settings.system.ion.plasma_gas, BeamType.ION)
+        self.microscope.set("working_distance", microscope_settings.system.ion.eucentric_height, BeamType.ION)
+        self.microscope.set("current", microscope_settings.system.electron.current, BeamType.ELECTRON)
+        self.microscope.set("voltage", microscope_settings.system.electron.voltage, BeamType.ELECTRON)
+        self.microscope.set("working_distance", microscope_settings.system.electron.eucentric_height, BeamType.ELECTRON)
+        self.microscope.set("detector_type", microscope_settings.system.ion.detector_type, BeamType.ION)
+        self.microscope.set("detector_mode", microscope_settings.system.ion.detector_mode, BeamType.ION)
+        self.microscope.set("detector_type", microscope_settings.system.electron.detector_type, BeamType.ELECTRON)
+        self.microscope.set("detector_mode", microscope_settings.system.electron.detector_mode, BeamType.ELECTRON)
+
+        self.image_widget.set_ui_from_settings(microscope_settings.image, beam_type=microscope_settings.image.beam_type)
+
+        self.get_stage_settings_from_ui()
+        self.get_model_from_ui()
+        self.milling_widget.set_milling_settings_ui(microscope_settings.milling)
+
 
     def save_defaults(self):
         system_dict = {}
@@ -94,12 +178,12 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["system"]["electron"]["detector_type"] = self.lineEdit_detector_type_eb.text()
         system_dict["system"]["electron"]["detector_mode"] = self.lineEdit_detector_mode_eb.text()
 
-        system_dict["system"]["stage"]["rotation_flat_to_electron"] = self.spinBox_rotation_eb.value()
-        system_dict["system"]["stage"]["rotation_flat_to_ion"] = self.spinBox_rotation_ib.value()
-        system_dict["system"]["stage"]["tilt_flat_to_electron"] = self.spinBox_tilt_eb.value()
-        system_dict["system"]["stage"]["tilt_flat_to_ion"] = self.spinBox_tilt_ib.value()
-        system_dict["system"]["stage"]["pre_tilt"] = self.spinBox_pretilt.value()
-        system_dict["system"]["stage"]["needle_stage_height_limit"] = self.doubleSpinBox_needle_height.value()
+        system_dict["system"]["stage"]["rotation_flat_to_electron"] = self.rotationFlatToElectronSpinBox.value()
+        system_dict["system"]["stage"]["rotation_flat_to_ion"] = self.rotationFlatToIonSpinBox.value()
+        system_dict["system"]["stage"]["tilt_flat_to_electron"] = self.tiltFlatToElectronSpinBox.value()
+        system_dict["system"]["stage"]["tilt_flat_to_ion"] = self.tiltFlatToIonSpinBox.value()
+        system_dict["system"]["stage"]["pre_tilt"] = self.preTiltSpinBox.value()
+        system_dict["system"]["stage"]["needle_stage_height_limit"] = self.needleStageHeightLimitnMmDoubleSpinBox.value()
 
         system_dict["user"]["milling"]["milling_current"] = self.doubleSpinBox_milling_current.value()*constants.NANO_TO_SI
         system_dict["user"]["milling"]["spot_size"] = self.doubleSpinBox_spotsize.value()*constants.NANO_TO_SI
@@ -114,14 +198,27 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["user"]["imaging"]["dwell_time"] = self.doubleSpinBox_dwell_time_imaging.value()*constants.MICRO_TO_SI
         system_dict["user"]["imaging"]["save"] = self.checkBox_save.isChecked()
         system_dict["user"]["imaging"]["gamma"] = self.checkBox_gamma.isChecked()
+
+        hardware_settings = self.get_model_from_ui()
+        system_dict["model"] = hardware_settings.__to_dict__()
+ 
+        system_dict["system"]["name"] = self.microscope.model
+        system_dict["system"]["manufacturer"] = self.comboBox_manufacturer.currentText()
+        system_dict["system"]["version"] = fibsem.__version__
+        from PyQt5.QtWidgets import QInputDialog
+        system_dict["system"]["id"] = QInputDialog.getText(self, "Microscope ID", "Please enter ID of microscope")[0]
+        system_dict["system"]["description"] = QInputDialog.getText(self, "Description", "Please enter system description")[0]
     
+        system_dict["connect_to_microscope_on_startup"] = bool(self.checkBox_connect_automatically.isChecked())
+        system_dict["apply_settings_on_startup"] = bool(self.checkBox_apply_settings.isChecked())
+
         protocol_path = _get_file_ui(msg="Select protocol file")
         if protocol_path == '':
             return
         with open(os.path.join(protocol_path), "w") as f:
             yaml.safe_dump(system_dict, f, indent=4)
 
-        logging.info("Protocol saved to file")
+        logging.info("Configuration saved to file")
 
     def set_defaults_to_ui(self):
         self.lineEdit_ipadress.setText(self.settings.system.ip_address)
@@ -138,12 +235,12 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.lineEdit_detector_type_eb.setText( self.settings.system.electron.detector_type )
         self.lineEdit_detector_mode_eb.setText( self.settings.system.electron.detector_mode )
 
-        self.spinBox_rotation_eb.setValue( self.settings.system.stage.rotation_flat_to_electron )
-        self.spinBox_rotation_ib.setValue( self.settings.system.stage.rotation_flat_to_ion )
-        self.spinBox_tilt_eb.setValue( self.settings.system.stage.tilt_flat_to_electron )
-        self.spinBox_tilt_ib.setValue( self.settings.system.stage.tilt_flat_to_ion )
-        self.spinBox_pretilt.setValue( self.settings.system.stage.pre_tilt )
-        self.doubleSpinBox_needle_height.setValue( self.settings.system.stage.needle_stage_height_limit )
+        self.rotationFlatToElectronSpinBox.setValue( self.settings.system.stage.rotation_flat_to_electron )
+        self.rotationFlatToIonSpinBox.setValue( self.settings.system.stage.rotation_flat_to_ion )
+        self.tiltFlatToElectronSpinBox.setValue( self.settings.system.stage.tilt_flat_to_electron )
+        self.tiltFlatToIonSpinBox.setValue( self.settings.system.stage.tilt_flat_to_ion )
+        self.preTiltSpinBox.setValue( self.settings.system.stage.pre_tilt )
+        self.needleStageHeightLimitnMmDoubleSpinBox.setValue( self.settings.system.stage.needle_stage_height_limit )
 
         self.doubleSpinBox_milling_current.setValue( self.settings.milling.milling_current *constants.SI_TO_NANO )
         self.doubleSpinBox_spotsize.setValue( self.settings.milling.spot_size *constants.SI_TO_NANO )
@@ -159,6 +256,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.doubleSpinBox_dwell_time_imaging.setValue( self.settings.image.dwell_time *constants.SI_TO_MICRO )
         self.checkBox_save.setCheckState( self.settings.image.save )
         self.checkBox_gamma.setCheckState( self.settings.image.gamma_enabled )
+
+        self.checkBox_connect_automatically.setCheckState( self.auto_connect)
+        self.checkBox_apply_settings.setCheckState( self.apply_settings)
 
     def get_stage_settings_from_ui(self):
         if self.microscope is None:
@@ -216,43 +316,28 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         hardware_settings.gis_enabled = self.checkBox_gis_enabled.isChecked()
         hardware_settings.gis_multichem = self.checkBox_multichem.isChecked()
         hardware_settings.manipulator_positions = self.settings.hardware.manipulator_positions
-        hardware_settings.system = self.settings.hardware.system
 
         self.settings.hardware = hardware_settings
         self.microscope.hardware_settings = hardware_settings
         logging.debug(f"Updated hardware settings: {hardware_settings}")
         return hardware_settings
 
-    def save_model(self) -> None:
-        hardware_settings = self.get_model_from_ui()
 
-        hardware_dict = hardware_settings.__to_dict__()
-        hardware_dict["system"] = {}
-        hardware_dict["system"]["name"] = self.microscope.model
-        hardware_dict["system"]["manufacturer"] = self.comboBox_manufacturer.currentText()
-        hardware_dict["system"]["version"] = fibsem.__version__
-        from PyQt5.QtWidgets import QInputDialog
-        hardware_dict["system"]["id"] = QInputDialog.getText(self, "Microscope ID", "Please enter ID of microscope")[0]
-        hardware_dict["system"]["description"] = QInputDialog.getText(self, "Description", "Please enter system description")[0]
-        from fibsem import config as cfg
-        protocol_path = os.path.join(cfg.BASE_PATH, "fibsem", "config", "model.yaml")
-        with open(os.path.join(protocol_path), "w") as f:
-            yaml.safe_dump(hardware_dict, f, indent=4)
+    def connect(self, ip_address: str = None, manufacturer: str = None) -> None:
 
-        logging.info("Model saved to file")
-
-
-    def connect(self):
-        if self.lineEdit_ipadress.text() == "":
-            napari.utils.notifications.show_error(
-                f"IP address not set. Please enter an IP address before connecting to microscope."
-            )
-            return
+        if ip_address is None:
+            if self.lineEdit_ipadress.text() == "":
+                napari.utils.notifications.show_error(
+                    f"IP address not set. Please enter an IP address before connecting to microscope."
+                )
+                return
+            else:
+                ip_address = self.lineEdit_ipadress.text() 
 
         try:
             log_status_message("CONNECTING")
-            ip_address = self.lineEdit_ipadress.text()
-            manufacturer = self.comboBox_manufacturer.currentText()
+            
+            manufacturer = self.comboBox_manufacturer.currentText() if manufacturer is None else manufacturer
             # user notification
             msg = f"Connecting to microscope at {ip_address}"
             logging.info(msg)
@@ -279,7 +364,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             log_status_message(F"CONNECTION_FAILED_{traceback.format_exc()}")
             napari.utils.notifications.show_error(msg)
 
-    def connect_to_microscope(self):
+    def connect_to_microscope(self, ip_address: str = None, manufacturer: str = None):
 
         _microscope_connected = bool(self.microscope)
 
@@ -287,7 +372,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.microscope.disconnect()
             self.microscope, self.settings = None, None
         else:
-            self.connect()
+            self.connect(ip_address, manufacturer )
 
         self.update_ui()
 

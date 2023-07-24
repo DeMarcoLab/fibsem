@@ -406,7 +406,8 @@ class ThermoMicroscope(FibsemMicroscope):
         import fibsem
         from fibsem.utils import load_protocol
         base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+        dict_system = load_protocol(os.path.join(base_path, "fibsem", "config", "system.yaml"))
+        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
     def disconnect(self):
         self.connection.disconnect()
@@ -2199,7 +2200,7 @@ class ThermoMicroscope(FibsemMicroscope):
             _check_needle(self.hardware_settings)
             return self.connection.specimen.manipulator.state
         
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -2320,8 +2321,11 @@ class ThermoMicroscope(FibsemMicroscope):
             if key == "plasma_gas":
                 _check_beam(beam_type, self.hardware_settings)
                 _check_sputter(self.hardware_settings)
-                beam.source.plasma_gas.value = value
-                logging.info(f"Plasma gas set to {value}.")
+                if self.hardware_settings.can_set_plasma_gas:
+                    beam.source.plasma_gas.value = value
+                    logging.info(f"Plasma gas set to {value}.")
+                else:
+                    logging.warning(f"Plasma gas cannot be set on this microscope.")
             return
         # chamber control (NOTE: dont implment until able to test on hardware)
         if key == "pump":
@@ -2531,7 +2535,8 @@ class TescanMicroscope(FibsemMicroscope):
         import fibsem
         from fibsem.utils import load_protocol
         base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path,"fibsem", "config", "model.yaml")))
+        dict_system = load_protocol(os.path.join(base_path, "fibsem", "config", "system.yaml"))
+        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -4423,7 +4428,7 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "presets":
             return self._get_presets()
 
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None   
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -4585,7 +4590,8 @@ class DemoMicroscope(FibsemMicroscope):
         from fibsem.utils import load_protocol
         import os
         base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+        dict_system = load_protocol(os.path.join(base_path, "fibsem", "config", "system.yaml"))
+        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
 
 

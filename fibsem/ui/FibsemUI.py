@@ -26,7 +26,7 @@ from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
 from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
-
+from fibsem.utils import load_yaml
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def __init__(self, viewer: napari.Viewer):
@@ -55,8 +55,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 config_path = CONFIG_PATH,
             )
         
-        self.setup_connections()
         self.tabWidget.addTab(self.system_widget, "System")
+        self.setup_connections()
         self.ref_current = None
         self.update_ui()
 
@@ -68,6 +68,12 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
         self.actionCurrent_alignment.triggered.connect(self.align_currents)
         self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
+        if self.system_widget.microscope is not None:
+            self.connect_to_microscope()
+            settings_dict = load_yaml(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            if bool(settings_dict["apply_settings_on_startup"]):
+                self.system_widget.apply_settings = True
+                self.system_widget.apply_defaults_settings() 
 
     def calibrate_manipulator_positions(self):
 
@@ -159,6 +165,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.addTab(self.milling_widget, "Milling")
             self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
             self.tabWidget.addTab(self.GIS_widget, "GIS")
+            self.system_widget.image_widget = self.image_widget
+            self.system_widget.milling_widget = self.milling_widget
 
 
 

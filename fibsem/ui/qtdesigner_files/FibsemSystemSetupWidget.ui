@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>543</width>
-    <height>753</height>
+    <width>686</width>
+    <height>883</height>
    </rect>
   </property>
   <property name="font">
@@ -37,15 +37,17 @@
        <string>Connect</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_7">
-       <item row="4" column="0" colspan="2">
-        <widget class="QPushButton" name="microscope_button">
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_title">
          <property name="font">
           <font>
-           <pointsize>8</pointsize>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
           </font>
          </property>
          <property name="text">
-          <string>Connect to Microscope</string>
+          <string>System</string>
          </property>
         </widget>
        </item>
@@ -61,32 +63,6 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_manufacturer">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Manufacturer </string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="label_title">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>System</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="1">
         <widget class="QComboBox" name="comboBox_manufacturer">
          <property name="font">
@@ -98,6 +74,30 @@
        </item>
        <item row="1" column="1">
         <widget class="QLineEdit" name="lineEdit_ipadress"/>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QPushButton" name="microscope_button">
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Connect to Microscope</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_manufacturer">
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Manufacturer </string>
+         </property>
+        </widget>
        </item>
        <item row="5" column="0">
         <spacer name="verticalSpacer_5">
@@ -119,65 +119,10 @@
        <string>Stage</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="needleStageHeightLimitnMmDoubleSpinBox">
-         <property name="minimum">
-          <double>-99.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="rotationFlatToIonLabel">
+       <item row="5" column="0">
+        <widget class="QLabel" name="preTiltLabel">
          <property name="text">
-          <string>Rotation Flat To Ion (deg)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_header_stage">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Stage </string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="needleStageHeightLimitnMmLabel">
-         <property name="text">
-          <string>Needle Stage Height Limit (mm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="tiltFlatToElectronLabel">
-         <property name="text">
-          <string>Tilt Flat To Electron (deg)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="rotationFlatToIonSpinBox">
-         <property name="minimum">
-          <double>-360.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QDoubleSpinBox" name="rotationFlatToElectronSpinBox">
-         <property name="minimum">
-          <double>-360.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>360.000000000000000</double>
+          <string>Shuttle Pre Tilt (deg)</string>
          </property>
         </widget>
        </item>
@@ -188,30 +133,20 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
-        <widget class="QDoubleSpinBox" name="tiltFlatToIonSpinBox">
+       <item row="3" column="0">
+        <widget class="QLabel" name="tiltFlatToElectronLabel">
+         <property name="text">
+          <string>Tilt Flat To Electron (deg)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="rotationFlatToElectronSpinBox">
          <property name="minimum">
           <double>-360.000000000000000</double>
          </property>
          <property name="maximum">
           <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="preTiltLabel">
-         <property name="text">
-          <string>Shuttle Pre Tilt (deg)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QDoubleSpinBox" name="preTiltSpinBox"/>
-       </item>
-       <item row="0" column="1">
-        <widget class="QPushButton" name="setStage_button">
-         <property name="text">
-          <string>Set Stage Parameters</string>
          </property>
         </widget>
        </item>
@@ -232,8 +167,66 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
-        <spacer name="verticalSpacer">
+       <item row="2" column="0">
+        <widget class="QLabel" name="rotationFlatToIonLabel">
+         <property name="text">
+          <string>Rotation Flat To Ion (deg)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="tiltFlatToIonSpinBox">
+         <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>360.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QDoubleSpinBox" name="needleStageHeightLimitnMmDoubleSpinBox">
+         <property name="minimum">
+          <double>-99.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QDoubleSpinBox" name="preTiltSpinBox"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="rotationFlatToIonSpinBox">
+         <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>360.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="needleStageHeightLimitnMmLabel">
+         <property name="text">
+          <string>Needle Stage Height Limit (mm)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_header_stage">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Stage </string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="2">
+        <spacer name="verticalSpacer_3">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -245,6 +238,13 @@
          </property>
         </spacer>
        </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="setStage_button">
+         <property name="text">
+          <string>Set Stage Parameters</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tab_microscope">
@@ -252,17 +252,57 @@
        <string>Microscope Model</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="7" column="1">
-        <widget class="QCheckBox" name="checkBox_stage_tilt">
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="checkBox_eb">
          <property name="text">
-          <string>Tilt</string>
+          <string>Enabled</string>
          </property>
          <property name="checked">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="9" column="0">
+       <item row="17" column="0" colspan="2">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="10" column="0" colspan="2">
+        <widget class="Line" name="line_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="1">
+        <widget class="QCheckBox" name="checkBox_gis_enabled">
+         <property name="text">
+          <string>Enabled</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QCheckBox" name="checkBox_needle_enabled">
+         <property name="text">
+          <string>Enabled</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
         <widget class="QLabel" name="label_5">
          <property name="font">
           <font>
@@ -275,17 +315,107 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="Line" name="line_2">
+       <item row="8" column="1">
+        <widget class="QCheckBox" name="checkBox_stage_rotation">
+         <property name="text">
+          <string>Rotation</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+           <underline>true</underline>
+          </font>
+         </property>
+         <property name="text">
+          <string>Stage</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Model parameters</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QCheckBox" name="checkBox_ib">
+         <property name="text">
+          <string>Enabled</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0" colspan="2">
+        <widget class="Line" name="line_4">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="12" column="1">
+        <widget class="QCheckBox" name="checkBox_needle_rotation">
+         <property name="text">
+          <string>Rotation</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
         <widget class="QCheckBox" name="checkBox_stage_enabled">
          <property name="text">
           <string>Enabled</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="1">
+        <widget class="QCheckBox" name="checkBox_multichem">
+         <property name="text">
+          <string>MultiChem</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="font">
+          <font>
+           <pointsize>8</pointsize>
+           <underline>true</underline>
+          </font>
+         </property>
+         <property name="text">
+          <string>GIS</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="1">
+        <widget class="QCheckBox" name="checkBox_needle_tilt">
+         <property name="text">
+          <string>Tilt</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -305,124 +435,10 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QCheckBox" name="checkBox_stage_rotation">
-         <property name="text">
-          <string>Rotation</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <spacer name="horizontalSpacer">
+       <item row="6" column="0" colspan="2">
+        <widget class="Line" name="line_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="3" column="1">
-        <widget class="QCheckBox" name="checkBox_ib">
-         <property name="text">
-          <string>Enabled</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QCheckBox" name="checkBox_eb">
-         <property name="text">
-          <string>Enabled</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QCheckBox" name="checkBox_needle_rotation">
-         <property name="text">
-          <string>Rotation</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Model parameters</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0" colspan="2">
-        <widget class="Line" name="line_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0" colspan="2">
-        <widget class="Line" name="line_4">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="1">
-        <widget class="QCheckBox" name="checkBox_gis_enabled">
-         <property name="text">
-          <string>Enabled</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QCheckBox" name="checkBox_needle_tilt">
-         <property name="text">
-          <string>Tilt</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string>Stage</string>
          </property>
         </widget>
        </item>
@@ -439,56 +455,27 @@
          </property>
         </widget>
        </item>
-       <item row="13" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string>GIS</string>
+       <item row="2" column="0" colspan="2">
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item row="9" column="1">
-        <widget class="QCheckBox" name="checkBox_needle_enabled">
+        <widget class="QCheckBox" name="checkBox_stage_tilt">
          <property name="text">
-          <string>Enabled</string>
+          <string>Tilt</string>
          </property>
          <property name="checked">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="14" column="1">
-        <widget class="QCheckBox" name="checkBox_multichem">
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="checkBox_select_plasma_gas">
          <property name="text">
-          <string>MultiChem</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="15" column="1">
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="pushButton_save_model">
-         <property name="text">
-          <string>Save Model</string>
+          <string>Can Select Plasma Gas</string>
          </property>
         </widget>
        </item>
@@ -496,10 +483,10 @@
      </widget>
      <widget class="QWidget" name="tab">
       <attribute name="title">
-       <string>Defaults</string>
+       <string>Settings</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="1" column="0">
+       <item row="0" column="0">
         <widget class="QTabWidget" name="tabWidget_2">
          <property name="font">
           <font>
@@ -514,64 +501,27 @@
            <string>System</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_5">
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="spinBox_ion_voltage">
-             <property name="maximum">
-              <number>100000</number>
-             </property>
-            </widget>
-           </item>
-           <item row="14" column="0">
-            <widget class="QLabel" name="label_21">
+           <item row="12" column="0">
+            <widget class="QLabel" name="label_19">
              <property name="text">
-              <string>Rotation Flat To Electron (°)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="16" column="0">
-            <widget class="QLabel" name="label_23">
-             <property name="text">
-              <string>Tilt Flat To Electron (°)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="11" column="1">
-            <widget class="QLineEdit" name="lineEdit_detector_type_eb"/>
-           </item>
-           <item row="8" column="1">
-            <widget class="QSpinBox" name="spinBox_voltage_eb">
-             <property name="maximum">
-              <number>1000000</number>
+              <string>Detector Mode</string>
              </property>
             </widget>
            </item>
            <item row="12" column="1">
             <widget class="QLineEdit" name="lineEdit_detector_mode_eb"/>
            </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Detector Mode</string>
+             </property>
+            </widget>
+           </item>
            <item row="4" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_height_ion">
              <property name="decimals">
               <number>4</number>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="0">
-            <widget class="QLabel" name="label_16">
-             <property name="text">
-              <string>Current (nA)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="13" column="0" colspan="2">
-            <widget class="QLabel" name="label_20">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-               <underline>true</underline>
-              </font>
-             </property>
-             <property name="text">
-              <string>Stage</string>
              </property>
             </widget>
            </item>
@@ -582,48 +532,19 @@
              </property>
             </widget>
            </item>
-           <item row="12" column="0">
-            <widget class="QLabel" name="label_19">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_8">
              <property name="text">
-              <string>Detector Mode</string>
+              <string>Voltage (V)</string>
              </property>
             </widget>
            </item>
-           <item row="18" column="0">
-            <widget class="QLabel" name="label_25">
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_12">
              <property name="text">
-              <string>Shuttle  Pretilt (°)</string>
+              <string>Detector Type</string>
              </property>
             </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="lineEdit_plasma_gas"/>
-           </item>
-           <item row="0" column="0" colspan="2">
-            <widget class="QLabel" name="label_7">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-               <underline>true</underline>
-              </font>
-             </property>
-             <property name="text">
-              <string>Ion Beam</string>
-             </property>
-            </widget>
-           </item>
-           <item row="20" column="1">
-            <spacer name="verticalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
            </item>
            <item row="7" column="0" colspan="2">
             <widget class="QLabel" name="label_14">
@@ -638,24 +559,32 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="label_12">
+           <item row="0" column="0" colspan="2">
+            <widget class="QLabel" name="label_7">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+               <underline>true</underline>
+              </font>
+             </property>
              <property name="text">
-              <string>Detector Type</string>
+              <string>Ion Beam</string>
              </property>
             </widget>
            </item>
-           <item row="17" column="0">
-            <widget class="QLabel" name="label_24">
-             <property name="text">
-              <string>Tilt Flat To Ion (°)</string>
-             </property>
-            </widget>
+           <item row="11" column="1">
+            <widget class="QLineEdit" name="lineEdit_detector_type_eb"/>
            </item>
-           <item row="10" column="0">
-            <widget class="QLabel" name="label_17">
-             <property name="text">
-              <string>Eucentric Height  (m)</string>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="lineEdit_plasma_gas"/>
+           </item>
+           <item row="9" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_current_eb">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
              </property>
             </widget>
            </item>
@@ -669,55 +598,10 @@
            <item row="5" column="1">
             <widget class="QLineEdit" name="lineEdit_detector_type_ion"/>
            </item>
-           <item row="11" column="0">
-            <widget class="QLabel" name="label_18">
+           <item row="10" column="0">
+            <widget class="QLabel" name="label_17">
              <property name="text">
-              <string>Detector Type</string>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_current_eb">
-             <property name="decimals">
-              <number>4</number>
-             </property>
-             <property name="maximum">
-              <double>100000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="15" column="0">
-            <widget class="QLabel" name="label_22">
-             <property name="text">
-              <string>Rotation Flat To Ion (°)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_11">
-             <property name="text">
-              <string>Eucentric Height (m)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string>Detector Mode</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_10">
-             <property name="text">
-              <string>Plasma Gas</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_9">
-             <property name="text">
-              <string>Current (nA)</string>
+              <string>Eucentric Height  (m)</string>
              </property>
             </widget>
            </item>
@@ -731,62 +615,82 @@
              </property>
             </widget>
            </item>
+           <item row="8" column="1">
+            <widget class="QSpinBox" name="spinBox_voltage_eb">
+             <property name="maximum">
+              <number>1000000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>Current (nA)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string>Detector Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>Plasma Gas</string>
+             </property>
+            </widget>
+           </item>
            <item row="6" column="1">
             <widget class="QLineEdit" name="lineEdit_detector_mode_ion"/>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_8">
+           <item row="9" column="0">
+            <widget class="QLabel" name="label_16">
              <property name="text">
-              <string>Voltage (V)</string>
+              <string>Current (nA)</string>
              </property>
             </widget>
            </item>
-           <item row="19" column="0">
-            <widget class="QLabel" name="label_26">
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_11">
              <property name="text">
-              <string>Needle Stage Hieght Limit (m)</string>
+              <string>Eucentric Height (m)</string>
              </property>
             </widget>
            </item>
-           <item row="14" column="1">
-            <widget class="QSpinBox" name="spinBox_rotation_eb">
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="spinBox_ion_voltage">
              <property name="maximum">
-              <number>360</number>
+              <number>100000</number>
              </property>
             </widget>
            </item>
            <item row="15" column="1">
-            <widget class="QSpinBox" name="spinBox_rotation_ib">
-             <property name="maximum">
-              <number>360</number>
+            <spacer name="verticalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="13" column="1">
+            <widget class="QCheckBox" name="checkBox_apply_settings">
+             <property name="text">
+              <string>Apply Settings On Start-up</string>
              </property>
             </widget>
            </item>
-           <item row="16" column="1">
-            <widget class="QSpinBox" name="spinBox_tilt_eb">
-             <property name="maximum">
-              <number>360</number>
-             </property>
-            </widget>
-           </item>
-           <item row="17" column="1">
-            <widget class="QSpinBox" name="spinBox_tilt_ib">
-             <property name="maximum">
-              <number>360</number>
-             </property>
-            </widget>
-           </item>
-           <item row="18" column="1">
-            <widget class="QSpinBox" name="spinBox_pretilt">
-             <property name="maximum">
-              <number>360</number>
-             </property>
-            </widget>
-           </item>
-           <item row="19" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_needle_height">
-             <property name="decimals">
-              <number>4</number>
+           <item row="14" column="1">
+            <widget class="QCheckBox" name="checkBox_connect_automatically">
+             <property name="text">
+              <string>Connect To Microscope Automatically</string>
              </property>
             </widget>
            </item>
@@ -1063,6 +967,9 @@
              <property name="decimals">
               <number>4</number>
              </property>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
+             </property>
             </widget>
            </item>
            <item row="2" column="1" colspan="2">
@@ -1089,15 +996,42 @@
          </widget>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QPushButton" name="pushButton_save_defaults">
-         <property name="text">
-          <string>Save Defaults To Yaml</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
+    </widget>
+   </item>
+   <item row="16" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="14" column="0">
+    <widget class="QPushButton" name="pushButton_save_yaml">
+     <property name="text">
+      <string>Save Configuration To File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="14" column="1">
+    <widget class="QPushButton" name="pushButton_import_yaml">
+     <property name="text">
+      <string>Import Settings</string>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_apply_settings">
+     <property name="text">
+      <string>Apply All Settings</string>
+     </property>
     </widget>
    </item>
   </layout>
