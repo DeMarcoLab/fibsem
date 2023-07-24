@@ -30,7 +30,7 @@ def log_status_message(step: str):
 
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     move_signal = QtCore.pyqtSignal()
-    tile_manager_opened = QtCore.pyqtSignal()
+    minimap_opened = QtCore.pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -313,14 +313,14 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def open_tile_manager(self):
         # TODO: need to register this with the main ui somehow
-        from fibsem.ui.FibsemTileWidget import FibsemTileWidget
+        from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
         self.viewer2 = napari.Viewer(ndisplay=2)
-        self.tile_widget = FibsemTileWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
+        self.minimap_widget = FibsemMinimapWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
         self.viewer2.window.add_dock_widget(
-            self.tile_widget, area="right", add_vertical_stretch=False
+            self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
-        self.tile_widget._stage_position_moved.connect(self._stage_position_moved)
-        self.tile_manager_opened.emit()
+        self.minimap_widget._stage_position_moved.connect(self._stage_position_moved)
+        self.minimap_opened.emit()
         napari.run(max_loop_level=2)
 
 

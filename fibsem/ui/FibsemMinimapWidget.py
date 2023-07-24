@@ -7,7 +7,7 @@ from fibsem import config as cfg
 from fibsem import constants, conversions, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point, FibsemStagePosition
-from fibsem.ui.qtdesigner_files import FibsemTileWidget
+from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
 import os
 
 from fibsem.imaging import _tile
@@ -22,7 +22,7 @@ from fibsem.ui import utils as ui_utils
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 
-class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWindow):
     _stage_position_moved = pyqtSignal(FibsemStagePosition)
     _stage_position_added = pyqtSignal(FibsemStagePosition)
     
@@ -33,7 +33,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         viewer: napari.Viewer,
         parent=None,
     ):
-        super(FibsemTileWidget, self).__init__(parent=parent)
+        super(FibsemMinimapWidget, self).__init__(parent=parent)
         self.setupUi(self)
 
         self.microscope = microscope
@@ -55,7 +55,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
     def setup_connections(self):
 
         self.pushButton_run_tile_collection.clicked.connect(self.run_tile_collection)
-        self.pushButton_load_image.clicked.connect(self.load_image)
+        self.actionLoad_Image.triggered.connect(self.load_image)
 
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
 
@@ -67,15 +67,15 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
         self.pushButton_remove_position.setStyleSheet("background-color: red")
 
-        self.pushButton_save_positions.clicked.connect(self._save_positions_pressed)
-        self.pushButton_load_positions.clicked.connect(self._load_positions)
+        self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
+        self.actionLoad_Positions.triggered.connect(self._load_positions)
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
 
 
         # correlation
-        self.pushButton_load_correlation_image.clicked.connect(self._load_correlation_image)
+        self.actionLoad_Correlation_Image.triggered.connect(self._load_correlation_image)
         self.pushButton_update_correlation_image.clicked.connect(lambda: self._update_correlation_image(None))
 
         # auto update correlation image
@@ -429,9 +429,9 @@ def main():
 
     viewer = napari.Viewer(ndisplay=2)
     microscope, settings = utils.setup_session()
-    tile_widget = FibsemTileWidget(microscope, settings, viewer=viewer)
+    minimap_widget = FibsemMinimapWidget(microscope, settings, viewer=viewer)
     viewer.window.add_dock_widget(
-        tile_widget, area="right", add_vertical_stretch=False
+        minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
     )
     napari.run()
 
