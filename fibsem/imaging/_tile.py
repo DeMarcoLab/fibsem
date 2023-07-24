@@ -1,7 +1,7 @@
 
 
 from fibsem import utils, acquire
-from fibsem.structures import BeamType, FibsemStagePosition, Point
+from fibsem.structures import BeamType, FibsemStagePosition, Point, FibsemImage
 
 import matplotlib.pyplot as plt
 import os
@@ -178,15 +178,41 @@ def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
     point = image_centre + px_delta
 
     # NB: there is a small reprojection error that grows with distance from centre
-    print(f"ERROR: dy: {dy}, delta_y: {delta.y}, delta_z: {delta.z}")
+    # print(f"ERROR: dy: {dy}, delta_y: {delta.y}, delta_z: {delta.z}")
 
     return point
 
 
-def _reproject_positions(image, positions):
-    
+def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition]):
+    # reprojection of positions onto image coordinates
     points = []
     for pos in positions:
         points.append(_calculate_repojection(image, pos))
     
     return points
+
+
+
+
+import  matplotlib.pyplot as plt
+def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], show:bool=False) -> plt.Figure:
+
+    points = _reproject_positions(image, positions)
+
+    # plot on matplotlib
+    fig = plt.figure(figsize=(7, 7))
+    plt.imshow(image.data, cmap="gray")
+
+    COLOURS = ["r", "g", "b", "c", "m", "y"]
+    for i, (pos, pt) in enumerate(zip(positions, points)):
+        c =COLOURS[i%len(COLOURS)]
+        plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
+
+        # draw label next to point
+        plt.text(pt.x-225, pt.y-100, pos.name, fontsize=10, color="white")
+
+    plt.axis("off")
+    if show:
+        plt.show()
+
+    return fig
