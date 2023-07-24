@@ -136,7 +136,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.pushButton_move_to_position.setEnabled(_image_loaded)
 
         if _image_loaded:
-            self.label_instructions.setText("Alt+Click to add a position, Double Click to Move the Stage...")
+            self.label_instructions.setText("Alt+Click to Add a position, Shift+Click to Update a position \nor Double Click to Move the Stage...")
         else:
             self.label_instructions.setText("Please take or load an overview image...")
 
@@ -203,7 +203,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
     def _on_click(self, layer, event):
         
-        if event.button != 1 or 'Alt' not in event.modifiers:
+        # left click + (alt or shift)
+        if event.button != 1 or ('Alt' not in event.modifiers and 'Shift' not in event.modifiers):
             return 
 
         coords, point = self._validate_mouse_click(layer, event)
@@ -213,10 +214,15 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                     dx=point.x, dy=point.y, 
                     beam_type=self.image.metadata.image_settings.beam_type, 
                     base_position=self.image.metadata.microscope_state.absolute_position)            
-        _new_position.name = f"Position {len(self.positions)+1:02d}" # TODO: allow user to edit this
-
-        # now should be able to just move to _new_position
-        self.positions.append(_new_position)
+       
+        if 'Shift' in event.modifiers:
+            idx = self.comboBox_tile_position.currentIndex()
+            _name = self.positions[idx].name
+            _new_position.name = _name
+            self.positions[idx] = _new_position
+        elif 'Alt' in event.modifiers:
+            _new_position.name = f"Position {len(self.positions)+1:02d}" 
+            self.positions.append(_new_position)
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
         self._update_position_info()
@@ -246,6 +252,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.lineEdit_tile_position_name.setText(self.positions[idx].name)
         else:
             self.lineEdit_tile_position_name.setText("")
+        
+        self.pushButton_move_to_position.setEnabled(idx != -1)
+        self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
 
     def _update_position_info(self):
         idx = self.comboBox_tile_position.currentIndex()
