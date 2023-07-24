@@ -396,6 +396,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self._corr_image_layer = self.viewer.add_image(self.corr_image.data, 
                 name="corr_image", colormap="green", blending="translucent", opacity=0.5)
             self.comboBox_correlation_selected_layer.addItems(["corr_image"])
+
+            self.viewer.layers.selection.active = self._image_layer
         
         
         # select layer
@@ -419,9 +421,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 # TODO: change name: tile to minimap
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 
-
-
-
 
 
 

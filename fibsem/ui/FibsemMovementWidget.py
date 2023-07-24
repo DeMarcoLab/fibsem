@@ -30,7 +30,6 @@ def log_status_message(step: str):
 
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     move_signal = QtCore.pyqtSignal()
-    minimap_opened = QtCore.pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -84,9 +83,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
         self.checkBox_auto_scaling.stateChanged.connect(self.minimap)
         self.spinBox_grid_radius.valueChanged.connect(self.minimap)
-
-        # tile manager
-        self.pushButton_tile_manager.clicked.connect(self.open_tile_manager)
 
     def auto_eucentric_correction(self):
 
@@ -311,17 +307,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def _stage_position_moved(self, pos: FibsemStagePosition):
         self.update_ui_after_movement()
 
-    def open_tile_manager(self):
-        # TODO: need to register this with the main ui somehow
-        from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
-        self.viewer2 = napari.Viewer(ndisplay=2)
-        self.minimap_widget = FibsemMinimapWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
-        self.viewer2.window.add_dock_widget(
-            self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
-        )
-        self.minimap_widget._stage_position_moved.connect(self._stage_position_moved)
-        self.minimap_opened.emit()
-        napari.run(max_loop_level=2)
+
 
 
 def main():
