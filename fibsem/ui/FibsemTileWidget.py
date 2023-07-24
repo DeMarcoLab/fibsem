@@ -44,6 +44,7 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
         self.image = None
         self._image_layer = None
         self._reprojection_layer = None
+        self._corr_image_layer = None
 
         self.positions = []
 
@@ -71,6 +72,26 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
+
+
+        # correlation
+        self.pushButton_load_correlation_image.clicked.connect(self._load_correlation_image)
+        self.pushButton_update_correlation_image.clicked.connect(lambda: self._update_correlation_image(None))
+
+        # auto update correlation image
+        self.doubleSpinBox_correlation_translation_x.valueChanged.connect(lambda: self._update_correlation_image(None))
+        self.doubleSpinBox_correlation_translation_y.valueChanged.connect(lambda: self._update_correlation_image(None))
+        self.doubleSpinBox_correlation_scale_x.valueChanged.connect(lambda: self._update_correlation_image(None)) 
+        self.doubleSpinBox_correlation_scale_y.valueChanged.connect(lambda: self._update_correlation_image(None))
+        self.doubleSpinBox_correlation_rotation.valueChanged.connect(lambda: self._update_correlation_image(None))
+
+        self.doubleSpinBox_correlation_translation_x.setKeyboardTracking(False)
+        self.doubleSpinBox_correlation_translation_y.setKeyboardTracking(False)
+        self.doubleSpinBox_correlation_scale_x.setKeyboardTracking(False)
+        self.doubleSpinBox_correlation_scale_y.setKeyboardTracking(False)
+        self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
+
+
 
     def run_tile_collection(self):
 
@@ -353,17 +374,51 @@ class FibsemTileWidget(FibsemTileWidget.Ui_Form, QtWidgets.QWidget):
                 self._reprojection_layer.data = data
                 self._reprojection_layer.text = text
 
-    def _align_image(self):
+    def _load_correlation_image(self):
 
         # load another image
+        path = ui_utils._get_file_ui( msg="Select image to load", 
+        path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
 
+        if path == "":
+            napari.utils.notifications.show_info(f"No file selected..")
+            return
+
+        image = FibsemImage.load(path)    
+
+        self._update_correlation_image(image)
+
+
+    def _update_correlation_image(self, image: FibsemImage = None):
+
+        if image is not None:
+            self.corr_image = image
+            self._corr_image_layer = self.viewer.add_image(self.corr_image.data, 
+                name="corr_image", colormap="green", blending="translucent", opacity=0.5)
+            self.comboBox_correlation_selected_layer.addItems(["corr_image"])
+        
+        
         # select layer
+        layer_name = self.comboBox_correlation_selected_layer.currentText()
+        if layer_name == "":
+            napari.utils.notifications.show_info(f"Please select a layer to correlate with...")
+            return
 
-        # allow translation, rotation, scaling of image
+        tx, ty = self.doubleSpinBox_correlation_translation_x.value(), self.doubleSpinBox_correlation_translation_y.value()
+        sx, sy = self.doubleSpinBox_correlation_scale_x.value(), self.doubleSpinBox_correlation_scale_y.value()
+        r = self.doubleSpinBox_correlation_rotation.value()
 
-        pass
+        # apply to selected layer
+        self.viewer.layers[layer_name].translate = [tx, ty]
+        self.viewer.layers[layer_name].scale = [sx, sy]
+        self.viewer.layers[layer_name].rotate = r
 
 
+
+# TODO: allow multiple correlation images
+# TODO: change name: tile to minimap
+# TODO: update layer name, set from file?
+# TODO: set combobox to all images in viewer 
 
 
 
