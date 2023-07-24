@@ -243,6 +243,9 @@ class FibsemMicroscope(ABC):
     def get_beam_settings(self, beam_type: BeamType = None) -> BeamSettings:
         pass
 
+    def set_beam_settings(self, settings: BeamSystemSettings) -> None:
+        pass
+
     @abstractmethod
     def get_detector_settings(self, beam_type: BeamType = None) -> FibsemDetectorSettings:
         pass
@@ -405,8 +408,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection = SdbMicroscopeClient()
         import fibsem
         from fibsem.utils import load_protocol
-        base_path = os.path.dirname(fibsem.__path__[0])
-        dict_system = load_protocol(os.path.join(base_path, "fibsem", "config", "system.yaml"))
+        import fibsem.config as cfg
+        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
         self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
     def disconnect(self):
@@ -2077,6 +2080,27 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return beam_settings
     
+    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
+        """Set the beam settings for the specified beam type.
+
+        Args:
+            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Setting {beam_settings.beam_type.value} beam settings...")
+        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+        self.set("current", beam_settings.current, beam_settings.beam_type)
+        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
+        self.set("detector_mode", beam_settings.detector_mode, beam_settings.beam_type)
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas is True:
+            self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
+    
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the specified beam type.
 
@@ -2532,10 +2556,9 @@ class TescanMicroscope(FibsemMicroscope):
         self.last_image_eb = None
         self.last_image_ib = None
 
-        import fibsem
+        import fibsem.config as cfg
         from fibsem.utils import load_protocol
-        base_path = os.path.dirname(fibsem.__path__[0])
-        dict_system = load_protocol(os.path.join(base_path, "fibsem", "config", "system.yaml"))
+        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
         self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
     def disconnect(self):
@@ -4326,6 +4349,27 @@ class TescanMicroscope(FibsemMicroscope):
 
         return beam_settings
     
+    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
+        """Set the beam settings for the specified beam type.
+
+        Args:
+            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Setting {beam_settings.beam_type.value} beam settings...")
+        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+        self.set("current", beam_settings.current, beam_settings.beam_type)
+        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
+
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas:
+            self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
+
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the microscope.
 
@@ -4529,6 +4573,7 @@ class TescanMicroscope(FibsemMicroscope):
             beam.Preset.Activate(value)
             logging.info(f"Preset {value} activated for {beam_type}.")
             return
+                    
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
@@ -4586,11 +4631,10 @@ class DemoMicroscope(FibsemMicroscope):
             brightness=0.5,
             contrast=0.5,
         )
-        import fibsem
+        import fibsem.config as cfg
         from fibsem.utils import load_protocol
         import os
-        base_path = os.path.dirname(fibsem.__path__[0])
-        dict_system = load_protocol(os.path.join(base_path, "fibsem", "config", "system.yaml"))
+        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
         self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
 
@@ -5008,6 +5052,24 @@ class DemoMicroscope(FibsemMicroscope):
         )
         return beam_settings
     
+    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
+        """Set the beam settings for the specified beam type.
+
+        Args:
+            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Setting {beam_settings.beam_type.value} beam settings...")
+        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+        self.set("current", beam_settings.beam_current, beam_settings.beam_type)
+        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+        self.set("detector_type", beam_settings.detector_settings.dtype, beam_settings.beam_type)
+        
     def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
         detector_settings = FibsemDetectorSettings(
             dtype=self.get("detector_type", beam_type),
