@@ -20,6 +20,8 @@ patterns:
     height: 5.0e-6
     depth: 1.0e-6
     rotation: 0.0
+    cleaning_cross_section: False
+    scan_direction: "ToptoBottom"
   Line:
     start_x: 0.0
     start_y: 0.0
@@ -29,6 +31,7 @@ patterns:
   Circle:
     radius: 5.0e-6
     depth: 1.0e-6
+    cleaning_cross_section: False
   Trench:
     lamella_width: 40.0e-6
     lamella_height: 10.0e-6
@@ -36,6 +39,7 @@ patterns:
     offset: 1.0e-6
     size_ratio: 1.0
     depth: 10.0e-6
+    cleaning_cross_section: False
   Horseshoe:
     lamella_width: 40.0e-6
     lamella_height: 10.0e-6
@@ -52,11 +56,13 @@ patterns:
     trench_width: 2.0e-6
     rhs_height: 10.0e-6
     h_offset: 5.0e-6
+    cleaning_cross_section: True
   Fiducial:
     height: 10.0e-6
     width: 1.0e-6
     depth: 5.0e-6
     rotation: 0.0
+    cleaning_cross_section: True
   SpotWeld:
     height: 1.0e-6
     width: 5.0e-6
@@ -65,6 +71,7 @@ patterns:
     number: 3
     rotation: 0.0
     passes: 1.0
+    scan_direction: "ToptoBottom"
   MicroExpansion:
     height: 1.0e-6
     width: 5.0e-6

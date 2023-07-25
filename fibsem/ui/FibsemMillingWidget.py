@@ -317,6 +317,29 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 path_explorer.clicked.connect(self.open_path_dialog)
                 self.path_edit.editingFinished.connect(self.update_ui_pattern)
                 continue
+            
+            if key == "scan_direction":
+                label = QtWidgets.QLabel(key)
+                self.comboBox_scan_direction = QtWidgets.QComboBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.comboBox_scan_direction, i, 1)
+                self.comboBox_scan_direction.addItems(self.microscope.get_available_values(key="scan_direction"))
+                scan_direction_to_use = pattern_protocol[key] if pattern_protocol[key] in self.microscope.get_available_values(key="scan_direction") else self.microscope.get_available_values(key="scan_direction")[0]
+                logging.info(f'Scan direction to use: {scan_direction_to_use}, available: {self.microscope.get_available_values(key="scan_direction")}')
+                self.comboBox_scan_direction.setCurrentText(scan_direction_to_use)
+                self.comboBox_scan_direction.currentIndexChanged.connect(self.update_ui_pattern)
+                continue
+
+            if key == "cleaning_cross_section":
+                if isinstance(self.microscope, ThermoMicroscope) and pattern.name == "Circle":
+                    continue
+                label = QtWidgets.QLabel(key)
+                self.checkbox_cleaning_cross_section = QtWidgets.QCheckBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.checkbox_cleaning_cross_section, i, 1)
+                self.checkbox_cleaning_cross_section.setChecked(pattern_protocol[key])
+                self.checkbox_cleaning_cross_section.stateChanged.connect(self.update_ui_pattern)
+                continue
 
             if key == "passes":
                 label = QtWidgets.QLabel(key)
@@ -364,9 +387,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 path = self.path_edit.text()
                 pattern_dict[key] = path
                 continue
+            if key == "scan_direction":
+                pattern_dict[key] = self.comboBox_scan_direction.currentText()
+                continue
+            if key == "cleaning_cross_section":
+                if isinstance(self.microscope, ThermoMicroscope) and pattern.name == "Circle":
+                    continue
+                pattern_dict[key] = self.checkbox_cleaning_cross_section.isChecked()
+                continue
             if key == "passes":
                 pattern_dict[key] = self.passes_comboBox.text() if self.passes_comboBox.text() != "N/A" else None
                 continue
+
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
             value = value * constants.DEGREES_TO_RADIANS if key in _ANGLE_KEYS else value
