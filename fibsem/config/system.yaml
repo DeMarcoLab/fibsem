@@ -2,15 +2,15 @@ apply_settings_on_startup: true
 connect_to_microscope_on_startup: true
 model:
     electron:
-        enabled: true
+        enabled: false
     gis:
-        enabled: true
+        enabled: false
         multichem: true
     ion:
         enabled: true
         can_select_plasma_gas: false 
     manipulator:
-        enabled: true
+        enabled: false
         positions:
             calibrated: true
             parking:
@@ -48,7 +48,7 @@ system:
         plasma_gas: Argon
         voltage: 30000
     ip_address: localhost
-    manufacturer: Thermo
+    manufacturer: Demo
     name: S8252G
     stage:
         needle_stage_height_limit: 0.0037

@@ -4632,6 +4632,7 @@ class DemoMicroscope(FibsemMicroscope):
         import fibsem.config as cfg
         from fibsem.utils import load_protocol
         import os
+        self.model = "Demo_F1BS3M"
         dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
         self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
@@ -5064,9 +5065,9 @@ class DemoMicroscope(FibsemMicroscope):
         """
         logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
         self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
-        self.set("current", beam_settings.beam_current, beam_settings.beam_type)
+        self.set("current", beam_settings.current, beam_settings.beam_type)
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
-        self.set("detector_type", beam_settings.detector_settings.dtype, beam_settings.beam_type)
+        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
         
     def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
         detector_settings = FibsemDetectorSettings(
