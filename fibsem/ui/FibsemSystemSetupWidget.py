@@ -84,7 +84,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
 
     def import_yaml(self):
-        protocol_path = _get_file_ui(msg="Select protocol file")
+        protocol_path = _get_file_ui(msg="Select system file")
         if protocol_path == "":
             return
         self.settings = utils.load_settings_from_config(protocol_path)
@@ -214,7 +214,6 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["connect_to_microscope_on_startup"] = bool(self.checkBox_connect_automatically.isChecked())
         system_dict["apply_settings_on_startup"] = bool(self.checkBox_apply_settings.isChecked())
 
-        # protocol_path = _get_file_ui(msg="Select protocol file")
         protocol_path = _get_save_file_ui(msg="Save system file")
         if protocol_path == '':
             return
