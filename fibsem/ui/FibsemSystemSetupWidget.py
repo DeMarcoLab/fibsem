@@ -13,7 +13,7 @@ from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
-from fibsem.ui.utils import _get_file_ui
+from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.utils import load_yaml
 
 def log_status_message(step: str):
@@ -214,7 +214,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["connect_to_microscope_on_startup"] = bool(self.checkBox_connect_automatically.isChecked())
         system_dict["apply_settings_on_startup"] = bool(self.checkBox_apply_settings.isChecked())
 
-        protocol_path = _get_file_ui(msg="Select protocol file")
+        # protocol_path = _get_file_ui(msg="Select protocol file")
+        protocol_path = _get_save_file_ui(msg="Save system file")
         if protocol_path == '':
             return
         with open(os.path.join(protocol_path), "w") as f:

@@ -165,8 +165,11 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.addTab(self.image_widget, "Image")
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
-            self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
-            self.tabWidget.addTab(self.GIS_widget, "GIS")
+
+            if self.microscope.hardware_settings.manipulator_enabled:
+                self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
+            if self.microscope.hardware_settings.gis_enabled:
+                self.tabWidget.addTab(self.GIS_widget, "GIS")
             self.system_widget.image_widget = self.image_widget
             self.system_widget.milling_widget = self.milling_widget
 

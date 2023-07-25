@@ -4634,6 +4634,7 @@ class DemoMicroscope(FibsemMicroscope):
         import fibsem.config as cfg
         from fibsem.utils import load_protocol
         import os
+        self.model = "Demo_F1BS3M"
         dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
         self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
