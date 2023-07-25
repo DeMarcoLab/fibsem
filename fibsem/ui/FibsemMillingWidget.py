@@ -295,7 +295,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         logging.info(f"Current Stage: {self.comboBox_milling_stage.currentIndex()}")
         logging.info(f"Selected pattern: {pattern.name}")
-        logging.info(f"Required parameters: {pattern.required_keys}")
         logging.info(f"Protocol: {pattern_protocol}")
 
         # create a label and double spinbox for each required keys and add it to the layout
@@ -351,6 +350,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             if key == "passes":
                 label = QtWidgets.QLabel(key)
                 self.passes_comboBox = QtWidgets.QLineEdit()
+                self.passes_comboBox.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
                 self.gridLayout_patterns.addWidget(label, i, 0)
                 self.gridLayout_patterns.addWidget(self.passes_comboBox, i, 1)
                 self.passes_comboBox.setText("N/A")
