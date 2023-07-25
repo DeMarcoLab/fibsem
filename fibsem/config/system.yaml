@@ -3,7 +3,7 @@ system:
         current: 1.0000000000000002e-12
         detector_mode: SecondaryElectrons
         detector_type: ETD
-        eucentric_height: 0.0039
+        eucentric_height: 0.00391
         voltage: 2000
     ion:
         current: 2.0000000000000002e-11

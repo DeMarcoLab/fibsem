@@ -154,7 +154,6 @@ Methods:
     def __to_dict__(self) -> dict:
         position_dict = {}
 
-        position_dict["name"] = self.name
         position_dict["name"] = self.name if self.name is not None else None
         position_dict["x"] = float(self.x) if self.x is not None else None
         position_dict["y"] = float(self.y) if self.y is not None else None
@@ -828,6 +827,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     rotation: float = 0.0 (m), 
                     centre_x: float = 0.0 (m), 
                     centre_y: float = 0.0 (m),
+                    passes: float = 1.0,
 
                 If FibsemPattern.Line
                     start_x: float (m), 
@@ -864,6 +864,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.centre_y = kwargs["centre_y"] if "centre_y" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+            self.passes = kwargs["passes"] if "passes" in kwargs else None
         elif pattern == FibsemPattern.Line:
             self.start_x = kwargs["start_x"]
             self.start_y = kwargs["start_y"]
@@ -906,7 +907,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
         
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
-            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section}, passes={self.passes})"
         if self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
         if self.pattern is FibsemPattern.Circle:
@@ -930,6 +931,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 centre_y=state_dict["centre_y"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
+                passes=int(state_dict["passes"]) if state_dict["passes"] is not None else None,
             )
         elif state_dict["pattern"] == "Line":
             return FibsemPatternSettings(
@@ -993,6 +995,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "centre_y": self.centre_y,
                 "scan_direction": self.scan_direction,
                 "cleaning_cross_section": self.cleaning_cross_section,
+                "passes": self.passes,
             }
         elif self.pattern == FibsemPattern.Line:
             return {
@@ -1552,16 +1555,7 @@ class FibsemImageMetadata:
         if settings["pixel_size"] is not None:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
         if settings["microscope_state"] is not None:
-            microscope_state = MicroscopeState(
-                timestamp=settings["microscope_state"]["timestamp"],
-                absolute_position=FibsemStagePosition(),
-                eb_settings=BeamSettings.__from_dict__(
-                    settings["microscope_state"]["eb_settings"]
-                ),
-                ib_settings=BeamSettings.__from_dict__(
-                    settings["microscope_state"]["ib_settings"]
-                ),
-            )
+            microscope_state = MicroscopeState.__from_dict__(settings["microscope_state"])
         
         detector_dict = settings.get("detector_settings", {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0})
         detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
@@ -1706,7 +1700,6 @@ class FibsemImage:
         Inputs:
             save_path (path): path to save directory and filename
         """
-        # self.metadata.image_settings.save_path = str(self.metadata.image_settings.save_path)
         if save_path is None:
             save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)

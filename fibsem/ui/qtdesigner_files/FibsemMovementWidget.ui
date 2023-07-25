@@ -17,7 +17,7 @@
    <item row="4" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_movement">
       <attribute name="title">
@@ -222,6 +222,44 @@
        <string>Positions</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="1">
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Positions </string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QPushButton" name="pushButton_update_position">
+         <property name="text">
+          <string>Update position</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <widget class="QPushButton" name="pushButton_remove_position">
+         <property name="styleSheet">
+          <string notr="true">color: white; background-color: rgb(170, 0, 0)</string>
+         </property>
+         <property name="text">
+          <string>Remove Position</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="3">
+        <widget class="QPushButton" name="pushButton_export">
+         <property name="text">
+          <string>Export positions</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="1">
         <widget class="QLabel" name="label_2">
          <property name="font">
@@ -252,31 +290,15 @@
        <item row="4" column="2" colspan="2">
         <widget class="QLineEdit" name="lineEdit_position_name"/>
        </item>
-       <item row="4" column="1">
-        <widget class="QPushButton" name="pushButton_save_position">
-         <property name="styleSheet">
-          <string notr="true">color: white; background-color: rgb(85, 170, 0)</string>
-         </property>
+       <item row="1" column="1">
+        <widget class="QLabel" name="label_3">
          <property name="text">
-          <string>Save position</string>
+          <string>All positions in mm and degrees</string>
          </property>
         </widget>
        </item>
        <item row="2" column="2" colspan="2">
         <widget class="QComboBox" name="comboBox_positions"/>
-       </item>
-       <item row="9" column="1" colspan="3">
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
        </item>
        <item row="7" column="1">
         <widget class="QLabel" name="label_5">
@@ -291,33 +313,18 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>All positions in mm and degrees</string>
+       <item row="9" column="1" colspan="3">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="label">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
          </property>
-         <property name="text">
-          <string>Positions </string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1" colspan="3">
-        <widget class="QLabel" name="label_minimap">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
+        </spacer>
        </item>
        <item row="3" column="2" colspan="2">
         <widget class="QLabel" name="label_current_position">
@@ -326,10 +333,20 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="2">
-        <widget class="QPushButton" name="pushButton_update_position">
+       <item row="4" column="1">
+        <widget class="QPushButton" name="pushButton_save_position">
+         <property name="styleSheet">
+          <string notr="true">color: white; background-color: rgb(85, 170, 0)</string>
+         </property>
          <property name="text">
-          <string>Update position</string>
+          <string>Save position</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <widget class="QCheckBox" name="checkBox_auto_scaling">
+         <property name="text">
+          <string>Auto scaling</string>
          </property>
         </widget>
        </item>
@@ -343,27 +360,10 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="3">
-        <widget class="QPushButton" name="pushButton_remove_position">
-         <property name="styleSheet">
-          <string notr="true">color: white; background-color: rgb(170, 0, 0)</string>
-         </property>
+       <item row="8" column="1" colspan="3">
+        <widget class="QLabel" name="label_minimap">
          <property name="text">
-          <string>Remove Position</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="3">
-        <widget class="QCheckBox" name="checkBox_auto_scaling">
-         <property name="text">
-          <string>Auto scaling</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="3">
-        <widget class="QPushButton" name="pushButton_export">
-         <property name="text">
-          <string>Export positions</string>
+          <string/>
          </property>
         </widget>
        </item>

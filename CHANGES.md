@@ -1,5 +1,33 @@
 ## Changes
 
+### 31/07/2023
+
+#### Highlights
+
+- OpenFIBSEM is now available on PyPI. Use pip to install: `pip install fibsem`
+- Minimap: Added a minimap widget for collecting tiled images and selected positions. Provides an overview of the current stage position and the positions of the selected locations. Also provides an integrated correlation user interface.
+
+
+#### Features
+
+- Added a _safe_absolute_stage_movement. This function will tilt flat before performing large movements to prevent collions. 
+- Added cleaning_cross_section and scan_direction to the milling widget user interface.
+- Rectangle Patterns now sputter a 'passes' parameter. This allows you to explicitly set the number of passes the beam will scan.
+- Added automatic logging for alignment data. All alignment data is now logged to a file in the log/crosscorrelation directory. You can change this log directory in the config.
+- Added a cryo sputter widget for automated sputtering in cryo conditions.
+
+#### Fixes / Updates
+
+- Fixed an issue where masks were not calculated for alignment.correct_stage_drift.
+- Changed the model checkpoint lookup to search the fibsem/segmentation/models directory instead of expecting an absolute path.
+- Fixed an issue where coordinate system was flipped when moving using a detection.
+- Fixed an issue where milling protocols were being overwritten when setting the milling stages directly. [USER-INTERFACE]
+- The milling widget hfw should now update automatically when changing the imaging settings. [USER-INTERFACE]
+- The user interface won't try to draw the cross hair if no image is available. [USER-INTERFACE]
+- Explicitly converting the last_image to np.uint8 (was np.uint16) [THERMO]
+- Explictly settings the manipulator coordinate system when performing movements [THERMO]
+
+
 ### 12/07/2023
 
 - Added Documentation
