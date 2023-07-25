@@ -145,18 +145,20 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
-            self.manipulator_widget = FibsemManipulatorWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-            self.GIS_widget = FibsemGISWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
+            if self.microscope.hardware_settings.manipulator_enabled:
+                self.manipulator_widget = FibsemManipulatorWidget(
+                    microscope=self.microscope,
+                    settings=self.settings,
+                    viewer=self.viewer,
+                    image_widget=self.image_widget,
+                )
+            if self.microscope.hardware_settings.gis_enabled:
+                self.GIS_widget = FibsemGISWidget(
+                    microscope=self.microscope,
+                    settings=self.settings,
+                    viewer=self.viewer,
+                    image_widget=self.image_widget,
+                )
 
 
             # add widgets to tabs
