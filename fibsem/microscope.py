@@ -3136,8 +3136,6 @@ class TescanMicroscope(FibsemMicroscope):
         # elif image_rotation == 180:
         #     dx_move = dx
         #     dy_move = -dy
-        image_rotation = self.connection.SEM.Optics.GetImageRotation()
-
         dx_move =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         dy_move = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
 
@@ -5225,42 +5223,44 @@ def printProgressBar(
     bar = fill * filled_length + "-" * (length - filled_length)
     print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\r")
 
+import warnings
+
 def _check_beam(beam_type: BeamType, hardware_settings: FibsemHardware):
     """
     Checks if beam is available.
     """
     if beam_type == BeamType.ELECTRON and hardware_settings.electron_beam == False:
-        raise NotImplementedError("The microscope does not have an electron beam.")
+        warnings.warn("The microscope does not have an electron beam.")
     if beam_type == BeamType.ION and hardware_settings.ion_beam == False:
-        raise NotImplementedError("The microscope does not have an ion beam.")
+        warnings.warn("The microscope does not have an ion beam.")
 
 def _check_stage(hardware_settings: FibsemHardware, rotation: bool = False, tilt: bool = False):
     """
     Checks if the stage is fully movable.
     """
     if hardware_settings.stage_enabled == False:
-        raise NotImplementedError("The microscope does not have a moving stage.")
+        warnings.warn("The microscope does not have a moving stage.")
     if hardware_settings.stage_rotation == False and rotation == True:
-        raise NotImplementedError("The microscope stage does not rotate.")
+        warnings.warn("The microscope stage does not rotate.")
     if hardware_settings.stage_tilt == False and tilt == True:
-        raise NotImplementedError("The microscope stage does not tilt.")
+        warnings.warn("The microscope stage does not tilt.")
 
 def _check_needle(hardware_settings: FibsemHardware, rotation: bool = False, tilt: bool = False):
     """
     Checks if the needle is available.
     """
     if hardware_settings.manipulator_enabled == False:
-        raise NotImplementedError("The microscope does not have a needle.")
+        warnings.warn("The microscope does not have a needle.")
     if hardware_settings.manipulator_rotation == False and rotation == True:
-        raise NotImplementedError("The microscope needle does not rotate.")
+        warnings.warn("The microscope needle does not rotate.")
     if hardware_settings.manipulator_tilt == False and tilt == True:
-        raise NotImplementedError("The microscope needle does not tilt.")
+        warnings.warn("The microscope needle does not tilt.")
 
 def _check_sputter(hardware_settings: FibsemHardware):
     """
     Checks if the sputter is available.
     """
     if hardware_settings.gis_enabled == False:
-        raise NotImplementedError("The microscope does not have a GIS system.")
+        warnings.warn("The microscope does not have a GIS system.")
     if hardware_settings.gis_multichem == False:
-        raise NotImplementedError("The microscope does not have a multichem system.")
+        warnings.warn("The microscope does not have a multichem system.")
