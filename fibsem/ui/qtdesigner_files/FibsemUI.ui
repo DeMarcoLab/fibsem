@@ -75,18 +75,29 @@
     </property>
     <addaction name="actionCurrent_alignment"/>
     <addaction name="actionManipulator_Positions_Calibration"/>
+    <addaction name="actionOpen_Minimap"/>
    </widget>
    <addaction name="menuTools"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionCurrent_alignment">
    <property name="text">
-    <string>Current alignment</string>
+    <string>Beam Current Alignment</string>
    </property>
   </action>
   <action name="actionManipulator_Positions_Calibration">
    <property name="text">
-    <string>Manipulator Positions Calibration</string>
+    <string>Manipulator Callibration</string>
+   </property>
+  </action>
+  <action name="actionMinimap">
+   <property name="text">
+    <string>Minimap</string>
+   </property>
+  </action>
+  <action name="actionOpen_Minimap">
+   <property name="text">
+    <string>Open Minimap</string>
    </property>
   </action>
  </widget>
