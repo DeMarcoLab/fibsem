@@ -3153,7 +3153,6 @@ class TescanMicroscope(FibsemMicroscope):
         # elif image_rotation == 180:
         #     dx_move = dx
         #     dy_move = -dy
-        image_rotation = self.connection.SEM.Optics.GetImageRotation()
 
         dx_move =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         dy_move = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
