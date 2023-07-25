@@ -918,7 +918,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 centre_y=state_dict["centre_y"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
-                passes=int(state_dict["passes"]) if state_dict["passes"] is not None else None,
+                passes=int(state_dict["passes"]) if state_dict.get("passes", None) is not None else None,# TODO: this line is crazy
             )
         elif state_dict["pattern"] == "Line":
             return FibsemPatternSettings(
