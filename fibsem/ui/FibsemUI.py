@@ -152,6 +152,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                     viewer=self.viewer,
                     image_widget=self.image_widget,
                 )
+            else:
+                self.manipulator_widget = None
             if self.microscope.hardware_settings.gis_enabled:
                 self.GIS_widget = FibsemGISWidget(
                     microscope=self.microscope,
@@ -159,6 +161,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                     viewer=self.viewer,
                     image_widget=self.image_widget,
                 )
+            else:
+                self.GIS_widget = None
 
 
             # add widgets to tabs
@@ -189,8 +193,10 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
-            self.manipulator_widget.deleteLater()
-            self.GIS_widget.deleteLater()
+            if self.manipulator_widget is not None:
+                self.manipulator_widget.deleteLater() 
+            if self.GIS_widget is not None:
+                self.GIS_widget.deleteLater()
 
 
 def main():
