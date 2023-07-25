@@ -65,6 +65,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self.good_copy_pattern = None
 
+        self._USER_CLICKED:bool = False
+
     def setup_connections(self):
 
         self.image_widget.viewer_update_signal.connect(self.update_ui) # this happens after every time the viewer is updated
@@ -151,6 +153,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_x.valueChanged.connect(self.update_ui_pattern)
         self.doubleSpinBox_centre_y.valueChanged.connect(self.update_ui_pattern)
         self.checkBox_live_update.setChecked(True)
+
+
+        self._AVAILABLE_SCAN_DIRECTIONS = self.microscope.get_available_values(key="scan_direction")
 
     def update_settings(self):
         settings = self.get_milling_settings_from_ui()
@@ -243,6 +248,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui_pattern(self):
 
+        if self._USER_CLICKED:
+            return
+
         if self.checkBox_live_update.isChecked():
             self.update_ui()
 
@@ -264,7 +272,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # update pattern and define
         milling_stage.pattern = self.get_pattern_from_ui_v2()
-
 
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
         return 
@@ -323,9 +330,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.comboBox_scan_direction = QtWidgets.QComboBox()
                 self.gridLayout_patterns.addWidget(label, i, 0)
                 self.gridLayout_patterns.addWidget(self.comboBox_scan_direction, i, 1)
-                self.comboBox_scan_direction.addItems(self.microscope.get_available_values(key="scan_direction"))
-                scan_direction_to_use = pattern_protocol[key] if pattern_protocol[key] in self.microscope.get_available_values(key="scan_direction") else self.microscope.get_available_values(key="scan_direction")[0]
-                logging.info(f'Scan direction to use: {scan_direction_to_use}, available: {self.microscope.get_available_values(key="scan_direction")}')
+                self.comboBox_scan_direction.addItems(self._AVAILABLE_SCAN_DIRECTIONS)
+                scan_direction_to_use = pattern_protocol[key] if pattern_protocol[key] in self._AVAILABLE_SCAN_DIRECTIONS else self._AVAILABLE_SCAN_DIRECTIONS[0]
+                # logging.info(f'Scan direction to use: {scan_direction_to_use}, available: {self._AVAILABLE_SCAN_DIRECTIONS}')
                 self.comboBox_scan_direction.setCurrentText(scan_direction_to_use)
                 self.comboBox_scan_direction.currentIndexChanged.connect(self.update_ui_pattern)
                 continue
@@ -419,8 +426,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def _single_click(self, layer, event):
         """Callback for single click on image layer."""
-        if event.button != 2:
+        if event.button != 1 or 'Shift' not in event.modifiers:
             return
+
+        self._USER_CLICKED = True
 
         # get coords
         coords = layer.world_to_data(event.position)
@@ -464,20 +473,22 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     milling_stage.pattern.point = point
 
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-                self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+                self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
                 logging.info(f"Moved patterns to {point} ")
                 self.update_ui(milling_stages=self.milling_stages)
                 self.milling_position_changed.emit()
 
                 
         else:
-        # update pattern
+            # update pattern
+            import time
+            t0 = time.time()
             current_stage_index = self.comboBox_milling_stage.currentIndex()
             pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
             pattern_dict = self.milling_stages[current_stage_index].pattern.protocol
             pattern.define(protocol=pattern_dict, point=point)
             is_valid = self.valid_pattern_location(pattern)
-
+            t1 = time.time()
             if is_valid:
                 # update ui
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
@@ -485,12 +496,17 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 logging.info(f"Moved pattern to {point}")
                 log_status_message(self.milling_stages[current_stage_index], f"MOVED_PATTERN_TO_{point}")
                 self.good_copy_pattern = deepcopy(pattern)
+                t2 = time.time()
                 self.update_ui()
+                t3 = time.time()
                 self.milling_position_changed.emit()
+
+                logging.warning(f"_SINGLE_CLICK: Time to move pattern: {t1-t0}, time to log: {t2-t1}, time to update ui: {t3-t2}")
             else:
                 napari.utils.notifications.show_warning("Pattern is not within the image.")
                 self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
         
+        self._USER_CLICKED = False
 
     def valid_pattern_location(self,stage_pattern):
         
@@ -557,16 +573,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             # self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
-
+        import time
         self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
 
         if milling_stages is None and len(self.milling_stages) < 1:
             return
         
+        t0 = time.time()
         if milling_stages is None:
             self.update_milling_stage_from_ui() # update milling stage from ui
             milling_stages = self.get_milling_stages() # get the latest milling stages from the ui
-            
+
+        t1 = time.time() 
 
         if not milling_stages:
             _remove_all_layers(self.viewer)
@@ -579,7 +597,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # get all patterns (2D list, one list of pattern settings per stage)
         patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
         pattern_centres: list[Point] = [stage.pattern.point for stage in milling_stages if stage.pattern is not None]
-
+        t2 = time.time()
         try:
             
             from fibsem.structures import FibsemImage
@@ -593,12 +611,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 eb_image=self.image_widget.eb_image, 
                 all_patterns=patterns,
                 stage_centres=pattern_centres) # TODO: add names and legend for this
-            
+        
         except Exception as e:
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
             logging.error(e)
             return
-        
+        t3 = time.time()
+        logging.warning(f"UPDATE_UI: Time to get milling_stages: {t1-t0}, time to get patterns: {t2-t1}, time to draw patterns: {t3-t2}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def _toggle_interaction(self, enabled: bool = True):
