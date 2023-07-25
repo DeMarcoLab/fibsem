@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import yaml
 import numpy as np
 from fibsem.structures import FibsemPattern, FibsemPatternSettings, Point
+from fibsem import constants 
 
 
 def check_keys(protocol: dict, required_keys: list[str]) -> bool:
@@ -158,7 +159,7 @@ class RectanglePattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Rectangle"  # redundant now
-        protocol["rotation"] = protocol.get("rotation", 0)
+        protocol["rotation"] = protocol.get("rotation", 0) * constants.DEGREES_TO_RADIANS
         protocol["cleaning_cross_section"] = protocol.get(
             "cleaning_cross_section", False
         )
@@ -398,7 +399,7 @@ class FiducialPattern(BasePattern):
 
         left_pattern = FibsemPatternSettings.__from_dict__(protocol)
         from fibsem import constants 
-        left_pattern.rotation = protocol["rotation"]*constants.DEGREES_TO_RADIANS
+        left_pattern.rotation = protocol["rotation"] * constants.DEGREES_TO_RADIANS
         right_pattern = FibsemPatternSettings.__from_dict__(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
@@ -569,7 +570,7 @@ class SpotWeldPattern(BasePattern):
         depth = protocol["depth"]
         distance = protocol["distance"]
         n_patterns = int(protocol["number"])
-        rotation = protocol["rotation"]
+        rotation = protocol.get("rotation", 0)
         passes = protocol.get("passes", 1)
         scan_direction = protocol.get("scan_direction", "LeftToRight")
         passes = int(passes) if passes is not None else None

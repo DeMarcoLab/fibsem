@@ -401,7 +401,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
-            value = value * constants.DEGREES_TO_RADIANS if key in _ANGLE_KEYS else value
+            # value = value * constants.DEGREES_TO_RADIANS if key in _ANGLE_KEYS else value
             pattern_dict[key] = value # TODO: not everythign is in microns
         return pattern_dict
 
