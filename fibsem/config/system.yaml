@@ -2,15 +2,15 @@ apply_settings_on_startup: true
 connect_to_microscope_on_startup: true
 model:
     electron:
-        enabled: false
+        enabled: true
     gis:
-        enabled: false
+        enabled: true
         multichem: true
     ion:
         enabled: true
-        can_select_plasma_gas: false 
+        can_select_plasma_gas: true 
     manipulator:
-        enabled: false
+        enabled: true
         positions:
             calibrated: true
             parking:
@@ -25,7 +25,7 @@ model:
                 x: 0.0
                 y: 0.0
                 z: 0.00585
-        rotation: false
+        rotation: true
         tilt: false
     stage:
         enabled: true
@@ -48,7 +48,7 @@ system:
         plasma_gas: Argon
         voltage: 30000
     ip_address: localhost
-    manufacturer: Demo
+    manufacturer: Tescan
     name: S8252G
     stage:
         needle_stage_height_limit: 0.0037
