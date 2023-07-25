@@ -12,9 +12,9 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 
 
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation", "passes"),
+    "Rectangle": ("width", "height", "depth", "rotation","passes", "cleaning_cross_section","scan_direction"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-    "Circle": ("radius", "depth"),
+    "Circle": ("radius", "depth","cleaning_cross_section"),
     "Trench": (
         "lamella_width",
         "lamella_height",
@@ -22,6 +22,7 @@ REQUIRED_KEYS = {
         "size_ratio",
         "offset",
         "depth",
+        "cleaning_cross_section",
     ),
     "Horseshoe": (
         "lamella_width",
@@ -33,7 +34,7 @@ REQUIRED_KEYS = {
         "side_width",
         "depth",
     ),
-    "Fiducial": ("height", "width", "depth", "rotation"),
+    "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
     "Undercut": (
         "height",
         "width",
@@ -41,6 +42,7 @@ REQUIRED_KEYS = {
         "trench_width",
         "rhs_height",
         "h_offset",
+        "cleaning_cross_section",
     ),
     "MicroExpansion": (
         "height",
@@ -49,7 +51,7 @@ REQUIRED_KEYS = {
         "distance",
         "lamella_width",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes"),
+    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes","scan_direction"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -569,7 +571,9 @@ class SpotWeldPattern(BasePattern):
         n_patterns = int(protocol["number"])
         rotation = protocol["rotation"]
         passes = protocol.get("passes", 1)
+        scan_direction = protocol.get("scan_direction", "LeftToRight")
         passes = int(passes) if passes is not None else None
+
 
         patterns = []
         for i in range(n_patterns):
@@ -581,7 +585,8 @@ class SpotWeldPattern(BasePattern):
                 centre_x=point.x,
                 centre_y=point.y + (i - (n_patterns - 1) / 2) * distance,
                 cleaning_cross_section=False,
-                scan_direction="LeftToRight",
+                scan_direction=scan_direction,
+
                 rotation=rotation,
                 passes=passes,
             )

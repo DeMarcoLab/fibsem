@@ -2074,6 +2074,18 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if key == "detector_mode":
             values = self.connection.detector.mode.available_values
+        
+        if key == "scan_direction":
+            values = ["BottomToTop", 
+                "DynamicAllDirections", 
+                "DynamicInnerToOuter", 
+                "DynamicLeftToRight", 
+                "DynamicTopToBottom", 
+                "InnerToOuter", 	
+                "LeftToRight", 	
+                "OuterToInner", 
+                "RightToLeft", 	
+                "TopToBottom"]
 
         return values
 
@@ -3814,7 +3826,7 @@ class TescanMicroscope(FibsemMicroscope):
         width = pattern_settings.width
         height = pattern_settings.height
         rotation = pattern_settings.rotation * constants.RADIANS_TO_DEGREES # CHECK UNITS (TESCAN Takes Degrees)
-        paths = self.get_scan_directions()
+        paths = self.get_available_values(key="scan_direction")
         passes = pattern_settings.passes if pattern_settings.passes is not None else 1.0
         if pattern_settings.scan_direction in paths:
             path = pattern_settings.scan_direction
@@ -3892,6 +3904,16 @@ class TescanMicroscope(FibsemMicroscope):
 
             
         """
+        if pattern_settings.cleaning_cross_section:
+            self.layer.addAnnulusPolish(
+                CenterX=pattern_settings.centre_x,
+                CenterY=pattern_settings.centre_y,
+                RadiusA=pattern_settings.radius,
+                RadiusB=0,
+                Depth=pattern_settings.depth,
+                DepthUnit='m',
+            )
+
         pattern = self.layer.addAnnulusFilled(
             CenterX=pattern_settings.centre_x,
             CenterY=pattern_settings.centre_y,
@@ -4358,6 +4380,10 @@ class TescanMicroscope(FibsemMicroscope):
 
         if key == "presets":
             return self._get_presets()
+
+        if key == "scan_direction":
+            values = ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]
+            
 
         return values
 
@@ -5071,6 +5097,13 @@ class DemoMicroscope(FibsemMicroscope):
             values = ["ETD", "TLD", "EDS"]
         if key == "detector_mode":
             values = ["SecondaryElectrons", "BackscatteredElectrons", "EDS"]
+        
+        if key == "scan_direction":
+            values = ["BottomToTop", 
+                "LeftToRight", 	
+                "RightToLeft", 	
+                "TopToBottom"]
+         
 
         return values
 
