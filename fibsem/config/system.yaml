@@ -1,26 +1,63 @@
+apply_settings_on_startup: true
+connect_to_microscope_on_startup: true
+model:
+    electron:
+        enabled: true
+    gis:
+        enabled: true
+        multichem: true
+    ion:
+        enabled: true
+        can_select_plasma_gas: true 
+    manipulator:
+        enabled: true
+        positions:
+            calibrated: true
+            parking:
+                x: -0.008918395
+                y: 0.0006548000000000001
+                z: -0.004848865
+            standby:
+                x: 0.0
+                y: 0.0
+                z: 0.00545
+            working:
+                x: 0.0
+                y: 0.0
+                z: 0.00585
+        rotation: true
+        tilt: false
+    stage:
+        enabled: true
+        rotation: true
+        tilt: true
 system:
+    description: test
     electron:
         current: 1.0000000000000002e-12
         detector_mode: SecondaryElectrons
-        detector_type: ETD
-        eucentric_height: 0.00391
+        detector_type: E-T
+        eucentric_height: 0.0039
         voltage: 2000
+    id: '123'
     ion:
         current: 2.0000000000000002e-11
         detector_mode: SecondaryElectrons
-        detector_type: ETD
+        detector_type: SE
         eucentric_height: 0.0165
         plasma_gas: Argon
         voltage: 30000
-    ip_address: 10.0.0.1
-    manufacturer: Thermo
+    ip_address: localhost
+    manufacturer: Tescan
+    name: S8252G
     stage:
         needle_stage_height_limit: 0.0037
-        pre_tilt: 35
-        rotation_flat_to_electron: 49
-        rotation_flat_to_ion: 229
-        tilt_flat_to_electron: 0
-        tilt_flat_to_ion: 52
+        pre_tilt: 35.0
+        rotation_flat_to_electron: 49.0
+        rotation_flat_to_ion: 229.0
+        tilt_flat_to_electron: 0.0
+        tilt_flat_to_ion: 52.0
+    version: 0.2.1a1
 user:
     imaging:
         autocontrast: true

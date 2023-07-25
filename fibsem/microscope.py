@@ -243,6 +243,9 @@ class FibsemMicroscope(ABC):
     def get_beam_settings(self, beam_type: BeamType = None) -> BeamSettings:
         pass
 
+    def set_beam_settings(self, settings: BeamSystemSettings) -> None:
+        pass
+
     @abstractmethod
     def get_detector_settings(self, beam_type: BeamType = None) -> FibsemDetectorSettings:
         pass
@@ -405,8 +408,9 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection = SdbMicroscopeClient()
         import fibsem
         from fibsem.utils import load_protocol
-        base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+        import fibsem.config as cfg
+        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
     def disconnect(self):
         self.connection.disconnect()
@@ -2117,6 +2121,27 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return beam_settings
     
+    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
+        """Set the beam settings for the specified beam type.
+
+        Args:
+            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
+        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+        self.set("current", beam_settings.current, beam_settings.beam_type)
+        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
+        self.set("detector_mode", beam_settings.detector_mode, beam_settings.beam_type)
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas is True:
+            self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
+    
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the specified beam type.
 
@@ -2240,7 +2265,7 @@ class ThermoMicroscope(FibsemMicroscope):
             _check_needle(self.hardware_settings)
             return self.connection.specimen.manipulator.state
         
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -2361,8 +2386,11 @@ class ThermoMicroscope(FibsemMicroscope):
             if key == "plasma_gas":
                 _check_beam(beam_type, self.hardware_settings)
                 _check_sputter(self.hardware_settings)
-                beam.source.plasma_gas.value = value
-                logging.info(f"Plasma gas set to {value}.")
+                if self.hardware_settings.can_select_plasma_gas:
+                    beam.source.plasma_gas.value = value
+                    logging.info(f"Plasma gas set to {value}.")
+                else:
+                    logging.warning(f"Plasma gas cannot be set on this microscope.")
             return
         # chamber control (NOTE: dont implment until able to test on hardware)
         if key == "pump":
@@ -2569,10 +2597,10 @@ class TescanMicroscope(FibsemMicroscope):
         self.last_image_eb = None
         self.last_image_ib = None
 
-        import fibsem
+        import fibsem.config as cfg
         from fibsem.utils import load_protocol
-        base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path,"fibsem", "config", "model.yaml")))
+        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -3153,8 +3181,6 @@ class TescanMicroscope(FibsemMicroscope):
         # elif image_rotation == 180:
         #     dx_move = dx
         #     dy_move = -dy
-        image_rotation = self.connection.SEM.Optics.GetImageRotation()
-
         dx_move =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         dy_move = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
 
@@ -4380,6 +4406,27 @@ class TescanMicroscope(FibsemMicroscope):
 
         return beam_settings
     
+    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
+        """Set the beam settings for the specified beam type.
+
+        Args:
+            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
+        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+        self.set("current", beam_settings.current, beam_settings.beam_type)
+        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
+
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas:
+            self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
+
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the microscope.
 
@@ -4482,7 +4529,7 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "presets":
             return self._get_presets()
 
-        logging.warning(f"Unknown key: {key} ({beam_type})")
+        # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None   
 
     def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -4583,6 +4630,7 @@ class TescanMicroscope(FibsemMicroscope):
             beam.Preset.Activate(value)
             logging.info(f"Preset {value} activated for {beam_type}.")
             return
+                    
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return
@@ -4640,11 +4688,12 @@ class DemoMicroscope(FibsemMicroscope):
             brightness=0.5,
             contrast=0.5,
         )
-        import fibsem
+        import fibsem.config as cfg
         from fibsem.utils import load_protocol
         import os
-        base_path = os.path.dirname(fibsem.__path__[0])
-        self.hardware_settings = FibsemHardware.__from_dict__(load_protocol(os.path.join(base_path, "fibsem", "config", "model.yaml")))
+        self.model = "Demo_F1BS3M"
+        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
 
 
 
@@ -5072,6 +5121,24 @@ class DemoMicroscope(FibsemMicroscope):
         )
         return beam_settings
     
+    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
+        """Set the beam settings for the specified beam type.
+
+        Args:
+            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
+        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+        self.set("current", beam_settings.current, beam_settings.beam_type)
+        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
+        
     def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
         detector_settings = FibsemDetectorSettings(
             dtype=self.get("detector_type", beam_type),
@@ -5226,42 +5293,44 @@ def printProgressBar(
     bar = fill * filled_length + "-" * (length - filled_length)
     print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\r")
 
+import warnings
+
 def _check_beam(beam_type: BeamType, hardware_settings: FibsemHardware):
     """
     Checks if beam is available.
     """
     if beam_type == BeamType.ELECTRON and hardware_settings.electron_beam == False:
-        raise NotImplementedError("The microscope does not have an electron beam.")
+        warnings.warn("The microscope does not have an electron beam.")
     if beam_type == BeamType.ION and hardware_settings.ion_beam == False:
-        raise NotImplementedError("The microscope does not have an ion beam.")
+        warnings.warn("The microscope does not have an ion beam.")
 
 def _check_stage(hardware_settings: FibsemHardware, rotation: bool = False, tilt: bool = False):
     """
     Checks if the stage is fully movable.
     """
     if hardware_settings.stage_enabled == False:
-        raise NotImplementedError("The microscope does not have a moving stage.")
+        warnings.warn("The microscope does not have a moving stage.")
     if hardware_settings.stage_rotation == False and rotation == True:
-        raise NotImplementedError("The microscope stage does not rotate.")
+        warnings.warn("The microscope stage does not rotate.")
     if hardware_settings.stage_tilt == False and tilt == True:
-        raise NotImplementedError("The microscope stage does not tilt.")
+        warnings.warn("The microscope stage does not tilt.")
 
 def _check_needle(hardware_settings: FibsemHardware, rotation: bool = False, tilt: bool = False):
     """
     Checks if the needle is available.
     """
     if hardware_settings.manipulator_enabled == False:
-        raise NotImplementedError("The microscope does not have a needle.")
+        warnings.warn("The microscope does not have a needle.")
     if hardware_settings.manipulator_rotation == False and rotation == True:
-        raise NotImplementedError("The microscope needle does not rotate.")
+        warnings.warn("The microscope needle does not rotate.")
     if hardware_settings.manipulator_tilt == False and tilt == True:
-        raise NotImplementedError("The microscope needle does not tilt.")
+        warnings.warn("The microscope needle does not tilt.")
 
 def _check_sputter(hardware_settings: FibsemHardware):
     """
     Checks if the sputter is available.
     """
     if hardware_settings.gis_enabled == False:
-        raise NotImplementedError("The microscope does not have a GIS system.")
+        warnings.warn("The microscope does not have a GIS system.")
     if hardware_settings.gis_multichem == False:
-        raise NotImplementedError("The microscope does not have a multichem system.")
+        warnings.warn("The microscope does not have a multichem system.")

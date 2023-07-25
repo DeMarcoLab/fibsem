@@ -27,7 +27,7 @@ from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicros
 from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
-        
+from fibsem.utils import load_yaml
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
@@ -49,7 +49,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.manipulator_widget: FibsemManipulatorWidget = None
 
 
-        CONFIG_PATH = os.path.join(cfg.CONFIG_PATH)
+        CONFIG_PATH = os.path.join(cfg.CONFIG_PATH, "system.yaml")
         self.system_widget = FibsemSystemSetupWidget(
                 microscope=self.microscope,
                 settings=self.settings,
@@ -57,8 +57,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 config_path = CONFIG_PATH,
             )
         
-        self.setup_connections()
         self.tabWidget.addTab(self.system_widget, "System")
+        self.setup_connections()
         self.ref_current = None
         self.update_ui()
 
@@ -70,6 +70,12 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
         self.actionCurrent_alignment.triggered.connect(self.align_currents)
         self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
+        if self.system_widget.microscope is not None:
+            self.connect_to_microscope()
+            settings_dict = load_yaml(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            if bool(settings_dict["apply_settings_on_startup"]):
+                self.system_widget.apply_settings = True
+                self.system_widget.apply_defaults_settings() 
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
 
     def _open_minimap(self):
@@ -164,26 +170,37 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
-            self.manipulator_widget = FibsemManipulatorWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-            self.GIS_widget = FibsemGISWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
+            if self.microscope.hardware_settings.manipulator_enabled:
+                self.manipulator_widget = FibsemManipulatorWidget(
+                    microscope=self.microscope,
+                    settings=self.settings,
+                    viewer=self.viewer,
+                    image_widget=self.image_widget,
+                )
+            else:
+                self.manipulator_widget = None
+            if self.microscope.hardware_settings.gis_enabled:
+                self.GIS_widget = FibsemGISWidget(
+                    microscope=self.microscope,
+                    settings=self.settings,
+                    viewer=self.viewer,
+                    image_widget=self.image_widget,
+                )
+            else:
+                self.GIS_widget = None
 
 
             # add widgets to tabs
             self.tabWidget.addTab(self.image_widget, "Image")
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
-            self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
-            self.tabWidget.addTab(self.GIS_widget, "GIS")
+
+            if self.microscope.hardware_settings.manipulator_enabled:
+                self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
+            if self.microscope.hardware_settings.gis_enabled:
+                self.tabWidget.addTab(self.GIS_widget, "GIS")
+            self.system_widget.image_widget = self.image_widget
+            self.system_widget.milling_widget = self.milling_widget
 
 
 
@@ -201,8 +218,10 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
-            self.manipulator_widget.deleteLater()
-            self.GIS_widget.deleteLater()
+            if self.manipulator_widget is not None:
+                self.manipulator_widget.deleteLater() 
+            if self.GIS_widget is not None:
+                self.GIS_widget.deleteLater()
 
 
 def main():

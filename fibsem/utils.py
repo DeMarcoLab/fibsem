@@ -209,7 +209,7 @@ def setup_session(
 
 
 def load_settings_from_config(
-    config_path: Path = None, protocol_path: Path = None, model_path: Path = None
+    config_path: Path = None, protocol_path: Path = None
 ) -> MicroscopeSettings:
     """Load microscope settings from configuration files
 
@@ -224,13 +224,10 @@ def load_settings_from_config(
     if config_path is None:
         from fibsem.config import CONFIG_PATH
 
-        config_path = CONFIG_PATH
+        config_path = os.path.join(CONFIG_PATH, "system.yaml")
     
-    if model_path is None:
-        model_path = os.path.join(config_path, "model.yaml")
-
     # system settings
-    settings = load_yaml(os.path.join(config_path, "system.yaml"))
+    settings = load_yaml(os.path.join(config_path))
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
@@ -242,7 +239,7 @@ def load_settings_from_config(
     protocol = load_protocol(protocol_path)
 
     # hardware settings
-    hardware_settings = FibsemHardware.__from_dict__(load_protocol(model_path))
+    hardware_settings = FibsemHardware.__from_dict__(settings["model"])
 
     settings = MicroscopeSettings(
         system=system_settings,
