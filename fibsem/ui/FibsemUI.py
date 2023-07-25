@@ -96,6 +96,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return
         self.settings.system.stage = self.system_widget.settings.system.stage  
         self.movement_widget.settings = self.settings
+        self.microscope.stage_settings = self.settings.system.stage
         logging.debug(f"Stage parameters set to {self.settings.system.stage}")
         logging.info("Stage parameters set")  
 

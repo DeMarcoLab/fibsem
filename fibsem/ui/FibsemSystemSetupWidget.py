@@ -389,7 +389,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         if _microscope_connected:
             self.microscope_button.setText("Microscope Connected")
             self.microscope_button.setStyleSheet("background-color: green")
-            self.set_stage_settings_to_ui(self.settings.system.stage)
+            self.set_stage_settings_to_ui(self.microscope.stage_settings)
             self.set_model_to_ui(self.settings.hardware)
             self.connected_signal.emit()
 

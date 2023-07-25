@@ -198,19 +198,19 @@ def setup_session(
         settings.system.manufacturer = manufacturer
 
     if settings.system.manufacturer == "Thermo":
-        microscope = FibSem.ThermoMicroscope()
+        microscope = FibSem.ThermoMicroscope(settings.hardware, settings.system.stage)
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=7520
         )
 
     elif settings.system.manufacturer == "Tescan":
-        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
+        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address, hardware_settings=settings.hardware, stage_settings=settings.system.stage)
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=8300
         )
     
     elif settings.system.manufacturer == "Demo":
-        microscope = FibSem.DemoMicroscope()
+        microscope = FibSem.DemoMicroscope(settings.hardware, settings.system.stage)
         microscope.connect_to_microscope()
 
     # image_settings
