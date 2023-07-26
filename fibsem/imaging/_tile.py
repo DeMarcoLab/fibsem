@@ -24,6 +24,7 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
     settings.image.resolution = [1024, 1024]
     settings.image.dwell_time = 1e-6
     settings.image.autocontrast = cryo # required for cryo
+    settings.image.gamma_enabled = False
 
     logging.info(f"TILE COLLECTION: {settings.image.label}")
     logging.info(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
@@ -179,7 +180,7 @@ def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
 
     # projection of the positions onto the image
     dx = delta.x
-    dy = np.sqrt(delta.y**2 + delta.z**2) 
+    dy = np.sqrt(delta.y**2 + delta.z**2) # TODO: correct for perspective here
     dy = dy if (delta.y<0) else -dy
 
     pt_delta = Point(dx, dy)

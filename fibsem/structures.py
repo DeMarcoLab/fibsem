@@ -499,7 +499,8 @@ class FibsemRectangle:
         assert isinstance(self.height,float) or isinstance(self.height,int), f"type {type(self.height)} is unsupported for height, must be int or floar"
 
     def __from_dict__(settings: dict) -> "FibsemRectangle":
-
+        if settings is None:
+            return None
         points = ["left","top","width","height"]
 
         for point in points:
