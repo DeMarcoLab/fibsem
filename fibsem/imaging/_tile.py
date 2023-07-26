@@ -8,11 +8,11 @@ import numpy as np
 from skimage import transform
 
 from fibsem import acquire, conversions, utils
-from fibsem.structures import (BeamType, FibsemImage, FibsemImageMetadata,
+from fibsem.structures import (BeamType, FibsemImage, FibsemImageMetadata, MicroscopeSettings,
                                FibsemStagePosition, Point)
+from fibsem.microscope import FibsemMicroscope
 
-
-def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict: 
+def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSettings, grid_size:float, tile_size:float, overlap: float = 0.0, cryo: bool = True) -> dict: 
 
     # TODO: OVERLAP + STITCH
     n_rows, n_cols = int(grid_size // tile_size), int(grid_size // tile_size)
@@ -23,7 +23,7 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
     # fixed image settings
     settings.image.resolution = [1024, 1024]
     settings.image.dwell_time = 1e-6
-    settings.image.autocontrast = False
+    settings.image.autocontrast = cryo # required for cryo
 
     logging.info(f"TILE COLLECTION: {settings.image.label}")
     logging.info(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
@@ -84,7 +84,7 @@ def _tile_image_collection(microscope, settings, grid_size, tile_size) -> dict:
 
     ddict = {"grid_size": grid_size, "tile_size": tile_size, "n_rows": n_rows, "n_cols": n_cols, 
             "image_settings": settings.image, 
-            "dx": dx, "dy": dy, 
+            "dx": dx, "dy": dy, "cryo": cryo,
             "start_state": start_state, "prev-label": prev_label, "start_move": start_move, "dxg": dxg, "dyg": dyg,
             "images": images, "big_image": big_image }
 
@@ -109,6 +109,10 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     image.metadata.microscope_state = deepcopy(ddict["start_state"])
     image.metadata.image_settings = ddict["image_settings"]
     image.metadata.image_settings.hfw = deepcopy(float(ddict["grid_size"]))
+
+    # for cryo need to histogram equalise
+    if ddict.get("cryo", False):
+        image = acquire.auto_gamma(image, method="autogamma")
 
     filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}')
     image.save(filename)
@@ -206,16 +210,17 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
     points = _reproject_positions(image, positions)
 
     # plot on matplotlib
-    fig = plt.figure(figsize=(7, 7))
+    fig = plt.figure(figsize=(15, 15))
     plt.imshow(image.data, cmap="gray")
 
-    COLOURS = ["r", "g", "b", "c", "m", "y"]
+    COLOURS = ["lime", "blue", "cyan", "magenta", 
+        "hotpink", "yellow", "orange", "red"]
     for i, (pos, pt) in enumerate(zip(positions, points)):
         c =COLOURS[i%len(COLOURS)]
         plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
 
         # draw label next to point
-        plt.text(pt.x-225, pt.y-100, pos.name, fontsize=10, color="white")
+        plt.text(pt.x-225, pt.y-50, pos.name, fontsize=14, color=c, alpha=0.75)
 
     plt.axis("off")
     if show:
