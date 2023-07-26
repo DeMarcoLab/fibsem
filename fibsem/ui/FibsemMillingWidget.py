@@ -34,7 +34,8 @@ def log_status_message(stage: FibsemMillingStage, step: str):
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
-
+    _milling_finished = QtCore.pyqtSignal()
+    
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -682,6 +683,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._toggle_interaction(enabled=True)
         self.image_widget.take_reference_images()
         self.update_ui()
+        self._milling_finished.emit()
 
 
 def main():
