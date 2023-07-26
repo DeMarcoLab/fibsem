@@ -356,7 +356,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
             # user notification
             msg = f"Connected to microscope at {ip_address}"
-            log_status_message("CONNECTED_AT_" + ip_address)
+            log_status_message(f"CONNECTED_AT_{ip_address}")
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
             # self.connected_signal.emit()

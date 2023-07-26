@@ -6,7 +6,6 @@ import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPixmap, QImage
 from copy import deepcopy
 from fibsem import constants, conversions
