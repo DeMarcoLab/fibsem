@@ -186,13 +186,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
-        self.comboBox_milling_stage.clear()
-        # index = self.comboBox_milling_stage.currentIndex()
-        # if index != -1:
-        if len(self.milling_stages)>0:
-            for i, stage in enumerate(self.milling_stages):
-                stage.name = f"Milling Stage {i + 1}"
-                self.comboBox_milling_stage.addItem(stage.name)
+        # self.comboBox_milling_stage.clear()
+        # # index = self.comboBox_milling_stage.currentIndex()
+        # # if index != -1:
+        # if len(self.milling_stages)>0:
+        #     for i, stage in enumerate(self.milling_stages):
+        #         stage.name = f"Milling Stage {i + 1}"
+        #         self.comboBox_milling_stage.addItem(stage.name)
             
 
     def _remove_all_stages(self):
