@@ -69,6 +69,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.good_copy_pattern = None
 
         self._UPDATING_PATTERN:bool = False
+        self._PATTERN_IS_MOVEABLE: bool = True
 
     def setup_connections(self):
 
@@ -420,6 +421,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def _single_click(self, layer, event):
         """Callback for single click on image layer."""
         if event.button != 1 or 'Shift' not in event.modifiers:
+            return
+
+        if not self._PATTERN_IS_MOVEABLE:
+            msg = f"Pattern is not moveable."
+            logging.info(msg)
+            napari.utils.notifications.show_info(msg)
             return
 
         self._UPDATING_PATTERN = True
