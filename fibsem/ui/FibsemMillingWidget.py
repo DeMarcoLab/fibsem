@@ -566,8 +566,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if not isinstance(milling_stages, list):
             milling_stages = [milling_stages]
 
-        # get all patterns (2D list, one list of pattern settings per stage)
-
         t2 = time.time()
         try:
             
@@ -586,8 +584,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
             logging.error(e)
             return
-        t3 = time.time()
-        logging.warning(f"UPDATE_UI: Time to get milling_stages: {t1-t0}, time to get patterns: {t2-t1}, time to draw patterns: {t3-t2}")
+        t2 = time.time()
+        logging.warning(f"UPDATE_UI: GET: {t1-t0}, DRAW: {t2-t1}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def _toggle_interaction(self, enabled: bool = True):

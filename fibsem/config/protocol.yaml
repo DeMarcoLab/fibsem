@@ -33,12 +33,12 @@ patterns:
     depth: 1.0e-6
     cleaning_cross_section: False
   Trench:
-    lamella_width: 40.0e-6
-    lamella_height: 10.0e-6
-    trench_height: 10.0e-6
+    lamella_width: 10.0e-6
+    lamella_height: 5.0e-6
+    trench_height: 5.0e-6
     offset: 1.0e-6
     size_ratio: 1.0
-    depth: 10.0e-6
+    depth: 2.0e-6
     cleaning_cross_section: false
   Horseshoe:
     lamella_width: 40.0e-6
@@ -61,7 +61,7 @@ patterns:
     height: 10.0e-6
     width: 1.0e-6
     depth: 5.0e-6
-    rotation: 0.0
+    rotation: 45.0
     cleaning_cross_section: false
   SpotWeld:
     height: 1.0e-6

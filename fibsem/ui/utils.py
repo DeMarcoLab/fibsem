@@ -277,7 +277,7 @@ def create_crosshair_shape(centre_point: Point, image: FibsemImage,eb_image: Fib
 
     r_angles = [0,np.deg2rad(90)] #
     w = 40
-    h = 5
+    h = 3
     crosshair_shapes = []
 
     for r in r_angles:
@@ -393,12 +393,13 @@ def _draw_patterns_in_napari(
 ):
 
     # colour wheel
-    colour = ["yellow", "cyan", "magenta", "lime", "orange", "pink"]
+    COLOURS = ["yellow", "cyan", "magenta", "lime", "orange", "hotpink", "green", "blue", "red", "purple"]
     from fibsem.structures import FibsemPattern
 
     # convert fibsem patterns to napari shapes
     import time
 
+    t_1 = time.time()
     for i, stage in enumerate(milling_stages):
         shape_patterns = []
         shape_types = []
@@ -419,7 +420,7 @@ def _draw_patterns_in_napari(
                 continue
             elif pattern_settings.pattern is FibsemPattern.Annulus:
                 annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
-                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=colour[i % len(colour)],opacity=0.4)
+                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=COLOURS[i % len(COLOURS)],opacity=0.4)
                 shape_patterns = []
                 continue
 
@@ -453,16 +454,16 @@ def _draw_patterns_in_napari(
             if name in viewer.layers:
                 viewer.layers[name].data = shape_patterns
                 viewer.layers[name].shape_type = shape_types
-                viewer.layers[name].edge_color = colour[i % len(colour)]
-                viewer.layers[name].face_color=colour[i % len(colour)]
+                viewer.layers[name].edge_color = COLOURS[i % len(COLOURS)]
+                viewer.layers[name].face_color=COLOURS[i % len(COLOURS)]
             else:
                 viewer.add_shapes(
                     shape_patterns,
                     name=name,
                     shape_type=shape_types,
                     edge_width=0.5,
-                    edge_color=colour[i % len(colour)],
-                    face_color=colour[i % len(colour)],
+                    edge_color=COLOURS[i % len(COLOURS)],
+                    face_color=COLOURS[i % len(COLOURS)],
                     opacity=0.5,
                     blending="translucent",
                 )
@@ -471,7 +472,9 @@ def _draw_patterns_in_napari(
         # remove all un-updated layers (assume they have been deleted)        
         _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=[stage.name for stage in milling_stages])
         t3 = time.time()
-        logging.warning(f"_DRAW_SHAPES: time to convert shapes: {t1-t0}, time to add shapes: {t2-t1}, time to remove shapes: {t3-t2}")
+        logging.warning(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}, REMOVE: {t3-t2}")
+    t_2 = time.time()
+    logging.warning(f"_DRAW_SHAPES: total time: {t_2-t_1}")
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()
