@@ -48,6 +48,7 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
     # TOP LEFT CORNER START
     settings.image.hfw = tile_size
     settings.image.label = prev_label
+    settings.image.autocontrast = False # required for cryo
     start_move = grid_size / 2 - tile_size / 2
     dxg, dyg = start_move, start_move
     dyg *= -1
