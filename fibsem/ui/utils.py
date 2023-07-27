@@ -14,7 +14,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
-
+from fibsem.patterning import FibsemMillingStage
 import napari
 
 # # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
@@ -370,11 +370,11 @@ def _create_annulus_shape(width, height, inner_radius, outer_radius):
     return donut
 
 
-def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes):
+def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes, _ignore: list[str] = []):
 
     # remove all shapes layers
     layers_to_remove = []
-    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value"]
+    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value"] + _ignore
     for layer in viewer.layers:
 
         if layer.name in layers_to_ignore:
@@ -389,23 +389,26 @@ def _draw_patterns_in_napari(
     viewer: napari.Viewer,
     ib_image: FibsemImage,
     eb_image: FibsemImage,
-    all_patterns: list[FibsemPatternSettings],
-    stage_centres: list[Point] = None,
+    milling_stages: list[FibsemMillingStage],
 ):
-    _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
 
     # colour wheel
-    colour = ["yellow", "cyan", "magenta", "lime", "orange"]
+    colour = ["yellow", "cyan", "magenta", "lime", "orange", "pink"]
     from fibsem.structures import FibsemPattern
 
     # convert fibsem patterns to napari shapes
     import time
 
-    for i, stage in enumerate(all_patterns):
+    for i, stage in enumerate(milling_stages):
         shape_patterns = []
         shape_types = []
         t0 = time.time()
-        for pattern_settings in stage:
+
+        patterns = stage.pattern.patterns
+        point = stage.pattern.point
+        name = stage.name
+
+        for pattern_settings in patterns:
             if pattern_settings.pattern is FibsemPattern.Bitmap:
                 if pattern_settings.path == None or pattern_settings.path == '':
                     continue
@@ -416,7 +419,7 @@ def _draw_patterns_in_napari(
                 continue
             elif pattern_settings.pattern is FibsemPattern.Annulus:
                 annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
-                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=colour[i % 5],opacity=0.4)
+                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=colour[i % len(colour)],opacity=0.4)
                 shape_patterns = []
                 continue
 
@@ -439,41 +442,36 @@ def _draw_patterns_in_napari(
         t1 = time.time()
 
         if len(shape_patterns) > 0:
-            if stage_centres is not None:
-                crosshair_point = stage_centres[i]
-                crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
-                crosshair_shape_types = ["rectangle","rectangle"]
-                shape_patterns += crosshair_shapes
-                shape_types += crosshair_shape_types
+            
+            crosshair_shapes = create_crosshair_shape(centre_point=point, image=ib_image, eb_image=eb_image)
+            crosshair_shape_types = ["rectangle","rectangle"]
+            shape_patterns += crosshair_shapes
+            shape_types += crosshair_shape_types
 
-            viewer.add_shapes(
-                shape_patterns,
-                name=f"Stage {i+1}",
-                shape_type=shape_types,
-                edge_width=0.5,
-                edge_color=colour[i % 5],
-                face_color=colour[i % 5],
-                opacity=0.5,
-                blending="translucent",
-            )
-        
+
+            # _name = f"Stage {i+1:02d}"
+            if name in viewer.layers:
+                viewer.layers[name].data = shape_patterns
+                viewer.layers[name].shape_type = shape_types
+                viewer.layers[name].edge_color = colour[i % len(colour)]
+                viewer.layers[name].face_color=colour[i % len(colour)]
+            else:
+                viewer.add_shapes(
+                    shape_patterns,
+                    name=name,
+                    shape_type=shape_types,
+                    edge_width=0.5,
+                    edge_color=colour[i % len(colour)],
+                    face_color=colour[i % len(colour)],
+                    opacity=0.5,
+                    blending="translucent",
+                )
+
         t2 = time.time()
-        # if stage_centres is not None:
-        #     crosshair_point = stage_centres[i]
-
-        #     crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
-        #     viewer.add_shapes(
-        #         crosshair_shapes,
-        #         name="pattern_crosshair",
-        #         shape_type=["rectangle","rectangle"],
-        #         edge_width=0.5,
-        #         edge_color=colour[i % 5],
-        #         face_color=colour[i % 5],
-        #         opacity=0.5,
-        #         blending="translucent",
-        #     )
+        # remove all un-updated layers (assume they have been deleted)        
+        _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=[stage.name for stage in milling_stages])
         t3 = time.time()
-        logging.warning(f"_DRAW_SHAPES: time to convert shapes: {t1-t0}, time to add shapes: {t2-t1}, time to add crosshair: {t3-t2}")
+        logging.warning(f"_DRAW_SHAPES: time to convert shapes: {t1-t0}, time to add shapes: {t2-t1}, time to remove shapes: {t3-t2}")
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()

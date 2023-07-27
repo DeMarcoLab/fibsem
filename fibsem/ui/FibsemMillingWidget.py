@@ -131,7 +131,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if _TESCAN and not _THERMO:
             index = self.comboBox_patterns.findText("BitmapPattern")
             self.comboBox_patterns.removeItem(index)
-        self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
+        self.comboBox_patterns.currentIndexChanged.connect(lambda: self.update_pattern_ui(None))
     
         # milling stages
         self.pushButton_add_milling_stage.clicked.connect(self.add_milling_stage)
@@ -212,7 +212,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
         self.comboBox_patterns.currentIndexChanged.disconnect()
         self.comboBox_patterns.setCurrentText(self.milling_stages[0].pattern.name)
-        self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
+        self.comboBox_patterns.currentIndexChanged.connect(lambda: self.update_pattern_ui(None))
         
         logging.info(f"Set milling stages: {len(milling_stages)}")
         self.update_milling_stage_ui()
@@ -298,7 +298,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             point = milling_stage.pattern.point
             self.comboBox_patterns.currentIndexChanged.disconnect()
             self.comboBox_patterns.setCurrentText(milling_stage.pattern.name)
-            self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
+            self.comboBox_patterns.currentIndexChanged.connect(lambda: self.update_pattern_ui(None))
 
         logging.info(f"PATTERN: {pattern.name}")
         logging.info(f"PROTOCOL: {pattern_protocol}")
@@ -567,8 +567,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             milling_stages = [milling_stages]
 
         # get all patterns (2D list, one list of pattern settings per stage)
-        patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
-        pattern_centres: list[Point] = [stage.pattern.point for stage in milling_stages if stage.pattern is not None]
+
         t2 = time.time()
         try:
             
@@ -581,8 +580,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
                 eb_image=self.image_widget.eb_image, 
-                all_patterns=patterns,
-                stage_centres=pattern_centres) # TODO: add names and legend for this
+                milling_stages = milling_stages) # TODO: add names and legend for this
         
         except Exception as e:
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
