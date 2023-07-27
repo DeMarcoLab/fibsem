@@ -329,7 +329,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def connect(self, ip_address: str = None, manufacturer: str = None) -> None:
 
-        if ip_address is not str:
+        if not isinstance(ip_address, str):
             if self.lineEdit_ipadress.text() == "":
                 napari.utils.notifications.show_error(
                     f"IP address not set. Please enter an IP address before connecting to microscope."
