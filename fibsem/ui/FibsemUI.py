@@ -11,12 +11,9 @@ from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
-from fibsem.ui.FibsemPositionsWidget import FibsemPositionsWidget
 
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QMessageBox
 from fibsem import config as cfg
 
 
@@ -45,13 +42,11 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
 
-
-        CONFIG_PATH = os.path.join(cfg.CONFIG_PATH, "system.yaml")
         self.system_widget = FibsemSystemSetupWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
-                config_path = CONFIG_PATH,
+                config_path = cfg.SYSTEM_PATH,
             )
         
         self.tabWidget.addTab(self.system_widget, "System")
@@ -69,7 +64,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
         if self.system_widget.microscope is not None:
             self.connect_to_microscope()
-            settings_dict = load_yaml(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            settings_dict = utils.load_yaml(cfg.SYSTEM_PATH)
             if bool(settings_dict["apply_settings_on_startup"]):
                 self.system_widget.apply_settings = True
                 self.system_widget.apply_defaults_settings() 

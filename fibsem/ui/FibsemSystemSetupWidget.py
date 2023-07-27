@@ -14,7 +14,6 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
-from fibsem.utils import load_yaml
 
 def log_status_message(step: str):
     logging.debug(
@@ -45,7 +44,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.viewer = viewer
         self.config_path = config_path  # TODO: allow user to set this
 
-        settings_dict = load_yaml(os.path.join(self.config_path))
+        settings_dict = utils.load_yaml(os.path.join(self.config_path))
         
         self.auto_connect = False
         self.apply_settings = False
@@ -329,7 +328,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def connect(self, ip_address: str = None, manufacturer: str = None) -> None:
 
-        if ip_address is not str:
+        if not isinstance(ip_address, str):
             if self.lineEdit_ipadress.text() == "":
                 napari.utils.notifications.show_error(
                     f"IP address not set. Please enter an IP address before connecting to microscope."
