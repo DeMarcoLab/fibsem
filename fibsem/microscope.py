@@ -3158,6 +3158,7 @@ class TescanMicroscope(FibsemMicroscope):
         dx: float,
         dy: float,
         beam_type: BeamType,
+        _fixed: bool = False,
     ) -> None:
         """
         Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
@@ -4799,7 +4800,7 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Moving stage: {position} (Relative)")
         self.stage_position += position
 
-    def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType) -> None:
+    def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType, _fixed: bool=False) -> None:
         _check_stage(self.hardware_settings)
         pre_tilt = np.deg2rad(settings.system.stage.pre_tilt)
         
