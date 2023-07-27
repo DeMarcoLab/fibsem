@@ -960,7 +960,8 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
     mill_settings = FibsemMillingSettings(
         milling_current=protocol["milling_current"], 
         hfw=float(protocol["hfw"]),
-        application_file=protocol.get("application_file", "Si"))
+        application_file=protocol.get("application_file", "Si"),
+        preset=protocol.get("preset", "no preset"))
 
     stage = FibsemMillingStage(
         name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
