@@ -1,5 +1,6 @@
 
 import logging
+import time
 from PIL import Image
 import numpy as np
 from copy import deepcopy
@@ -17,11 +18,12 @@ from fibsem.structures import (BeamType, FibsemMillingSettings,
                                Point, FibsemPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle,convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui
 from napari.qt.threading import thread_worker
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes"]
 _ANGLE_KEYS = ["rotation"]
+
 def _scale_value(key, value, scale):
     if key not in _UNSCALED_VALUES:
         return value * scale    
@@ -185,15 +187,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
-        napari.utils.notifications.show_info(f"Removed milling stage.")
-        # self.comboBox_milling_stage.clear()
-        # # index = self.comboBox_milling_stage.currentIndex()
-        # # if index != -1:
-        # if len(self.milling_stages)>0:
-        #     for i, stage in enumerate(self.milling_stages):
-        #         stage.name = f"Milling Stage {i + 1}"
-        #         self.comboBox_milling_stage.addItem(stage.name)
-            
+        napari.utils.notifications.show_info(f"Removed milling stage.")            
 
     def _remove_all_stages(self):
 
@@ -202,10 +196,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.clear()
         self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
         self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_milling_stage_ui())
-        
 
-        # while len(self.milling_stages) > 0:
-        #     self.remove_milling_stage()
         _remove_all_layers(self.viewer) # remove all shape layers
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
@@ -548,7 +539,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         return milling_settings
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
-        import time
         self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
 
         if milling_stages is None and len(self.milling_stages) < 1:
