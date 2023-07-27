@@ -3196,9 +3196,9 @@ class TescanMicroscope(FibsemMicroscope):
         image_rotation = self.connection.FIB.Optics.GetImageRotation()
             
         if np.isclose(image_rotation, 0.0):
-            dy_move = -dy
-        elif np.isclose(image_rotation, 180):
             dy_move = dy
+        elif np.isclose(image_rotation, 180):
+            dy_move = -dy
             
         PRETILT_SIGN = 1.0
         from fibsem import movement

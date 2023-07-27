@@ -1,5 +1,5 @@
-apply_settings_on_startup: true
-connect_to_microscope_on_startup: true
+apply_settings_on_startup: false
+connect_to_microscope_on_startup: false
 model:
     electron:
         enabled: true
