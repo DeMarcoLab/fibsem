@@ -88,6 +88,15 @@ def take_set_of_reference_images(
 
     reference_images = ReferenceImages(low_eb, high_eb, low_ib, high_ib)
 
+
+    # more flexible version
+    # reference_images = []
+    # for i, hfw in enumerate(hfws):
+    #     image_settings.hfw = hfw
+    #     image_settings.label = f"{label}_res_{i:02d}"
+    #     eb_image, ib_image = take_reference_images(microscope, image_settings)
+    #     reference_images.append([eb_image, ib_image])
+
     return reference_images
 
 

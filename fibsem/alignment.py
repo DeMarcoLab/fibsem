@@ -16,7 +16,7 @@ from fibsem.structures import (
     FibsemRectangle,
 )
 from fibsem.microscope import FibsemMicroscope
-from typing import Union
+from typing import Union, Optional
 
 
 def auto_eucentric_correction(
@@ -51,7 +51,7 @@ def beam_shift_alignment(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
     ref_image: FibsemImage,
-    reduced_area: FibsemRectangle = None,
+    reduced_area: Optional[FibsemRectangle] = None,
 ):
     """Aligns the images by adjusting the beam shift instead of moving the stage.
 
