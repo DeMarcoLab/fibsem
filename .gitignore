@@ -51,3 +51,5 @@ example/demo/*
 fibsem/chat/secret.txt
 
 dist/*
+scratch/tile-images/*
+fibsem/log/*

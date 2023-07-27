@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import yaml
 import numpy as np
 from fibsem.structures import FibsemPattern, FibsemPatternSettings, Point
+from fibsem import constants 
 
 
 def check_keys(protocol: dict, required_keys: list[str]) -> bool:
@@ -12,9 +13,9 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 
 
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation", "passes"),
+    "Rectangle": ("width", "height", "depth", "rotation","passes", "cleaning_cross_section","scan_direction"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-    "Circle": ("radius", "depth"),
+    "Circle": ("radius", "depth","cleaning_cross_section"),
     "Trench": (
         "lamella_width",
         "lamella_height",
@@ -22,6 +23,7 @@ REQUIRED_KEYS = {
         "size_ratio",
         "offset",
         "depth",
+        "cleaning_cross_section",
     ),
     "Horseshoe": (
         "lamella_width",
@@ -33,7 +35,7 @@ REQUIRED_KEYS = {
         "side_width",
         "depth",
     ),
-    "Fiducial": ("height", "width", "depth", "rotation"),
+    "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
     "Undercut": (
         "height",
         "width",
@@ -41,6 +43,7 @@ REQUIRED_KEYS = {
         "trench_width",
         "rhs_height",
         "h_offset",
+        "cleaning_cross_section",
     ),
     "MicroExpansion": (
         "height",
@@ -49,7 +52,7 @@ REQUIRED_KEYS = {
         "distance",
         "lamella_width",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes"),
+    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes","scan_direction"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -156,7 +159,7 @@ class RectanglePattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Rectangle"  # redundant now
-        protocol["rotation"] = protocol.get("rotation", 0)
+        protocol["rotation"] = protocol.get("rotation", 0) * constants.DEGREES_TO_RADIANS
         protocol["cleaning_cross_section"] = protocol.get(
             "cleaning_cross_section", False
         )
@@ -396,7 +399,7 @@ class FiducialPattern(BasePattern):
 
         left_pattern = FibsemPatternSettings.__from_dict__(protocol)
         from fibsem import constants 
-        left_pattern.rotation = protocol["rotation"]*constants.DEGREES_TO_RADIANS
+        left_pattern.rotation = protocol["rotation"] * constants.DEGREES_TO_RADIANS
         right_pattern = FibsemPatternSettings.__from_dict__(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
@@ -567,9 +570,11 @@ class SpotWeldPattern(BasePattern):
         depth = protocol["depth"]
         distance = protocol["distance"]
         n_patterns = int(protocol["number"])
-        rotation = protocol["rotation"]
+        rotation = protocol.get("rotation", 0)
         passes = protocol.get("passes", 1)
+        scan_direction = protocol.get("scan_direction", "LeftToRight")
         passes = int(passes) if passes is not None else None
+
 
         patterns = []
         for i in range(n_patterns):
@@ -581,7 +586,8 @@ class SpotWeldPattern(BasePattern):
                 centre_x=point.x,
                 centre_y=point.y + (i - (n_patterns - 1) / 2) * distance,
                 cleaning_cross_section=False,
-                scan_direction="LeftToRight",
+                scan_direction=scan_direction,
+
                 rotation=rotation,
                 passes=passes,
             )
@@ -939,6 +945,7 @@ PROTOCOL_MILL_MAP = {
     "clover": CloverPattern,
     "autolamella": TrenchPattern,
     "autolamella_undercut": RectanglePattern,
+    "rectangle": RectanglePattern,
 }
 
 

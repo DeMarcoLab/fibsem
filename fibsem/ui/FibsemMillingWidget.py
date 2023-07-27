@@ -34,6 +34,7 @@ def log_status_message(stage: FibsemMillingStage, step: str):
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
+    _milling_finished = QtCore.pyqtSignal()
 
     def __init__(
         self,
@@ -64,6 +65,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.update_pattern_ui()
 
         self.good_copy_pattern = None
+
+        self._USER_CLICKED:bool = False
 
     def setup_connections(self):
 
@@ -152,6 +155,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_y.valueChanged.connect(self.update_ui_pattern)
         self.checkBox_live_update.setChecked(True)
 
+
+        self._AVAILABLE_SCAN_DIRECTIONS = self.microscope.get_available_values(key="scan_direction")
+
     def update_settings(self):
         settings = self.get_milling_settings_from_ui()
         index = self.comboBox_milling_stage.currentIndex()
@@ -180,19 +186,26 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info(f"Removed milling stage.")
-        self.comboBox_milling_stage.clear()
-        # index = self.comboBox_milling_stage.currentIndex()
-        # if index != -1:
-        if len(self.milling_stages)>0:
-            for i, stage in enumerate(self.milling_stages):
-                stage.name = f"Milling Stage {i + 1}"
-                self.comboBox_milling_stage.addItem(stage.name)
+        # self.comboBox_milling_stage.clear()
+        # # index = self.comboBox_milling_stage.currentIndex()
+        # # if index != -1:
+        # if len(self.milling_stages)>0:
+        #     for i, stage in enumerate(self.milling_stages):
+        #         stage.name = f"Milling Stage {i + 1}"
+        #         self.comboBox_milling_stage.addItem(stage.name)
             
 
     def _remove_all_stages(self):
 
-        while len(self.milling_stages) > 0:
-            self.remove_milling_stage()
+        self.milling_stages = []
+        self.comboBox_milling_stage.currentIndexChanged.disconnect()
+        self.comboBox_milling_stage.clear()
+        self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
+        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_milling_stage_ui())
+        
+
+        # while len(self.milling_stages) > 0:
+        #     self.remove_milling_stage()
         _remove_all_layers(self.viewer) # remove all shape layers
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
@@ -203,7 +216,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.currentIndexChanged.disconnect()
         self.comboBox_milling_stage.clear()
         self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
-        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_protocol_ui())
+        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_milling_stage_ui())
         
         self.comboBox_patterns.currentIndexChanged.disconnect()
         self.comboBox_patterns.setCurrentText(self.milling_stages[0].pattern.name)
@@ -237,12 +250,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # set the pattern protcol
         self.update_pattern_ui(milling_stage.pattern.protocol, milling_stage.pattern.point)
-        print("UPDATE_MILLING_STAGE PROTOCOL: ", milling_stage.pattern.protocol)
 
         # set the pattern (and triggers the pattern settings)
         self.comboBox_patterns.setCurrentText(milling_stage.pattern.name)
 
     def update_ui_pattern(self):
+
+        if self._USER_CLICKED:
+            return
 
         if self.checkBox_live_update.isChecked():
             self.update_ui()
@@ -266,7 +281,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # update pattern and define
         milling_stage.pattern = self.get_pattern_from_ui_v2()
 
-
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
         return 
 
@@ -289,7 +303,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         logging.info(f"Current Stage: {self.comboBox_milling_stage.currentIndex()}")
         logging.info(f"Selected pattern: {pattern.name}")
-        logging.info(f"Required parameters: {pattern.required_keys}")
         logging.info(f"Protocol: {pattern_protocol}")
 
         # create a label and double spinbox for each required keys and add it to the layout
@@ -318,10 +331,34 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 path_explorer.clicked.connect(self.open_path_dialog)
                 self.path_edit.editingFinished.connect(self.update_ui_pattern)
                 continue
+            
+            if key == "scan_direction":
+                label = QtWidgets.QLabel(key)
+                self.comboBox_scan_direction = QtWidgets.QComboBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.comboBox_scan_direction, i, 1)
+                self.comboBox_scan_direction.addItems(self._AVAILABLE_SCAN_DIRECTIONS)
+                scan_direction_to_use = pattern_protocol[key] if pattern_protocol[key] in self._AVAILABLE_SCAN_DIRECTIONS else self._AVAILABLE_SCAN_DIRECTIONS[0]
+                # logging.info(f'Scan direction to use: {scan_direction_to_use}, available: {self._AVAILABLE_SCAN_DIRECTIONS}')
+                self.comboBox_scan_direction.setCurrentText(scan_direction_to_use)
+                self.comboBox_scan_direction.currentIndexChanged.connect(self.update_ui_pattern)
+                continue
+
+            if key == "cleaning_cross_section":
+                if isinstance(self.microscope, ThermoMicroscope) and pattern.name == "Circle":
+                    continue
+                label = QtWidgets.QLabel(key)
+                self.checkbox_cleaning_cross_section = QtWidgets.QCheckBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.checkbox_cleaning_cross_section, i, 1)
+                self.checkbox_cleaning_cross_section.setChecked(pattern_protocol[key])
+                self.checkbox_cleaning_cross_section.stateChanged.connect(self.update_ui_pattern)
+                continue
 
             if key == "passes":
                 label = QtWidgets.QLabel(key)
                 self.passes_comboBox = QtWidgets.QLineEdit()
+                self.passes_comboBox.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
                 self.gridLayout_patterns.addWidget(label, i, 0)
                 self.gridLayout_patterns.addWidget(self.passes_comboBox, i, 1)
                 self.passes_comboBox.setText("N/A")
@@ -365,12 +402,21 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 path = self.path_edit.text()
                 pattern_dict[key] = path
                 continue
+            if key == "scan_direction":
+                pattern_dict[key] = self.comboBox_scan_direction.currentText()
+                continue
+            if key == "cleaning_cross_section":
+                if isinstance(self.microscope, ThermoMicroscope) and pattern.name == "Circle":
+                    continue
+                pattern_dict[key] = self.checkbox_cleaning_cross_section.isChecked()
+                continue
             if key == "passes":
                 pattern_dict[key] = self.passes_comboBox.text() if self.passes_comboBox.text() != "N/A" else None
                 continue
+
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
-            value = value * constants.DEGREES_TO_RADIANS if key in _ANGLE_KEYS else value
+            # value = value * constants.DEGREES_TO_RADIANS if key in _ANGLE_KEYS else value
             pattern_dict[key] = value # TODO: not everythign is in microns
         return pattern_dict
 
@@ -388,8 +434,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def _single_click(self, layer, event):
         """Callback for single click on image layer."""
-        if event.button != 2:
+        if event.button != 1 or 'Shift' not in event.modifiers:
             return
+
+        self._USER_CLICKED = True
 
         # get coords
         coords = layer.world_to_data(event.position)
@@ -433,20 +481,19 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     milling_stage.pattern.point = point
 
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-                self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
+                self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
                 logging.info(f"Moved patterns to {point} ")
                 self.update_ui(milling_stages=self.milling_stages)
                 self.milling_position_changed.emit()
 
                 
         else:
-        # update pattern
+            # update pattern
             current_stage_index = self.comboBox_milling_stage.currentIndex()
             pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
             pattern_dict = self.milling_stages[current_stage_index].pattern.protocol
             pattern.define(protocol=pattern_dict, point=point)
             is_valid = self.valid_pattern_location(pattern)
-
             if is_valid:
                 # update ui
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
@@ -456,10 +503,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.good_copy_pattern = deepcopy(pattern)
                 self.update_ui()
                 self.milling_position_changed.emit()
+
             else:
                 napari.utils.notifications.show_warning("Pattern is not within the image.")
                 self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
         
+        self._USER_CLICKED = False
 
     def valid_pattern_location(self,stage_pattern):
         
@@ -526,16 +575,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             # self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
-
+        import time
         self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
 
         if milling_stages is None and len(self.milling_stages) < 1:
             return
         
+        t0 = time.time()
         if milling_stages is None:
             self.update_milling_stage_from_ui() # update milling stage from ui
             milling_stages = self.get_milling_stages() # get the latest milling stages from the ui
-            
+
+        t1 = time.time() 
 
         if not milling_stages:
             _remove_all_layers(self.viewer)
@@ -548,7 +599,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # get all patterns (2D list, one list of pattern settings per stage)
         patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in milling_stages if stage.pattern is not None]
         pattern_centres: list[Point] = [stage.pattern.point for stage in milling_stages if stage.pattern is not None]
-
+        t2 = time.time()
         try:
             
             from fibsem.structures import FibsemImage
@@ -562,12 +613,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 eb_image=self.image_widget.eb_image, 
                 all_patterns=patterns,
                 stage_centres=pattern_centres) # TODO: add names and legend for this
-            
+        
         except Exception as e:
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
             logging.error(e)
             return
-        
+        t3 = time.time()
+        logging.warning(f"UPDATE_UI: Time to get milling_stages: {t1-t0}, time to get patterns: {t2-t1}, time to draw patterns: {t3-t2}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def _toggle_interaction(self, enabled: bool = True):
@@ -632,6 +684,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._toggle_interaction(enabled=True)
         self.image_widget.take_reference_images()
         self.update_ui()
+        self._milling_finished.emit()
 
 
 def main():

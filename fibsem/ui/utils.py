@@ -395,15 +395,16 @@ def _draw_patterns_in_napari(
     _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes)
 
     # colour wheel
-    # colour = ["orange", "yellow", "red", "green", "purple"]
     colour = ["yellow", "cyan", "magenta", "lime", "orange"]
     from fibsem.structures import FibsemPattern
 
     # convert fibsem patterns to napari shapes
+    import time
 
     for i, stage in enumerate(all_patterns):
         shape_patterns = []
         shape_types = []
+        t0 = time.time()
         for pattern_settings in stage:
             if pattern_settings.pattern is FibsemPattern.Bitmap:
                 if pattern_settings.path == None or pattern_settings.path == '':
@@ -434,9 +435,17 @@ def _draw_patterns_in_napari(
                 for c in shape:
                     c[1] += eb_image.data.shape[1]
             shape_patterns.append(shape)
+        
+        t1 = time.time()
 
+        if len(shape_patterns) > 0:
+            if stage_centres is not None:
+                crosshair_point = stage_centres[i]
+                crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
+                crosshair_shape_types = ["rectangle","rectangle"]
+                shape_patterns += crosshair_shapes
+                shape_types += crosshair_shape_types
 
-        if len(shape_patterns) > 0:    
             viewer.add_shapes(
                 shape_patterns,
                 name=f"Stage {i+1}",
@@ -448,21 +457,23 @@ def _draw_patterns_in_napari(
                 blending="translucent",
             )
         
-        if stage_centres is not None:
-            crosshair_point = stage_centres[i]
+        t2 = time.time()
+        # if stage_centres is not None:
+        #     crosshair_point = stage_centres[i]
 
-            crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
-            viewer.add_shapes(
-                crosshair_shapes,
-                name="pattern_crosshair",
-                shape_type=["rectangle","rectangle"],
-                edge_width=0.5,
-                edge_color=colour[i % 5],
-                face_color=colour[i % 5],
-                opacity=0.5,
-                blending="translucent",
-            )
-
+        #     crosshair_shapes = create_crosshair_shape(centre_point=crosshair_point, image=ib_image, eb_image=eb_image)
+        #     viewer.add_shapes(
+        #         crosshair_shapes,
+        #         name="pattern_crosshair",
+        #         shape_type=["rectangle","rectangle"],
+        #         edge_width=0.5,
+        #         edge_color=colour[i % 5],
+        #         face_color=colour[i % 5],
+        #         opacity=0.5,
+        #         blending="translucent",
+        #     )
+        t3 = time.time()
+        logging.warning(f"_DRAW_SHAPES: time to convert shapes: {t1-t0}, time to add shapes: {t2-t1}, time to add crosshair: {t3-t2}")
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()

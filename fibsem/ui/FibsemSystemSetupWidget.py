@@ -13,7 +13,7 @@ from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
-from fibsem.ui.utils import _get_file_ui
+from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.utils import load_yaml
 
 def log_status_message(step: str):
@@ -84,7 +84,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
 
     def import_yaml(self):
-        protocol_path = _get_file_ui(msg="Select protocol file")
+        protocol_path = _get_file_ui(msg="Select system file")
         if protocol_path == "":
             return
         self.settings = utils.load_settings_from_config(protocol_path)
@@ -214,7 +214,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["connect_to_microscope_on_startup"] = bool(self.checkBox_connect_automatically.isChecked())
         system_dict["apply_settings_on_startup"] = bool(self.checkBox_apply_settings.isChecked())
 
-        protocol_path = _get_file_ui(msg="Select protocol file")
+        protocol_path = _get_save_file_ui(msg="Save system file")
         if protocol_path == '':
             return
         with open(os.path.join(protocol_path), "w") as f:
@@ -329,7 +329,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def connect(self, ip_address: str = None, manufacturer: str = None) -> None:
 
-        if ip_address is None:
+        if ip_address is not str:
             if self.lineEdit_ipadress.text() == "":
                 napari.utils.notifications.show_error(
                     f"IP address not set. Please enter an IP address before connecting to microscope."
@@ -356,7 +356,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
             # user notification
             msg = f"Connected to microscope at {ip_address}"
-            log_status_message("CONNECTED_AT_" + ip_address)
+            log_status_message(f"CONNECTED_AT_{ip_address}")
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
             # self.connected_signal.emit()

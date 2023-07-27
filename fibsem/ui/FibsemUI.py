@@ -26,9 +26,11 @@ from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
 from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
+from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.utils import load_yaml
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
+
     def __init__(self, viewer: napari.Viewer):
         super(FibsemUI, self).__init__()
         self.setupUi(self)
@@ -74,6 +76,26 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             if bool(settings_dict["apply_settings_on_startup"]):
                 self.system_widget.apply_settings = True
                 self.system_widget.apply_defaults_settings() 
+        self.actionOpen_Minimap.triggered.connect(self._open_minimap)
+
+    def _open_minimap(self):
+        if self.microscope is None:
+            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Microscope Connected]")
+            return
+
+        if self.movement_widget is None:
+            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Movement Widget]")
+            return
+
+        # TODO: need to register this with the main ui somehow
+        self.viewer2 = napari.Viewer(ndisplay=2)
+        self.minimap_widget = FibsemMinimapWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
+        self.viewer2.window.add_dock_widget(
+            self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
+        )
+        self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
+        napari.run(max_loop_level=2)
+
 
     def calibrate_manipulator_positions(self):
 
@@ -107,6 +129,9 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setTabVisible(2, _microscope_connected)
         self.tabWidget.setTabVisible(3, _microscope_connected)
         self.tabWidget.setTabVisible(4, _microscope_connected)
+        self.actionOpen_Minimap.setVisible(_microscope_connected)
+        self.actionCurrent_alignment.setVisible(_microscope_connected)
+        self.actionManipulator_Positions_Calibration.setVisible(_microscope_connected)
 
 
     def connect_to_microscope(self):
@@ -146,26 +171,35 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
-            self.manipulator_widget = FibsemManipulatorWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-            self.GIS_widget = FibsemGISWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
+            if self.microscope.hardware_settings.manipulator_enabled:
+                self.manipulator_widget = FibsemManipulatorWidget(
+                    microscope=self.microscope,
+                    settings=self.settings,
+                    viewer=self.viewer,
+                    image_widget=self.image_widget,
+                )
+            else:
+                self.manipulator_widget = None
+            if self.microscope.hardware_settings.gis_enabled:
+                self.GIS_widget = FibsemGISWidget(
+                    microscope=self.microscope,
+                    settings=self.settings,
+                    viewer=self.viewer,
+                    image_widget=self.image_widget,
+                )
+            else:
+                self.GIS_widget = None
 
 
             # add widgets to tabs
             self.tabWidget.addTab(self.image_widget, "Image")
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
-            self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
-            self.tabWidget.addTab(self.GIS_widget, "GIS")
+
+            if self.microscope.hardware_settings.manipulator_enabled:
+                self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
+            if self.microscope.hardware_settings.gis_enabled:
+                self.tabWidget.addTab(self.GIS_widget, "GIS")
             self.system_widget.image_widget = self.image_widget
             self.system_widget.milling_widget = self.milling_widget
 
@@ -185,8 +219,10 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
-            self.manipulator_widget.deleteLater()
-            self.GIS_widget.deleteLater()
+            if self.manipulator_widget is not None:
+                self.manipulator_widget.deleteLater() 
+            if self.GIS_widget is not None:
+                self.GIS_widget.deleteLater()
 
 
 def main():
