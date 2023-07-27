@@ -146,7 +146,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if self.milling_stages:
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
             self.update_milling_stage_ui()
-        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_protocol_ui())
+        self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_milling_stage_ui())
 
         # last
         self.doubleSpinBox_centre_x.setKeyboardTracking(False)
@@ -308,20 +308,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.comboBox_patterns.setCurrentText(milling_stage.pattern.name)
             self.comboBox_patterns.currentIndexChanged.connect(self.update_pattern_ui)
 
-
-        logging.info(f"Current Stage: {self.comboBox_milling_stage.currentIndex()}")
-        logging.info(f"Selected pattern: {pattern.name}")
-        logging.info(f"Protocol: {pattern_protocol}")
-
-        # create a label and double spinbox for each required keys and add it to the layout
+        logging.info(f"PATTERN: {pattern.name}")
+        logging.info(f"PROTOCOL: {pattern_protocol}")
 
         # clear layout
         for i in reversed(range(self.gridLayout_patterns.count())):
             self.gridLayout_patterns.itemAt(i).widget().setParent(None)
 
-        # we want to set the protocol, not the milling stage...
-        # add new widgets
-        # TODO: smarter logic for which kinds of widgets to add
+        # set widgets for each required key / value
         for i, key in enumerate(pattern.required_keys):
             if key == "path":
                 label = QtWidgets.QLabel(key)
@@ -552,27 +546,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         return milling_settings
-
-    def update_protocol_ui(self):
-        index = self.comboBox_milling_stage.currentIndex()
-        if index != -1:
-            settings = self.milling_stages[index].milling 
-            self.set_milling_settings_ui(settings)
-            self.comboBox_patterns.setCurrentText(self.milling_stages[index].pattern.name)
-            # pattern_protocol = self.milling_stages[index].pattern.protocol
-            # point = self.milling_stages[index].pattern.point
-            self.update_pattern_ui(self.milling_stages[index])
-        else:
-            layer_names_to_remove = ["Stage 1","annulus_Image","bmp_Image","pattern_crosshair"]
-            layers_to_remove = []
-            for layer in self.viewer.layers:
-                
-                if layer.name in layer_names_to_remove:
-                    layers_to_remove.append(layer)
-
-            for layer in layers_to_remove:
-                self.viewer.layers.remove(layer)
-            # self.viewer.layers.remove("Stage 1")
 
     def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
         import time
