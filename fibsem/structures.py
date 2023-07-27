@@ -1665,6 +1665,8 @@ class FibsemImage:
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
 
         if check_data_format(data):
+            if data.ndim == 3 and data.shape[2] == 1:
+                data = data[:, :, 0]
             self.data = data
         else:
             raise Exception("Invalid Data format for Fibsem Image")
@@ -1974,8 +1976,8 @@ def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
     # assert data.ndim == 2  # or data.ndim == 3
     # assert data.dtype in [np.uint8, np.uint16]
-    # if data.ndim == 3 and data.shape[2] == 1:
-    #     data = data[:, :, 0]
+    if data.ndim == 3 and data.shape[2] == 1:
+        data = data[:, :, 0]
     return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]
 
 
