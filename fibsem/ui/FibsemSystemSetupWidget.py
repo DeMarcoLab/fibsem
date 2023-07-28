@@ -155,7 +155,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.milling_widget.set_milling_settings_ui(microscope_settings.milling)
 
 
-    def save_defaults(self):
+    def save_defaults(self, path: str = None):
         system_dict = {}
         system_dict["system"] = {}
         system_dict["user"] = {}
@@ -213,9 +213,12 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["connect_to_microscope_on_startup"] = bool(self.checkBox_connect_automatically.isChecked())
         system_dict["apply_settings_on_startup"] = bool(self.checkBox_apply_settings.isChecked())
 
-        protocol_path = _get_save_file_ui(msg="Save system file")
-        if protocol_path == '':
-            return
+        if path is None:
+            protocol_path = _get_save_file_ui(msg="Save system file")
+            if protocol_path == '':
+                return
+        else:
+            protocol_path = path
         with open(os.path.join(protocol_path), "w") as f:
             yaml.safe_dump(system_dict, f, indent=4)
 
