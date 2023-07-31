@@ -20,6 +20,7 @@ class FibsemCryoSputterWidget(FibsemCryoSputterWidget.Ui_Dialog, QtWidgets.QDial
     ):
         super(FibsemCryoSputterWidget, self).__init__(parent=parent)
         self.setupUi(self)
+        self.setWindowTitle("Cryo Sputter")
 
         self.microscope = microscope
         self.settings = settings
