@@ -47,7 +47,7 @@ system:
         eucentric_height: 0.0165
         plasma_gas: Argon
         voltage: 30000
-    ip_address: 10.0.0.1
+    ip_address: localhost
     manufacturer: Thermo
     name: S8252G
     stage:

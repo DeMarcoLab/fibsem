@@ -21,7 +21,7 @@ from fibsem.structures import (
     FibsemHardware,
     FibsemPatternSettings,
 )
-from fibsem.config import BASE_PATH
+from fibsem.config import BASE_PATH, LOG_PATH
 from fibsem.microscope import FibsemMicroscope
 
 
@@ -167,7 +167,7 @@ def setup_session(
 
     # configure paths
     if session_path is None:# change this to cfg.LOG_PATH
-        session_path = os.path.join(BASE_PATH, "fibsem", "log", session)
+        session_path = LOG_PATH
     os.makedirs(session_path, exist_ok=True)
 
     # configure logging
