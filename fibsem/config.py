@@ -40,7 +40,7 @@ import os
 import fibsem
 
 BASE_PATH = os.path.dirname(fibsem.__path__[0]) # TODO: figure out a more stable way to do this
-CONFIG_PATH = os.path.join(BASE_PATH, "config")
+CONFIG_PATH = os.path.join(BASE_PATH, "fibsem", "config")
 SYSTEM_PATH = os.path.join(CONFIG_PATH, "system.yaml")
 PROTOCOL_PATH = os.path.join(CONFIG_PATH, "protocol.yaml")
 LOG_PATH = os.path.join(BASE_PATH, "fibsem", "log")
