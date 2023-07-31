@@ -65,7 +65,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         # buttons
         self.microscope_button.clicked.connect(self.connect_to_microscope)
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
-        self.pushButton_save_yaml.clicked.connect(self.save_defaults)
+        self.pushButton_save_yaml.clicked.connect(lambda: self.save_defaults(path=None))
         self.pushButton_apply_settings.clicked.connect(self.apply_defaults_settings)
         self.pushButton_import_yaml.clicked.connect(self.import_yaml)
 
@@ -83,10 +83,10 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
 
     def import_yaml(self):
-        protocol_path = _get_file_ui(msg="Select system file")
-        if protocol_path == "":
+        path = _get_file_ui(msg="Select system file", path=cfg.CONFIG_PATH)
+        if path == "":
             return
-        self.settings = utils.load_settings_from_config(protocol_path)
+        self.settings = utils.load_settings_from_config(path)
         self.set_defaults_to_ui()
         self.set_stage_settings_to_ui(self.settings.system.stage)
         self.set_model_to_ui(self.settings.hardware)
@@ -214,15 +214,16 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["apply_settings_on_startup"] = bool(self.checkBox_apply_settings.isChecked())
 
         if path is None:
-            protocol_path = _get_save_file_ui(msg="Save system file")
-            if protocol_path == '':
-                return
-        else:
-            protocol_path = path
-        with open(os.path.join(protocol_path), "w") as f:
-            yaml.safe_dump(system_dict, f, indent=4)
-
-        logging.info("Configuration saved to file")
+            path = _get_save_file_ui(msg="Save system file", path=cfg.CONFIG_PATH)
+        
+        if path == '':
+            napari.utils.notifications.show_info(f"No file selected. System configuration not saved.")
+            return
+        
+        utils.save_yaml(path=path, data=system_dict)
+        
+        napari.utils.notifications.show_info(f"System configuration saved to {os.path.basename(path)}")
+        logging.info(f"System configuration saved to {os.path.basename(path)}")
 
     def set_defaults_to_ui(self):
         self.lineEdit_ipadress.setText(self.settings.system.ip_address)
