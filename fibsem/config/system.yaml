@@ -37,6 +37,7 @@ system:
         current: 1.0000000000000002e-12
         detector_mode: SecondaryElectrons
         detector_type: E-T
+        detector_type: E-T
         eucentric_height: 0.0039
         voltage: 2000
     id: '123'
@@ -44,10 +45,11 @@ system:
         current: 2.0000000000000002e-11
         detector_mode: SecondaryElectrons
         detector_type: SE
+        detector_type: SE
         eucentric_height: 0.0165
         plasma_gas: Argon
         voltage: 30000
-    ip_address: 10.0.0.1
+    ip_address: localhost
     manufacturer: Thermo
     name: S8252G
     stage:

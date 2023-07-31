@@ -59,7 +59,8 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemMillingSettings, FibsemRectangle,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
-                               MicroscopeState, Point, FibsemDetectorSettings,ThermoGISLine,ThermoMultiChemLine)
+                               MicroscopeState, Point, FibsemDetectorSettings,
+                               ThermoGISLine,ThermoMultiChemLine, StageSettings)
 
 
 class FibsemMicroscope(ABC):
@@ -404,13 +405,21 @@ class ThermoMicroscope(FibsemMicroscope):
             Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
     """
 
-    def __init__(self):
+    def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings =None,):
         self.connection = SdbMicroscopeClient()
         import fibsem
         from fibsem.utils import load_protocol
         import fibsem.config as cfg
-        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
+        if hardware_settings is None:
+            dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
+        else:
+            self.hardware_settings = hardware_settings
+        if stage_settings is None:
+            dict_stage = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
+        else:
+            self.stage_settings = stage_settings
 
     def disconnect(self):
         self.connection.disconnect()
@@ -861,7 +870,7 @@ class ThermoMicroscope(FibsemMicroscope):
             dy = -dy
         # TODO: does this need the perspective correction too?
 
-        z_move = dy / np.cos(np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy / np.cos(np.deg2rad(90 - self.stage_settings.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(
@@ -904,17 +913,17 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # all angles in radians
         stage_tilt_flat_to_electron = np.deg2rad(
-            settings.system.stage.tilt_flat_to_electron
+            self.stage_settings.tilt_flat_to_electron
         )
-        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+        stage_tilt_flat_to_ion = np.deg2rad(self.stage_settings.tilt_flat_to_ion)
 
-        stage_pretilt = np.deg2rad(settings.system.stage.pre_tilt)
+        stage_pretilt = np.deg2rad(self.stage_settings.pre_tilt)
 
         stage_rotation_flat_to_eb = np.deg2rad(
-            settings.system.stage.rotation_flat_to_electron
+            self.stage_settings.rotation_flat_to_electron
         ) % (2 * np.pi)
         stage_rotation_flat_to_ion = np.deg2rad(
-            settings.system.stage.rotation_flat_to_ion
+            self.stage_settings.rotation_flat_to_ion
         ) % (2 * np.pi)
 
         # current stage position
@@ -977,7 +986,7 @@ class ThermoMicroscope(FibsemMicroscope):
             None.
         """
         _check_stage(self.hardware_settings, tilt=True)
-        stage_settings = settings.system.stage
+        stage_settings = self.stage_settings
 
         if beam_type is BeamType.ELECTRON:
             rotation = np.deg2rad(stage_settings.rotation_flat_to_electron)
@@ -2586,7 +2595,7 @@ class TescanMicroscope(FibsemMicroscope):
             Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
     """
 
-    def __init__(self, ip_address: str = "localhost"):
+    def __init__(self, ip_address: str = "localhost", hardware_settings: FibsemHardware = None, stage_settings: StageSettings = None):
         self.connection = Automation(ip_address)
         detectors = self.connection.FIB.Detector.Enum()
         self.ion_detector_active = detectors[0]
@@ -2599,8 +2608,16 @@ class TescanMicroscope(FibsemMicroscope):
 
         import fibsem.config as cfg
         from fibsem.utils import load_protocol
-        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
+        if hardware_settings is None:
+            dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
+        else:
+            self.hardware_settings = hardware_settings
+        if stage_settings is None:
+            dict_stage = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
+        else:
+            self.stage_settings = stage_settings
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -3182,6 +3199,7 @@ class TescanMicroscope(FibsemMicroscope):
         # elif image_rotation == 180:
         #     dx_move = dx
         #     dy_move = -dy
+
         dx_move =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         dy_move = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
 
@@ -3224,9 +3242,9 @@ class TescanMicroscope(FibsemMicroscope):
         image_rotation = self.connection.FIB.Optics.GetImageRotation()
             
         if np.isclose(image_rotation, 0.0):
-            dy_move = -dy
-        elif np.isclose(image_rotation, 180):
             dy_move = dy
+        elif np.isclose(image_rotation, 180):
+            dy_move = -dy
             
         PRETILT_SIGN = 1.0
         from fibsem import movement
@@ -3235,12 +3253,12 @@ class TescanMicroscope(FibsemMicroscope):
         stage_rotation = current_stage_position.r % (2 * np.pi)
         stage_tilt = current_stage_position.t
         stage_tilt_flat_to_electron = np.deg2rad(
-            settings.system.stage.tilt_flat_to_electron
+            self.stage_settings.tilt_flat_to_electron
         )
-        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+        stage_tilt_flat_to_ion = np.deg2rad(self.stage_settings.tilt_flat_to_ion)
 
         stage_rotation_flat_to_ion = np.deg2rad(
-            settings.system.stage.rotation_flat_to_ion
+            self.stage_settings.rotation_flat_to_ion
         ) % (2 * np.pi)
 
         if movement.rotation_angle_is_smaller(
@@ -3249,12 +3267,12 @@ class TescanMicroscope(FibsemMicroscope):
             PRETILT_SIGN = -1.0
 
         # TODO: check this pre-tilt angle calculation
-        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - self.stage_settings.pre_tilt*constants.DEGREES_TO_RADIANS)
         perspective_tilt = (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
         z_perspective = - dy_move/np.cos((stage_tilt + corrected_pretilt_angle + perspective_tilt))
         z_move = z_perspective*np.sin(90*constants.DEGREES_TO_RADIANS - stage_tilt_flat_to_ion) 
         # z_move = dy / np.cos(
-        #     np.deg2rad(90 - settings.system.stage.tilt_flat_to_ion + settings.system.stage.pre_tilt)
+        #     np.deg2rad(90 - self.stage_settingse.tilt_flat_to_ion + self.stage_settings.pre_tilt)
         # )  # TODO: MAGIC NUMBER, 90 - fib tilt
         logging.info(f"eucentric movement: {z_move}")
         z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
@@ -3285,15 +3303,15 @@ class TescanMicroscope(FibsemMicroscope):
 
         # all angles in radians
         stage_tilt_flat_to_electron = np.deg2rad(
-            settings.system.stage.tilt_flat_to_electron
+            self.stage_settings.tilt_flat_to_electron
         )
-        stage_tilt_flat_to_ion = np.deg2rad(settings.system.stage.tilt_flat_to_ion)
+        stage_tilt_flat_to_ion = np.deg2rad(self.stage_settings.tilt_flat_to_ion)
 
         # stage_rotation_flat_to_eb = np.deg2rad(
-        #     settings.system.stage.rotation_flat_to_electron
+        #     self.stage_settings.rotation_flat_to_electron
         # ) % (2 * np.pi)
         stage_rotation_flat_to_ion = np.deg2rad(
-            settings.system.stage.rotation_flat_to_ion
+            self.stage_settings.rotation_flat_to_ion
         ) % (2 * np.pi)
 
         # current stage position
@@ -3311,7 +3329,7 @@ class TescanMicroscope(FibsemMicroscope):
         ):
             PRETILT_SIGN = -1.0
 
-        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - settings.system.stage.pre_tilt*constants.DEGREES_TO_RADIANS)
+        corrected_pretilt_angle = PRETILT_SIGN * (stage_tilt_flat_to_electron - self.stage_settings.pre_tilt*constants.DEGREES_TO_RADIANS)
         
         perspective_tilt = - corrected_pretilt_angle if beam_type is BeamType.ELECTRON else (- corrected_pretilt_angle - stage_tilt_flat_to_ion)
 
@@ -3339,7 +3357,7 @@ class TescanMicroscope(FibsemMicroscope):
         """
         _check_beam(beam_type, self.hardware_settings)
         # BUG if I set or pass BeamType.ION it still sees beam_type as BeamType.ELECTRON
-        stage_settings = settings.system.stage
+        stage_settings = self.stage_settings
 
         if beam_type is BeamType.ION:
             tilt = stage_settings.tilt_flat_to_ion
@@ -4648,7 +4666,7 @@ class TescanMicroscope(FibsemMicroscope):
 ########################
 class DemoMicroscope(FibsemMicroscope):
 
-    def __init__(self):            
+    def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings = None):            
         self.connection = None
         self.stage_position = FibsemStagePosition(x=0, y=0, z=0, r=0, t=0)
         self.manipulator_position = FibsemManipulatorPosition()
@@ -4692,9 +4710,16 @@ class DemoMicroscope(FibsemMicroscope):
         import fibsem.config as cfg
         from fibsem.utils import load_protocol
         import os
-        self.model = "Demo_F1BS3M"
-        dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-        self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
+        if hardware_settings is None:
+            dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
+        else:
+            self.hardware_settings = hardware_settings
+        if stage_settings is None:
+            dict_stage = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
+            self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
+        else:
+            self.stage_settings = stage_settings
 
 
 
@@ -4802,7 +4827,7 @@ class DemoMicroscope(FibsemMicroscope):
 
     def stable_move(self, settings: MicroscopeSettings, dx: float, dy:float, beam_type: BeamType, _fixed: bool=False) -> None:
         _check_stage(self.hardware_settings)
-        pre_tilt = np.deg2rad(settings.system.stage.pre_tilt)
+        pre_tilt = np.deg2rad(self.stage_settings.pre_tilt)
         
         stage_position = FibsemStagePosition(
             x=float(dx),
@@ -4822,20 +4847,20 @@ class DemoMicroscope(FibsemMicroscope):
     def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
-        self.stage_position.z += dy / np.cos(np.deg2rad(90-settings.system.stage.tilt_flat_to_ion))
+        self.stage_position.z += dy / np.cos(np.deg2rad(90-self.stage_settings.tilt_flat_to_ion))
 
     def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
         _check_stage(self.hardware_settings, tilt = True)
                 
         if beam_type is BeamType.ELECTRON:
-            r = settings.system.stage.tilt_flat_to_electron
-            t = settings.system.stage.tilt_flat_to_electron
+            r = self.stage_settings.tilt_flat_to_electron
+            t = self.stage_settings.tilt_flat_to_electron
         if beam_type is BeamType.ION:
-            r = settings.system.stage.tilt_flat_to_ion
-            t = settings.system.stage.tilt_flat_to_ion
+            r = self.stage_settings.tilt_flat_to_ion
+            t = self.stage_settings.tilt_flat_to_ion
 
         # pre-tilt adjustment
-        t  = t - settings.system.stage.pre_tilt
+        t  = t - self.stage_settings.pre_tilt
         
         logging.info(f"Moving stage: Flat to {beam_type.name} beam, r={r:.2f}, t={t:.2f})")
 
