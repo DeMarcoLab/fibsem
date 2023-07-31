@@ -143,7 +143,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         # move
-        if "Shift" in event.modifiers:
+        if "Alt" in event.modifiers:
             self.movement_mode = MovementMode.Eucentric
         else:
             self.movement_mode = MovementMode[self.comboBox_movement_mode.currentText()]
