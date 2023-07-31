@@ -51,7 +51,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.positions = []
    
         self.update_ui()
-        # self.minimap()
 
     def setup_connections(self):
 
@@ -83,8 +82,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_export.clicked.connect(self.export_positions)
         self.pushButton_import.clicked.connect(self.import_positions)
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
-        self.checkBox_auto_scaling.stateChanged.connect(self.minimap)
-        self.spinBox_grid_radius.valueChanged.connect(self.minimap)
 
     def auto_eucentric_correction(self):
 
@@ -98,7 +95,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.move_stage_absolute(stage_position)
         log_status_message(f"MOVED_TO_{stage_position}")
         self.update_ui_after_movement()
-        self.minimap()
     
     def update_ui(self):
 
@@ -169,13 +165,11 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             )
         
         self.update_ui_after_movement()
-        self.minimap()
 
     def select_position(self):
         if self.comboBox_positions.currentIndex() != -1:
             position = self.positions[self.comboBox_positions.currentIndex()]
             self.label_current_position.setText(f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}, y={position.y*constants.METRE_TO_MILLIMETRE:.3f}, z={position.z*constants.METRE_TO_MILLIMETRE:.3f}, r={position.r*constants.RADIANS_TO_DEGREES:.1f}, t={position.t*constants.RADIANS_TO_DEGREES:.1f}")
-            self.minimap()
 
     def add_position(self):
         position = self.microscope.get_stage_position()
@@ -233,69 +227,69 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
 
-    def minimap(self):
-        x = []
-        y = []
-        labels = []
-        pil_image = None
-        current_position = self.microscope.get_stage_position()
-        x.append(deepcopy(current_position.x)*constants.SI_TO_MICRO)
-        y.append(deepcopy(current_position.y)*constants.SI_TO_MICRO)
-        labels.append("Current Position")
-        for position in self.positions:
-            x.append(deepcopy(position.x)*constants.SI_TO_MICRO)
-            y.append(deepcopy(position.y)*constants.SI_TO_MICRO)
-            labels.append(deepcopy(position.name))
-        import pandas as pd
-        df = pd.DataFrame({'x': x, 'y': y, 'labels': labels})
-        import plotly.express as px
-        import plotly.io as pio
-        fig = px.scatter(df, color="labels", labels={'color': 'Position'}, x = 'x', y = 'y', width=400, height=400)
-        fig.update_traces(
-                marker=dict(size=8, symbol="cross"),
-                selector=dict(mode="markers"),
-            )
+    # def minimap(self):
+    #     x = []
+    #     y = []
+    #     labels = []
+    #     pil_image = None
+    #     current_position = self.microscope.get_stage_position()
+    #     x.append(deepcopy(current_position.x)*constants.SI_TO_MICRO)
+    #     y.append(deepcopy(current_position.y)*constants.SI_TO_MICRO)
+    #     labels.append("Current Position")
+    #     for position in self.positions:
+    #         x.append(deepcopy(position.x)*constants.SI_TO_MICRO)
+    #         y.append(deepcopy(position.y)*constants.SI_TO_MICRO)
+    #         labels.append(deepcopy(position.name))
+    #     import pandas as pd
+    #     df = pd.DataFrame({'x': x, 'y': y, 'labels': labels})
+    #     import plotly.express as px
+    #     import plotly.io as pio
+    #     fig = px.scatter(df, color="labels", labels={'color': 'Position'}, x = 'x', y = 'y', width=400, height=400)
+    #     fig.update_traces(
+    #             marker=dict(size=8, symbol="cross"),
+    #             selector=dict(mode="markers"),
+    #         )
         
-        if self.checkBox_auto_scaling.isChecked():
-            fig.update_layout(legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            margin=dict(l=5, r=5, t=5, b=5),
-            legend_title_text=None,
-            xaxis_title=None,
-                yaxis_title=None,
-            )
+    #     if self.checkBox_auto_scaling.isChecked():
+    #         fig.update_layout(legend=dict(
+    #             orientation="h",
+    #             yanchor="bottom",
+    #             y=1.02,
+    #             xanchor="right",
+    #             x=1
+    #         ),
+    #         margin=dict(l=5, r=5, t=5, b=5),
+    #         legend_title_text=None,
+    #         xaxis_title=None,
+    #             yaxis_title=None,
+    #         )
             
-        else:
-            range = [-self.spinBox_grid_radius.value(), self.spinBox_grid_radius.value()]
-            fig.update_layout(legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            margin=dict(l=5, r=5, t=5, b=5),
-            legend_title_text=None,
-            xaxis_title=None,
-            yaxis_title=None,
-            xaxis=dict(range=range),
-            yaxis=dict(range=range)
-            )
+    #     else:
+    #         range = [-self.spinBox_grid_radius.value(), self.spinBox_grid_radius.value()]
+    #         fig.update_layout(legend=dict(
+    #             orientation="h",
+    #             yanchor="bottom",
+    #             y=1.02,
+    #             xanchor="right",
+    #             x=1
+    #         ),
+    #         margin=dict(l=5, r=5, t=5, b=5),
+    #         legend_title_text=None,
+    #         xaxis_title=None,
+    #         yaxis_title=None,
+    #         xaxis=dict(range=range),
+    #         yaxis=dict(range=range)
+    #         )
 
-        image_from_plot = fig.to_image(format="png", engine="kaleido")
+    #     image_from_plot = fig.to_image(format="png", engine="kaleido")
 
 
-        pil_image = Image.open(io.BytesIO(image_from_plot))
-        # Convert the PIL image to a QImage
-        image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
-        # Convert the QImage to a QPixmap 
-        qpixmap = QPixmap.fromImage(image_qt)
-        self.label_minimap.setPixmap(qpixmap)
+    #     pil_image = Image.open(io.BytesIO(image_from_plot))
+    #     # Convert the PIL image to a QImage
+    #     image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
+    #     # Convert the QImage to a QPixmap 
+    #     qpixmap = QPixmap.fromImage(image_qt)
+    #     self.label_minimap.setPixmap(qpixmap)
 
 
     def update_ui_after_movement(self):

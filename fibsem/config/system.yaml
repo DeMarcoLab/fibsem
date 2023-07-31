@@ -12,7 +12,7 @@ model:
     manipulator:
         enabled: true
         positions:
-            calibrated: true
+            calibrated: false
             parking:
                 x: -0.008918395
                 y: 0.0006548000000000001
@@ -34,22 +34,20 @@ model:
 system:
     description: test
     electron:
-        current: 1.0000000000000002e-12
+        current: 50.0e-12
         detector_mode: SecondaryElectrons
-        detector_type: E-T
-        detector_type: E-T
+        detector_type: ETD
         eucentric_height: 0.0039
         voltage: 2000
     id: '123'
     ion:
         current: 2.0000000000000002e-11
         detector_mode: SecondaryElectrons
-        detector_type: SE
-        detector_type: SE
+        detector_type: ETD
         eucentric_height: 0.0165
         plasma_gas: Argon
         voltage: 30000
-    ip_address: localhost
+    ip_address: 10.0.0.1
     manufacturer: Thermo
     name: S8252G
     stage:
