@@ -617,18 +617,18 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             self (FibsemMicroscope): instance of the FibsemMicroscope object
         """
-        from autoscript_sdb_microscope_client.structures import Point
+        from autoscript_sdb_microscope_client.structures import Point as ThermoPoint
         _check_beam(beam_type = BeamType.ELECTRON, hardware_settings = self.hardware_settings)
         # reset zero beamshift
         logging.debug(
             f"reseting ebeam shift to (0, 0) from: {self.connection.beams.electron_beam.beam_shift.value}"
         )
-        self.connection.beams.electron_beam.beam_shift.value = Point(0, 0)
+        self.connection.beams.electron_beam.beam_shift.value = ThermoPoint(0, 0)
         _check_beam(beam_type = BeamType.ION, hardware_settings = self.hardware_settings)
         logging.debug(
             f"reseting ibeam shift to (0, 0) from: {self.connection.beams.electron_beam.beam_shift.value}"
         )
-        self.connection.beams.ion_beam.beam_shift.value = Point(0, 0)
+        self.connection.beams.ion_beam.beam_shift.value = ThermoPoint(0, 0)
         logging.debug(f"reset beam shifts to zero complete")
 
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType = BeamType.ION) -> None:
@@ -692,10 +692,13 @@ class ThermoMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ELECTRON,
                 working_distance=self.connection.beams.electron_beam.working_distance.value,
                 beam_current=self.connection.beams.electron_beam.beam_current.value,
+                voltage=self.connection.beams.electron_beam.high_voltage.value,
                 hfw=self.connection.beams.electron_beam.horizontal_field_width.value,
                 resolution=[width_eb, height_eb],
                 dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value,
                 scan_rotation=self.connection.beams.electron_beam.scanning.rotation.value,
+                shift=Point(self.connection.beams.electron_beam.beam_shift.value.x, self.connection.beams.electron_beam.beam_shift.value.y),
+                stigmation=Point(self.connection.beams.electron_beam.stigmator.value.x, self.connection.beams.electron_beam.stigmator.value.y),
             )  
             # eb_settings = self.get_beam_settings(beam_type=BeamType.ELECTRON) # TODO: CHANGE_THIS_OVER
         else:
@@ -710,6 +713,9 @@ class ThermoMicroscope(FibsemMicroscope):
                 resolution=[width_ib, height_ib],
                 dwell_time=self.connection.beams.ion_beam.scanning.dwell_time.value,
                 scan_rotation=self.connection.beams.ion_beam.scanning.rotation.value,
+                voltage=self.connection.beams.ion_beam.high_voltage.value,
+                shift=Point(self.connection.beams.ion_beam.beam_shift.value.x, self.connection.beams.ion_beam.beam_shift.value.y),
+                stigmation=Point(self.connection.beams.ion_beam.stigmator.value.x, self.connection.beams.ion_beam.stigmator.value.y),
             )
             # ib_settings = self.get_beam_settings(beam_type=BeamType.ION) # TODO: CHANGE_THIS_OVER
 
@@ -2004,6 +2010,8 @@ class ThermoMicroscope(FibsemMicroscope):
             in the `MicroscopeState` object, and then restores the electron and ion beam settings to their values in the `MicroscopeState`
             object. It also logs messages indicating the progress of the operation.
         """
+        from autoscript_sdb_microscope_client.structures import Point as ThermoPoint
+
         resolution = f"{microscope_state.eb_settings.resolution[0]}x{microscope_state.eb_settings.resolution[1]}"
         # Restore electron beam settings
         if self.hardware_settings.electron_beam is False:
@@ -2025,6 +2033,10 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.electron_beam.scanning.dwell_time.value = (
                 microscope_state.eb_settings.dwell_time
             )
+            self.connection.beams.electron_beam.high_voltage.value = microscope_state.eb_settings.voltage
+
+            self.connection.beams.electron_beam.beam_shift.value = ThermoPoint(x=microscope_state.eb_settings.shift.x, y=microscope_state.eb_settings.shift.y)
+            self.connection.beams.electron_beam.stigmator.value = ThermoPoint(x=microscope_state.eb_settings.stigmation.x, y=microscope_state.eb_settings.stigmation.y)
 
         # Restore ion beam settings
         resolution = f"{microscope_state.ib_settings.resolution[0]}x{microscope_state.ib_settings.resolution[1]}"
@@ -2047,6 +2059,10 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.ion_beam.scanning.dwell_time.value = (
                 microscope_state.ib_settings.dwell_time
             )
+            self.connection.beams.ion_beam.high_voltage.value = microscope_state.ib_settings.voltage
+            self.connection.beams.ion_beam.beam_shift.value = ThermoPoint(x=microscope_state.ib_settings.shift.x, y=microscope_state.ib_settings.shift.y)
+            self.connection.beams.ion_beam.stigmator.value = ThermoPoint(x=microscope_state.ib_settings.stigmation.x, y=microscope_state.ib_settings.stigmation.y)
+
 
         # Link the specimen stage
         if self.hardware_settings.stage_enabled is False:
@@ -3029,6 +3045,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ELECTRON,
                 working_distance=self.connection.SEM.Optics.GetWD() * constants.MILLIMETRE_TO_METRE,
                 beam_current=self.connection.SEM.Beam.GetCurrent() * constants.PICO_TO_SI,
+                voltage=self.connection.SEM.Beam.GetVoltage(),
                 hfw=self.connection.SEM.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
                 resolution=image_eb.metadata.image_settings.resolution,  # TODO fix these empty parameters
                 dwell_time=image_eb.metadata.image_settings.dwell_time,
@@ -3048,6 +3065,7 @@ class TescanMicroscope(FibsemMicroscope):
                         beam_type=BeamType.ION,
                         working_distance=image_ib.metadata.microscope_state.ib_settings.working_distance,
                         beam_current=self.connection.FIB.Beam.ReadProbeCurrent() * constants.PICO_TO_SI,
+                        voltage=self.connection.FIB.Beam.GetVoltage(),
                         hfw=self.connection.FIB.Optics.GetViewfield() * constants.MILLIMETRE_TO_METRE,
                         resolution=image_ib.metadata.image_settings.resolution,
                         dwell_time=image_ib.metadata.image_settings.dwell_time,
@@ -4353,6 +4371,8 @@ class TescanMicroscope(FibsemMicroscope):
             microscope_state.eb_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
 
+        self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+        self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
         # )
@@ -4364,6 +4384,8 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(
             microscope_state.ib_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
+        self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+        self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         time.sleep(3)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
         self.move_stage_absolute(microscope_state.absolute_position)
