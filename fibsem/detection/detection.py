@@ -436,7 +436,7 @@ def take_image_and_detect_features(
         )
         settings.image.reduced_area = None
     
-    settings.image.label = utils.current_timestamp_v2()
+    settings.image.label = f"ml-{utils.current_timestamp_v2()}"
     settings.image.save = True
 
     # take new image
