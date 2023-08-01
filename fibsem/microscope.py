@@ -3688,7 +3688,7 @@ class TescanMicroscope(FibsemMicroscope):
         print(f"spacing: {mill_settings.spacing}")
 
         self.set("preset", mill_settings.preset, BeamType.ION)
-        beam_current = self.connection.FIB.Beam.ReadProbeCurrent()
+        beam_current = self.connection.FIB.Beam.ReadProbeCurrent()*constants.PICO_TO_SI
         print(f"beam_current: {beam_current}")
         layer_settings = IEtching(
             syncWriteField=False,
