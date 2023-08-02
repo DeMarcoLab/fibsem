@@ -3263,6 +3263,8 @@ class TescanMicroscope(FibsemMicroscope):
             dy_move = dy
         elif np.isclose(image_rotation, 180):
             dy_move = -dy
+
+
             
         PRETILT_SIGN = 1.0
         from fibsem import movement
@@ -3824,7 +3826,7 @@ class TescanMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         # """
         try:
-            self.connection.FIB.Preset.Activate("30 keV; UHR imaging")
+            self.connection.FIB.Preset.Activate("30 keV; 150 pA")
             self.connection.DrawBeam.UnloadLayer()
             print("hello")
         except:
