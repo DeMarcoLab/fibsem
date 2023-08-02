@@ -16,7 +16,7 @@ from fibsem.structures import (
     FibsemRectangle,
 )
 from fibsem.microscope import FibsemMicroscope
-from typing import Union
+from typing import Union, Optional
 
 
 def auto_eucentric_correction(
@@ -51,7 +51,7 @@ def beam_shift_alignment(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
     ref_image: FibsemImage,
-    reduced_area: FibsemRectangle = None,
+    reduced_area: Optional[FibsemRectangle] = None,
 ):
     """Aligns the images by adjusting the beam shift instead of moving the stage.
 
@@ -71,6 +71,8 @@ def beam_shift_alignment(
         ValueError: If `image_settings.beam_type` is not set to `BeamType.ION`.
 
     """
+    image_settings = ImageSettings.fromFibsemImage(ref_image)
+    image_settings.beam_type = BeamType.ION
     image_settings.reduced_area = reduced_area
     new_image = acquire.new_image(
         microscope, settings=image_settings
@@ -89,10 +91,10 @@ def correct_stage_drift(
     reference_images: ReferenceImages,
     alignment: tuple[BeamType, BeamType] = (BeamType.ELECTRON, BeamType.ELECTRON),
     rotate: bool = False,
-    use_ref_mask: bool = False,
-    mask_scale: int = 4,
+    ref_mask_rad: int = 512,
     xcorr_limit: Union[tuple[int, int], None] = None,
     constrain_vertical: bool = False,
+    use_beam_shift: bool = False,
 ) -> bool:
     """Corrects the stage drift by aligning low- and high-resolution reference images
     using cross-correlation.
@@ -108,10 +110,7 @@ def correct_stage_drift(
             BeamType.ELECTRON).
         rotate (bool, optional): Whether to rotate the reference images before
             alignment. Defaults to False.
-        use_ref_mask (bool, optional): Whether to apply a mask to the reference images
-            before alignment. Defaults to False.
-        mask_scale (int, optional): The scale factor used for creating the mask. Defaults
-            to 4.
+        ref_mask_rad (int, optional): The radius of the circular mask used for reference
         xcorr_limit (tuple[int, int] | None, optional): A tuple of two integers that
             represent the minimum and maximum cross-correlation values allowed for the
             alignment. If not specified, the values are set to (None, None), which means
@@ -146,21 +145,10 @@ def correct_stage_drift(
     # align lowres, then highres
     for i, ref_image in enumerate([ref_lowres, ref_highres]):
 
-        if use_ref_mask:
-            ref_mask = masks.create_lamella_mask(
-                ref_image,
-                settings.protocol["lamella"],
-                scale=mask_scale,
-                use_trench_height=True,
-            )  # TODO: refactor, liftout specific
-        else:
-            ref_mask = None
+        ref_mask = masks.create_circle_mask(ref_image.data.shape, ref_mask_rad)
 
         # take new images
         # set new image settings (same as reference)
-        # settings.image = utils.match_image_settings(
-        #     ref_image, settings.image, beam_type=alignment[1]
-        # )
         settings.image = ImageSettings.fromFibsemImage(ref_image)
         settings.image.beam_type = alignment[1]
         new_image = acquire.new_image(microscope, settings.image)
@@ -174,6 +162,7 @@ def correct_stage_drift(
             ref_mask=ref_mask,
             xcorr_limit=xcorr_limit[i],
             constrain_vertical=constrain_vertical,
+            use_beam_shift=use_beam_shift,
         )
 
         if ret is False:
@@ -190,6 +179,7 @@ def align_using_reference_images(
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
     constrain_vertical: bool = False,
+    use_beam_shift: bool = False,
 ) -> bool:
     """
     Uses cross-correlation to align a new image to a reference image.
@@ -245,13 +235,17 @@ def align_using_reference_images(
                 settings=settings, dy=-dy
             )  # FLAG_TEST
         else:
-            # move the stage
-            microscope.stable_move(
-                settings=settings,
-                dx=dx,
-                dy=-dy,
-                beam_type=new_beam_type,
-            )
+            if use_beam_shift:
+                # move the beam shift
+                microscope.beam_shift(dx=-dx, dy=dy, beam_type=new_beam_type)
+            else:
+                # move the stage
+                microscope.stable_move(
+                    settings=settings,
+                    dx=dx,
+                    dy=-dy,
+                    beam_type=new_beam_type,
+                )
 
     return shift_within_tolerance
 
@@ -326,17 +320,35 @@ def shift_from_crosscorrelation(
     err = np.array(cen - [maxX, maxY], int)
 
     # calculate shift in metres
-    x_shift = err[1] * pixelsize_x
-    y_shift = err[0] * pixelsize_y  # this could be the issue?
+    dx = err[1] * pixelsize_x
+    dy = err[0] * pixelsize_y  # this could be the issue?
 
     logging.debug(f"cross-correlation:")
     logging.debug(f"pixelsize: x: {pixelsize_x:.2e}, y: {pixelsize_y:.2e}")
     logging.debug(f"maxX: {maxX}, {maxY}, centre: {cen}")
     logging.debug(f"x: {err[1]}px, y: {err[0]}px")
-    logging.debug(f"x: {x_shift:.2e}m, y: {y_shift:.2e} meters")
+    logging.debug(f"x: {dx:.2e}m, y: {dy:.2e} meters")
+
+    # save data
+    _save_alignment_data(
+        ref_image=ref_image,
+        new_image=new_image,
+        bandpass=bandpass,
+        xcorr=xcorr,
+        use_rect_mask=use_rect_mask,
+        ref_mask=ref_mask,
+        xcorr_limit=xcorr_limit,
+        lowpass=lowpass,
+        highpass=highpass,
+        sigma=sigma,
+        dx=dx,
+        dy=dy,
+        pixelsize_x=pixelsize_x,
+        pixelsize_y=pixelsize_y,
+    )
 
     # metres
-    return x_shift, y_shift, xcorr
+    return dx, dy, xcorr
 
 
 def crosscorrelation_v2(
@@ -388,3 +400,59 @@ def crosscorrelation_v2(
     xcorr = np.real(np.fft.fftshift(np.fft.ifft2(img1ft * np.conj(img2ft))))
 
     return xcorr
+
+def _save_alignment_data(
+    ref_image: FibsemImage,
+    new_image: FibsemImage,
+    bandpass: np.ndarray,
+    xcorr: np.ndarray,
+    ref_mask: np.ndarray = None,
+    lowpass: float = None,
+    highpass: float = None,
+    sigma: float = None,
+    xcorr_limit: float = None,
+    use_rect_mask: bool = False,
+    dx: float = None,
+    dy: float = None,
+    pixelsize_x: float = None,
+    pixelsize_y: float = None,
+    
+
+):
+    """Save alignment data to disk."""
+    
+    import pandas as pd
+    import os
+    from fibsem import config as cfg
+    import tifffile as tff
+
+    ts = utils.current_timestamp_v2()
+    fname = os.path.join(cfg.DATA_CC_PATH, str(ts))
+
+    # save fibsem images
+    ref_image.save(fname + "_ref.tif")
+    new_image.save(fname + "_new.tif")
+
+    # convert to tiff , save
+    tff.imwrite(fname + "_xcorr.tif", xcorr)
+    tff.imwrite(fname + "_bandpass.tif", bandpass)
+    if ref_mask is not None:
+        tff.imwrite(fname + "_ref_mask.tif", ref_mask)
+
+    info = {
+        # "ref_image": ref_image, "new_image": new_image, "bandpass": bandpass, "xcorr": xcorr, "ref_mask": ref_mask,
+        "lowpass": lowpass, "highpass": highpass, "sigma": sigma,
+        "pixelsize_x": pixelsize_x, "pixelsize_y": pixelsize_y, 
+        "use_rect_mask": use_rect_mask, "xcorr_limit": xcorr_limit, "ref_mask": ref_mask is not None,
+        "dx": dx, "dy": dy, "fname": fname, "timestamp": ts }
+
+
+    df = pd.DataFrame.from_dict(info, orient='index').T
+    
+    # save the dataframe to a csv file, append if the file already exists
+    DATAFRAME_PATH = os.path.join(cfg.DATA_CC_PATH, "data.csv")
+    if os.path.exists(DATAFRAME_PATH):
+        df_tmp = pd.read_csv(DATAFRAME_PATH)
+        df = pd.concat([df_tmp, df], axis=0, ignore_index=True)
+    
+    df.to_csv(DATAFRAME_PATH, index=False)

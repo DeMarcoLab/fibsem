@@ -154,7 +154,6 @@ Methods:
     def __to_dict__(self) -> dict:
         position_dict = {}
 
-        position_dict["name"] = self.name
         position_dict["name"] = self.name if self.name is not None else None
         position_dict["x"] = float(self.x) if self.x is not None else None
         position_dict["y"] = float(self.y) if self.y is not None else None
@@ -252,6 +251,7 @@ Attributes:
     """
     electron_beam: bool = True
     ion_beam: bool = True
+    can_select_plasma_gas: bool = True
     stage_enabled: bool = True
     stage_rotation: bool = True
     stage_tilt: bool = True
@@ -261,12 +261,12 @@ Attributes:
     gis_enabled: bool = True
     gis_multichem: bool = True
     manipulator_positions: dict = None
-    system: dict = None
 
     def __post_init__(self):
         attributes = [
             "electron_beam",
             "ion_beam",
+            "can_select_plasma_gas",
             "stage_enabled",
             "stage_rotation",
             "stage_tilt",
@@ -276,12 +276,11 @@ Attributes:
             "gis_enabled",
             "gis_multichem",
             "manipulator_positions",
-            "system"
         ]
 
         for attribute in attributes:
             object_attribute = getattr(self,attribute)
-            if attribute in ["manipulator_positions","system"]:
+            if attribute in ["manipulator_positions"]:
                 continue
             assert isinstance(object_attribute,bool)
 
@@ -291,6 +290,7 @@ Attributes:
         return cls(
             electron_beam=bool(hardware_dict["electron"]["enabled"]),
             ion_beam=bool(hardware_dict["ion"]["enabled"]),
+            can_select_plasma_gas=bool(hardware_dict["ion"]["can_select_plasma_gas"]),
             stage_enabled=bool(hardware_dict["stage"]["enabled"]),
             stage_rotation=bool(hardware_dict["stage"]["rotation"]),
             stage_tilt=bool(hardware_dict["stage"]["tilt"]),
@@ -313,32 +313,18 @@ Attributes:
                             "z":hardware_dict["manipulator"]["positions"]["working"]["z"],
                 },
                 "calibrated":hardware_dict["manipulator"]["positions"]["calibrated"]}, 
-            system = {
-                "name":hardware_dict["system"]["name"],
-                "manufacturer":hardware_dict["system"]["manufacturer"],
-                "description":hardware_dict["system"]["description"],
-                "version":hardware_dict["system"]["version"],
-                "id":hardware_dict["system"]["id"],
-            }
         )
 
     def __to_dict__(self) -> dict:
             
             hardware_dict = {}
-
-            hardware_dict["system"] = {}
-            hardware_dict["system"]["name"] = self.system["name"]
-            hardware_dict["system"]["manufacturer"] = self.system["manufacturer"]
-            hardware_dict["system"]["description"] = self.system["description"]
-            hardware_dict["system"]["version"] = self.system["version"]
-            hardware_dict["system"]["id"] = self.system["id"]
-
     
             hardware_dict["electron"] = {}
             hardware_dict["electron"]["enabled"] = self.electron_beam
     
             hardware_dict["ion"] = {}
             hardware_dict["ion"]["enabled"] = self.ion_beam
+            hardware_dict["ion"]["can_select_plasma_gas"] = self.can_select_plasma_gas
     
             hardware_dict["stage"] = {}
             hardware_dict["stage"]["enabled"] = self.stage_enabled
@@ -409,10 +395,10 @@ Methods:
 
     def __post_init__(self):
 
-        attributes = ["x","y","z","r","t"]
-        for attribute in attributes:
-            output = getattr(self,attribute)
-            assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
+        # attributes = ["x","y","z","r","t"]
+        # for attribute in attributes:
+            # output = getattr(self,attribute)
+            # assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
         assert isinstance(self.coordinate_system,str) or self.coordinate_system is None, f"unsupported type {type(self.coordinate_system)} for coorindate system"
         assert self.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or self.coordinate_system is None, f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
 
@@ -459,6 +445,8 @@ Methods:
                     x=self.x,
                     y=self.y,
                     z=self.z,
+                    # r=0.0 if self.r is None else self.r,
+                    r=None,
                     coordinate_system=coordinate_system,
                 )
     
@@ -511,7 +499,8 @@ class FibsemRectangle:
         assert isinstance(self.height,float) or isinstance(self.height,int), f"type {type(self.height)} is unsupported for height, must be int or floar"
 
     def __from_dict__(settings: dict) -> "FibsemRectangle":
-
+        if settings is None:
+            return None
         points = ["left","top","width","height"]
 
         for point in points:
@@ -826,6 +815,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     rotation: float = 0.0 (m), 
                     centre_x: float = 0.0 (m), 
                     centre_y: float = 0.0 (m),
+                    passes: float = 1.0,
 
                 If FibsemPattern.Line
                     start_x: float (m), 
@@ -862,6 +852,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
             self.centre_y = kwargs["centre_y"] if "centre_y" in kwargs else 0.0
             self.scan_direction= kwargs["scan_direction"] if "scan_direction" in kwargs else "TopToBottom"
             self.cleaning_cross_section= kwargs["cleaning_cross_section"] if "cleaning_cross_section" in kwargs else False
+            self.passes = kwargs["passes"] if "passes" in kwargs else None
         elif pattern == FibsemPattern.Line:
             self.start_x = kwargs["start_x"]
             self.start_y = kwargs["start_y"]
@@ -904,7 +895,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
         
     def __repr__(self) -> str:
         if self.pattern == FibsemPattern.Rectangle:
-            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section}, passes={self.passes})"
         if self.pattern == FibsemPattern.Line:
             return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
         if self.pattern is FibsemPattern.Circle:
@@ -928,6 +919,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 centre_y=state_dict["centre_y"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
+                passes=int(state_dict["passes"]) if state_dict.get("passes", None) is not None else None,# TODO: this line is crazy
             )
         elif state_dict["pattern"] == "Line":
             return FibsemPatternSettings(
@@ -991,6 +983,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "centre_y": self.centre_y,
                 "scan_direction": self.scan_direction,
                 "cleaning_cross_section": self.cleaning_cross_section,
+                "passes": self.passes,
             }
         elif self.pattern == FibsemPattern.Line:
             return {
@@ -1068,7 +1061,7 @@ class FibsemMillingSettings:
 
     milling_current: float = 20.0e-12
     spot_size: float = 5.0e-8
-    rate: float = 3.0e-3 # m3/A/s
+    rate: float = 3.0e-11 # m3/A/s
     dwell_time: float = 1.0e-6 # s
     hfw: float = 150e-6
     patterning_mode: str = "Serial" 
@@ -1109,7 +1102,7 @@ class FibsemMillingSettings:
         milling_settings = FibsemMillingSettings(
             milling_current=settings.get("milling_current", 20.0e-12),
             spot_size=settings.get("spot_size", 5.0e-8),
-            rate=settings.get("rate", 3.0e-3),
+            rate=settings.get("rate", 3.0e-11),
             dwell_time=settings.get("dwell_time", 1.0e-6),
             hfw=settings.get("hfw", 150e-6),
             patterning_mode=settings.get("patterning_mode", "Serial"),
@@ -1337,6 +1330,7 @@ class SystemSettings:
     ion: BeamSystemSettings = None
     electron: BeamSystemSettings = None
     manufacturer: str = None
+    system_info: dict = None
 
     def __to_dict__(self) -> dict:
 
@@ -1347,6 +1341,11 @@ class SystemSettings:
             "electron": self.electron.__to_dict__(),
             "manufacturer": self.manufacturer,
         }
+        settings_dict["name"] = self.system_info["name"]
+        settings_dict["manufacturer"] = self.system_info["manufacturer"]
+        settings_dict["description"] = self.system_info["description"]
+        settings_dict["version"] = self.system_info["version"]
+        settings_dict["id"] = self.system_info["id"]
 
         return settings_dict
 
@@ -1361,6 +1360,13 @@ class SystemSettings:
                 settings["electron"], BeamType.ELECTRON
             ),
             manufacturer=settings["manufacturer"],
+            system_info = {
+                "name":settings["name"],
+                "manufacturer":settings["manufacturer"],
+                "description":settings["description"],
+                "version":settings["version"],
+                "id":settings["id"],
+            }
         )
 
         return system_settings
@@ -1550,16 +1556,7 @@ class FibsemImageMetadata:
         if settings["pixel_size"] is not None:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
         if settings["microscope_state"] is not None:
-            microscope_state = MicroscopeState(
-                timestamp=settings["microscope_state"]["timestamp"],
-                absolute_position=FibsemStagePosition(),
-                eb_settings=BeamSettings.__from_dict__(
-                    settings["microscope_state"]["eb_settings"]
-                ),
-                ib_settings=BeamSettings.__from_dict__(
-                    settings["microscope_state"]["ib_settings"]
-                ),
-            )
+            microscope_state = MicroscopeState.__from_dict__(settings["microscope_state"])
         
         detector_dict = settings.get("detector_settings", {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0})
         detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
@@ -1668,6 +1665,8 @@ class FibsemImage:
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
 
         if check_data_format(data):
+            if data.ndim == 3 and data.shape[2] == 1:
+                data = data[:, :, 0]
             self.data = data
         else:
             raise Exception("Invalid Data format for Fibsem Image")
@@ -1704,7 +1703,6 @@ class FibsemImage:
         Inputs:
             save_path (path): path to save directory and filename
         """
-        # self.metadata.image_settings.save_path = str(self.metadata.image_settings.save_path)
         if save_path is None:
             save_path = os.path.join(self.metadata.image_settings.save_path, self.metadata.image_settings.label)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -1978,8 +1976,8 @@ def check_data_format(data: np.ndarray) -> bool:
     """Checks that data is in the correct format."""
     # assert data.ndim == 2  # or data.ndim == 3
     # assert data.dtype in [np.uint8, np.uint16]
-    # if data.ndim == 3 and data.shape[2] == 1:
-    #     data = data[:, :, 0]
+    if data.ndim == 3 and data.shape[2] == 1:
+        data = data[:, :, 0]
     return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]
 
 

@@ -21,8 +21,8 @@ manipulator:
             x: 0.0
             y: 0.0
             z: 0.00585
-    rotation: true
-    tilt: true
+    rotation: false
+    tilt: false
 stage:
     enabled: true
     rotation: true

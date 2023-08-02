@@ -1,0 +1,85 @@
+ValueError                                Traceback (most recent call last)
+File c:\Users\lnae0002\Desktop\autoliftout\liftout\ui\AutoLiftoutUIv2.py:490, in AutoLiftoutUIv2._ui_signal(self=<__main__.AutoLiftoutUIv2 object>, info={'det': None, 'eb_image': <fibsem.structures.FibsemImage object>, 'ib_image': <fibsem.structures.FibsemImage object>, 'mill': None, 'movement': None, 'msg': 'Updating Images', 'neg': None, 'pos': None})
+    488     self.image_widget.ib_image = ib_image
+    489     print("ib_image.metadata.image_settings", ib_image.metadata.image_settings)
+--> 490     self.image_widget.set_ui_from_settings(image_settings=ib_image.metadata.image_settings, beam_type=BeamType.ION)
+        ib_image = <fibsem.structures.FibsemImage object at 0x00000213C172A400>
+        self.image_widget = <fibsem.ui.FibsemImageSettingsWidget.FibsemImageSettingsWidget object at 0x00000213B1C90D30>
+        ib_image.metadata.image_settings = ImageSettings(resolution=[1536, 1024], dwell_time=1e-06, hfw=0.00015, autocontrast=True, beam_type=<BeamType.ION: 2>, save=True, label='ref_trench_jcut_high_res', gamma_enabled=False, save_path='C:/Users/lnae0002/Desktop/autoliftout/liftout/log\\AutoLiftout-2023-07-19-11-45\\01-mighty-hog', reduced_area=None)
+        self = <__main__.AutoLiftoutUIv2 object at 0x00000213B1C78E50>
+        ib_image.metadata = FibsemImageMetadata(image_settings=ImageSettings(resolution=[1536, 1024], dwell_time=1e-06, hfw=0.00015, autocontrast=True, beam_type=<BeamType.ION: 2>, save=True, label='ref_trench_jcut_high_res', gamma_enabled=False, save_path='C:/Users/lnae0002/Desktop/autoliftout/liftout/log\\AutoLiftout-2023-07-19-11-45\\01-mighty-hog', reduced_area=None), pixel_size=Point(x=9.765625e-08, y=9.765625e-08), microscope_state=MicroscopeState(timestamp=1689731529.237436, absolute_position=FibsemStagePosition(name=None, x=0.0023149167, y=-0.0019699167, z=0.0319542181, r=229.0008528, t=16.99999312, coordinate_system='RAW'), eb_settings=BeamSettings(beam_type=<BeamType.ELECTRON: 1>, working_distance=None, beam_current=None, voltage=None, hfw=None, resolution=None, dwell_time=None, stigmation=None, shift=None, scan_rotation=None), ib_settings=BeamSettings(beam_type=<BeamType.ION: 2>, working_distance=0.012, beam_current=0.174540291, voltage=None, hfw=None, resolution=[1536, 1024], dwell_time=1e-06, stigmation=Point(x=0.0, y=0.0), shift=Point(x=-2.01e-06, y=-5.8e-07), scan_rotation=180.0)), detector_settings=FibsemDetectorSettings(type='SE', mode='N/A', brightness=0.4875, contrast=0.421875), version='v1')
+        BeamType.ION = <BeamType.ION: 2>
+    491     self.image_widget.viewer_update_signal.emit()
+    494 if isinstance(stages, list):
+
+File ~\Desktop\fibsem\fibsem\ui\FibsemImageSettingsWidget.py:278, in FibsemImageSettingsWidget.set_ui_from_settings(self=<fibsem.ui.FibsemImageSettingsWidget.FibsemImageSettingsWidget object>, image_settings=ImageSettings(resolution=[1536, 1024], dwell_tim...3-07-19-11-45\\01-mighty-hog', reduced_area=None), beam_type=<BeamType.ION: 2>)
+    276 def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType):
+--> 278     beam_settings = self.get_beam_settings(beam_type)
+        beam_type = <BeamType.ION: 2>
+        self = <fibsem.ui.FibsemImageSettingsWidget.FibsemImageSettingsWidget object at 0x00000213B1C90D30>
+    279     detector_settings = self.get_detector_settings(beam_type)
+    281     self.spinBox_resolution_x.setValue(image_settings.resolution[0])
+
+File ~\Desktop\fibsem\fibsem\ui\FibsemImageSettingsWidget.py:234, in FibsemImageSettingsWidget.get_beam_settings(self=<fibsem.ui.FibsemImageSettingsWidget.FibsemImageSettingsWidget object>, beam_type=<BeamType.ION: 2>)
+    230 def get_beam_settings(self, beam_type: BeamType= BeamType.ELECTRON) -> BeamSettings:
+    231     beam_settings = BeamSettings(
+    232         beam_type = beam_type,
+    233         working_distance=self.microscope.get("working_distance", beam_type=beam_type),
+--> 234         beam_current = self.microscope.get("current", beam_type=beam_type),
+        beam_type = <BeamType.ION: 2>
+        self.microscope = <fibsem.microscope.TescanMicroscope object at 0x00000213B1CA11C0>
+        self = <fibsem.ui.FibsemImageSettingsWidget.FibsemImageSettingsWidget object at 0x00000213B1C90D30>
+    235         voltage = self.microscope.get("voltage", beam_type=beam_type),
+    236         shift=self.microscope.get("shift", beam_type=beam_type),
+    237         stigmation=self.microscope.get("stigmation", beam_type=beam_type),
+    238     )
+    239     return beam_settings
+
+File ~\Desktop\fibsem\fibsem\microscope.py:4346, in TescanMicroscope.get(self=<fibsem.microscope.TescanMicroscope object>, key='current', beam_type=<BeamType.ION: 2>)
+   4344         return beam.Beam.GetCurrent() * constants.PICO_TO_SI
+   4345     else:
+-> 4346         return beam.Beam.ReadProbeCurrent() * constants.PICO_TO_SI
+        beam = <tescanautomation.tescanautomation.Automation.FIB object at 0x00000213B3A1D430>
+        beam.Beam = <tescanautomation.tescanautomation.Automation.FIB.Beam object at 0x00000213B3A1D3A0>
+        constants = <module 'fibsem.constants' from 'C:\\Users\\lnae0002\\Desktop\\fibsem\\fibsem\\constants.py'>
+        constants.PICO_TO_SI = 1e-12
+   4347 if key == "voltage":
+   4348     _check_beam(beam_type, self.hardware_settings)
+
+File ~\AppData\Local\miniconda3\envs\fibsem\lib\site-packages\tescanautomation\tescanautomation.py:2885, in Automation.FIB.Beam.ReadProbeCurrent(self=<tescanautomation.tescanautomation.Automation.FIB.Beam object>)
+   2865 def ReadProbeCurrent(self) -> float:
+   2866     """
+   2867     Measure FIB beam current in the Faraday cup.
+   2868
+   (...)
+   2883     :return: Faraday
+   2884     """
+-> 2885     return self._client.FibReadFCCurr()
+        self._client = <tescanautomation.abstract.AutomationAbstract object at 0x00000213B3A15F40>
+        self = <tescanautomation.tescanautomation.Automation.FIB.Beam object at 0x00000213B3A1D3A0>
+
+File ~\AppData\Local\miniconda3\envs\fibsem\lib\site-packages\tescansharksem\sem.py:3520, in Sem.FibReadFCCurr(self=<tescanautomation.abstract.AutomationAbstract object>)
+   3500 def FibReadFCCurr(self) -> float:
+   3501     """
+   3502     Measure FIB beam current in the Faraday cup.
+   3503
+   (...)
+   3518     :return: Faraday
+   3519     """
+-> 3520     return self._Return(self.connection.Recv('FibReadFCCurr', (sem_conn.ArgType.Float, )))
+        self = <tescanautomation.abstract.AutomationAbstract object at 0x00000213B3A15F40>
+        (sem_conn.ArgType.Float, ) = (3,)
+        self.connection = <tescansharksem.sem_conn.SemConnection object at 0x00000213B3A15E20>
+        sem_conn.ArgType.Float = 3
+        sem_conn = <module 'tescansharksem.sem_conn' from 'C:\\Users\\lnae0002\\AppData\\Local\\miniconda3\\envs\\fibsem\\lib\\site-packages\\tescansharksem\\sem_conn.py'>
+
+File ~\AppData\Local\miniconda3\envs\fibsem\lib\site-packages\tescansharksem\sem_conn.py:560, in SemConnection.Recv(self=<tescansharksem.sem_conn.SemConnection object>, fn_name='FibReadFCCurr', retval=(3,), *args=())
+    558     stop = start + fl_size
+    559     s = DecodeString(body[start:stop])
+--> 560     l.append(float(s))
+        l = []
+        s = ''
+    561     start = (start + fl_size + 3) // 4 * 4
+    563 if t == ArgType.String:             # string
+
+ValueError: could not convert string to float: ''

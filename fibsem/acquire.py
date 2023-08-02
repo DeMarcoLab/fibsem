@@ -38,10 +38,14 @@ def take_reference_images(
         - The `FibsemImage` objects in the returned tuple contain the image data as numpy arrays,
           as well as other image metadata.
     """
+    import time 
+    from fibsem.microscope import TescanMicroscope
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
     eb_image = new_image(microscope, image_settings)
     image_settings.beam_type = BeamType.ION
+    if isinstance(microscope, TescanMicroscope):
+        time.sleep(3)
     ib_image = new_image(microscope, image_settings)
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
 
@@ -87,6 +91,15 @@ def take_set_of_reference_images(
     high_eb, high_ib = take_reference_images(microscope, image_settings)
 
     reference_images = ReferenceImages(low_eb, high_eb, low_ib, high_ib)
+
+
+    # more flexible version
+    # reference_images = []
+    # for i, hfw in enumerate(hfws):
+    #     image_settings.hfw = hfw
+    #     image_settings.label = f"{label}_res_{i:02d}"
+    #     eb_image, ib_image = take_reference_images(microscope, image_settings)
+    #     reference_images.append([eb_image, ib_image])
 
     return reference_images
 

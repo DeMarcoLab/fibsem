@@ -5,7 +5,7 @@ name: Python package
 
 on:
   pull_request:
-    branches: [ "v0.2-stable" ]
+    branches: [ "v0.2-release" ]
 
 jobs:
   build:

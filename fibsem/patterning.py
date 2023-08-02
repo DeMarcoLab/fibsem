@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import yaml
 import numpy as np
 from fibsem.structures import FibsemPattern, FibsemPatternSettings, Point
+from fibsem import constants 
 
 
 def check_keys(protocol: dict, required_keys: list[str]) -> bool:
@@ -12,9 +13,9 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 
 
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation"),
+    "Rectangle": ("width", "height", "depth", "rotation","passes", "cleaning_cross_section","scan_direction"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-    "Circle": ("radius", "depth"),
+    "Circle": ("radius", "depth","cleaning_cross_section"),
     "Trench": (
         "lamella_width",
         "lamella_height",
@@ -22,6 +23,7 @@ REQUIRED_KEYS = {
         "size_ratio",
         "offset",
         "depth",
+        "cleaning_cross_section",
     ),
     "Horseshoe": (
         "lamella_width",
@@ -33,7 +35,7 @@ REQUIRED_KEYS = {
         "side_width",
         "depth",
     ),
-    "Fiducial": ("height", "width", "depth", "rotation"),
+    "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
     "Undercut": (
         "height",
         "width",
@@ -41,6 +43,7 @@ REQUIRED_KEYS = {
         "trench_width",
         "rhs_height",
         "h_offset",
+        "cleaning_cross_section",
     ),
     "MicroExpansion": (
         "height",
@@ -49,7 +52,7 @@ REQUIRED_KEYS = {
         "distance",
         "lamella_width",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation"),
+    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes","scan_direction"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -156,11 +159,12 @@ class RectanglePattern(BasePattern):
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Rectangle"  # redundant now
-        protocol["rotation"] = protocol.get("rotation", 0)
+        protocol["rotation"] = protocol.get("rotation", 0) * constants.DEGREES_TO_RADIANS
         protocol["cleaning_cross_section"] = protocol.get(
             "cleaning_cross_section", False
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        protocol["passes"] = protocol.get("passes", None)
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
         self.point = point
@@ -337,7 +341,7 @@ class HorseshoePattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=False,
             scan_direction="BottomToTop",
         )
 
@@ -348,7 +352,7 @@ class HorseshoePattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_upper_y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=False,
             scan_direction="TopToBottom",
         )
 
@@ -361,7 +365,7 @@ class HorseshoePattern(BasePattern):
             - protocol["side_offset"]
             + (lamella_width / 2 - protocol["side_width"] / 2),
             centre_y=point.y,
-            cleaning_cross_section=True,
+            cleaning_cross_section=False,
             scan_direction="TopToBottom",
         )
 
@@ -395,7 +399,7 @@ class FiducialPattern(BasePattern):
 
         left_pattern = FibsemPatternSettings.__from_dict__(protocol)
         from fibsem import constants 
-        left_pattern.rotation = protocol["rotation"]*constants.DEGREES_TO_RADIANS
+        left_pattern.rotation = protocol["rotation"] * constants.DEGREES_TO_RADIANS
         right_pattern = FibsemPatternSettings.__from_dict__(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
@@ -431,7 +435,7 @@ class UndercutPattern(BasePattern):
         jcut_half_width = jcut_width - jcut_trench_thickness / 2
         jcut_half_height = jcut_lamella_height / 2
 
-        use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
+        use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
 
         # top_jcut
         jcut_top_centre_x = point.x + jcut_width / 2 - jcut_h_offset
@@ -566,7 +570,11 @@ class SpotWeldPattern(BasePattern):
         depth = protocol["depth"]
         distance = protocol["distance"]
         n_patterns = int(protocol["number"])
-        rotation = protocol["rotation"]
+        rotation = protocol.get("rotation", 0)
+        passes = protocol.get("passes", 1)
+        scan_direction = protocol.get("scan_direction", "LeftToRight")
+        passes = int(passes) if passes is not None else None
+
 
         patterns = []
         for i in range(n_patterns):
@@ -577,9 +585,11 @@ class SpotWeldPattern(BasePattern):
                 depth=depth,
                 centre_x=point.x,
                 centre_y=point.y + (i - (n_patterns - 1) / 2) * distance,
-                cleaning_cross_section=True,
-                scan_direction="LeftToRight",
+                cleaning_cross_section=False,
+                scan_direction=scan_direction,
+
                 rotation=rotation,
+                passes=passes,
             )
             patterns.append(pattern_settings)
 
@@ -916,7 +926,7 @@ PROTOCOL_MILL_MAP = {
     "lamella": TrenchPattern,
     "polish_lamella": TrenchPattern,
     "thin_lamella": TrenchPattern,
-    "weld": RectanglePattern,
+    "weld": SpotWeldPattern,
     "sever": RectanglePattern,
     "sharpen": RectanglePattern,
     "needle": RectanglePattern,
@@ -934,6 +944,8 @@ PROTOCOL_MILL_MAP = {
     "microexpansion": MicroExpansionPattern,
     "clover": CloverPattern,
     "autolamella": TrenchPattern,
+    "autolamella_undercut": RectanglePattern,
+    "rectangle": RectanglePattern,
 }
 
 
@@ -945,7 +957,11 @@ def _get_pattern(key: str, protocol: dict, point: Point = Point()) -> BasePatter
 
 def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> FibsemMillingStage:
     pattern = _get_pattern(key, protocol, point=point)
-    mill_settings = FibsemMillingSettings(milling_current=protocol["milling_current"], hfw=float(protocol["hfw"]))
+    mill_settings = FibsemMillingSettings(
+        milling_current=protocol["milling_current"], 
+        hfw=float(protocol["hfw"]),
+        application_file=protocol.get("application_file", "Si"),
+        preset=protocol.get("preset", "no preset"))
 
     stage = FibsemMillingStage(
         name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
@@ -956,7 +972,7 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
 def _get_milling_stages(key, protocol, point: Point = Point()):
     
     # TODO: maybe add support for defining point per stages?
-    
+
     if "stages" in protocol[key]:
         stages = [
             _get_stage(key, pstage, point=point, i=i)
@@ -965,3 +981,19 @@ def _get_milling_stages(key, protocol, point: Point = Point()):
     else:
         stages = [_get_stage(key, protocol[key], point=point)]
     return stages
+
+
+from copy import deepcopy
+def _get_protocol_from_stages(stages: list):
+    protocol = {}  
+    protocol["stages"] = []
+
+    if not isinstance(stages, list):
+        stages = [stages]
+
+    for stage in stages:
+        # join two dicts union
+        ddict = {**stage.__to_dict__()["milling"], **stage.__to_dict__()["pattern"]["protocol"]}
+        protocol["stages"].append(deepcopy(ddict))
+
+    return protocol

@@ -71,7 +71,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
-        self.selected_beam.currentTextChanged.connect(self.update_detector_ui)
+        self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
         self.button_set_beam_settings.clicked.connect(self.apply_beam_settings)
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
@@ -275,6 +275,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType):
 
+        # disconnect beam type combobox
+        self.selected_beam.currentIndexChanged.disconnect()
+        self.selected_beam.setCurrentText(beam_type.name)
+        self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
+        
         beam_settings = self.get_beam_settings(beam_type)
         detector_settings = self.get_detector_settings(beam_type)
 
@@ -304,6 +309,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if beam_settings.stigmation is not None:
             self.stigmation_x.setValue(beam_settings.stigmation.x)
             self.stigmation_y.setValue(beam_settings.stigmation.y)
+        
+        self.update_ui_saving_settings()
 
     def update_ui_saving_settings(self):
 
@@ -315,13 +322,20 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
   
     def update_detector_ui(self):
         beam_type = BeamType[self.selected_beam.currentText()]
-        if beam_type == BeamType.ELECTRON:
-            self.comboBox_presets.hide()
-            self.label_presets.hide()
-        else:
-            self.comboBox_presets.show()
-            self.label_presets.show()
+        # if beam_type is BeamType.ELECTRON:
+        #     self.comboBox_presets.hide()
+        #     self.label_presets.hide()
+        # else:
+        #     self.comboBox_presets.show()
+        #     self.label_presets.show()
+
+        _is_ion = bool(beam_type is BeamType.ION)
+        _is_tescan = isinstance(self.microscope, TescanMicroscope)
         
+        self.comboBox_presets.setVisible(_is_ion and _is_tescan)
+        self.label_presets.setVisible(_is_ion and _is_tescan)
+
+
         self.detector_type = self.microscope.get_available_values("detector_type", beam_type=beam_type)
         self.detector_type_combobox.clear()
         self.detector_type_combobox.addItems(self.detector_type)
@@ -437,25 +451,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 face_color='transparent',
                 )   
 
-        if self.scalebar_checkbox.isChecked():
-            sc_is_checked = True
-            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
-        else:
-            sc_is_checked = False
-            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=sc_is_checked)
 
-        if self.crosshair_checkbox.isChecked():
-            is_checked = True
-            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
+        # draw scalebar and crosshair
+        if self.eb_image is not None and self.ib_image is not None:
+            ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
+            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
             
-        else:
-            is_checked = False
-            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=is_checked)
-            
-
-        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])
-
-        
+        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])      
         
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:

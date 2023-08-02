@@ -107,7 +107,20 @@ class LandingPost(Feature):
         return self.px
 
 
-__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost]
+@dataclass
+class CoreFeature(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (50, 205, 50)
+    color = "lime"
+    name: str = "CoreFeature"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CoreFature':
+        self.px = detect_core_feature(mask, self)
+        return self.px
+
+
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, CoreFeature]
  
 
 
@@ -195,6 +208,15 @@ def detect_corner(
 
     return Point(x=int(edge_px[1]), y=int(edge_px[0]))
 
+
+def detect_core_feature(
+    mask: np.ndarray,
+    feature: Feature,
+    mask_radius: int = 512,
+    idx: int = 1,
+) -> Point:
+    px = detect_centre_point(mask == idx, threshold=500)
+    return px
 
 def detect_lamella(
     mask: np.ndarray,
@@ -344,7 +366,7 @@ def detect_features_v2(
 
     for feature in features:
         
-        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge)):
+        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, CoreFeature)):
             feature = detect_multi_features(img, mask, feature)
             if filter:
                 feature = filter_best_feature(mask, feature, 
@@ -390,6 +412,12 @@ def detect_features(
         pixelsize=pixelsize,
     )
 
+    # distance in metres (from centre)
+    for feature in det.features:
+        feature.feature_m = conversions.image_to_microscope_image_coordinates(
+            feature.px, det.image.data, det.pixelsize
+        )
+
     return det
 
 
@@ -399,7 +427,7 @@ def take_image_and_detect_features(
     features: tuple[Feature],
 ) -> DetectedFeatures:
     
-    from fibsem import acquire
+    from fibsem import acquire, utils
     from fibsem.segmentation.model import load_model
 
     if settings.image.reduced_area is not None:
@@ -408,6 +436,8 @@ def take_image_and_detect_features(
         )
         settings.image.reduced_area = None
     
+    settings.image.label = f"ml-{utils.current_timestamp_v2()}"
+    settings.image.save = True
 
     # take new image
     image = acquire.new_image(microscope, settings.image)
@@ -452,7 +482,8 @@ def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", sho
                 "o",  color=f.color, 
                 markersize=5, markeredgecolor="w", 
                 label=f.name)
-    ax.legend(loc="best")
+    if len(det.features) < 10:
+        ax.legend(loc="best")
 
     if len(det.features) == 2:
         # plot white line between features
@@ -516,7 +547,7 @@ def move_based_on_detection(
     if isinstance(f1, NeedleTip) or isinstance(f1, LamellaRightEdge):
 
         # electron: neg = down, ion: neg = up
-        if beam_type is BeamType.ELECTRON:
+        if beam_type is BeamType.ION:
             det.distance.y *= -1
 
         microscope.move_manipulator_corrected(
@@ -532,7 +563,7 @@ def move_based_on_detection(
             microscope.stable_move(
                 settings=settings,
                 dx=-det.distance.x,
-                dy=-det.distance.y,
+                dy=det.distance.y,
                 beam_type=beam_type,
             )
 
@@ -549,7 +580,7 @@ import pandas as pd
 import tifffile as tff
 
 from fibsem.segmentation import utils as seg_utils
-from fibsem.structures import FibsemImage, Point
+from fibsem.structures import FibsemImage, Point, FibsemStagePosition
 
 
 def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedFeatures]:
@@ -672,3 +703,31 @@ def get_feature(name: str) -> Feature:
 
     return feature
 
+
+
+# v4 intersection features
+from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
+import numpy as np
+from fibsem.imaging import _tile
+
+def _detect_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings, image: FibsemImage, mask:np.ndarray, features: list[Feature]) -> list[FibsemStagePosition]:
+
+    # detect features
+    features = detect_features_v2(img=image, 
+                                mask=mask, 
+                                features=features, 
+                                filter=False, point=None)
+
+    # convert image coordinates to microscope coordinates # TODO: check why we reverse the points axis?
+    positions = _tile._convert_image_coords_to_positions(microscope, settings, image, [Point(f.px.y, f.px.x) for f in features])
+
+    return positions, features
+
+def _calculate_intersection(masks: list[np.ndarray]) -> np.ndarray:
+
+    intersection = masks[0]
+    for mask in masks[1:]:
+        intersection = intersection + mask
+        intersection[intersection < 2] = 0
+        intersection[intersection == 2] = 1
+    return intersection

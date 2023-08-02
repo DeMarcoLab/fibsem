@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'FibsemMillingWidgetui.ui'
+# Form implementation generated from reading ui file 'FibsemMillingWidget.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -99,7 +99,9 @@ class Ui_Form(object):
         self.label_spot_size.setObjectName("label_spot_size")
         self.gridLayout_4.addWidget(self.label_spot_size, 10, 0, 1, 1)
         self.doubleSpinBox_rate = QtWidgets.QDoubleSpinBox(self.tab_patterns)
-        self.doubleSpinBox_rate.setMinimum(0.01)
+        self.doubleSpinBox_rate.setDecimals(4)
+        self.doubleSpinBox_rate.setMinimum(0.0)
+        self.doubleSpinBox_rate.setMaximum(100000.0)
         self.doubleSpinBox_rate.setSingleStep(0.01)
         self.doubleSpinBox_rate.setObjectName("doubleSpinBox_rate")
         self.gridLayout_4.addWidget(self.doubleSpinBox_rate, 8, 1, 1, 1)
@@ -123,8 +125,10 @@ class Ui_Form(object):
         self.doubleSpinBox_spacing.setObjectName("doubleSpinBox_spacing")
         self.gridLayout_4.addWidget(self.doubleSpinBox_spacing, 11, 1, 1, 1)
         self.doubleSpinBox_hfw = QtWidgets.QDoubleSpinBox(self.tab_patterns)
+        self.doubleSpinBox_hfw.setEnabled(True)
+        self.doubleSpinBox_hfw.setReadOnly(True)
         self.doubleSpinBox_hfw.setMinimum(10.0)
-        self.doubleSpinBox_hfw.setMaximum(2700.0)
+        self.doubleSpinBox_hfw.setMaximum(1000000000.0)
         self.doubleSpinBox_hfw.setProperty("value", 150.0)
         self.doubleSpinBox_hfw.setObjectName("doubleSpinBox_hfw")
         self.gridLayout_4.addWidget(self.doubleSpinBox_hfw, 6, 1, 1, 1)
@@ -187,7 +191,7 @@ class Ui_Form(object):
         self.label_hfw.setText(_translate("Form", "Horizontal Field Width (um)"))
         self.label_rate.setText(_translate("Form", "Rate (mm3/A/s)"))
         self.checkBox_live_update.setText(_translate("Form", "Live Update"))
-        self.label_milling_current.setText(_translate("Form", "Current (nA)"))
+        self.label_milling_current.setText(_translate("Form", "Current (A)"))
         self.label_dwell_time.setText(_translate("Form", "Dwell Time (us)"))
         self.pushButton_add_milling_stage.setText(_translate("Form", "Add"))
         self.label_centre_x.setText(_translate("Form", "Centre X (um)"))

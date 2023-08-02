@@ -156,7 +156,7 @@ def create_lamella_mask(
     )
 
     if circ:
-        mask = circ_mask(
+        mask = create_circle_mask(
             size=(img.data.shape[1], img.data.shape[0]),
             radius=max(lamella_height_px, lamella_width_px) * scale,
             sigma=12,
@@ -224,4 +224,26 @@ def create_vertical_mask(arr, width=128):
     mask = np.zeros_like(arr)
     mid = arr.shape[1] // 2
     mask[:, mid - width : mid + width] = 1
+    return mask
+
+
+
+def create_mask(arr: np.ndarray, mask_info: dict) -> np.ndarray:
+
+    # mask_info = {
+    #     "type": "circle",
+    #     "radius": 500,
+    #     "sigma": 0,
+    #     "invert": False
+    # }
+
+    if mask_info["type"] == "circle":
+        mask = create_circle_mask(arr.shape, radius=mask_info["radius"], sigma=mask_info["sigma"])
+
+    if mask_info["type"] == "rect":
+        mask = create_rect_mask(arr, pt=mask_info["pt"], w=mask_info["w"], h=mask_info["h"], sigma=mask_info["sigma"])
+
+    if mask_info["invert"]:
+        mask = np.logical_not(mask)
+
     return mask

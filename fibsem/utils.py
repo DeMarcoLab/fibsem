@@ -21,26 +21,8 @@ from fibsem.structures import (
     FibsemHardware,
     FibsemPatternSettings,
 )
-from fibsem.config import BASE_PATH
+from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope
-
-
-def save_image(image: FibsemImage, save_path: Path, label: str = "image"):
-    """
-    Save the given FibsemImage object as a TIFF file with the specified label at the specified file path.
-
-        Args:
-        image (FibsemImage): The FibsemImage object to save.
-        save_path (Path): The file path to save the image at.
-        label (str, optional): The label to use for the saved image file. Default is "image".
-
-        Returns:
-        None
-   
-    """
-    os.makedirs(save_path, exist_ok=True)
-    path = os.path.join(save_path, f"{label}.tif")
-    image.save(path)
 
 
 def current_timestamp():
@@ -51,6 +33,14 @@ def current_timestamp():
     """
     return datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d-%I-%M-%S%p") #PM/AM doesnt work?
 
+
+def current_timestamp_v2():
+    """Returns current time in a specific string format
+
+    Returns:
+        String: Current time
+    """
+    return str(time.time()).replace(".", "_")
 
 def _format_time_seconds(seconds: float) -> str:
     """Format a time delta in seconds to proper string format."""
@@ -71,7 +61,7 @@ def make_logging_directory(path: Path = None, name="run"):
         """
     
     if path is None:
-        path = os.path.join(BASE_PATH, "log")
+        path = os.path.join(cfg.BASE_PATH, "log")
     directory = os.path.join(path, name)
     os.makedirs(directory, exist_ok=True)
     return directory
@@ -120,23 +110,10 @@ def save_yaml(path: Path, data: dict) -> None:
         path (Path): path location to save yaml file
         data (dict): dictionary object
     """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    path = Path(path).with_suffix(".yaml")
     with open(path, "w") as f:
         yaml.dump(data, f, indent=4)
-
-
-from fibsem.structures import MicroscopeState
-
-
-def save_state_yaml(path: Path, state: MicroscopeState) -> None:
-    """Saves microscope state as a yaml file
-
-    Args:
-        path (Path): path location to save file
-        state (MicroscopeState): MicroscopeState
-    """
-    state_dict = state.__to_dict__()
-
-    save_yaml(path, state_dict)
 
 
 def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
@@ -189,8 +166,8 @@ def setup_session(
         protocol_path = os.getcwd()
 
     # configure paths
-    if session_path is None:# change this to cfg.LOG_PATH
-        session_path = os.path.join(BASE_PATH, "fibsem", "log", session)
+    if session_path is None:
+        session_path = cfg.LOG_PATH
     os.makedirs(session_path, exist_ok=True)
 
     # configure logging
@@ -208,19 +185,19 @@ def setup_session(
         settings.system.manufacturer = manufacturer
 
     if settings.system.manufacturer == "Thermo":
-        microscope = FibSem.ThermoMicroscope()
+        microscope = FibSem.ThermoMicroscope(settings.hardware, settings.system.stage)
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=7520
         )
 
     elif settings.system.manufacturer == "Tescan":
-        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
+        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address, hardware_settings=settings.hardware, stage_settings=settings.system.stage)
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=8300
         )
     
     elif settings.system.manufacturer == "Demo":
-        microscope = FibSem.DemoMicroscope()
+        microscope = FibSem.DemoMicroscope(settings.hardware, settings.system.stage)
         microscope.connect_to_microscope()
 
     # image_settings
@@ -232,7 +209,7 @@ def setup_session(
 
 
 def load_settings_from_config(
-    config_path: Path = None, protocol_path: Path = None, model_path: Path = None
+    config_path: Path = None, protocol_path: Path = None
 ) -> MicroscopeSettings:
     """Load microscope settings from configuration files
 
@@ -243,18 +220,14 @@ def load_settings_from_config(
     Returns:
         MicroscopeSettings: microscope settings
     """
-    # print("HELLO")
     # TODO: this should just be system.yaml path, not directory
     if config_path is None:
         from fibsem.config import CONFIG_PATH
 
-        config_path = CONFIG_PATH
+        config_path = os.path.join(CONFIG_PATH, "system.yaml")
     
-    if model_path is None:
-        model_path = os.path.join(config_path, "model.yaml")
-
     # system settings
-    settings = load_yaml(os.path.join(config_path, "system.yaml"))
+    settings = load_yaml(os.path.join(config_path))
     system_settings = SystemSettings.__from_dict__(settings["system"])
 
     # user settings
@@ -266,7 +239,7 @@ def load_settings_from_config(
     protocol = load_protocol(protocol_path)
 
     # hardware settings
-    hardware_settings = FibsemHardware.__from_dict__(load_protocol(model_path))
+    hardware_settings = FibsemHardware.__from_dict__(settings["model"])
 
     settings = MicroscopeSettings(
         system=system_settings,
@@ -328,30 +301,6 @@ def _format_dictionary(dictionary: dict) -> dict:
                     pass
     return dictionary
 
-
-def match_image_settings(
-    ref_image: FibsemImage,
-    image_settings: ImageSettings,
-    beam_type: BeamType = BeamType.ELECTRON,
-) -> ImageSettings:
-    
-    
-    """Generate matching image settings from an image."""
-
-
-    image_settings.resolution = (ref_image.data.shape[1], ref_image.data.shape[0])
-    # image_settings.dwell_time = ref_image.metadata.scan_settings.dwell_time
-    image_settings.hfw = ref_image.data.shape[1] * ref_image.metadata.pixel_size.x
-    image_settings.beam_type = beam_type
-    image_settings.save = True
-    image_settings.label = current_timestamp()
-
-    return image_settings
-
-
-
-
-
 def get_params(main_str: str) -> list:
     """Helper function to access relevant metadata parameters from sub field
 
@@ -377,3 +326,17 @@ def get_params(main_str: str) -> list:
 
         i += 1
     return cats
+
+
+def _get_position(name: str):
+    
+    from fibsem import config as cfg
+    from fibsem.structures import FibsemStagePosition
+    import os
+
+    ddict = load_yaml(fname=os.path.join(cfg.CONFIG_PATH, "positions.yaml"))
+    # get position from save positions?
+    for d in ddict:
+        if d["name"] == name:
+            return FibsemStagePosition.__from_dict__(d)
+    return None
