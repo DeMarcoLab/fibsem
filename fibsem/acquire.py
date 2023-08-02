@@ -39,11 +39,13 @@ def take_reference_images(
           as well as other image metadata.
     """
     import time 
+    from fibsem.microscope import TescanMicroscope
     tmp_beam_type = image_settings.beam_type
     image_settings.beam_type = BeamType.ELECTRON
     eb_image = new_image(microscope, image_settings)
     image_settings.beam_type = BeamType.ION
-    time.sleep(3)
+    if isinstance(microscope, TescanMicroscope):
+        time.sleep(3)
     ib_image = new_image(microscope, image_settings)
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
 
