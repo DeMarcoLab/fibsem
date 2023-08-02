@@ -1061,7 +1061,7 @@ class FibsemMillingSettings:
 
     milling_current: float = 20.0e-12
     spot_size: float = 5.0e-8
-    rate: float = 3.0e-3 # m3/A/s
+    rate: float = 3.0e-11 # m3/A/s
     dwell_time: float = 1.0e-6 # s
     hfw: float = 150e-6
     patterning_mode: str = "Serial" 
@@ -1102,7 +1102,7 @@ class FibsemMillingSettings:
         milling_settings = FibsemMillingSettings(
             milling_current=settings.get("milling_current", 20.0e-12),
             spot_size=settings.get("spot_size", 5.0e-8),
-            rate=settings.get("rate", 3.0e-3),
+            rate=settings.get("rate", 3.0e-11),
             dwell_time=settings.get("dwell_time", 1.0e-6),
             hfw=settings.get("hfw", 150e-6),
             patterning_mode=settings.get("patterning_mode", "Serial"),
