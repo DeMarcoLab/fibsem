@@ -3824,7 +3824,7 @@ class TescanMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         # """
         try:
-            self.connection.FIB.Preset.Activate("30 keV; UHR imaging")
+            self.connection.FIB.Preset.Activate("30 keV; 150 pA")
             self.connection.DrawBeam.UnloadLayer()
             print("hello")
         except:
