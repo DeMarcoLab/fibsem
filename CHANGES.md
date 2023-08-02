@@ -26,6 +26,8 @@
 - The user interface won't try to draw the cross hair if no image is available. [USER-INTERFACE]
 - Explicitly converting the last_image to np.uint8 (was np.uint16) [THERMO]
 - Explictly settings the manipulator coordinate system when performing movements [THERMO]
+- Post milling current now set to 30keV: 150 pA instead of 30keV: UHR Imaging [TESCAN]
+- Fixed milling rate conversions, where the milling rate units were not converted correctly [TESCAN]
 
 
 ### 12/07/2023
