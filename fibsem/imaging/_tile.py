@@ -112,11 +112,14 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     image.metadata.image_settings = ddict["image_settings"]
     image.metadata.image_settings.hfw = deepcopy(float(ddict["grid_size"]))
 
+    filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}')
+    image.save(filename)
+
     # for cryo need to histogram equalise
     if ddict.get("cryo", False):
         image = acquire.auto_gamma(image, method="autogamma")
 
-    filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}')
+    filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}-autogamma')
     image.save(filename)
 
     # save ddict as yaml

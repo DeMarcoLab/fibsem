@@ -72,6 +72,7 @@ def beam_shift_alignment(
 
     """
     image_settings = ImageSettings.fromFibsemImage(ref_image)
+    image_settings.beam_type = BeamType.ION
     image_settings.reduced_area = reduced_area
     new_image = acquire.new_image(
         microscope, settings=image_settings
