@@ -93,6 +93,29 @@ class LamellaRightEdge(Feature):
         self.px = detect_lamella(mask, self)
         return self.px
 
+@dataclass
+class LamellaTopEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255,0,255)
+    color = "hotpink"
+    name: str = "LamellaTopEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaTopEdge':
+        self.px = detect_lamella(mask, self)
+        return self.px
+
+@dataclass
+class LamellaBottomEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (0, 0, 255)
+    color = "blue"
+    name: str = "LamellaBottomEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaBottomEdge':
+        self.px = detect_lamella(mask, self)
+        return self.px
 
 @dataclass
 class LandingPost(Feature):
@@ -155,7 +178,7 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     return px
 
 
-def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
+def detect_centre_point(mask: np.ndarray, threshold: int = 500) -> Point:
     """ Detect the centre (mean) point of the mask for a given color (label)
 
     args:
@@ -209,6 +232,37 @@ def detect_corner(
     return Point(x=int(edge_px[1]), y=int(edge_px[0]))
 
 
+def detect_median_edge(mask: np.ndarray, edge: str, threshold: int = 250) -> Point:
+
+    # get mask px coordindates
+    edge_mask = np.where(mask)
+    edge_px = Point(0, 0)
+
+    if len(edge_mask[0]) > threshold:
+        try:
+            # get the centre point of each coordinate
+            py = int(np.mean(edge_mask[0]))
+            px = int(np.mean(edge_mask[1]))
+
+            # get the min and max x and y coordinates at these median points
+            x_min = np.min(edge_mask[1][edge_mask[0] == py])
+            x_max = np.max(edge_mask[1][edge_mask[0] == py])
+            y_min = np.min(edge_mask[0][edge_mask[1] == px])
+            y_max = np.max(edge_mask[0][edge_mask[1] == px])
+
+
+            if edge == "left":
+                edge_px = Point(x=x_min, y=py)
+            if edge == "right":
+                edge_px = Point(x=x_max, y=py)
+            if edge == "top":
+                edge_px = Point(x=px, y=y_min)
+            if edge == "bottom":
+                edge_px = Point(x=px, y=y_max)
+        except:
+            pass
+    return Point(x=int(edge_px.x), y=int(edge_px.y))
+
 def detect_core_feature(
     mask: np.ndarray,
     feature: Feature,
@@ -236,6 +290,14 @@ def detect_lamella(
 
     if isinstance(feature, LamellaRightEdge):
         px = detect_corner(lamella_mask, left=False)
+
+
+    if isinstance(feature, LamellaTopEdge):
+        px = detect_median_edge(lamella_mask, edge="top")
+
+    if isinstance(feature, LamellaBottomEdge):
+        px = detect_median_edge(lamella_mask, edge="bottom")
+    
     return px
 
 
@@ -366,7 +428,7 @@ def detect_features_v2(
 
     for feature in features:
         
-        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, CoreFeature)):
+        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
             feature = detect_multi_features(img, mask, feature)
             if filter:
                 feature = filter_best_feature(mask, feature, 
@@ -507,7 +569,7 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
     if titles is None:
         titles = [f"Prediction {i}" for i in range(len(dets))]
 
-    fig, ax = plt.subplots(1, len(dets), figsize=(12, 7))
+    fig, ax = plt.subplots(1, len(dets), figsize=(15, 7))
 
     for i, det in enumerate(dets):
 
