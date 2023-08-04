@@ -585,7 +585,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             logging.error(e)
             return
         t2 = time.time()
-        logging.warning(f"UPDATE_UI: GET: {t1-t0}, DRAW: {t2-t1}")
+        logging.debug(f"UPDATE_UI: GET: {t1-t0}, DRAW: {t2-t1}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def _toggle_interaction(self, enabled: bool = True):

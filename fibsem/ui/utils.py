@@ -472,9 +472,9 @@ def _draw_patterns_in_napari(
         # remove all un-updated layers (assume they have been deleted)        
         _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=[stage.name for stage in milling_stages])
         t3 = time.time()
-        logging.warning(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}, REMOVE: {t3-t2}")
+        logging.debug(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}, REMOVE: {t3-t2}")
     t_2 = time.time()
-    logging.warning(f"_DRAW_SHAPES: total time: {t_2-t_1}")
+    logging.debug(f"_DRAW_SHAPES: total time: {t_2-t_1}")
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()
