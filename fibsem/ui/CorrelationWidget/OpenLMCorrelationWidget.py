@@ -19,16 +19,16 @@ import numpy as np
 from PyQt5 import QtWidgets
 
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
-from openlm.microscope import LightMicroscope
+# from openlm.microscope import LightMicroscope
 
-from openlm.ui.qt import OpenLMCorrelationWidget
+from fibsem.ui.CorrelationWidget.qt import OpenLMCorrelationWidget
 
 
 class OpenLMCorrelationWidget(OpenLMCorrelationWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
         self,
         viewer: napari.Viewer = None,
-        microscope: LightMicroscope = None,
+        microscope = None,
         parent=None,
     ):
         super(OpenLMCorrelationWidget, self).__init__(parent=parent)
@@ -36,7 +36,7 @@ class OpenLMCorrelationWidget(OpenLMCorrelationWidget.Ui_Form, QtWidgets.QWidget
         self.parent = parent
         self.viewer = viewer
         # TODO: add fibsem microscope
-        self.microscope = microscope
+        # self.microscope = microscope
         self.points_1 = []
         self.points_2 = []
 
@@ -268,16 +268,19 @@ class OpenLMCorrelationWidget(OpenLMCorrelationWidget.Ui_Form, QtWidgets.QWidget
     def load_images(self):
         # TODO: make this dynamic
         """Forcefully load images from hard drive"""
-        self.image_1 = tf.imread(r"C:\Users\User\Downloads\pairsib.tif")
+        # self.image_1 = tf.imread(r"C:\Users\User\Downloads\pairsib.tif")
         # print(self.image_1.shape)
         # self.image_1 = tf.imread(r"Y:\Projects\piescope\piescope_dev\tile\2023-05-08-03-58-01-001792PM.tif")
         # self.image_1 = self.image_1[:, :, 0]
 
-        self.image_2 = tf.imread(r"C:\Users\User\Downloads\pairsbeforeeb.tif")
+        # self.image_2 = tf.imread(r"C:\Users\User\Downloads\pairsbeforeeb.tif")
         # self.image_2 = tf.imread(r"Y:\Projects\piescope\piescope_dev\tile\2023-05-08-03-58-09-153392PM.tif")
         # print(self.image_2.shape)
         # self.image_2 = self.image_2[:, :, 0]
 
+        # random image 2048x2048
+        self.image_1 = np.random.randint(0, 255, (2048, 2048), dtype=np.uint8)
+        self.image_2 = np.random.randint(0, 255, (2048, 2048), dtype=np.uint8)
 
 def correlate_images(fluorescence_image_rgb, fibsem_image, matched_points_dict):
     """Correlates two images using points chosen by the user
@@ -432,7 +435,7 @@ def overlay_images(fluorescence_image, fibsem_image, transparency=0.5):
     fluorescence_image = skimage.img_as_float(fluorescence_image)
     fibsem_image = skimage.img_as_float(fibsem_image)
     blended = (
-        transparency * fluorescence_image + (1 - transparency) * fibsem_image[:, :, 0]
+        transparency * fluorescence_image + (1 - transparency) * fibsem_image# fibsem_image[:, :, 0]
     )
     blended = np.clip(blended, 0, 1)
 
