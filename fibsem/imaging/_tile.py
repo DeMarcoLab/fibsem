@@ -76,7 +76,6 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
 
             logging.info(f"ACQUIRING IMAGE {i}, {j}")
             image = acquire.new_image(microscope, settings.image)
-            logging.info(f"WORKING_DISTANCE: {image.metadata.microscope_state.eb_settings.working_distance}")
             img_row.append(image)
         images.append(img_row)
 
@@ -111,6 +110,7 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     image.metadata.microscope_state = deepcopy(ddict["start_state"])
     image.metadata.image_settings = ddict["image_settings"]
     image.metadata.image_settings.hfw = deepcopy(float(ddict["grid_size"]))
+    image.metadata.image_settings.resolution = deepcopy([arr.shape[0], arr.shape[1]])
 
     filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}')
     image.save(filename)
