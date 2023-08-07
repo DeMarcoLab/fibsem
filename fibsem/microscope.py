@@ -5023,6 +5023,25 @@ class DemoMicroscope(FibsemMicroscope):
         _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
 
+    def setup_GIS(self, protocol) -> None:
+
+        beamtype = protocol["beam_type"]
+
+        logging.info(f"Setting up GIS for {beamtype}")
+
+
+    def setup_GIS_pattern(self,protocol) -> None:
+
+        length = protocol["length"]
+
+        logging.info(f"Setting up line pattern with length: {length}m")
+
+    def run_GIS(self, protocol) -> None:
+
+        logging.info(f"Running GIS")
+        time.sleep(3)
+        logging.info(f"GIS finished")
+
     def GIS_available_lines(self) -> list[str]:
 
         self.gis_lines = {

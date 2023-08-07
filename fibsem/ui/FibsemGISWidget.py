@@ -79,10 +79,10 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             "beam_current": 5.0e-10,
             "dwell_time": 1.0e-6,
             "beam_type": "ELECTRON",
-            "sputter_time": 1.0e-6,
+            "sputter_time": 1.5,
         }
 
-        self.timeDuration_spinbox.setValue(self.gas_protocol["sputter_time"]*constants.SI_TO_MICRO)
+        self.timeDuration_spinbox.setValue(self.gas_protocol["sputter_time"])
 
     def tescan_setup(self):
         
@@ -208,7 +208,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.gas_protocol["application_file"] = self.app_file_combobox.currentText()
         self.gas_protocol["beam_type"] = self.beamtype_combobox.currentText()
         self.gas_protocol["hfw"] = self.hfw_spinbox.value()*constants.MICRON_TO_METRE
-        self.gas_protocol["sputter_time"] = self.timeDuration_spinbox.value()*constants.MICRO_TO_SI
+        self.gas_protocol["sputter_time"] = self.timeDuration_spinbox.value()
 
     def setup_connections(self):
         self.insertGIS_button.clicked.connect(self.insert_retract_gis)
@@ -219,8 +219,8 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.warm_button.clicked.connect(self.warm_up_gis)
         self.run_button.clicked.connect(self.run_gis)
         self.beamtype_combobox.setCurrentText("ION")
-        self.beamtype_combobox.currentIndexChanged.connect(self.update_gas_protocol)
-        self.app_file_combobox.currentIndexChanged.connect(self.update_gas_protocol)
+        self.pushButton_settings_update.clicked.connect(self.update_gas_protocol)
+
     
 
     def warm_up_gis(self):
