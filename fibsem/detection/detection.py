@@ -12,7 +12,7 @@ from fibsem import conversions
 from fibsem.imaging import masks
 from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation.model import SegmentationModel
-from fibsem.structures import BeamType, MicroscopeSettings, Point
+from fibsem.structures import FibsemImage, BeamType, MicroscopeSettings, Point
 import matplotlib.pyplot as plt
 
 @dataclass
@@ -405,6 +405,7 @@ class DetectedFeatures:
     rgb: np.ndarray # rgb mask
     pixelsize: float
     _distance: Point = Point(x=0, y=0)
+    fibsem_image: FibsemImage = None
 
     @property
     def distance(self):
@@ -447,13 +448,17 @@ def detect_features_v2(
 
 
 def detect_features(
-    image: np.ndarray,
+    image: Union[np.ndarray, FibsemImage],
     model: SegmentationModel,
     features: tuple[Feature],
     pixelsize: float,
     filter: bool = True,
     point: Point = None
 ) -> DetectedFeatures:
+
+    if isinstance(image, FibsemImage):
+        fibsem_image = deepcopy(image)
+        image = image.data
 
     # model inference
     mask = model.inference(image, rgb=False)
@@ -472,6 +477,7 @@ def detect_features(
         mask=mask,
         rgb=rgb,
         pixelsize=pixelsize,
+        fibsem_image=fibsem_image
     )
 
     # distance in metres (from centre)
@@ -513,7 +519,7 @@ def take_image_and_detect_features(
 
     # detect features
     det = detect_features(
-        deepcopy(image.data), model, features=features, pixelsize=image.metadata.pixel_size.x
+        deepcopy(image), model, features=features, pixelsize=image.metadata.pixel_size.x
     )
     return det
 

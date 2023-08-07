@@ -71,7 +71,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
         
         # save current data
-        det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=None)
+        det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=self.det.fibsem_image.metadata.image_settings.label)
     
 
     def confirm_button_clicked(self, reset_camera=False):
@@ -86,7 +86,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         for f0, f1 in zip(self.det.features, self._intial_det.features):
             px_diff = f1.px - f0.px
             # FEATURE_NAME | PIXEL DIFFERENCE | METRE_DIFFERENCE | IS_CORRECT
-            logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)}")
+            logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)} | {self.det.fibsem_image.metadata.image_settings.beam_type}")
 
         # remove det layers
         if self._image_layer is not None:

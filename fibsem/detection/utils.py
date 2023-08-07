@@ -206,7 +206,7 @@ def write_data_to_disk(path: Path, detected_features) -> None:
 
 def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None) -> None:
 
-    image = det.image
+    image = det.fibsem_image if det.fibsem_image is not None else det.image
     if not isinstance(image, FibsemImage):
         image = FibsemImage(image, None)
     
