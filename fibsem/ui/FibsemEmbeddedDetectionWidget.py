@@ -82,6 +82,11 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         except Exception as e:
             logging.error(f"Error saving data: {e}")
     
+        # log the difference between initial and final detections
+        for f0, f1 in zip(self.det.features, self._intial_det.features):
+            px_diff = f1.px - f0.px
+            # FEATURE_NAME | PIXEL DIFFERENCE | METRE_DIFFERENCE | IS_CORRECT
+            logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)}")
 
         # remove det layers
         if self._image_layer is not None:
@@ -102,6 +107,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
 
     def set_detected_features(self, det_features: DetectedFeatures):
         self.det = det_features
+        self._intial_det = deepcopy(det_features)
         self._USER_CORRECTED = False
 
         self.update_features_ui()
