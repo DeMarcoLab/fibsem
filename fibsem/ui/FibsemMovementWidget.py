@@ -123,7 +123,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def _double_click(self, layer, event):
         
-        if event.button != 1:
+        if event.button != 1 or "Shift" in event.modifiers:
             return
 
         # get coords

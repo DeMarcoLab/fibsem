@@ -487,6 +487,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             pattern.define(protocol=pattern_dict, point=point)
             is_valid = self.valid_pattern_location(pattern)
             if is_valid:
+
+                logging.info(f"MILL | {pattern.name} | {point - self.milling_stages[current_stage_index].pattern.point}")
+
                 # update ui
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
                 self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
@@ -500,6 +503,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 napari.utils.notifications.show_warning("Pattern is not within the image.")
                 self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
         
+
+
         self._UPDATING_PATTERN = False
 
     def valid_pattern_location(self,stage_pattern):
