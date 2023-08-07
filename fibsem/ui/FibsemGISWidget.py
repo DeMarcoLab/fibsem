@@ -80,6 +80,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
             "dwell_time": 1.0e-6,
             "beam_type": "ELECTRON",
             "sputter_time": 1.5,
+            "blank_beam": False,
         }
 
         self.timeDuration_spinbox.setValue(self.gas_protocol["sputter_time"])
@@ -127,6 +128,9 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
 
         self.insertGIS_button.setEnabled(True)
         self.insertGIS_button.show()
+
+        self.blankBeamcheckbox.setChecked(False)
+
 
         self.current_position_label.setEnabled(False)
         self.current_position_label.hide()
@@ -209,6 +213,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
         self.gas_protocol["beam_type"] = self.beamtype_combobox.currentText()
         self.gas_protocol["hfw"] = self.hfw_spinbox.value()*constants.MICRON_TO_METRE
         self.gas_protocol["sputter_time"] = self.timeDuration_spinbox.value()
+        self.gas_protocol["blank_beam"] = self.blankBeamcheckbox.isChecked()
 
     def setup_connections(self):
         self.insertGIS_button.clicked.connect(self.insert_retract_gis)

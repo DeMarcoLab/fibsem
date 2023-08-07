@@ -1734,8 +1734,14 @@ class ThermoMicroscope(FibsemMicroscope):
         gis_line = protocol["gas"]
         sputter_time = protocol["sputter_time"]
 
+        blank =protocol["blank_beam"]
 
-        self.connection.beams.electron_beam.blank()
+        print(f"blank beam: {blank}") 
+
+        if protocol["blank_beam"]:
+            self.connection.beams.electron_beam.blank()
+
+
         if self.connection.patterning.state == "Idle":
             logging.info(f"Sputtering with {gis_line} for {sputter_time} seconds...")
             self.connection.patterning.start()  # asynchronous patterning
@@ -5037,6 +5043,9 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Setting up line pattern with length: {length}m")
 
     def run_GIS(self, protocol) -> None:
+
+        blank = protocol["blank_beam"]
+
 
         logging.info(f"Running GIS")
         time.sleep(3)
