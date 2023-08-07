@@ -506,7 +506,7 @@ def take_image_and_detect_features(
 
     # load model
     ml_protocol = settings.protocol.get("ml", {})
-    checkpoint = ml_protocol.get("weights", None)
+    checkpoint = ml_protocol.get("checkpoint", None)
     encoder = ml_protocol.get("encoder", "resnet34")
     num_classes = int(ml_protocol.get("num_classes", 3))
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
