@@ -127,6 +127,7 @@ class FibsemMicroscope(ABC):
     def eucentric_move(self,
         settings: MicroscopeSettings,
         dy: float,
+        dx: float = 0,
         static_wd: bool = True,
     ) -> None:
         pass
@@ -319,7 +320,7 @@ class ThermoMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, static_wd: bool = True) -> None:
+        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -858,6 +859,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self,
         settings: MicroscopeSettings,
         dy: float,
+        dx: float = 0.0,
         static_wd: bool = True,
     ) -> None:
         """
@@ -880,10 +882,14 @@ class ThermoMicroscope(FibsemMicroscope):
 
         move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(
+            x=dx,
             z=z_move, coordinate_system="Specimen"
         ).to_autoscript_position()
         self.connection.specimen.stage.relative_move(z_move, move_settings)
         logging.info(f"eucentric movement: {z_move}")
+
+        # x-move
+        # self.move_stage_relative(FibsemStagePosition(x=dx, y=0, z=0))
 
         if static_wd:
             self.connection.beams.electron_beam.working_distance.value = (
@@ -2534,7 +2540,7 @@ class TescanMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, static_wd: bool = True) -> None:
+        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0.0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -3256,6 +3262,7 @@ class TescanMicroscope(FibsemMicroscope):
         self,
         settings: MicroscopeSettings,
         dy: float,
+        dx: float = 0.0,
         static_wd: bool = True,
     ) -> None:
         """
@@ -3305,7 +3312,7 @@ class TescanMicroscope(FibsemMicroscope):
         #     np.deg2rad(90 - self.stage_settingse.tilt_flat_to_ion + self.stage_settings.pre_tilt)
         # )  # TODO: MAGIC NUMBER, 90 - fib tilt
         logging.info(f"eucentric movement: {z_move}")
-        z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
+        z_move = FibsemStagePosition(x=dx, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
 
         self.connection.SEM.Optics.SetWD(wd)
@@ -4879,9 +4886,10 @@ class DemoMicroscope(FibsemMicroscope):
         return stage_position
 
 
-    def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
+    def eucentric_move(self, settings:MicroscopeSettings, dy: float, dx:float = 0.0, static_wd: bool=True) -> None:
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
+        self.stage_position.x += dx
         self.stage_position.z += dy / np.cos(np.deg2rad(90-self.stage_settings.tilt_flat_to_ion))
 
     def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:

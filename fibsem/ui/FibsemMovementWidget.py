@@ -155,7 +155,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
             self.microscope.eucentric_move(
-                settings=self.settings, dy=-point.y
+                settings=self.settings, dx=point.x, dy=-point.y
             )
 
         else:
