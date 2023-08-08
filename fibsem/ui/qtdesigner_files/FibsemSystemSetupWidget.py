@@ -518,7 +518,7 @@ class Ui_Form(object):
         self.gridLayout.addWidget(self.pushButton_apply_settings, 15, 0, 1, 2)
 
         self.retranslateUi(Form)
-        self.tabWidget.setCurrentIndex(3)
+        self.tabWidget.setCurrentIndex(0)
         self.tabWidget_2.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(Form)
         Form.setTabOrder(self.tabWidget, self.lineEdit_ipadress)
