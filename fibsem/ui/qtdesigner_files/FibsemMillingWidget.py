@@ -191,7 +191,11 @@ class Ui_Form(object):
         Form.setTabOrder(self.tabWidget, self.comboBox_milling_stage)
         Form.setTabOrder(self.comboBox_milling_stage, self.pushButton_add_milling_stage)
         Form.setTabOrder(self.pushButton_add_milling_stage, self.pushButton_remove_milling_stage)
-        Form.setTabOrder(self.pushButton_remove_milling_stage, self.comboBox_milling_current)
+        Form.setTabOrder(self.pushButton_remove_milling_stage, self.checkBox_live_update)
+        Form.setTabOrder(self.checkBox_live_update, self.checkBox_move_all_patterns)
+        Form.setTabOrder(self.checkBox_move_all_patterns, self.pushButton)
+        Form.setTabOrder(self.pushButton, self.pushButton_run_milling)
+        Form.setTabOrder(self.pushButton_run_milling, self.comboBox_milling_current)
         Form.setTabOrder(self.comboBox_milling_current, self.doubleSpinBox_hfw)
         Form.setTabOrder(self.doubleSpinBox_hfw, self.comboBox_application_file)
         Form.setTabOrder(self.comboBox_application_file, self.doubleSpinBox_rate)
@@ -202,10 +206,6 @@ class Ui_Form(object):
         Form.setTabOrder(self.comboBox_preset, self.comboBox_patterns)
         Form.setTabOrder(self.comboBox_patterns, self.doubleSpinBox_centre_x)
         Form.setTabOrder(self.doubleSpinBox_centre_x, self.doubleSpinBox_centre_y)
-        Form.setTabOrder(self.doubleSpinBox_centre_y, self.checkBox_live_update)
-        Form.setTabOrder(self.checkBox_live_update, self.checkBox_move_all_patterns)
-        Form.setTabOrder(self.checkBox_move_all_patterns, self.pushButton)
-        Form.setTabOrder(self.pushButton, self.pushButton_run_milling)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
