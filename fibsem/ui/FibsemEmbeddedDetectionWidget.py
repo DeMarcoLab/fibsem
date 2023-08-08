@@ -83,10 +83,11 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             logging.error(f"Error saving data: {e}")
     
         # log the difference between initial and final detections
+        fname = self.det.fibsem_image.metadata.image_settings.label
         for f0, f1 in zip(self.det.features, self._intial_det.features):
             px_diff = f1.px - f0.px
-            # FEATURE_NAME | PIXEL DIFFERENCE | METRE_DIFFERENCE | IS_CORRECT
-            logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)} | {self.det.fibsem_image.metadata.image_settings.beam_type}")
+            # FEATURE_NAME | PIXEL DIFFERENCE | METRE_DIFFERENCE | IS_CORRECT | BEAM_TYPE | FILENAME
+            logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)} | {self.det.fibsem_image.metadata.image_settings.beam_type} | {fname}")
 
         # remove det layers
         if self._image_layer is not None:
@@ -196,7 +197,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             return
 
     def update_point(self, event):
-        logging.info(f"{event.source.name} changed its data!")
+        logging.debug(f"{event.source.name} changed its data!")
 
         layer = self.viewer.layers[f"{event.source.name}"]  # type: ignore
 

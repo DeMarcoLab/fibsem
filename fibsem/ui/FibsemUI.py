@@ -21,7 +21,6 @@ from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicros
 from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
-from fibsem.utils import load_yaml
 from fibsem.ui.utils import message_box_ui
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
