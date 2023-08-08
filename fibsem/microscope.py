@@ -1734,8 +1734,14 @@ class ThermoMicroscope(FibsemMicroscope):
         gis_line = protocol["gas"]
         sputter_time = protocol["sputter_time"]
 
+        blank =protocol["blank_beam"]
 
-        self.connection.beams.electron_beam.blank()
+        print(f"blank beam: {blank}") 
+
+        if protocol["blank_beam"]:
+            self.connection.beams.electron_beam.blank()
+
+
         if self.connection.patterning.state == "Idle":
             logging.info(f"Sputtering with {gis_line} for {sputter_time} seconds...")
             self.connection.patterning.start()  # asynchronous patterning
@@ -1941,12 +1947,16 @@ class ThermoMicroscope(FibsemMicroscope):
         Moves the multichem object to a specified position.
         """
 
+        logging.info(f"Moving multichem to position: {position}" )
+
         _check_sputter(self.hardware_settings)
 
         if position == "Retract":
             self.multichem.retract()
         else:
             self.multichem.insert(position=position)
+
+        
 
 
     def multichem_position(self) -> str:
@@ -4028,10 +4038,11 @@ class TescanMicroscope(FibsemMicroscope):
             This function also waits for 3 seconds to allow the heater to warm up.
         """
         _check_sputter(self.hardware_settings)
+        gas = protocol["gas"]
         self.connection.FIB.Beam.On()
         lines = self.connection.GIS.Enum()
         for line in lines:
-            if line.name == "Platinum":
+            if line.name == gas:
                 self.line = line
 
                 # Start GIS heating
@@ -5022,6 +5033,28 @@ class DemoMicroscope(FibsemMicroscope):
     def finish_sputter(self, **kwargs):
         _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
+
+    def setup_GIS(self, protocol) -> None:
+
+        beamtype = protocol["beam_type"]
+
+        logging.info(f"Setting up GIS for {beamtype}")
+
+
+    def setup_GIS_pattern(self,protocol) -> None:
+
+        length = protocol["length"]
+
+        logging.info(f"Setting up line pattern with length: {length}m")
+
+    def run_GIS(self, protocol) -> None:
+
+        blank = protocol["blank_beam"]
+
+
+        logging.info(f"Running GIS")
+        time.sleep(3)
+        logging.info(f"GIS finished")
 
     def GIS_available_lines(self) -> list[str]:
 
