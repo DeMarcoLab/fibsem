@@ -670,8 +670,9 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.SPECIMEN
         )
-        return FibsemStagePosition.from_autoscript_position(stage_position)
-
+        pos = FibsemStagePosition.from_autoscript_position(stage_position)
+        logging.debug(f"CURRENT_POSITION | {pos.__to_dict__()}")
+        return pos
     def get_current_microscope_state(self) -> MicroscopeState:
         """
         Get the current microscope state
@@ -735,6 +736,8 @@ class ThermoMicroscope(FibsemMicroscope):
             ib_settings=ib_settings,
         )
 
+        logging.debug(f"CURRENT_MICROSCOPE_STATE | {current_microscope_state.__to_dict__()}")
+
         return current_microscope_state
 
     def move_stage_absolute(self, position: FibsemStagePosition):
@@ -761,6 +764,7 @@ class ThermoMicroscope(FibsemMicroscope):
             tilt = False
         _check_stage(self.hardware_settings, rotation=rotation, tilt=tilt)
         logging.info(f"Moving stage to {position}.")
+        logging.debug(f"MOVE_ABSOLUTE | {position.__to_dict__()}.")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
@@ -790,6 +794,7 @@ class ThermoMicroscope(FibsemMicroscope):
             tilt = False
         _check_stage(self.hardware_settings, rotation=rotation, tilt=tilt)
         logging.info(f"Moving stage by {position}.")
+        logging.debug(f"MOVE_RELATIVE | {position.__to_dict__()}")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
