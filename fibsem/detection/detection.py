@@ -459,6 +459,8 @@ def detect_features(
     if isinstance(image, FibsemImage):
         fibsem_image = deepcopy(image)
         image = image.data
+    else:
+        fibsem_image = None
 
     # model inference
     mask = model.inference(image, rgb=False)
