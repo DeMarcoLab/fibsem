@@ -1947,12 +1947,16 @@ class ThermoMicroscope(FibsemMicroscope):
         Moves the multichem object to a specified position.
         """
 
+        logging.info(f"Moving multichem to position: {position}" )
+
         _check_sputter(self.hardware_settings)
 
         if position == "Retract":
             self.multichem.retract()
         else:
             self.multichem.insert(position=position)
+
+        
 
 
     def multichem_position(self) -> str:
@@ -4034,10 +4038,11 @@ class TescanMicroscope(FibsemMicroscope):
             This function also waits for 3 seconds to allow the heater to warm up.
         """
         _check_sputter(self.hardware_settings)
+        gas = protocol["gas"]
         self.connection.FIB.Beam.On()
         lines = self.connection.GIS.Enum()
         for line in lines:
-            if line.name == "Platinum":
+            if line.name == gas:
                 self.line = line
 
                 # Start GIS heating

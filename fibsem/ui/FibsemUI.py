@@ -214,15 +214,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 )
             else:
                 self.manipulator_widget = None
-            if self.microscope.hardware_settings.gis_enabled:
-                self.GIS_widget = FibsemGISWidget(
-                    microscope=self.microscope,
-                    settings=self.settings,
-                    viewer=self.viewer,
-                    image_widget=self.image_widget,
-                )
-            else:
-                self.GIS_widget = None
+  
 
 
             # add widgets to tabs
@@ -232,8 +224,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             if self.microscope.hardware_settings.manipulator_enabled:
                 self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
-            if self.microscope.hardware_settings.gis_enabled:
-                self.tabWidget.addTab(self.GIS_widget, "GIS")
+
             self.system_widget.image_widget = self.image_widget
             self.system_widget.milling_widget = self.milling_widget
 
@@ -244,7 +235,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 return
             
             # remove tabs
-            self.tabWidget.removeTab(5)
             self.tabWidget.removeTab(4)
             self.tabWidget.removeTab(3)
             self.tabWidget.removeTab(2)
@@ -255,8 +245,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.milling_widget.deleteLater()
             if self.manipulator_widget is not None:
                 self.manipulator_widget.deleteLater() 
-            if self.GIS_widget is not None:
-                self.GIS_widget.deleteLater()
+
 
 
 def main():

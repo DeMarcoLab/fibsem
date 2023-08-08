@@ -1945,8 +1945,8 @@ class ThermoMultiChemLine():
         self.line = line
         self.status = status
         self.positions = [
-            "ELECTRON_DEFAULT",
-            "ION_DEFAULT",
+            "Electron Default",
+            "Ion Default",
             "Retract"
         ]
         self.current_position = "Retract"
@@ -1954,10 +1954,10 @@ class ThermoMultiChemLine():
 
     def insert(self,position):
 
-        position_str = getattr(MultiChemInsertPosition,position)
+        # position_str = getattr(MultiChemInsertPosition,position)
 
         if self.line is not None:
-            self.line.insert(position_str)
+            self.line.insert(position)
 
         self.current_position = position
         self.status = "Inserted"
