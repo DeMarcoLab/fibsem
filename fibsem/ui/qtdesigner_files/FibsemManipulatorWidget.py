@@ -101,6 +101,17 @@ class Ui_Form(object):
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
+        Form.setTabOrder(self.insertManipulator_button, self.move_type_comboBox)
+        Form.setTabOrder(self.move_type_comboBox, self.dX_spinbox)
+        Form.setTabOrder(self.dX_spinbox, self.dY_spinbox)
+        Form.setTabOrder(self.dY_spinbox, self.dZ_spinbox)
+        Form.setTabOrder(self.dZ_spinbox, self.dR_spinbox)
+        Form.setTabOrder(self.dR_spinbox, self.beam_type_combobox)
+        Form.setTabOrder(self.beam_type_combobox, self.moveRelative_button)
+        Form.setTabOrder(self.moveRelative_button, self.addSavedPosition_button)
+        Form.setTabOrder(self.addSavedPosition_button, self.savedPositionName_lineEdit)
+        Form.setTabOrder(self.savedPositionName_lineEdit, self.goToPosition_button)
+        Form.setTabOrder(self.goToPosition_button, self.savedPosition_combobox)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
