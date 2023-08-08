@@ -56,7 +56,7 @@
    <item row="1" column="0" colspan="3">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -256,6 +256,25 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>lineEdit_data_path</tabstop>
+  <tabstop>dataPath_button</tabstop>
+  <tabstop>lineEdit_label_path</tabstop>
+  <tabstop>labelPath_button</tabstop>
+  <tabstop>lineEdit_save_path</tabstop>
+  <tabstop>outputPath_button</tabstop>
+  <tabstop>pushButton_train_model</tabstop>
+  <tabstop>comboBox_encoder</tabstop>
+  <tabstop>lineEdit_checkpoint</tabstop>
+  <tabstop>spinBox_num_classes</tabstop>
+  <tabstop>spinBox_batch_size</tabstop>
+  <tabstop>spinBox_epochs</tabstop>
+  <tabstop>doubleSpinBox_lr</tabstop>
+  <tabstop>checkBox_use_wandb</tabstop>
+  <tabstop>lineEdit_wandb_entity</tabstop>
+  <tabstop>lineEdit_wandb_project</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
