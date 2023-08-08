@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>394</width>
+    <width>396</width>
     <height>837</height>
    </rect>
   </property>
@@ -171,11 +171,20 @@
        </item>
        <item row="10" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_spot_size">
+         <property name="decimals">
+          <number>4</number>
+         </property>
          <property name="minimum">
-          <double>0.010000000000000</double>
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>100000.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.010000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -199,6 +208,9 @@
          </property>
          <property name="singleStep">
           <double>0.010000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -257,11 +269,20 @@
        </item>
        <item row="9" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time">
+         <property name="decimals">
+          <number>4</number>
+         </property>
          <property name="minimum">
-          <double>0.010000000000000</double>
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>4000000.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.010000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -353,6 +374,27 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>comboBox_milling_stage</tabstop>
+  <tabstop>pushButton_add_milling_stage</tabstop>
+  <tabstop>pushButton_remove_milling_stage</tabstop>
+  <tabstop>comboBox_milling_current</tabstop>
+  <tabstop>doubleSpinBox_hfw</tabstop>
+  <tabstop>comboBox_application_file</tabstop>
+  <tabstop>doubleSpinBox_rate</tabstop>
+  <tabstop>doubleSpinBox_dwell_time</tabstop>
+  <tabstop>doubleSpinBox_spot_size</tabstop>
+  <tabstop>doubleSpinBox_spacing</tabstop>
+  <tabstop>comboBox_preset</tabstop>
+  <tabstop>comboBox_patterns</tabstop>
+  <tabstop>doubleSpinBox_centre_x</tabstop>
+  <tabstop>doubleSpinBox_centre_y</tabstop>
+  <tabstop>checkBox_live_update</tabstop>
+  <tabstop>checkBox_move_all_patterns</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>pushButton_run_milling</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
