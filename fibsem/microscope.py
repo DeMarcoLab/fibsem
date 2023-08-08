@@ -3202,7 +3202,12 @@ class TescanMicroscope(FibsemMicroscope):
             settings (MicroscopeSettings): microscope settings
             dx (float): distance along the x-axis (image coordinates)
             dy (float): distance along the y-axis (image coordinates)
+            
         """
+
+        print("################### STABLE MOVE ###################")
+        print(f"dx: {dx}")
+        print(f"dy: {dy}")
         _check_stage(self.hardware_settings)
         wd = self.connection.SEM.Optics.GetWD()
 
@@ -3211,6 +3216,13 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             image_rotation = self.connection.FIB.Optics.GetImageRotation()
 
+        print(f"image_rotation: {image_rotation}")
+        
+        import math
+        if math.isnan(image_rotation):
+            image_rotation = 0.0
+        
+        print(f"image_rotation: {image_rotation}")
         # if image_rotation == 0:
         #     dx_move = -dx
         #     dy_move = dy
@@ -3220,15 +3232,17 @@ class TescanMicroscope(FibsemMicroscope):
 
         dx_move =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         dy_move = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
-
+        print(f"dx_move: {dx_move}")
+        print(f"dy_move: {dy_move}")
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx_move, y=0, z=0) 
+        print(f"x_move: {x_move}")
         yz_move = self._y_corrected_stage_movement(
             settings=settings,
             expected_y=dy_move,
             beam_type=beam_type,
         )
-
+        print(f"yz_move: {yz_move}")
         # move stage
         stage_position = FibsemStagePosition(
             x=x_move.x, y=yz_move.y, z=yz_move.z, r=0, t=0

@@ -148,7 +148,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         else:
             self.movement_mode = MovementMode[self.comboBox_movement_mode.currentText()]
 
-        logging.debug(
+        logging.info(
             f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
         )
         log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")

@@ -12,7 +12,7 @@ model:
     manipulator:
         enabled: true
         positions:
-            calibrated: false
+            calibrated: true
             parking:
                 x: -0.008918395
                 y: 0.0006548000000000001
