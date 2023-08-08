@@ -36,6 +36,9 @@ REFERENCE_HFW_SUPER = 80e-6
 REFERENCE_HFW_ULTRA = 50e-6
 
 
+MILL_HFW_THRESHOLD = 0.05 # 5% of the image 
+
+
 import os
 import fibsem
 
