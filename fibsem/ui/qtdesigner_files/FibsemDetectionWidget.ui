@@ -268,6 +268,26 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>checkBox_use_segmentation</tabstop>
+  <tabstop>checkBox_use_feature_detection</tabstop>
+  <tabstop>checkBox_use_evaluation</tabstop>
+  <tabstop>lineEdit_encoder</tabstop>
+  <tabstop>lineEdit_checkpoint</tabstop>
+  <tabstop>spinBox_num_classes</tabstop>
+  <tabstop>pushButton_load_model</tabstop>
+  <tabstop>comboBox_feature_1</tabstop>
+  <tabstop>comboBox_feature_2</tabstop>
+  <tabstop>checkBox_all_features</tabstop>
+  <tabstop>checkBox_move_features</tabstop>
+  <tabstop>checkBox_show_info</tabstop>
+  <tabstop>pushButton_run_feature_detection</tabstop>
+  <tabstop>lineEdit_image_path_folder</tabstop>
+  <tabstop>pushButton_load_images</tabstop>
+  <tabstop>pushButton_previous_image</tabstop>
+  <tabstop>pushButton_next_image</tabstop>
+  <tabstop>pushButton_continue</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
