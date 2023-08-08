@@ -201,7 +201,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         _remove_all_layers(self.viewer) # remove all shape layers
 
     def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
-        logging.info(f"Setting milling stages: {len(milling_stages)}")
+        logging.debug(f"Setting milling stages: {len(milling_stages)}")
         self.milling_stages = milling_stages
         
         # very explicitly set what is happening
@@ -214,7 +214,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_patterns.setCurrentText(self.milling_stages[0].pattern.name)
         self.comboBox_patterns.currentIndexChanged.connect(lambda: self.update_pattern_ui(None))
         
-        logging.info(f"Set milling stages: {len(milling_stages)}")
+        logging.debug(f"Set milling stages: {len(milling_stages)}")
         self.update_milling_stage_ui()
         # self.update_ui()
 
@@ -300,8 +300,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.comboBox_patterns.setCurrentText(milling_stage.pattern.name)
             self.comboBox_patterns.currentIndexChanged.connect(lambda: self.update_pattern_ui(None))
 
-        logging.info(f"PATTERN: {pattern.name}")
-        logging.info(f"PROTOCOL: {pattern_protocol}")
+        logging.debug(f"PATTERN: {pattern.name}, PROTOCOL: {pattern_protocol}")
 
         # clear layout
         for i in reversed(range(self.gridLayout_patterns.count())):
@@ -488,7 +487,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             is_valid = self.valid_pattern_location(pattern)
             if is_valid:
 
-                logging.info(f"MILL | {pattern.name} | {point - self.milling_stages[current_stage_index].pattern.point}")
+                logging.info(f"MILL | {pattern.name} | {point - self.milling_stages[current_stage_index].pattern.point} | {BeamType.ION}")
 
                 # update ui
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)

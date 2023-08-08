@@ -472,6 +472,8 @@ class ThermoMicroscope(FibsemMicroscope):
         # set frame settings
         if image_settings.reduced_area is not None:
             reduced_area = image_settings.reduced_area.__to_FEI__()
+            logging.warning(f"----------- REDUCED AREA: {reduced_area} -----------")
+            logging.warning(f"----------- BEAM_TYPE {image_settings.beam_type} -----------")
         else:
             reduced_area = None
             if image_settings.beam_type == BeamType.ELECTRON:
@@ -1010,8 +1012,6 @@ class ThermoMicroscope(FibsemMicroscope):
                 stage_settings.tilt_flat_to_ion - stage_settings.pre_tilt
             )
 
-        position = self.get_stage_position()
-
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
         stage_position = FibsemStagePosition(r=rotation, t=tilt)
@@ -1051,10 +1051,10 @@ class ThermoMicroscope(FibsemMicroscope):
         # move to compucentric rotation
         self.move_stage_absolute(FibsemStagePosition(r=stage_position.r))
 
-        logging.info(f"safe moving to {stage_position}")
+        logging.debug(f"safe moving to {stage_position}")
         self.move_stage_absolute(stage_position)
 
-        logging.info(f"safe movement complete.")
+        logging.debug(f"safe movement complete.")
 
         return
 
