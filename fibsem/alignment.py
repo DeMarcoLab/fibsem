@@ -71,6 +71,8 @@ def beam_shift_alignment(
         ValueError: If `image_settings.beam_type` is not set to `BeamType.ION`.
 
     """
+    import time
+    time.sleep(3) # threading is too fast?
     image_settings = ImageSettings.fromFibsemImage(ref_image)
     image_settings.beam_type = BeamType.ION
     image_settings.reduced_area = reduced_area
