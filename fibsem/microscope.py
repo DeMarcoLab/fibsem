@@ -2672,6 +2672,14 @@ class TescanMicroscope(FibsemMicroscope):
             Returns:
                 A `FibsemImage` object that represents the acquired image.
         """
+        if image_settings.beam_type.name == "ELECTRON":
+            image_settings.hfw = np.clip(
+                    image_settings.hfw, 1.0e-6, 2580.0e-6
+                )
+        else:
+            image_settings.hfw = np.clip(
+                    image_settings.hfw, 1.0e-6, 450.0e-6
+                )
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
         if image_settings.beam_type.name == "ELECTRON":
             _check_beam(BeamType.ELECTRON, self.hardware_settings)
@@ -4386,9 +4394,16 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.SEM.Optics.SetViewfield(
             microscope_state.eb_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-
-        self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
+        if microscope_state.eb_settings.shift is not None:
+            print("hello from the dark side shift em")
+            self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+        scan_rotation = self.connection.SEM.Optics.GetImageRotation()
+        print('########### scan rotation SEM before ', scan_rotation)
+        if microscope_state.eb_settings.scan_rotation is not None:
+            print("hello from the dark side scan rotation em")
+            self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
+        scan_rotation = self.connection.SEM.Optics.GetImageRotation()
+        print('########### scan rotation SEM after ', scan_rotation)
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
         # )
@@ -4400,8 +4415,16 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(
             microscope_state.ib_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-        self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
+        if microscope_state.ib_settings.shift is not None:
+            print("hello from the dark side shift ib")
+            self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+        scan_rotation = self.connection.FIB.Optics.GetImageRotation()
+        print('########### scan rotation FIB before ', scan_rotation)
+        if microscope_state.eb_settings.scan_rotation is not None:
+            print("hello from the dark side scan rotation ib")
+            self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
+        scan_rotation = self.connection.FIB.Optics.GetImageRotation()
+        print('########### scan rotation FIB after ', scan_rotation)
         time.sleep(3)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
         self.move_stage_absolute(microscope_state.absolute_position)
