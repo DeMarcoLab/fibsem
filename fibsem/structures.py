@@ -1066,7 +1066,7 @@ class FibsemMillingSettings:
     hfw: float = 150e-6
     patterning_mode: str = "Serial" 
     application_file: str = "Si"
-    preset: str = "30 keV; UHR imaging"
+    preset: str = "30 keV; 100 nA"
     spacing: float = 1.0
 
     def __post_init__(self):
