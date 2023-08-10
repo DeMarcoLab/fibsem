@@ -390,6 +390,21 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 self._reprojection_layer.data = data
                 self._reprojection_layer.text = text
 
+            _SHOW_PATTERNS:bool = False
+            if _SHOW_PATTERNS:
+                from fibsem import patterning
+                points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
+                protocol = utils.load_yaml(r"/home/patrick/github/autolamella/autolamella/protocol/protocol.yaml")
+                milling_stages = [patterning._get_milling_stages("trench", protocol, Point(point.x, point.y))[0] for point in points]
+                
+                for stage, pos in zip(milling_stages, drawn_positions[:-1]):
+                    stage.name = pos.name
+
+                ui_utils._draw_patterns_in_napari(self.viewer, 
+                    ib_image=self.image, 
+                    eb_image=None, 
+                    milling_stages = milling_stages)
+
     def _load_correlation_image(self):
 
         # load another image
