@@ -428,9 +428,7 @@ def detect_features_v2(
     detection_features = []
 
     for feature in features:
-        print(f"Detecting {feature.name}")
         if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
-            print("Detecting lamella feature")
             feature = detect_multi_features(img, mask, feature)
             if filter:
                 feature = filter_best_feature(mask, feature, 
@@ -707,6 +705,8 @@ def mask_contours(image):
     # Create a mask with the same shape as the input image
     mask = np.zeros_like(image, dtype=np.uint8)
 
+    MAX_THRESHOLD_FEATURES = 100
+  
     # Mask the area inside each contour
     for i, contour in enumerate(contours):
         # Convert the contour coordinates to integers
@@ -727,13 +727,15 @@ def mask_contours(image):
         # Apply the mask for this contour
         mask = mask + inside_contour
 
+        if i > MAX_THRESHOLD_FEATURES:
+            break
+
     return mask
 
 from copy import deepcopy
 # TODO: need passthrough for the params
 def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature, class_idx: int = 1):
     
-    print("get countours")
     mask = mask == class_idx # filter to class 
     mask = mask_contours(mask)
     idxs = np.unique(mask)
@@ -744,12 +746,11 @@ def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature,
             continue
 
         # create a new image
-        print(f"Creating mask for feature {idx}")
         feature_mask = np.zeros_like(mask)
         feature_mask[mask==idx] = 1
 
         # detect features
-        print(f"Detecting feature {idx}")
+
         feature.detect(image, feature_mask)
         features.append(deepcopy(feature))
 
