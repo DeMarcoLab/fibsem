@@ -391,7 +391,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 self._reprojection_layer.text = text
 
             _SHOW_PATTERNS:bool = False
-            if _SHOW_PATTERNS:
+            if _SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
                 from fibsem import patterning
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
                 protocol = utils.load_yaml(r"/home/patrick/github/autolamella/autolamella/protocol/protocol.yaml")
