@@ -428,8 +428,9 @@ def detect_features_v2(
     detection_features = []
 
     for feature in features:
-        
+        print(f"Detecting {feature.name}")
         if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
+            print("Detecting lamella feature")
             feature = detect_multi_features(img, mask, feature)
             if filter:
                 feature = filter_best_feature(mask, feature, 
@@ -466,6 +467,7 @@ def detect_features(
     mask = mask[0] # remove channel dim
 
     # detect features
+    print("Detecting features...")
     features = detect_features_v2(img=image, 
                                   mask=mask, 
                                   features=features, 
@@ -508,9 +510,11 @@ def take_image_and_detect_features(
     settings.image.save = True
 
     # take new image
+    print("Acquiring new image...")
     image = acquire.new_image(microscope, settings.image)
 
     # load model
+    print("Loading model...")
     ml_protocol = settings.protocol.get("ml", {})
     checkpoint = ml_protocol.get("checkpoint", None)
     encoder = ml_protocol.get("encoder", "resnet34")
@@ -518,6 +522,7 @@ def take_image_and_detect_features(
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
     # detect features
+    print("Detecting features...")
     det = detect_features(
         deepcopy(image), model, features=features, pixelsize=image.metadata.pixel_size.x
     )
@@ -728,6 +733,7 @@ from copy import deepcopy
 # TODO: need passthrough for the params
 def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature, class_idx: int = 1):
     
+    print("get countours")
     mask = mask == class_idx # filter to class 
     mask = mask_contours(mask)
     idxs = np.unique(mask)
@@ -738,10 +744,12 @@ def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature,
             continue
 
         # create a new image
+        print(f"Creating mask for feature {idx}")
         feature_mask = np.zeros_like(mask)
         feature_mask[mask==idx] = 1
 
         # detect features
+        print(f"Detecting feature {idx}")
         feature.detect(image, feature_mask)
         features.append(deepcopy(feature))
 
