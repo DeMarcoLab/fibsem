@@ -946,6 +946,10 @@ PROTOCOL_MILL_MAP = {
     "autolamella": TrenchPattern,
     "autolamella_undercut": RectanglePattern,
     "rectangle": RectanglePattern,
+    "MillRoughCut": TrenchPattern,
+    "MillRegularCut": TrenchPattern,
+    "MillPolishingCut": TrenchPattern,
+
 }
 
 
