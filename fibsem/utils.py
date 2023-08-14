@@ -340,3 +340,16 @@ def _get_position(name: str):
         if d["name"] == name:
             return FibsemStagePosition.__from_dict__(d)
     return None
+
+def _get_positions(fname: str = None) -> list[str]:    
+    
+    from fibsem import config as cfg
+    from fibsem.structures import FibsemStagePosition
+    import os
+
+    if fname is None:
+        fname = os.path.join(cfg.CONFIG_PATH, "positions.yaml")
+
+    ddict = load_yaml(fname=fname)
+
+    return [d["name"] for d in ddict]
