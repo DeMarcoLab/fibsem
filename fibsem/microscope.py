@@ -4396,6 +4396,7 @@ class TescanMicroscope(FibsemMicroscope):
         )
         if microscope_state.eb_settings.shift is not None:
             print("hello from the dark side shift em")
+            print(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
             self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
         scan_rotation = self.connection.SEM.Optics.GetImageRotation()
         print('########### scan rotation SEM before ', scan_rotation)
@@ -4417,6 +4418,7 @@ class TescanMicroscope(FibsemMicroscope):
         )
         if microscope_state.ib_settings.shift is not None:
             print("hello from the dark side shift ib")
+            print(microscope_state.ib_settings.shift.x, microscope_state.ib_settings.shift.y)
             self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
         scan_rotation = self.connection.FIB.Optics.GetImageRotation()
         print('########### scan rotation FIB before ', scan_rotation)
