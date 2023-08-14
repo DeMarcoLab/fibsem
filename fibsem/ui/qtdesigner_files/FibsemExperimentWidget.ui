@@ -82,6 +82,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>lineEdit_exp_name</tabstop>
+  <tabstop>lineEdit_exp_user</tabstop>
+  <tabstop>lineEdit_exp_sample</tabstop>
+  <tabstop>lineEdit_exp_project</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

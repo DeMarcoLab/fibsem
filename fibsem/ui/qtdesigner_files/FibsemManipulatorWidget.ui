@@ -194,6 +194,20 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>insertManipulator_button</tabstop>
+  <tabstop>move_type_comboBox</tabstop>
+  <tabstop>dX_spinbox</tabstop>
+  <tabstop>dY_spinbox</tabstop>
+  <tabstop>dZ_spinbox</tabstop>
+  <tabstop>dR_spinbox</tabstop>
+  <tabstop>beam_type_combobox</tabstop>
+  <tabstop>moveRelative_button</tabstop>
+  <tabstop>addSavedPosition_button</tabstop>
+  <tabstop>savedPositionName_lineEdit</tabstop>
+  <tabstop>goToPosition_button</tabstop>
+  <tabstop>savedPosition_combobox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

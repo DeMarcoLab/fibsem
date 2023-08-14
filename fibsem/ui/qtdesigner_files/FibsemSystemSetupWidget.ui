@@ -494,7 +494,7 @@
           </font>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tab_2">
           <attribute name="title">
@@ -1036,6 +1036,60 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>lineEdit_ipadress</tabstop>
+  <tabstop>comboBox_manufacturer</tabstop>
+  <tabstop>microscope_button</tabstop>
+  <tabstop>pushButton_save_yaml</tabstop>
+  <tabstop>pushButton_import_yaml</tabstop>
+  <tabstop>pushButton_apply_settings</tabstop>
+  <tabstop>setStage_button</tabstop>
+  <tabstop>rotationFlatToElectronSpinBox</tabstop>
+  <tabstop>rotationFlatToIonSpinBox</tabstop>
+  <tabstop>tiltFlatToElectronSpinBox</tabstop>
+  <tabstop>tiltFlatToIonSpinBox</tabstop>
+  <tabstop>preTiltSpinBox</tabstop>
+  <tabstop>needleStageHeightLimitnMmDoubleSpinBox</tabstop>
+  <tabstop>checkBox_eb</tabstop>
+  <tabstop>checkBox_ib</tabstop>
+  <tabstop>checkBox_select_plasma_gas</tabstop>
+  <tabstop>checkBox_stage_enabled</tabstop>
+  <tabstop>checkBox_stage_rotation</tabstop>
+  <tabstop>checkBox_stage_tilt</tabstop>
+  <tabstop>checkBox_needle_enabled</tabstop>
+  <tabstop>checkBox_needle_rotation</tabstop>
+  <tabstop>checkBox_needle_tilt</tabstop>
+  <tabstop>checkBox_gis_enabled</tabstop>
+  <tabstop>checkBox_multichem</tabstop>
+  <tabstop>tabWidget_2</tabstop>
+  <tabstop>spinBox_ion_voltage</tabstop>
+  <tabstop>doubleSpinBox_ion_current</tabstop>
+  <tabstop>lineEdit_plasma_gas</tabstop>
+  <tabstop>doubleSpinBox_height_ion</tabstop>
+  <tabstop>lineEdit_detector_type_ion</tabstop>
+  <tabstop>lineEdit_detector_mode_ion</tabstop>
+  <tabstop>spinBox_voltage_eb</tabstop>
+  <tabstop>doubleSpinBox_current_eb</tabstop>
+  <tabstop>doubleSpinBox_height_eb</tabstop>
+  <tabstop>lineEdit_detector_type_eb</tabstop>
+  <tabstop>lineEdit_detector_mode_eb</tabstop>
+  <tabstop>checkBox_apply_settings</tabstop>
+  <tabstop>checkBox_connect_automatically</tabstop>
+  <tabstop>doubleSpinBox_milling_current</tabstop>
+  <tabstop>doubleSpinBox_spotsize</tabstop>
+  <tabstop>doubleSpinBox_rate</tabstop>
+  <tabstop>doubleSpinBox_dwell_time_milling</tabstop>
+  <tabstop>doubleSpinBox_imaging_current</tabstop>
+  <tabstop>spinBox_res_width</tabstop>
+  <tabstop>spinBox_res_height</tabstop>
+  <tabstop>spinBox_hfw</tabstop>
+  <tabstop>lineEdit_beam_type</tabstop>
+  <tabstop>checkBox_autocontrast</tabstop>
+  <tabstop>doubleSpinBox_dwell_time_imaging</tabstop>
+  <tabstop>checkBox_save</tabstop>
+  <tabstop>checkBox_gamma</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

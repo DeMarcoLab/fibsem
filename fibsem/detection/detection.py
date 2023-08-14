@@ -458,6 +458,8 @@ def detect_features(
     if isinstance(image, FibsemImage):
         fibsem_image = deepcopy(image)
         image = image.data
+    else:
+        fibsem_image = None
 
     # model inference
     mask = model.inference(image, rgb=False)
@@ -548,13 +550,27 @@ def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", sho
     ax.imshow(det.rgb, alpha=0.3)
     ax.set_title(title)
     
+
+    # get unique feature names
+    names = []
+    for f in det.features:
+        if f.name not in names:
+            names.append(f.name)
+    
+
     for f in det.features:
         ax.plot(f.px.x, f.px.y, 
                 "o",  color=f.color, 
                 markersize=5, markeredgecolor="w", 
-                label=f.name)
-    if len(det.features) < 10:
-        ax.legend(loc="best")
+                label=f.name if names.count(f.name) == 1 else None)
+        
+        # remove from names list
+        if names.count(f.name) == 1:
+            names.remove(f.name)
+
+    # if len(det.features) < 5:
+    ax.legend(loc="best")
+    ax.axis("off")
 
     if len(det.features) == 2:
         # plot white line between features
@@ -578,12 +594,13 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
     if titles is None:
         titles = [f"Prediction {i}" for i in range(len(dets))]
 
-    fig, ax = plt.subplots(1, len(dets), figsize=(15, 7))
+    fig, ax = plt.subplots(1, len(dets), figsize=(25, 10))
 
     for i, det in enumerate(dets):
 
         plot_det(det, ax[i], title=titles[i], show=False)
     
+    plt.subplots_adjust(wspace=0.05, hspace=0.05)
     plt.show()
 
     return fig

@@ -45,7 +45,7 @@
    <item row="1" column="0" colspan="2">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="system">
       <attribute name="title">
@@ -433,6 +433,38 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>lineEdit_system_ip_address</tabstop>
+  <tabstop>comboBox_system_application_file</tabstop>
+  <tabstop>pushButton_save_settings</tabstop>
+  <tabstop>pushButton_load_settings</tabstop>
+  <tabstop>spinBox_stage_rotation_flat_to_electron</tabstop>
+  <tabstop>spinBox_stage_rotation_flat_to_ion</tabstop>
+  <tabstop>spinBox_stage_pre_tilt</tabstop>
+  <tabstop>spinBox_stage_tilt_flat_to_electron</tabstop>
+  <tabstop>spinBox_stage_tilt_flat_to_ion</tabstop>
+  <tabstop>doubleSpinBox_stage_needle_height_limit</tabstop>
+  <tabstop>doubleSpinBox_electron_voltage</tabstop>
+  <tabstop>doubleSpinBox_electron_current</tabstop>
+  <tabstop>comboBox_electron_detector_type</tabstop>
+  <tabstop>comboBox_electron_detector_mode</tabstop>
+  <tabstop>doubleSpinBox_electron_eucentric_height</tabstop>
+  <tabstop>pushButton_get_electron_settings</tabstop>
+  <tabstop>doubleSpinBox_ion_voltage</tabstop>
+  <tabstop>doubleSpinBox_ion_current</tabstop>
+  <tabstop>comboBox_ion_detector_type</tabstop>
+  <tabstop>comboBox_ion_detector_mode</tabstop>
+  <tabstop>doubleSpinBox_ion_eucentric_height</tabstop>
+  <tabstop>comboBox_ion_plasma_gas</tabstop>
+  <tabstop>pushButton_get_ion_settings</tabstop>
+  <tabstop>comboBox_imaging_resolution</tabstop>
+  <tabstop>doubleSpinBox_imaging_dwell_time</tabstop>
+  <tabstop>doubleSpinBox_imaging_hfw</tabstop>
+  <tabstop>checkBox_imaging_use_autocontrast</tabstop>
+  <tabstop>checkBox_imaging_use_autogamma</tabstop>
+  <tabstop>checkBox_imaging_save_image</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

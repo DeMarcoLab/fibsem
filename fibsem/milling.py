@@ -72,7 +72,7 @@ def finish_milling(
 
     """
     # restore imaging current
-    logging.info(f"Changing to Imaging Settings")
+    logging.info(f"Changing to Imaging Current: {imaging_current:.2e}")
     microscope.finish_milling(imaging_current)
     logging.info("Finished Ion Beam Milling.")
 
