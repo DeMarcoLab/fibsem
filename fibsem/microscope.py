@@ -133,7 +133,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType, _safe: bool = True) -> None:
         pass
 
     @abstractmethod
@@ -990,7 +990,7 @@ class ThermoMicroscope(FibsemMicroscope):
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
     def move_flat_to_beam(
-        self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON
+        self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
     ) -> None:
         """
         Moves the microscope stage to the tilt angle corresponding to the given beam type,
@@ -1020,7 +1020,10 @@ class ThermoMicroscope(FibsemMicroscope):
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
         stage_position = FibsemStagePosition(r=rotation, t=tilt)
-        self._safe_absolute_stage_movement(stage_position)
+        if _safe:
+            self._safe_absolute_stage_movement(stage_position)
+        else:
+            self.move_stage_absolute(stage_position)
 
     
     def _safe_rotation_movement(
@@ -3383,7 +3386,7 @@ class TescanMicroscope(FibsemMicroscope):
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
     def move_flat_to_beam(
-        self, settings=MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON
+        self, settings=MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
     ):
         """
         Moves the microscope stage to the tilt angle corresponding to the given beam type,
@@ -4897,7 +4900,7 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position.x += dx
         self.stage_position.z += dy / np.cos(np.deg2rad(90-self.stage_settings.tilt_flat_to_ion))
 
-    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType, _safe:bool = True) -> None:
         _check_stage(self.hardware_settings, tilt = True)
                 
         if beam_type is BeamType.ELECTRON:
