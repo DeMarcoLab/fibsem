@@ -954,7 +954,10 @@ PROTOCOL_MILL_MAP = {
 
 
 def _get_pattern(key: str, protocol: dict, point: Point = Point()) -> BasePattern:
-    pattern = PROTOCOL_MILL_MAP[key]()
+    if "pattern" in protocol:
+        pattern = get_pattern(protocol["pattern"])
+    else:
+        pattern = PROTOCOL_MILL_MAP[key]()
     pattern.define(protocol, point=point)
     return pattern
 
