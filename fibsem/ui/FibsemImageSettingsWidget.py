@@ -7,7 +7,7 @@ from fibsem import constants, acquire
 
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
 from fibsem.ui import utils as ui_utils 
-
+from fibsem.ui import _stylesheets
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
 from scipy.ndimage import median_filter
@@ -68,11 +68,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.selected_beam.addItems([beam.name for beam in BeamType])
 
         self.pushButton_take_image.clicked.connect(lambda: self.take_image(None))
+        self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
+        self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
+        self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
         self.button_set_beam_settings.clicked.connect(self.apply_beam_settings)
+        self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
         self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
