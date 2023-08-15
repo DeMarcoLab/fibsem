@@ -1,0 +1,16 @@
+data_path:  /home/patrick/github/data/liftout/train-new/train 
+label_path: /home/patrick/github/data/liftout/train-new/train/labels 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/med/fintune
+checkpoint: /home/patrick/github/fibsem/fibsem/segmentation/models/openfibsem-baseline-34.pt
+encoder: "resnet34" 
+epochs: 5
+batch_size: 4 
+num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
+lr: 3.0e-4
+wandb: true 
+wandb_project: "autoliftout"
+wandb_entity: "demarcolab"
+
+# TODO: try a 34 version
+
+
