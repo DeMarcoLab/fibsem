@@ -4418,16 +4418,11 @@ class TescanMicroscope(FibsemMicroscope):
             microscope_state.eb_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
         if microscope_state.eb_settings.shift is not None:
-            print("hello from the dark side shift em")
             print(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
             self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        scan_rotation = self.connection.SEM.Optics.GetImageRotation()
-        print('########### scan rotation SEM before ', scan_rotation)
+            time.sleep(1)
         if microscope_state.eb_settings.scan_rotation is not None:
-            print("hello from the dark side scan rotation em")
             self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
-        scan_rotation = self.connection.SEM.Optics.GetImageRotation()
-        print('########### scan rotation SEM after ', scan_rotation)
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
         # )
@@ -4440,16 +4435,11 @@ class TescanMicroscope(FibsemMicroscope):
             microscope_state.ib_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
         if microscope_state.ib_settings.shift is not None:
-            print("hello from the dark side shift ib")
-            print(microscope_state.ib_settings.shift.x, microscope_state.ib_settings.shift.y)
             self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        scan_rotation = self.connection.FIB.Optics.GetImageRotation()
-        print('########### scan rotation FIB before ', scan_rotation)
+            time.sleep(1)
         if microscope_state.eb_settings.scan_rotation is not None:
             print("hello from the dark side scan rotation ib")
             self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
-        scan_rotation = self.connection.FIB.Optics.GetImageRotation()
-        print('########### scan rotation FIB after ', scan_rotation)
         time.sleep(3)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
         self.move_stage_absolute(microscope_state.absolute_position)
