@@ -7,6 +7,7 @@ from pathlib import Path
 
 import napari
 import napari.utils.notifications
+from napari.qt.threading import thread_worker
 import numpy as np
 import yaml
 from PIL import Image
@@ -99,12 +100,36 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def continue_pressed(self):
         print("continue pressed")
 
+    def _toggle_interactions(self, enable: bool):
+        self.pushButton_move.setEnabled(enable)
+        self.pushButton_move_flat_ion.setEnabled(enable)
+        self.pushButton_move_flat_electron.setEnabled(enable)
+        self.pushButton_go_to.setEnabled(enable)
+
     def move_to_position(self):
+        worker = self.move_worker()
+        worker.finished.connect(self.run_moving_finished)
+        worker.yielded.connect(self.update_moving_ui)
+        worker.start()
+    
+    @thread_worker
+    def move_worker(self):
+        self._toggle_interactions(False)
         stage_position = self.get_position_from_ui()
+        yield "Moving to {stage_position}"
         self.microscope.move_stage_absolute(stage_position)
         log_status_message(f"MOVED_TO_{stage_position}")
+        yield "Move finished, taking new images"
+
+    def run_moving_finished(self):
         self.update_ui_after_movement()
-    
+        self._toggle_interactions(True)
+
+    def update_moving_ui(self, msg: str):
+        logging.info(msg)
+        napari.utils.notifications.notification_manager.records.clear()
+        napari.utils.notifications.show_info(msg)
+
     def update_ui(self):
 
         stage_position: FibsemStagePosition = self.microscope.get_stage_position()
