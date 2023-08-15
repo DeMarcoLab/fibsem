@@ -32,6 +32,8 @@ class SegmentationDataset(Dataset):
 
         mask = np.asarray(self.masks[idx])
 
+        # if mask > num_class, set to zero
+        mask[mask >= self.num_classes] = 0
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
         mask = torch.tensor(mask).unsqueeze(0)
