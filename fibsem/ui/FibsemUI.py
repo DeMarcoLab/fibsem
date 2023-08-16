@@ -190,18 +190,21 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 microscope=self.microscope,
                 image_settings=self.settings.image,
                 viewer=self.viewer,
+                parent=self,
             )
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
             if self.microscope.hardware_settings.manipulator_enabled:
                 self.manipulator_widget = FibsemManipulatorWidget(
@@ -209,6 +212,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                     settings=self.settings,
                     viewer=self.viewer,
                     image_widget=self.image_widget,
+                    parent=self,
                 )
             else:
                 self.manipulator_widget = None

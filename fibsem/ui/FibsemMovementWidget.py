@@ -42,7 +42,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     ):
         super(FibsemMovementWidget, self).__init__(parent=parent)
         self.setupUi(self)
-
+        self.parent = parent
         self.microscope = microscope
         self.settings = settings
         self.viewer = viewer
@@ -101,12 +101,15 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def continue_pressed(self):
         print("continue pressed")
 
-    def _toggle_interactions(self, enable: bool):
+    def _toggle_interactions(self, enable: bool, caller: str = None):
         
         self.pushButton_move.setEnabled(enable)
         self.pushButton_move_flat_ion.setEnabled(enable)
         self.pushButton_move_flat_electron.setEnabled(enable)
         self.pushButton_go_to.setEnabled(enable)
+        if caller is None:
+            self.parent.milling_widget._toggle_interactions(enable, caller="movement")
+            self.parent.image_widget._toggle_interactions(enable, caller="movement")
         if enable:
             self.pushButton_move.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_move_flat_ion.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
