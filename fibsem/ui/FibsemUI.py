@@ -12,7 +12,6 @@ from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 
-from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
 
