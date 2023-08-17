@@ -12,15 +12,17 @@ import yaml
 from PIL import Image
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QImage, QPixmap
-
+from fibsem import config as cfg
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (BeamType, FibsemStagePosition,
-                               MicroscopeSettings, MovementMode, Point)
+                               MicroscopeSettings, MovementMode, Point, FibsemImage)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
-
+from fibsem.imaging._tile import _plot_positions, _minimap 
+from fibsem.ui import utils as ui_utils 
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 def log_status_message(step: str):
     logging.debug(
@@ -49,7 +51,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.setup_connections()
         self.image_widget.picture_signal.connect(self.update_ui)
         self.positions = []
-   
+        self.minimap_image = None
         self.update_ui()
 
     def setup_connections(self):
@@ -63,6 +65,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_continue.clicked.connect(self.continue_pressed)
         self.pushButton_move_flat_ion.clicked.connect(self.move_flat_to_beam)
         self.pushButton_move_flat_electron.clicked.connect(self.move_flat_to_beam)
+        self.pushButton_load_image_minimap.clicked.connect(self.load_image)
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_double_click_callbacks.append(self._double_click)
@@ -105,6 +108,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_movement_stage_z.setValue(stage_position.z * constants.SI_TO_MILLI)
         self.doubleSpinBox_movement_stage_rotation.setValue(np.rad2deg(stage_position.r))
         self.doubleSpinBox_movement_stage_tilt.setValue(np.rad2deg(stage_position.t))
+        self.minimap()
 
     
     def get_position_from_ui(self):
@@ -186,12 +190,14 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_positions.setCurrentIndex(self.comboBox_positions.count() - 1)
         self.lineEdit_position_name.setText("")
         logging.info(f"Added position {name}")
+        self.minimap()
 
     def delete_position(self):
         del self.positions[self.comboBox_positions.currentIndex()]
         name = self.comboBox_positions.currentIndex()
         self.comboBox_positions.removeItem(self.comboBox_positions.currentIndex())
         logging.info(f"Removed position {name}")
+        self.minimap()
 
     def update_saved_position(self):
         position = self.microscope.get_stage_position()
@@ -199,6 +205,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.positions[self.comboBox_positions.currentIndex()] = position
         self.select_position()
         logging.info(f"Updated position {self.comboBox_positions.currentText()}")
+        self.minimap()
 
     def go_to_saved_position(self):
         self.microscope.move_stage_absolute(self.positions[self.comboBox_positions.currentIndex()])
@@ -229,70 +236,38 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             position = FibsemStagePosition.__from_dict__(dict_position)
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
+        self.minimap()
 
-    # def minimap(self):
-    #     x = []
-    #     y = []
-    #     labels = []
-    #     pil_image = None
-    #     current_position = self.microscope.get_stage_position()
-    #     x.append(deepcopy(current_position.x)*constants.SI_TO_MICRO)
-    #     y.append(deepcopy(current_position.y)*constants.SI_TO_MICRO)
-    #     labels.append("Current Position")
-    #     for position in self.positions:
-    #         x.append(deepcopy(position.x)*constants.SI_TO_MICRO)
-    #         y.append(deepcopy(position.y)*constants.SI_TO_MICRO)
-    #         labels.append(deepcopy(position.name))
-    #     import pandas as pd
-    #     df = pd.DataFrame({'x': x, 'y': y, 'labels': labels})
-    #     import plotly.express as px
-    #     import plotly.io as pio
-    #     fig = px.scatter(df, color="labels", labels={'color': 'Position'}, x = 'x', y = 'y', width=400, height=400)
-    #     fig.update_traces(
-    #             marker=dict(size=8, symbol="cross"),
-    #             selector=dict(mode="markers"),
-    #         )
+    def load_image(self):
+
+        path = ui_utils._get_file_ui( msg="Select image to load", path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
+
+        if path == "":
+            napari.utils.notifications.show_info(f"No file selected..")
+            return
+
         
-    #     if self.checkBox_auto_scaling.isChecked():
-    #         fig.update_layout(legend=dict(
-    #             orientation="h",
-    #             yanchor="bottom",
-    #             y=1.02,
-    #             xanchor="right",
-    #             x=1
-    #         ),
-    #         margin=dict(l=5, r=5, t=5, b=5),
-    #         legend_title_text=None,
-    #         xaxis_title=None,
-    #             yaxis_title=None,
-    #         )
-            
-    #     else:
-    #         range = [-self.spinBox_grid_radius.value(), self.spinBox_grid_radius.value()]
-    #         fig.update_layout(legend=dict(
-    #             orientation="h",
-    #             yanchor="bottom",
-    #             y=1.02,
-    #             xanchor="right",
-    #             x=1
-    #         ),
-    #         margin=dict(l=5, r=5, t=5, b=5),
-    #         legend_title_text=None,
-    #         xaxis_title=None,
-    #         yaxis_title=None,
-    #         xaxis=dict(range=range),
-    #         yaxis=dict(range=range)
-    #         )
+        image = FibsemImage.load(path)
+        if image.metadata is None:
+            napari.utils.notifications.show_error(f"Could not load image {path}. Make sure it is an OpenFibsem Image.")
+            return
 
-    #     image_from_plot = fig.to_image(format="png", engine="kaleido")
+        self.minimap_image = image
+        self.minimap()
 
+    def minimap(self):
 
-    #     pil_image = Image.open(io.BytesIO(image_from_plot))
-    #     # Convert the PIL image to a QImage
-    #     image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
-    #     # Convert the QImage to a QPixmap 
-    #     qpixmap = QPixmap.fromImage(image_qt)
-    #     self.label_minimap.setPixmap(qpixmap)
+        if self.minimap_image is None:
+            return
+        
+        current_position = self.microscope.get_stage_position()
+        current_position.name = "Current Position"
+        positions = deepcopy(self.positions)
+        positions.append(current_position)
+        
+        qpixmap = _minimap(self.minimap_image, positions)
+
+        self.label_minimap.setPixmap(qpixmap)
 
 
     def update_ui_after_movement(self):
