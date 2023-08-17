@@ -104,45 +104,6 @@ cols[0].plotly_chart(fig_acc, use_container_width=True)
 fig_det = px.scatter(df_det, x="dpx_x", y="dpx_y", color="stage", symbol="feature",  hover_data=df_det.columns, title="ML Error Size")
 cols[1].plotly_chart(fig_det, use_container_width=True)
 
-
-st.subheader("AGGREGATE")
-
-
-df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
-
-st.dataframe(df)
-
-
-
-df_group = df.groupby(["name", "date", "feature", "is_correct"]).count().reset_index()
-
-df_group = df_group.pivot(index=["name", "date", "feature"], columns="is_correct", values="petname")
-
-# if no false, add false column
-if "False" not in df_group.columns:
-    df_group["False"] = 0
-if "True" not in df_group.columns:
-    df_group["True"] = 0
-
-# fill missing values with zero
-df_group.fillna(0, inplace=True)
-
-df_group["total"] = df_group["True"] + df_group["False"]
-df_group["percent_correct"] = df_group["True"] / df_group["total"]
-df_group["percent_correct"] = df_group["percent_correct"].round(2)
-df_group = df_group.sort_values(by="date", ascending=False)
-
-df_group.reset_index(inplace=True)
-
-st.dataframe(df_group)
-
-# plot
-fig_acc = px.bar(df_group, x="date", y="percent_correct", color="feature", barmode="group", title="ML Accuracy", hover_data=df_group.columns)
-st.plotly_chart(fig_acc, use_container_width=True)
-
-
-
-
 # INTERACTIONS
 
 df = conn.query(f"""SELECT e.name, e.date, i.timestamp, i.petname, i.stage, i.step, i.type, i.subtype, i.dm_x, i.dm_y, i.beam_type FROM interactions i JOIN experiments e ON e.id = i.experiment_id""")
@@ -163,10 +124,41 @@ st.plotly_chart(fig_interactions, use_container_width=True)
 
 st.markdown("---")
 st.header("COMPARISON TO AGGREGATES")
+
+
+st.subheader("Machine Learning")
+
+df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
+df_group = df.groupby(["name", "date", "feature", "is_correct"]).count().reset_index()
+
+df_group = df_group.pivot(index=["name", "date", "feature"], columns="is_correct", values="petname")
+
+# if no false, add false column
+if "False" not in df_group.columns:
+    df_group["False"] = 0
+if "True" not in df_group.columns:
+    df_group["True"] = 0
+
+# fill missing values with zero
+df_group.fillna(0, inplace=True)
+
+df_group["total"] = df_group["True"] + df_group["False"]
+df_group["percent_correct"] = df_group["True"] / df_group["total"]
+df_group["percent_correct"] = df_group["percent_correct"].round(2)
+df_group = df_group.sort_values(by="date", ascending=False)
+
+df_group.reset_index(inplace=True)
+
+# plot
+# sort by date
+df_group.sort_values(by="date", ascending=True, inplace=True)
+fig_acc = px.bar(df_group, x="name", y="percent_correct", color="feature", barmode="group", title="ML Accuracy", hover_data=df_group.columns)
+st.plotly_chart(fig_acc, use_container_width=True)
+
+
+
 # select all detections
 df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
-
-st.dataframe(df)
 
 # calculate average accuracy
 df_group = df.groupby(["name", "date", "is_correct"]).count().reset_index()
@@ -196,72 +188,108 @@ ACCURACY = N_TRUE / N_TOTAL
 
 SELECTED_ACCURACY = df_group[df_group["name"] == EXPERIMENT_NAME]["percent_correct"].values[0]
 
-st.markdown(f"**Selected Accuracy:** {SELECTED_ACCURACY:.2f}")
-st.markdown(f"**Overall Accuracy:** {ACCURACY:.2f}")
-st.metric("ML Accuracy", f"{SELECTED_ACCURACY:.2f}", delta=f"{SELECTED_ACCURACY - ACCURACY:.2f}")
+# st.markdown(f"**Selected Accuracy:** {SELECTED_ACCURACY:.2f}")
+# st.markdown(f"**Overall Accuracy:** {ACCURACY:.2f}")
+cols = st.columns(len(df["feature"].unique())+1)
+cols[0].metric("ML Accuracy", f"{SELECTED_ACCURACY*100:.2f}%", delta=f"{(SELECTED_ACCURACY - ACCURACY)*100:.2f}%")
+
+
+for i, FEATURE_NAME in enumerate(df["feature"].unique(), 1):
+    df_det_filt = df[df["feature"] == FEATURE_NAME]
+
+    # calculate average accuracy
+    df_group = df_det_filt.groupby(["name", "date", "is_correct"]).count().reset_index()
+    df_group = df_group.pivot(index=["name", "date"], columns="is_correct", values="petname")
+
+
+    # if no false, add false column
+    if "False" not in df_group.columns:
+        df_group["False"] = 0
+    if "True" not in df_group.columns:
+        df_group["True"] = 0
+
+    # fill missing values with zero
+    df_group.fillna(0, inplace=True)
+
+    df_group["total"] = df_group["True"] + df_group["False"]
+    df_group["percent_correct"] = df_group["True"] / df_group["total"]
+    df_group["percent_correct"] = df_group["percent_correct"].round(2)
+    df_group = df_group.sort_values(by="date", ascending=False)
+
+    df_group.reset_index(inplace=True)
+
+    N_TRUE = df_group["True"].sum()
+    N_FALSE = df_group["False"].sum()
+    N_TOTAL = N_TRUE + N_FALSE
+    ACCURACY = N_TRUE / N_TOTAL
+
+    SELECTED_ACCURACY = df_group[df_group["name"] == EXPERIMENT_NAME]["percent_correct"].values[0]
+
+    cols[i].metric(f"{FEATURE_NAME}", f"{SELECTED_ACCURACY*100:.2f}%", delta=f"{(SELECTED_ACCURACY - ACCURACY)*100:.2f}%")
 
 
 
+st.markdown("---")
 # history
+st.subheader("Stage Duration")
 df_history = conn.query(f"SELECT e.name, e.date, e.id, h.petname, h.start, h.end, h.duration, h.stage FROM history h JOIN experiments e ON e.id = h.experiment_id")
 
-
-st.dataframe(df_history)
-
-# calculate average duration 
+# calculate average duration # fill missing values with zero
 df_group = df_history.groupby(["name", "date", "stage"]).mean().reset_index()
-# df_group = df_group.pivot(index=["name", "date"], columns="stage", values="duration")
-
-# fill missing values with zero
 df_group.fillna(0, inplace=True)
-
-
-
 df_group.reset_index(inplace=True)
 
-st.dataframe(df_group)
-
-# SELECTED_DURATION = df_group[df_group["name"] == EXPERIMENT_NAME]["duration"].values[0]
-
-# st.markdown(f"**Selected Duration:** {SELECTED_DURATION:.2f}")
-
-# st.metric("Duration", f"{SELECTED_DURATION:.2f}", delta=f"{SELECTED_DURATION - df_group['duration'].mean():.2f}")
-
-
-
-
 # drop stages with setup, ready
-df_group = df_group[~df_group["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella"])]
-st.dataframe(df_group)
-
-
+df_group = df_group[~df_group["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella", "Finished"])]
 df_group = df_group.sort_values(by="date", ascending=True)
+
 # plot
 fig_duration = px.bar(df_group, x="name", y="duration", color="stage", barmode="group", title="Duration", hover_data=df_group.columns)
 st.plotly_chart(fig_duration, use_container_width=True)
 
 # calculate average duration per lamella
-df_history_filter = df_history[~df_history["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella"])]
+df_history_filter = df_history[~df_history["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella", "Finished"])]
 
 
-STAGE_NAME = st.selectbox("Stage", df_history_filter["stage"].unique())
-for STAGE_NAME in df_history_filter["stage"].unique():
+
+st.subheader("Stage Duration")
+cols = st.columns(len(df_history_filter["stage"].unique())+1)
+
+# OVERALL DURATION
+df_group = df_history_filter.groupby(["name", "date"]).mean().reset_index()
+df_group = df_group.sort_values(by="duration", ascending=False)
+
+df_group["duration_hrs"] = df_group["duration"] /60/60  
+df_group["duration_mins"] = df_group["duration"] /60
+# drop id column
+df_group.drop(columns="id", inplace=True)
+
+st.dataframe(df_group, use_container_width=True)
+
+SELECTED_DURATION = df_group[df_group["name"] == EXPERIMENT_NAME]["duration"].values[0]
+AVERAGE_DURATION = df_group['duration'].mean()
+DURATION_DELTA = (SELECTED_DURATION - AVERAGE_DURATION) / AVERAGE_DURATION * 100
+
+cols[0].metric(f"Average", f"{SELECTED_DURATION/60:.2f} mins", 
+    delta=f"{DURATION_DELTA:.2f}%", delta_color="inverse")
+
+
+# PER STAGE DURATION
+for i, STAGE_NAME in enumerate(df_history_filter["stage"].unique(), 1):
     df_history_filter2 = df_history_filter[df_history_filter["stage"] == STAGE_NAME]
-    # st.dataframe(df_history_filter)
 
     df_group = df_history_filter2.groupby(["name", "date"]).mean().reset_index()
     df_group = df_group.sort_values(by="duration", ascending=False)
 
-    # st.dataframe(df_group)
-    # st.write(STAGE_NAME)
-    # show metric
-    SELECTED_DURATION = df_group[df_group["name"] == EXPERIMENT_NAME]["duration"].values[0]
-    AVERAGE_DURATION = df_group['duration'].mean()
-    DURATION_DELTA = (SELECTED_DURATION - AVERAGE_DURATION)
-    # calc delta as %
-    DURATION_DELTA = DURATION_DELTA / AVERAGE_DURATION * 100
 
-    st.subheader(f"Duration {STAGE_NAME}")
-    st.markdown(f"**Selected Duration:** {SELECTED_DURATION:.2f}")
-    st.metric("Duration", f"{SELECTED_DURATION/60:.2f}min", 
-        delta=f"{DURATION_DELTA:.2f}%", delta_color="inverse")
+    # show metric
+    try:
+        SELECTED_DURATION = df_group[df_group["name"] == EXPERIMENT_NAME]["duration"].values[0]
+        AVERAGE_DURATION = df_group['duration'].mean()
+        DURATION_DELTA = (SELECTED_DURATION - AVERAGE_DURATION) / AVERAGE_DURATION * 100
+
+        cols[i].metric(f"{STAGE_NAME}", f"{SELECTED_DURATION/60:.2f}min", 
+            delta=f"{DURATION_DELTA:.2f}%", delta_color="inverse")
+    except Exception as e:
+        st.write(e)
+        cols[i].empty()
