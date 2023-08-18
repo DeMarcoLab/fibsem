@@ -573,11 +573,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             milling_stages = [milling_stages]
 
         # # check hfw threshold
-        # for stage in milling_stages:
-        #     if stage.pattern.name == "Trench":
-        #         if stage.pattern.protocol["trench_height"] / stage.pattern.protocol["hfw"] < cfg.MILL_HFW_THRESHOLD:
-        #             napari.utils.notifications.show_warning(f"Pattern dimensions are too small for milling. Please decrease the image hfw or increase the trench height.")
-        #             return
+        for stage in milling_stages:
+            if stage.pattern.name == "Trench":
+                if stage.pattern.protocol["trench_height"] / stage.milling.hfw < cfg.MILL_HFW_THRESHOLD:
+                    napari.utils.notifications.show_warning(f"Pattern dimensions are too small for milling. Please decrease the image hfw or increase the trench height.")
+                    _remove_all_layers(self.viewer)
+                    return
 
         t2 = time.time()
         try:
