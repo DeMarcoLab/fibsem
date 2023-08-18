@@ -11,9 +11,10 @@ from fibsem import acquire, conversions, utils
 from fibsem.structures import (BeamType, FibsemImage, FibsemImageMetadata, MicroscopeSettings,
                                FibsemStagePosition, Point)
 from fibsem.microscope import FibsemMicroscope
+import time
 
 def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSettings, grid_size:float, 
-    tile_size:float, overlap: float = 0.0, cryo: bool = True) -> dict: 
+    tile_size:float, overlap: float = 0.0, cryo: bool = True, parent_ui = None) -> dict: 
 
     # TODO: OVERLAP + STITCH
     n_rows, n_cols = int(grid_size // tile_size), int(grid_size // tile_size)
@@ -74,6 +75,9 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
             microscope.stable_move(settings=settings, dx=dx*(j!=0),  dy=0, beam_type=settings.image.beam_type) # dont move on the first tile?
 
             logging.info(f"ACQUIRING IMAGE {i}, {j}")
+
+            if parent_ui:
+                parent_ui._update_tile_collection.emit({"msg": "Tile Collected", "i": i, "j": j, "n_rows": n_rows, "n_cols": n_cols, "image": None })
             image = acquire.new_image(microscope, settings.image)
             img_row.append(image)
         images.append(img_row)
@@ -91,8 +95,8 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
     return ddict
 
 
-
-def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
+# TODO: stitch while collecting
+def _stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemImage:
 
     arr = np.array(images)
     n_rows, n_cols = arr.shape[0], arr.shape[1]
@@ -103,6 +107,11 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     for i in range(n_rows):
         for j in range(n_cols):
             arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = images[i][j].data
+            
+            if parent_ui:
+                parent_ui._update_tile_collection.emit({"msg": "Tile Stitched", "i": i, "j": j, 
+                    "n_rows": n_rows, "n_cols": n_cols, "image": arr })
+            # time.sleep(0.5)
     
     # convert to fibsem image
     image = FibsemImage(data=arr, metadata=images[0][0].metadata)
@@ -133,10 +142,10 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     return image
 
 
-def _tile_image_collection_stitch(microscope, settings, grid_size, tile_size, overlap=0, cryo:bool=True) -> FibsemImage:
+def _tile_image_collection_stitch(microscope, settings, grid_size, tile_size, overlap=0, cryo:bool=True, parent_ui = None) -> FibsemImage:
 
-    ddict = _tile_image_collection(microscope, settings, grid_size, tile_size, cryo=cryo)
-    image = _stitch_images(ddict["images"], ddict, overlap=overlap)
+    ddict = _tile_image_collection(microscope, settings, grid_size, tile_size, cryo=cryo, parent_ui=parent_ui)
+    image = _stitch_images(ddict["images"], ddict, overlap=overlap, parent_ui=parent_ui)
 
     return image
 

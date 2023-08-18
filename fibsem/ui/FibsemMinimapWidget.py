@@ -27,6 +27,7 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWindow):
     _stage_position_moved = pyqtSignal(FibsemStagePosition)
     _stage_position_added = pyqtSignal(FibsemStagePosition)
+    _update_tile_collection = pyqtSignal(dict)
     
     def __init__(
         self,
@@ -75,6 +76,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
+        self._update_tile_collection.connect(self._update_tile_collection_callback)
+
 
         # pattern overlay
         self.comboBox_pattern_overlay.addItems([k for k in self.settings.protocol if "stages" in self.settings.protocol[k] or "type" in self.settings.protocol[k]])
@@ -144,7 +147,22 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.image = _tile._tile_image_collection_stitch(
             microscope=microscope, settings=settings, 
             grid_size=grid_size, tile_size=tile_size, 
-            overlap=overlap, cryo=cryo)
+            overlap=overlap, cryo=cryo, parent_ui=self)
+
+    def _update_tile_collection_callback(self, ddict):
+        
+        msg = f"{ddict['msg']} ({ddict['i']}, {ddict['j']})"
+
+        logging.info(msg)
+        napari.utils.notifications.show_info(msg)
+
+        if ddict["image"] is not None:
+
+            arr = median_filter(ddict["image"], size=3)
+            try:
+                self._image_layer.data = arr
+            except:
+                self._image_layer = self.viewer.add_image(arr, name="overview-image", colormap="gray", blending="additive")
 
     def load_image(self):
 
