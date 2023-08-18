@@ -4774,6 +4774,7 @@ class DemoMicroscope(FibsemMicroscope):
 
 
     def connect_to_microscope(self):
+        self.model = "Demo"
         logging.info(f"Connected to Demo Microscope")
         logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")
         return

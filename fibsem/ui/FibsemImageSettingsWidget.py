@@ -15,6 +15,14 @@ from fibsem.microscope import FibsemMicroscope, TescanMicroscope
 from fibsem.structures import (BeamSettings, BeamType, FibsemDetectorSettings,
                                FibsemImage, ImageSettings, Point)
 from fibsem.ui import utils as ui_utils
+
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem import constants, acquire
+
+from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
+from fibsem.ui import utils as ui_utils 
+from fibsem.ui import _stylesheets
+
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 from fibsem.ui import _stylesheets
 from napari.qt.threading import thread_worker

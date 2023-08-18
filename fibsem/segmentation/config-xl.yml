@@ -1,0 +1,15 @@
+data_path:  /home/patrick/github/data/liftout/train-new/train 
+label_path: /home/patrick/github/data/liftout/train-new/train/labels 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/xl/finetune/nc3/earlystop
+checkpoint: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/xl/base/nc3/earlystop/model.pt
+encoder: "resnet50" 
+epochs: 5
+batch_size: 4 
+num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
+lr: 3.0e-4
+wandb: true 
+wandb_project: "autoliftout"
+wandb_entity: "demarcolab"
+
+
+
