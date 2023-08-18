@@ -15,7 +15,7 @@ from fibsem.structures import (BeamType, FibsemManipulatorPosition,
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemManipulatorWidget
 from fibsem.ui.utils import message_box_ui
-\
+from fibsem.ui import _stylesheets
 
 class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget):
     def __init__(
@@ -146,10 +146,13 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
     def setup_connections(self):
 
         self.insertManipulator_button.clicked.connect(self.insert_retract_manipulator)
+        self.insertManipulator_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.addSavedPosition_button.clicked.connect(self.add_saved_position)
+        self.addSavedPosition_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
+        self.goToPosition_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.moveRelative_button.clicked.connect(self.move_relative)
-
+        self.moveRelative_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
 
 
@@ -213,6 +216,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.microscope.retract_manipulator()
             self.insertManipulator_button.setText("Insert")
             self.manipulatorStatus_label.setText("Manipulator Status: Retracted")
+            self.insertManipulator_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.update_ui()
             self.manipulator_inserted = False
             self._hide_show_buttons(show=False)
@@ -222,6 +226,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.microscope.insert_manipulator()
             self.insertManipulator_button.setText("Retract")
             self.manipulatorStatus_label.setText("Manipulator Status: Inserted")
+            self.insertManipulator_button.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
             self.update_ui()
             self.manipulator_inserted = True
             self._hide_show_buttons(show=True)

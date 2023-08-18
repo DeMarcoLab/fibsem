@@ -93,6 +93,7 @@
     <widget class="QLabel" name="label_header_features">
      <property name="font">
       <font>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
@@ -191,6 +192,7 @@
     <widget class="QLabel" name="label_header_model">
      <property name="font">
       <font>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>

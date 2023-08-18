@@ -19,6 +19,7 @@ from fibsem.structures import (
     FibsemImage,
     Point,
 )
+from fibsem.ui import _stylesheets
 from PyQt5.QtCore import pyqtSignal
 from fibsem.ui.qtdesigner_files import FibsemDetectionWidget
 import logging
@@ -84,7 +85,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.pushButton_run_feature_detection.clicked.connect(
             self.run_feature_detection
         )
-
+        self.pushButton_run_feature_detection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         # ui
         # self.checkBox_use_segmentation.stateChanged.connect(self._toggle_ui)
         self.checkBox_use_feature_detection.stateChanged.connect(self._toggle_ui)
@@ -100,6 +101,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
 
         # model
         self.pushButton_load_model.clicked.connect(self.load_model)
+        self.pushButton_load_model.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.lineEdit_encoder.setText("resnet34")
         self.lineEdit_checkpoint.setText(CHECKPOINT_PATH)
         self.spinBox_num_classes.setValue(3)
@@ -113,6 +115,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         self.lineEdit_image_path_folder.setVisible(self._EVAL_MODE)
         self.pushButton_load_images.setVisible(self._EVAL_MODE)
         self.pushButton_load_images.clicked.connect(self.load_image_folder)
+        self.pushButton_load_images.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.pushButton_previous_image.clicked.connect(self.update_image)
         self.pushButton_next_image.clicked.connect(self.update_image)
         self.pushButton_previous_image.setVisible(self._EVAL_MODE)

@@ -185,7 +185,7 @@
     <widget class="QLabel" name="label_title">
      <property name="font">
       <font>
-       <pointsize>12</pointsize>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
@@ -302,13 +302,6 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="1">
-    <widget class="QCheckBox" name="checkBox_image_use_autogamma">
-     <property name="text">
-      <string>AutoGamma</string>
-     </property>
-    </widget>
-   </item>
    <item row="19" column="0">
     <widget class="QLabel" name="label_9">
      <property name="text">
@@ -377,7 +370,7 @@
     <widget class="QLabel" name="label">
      <property name="font">
       <font>
-       <pointsize>12</pointsize>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
@@ -407,7 +400,7 @@
     <widget class="QLabel" name="label_6">
      <property name="font">
       <font>
-       <pointsize>12</pointsize>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
@@ -448,6 +441,13 @@
     <widget class="QCheckBox" name="scalebar_checkbox">
      <property name="text">
       <string>Scale Bar</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1" colspan="2">
+    <widget class="QCheckBox" name="checkBox_image_use_autogamma">
+     <property name="text">
+      <string>AutoGamma</string>
      </property>
     </widget>
    </item>

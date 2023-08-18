@@ -14,6 +14,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
+from fibsem.ui import _stylesheets
 
 def log_status_message(step: str):
     logging.debug(
@@ -391,14 +392,14 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         if _microscope_connected:
             self.microscope_button.setText("Microscope Connected")
-            self.microscope_button.setStyleSheet("background-color: green")
+            self.microscope_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_stage_settings_to_ui(self.microscope.stage_settings)
             self.set_model_to_ui(self.settings.hardware)
             self.connected_signal.emit()
 
         else:
             self.microscope_button.setText("Connect To Microscope")
-            self.microscope_button.setStyleSheet("background-color: gray")
+            self.microscope_button.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
             self.disconnected_signal.emit()
 
 
