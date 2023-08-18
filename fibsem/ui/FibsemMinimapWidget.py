@@ -108,9 +108,13 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         beam_type = BeamType[self.comboBox_tile_beam_type.currentText()]
         grid_size = self.doubleSpinBox_tile_grid_size.value() * constants.MICRO_TO_SI
         tile_size = self.doubleSpinBox_tile_tile_size.value() * constants.MICRO_TO_SI
-
+        resolution = int(self.spinBox_tile_resolution.value())
+        cryo = self.checkBox_tile_autogamma.isChecked()
+        
         self.settings.image.hfw = tile_size
         self.settings.image.beam_type = beam_type
+        self.settings.image.resolution = [resolution, resolution]
+        self.settings.image.autocontrast = self.checkBox_tile_autocontrast.isChecked()
         self.settings.image.save = True
         self.settings.image.save_path = self.lineEdit_tile_path.text()
         self.settings.image.label = self.lineEdit_tile_label.text() 
@@ -119,7 +123,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             napari.utils.notifications.show_error(f"Please enter a filename for the image")
             return
 
-        image = _tile._tile_image_collection_stitch(self.microscope, self.settings, grid_size, tile_size, overlap=0)
+        image = _tile._tile_image_collection_stitch(self.microscope, self.settings, 
+            grid_size, tile_size, overlap=0, cryo=cryo)
 
         self._update_viewer(image)
 

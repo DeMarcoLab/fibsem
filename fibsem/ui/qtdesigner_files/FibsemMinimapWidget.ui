@@ -32,64 +32,35 @@
     <item row="1" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
         <string>Collection</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="7" column="0" colspan="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_grid_size">
-          <property name="maximum">
-           <double>1000000.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>400.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="comboBox_tile_beam_type"/>
-        </item>
-        <item row="4" column="1">
-         <widget class="QLineEdit" name="lineEdit_tile_path">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_tile_path">
-          <property name="text">
-           <string>Path</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
+        <item row="7" column="0">
          <widget class="QLabel" name="label_tile_label">
           <property name="text">
            <string>Filename</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_tile_path">
+          <property name="text">
+           <string>Path</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_tile_beam_type">
+          <property name="text">
+           <string>Beam Type</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
          <widget class="QLineEdit" name="lineEdit_tile_label">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -98,28 +69,20 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>stitched-image</string>
+           <string>overview-image</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_tile_overlap">
-          <property name="text">
-           <string>Overlap (%)</string>
+        <item row="3" column="1">
+         <widget class="QSpinBox" name="spinBox_tile_resolution">
+          <property name="minimum">
+           <number>1</number>
           </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_tile_grid_size">
-          <property name="text">
-           <string>Grid Size (um)</string>
+          <property name="maximum">
+           <number>10000</number>
           </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_tile_tile_size">
-          <property name="text">
-           <string>Tile Size (um)</string>
+          <property name="value">
+           <number>1024</number>
           </property>
          </widget>
         </item>
@@ -133,17 +96,94 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_tile_beam_type">
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_tile_tile_size">
           <property name="text">
-           <string>Beam Type</string>
+           <string>Tile Size (um)</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0" colspan="2">
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_tile_resolution">
+          <property name="text">
+           <string>Resolution</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_tile_overlap">
+          <property name="text">
+           <string>Overlap (%)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_grid_size">
+          <property name="maximum">
+           <double>1000000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>400.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_tile_grid_size">
+          <property name="text">
+           <string>Grid Size (um)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboBox_tile_beam_type"/>
+        </item>
+        <item row="5" column="1">
+         <widget class="QCheckBox" name="checkBox_tile_autogamma">
+          <property name="text">
+           <string>AutoGamma</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QLineEdit" name="lineEdit_tile_path">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_tile_collection">
           <property name="text">
            <string>Run Tile Collection</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QCheckBox" name="checkBox_tile_autocontrast">
+          <property name="text">
+           <string>AutoContrast</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>

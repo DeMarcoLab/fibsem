@@ -12,7 +12,8 @@ from fibsem.structures import (BeamType, FibsemImage, FibsemImageMetadata, Micro
                                FibsemStagePosition, Point)
 from fibsem.microscope import FibsemMicroscope
 
-def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSettings, grid_size:float, tile_size:float, overlap: float = 0.0, cryo: bool = True) -> dict: 
+def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSettings, grid_size:float, 
+    tile_size:float, overlap: float = 0.0, cryo: bool = True) -> dict: 
 
     # TODO: OVERLAP + STITCH
     n_rows, n_cols = int(grid_size // tile_size), int(grid_size // tile_size)
@@ -21,9 +22,7 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
     dy *= -1 # need to invert y-axis
 
     # fixed image settings
-    settings.image.resolution = [1024, 1024]
     settings.image.dwell_time = 1e-6
-    settings.image.autocontrast = cryo # required for cryo
     settings.image.gamma_enabled = False
 
     logging.info(f"TILE COLLECTION: {settings.image.label}")
@@ -134,9 +133,9 @@ def _stitch_images(images, ddict: dict, overlap=0) -> FibsemImage:
     return image
 
 
-def _tile_image_collection_stitch(microscope, settings, grid_size, tile_size, overlap=0) -> FibsemImage:
+def _tile_image_collection_stitch(microscope, settings, grid_size, tile_size, overlap=0, cryo:bool=True) -> FibsemImage:
 
-    ddict = _tile_image_collection(microscope, settings, grid_size, tile_size)
+    ddict = _tile_image_collection(microscope, settings, grid_size, tile_size, cryo=cryo)
     image = _stitch_images(ddict["images"], ddict, overlap=overlap)
 
     return image
