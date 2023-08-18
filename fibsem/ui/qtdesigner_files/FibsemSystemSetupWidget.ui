@@ -409,280 +409,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Manipulator</string>
-             </property>
-            </widget>
-           </item>
-           <item row="29" column="0">
-            <widget class="QLabel" name="label_9">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Current (nA)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="28" column="1">
-            <widget class="QSpinBox" name="spinBox_ion_voltage">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="focusPolicy">
-              <enum>Qt::ClickFocus</enum>
-             </property>
-             <property name="maximum">
-              <number>100000</number>
-             </property>
-            </widget>
-           </item>
-           <item row="27" column="0">
-            <widget class="QLabel" name="label_7">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-               <underline>true</underline>
-              </font>
-             </property>
-             <property name="text">
-              <string>Ion Beam</string>
-             </property>
-            </widget>
-           </item>
-           <item row="20" column="1">
-            <widget class="QCheckBox" name="checkBox_needle_rotation">
-             <property name="text">
-              <string>Rotation</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="53" column="1">
-            <widget class="QSpinBox" name="spinBox_hfw">
-             <property name="focusPolicy">
-              <enum>Qt::ClickFocus</enum>
-             </property>
-             <property name="maximum">
-              <number>1000000</number>
-             </property>
-            </widget>
-           </item>
-           <item row="28" column="0">
-            <widget class="QLabel" name="label_8">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Voltage (V)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="41" column="1">
-            <widget class="QCheckBox" name="checkBox_apply_settings">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Apply Settings On Start-up</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="tiltFlatToElectronLabel">
-             <property name="text">
-              <string>Tilt Flat To Electron (deg)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="58" column="1">
-            <widget class="QCheckBox" name="checkBox_gamma">
-             <property name="text">
-              <string>Enabled</string>
-             </property>
-            </widget>
-           </item>
-           <item row="45" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current">
-             <property name="focusPolicy">
-              <enum>Qt::ClickFocus</enum>
-             </property>
-             <property name="decimals">
-              <number>4</number>
-             </property>
-             <property name="maximum">
-              <double>100000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="50" column="0">
-            <widget class="QLabel" name="label_32">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-               <underline>true</underline>
-              </font>
-             </property>
-             <property name="text">
-              <string>Imaging</string>
-             </property>
-            </widget>
-           </item>
-           <item row="51" column="0">
-            <widget class="QLabel" name="label_33">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Imaging Current (nA)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="37" column="0">
-            <widget class="QLabel" name="label_16">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Current (nA)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="15" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-               <underline>true</underline>
-              </font>
-             </property>
-             <property name="text">
-              <string>Stage</string>
-             </property>
-            </widget>
-           </item>
-           <item row="31" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_height_ion">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="focusPolicy">
-              <enum>Qt::ClickFocus</enum>
-             </property>
-             <property name="decimals">
-              <number>4</number>
-             </property>
-            </widget>
-           </item>
-           <item row="55" column="0">
-            <widget class="QLabel" name="label_37">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Autocontrast</string>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="1">
-            <widget class="QCheckBox" name="checkBox_eb">
-             <property name="text">
-              <string>Enabled</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="43" column="0" colspan="2">
-            <widget class="QLabel" name="label_21">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>User Settings </string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_header_stage">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Stage </string>
-             </property>
-            </widget>
-           </item>
-           <item row="30" column="0">
-            <widget class="QLabel" name="label_10">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Plasma Gas</string>
-             </property>
-            </widget>
-           </item>
-           <item row="13" column="0" colspan="2">
-            <widget class="Line" name="line_2">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item row="48" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_rate">
-             <property name="focusPolicy">
-              <enum>Qt::ClickFocus</enum>
-             </property>
-             <property name="decimals">
-              <number>4</number>
-             </property>
-             <property name="maximum">
-              <double>1000000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="35" column="1">
-            <widget class="QSpinBox" name="spinBox_voltage_eb">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="focusPolicy">
-              <enum>Qt::ClickFocus</enum>
-             </property>
-             <property name="maximum">
-              <number>1000000</number>
+              <string>Detector Mode</string>
              </property>
             </widget>
            </item>
@@ -703,13 +430,11 @@
            </item>
            <item row="23" column="0" colspan="2">
             <widget class="Line" name="line_4">
-
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
             </widget>
            </item>
-
            <item row="56" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time_imaging">
              <property name="focusPolicy">
@@ -756,52 +481,17 @@
               </font>
              </property>
              <property name="text">
-              <string>Needle Stage Height Limit (mm)</string>
+              <string>Detector Mode</string>
              </property>
             </widget>
            </item>
-
            <item row="18" column="0" colspan="2">
             <widget class="Line" name="line_3">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
-
-             </property>
-             <property name="maximum">
-              <double>100000.000000000000000</double>
              </property>
             </widget>
            </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="label">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Microscope Model</string>
-             </property>
-            </widget>
-           </item>
-           <item row="32" column="1" colspan="2">
-            <widget class="QLineEdit" name="lineEdit_detector_type_ion">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-            </widget>
-           </item>
-
            <item row="40" column="1" colspan="2">
             <widget class="QLineEdit" name="lineEdit_detector_mode_eb">
              <property name="sizePolicy">
@@ -810,12 +500,10 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-
              <property name="font">
               <font>
                <pointsize>8</pointsize>
               </font>
-
              </property>
             </widget>
            </item>
@@ -863,7 +551,6 @@
            </item>
            <item row="35" column="1">
             <widget class="QSpinBox" name="spinBox_voltage_eb">
-
              <property name="font">
               <font>
                <pointsize>8</pointsize>
@@ -873,7 +560,6 @@
               <enum>Qt::ClickFocus</enum>
              </property>
              <property name="maximum">
-
               <number>1000000</number>
              </property>
             </widget>
@@ -890,7 +576,6 @@
               <font>
                <pointsize>8</pointsize>
               </font>
-
              </property>
             </widget>
            </item>
@@ -905,7 +590,6 @@
              <property name="font">
               <font>
                <pointsize>8</pointsize>
-
               </font>
              </property>
             </widget>
@@ -915,15 +599,9 @@
              <property name="font">
               <font>
                <pointsize>8</pointsize>
-
               </font>
              </property>
-            </widget>
-           </item>
-           <item row="12" column="1">
-            <widget class="QCheckBox" name="checkBox_select_plasma_gas">
              <property name="text">
-
               <string>Save</string>
              </property>
             </widget>
@@ -936,7 +614,6 @@
               </font>
              </property>
              <property name="text">
-
               <string>Gamma </string>
              </property>
             </widget>
@@ -970,32 +647,27 @@
            </item>
            <item row="37" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_current_eb">
-
              <property name="font">
               <font>
                <pointsize>8</pointsize>
               </font>
-
              </property>
              <property name="decimals">
               <number>4</number>
              </property>
-             <property name="text">
-              <string>Beam</string>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
              </property>
             </widget>
            </item>
-
            <item row="54" column="0">
             <widget class="QLabel" name="label_36">
-
              <property name="font">
               <font>
                <pointsize>8</pointsize>
               </font>
              </property>
              <property name="text">
-
               <string>Beam</string>
              </property>
             </widget>
@@ -1015,7 +687,6 @@
               </font>
              </property>
              <property name="text">
-
               <string>Spot Size (nm)</string>
              </property>
             </widget>
@@ -1207,14 +878,12 @@
            </item>
            <item row="32" column="0">
             <widget class="QLabel" name="label_12">
-
              <property name="font">
               <font>
                <pointsize>8</pointsize>
               </font>
              </property>
              <property name="text">
-
               <string>Detector Type</string>
              </property>
             </widget>
@@ -1223,12 +892,10 @@
             <widget class="QLabel" name="label_31">
              <property name="font">
               <font>
-               <pointsize>10</pointsize>
-               <underline>true</underline>
+               <pointsize>8</pointsize>
               </font>
              </property>
              <property name="text">
-
               <string>Dwell time (µs)</string>
              </property>
             </widget>
@@ -1258,7 +925,6 @@
               </font>
              </property>
              <property name="text">
-
               <string>Imaging Current (nA)</string>
              </property>
             </widget>
@@ -1330,13 +996,11 @@
            </item>
            <item row="41" column="1">
             <widget class="QCheckBox" name="checkBox_apply_settings">
-
              <property name="font">
               <font>
                <pointsize>8</pointsize>
               </font>
              </property>
-
              <property name="text">
               <string>Apply Settings On Start-up</string>
              </property>
@@ -1350,14 +1014,12 @@
               </font>
              </property>
              <property name="text">
-
               <string>Milling Current (nA)</string>
              </property>
             </widget>
            </item>
            <item row="15" column="0">
             <widget class="QLabel" name="label_4">
-
              <property name="font">
               <font>
                <pointsize>8</pointsize>
@@ -1365,24 +1027,18 @@
               </font>
              </property>
              <property name="text">
-
               <string>Stage</string>
-
-             </property>
-             <property name="checked">
-              <bool>true</bool>
              </property>
             </widget>
            </item>
-
            <item row="34" column="0">
             <widget class="QLabel" name="label_14">
              <property name="font">
               <font>
-               <pointsize>8</pointsize>
+               <pointsize>10</pointsize>
+               <underline>true</underline>
               </font>
              </property>
-
              <property name="text">
               <string>Electron Beam</string>
              </property>
@@ -1397,7 +1053,6 @@
               </font>
              </property>
              <property name="text">
-
               <string>Milling</string>
              </property>
             </widget>
@@ -1410,7 +1065,6 @@
               </font>
              </property>
              <property name="text">
-
               <string>Current (nA)</string>
              </property>
             </widget>
@@ -1458,7 +1112,6 @@
                <pointsize>8</pointsize>
               </font>
              </property>
-
              <property name="text">
               <string>Dwell Time (µs)</string>
              </property>
@@ -1488,7 +1141,6 @@
              </property>
             </widget>
            </item>
-
            <item row="26" column="0" colspan="2">
             <widget class="QLabel" name="label_20">
              <property name="font">
@@ -1516,8 +1168,8 @@
              <property name="decimals">
               <number>4</number>
              </property>
-             <property name="tristate">
-              <bool>false</bool>
+             <property name="maximum">
+              <double>1000000.000000000000000</double>
              </property>
             </widget>
            </item>
@@ -1530,7 +1182,6 @@
               </font>
              </property>
              <property name="text">
-
               <string>Imaging</string>
              </property>
             </widget>

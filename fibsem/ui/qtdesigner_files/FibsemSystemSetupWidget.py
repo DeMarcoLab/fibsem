@@ -146,7 +146,6 @@ class Ui_Form(object):
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
-
         self.label_21.setFont(font)
         self.label_21.setObjectName("label_21")
         self.gridLayout_8.addWidget(self.label_21, 43, 0, 1, 2)
@@ -182,12 +181,10 @@ class Ui_Form(object):
         self.lineEdit_beam_type.setObjectName("lineEdit_beam_type")
         self.gridLayout_8.addWidget(self.lineEdit_beam_type, 54, 1, 1, 2)
         self.label_header_stage = QtWidgets.QLabel(self.scrollAreaWidgetContents)
-
         font = QtGui.QFont()
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
-
         self.label_header_stage.setFont(font)
         self.label_header_stage.setObjectName("label_header_stage")
         self.gridLayout_8.addWidget(self.label_header_stage, 0, 0, 1, 1)
@@ -252,12 +249,10 @@ class Ui_Form(object):
         self.doubleSpinBox_height_eb = QtWidgets.QDoubleSpinBox(self.scrollAreaWidgetContents)
         font = QtGui.QFont()
         font.setPointSize(8)
-
         self.doubleSpinBox_height_eb.setFont(font)
         self.doubleSpinBox_height_eb.setDecimals(4)
         self.doubleSpinBox_height_eb.setObjectName("doubleSpinBox_height_eb")
         self.gridLayout_8.addWidget(self.doubleSpinBox_height_eb, 38, 1, 1, 1)
-
         self.label_13 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         font = QtGui.QFont()
         font.setPointSize(8)
@@ -269,7 +264,6 @@ class Ui_Form(object):
         self.line_3.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_3.setObjectName("line_3")
         self.gridLayout_8.addWidget(self.line_3, 18, 0, 1, 2)
-
         self.lineEdit_detector_mode_eb = QtWidgets.QLineEdit(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -281,7 +275,6 @@ class Ui_Form(object):
         self.lineEdit_detector_mode_eb.setFont(font)
         self.lineEdit_detector_mode_eb.setObjectName("lineEdit_detector_mode_eb")
         self.gridLayout_8.addWidget(self.lineEdit_detector_mode_eb, 40, 1, 1, 2)
-
         self.spinBox_ion_voltage = QtWidgets.QSpinBox(self.scrollAreaWidgetContents)
         font = QtGui.QFont()
         font.setPointSize(8)
@@ -501,7 +494,6 @@ class Ui_Form(object):
         self.label_34.setFont(font)
         self.label_34.setObjectName("label_34")
         self.gridLayout_8.addWidget(self.label_34, 52, 0, 1, 1)
-
         self.spinBox_res_height = QtWidgets.QSpinBox(self.scrollAreaWidgetContents)
         self.spinBox_res_height.setMaximum(100000)
         self.spinBox_res_height.setObjectName("spinBox_res_height")
@@ -564,7 +556,6 @@ class Ui_Form(object):
         self.label_27.setFont(font)
         self.label_27.setObjectName("label_27")
         self.gridLayout_8.addWidget(self.label_27, 44, 0, 1, 1)
-
         self.label_16 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         font = QtGui.QFont()
         font.setPointSize(8)
@@ -623,17 +614,9 @@ class Ui_Form(object):
         self.doubleSpinBox_ion_current.setObjectName("doubleSpinBox_ion_current")
         self.gridLayout_8.addWidget(self.doubleSpinBox_ion_current, 29, 1, 1, 1)
         self.label_32 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
-
         font = QtGui.QFont()
-        font.setPointSize(8)
-        self.label_15.setFont(font)
-        self.label_15.setObjectName("label_15")
-        self.gridLayout_8.addWidget(self.label_15, 35, 0, 1, 1)
-        self.label_2 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
-        font = QtGui.QFont()
-        font.setPointSize(8)
+        font.setPointSize(10)
         font.setUnderline(True)
-
         self.label_32.setFont(font)
         self.label_32.setObjectName("label_32")
         self.gridLayout_8.addWidget(self.label_32, 50, 0, 1, 1)
@@ -644,7 +627,6 @@ class Ui_Form(object):
         self.label_7.setFont(font)
         self.label_7.setObjectName("label_7")
         self.gridLayout_8.addWidget(self.label_7, 27, 0, 1, 1)
-
         self.line = QtWidgets.QFrame(self.scrollAreaWidgetContents)
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -720,7 +702,6 @@ class Ui_Form(object):
         self.label_ip_address.setText(_translate("Form", "IP address"))
         self.label_manufacturer.setText(_translate("Form", "Manufacturer "))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("Form", "Connect"))
-
         self.label_18.setText(_translate("Form", "Detector Type"))
         self.checkBox_save.setText(_translate("Form", "Enabled"))
         self.label_17.setText(_translate("Form", "Eucentric Height  (m)"))
