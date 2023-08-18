@@ -9,7 +9,8 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
 import os
-
+from fibsem import patterning
+                
 from fibsem.imaging import _tile
 from scipy.ndimage import median_filter
 
@@ -74,6 +75,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
 
+        # pattern overlay
+        self.comboBox_pattern_overlay.addItems([k for k in self.settings.protocol if "stages" in self.settings.protocol[k] or "type" in self.settings.protocol[k]])
+        self.comboBox_pattern_overlay.currentIndexChanged.connect(self._update_pattern_overlay)
+        self.checkBox_pattern_overlay.stateChanged.connect(self._update_pattern_overlay)
 
         # correlation
         self.actionLoad_Correlation_Image.triggered.connect(self._load_correlation_image)
@@ -350,6 +355,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         napari.utils.notifications.show_info(f"Saved positions to {path}")
 
+    def _update_pattern_overlay(self):
+
+        self._draw_positions()
+
 
     def _draw_positions(self):
         
@@ -390,12 +399,13 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 self._reprojection_layer.data = data
                 self._reprojection_layer.text = text
 
-            _SHOW_PATTERNS:bool = False
+            _SHOW_PATTERNS:bool = self.checkBox_pattern_overlay.isChecked()
             if _SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
-                from fibsem import patterning
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
-                protocol = utils.load_yaml(r"/home/patrick/github/autolamella/autolamella/protocol/protocol.yaml")
-                milling_stages = [patterning._get_milling_stages("trench", protocol, Point(point.x, point.y))[0] for point in points]
+                # protocol = utils.load_yaml(r"/home/patrick/github/autolamella/autolamella/protocol/protocol.yaml")
+                pattern = self.comboBox_pattern_overlay.currentText() 
+                
+                milling_stages = [patterning._get_milling_stages(pattern, self.settings.protocol, Point(point.x, point.y))[0] for point in points]
                 
                 for stage, pos in zip(milling_stages, drawn_positions[:-1]):
                     stage.name = pos.name
@@ -404,6 +414,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                     ib_image=self.image, 
                     eb_image=None, 
                     milling_stages = milling_stages)
+            else:
+                ui_utils._remove_all_layers(viewer=self.viewer)
+
+        self.viewer.layers.selection.active = self._image_layer
+
 
     def _load_correlation_image(self):
 
