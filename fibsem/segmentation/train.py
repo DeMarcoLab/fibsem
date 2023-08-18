@@ -65,7 +65,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
 
         img_base = images[idx].detach().cpu().squeeze().numpy()
         gt_base = masks[idx].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
-        if WANDB:
+        if WANDB: # TODO: reduce the frequency of this logging
             wandb.log({"train_loss": loss.item()})
 
             wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Input Image")

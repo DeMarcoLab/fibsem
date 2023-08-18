@@ -228,3 +228,4 @@ class Ui_Form(object):
         self.label_patterns_header.setText(_translate("Form", "Patterns"))
         self.label_pattern_set.setText(_translate("Form", "Pattern"))
         self.checkBox_relative_move.setText(_translate("Form", "Keep Relative Orientation"))
+

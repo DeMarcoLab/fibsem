@@ -20,6 +20,7 @@ from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui
 from napari.qt.threading import thread_worker
+from fibsem.ui import _stylesheets
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes"]
 _ANGLE_KEYS = ["rotation"]
@@ -135,16 +136,17 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     
         # milling stages
         self.pushButton_add_milling_stage.clicked.connect(self.add_milling_stage)
-        self.pushButton_add_milling_stage.setStyleSheet("background-color: green; color: white;")
+        self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_milling_stage.clicked.connect(self.remove_milling_stage)
-        self.pushButton_remove_milling_stage.setStyleSheet("background-color: red; color: white;")
+        self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
         
         # update ui
         self.pushButton.clicked.connect(lambda: self.update_ui())
-        self.pushButton.setStyleSheet("background-color: blue; color: white;")
+        self.pushButton.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
         # run milling
         self.pushButton_run_milling.clicked.connect(self.run_milling)
+        self.pushButton_run_milling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
 
         if self.milling_stages:
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
