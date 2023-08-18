@@ -10,7 +10,8 @@ from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point, 
 from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
 import os
 from fibsem import patterning
-                
+from napari.qt.threading import thread_worker
+
 from fibsem.imaging import _tile
 from scipy.ndimage import median_filter
 
@@ -123,11 +124,27 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             napari.utils.notifications.show_error(f"Please enter a filename for the image")
             return
 
-        image = _tile._tile_image_collection_stitch(self.microscope, self.settings, 
-            grid_size, tile_size, overlap=0, cryo=cryo)
+        worker = self._run_tile_collection_thread(
+            microscope=self.microscope, settings=self.settings, 
+            grid_size=grid_size, tile_size=tile_size, 
+            overlap=0, cryo=cryo)
 
-        self._update_viewer(image)
+        worker.finished.connect(self._tile_collection_finished)
+        worker.start()
 
+    def _tile_collection_finished(self):
+
+        napari.utils.notifications.show_info(f"Tile collection finished.")
+        self._update_viewer(self.image)
+    
+    @thread_worker
+    def _run_tile_collection_thread(self, microscope: FibsemMicroscope, settings:MicroscopeSettings, 
+        grid_size: float, tile_size:float, overlap:float=0, cryo: bool=True):
+
+        self.image = _tile._tile_image_collection_stitch(
+            microscope=microscope, settings=settings, 
+            grid_size=grid_size, tile_size=tile_size, 
+            overlap=overlap, cryo=cryo)
 
     def load_image(self):
 
