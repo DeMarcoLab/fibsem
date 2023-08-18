@@ -57,6 +57,11 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
     state = microscope.get_current_microscope_state()
     images = []
 
+    # stitched image
+    shape = settings.image.resolution
+    arr = np.zeros(shape=(n_rows*shape[0], n_cols*shape[1]), dtype=np.uint8)
+    _counter = 0
+    _total = n_rows*n_cols
     for i in range(n_rows):
 
         microscope._safe_absolute_stage_movement(state.absolute_position)
@@ -75,10 +80,17 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
             microscope.stable_move(settings=settings, dx=dx*(j!=0),  dy=0, beam_type=settings.image.beam_type) # dont move on the first tile?
 
             logging.info(f"ACQUIRING IMAGE {i}, {j}")
-
-            if parent_ui:
-                parent_ui._update_tile_collection.emit({"msg": "Tile Collected", "i": i, "j": j, "n_rows": n_rows, "n_cols": n_cols, "image": None })
             image = acquire.new_image(microscope, settings.image)
+
+            # stitch image
+            arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = image.data
+            
+            if parent_ui:
+                _counter+=1 
+                parent_ui._update_tile_collection.emit({"msg": "Tile Collected", "i": i, "j": j, 
+                    "n_rows": n_rows, "n_cols": n_cols, "image": arr, "counter": _counter, "total": _total })
+                time.sleep(1)
+
             img_row.append(image)
         images.append(img_row)
 
@@ -90,7 +102,7 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
             "image_settings": settings.image, 
             "dx": dx, "dy": dy, "cryo": cryo,
             "start_state": start_state, "prev-label": prev_label, "start_move": start_move, "dxg": dxg, "dyg": dyg,
-            "images": images, "big_image": big_image }
+            "images": images, "big_image": big_image, "stitched_image": arr}
 
     return ddict
 
@@ -98,21 +110,22 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
 # TODO: stitch while collecting
 def _stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemImage:
 
-    arr = np.array(images)
-    n_rows, n_cols = arr.shape[0], arr.shape[1]
-    shape = arr[0, 0].data.shape
+    # arr = np.array(images)
+    # n_rows, n_cols = arr.shape[0], arr.shape[1]
+    # shape = arr[0, 0].data.shape
 
-    arr = np.zeros(shape=(n_rows*shape[0], n_cols*shape[1]), dtype=np.uint8)
+    # arr = np.zeros(shape=(n_rows*shape[0], n_cols*shape[1]), dtype=np.uint8)
 
-    for i in range(n_rows):
-        for j in range(n_cols):
-            arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = images[i][j].data
+    # for i in range(n_rows):
+    #     for j in range(n_cols):
+    #         arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = images[i][j].data
             
-            if parent_ui:
-                parent_ui._update_tile_collection.emit({"msg": "Tile Stitched", "i": i, "j": j, 
-                    "n_rows": n_rows, "n_cols": n_cols, "image": arr })
-            # time.sleep(0.5)
+    #         if parent_ui:
+    #             parent_ui._update_tile_collection.emit({"msg": "Tile Stitched", "i": i, "j": j, 
+    #                 "n_rows": n_rows, "n_cols": n_cols, "image": arr })
     
+    arr = ddict["stitched_image"]
+
     # convert to fibsem image
     image = FibsemImage(data=arr, metadata=images[0][0].metadata)
     image.metadata.microscope_state = deepcopy(ddict["start_state"])
@@ -150,7 +163,7 @@ def _tile_image_collection_stitch(microscope, settings, grid_size, tile_size, ov
     return image
 
 
-def _stitch_arr(images, dtype=np.uint8):
+def _stitch_arr(images:list[FibsemImage], dtype=np.uint8):
 
     arr = np.array(images)
     n_rows, n_cols = arr.shape[0], arr.shape[1]

@@ -151,8 +151,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
     def _update_tile_collection_callback(self, ddict):
         
-        msg = f"{ddict['msg']} ({ddict['i']}, {ddict['j']})"
-
+        # msg = f"{ddict['msg']} ({ddict['i']+1}/{ddict['n_rows']}, {ddict['j']+1}/{ddict['n_cols']})"
+        msg = f"{ddict['msg']} ({ddict['counter']}/{ddict['total']})"
         logging.info(msg)
         napari.utils.notifications.show_info(msg)
 
