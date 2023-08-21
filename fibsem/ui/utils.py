@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from fibsem.config import load_microscope_manufacturer
 from fibsem import constants
 from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
