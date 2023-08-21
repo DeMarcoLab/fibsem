@@ -404,13 +404,14 @@ class DetectedFeatures:
     mask: np.ndarray # class binary mask
     rgb: np.ndarray # rgb mask
     pixelsize: float
-    _distance: Point = Point(x=0, y=0)
+    _distance: Point = None
+    _offset: Point = Point(0, 0)
     fibsem_image: FibsemImage = None
 
     @property
     def distance(self):
         assert len(self.features) >= 2, "Need at least two features to calculate distance"
-        return self.features[0].px.distance(self.features[1].px)._to_metres(self.pixelsize)
+        return self.features[0].px.distance(self.features[1].px)._to_metres(self.pixelsize) + self._offset        
         
     @distance.setter
     def distance(self, value: Point) -> None:
