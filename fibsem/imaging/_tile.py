@@ -231,7 +231,8 @@ def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition]
 
 
 
-def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], show:bool=False) -> plt.Figure:
+def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], show:bool=False, 
+    _clip: bool=False, _bound: bool= True) -> plt.Figure:
 
     points = _reproject_positions(image, positions)
 
@@ -242,6 +243,18 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
     COLOURS = ["lime", "blue", "cyan", "magenta", 
         "hotpink", "yellow", "orange", "red"]
     for i, (pos, pt) in enumerate(zip(positions, points)):
+
+        # if points outside image, don't plot
+        if _bound:
+            if pt.x<0 or pt.x>image.data.shape[1] or pt.y<0 or pt.y>image.data.shape[0]:
+                continue          
+        
+        # clip points to image 
+        if _clip:
+            pt.x = np.clip(pt.x, 0, image.data.shape[1])
+            pt.y = np.clip(pt.y, 0, image.data.shape[0])
+
+
         c =COLOURS[i%len(COLOURS)]
         plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
 
@@ -281,3 +294,52 @@ def _convert_image_coords_to_positions(microscope, settings, image, coords) -> l
         positions.append(_convert_image_coord_to_position(microscope, settings, image, coord))
         positions[i].name = f"Position {i:02d}"
     return positions
+
+
+
+##### THERMO ONLY
+
+X_OFFSET = -0.0005127403888932854 
+Y_OFFSET = 0.0007937916666666666
+
+def _to_specimen_coordinate_system(pos: FibsemStagePosition):
+    """Converts a position in the raw coordinate system to the specimen coordinate system"""
+
+    specimen_offset = FibsemStagePosition(x=X_OFFSET, y=Y_OFFSET, z=0.0, r=0, t=0, coordinate_system="RAW")
+    specimen_position = pos - specimen_offset
+
+    return specimen_position
+
+def _to_raw_coordinate_system(pos: FibsemStagePosition):
+    """Converts a position in the raw coordinate system to the specimen coordinate system"""
+
+    specimen_offset = FibsemStagePosition(x=X_OFFSET, y=Y_OFFSET, z=0.0, r=0, t=0, coordinate_system="RAW")
+    raw_position = pos + specimen_offset
+
+    return raw_position
+
+
+def _transform_position(pos: FibsemStagePosition):
+    """This function takes in a position flat to a beam, and outputs the position if stage was rotated / tilted flat to the other beam)"""
+
+    specimen_position = _to_specimen_coordinate_system(pos)
+    # print("raw      pos: ", pos)
+    # print("specimen pos: ", specimen_position)
+
+    # # inverse xy (rotate 180 degrees)
+    specimen_position.x = -specimen_position.x
+    specimen_position.y = -specimen_position.y
+
+    # movement offset (calibration for compucentric rotation error)
+    specimen_position.x += 50e-6
+    specimen_position.y += 25e-6
+
+    # print("rotated pos: ", specimen_position)
+
+    # _to_raw_coordinates
+    transformed_position = _to_raw_coordinate_system(specimen_position)
+    transformed_position.name = pos.name
+
+    # print("trans   pos: ", transformed_position)
+
+    return transformed_position
