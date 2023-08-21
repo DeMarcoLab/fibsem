@@ -11,7 +11,7 @@ from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
 import os
 from fibsem import patterning
 from napari.qt.threading import thread_worker
-
+from fibsem.ui import _stylesheets
 from fibsem.imaging import _tile
 from scipy.ndimage import median_filter
 
@@ -59,6 +59,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def setup_connections(self):
 
         self.pushButton_run_tile_collection.clicked.connect(self.run_tile_collection)
+        self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.actionLoad_Image.triggered.connect(self.load_image)
 
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
@@ -67,9 +68,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self.comboBox_tile_position.currentIndexChanged.connect(self._update_current_position_info)
         self.pushButton_update_position.clicked.connect(self._update_position_pressed)
-        self.pushButton_update_position.setStyleSheet("background-color: blue")
+        self.pushButton_update_position.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
-        self.pushButton_remove_position.setStyleSheet("background-color: red")
+        self.pushButton_remove_position.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
 
         self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
@@ -109,6 +110,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         print("run_tile_collection")
 
+
+
         beam_type = BeamType[self.comboBox_tile_beam_type.currentText()]
         grid_size = self.doubleSpinBox_tile_grid_size.value() * constants.MICRO_TO_SI
         tile_size = self.doubleSpinBox_tile_tile_size.value() * constants.MICRO_TO_SI
@@ -126,6 +129,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         if self.settings.image.label == "":
             napari.utils.notifications.show_error(f"Please enter a filename for the image")
             return
+        
+        # ui feedback
+        self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+        self.pushButton_run_tile_collection.setText("Running Tile Collection...")
 
         worker = self._run_tile_collection_thread(
             microscope=self.microscope, settings=self.settings, 
@@ -139,6 +146,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         napari.utils.notifications.show_info(f"Tile collection finished.")
         self._update_viewer(self.image)
+        self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_run_tile_collection.setText("Run Tile Collection")
+
     
     @thread_worker
     def _run_tile_collection_thread(self, microscope: FibsemMicroscope, settings:MicroscopeSettings, 
