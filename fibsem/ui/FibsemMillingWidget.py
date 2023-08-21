@@ -454,39 +454,39 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             if self.checkBox_relative_move.isChecked():
                 diff_x = point.x - self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.point.x
                 diff_y = point.y - self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.point.y
-                for milling_stage in self.milling_stages:
-                # loop to check through all patterns to see if they are in bounds
-                    pattern_dict_existing = milling_stage.pattern.protocol
-                    pattern_name = milling_stage.pattern.name
-                    pattern_renew = patterning.get_pattern(pattern_name)
-                    new_point = Point(x=milling_stage.pattern.point.x + diff_x, y=milling_stage.pattern.point.y + diff_y)
-                    pattern_renew.define(protocol=pattern_dict_existing, point=new_point)
-                    pattern_renew.point = new_point
+            for milling_stage in self.milling_stages:
+            # loop to check through all patterns to see if they are in bounds
+                pattern_dict_existing = milling_stage.pattern.protocol
+                pattern_name = milling_stage.pattern.name
+                pattern_renew = patterning.get_pattern(pattern_name)
+                new_point = Point(x=milling_stage.pattern.point.x + diff_x, y=milling_stage.pattern.point.y + diff_y) if self.checkBox_relative_move.isChecked() else point
+                pattern_renew.define(protocol=pattern_dict_existing, point=new_point)
+                pattern_renew.point = new_point
 
-                    pattern_is_valid = self.valid_pattern_location(pattern_renew)
+                pattern_is_valid = self.valid_pattern_location(pattern_renew)
 
-                    if not pattern_is_valid:
-                        logging.info(f"Could not move Patterns, out of bounds at at {point}")
-                        napari.utils.notifications.show_warning(f"Patterns is not within the image.")
-                        break
-                    else:
-                        renewed_patterns.append(pattern_renew)
-            else:
-                for milling_stage in self.milling_stages:
-                    # loop to check through all patterns to see if they are in bounds
-                    pattern_dict_existing = milling_stage.pattern.protocol
-                    pattern_name = milling_stage.pattern.name
-                    pattern_renew = patterning.get_pattern(pattern_name)
-                    pattern_renew.define(protocol=pattern_dict_existing, point=point)
+                if not pattern_is_valid:
+                    logging.info(f"Could not move Patterns, out of bounds at at {point}")
+                    napari.utils.notifications.show_warning(f"Patterns is not within the image.")
+                    break
+                else:
+                    renewed_patterns.append(pattern_renew)
+            # else:
+            #     for milling_stage in self.milling_stages:
+            #         # loop to check through all patterns to see if they are in bounds
+            #         pattern_dict_existing = milling_stage.pattern.protocol
+            #         pattern_name = milling_stage.pattern.name
+            #         pattern_renew = patterning.get_pattern(pattern_name)
+            #         pattern_renew.define(protocol=pattern_dict_existing, point=point)
 
-                    pattern_is_valid = self.valid_pattern_location(pattern_renew)
+            #         pattern_is_valid = self.valid_pattern_location(pattern_renew)
 
-                    if not pattern_is_valid:
-                        logging.info(f"Could not move Patterns, out of bounds at at {point}")
-                        napari.utils.notifications.show_warning(f"Patterns is not within the image.")
-                        break
-                    else:
-                        renewed_patterns.append(pattern_renew)
+            #         if not pattern_is_valid:
+            #             logging.info(f"Could not move Patterns, out of bounds at at {point}")
+            #             napari.utils.notifications.show_warning(f"Patterns is not within the image.")
+            #             break
+            #         else:
+            #             renewed_patterns.append(pattern_renew)
 
             if len(renewed_patterns) == len(self.milling_stages):
                 for milling_stage, pattern_renew in zip(self.milling_stages, renewed_patterns):
