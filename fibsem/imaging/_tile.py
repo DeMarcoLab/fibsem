@@ -220,11 +220,29 @@ def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
     return point
 
 
-def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition]):
+def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition], _bound: bool=False):
     # reprojection of positions onto image coordinates
     points = []
     for pos in positions:
-        points.append(_calculate_repojection(image, pos))
+
+        # automate logic for transforming positions
+        # assume only two valid positions are when stage is flat to either beam...  
+        # r needs to be 180 degrees different
+        # currently only one way: Flat to Ion -> Flat to Electron
+        dr = abs(np.rad2deg(image.metadata.microscope_state.absolute_position.r - pos.r))
+        # print("dr: ", dr)
+        if np.isclose(dr, 180, atol=2):     
+            # print("transforming position")
+            pos = _transform_position(pos)
+
+        pt = _calculate_repojection(image, pos)
+        pt.name = pos.name
+        
+        if _bound:
+            if pt.x<0 or pt.x>image.data.shape[1] or pt.y<0 or pt.y>image.data.shape[0]:
+                continue 
+        
+        points.append(pt)
     
     return points
 
@@ -259,7 +277,7 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
         plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
 
         # draw label next to point
-        plt.text(pt.x-225, pt.y-50, pos.name, fontsize=14, color=c, alpha=0.75)
+        plt.text(pt.x-225, pt.y-50, pos.name, fontsize=18, color=c, alpha=0.75)
 
     plt.axis("off")
     if show:
@@ -270,8 +288,6 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
 
 # TODO: these probs should be somewhere else
 def _convert_image_coord_to_position(microscope, settings, image, coords) -> FibsemStagePosition:
-
-
 
     # microscope coordinates
     point = conversions.image_to_microscope_image_coordinates(
