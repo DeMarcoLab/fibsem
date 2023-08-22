@@ -404,13 +404,14 @@ class DetectedFeatures:
     mask: np.ndarray # class binary mask
     rgb: np.ndarray # rgb mask
     pixelsize: float
-    _distance: Point = Point(x=0, y=0)
+    _distance: Point = None
+    _offset: Point = Point(0, 0)
     fibsem_image: FibsemImage = None
 
     @property
     def distance(self):
         assert len(self.features) >= 2, "Need at least two features to calculate distance"
-        return self.features[0].px.distance(self.features[1].px)._to_metres(self.pixelsize)
+        return self.features[0].px.distance(self.features[1].px)._to_metres(self.pixelsize) + self._offset        
         
     @distance.setter
     def distance(self, value: Point) -> None:
@@ -539,7 +540,9 @@ def plot_detection(det: DetectedFeatures):
 
     fig, ax = plt.subplots(1, 1, figsize=(12, 7))
 
-    plot_det(det, ax)
+    fig = plot_det(det, ax)
+    
+    return fig
 
 
 def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", show: bool = True):
@@ -569,11 +572,11 @@ def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", sho
     ax.legend(loc="best")
     ax.axis("off")
 
-    if len(det.features) == 2:
-        # plot white line between features
-        ax.plot([det.features[0].px.x, det.features[1].px.x],
-                [det.features[0].px.y, det.features[1].px.y], 
-                color="w", linestyle="--")
+    # if len(det.features) == 2:
+    #     # plot white line between features
+    #     ax.plot([det.features[0].px.x, det.features[1].px.x],
+    #             [det.features[0].px.y, det.features[1].px.y], 
+    #             color="w", linestyle="--")
 
     if show:
         plt.show()
