@@ -450,6 +450,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # only move the pattern if milling widget is activate and beamtype is ion?
         renewed_patterns = []
+        _patterns_valid = True
 
         current_stage_index = self.comboBox_milling_stage.currentIndex()
 
@@ -475,19 +476,22 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             if not pattern_is_valid:
                 logging.info(f"Could not move Patterns, out of bounds at at {point}")
                 napari.utils.notifications.show_warning(f"Patterns is not within the image.")
+                _patterns_valid = False
                 break
             else:
                 renewed_patterns.append(pattern_renew)
 
         _redraw = False
 
-        if len(renewed_patterns) == len(self.milling_stages):
-            for milling_stage, pattern_renew in zip(self.milling_stages, renewed_patterns):
-                milling_stage.pattern = pattern_renew
-            _redraw = True
-        elif len(renewed_patterns)>0:
-            self.milling_stages[current_stage_index].pattern = renewed_patterns[0]
-            _redraw = True
+        if _patterns_valid:
+
+            if len(renewed_patterns) == len(self.milling_stages):
+                for milling_stage, pattern_renew in zip(self.milling_stages, renewed_patterns):
+                    milling_stage.pattern = pattern_renew
+                _redraw = True
+            elif len(renewed_patterns)>0:
+                self.milling_stages[current_stage_index].pattern = renewed_patterns[0]
+                _redraw = True
 
         if _redraw:
             self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
