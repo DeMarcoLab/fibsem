@@ -450,10 +450,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # only move the pattern if milling widget is activate and beamtype is ion?
         renewed_patterns = []
-        # if 'Control' in event.modifiers:
-            # if self.checkBox_relative_move.isChecked():
-        diff_x = point.x - self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.point.x
-        diff_y = point.y - self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.point.y
+
+        diff = point - self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.point
 
         for idx, milling_stage in enumerate(self.milling_stages):
         # loop to check through all patterns to see if they are in bounds
@@ -463,9 +461,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             pattern_dict_existing = milling_stage.pattern.protocol
             pattern_name = milling_stage.pattern.name
             pattern_renew = patterning.get_pattern(pattern_name)
-            new_point = Point(x=milling_stage.pattern.point.x + diff_x, y=milling_stage.pattern.point.y + diff_y) if self.checkBox_relative_move.isChecked() else point
-            pattern_renew.define(protocol=pattern_dict_existing, point=new_point)
-            pattern_renew.point = new_point
+
+            if self.checkBox_relative_move.isChecked():
+                point = Point(x=milling_stage.pattern.point.x + diff.x, y=milling_stage.pattern.point.y + diff.y)
+            
+            pattern_renew.define(protocol=pattern_dict_existing, point=point)
+            pattern_renew.point = point
 
             pattern_is_valid = self.valid_pattern_location(pattern_renew)
 
@@ -475,22 +476,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 break
             else:
                 renewed_patterns.append(pattern_renew)
-            # else:
-            #     for milling_stage in self.milling_stages:
-            #         # loop to check through all patterns to see if they are in bounds
-            #         pattern_dict_existing = milling_stage.pattern.protocol
-            #         pattern_name = milling_stage.pattern.name
-            #         pattern_renew = patterning.get_pattern(pattern_name)
-            #         pattern_renew.define(protocol=pattern_dict_existing, point=point)
-
-            #         pattern_is_valid = self.valid_pattern_location(pattern_renew)
-
-            #         if not pattern_is_valid:
-            #             logging.info(f"Could not move Patterns, out of bounds at at {point}")
-            #             napari.utils.notifications.show_warning(f"Patterns is not within the image.")
-            #             break
-            #         else:
-            #             renewed_patterns.append(pattern_renew)
 
         _redraw = False
 
@@ -507,32 +492,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
             logging.info(f"Moved patterns to {point} ")
+            logging.info(f"MILL | {self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
             self.update_ui(milling_stages=self.milling_stages)
             self.milling_position_changed.emit()
     
-        # else:
-        #     # update pattern
-        #     current_stage_index = self.comboBox_milling_stage.currentIndex()
-        #     pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
-        #     pattern_dict = self.milling_stages[current_stage_index].pattern.protocol
-        #     pattern.define(protocol=pattern_dict, point=point)
-        #     is_valid = self.valid_pattern_location(pattern)
-        #     if is_valid:
 
-        #         logging.info(f"MILL | {pattern.name} | {point - self.milling_stages[current_stage_index].pattern.point} | {BeamType.ION}")
-
-        #         # update ui
-        #         self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-        #         self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
-        #         logging.info(f"Moved pattern to {point}")
-        #         log_status_message(self.milling_stages[current_stage_index], f"MOVED_PATTERN_TO_{point}")
-        #         self.good_copy_pattern = deepcopy(pattern)
-        #         self.update_ui()
-        #         self.milling_position_changed.emit()
-
-        #     else:
-        #         napari.utils.notifications.show_warning("Pattern is not within the image.")
-        #         self.milling_stages[current_stage_index].pattern = self.good_copy_pattern
         
         self._UPDATING_PATTERN = False
 
