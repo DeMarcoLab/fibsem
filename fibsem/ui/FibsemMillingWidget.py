@@ -451,12 +451,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # only move the pattern if milling widget is activate and beamtype is ion?
         renewed_patterns = []
 
-        diff = point - self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.point
+        current_stage_index = self.comboBox_milling_stage.currentIndex()
+
+        diff = point - self.milling_stages[current_stage_index].pattern.point
 
         for idx, milling_stage in enumerate(self.milling_stages):
         # loop to check through all patterns to see if they are in bounds
             if 'Control' not in event.modifiers:
-                if idx != self.comboBox_milling_stage.currentIndex(): 
+                if idx != current_stage_index: 
                     continue
             pattern_dict_existing = milling_stage.pattern.protocol
             pattern_name = milling_stage.pattern.name
@@ -481,18 +483,17 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         if len(renewed_patterns) == len(self.milling_stages):
             for milling_stage, pattern_renew in zip(self.milling_stages, renewed_patterns):
-
                 milling_stage.pattern = pattern_renew
             _redraw = True
         elif len(renewed_patterns)>0:
-            self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern = renewed_patterns[0]
+            self.milling_stages[current_stage_index].pattern = renewed_patterns[0]
             _redraw = True
 
         if _redraw:
             self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
             logging.info(f"Moved patterns to {point} ")
-            logging.info(f"MILL | {self.milling_stages[self.comboBox_milling_stage.currentIndex()].pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
+            logging.info(f"MILL | {self.milling_stages[current_stage_index].pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
             self.update_ui(milling_stages=self.milling_stages)
             self.milling_position_changed.emit()
     
