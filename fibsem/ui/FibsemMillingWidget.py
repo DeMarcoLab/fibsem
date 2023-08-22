@@ -488,8 +488,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             pattern.define(protocol=pattern_dict, point=point)
             is_valid = self.valid_pattern_location(pattern)
             if is_valid:
-
+                diff = point - self.milling_stages[current_stage_index].pattern.point
                 logging.info(f"MILL | {pattern.name} | {point - self.milling_stages[current_stage_index].pattern.point} | {BeamType.ION}")
+                logging.info(f"MILL | {pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
 
                 # update ui
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)

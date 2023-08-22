@@ -160,6 +160,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.debug(
             f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
         )
+        logging.debug(
+            f"Movement: {self.movement_mode.name} | COORD {coords} | {point.__to_dict__()} | {beam_type}"
+        )
         log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
