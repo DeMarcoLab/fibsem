@@ -22,6 +22,7 @@ from fibsem.ui.qtdesigner_files import FibsemMovementWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.imaging._tile import _plot_positions, _minimap 
 from fibsem.ui import utils as ui_utils 
+from fibsem.ui.utils import message_box_ui
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 def log_status_message(step: str):
@@ -213,10 +214,17 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
 
     def export_positions(self):
+
         protocol_path = _get_save_file_ui(msg="Select or create file")
         if protocol_path == '':
             return
+        response = message_box_ui(text="Do you want to overwrite the file ? Click no to append the new positions to the existing file.", title="Overwrite ?", buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        
         dict_position = []
+        if not response:
+            with open(protocol_path, 'r') as yaml_file:
+                dict_position = yaml.safe_load(yaml_file)
+
         for position in self.positions:
             dict_position.append(position.__to_dict__())
         with open(os.path.join(Path(protocol_path).with_suffix(".yaml")), "w") as f:
@@ -263,7 +271,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         current_position = self.microscope.get_stage_position()
         current_position.name = "Current Position"
         positions = deepcopy(self.positions)
-        positions.append(current_position)
+        positions.insert(0, current_position)
         
         qpixmap = _minimap(self.minimap_image, positions)
 
