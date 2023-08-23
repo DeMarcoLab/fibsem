@@ -35,6 +35,8 @@ def log_status_message(step: str):
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
     viewer_update_signal = pyqtSignal()
+    image_notification_signal = pyqtSignal(str)
+
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -91,6 +93,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
+        self.image_notification_signal.connect(self.update_imaging_ui)
 
         if self._TESCAN:
 
@@ -367,7 +370,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         print("helllo from thread")
         worker = self.take_image_worker(beam_type)
         worker.finished.connect(self.imaging_finished)
-        worker.yielded.connect(self.update_imaging_ui)
         worker.start()
         print("started thread")
 
@@ -419,7 +421,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self._toggle_interactions(enable=False, imaging=True)
         print("Taking image...")
         self.image_settings = self.get_settings_from_ui()[0]
-        yield "Taking image..."
+        self.image_notification_signal.emit("Taking image...")
         if beam_type is not None:
             self.image_settings.beam_type = beam_type
 
@@ -439,14 +441,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.TAKING_IMAGES = True
         worker = self.take_reference_images_worker()
         worker.finished.connect(self.imaging_finished)
-        worker.yielded.connect(self.update_imaging_ui)
         worker.start()
 
     @thread_worker
     def take_reference_images_worker(self):
         self._toggle_interactions(enable=False,imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
-        yield "Taking reference images..."
+        self.image_notification_signal.emit("Taking Reference Images...")
+
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
         self.picture_signal.emit()
         log_status_message("REFERENCE_IMAGES_TAKEN")
