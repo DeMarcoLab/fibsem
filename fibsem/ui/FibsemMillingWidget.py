@@ -601,10 +601,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.debug(f"UPDATE_UI: GET: {t1-t0}, DRAW: {t2-t1}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
-    def _toggle_interactions(self, enabled: bool = True, caller: str = None):
+    def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
 
         """Toggle microscope and pattern interactions."""
-
         self.pushButton.setEnabled(enabled)
         self.pushButton_add_milling_stage.setEnabled(enabled)
         self.pushButton_remove_milling_stage.setEnabled(enabled)
@@ -612,9 +611,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_run_milling.setEnabled(enabled)
         if enabled:
             self.pushButton_run_milling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setText("Run Milling")
             self.pushButton.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        elif milling:
+            self.pushButton_run_milling.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setText("Running...")
         else:
             self.pushButton_run_milling.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
@@ -643,7 +646,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def run_milling_step(self):
 
         milling_stages = self.get_milling_stages()
-        self._toggle_interactions(enabled=False)
+        self._toggle_interactions(enabled=False,milling=True)
         for stage in milling_stages:
             yield f"Preparing: {stage.name}"
             if stage.pattern is not None:

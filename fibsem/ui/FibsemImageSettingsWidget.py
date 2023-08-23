@@ -389,7 +389,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.set_detector_button.setEnabled(enable)
         self.button_set_beam_settings.setEnabled(enable)
         self.parent.movement_widget._toggle_interactions(enable, caller="ui")
-        self.parent.milling_widget._toggle_interactions(enable, caller="ui")
+        if caller != "milling":
+            self.parent.milling_widget._toggle_interactions(enable, caller="ui")
         if enable:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
