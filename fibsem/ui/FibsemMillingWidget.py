@@ -38,6 +38,7 @@ def log_status_message(stage: FibsemMillingStage, step: str):
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
     _milling_finished = QtCore.pyqtSignal()
+    milling_notification = QtCore.pyqtSignal(str)
 
     def __init__(
         self,
@@ -143,6 +144,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # update ui
         self.pushButton.clicked.connect(lambda: self.update_ui())
         self.pushButton.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.milling_notification.connect(self.update_milling_ui)
 
         # run milling
         self.pushButton_run_milling.clicked.connect(self.run_milling)
@@ -639,7 +641,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
-        worker.yielded.connect(self.update_milling_ui)
+        # worker.yielded.connect(self.update_milling_ui)
         worker.start()
 
     @thread_worker
@@ -648,7 +650,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         milling_stages = self.get_milling_stages()
         self._toggle_interactions(enabled=False,milling=True)
         for stage in milling_stages:
-            yield f"Preparing: {stage.name}"
+            self.milling_notification.emit(f"Preparing: {stage.name}")
             if stage.pattern is not None:
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
@@ -657,15 +659,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                 milling.draw_patterns(self.microscope, stage.pattern.patterns)
 
-                yield f"Running {stage.name}..."
+                self.milling_notification.emit(f"Running {stage.name}...")
                 milling.run_milling(self.microscope, stage.milling.milling_current)
             
                 milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
                 log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
 
-            yield f"Milling stage complete: {stage.name}"
-        yield f"Milling complete. {len(self.milling_stages)} stages completed."
+            self.milling_notification.emit(f"Milling stage complete: {stage.name}")
+        self.milling_notification.emit(f"Milling complete. {len(self.milling_stages)} stages completed.")
 
     def update_milling_ui(self, msg: str):
         logging.info(msg)
