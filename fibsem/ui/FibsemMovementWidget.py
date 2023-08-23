@@ -24,6 +24,7 @@ from fibsem.imaging._tile import _plot_positions, _minimap
 from fibsem.ui import utils as ui_utils 
 from fibsem.ui.utils import message_box_ui
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from fibsem.ui import _stylesheets
 
 def log_status_message(step: str):
     logging.debug(
@@ -63,10 +64,13 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         # buttons
         self.pushButton_move.clicked.connect(self.move_to_position)
+        self.pushButton_move.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_continue.clicked.connect(self.continue_pressed)
         self.pushButton_move_flat_ion.clicked.connect(self.move_flat_to_beam)
+        self.pushButton_move_flat_ion.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.pushButton_move_flat_electron.clicked.connect(self.move_flat_to_beam)
         self.pushButton_load_image_minimap.clicked.connect(self.load_image)
+        self.pushButton_move_flat_electron.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_double_click_callbacks.append(self._double_click)
@@ -81,11 +85,17 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # positions
         self.comboBox_positions.currentIndexChanged.connect(self.select_position)
         self.pushButton_save_position.clicked.connect(self.add_position)
+        self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_position.clicked.connect(self.delete_position)
+        self.pushButton_remove_position.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
         self.pushButton_go_to.clicked.connect(self.go_to_saved_position)
+        self.pushButton_go_to.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.pushButton_export.clicked.connect(self.export_positions)
+        self.pushButton_export.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
         self.pushButton_import.clicked.connect(self.import_positions)
+        self.pushButton_import.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
+        self.pushButton_update_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
 
     def auto_eucentric_correction(self):
 
@@ -155,6 +165,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         logging.debug(
             f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
+        )
+        logging.debug(
+            f"Movement: {self.movement_mode.name} | COORD {coords} | {point.__to_dict__()} | {beam_type}"
         )
         log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
         # eucentric is only supported for ION beam

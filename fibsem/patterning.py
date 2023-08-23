@@ -422,18 +422,12 @@ class UndercutPattern(BasePattern):
     ) -> list[FibsemPatternSettings]:
         check_keys(protocol, self.required_keys)
 
-        # jcut_lhs_height = protocol["lhs_height"]
         jcut_rhs_height = protocol["rhs_height"]
         jcut_lamella_height = protocol["height"]
         jcut_width = protocol["width"]
         jcut_trench_thickness = protocol["trench_width"]
-        # jcut_lhs_trench_thickness = protocol["lhs_trench_width"]
-        # jcut_lhs_offset = protocol["lhs_offset"]
         jcut_depth = protocol["depth"]
         jcut_h_offset = protocol["h_offset"]
-
-        jcut_half_width = jcut_width - jcut_trench_thickness / 2
-        jcut_half_height = jcut_lamella_height / 2
 
         use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
 
@@ -449,29 +443,14 @@ class UndercutPattern(BasePattern):
             width=jcut_top_width,
             height=jcut_top_height,
             depth=jcut_top_depth,
-            centre_x=jcut_top_centre_x,
-            centre_y=jcut_top_centre_y,
+            centre_x=point.x,
+            centre_y=point.y,
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
         )
-
-        # lhs_jcut
-        # jcut_lhs = microscope.patterning.create_rectangle(
-        #     center_x=point.x - jcut_half_width - jcut_lhs_offset,
-        #     center_y=point.y + jcut_half_height - (jcut_lhs_height / 2 - jcut_half_height),
-        #     width=jcut_lhs_trench_thickness,
-        #     height=jcut_lhs_height,
-        #     depth=jcut_depth,
-        # )  # depth
-
         # rhs jcut
-        jcut_rhs_centre_x = point.x + jcut_half_width - jcut_h_offset
-        jcut_rhs_centre_y = (
-            point.y
-            + jcut_half_height
-            - (jcut_rhs_height / 2 - jcut_half_height)
-            + jcut_trench_thickness / 2
-        )
+        jcut_rhs_centre_x = point.x + (jcut_width / 2) - jcut_trench_thickness / 2
+        jcut_rhs_centre_y = point.y - (jcut_rhs_height / 2) + jcut_trench_thickness / 2
         jcut_rhs_width = jcut_trench_thickness
         jcut_rhs_height = jcut_rhs_height
         jcut_rhs_depth = jcut_depth
@@ -486,6 +465,64 @@ class UndercutPattern(BasePattern):
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
         )
+
+
+
+
+
+
+
+
+
+        # # top_jcut
+        # jcut_top_centre_x = point.x + jcut_width / 2 - jcut_h_offset
+        # jcut_top_centre_y = point.y + jcut_lamella_height
+        # jcut_top_width = jcut_width
+        # jcut_top_height = jcut_trench_thickness
+        # jcut_top_depth = jcut_depth
+
+        # top_pattern = FibsemPatternSettings(
+        #     pattern=FibsemPattern.Rectangle,
+        #     width=jcut_top_width,
+        #     height=jcut_top_height,
+        #     depth=jcut_top_depth,
+        #     centre_x=jcut_top_centre_x,
+        #     centre_y=jcut_top_centre_y,
+        #     cleaning_cross_section=use_cleaning_cross_section,
+        #     scan_direction="TopToBottom",
+        # )
+
+        # # lhs_jcut
+        # # jcut_lhs = microscope.patterning.create_rectangle(
+        # #     center_x=point.x - jcut_half_width - jcut_lhs_offset,
+        # #     center_y=point.y + jcut_half_height - (jcut_lhs_height / 2 - jcut_half_height),
+        # #     width=jcut_lhs_trench_thickness,
+        # #     height=jcut_lhs_height,
+        # #     depth=jcut_depth,
+        # # )  # depth
+
+        # # rhs jcut
+        # jcut_rhs_centre_x = point.x + jcut_half_width - jcut_h_offset
+        # jcut_rhs_centre_y = (
+        #     point.y
+        #     + jcut_half_height
+        #     - (jcut_rhs_height / 2 - jcut_half_height)
+        #     + jcut_trench_thickness / 2
+        # )
+        # jcut_rhs_width = jcut_trench_thickness
+        # jcut_rhs_height = jcut_rhs_height
+        # jcut_rhs_depth = jcut_depth
+
+        # rhs_pattern = FibsemPatternSettings(
+        #     pattern=FibsemPattern.Rectangle,
+        #     width=jcut_rhs_width,
+        #     height=jcut_rhs_height,
+        #     depth=jcut_rhs_depth,
+        #     centre_x=jcut_rhs_centre_x,
+        #     centre_y=jcut_rhs_centre_y,
+        #     cleaning_cross_section=use_cleaning_cross_section,
+        #     scan_direction="TopToBottom",
+        # )
 
         self.patterns = [top_pattern, rhs_pattern]
         self.protocol = protocol

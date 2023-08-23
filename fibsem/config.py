@@ -36,7 +36,7 @@ REFERENCE_HFW_SUPER = 80e-6
 REFERENCE_HFW_ULTRA = 50e-6
 
 
-MILL_HFW_THRESHOLD = 0.05 # 5% of the image 
+MILL_HFW_THRESHOLD = 0.005 # 0.5% of the image 
 
 
 import os
@@ -81,35 +81,6 @@ def load_yaml(fname):
         config = yaml.safe_load(f)
 
     return config
-
-
-def load_microscope_manufacturer(config_path=None) -> str:
-    """
-    Load the microscope manufacturer from the configuration file.
-
-    Args:
-        config_path (str, optional): The path to the configuration file. If not provided, the default path is used.
-
-    Returns:
-        str: The name of the microscope manufacturer.
-
-    Raises:
-        IOError: If the configuration file cannot be loaded.
-        KeyError: If the "manufacturer" key is not found in the configuration file.
-
-    Example:
-        >>> load_microscope_manufacturer(config_path="/path/to/config/")
-        "Thermo"
-    """
-    if config_path is None:
-        config_path = CONFIG_PATH
-
-    # system settings
-    settings = load_yaml(os.path.join(config_path, "system.yaml"))
-    manufacturer = settings["system"]["manufacturer"]
-
-    return manufacturer
-
 
 __SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
 __DEFAULT_MANUFACTURER__ = "Thermo"
