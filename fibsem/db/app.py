@@ -157,6 +157,34 @@ with tab_ml:
     fig_acc.update_yaxes(range=[0, 1])
     st.plotly_chart(fig_acc, use_container_width=True)
 
+    # group by name, petname, feature, is_correct
+    df_group = df.groupby(["name", "date", "petname", "stage", "feature", "is_correct"]).count().reset_index()
+    df_group = df_group.pivot(index=["name", "date", "petname", "stage", "feature"], columns="is_correct", values="timestamp")
+
+    # if no false, add false column
+    if "False" not in df_group.columns:
+        df_group["False"] = 0
+    if "True" not in df_group.columns:
+        df_group["True"] = 0
+
+    # fill missing values with zero
+    df_group.fillna(0, inplace=True)
+
+    df_group["total"] = df_group["True"] + df_group["False"]
+    df_group["percent_correct"] = df_group["True"] / df_group["total"]
+    df_group["percent_correct"] = df_group["percent_correct"].round(2)
+    df_group = df_group.sort_values(by="date", ascending=False)
+
+    df_group.reset_index(inplace=True)
+
+    st.dataframe(df_group, use_container_width=True)
+
+    # sort by date, petname
+    df_group.sort_values(by=["date", "petname"], ascending=True, inplace=True)
+
+    fig_ml = px.bar(df_group, x="petname", y="percent_correct", color="feature", 
+                    barmode="group", facet_row="name", facet_col="stage", title="ML Accuracy Per Lamella Per Stage Per Experiment", hover_data=df_group.columns, height=800)
+    st.plotly_chart(fig_ml, use_container_width=True)
 
     # select all detections
     df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
