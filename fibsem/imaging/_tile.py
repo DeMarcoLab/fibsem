@@ -323,6 +323,7 @@ def _minimap(minimap_image: FibsemImage, positions: list[FibsemStagePosition]):
         pil_image = None
 
         import matplotlib.pyplot as plt
+        plt.close("all")
         fig = _plot_positions(image=minimap_image, positions = positions, minimap=True)
         plt.tight_layout(pad=0)
         canvas = FigureCanvasAgg(fig)
