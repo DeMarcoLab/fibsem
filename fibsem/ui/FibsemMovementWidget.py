@@ -32,6 +32,8 @@ def log_status_message(step: str):
 
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     move_signal = QtCore.pyqtSignal()
+    movement_notification_signal = QtCore.pyqtSignal(str)
+
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -94,6 +96,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
         self.pushButton_update_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
 
+        self.movement_notification_signal.connect(self.update_moving_ui)
+
     def auto_eucentric_correction(self):
 
         print("auto eucentric")
@@ -124,17 +128,17 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def move_to_position(self):
         worker = self.move_worker()
         worker.finished.connect(self.run_moving_finished)
-        worker.yielded.connect(self.update_moving_ui)
+        # worker.yielded.connect(self.update_moving_ui)
         worker.start()
     
     @thread_worker
     def move_worker(self):
         self._toggle_interactions(False)
         stage_position = self.get_position_from_ui()
-        yield f"Moving to {stage_position}"
+        self.movement_notification_signal.emit(f"Moving to {stage_position}")
         self.microscope.move_stage_absolute(stage_position)
         log_status_message(f"MOVED_TO_{stage_position}")
-        yield "Move finished, taking new images"
+        self.movement_notification_signal.emit("Move finished, taking new images")
         self.update_ui_after_movement()
 
     def run_moving_finished(self):
@@ -173,7 +177,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def _double_click(self, layer, event):
         worker = self._double_click_worker(layer, event)
         worker.finished.connect(self.run_moving_finished)
-        worker.yielded.connect(self.update_moving_ui)
+        # worker.yielded.connect(self.update_moving_ui)
         worker.start()
 
     @thread_worker
@@ -187,7 +191,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         # TODO: dimensions are mixed which makes this confusing to interpret... resolve
         coords, beam_type, image = self.image_widget.get_data_from_coord(coords)
-        yield "Click to move in progress"
+        self.movement_notification_signal.emit("Click to move in progress")
         if beam_type is None:
             napari.utils.notifications.show_info(
                 f"Clicked outside image dimensions. Please click inside the image to move."
@@ -208,7 +212,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
         )
         log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
-        yield "Moving stage "
+        self.movement_notification_signal.emit("Moving stage ")
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
             self.microscope.eucentric_move(
@@ -223,7 +227,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 dy=point.y,
                 beam_type=beam_type,
             )
-        yield "Move finished, taking new images"
+        self.movement_notification_signal.emit("Move finished, taking new images")
         self.update_ui_after_movement()
 
     def select_position(self):
@@ -260,13 +264,13 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def go_to_saved_position(self):
         worker = self.go_to_saved_position_worker()
         worker.finished.connect(self.run_moving_finished)
-        worker.yielded.connect(self.update_moving_ui)
+        # worker.yielded.connect(self.update_moving_ui)
         worker.start()
     
     @thread_worker
     def go_to_saved_position_worker(self):
         self._toggle_interactions(False)
-        yield f"Moving to saved position {self.comboBox_positions.currentText()}"
+        self.movement_notification_signal.emit(f"Moving to saved position {self.comboBox_positions.currentText()}")
         self.microscope.move_stage_absolute(self.positions[self.comboBox_positions.currentIndex()])
         logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
         self.update_ui_after_movement()
@@ -386,13 +390,13 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON
         worker = self.move_flat_to_beam_worker(beam_type)
         worker.finished.connect(self.run_moving_finished)
-        worker.yielded.connect(self.update_moving_ui)
+        # worker.yielded.connect(self.update_moving_ui)
         worker.start()
 
     @thread_worker
     def move_flat_to_beam_worker(self, beam_type):
         self._toggle_interactions(False)
-        yield f"Moving flat to {beam_type.name} beam"
+        self.movement_notification_signal.emit(f"Moving flat to {beam_type.name} beam")
         self.microscope.move_flat_to_beam(settings=self.settings, beam_type=beam_type)
         self.update_ui_after_movement()
 
