@@ -383,7 +383,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self._toggle_interactions(True)
         self.TAKING_IMAGES = False
 
-    def _toggle_interactions(self, enable: bool, caller: str = None):
+    def _toggle_interactions(self, enable: bool, caller: str = None, imaging: bool = False):
         self.pushButton_take_image.setEnabled(enable)
         self.pushButton_take_all_images.setEnabled(enable)
         self.set_detector_button.setEnabled(enable)
@@ -395,6 +395,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        elif imaging:
+            self.pushButton_take_all_images.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         else:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
@@ -403,7 +408,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     @thread_worker
     def take_image_worker(self, beam_type: BeamType = None):
-        self._toggle_interactions(False)
+        self._toggle_interactions(enable=False, imaging=True)
         print("Taking image...")
         self.image_settings = self.get_settings_from_ui()[0]
         yield "Taking image..."
@@ -431,7 +436,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     @thread_worker
     def take_reference_images_worker(self):
-        self._toggle_interactions(False)
+        self._toggle_interactions(enable=False,imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
         yield "Taking reference images..."
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
