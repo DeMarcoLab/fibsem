@@ -25,6 +25,7 @@ from fibsem.ui import utils as ui_utils
 from fibsem.ui.utils import message_box_ui
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from fibsem.ui import _stylesheets
+import fibsem.utils as utils
 
 def log_status_message(step: str):
     logging.debug(
@@ -54,6 +55,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.picture_signal.connect(self.update_ui)
         self.positions = []
         self.minimap_image = None
+        settings_dict = utils.load_yaml(cfg.SYSTEM_PATH)
+        if bool(settings_dict["load_positions_on_startup"]):
+            self.import_positions(cfg.POSITION_PATH)
         self.update_ui()
 
     def setup_connections(self):
@@ -208,7 +212,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def delete_position(self):
         del self.positions[self.comboBox_positions.currentIndex()]
-        name = self.comboBox_positions.currentIndex()
+        name = self.comboBox_positions.currentText()
         self.comboBox_positions.removeItem(self.comboBox_positions.currentIndex())
         logging.info(f"Removed position {name}")
         self.minimap()
@@ -224,7 +228,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def go_to_saved_position(self):
         self.microscope.move_stage_absolute(self.positions[self.comboBox_positions.currentIndex()])
         self.update_ui_after_movement()
-        logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
+        logging.info(f"Moved to position {self.comboBox_positions.currentText()}")
 
     def export_positions(self):
 
@@ -246,8 +250,11 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.info("Positions saved to file")
 
 
-    def import_positions(self):
-        protocol_path = _get_file_ui(msg="Select or create file")
+    def import_positions(self, path: str = None):
+        if not isinstance(path, str):
+            protocol_path = _get_file_ui(msg="Select or create file")
+        else: 
+            protocol_path = path
         if protocol_path == '':
             napari.utils.notifications.show_info("No file selected, positions not loaded")
             return
