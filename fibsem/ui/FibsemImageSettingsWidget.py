@@ -219,7 +219,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.set("detector_contrast", self.detector_settings.contrast, beam_type=beam)
         log_status_message("SET_DETECTOR_PARAMETERS")
         log_status_message(f"Detector Type: {self.detector_settings.type}, Mode: {self.detector_settings.mode}, Brightness: {self.detector_settings.brightness}, Contrast: {self.detector_settings.contrast}")
-        
+        napari.utils.notifications.show_info("Detector Settings Updated")
 
     def apply_beam_settings(self):
         beam = BeamType[self.selected_beam.currentText()]
@@ -232,6 +232,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message("SET_BEAM_PARAMETERS")
         log_status_message(f"Working Distance: {self.beam_settings.working_distance}, Current: {self.beam_settings.beam_current}, Voltage: {self.beam_settings.voltage}, Stigmation: {self.beam_settings.stigmation}, Shift: {self.beam_settings.shift}")
         self.set_ui_from_settings(self.image_settings,beam)
+        napari.utils.notifications.show_info("Beam Settings Updated")
 
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         contrast = self.microscope.get("detector_contrast", beam_type=beam_type)
@@ -396,9 +397,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setText("Acquire Image")
+            self.pushButton_take_all_images.setText("Acquire All Images")
         elif imaging:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setText("Acquiring Images...")
+            self.pushButton_take_all_images.setText("Acquiring Images...")
             self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         else:
@@ -406,6 +411,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_image.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setText("Acquire Image")
+            self.pushButton_take_all_images.setText("Acquire All Images")
 
     @thread_worker
     def take_image_worker(self, beam_type: BeamType = None):

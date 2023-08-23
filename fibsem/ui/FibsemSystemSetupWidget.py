@@ -284,6 +284,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.rotationFlatToIonSpinBox.value()
         )
         self.settings.system.stage.pre_tilt = self.preTiltSpinBox.value()
+        napari.utils.notifications.show_info("Stage Parameters Updated")
         self.set_stage_signal.emit()
 
     def set_stage_settings_to_ui(self, stage_settings: StageSettings) -> None:
