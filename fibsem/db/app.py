@@ -87,7 +87,7 @@ df_group.fillna(0, inplace=True)
 
 df_group["total"] = df_group["True"] + df_group["False"]
 df_group["percent_correct"] = df_group["True"] / df_group["total"]
-df_group["percent_correct"] = df_group["percent_correct"].round(2)
+df_group["percent_correct"] = df_group["percent_correct"]#.round(2)
 # df_group = df_group.sort_values(by="percent_correct", ascending=False)
 df_group.reset_index(inplace=True)
 
@@ -139,7 +139,7 @@ with tab_ml:
 
     df_group["total"] = df_group["True"] + df_group["False"]
     df_group["percent_correct"] = df_group["True"] / df_group["total"]
-    df_group["percent_correct"] = df_group["percent_correct"].round(2)
+    df_group["percent_correct"] = df_group["percent_correct"]#.round(2)
     df_group = df_group.sort_values(by="date", ascending=False)
 
     df_group.reset_index(inplace=True)
@@ -172,7 +172,7 @@ with tab_ml:
 
     df_group["total"] = df_group["True"] + df_group["False"]
     df_group["percent_correct"] = df_group["True"] / df_group["total"]
-    df_group["percent_correct"] = df_group["percent_correct"].round(2)
+    df_group["percent_correct"] = df_group["percent_correct"]#.round(2)
     df_group = df_group.sort_values(by="date", ascending=False)
 
     df_group.reset_index(inplace=True)
@@ -182,9 +182,15 @@ with tab_ml:
     # sort by date, petname
     df_group.sort_values(by=["date", "petname"], ascending=True, inplace=True)
 
-    fig_ml = px.bar(df_group, x="petname", y="percent_correct", color="feature", 
-                    barmode="group", facet_row="name", facet_col="stage", title="ML Accuracy Per Lamella Per Stage Per Experiment", hover_data=df_group.columns, height=800)
-    st.plotly_chart(fig_ml, use_container_width=True)
+    for STAGE_NAME in df_group["stage"].unique():
+        df_group_stage_filt = df_group[df_group["stage"] == STAGE_NAME]
+        fig_ml = px.bar(df_group_stage_filt, x="petname", y="percent_correct", color="feature", 
+                        barmode="group", facet_row="name", title=f"ML Accuracy Per Lamella Per Experiment (Stage: {STAGE_NAME})", hover_data=df_group.columns, 
+                        height=max(100*len(df_group_stage_filt["name"].unique()), 300))
+        
+        # set y limits 0 -1
+        fig_ml.update_yaxes(range=[0, 1])
+        st.plotly_chart(fig_ml, use_container_width=True)
 
     # select all detections
     df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
@@ -205,7 +211,7 @@ with tab_ml:
 
     df_group["total"] = df_group["True"] + df_group["False"]
     df_group["percent_correct"] = df_group["True"] / df_group["total"]
-    df_group["percent_correct"] = df_group["percent_correct"].round(2)
+    df_group["percent_correct"] = df_group["percent_correct"]#.round(2)
     df_group = df_group.sort_values(by="date", ascending=False)
 
     df_group.reset_index(inplace=True)
@@ -242,7 +248,7 @@ with tab_ml:
 
         df_group["total"] = df_group["True"] + df_group["False"]
         df_group["percent_correct"] = df_group["True"] / df_group["total"]
-        df_group["percent_correct"] = df_group["percent_correct"].round(2)
+        df_group["percent_correct"] = df_group["percent_correct"]#.round(2)
         df_group = df_group.sort_values(by="date", ascending=False)
 
         df_group.reset_index(inplace=True)
@@ -269,7 +275,7 @@ with tab_duration:
     df_group.reset_index(inplace=True)
 
     # drop stages with setup, ready
-    df_group = df_group[~df_group["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella", "Finished"])]
+    df_group = df_group[~df_group["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella", "Finished", "Setup"])]
     df_group = df_group.sort_values(by="date", ascending=True)
 
     df_group["duration_mins"] = df_group["duration"] /60
@@ -287,7 +293,7 @@ with tab_duration:
 
 
     # calculate average duration per lamella
-    df_history_filter = df_history[~df_history["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella", "Finished"])]
+    df_history_filter = df_history[~df_history["stage"].isin(["SetupTrench", "ReadyTrench", "SetupLamella", "Finished", "Setup"])]
 
 
 
