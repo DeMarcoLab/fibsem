@@ -254,7 +254,7 @@ def main():
     viewer.window.add_dock_widget(fibsem_ui, 
                                   area="right", 
                                   add_vertical_stretch=True, 
-                                  name="OpenFIBSEM")
+                                  name=f"OpenFIBSEM v{fibsem.__version__}")
     napari.run()
 
 
