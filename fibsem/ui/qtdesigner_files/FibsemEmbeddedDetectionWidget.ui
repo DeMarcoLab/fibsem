@@ -7,27 +7,24 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>465</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="0" colspan="2">
-    <widget class="QLabel" name="label_instructions">
+   <item row="8" column="0">
+    <widget class="QLabel" name="label_labelling_class_index">
      <property name="text">
-      <string>Drag to move the features, when finished press confirm.</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
+      <string>Class Index</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_continue">
+   <item row="10" column="0" colspan="2">
+    <widget class="QLabel" name="label_labelling_instructions">
      <property name="text">
-      <string>Confirm</string>
+      <string>Use the paint tools to label the images.</string>
      </property>
     </widget>
    </item>
@@ -44,6 +41,33 @@
      </property>
     </widget>
    </item>
+   <item row="9" column="1">
+    <widget class="QPushButton" name="pushButton_labelling_cancel">
+     <property name="text">
+      <string>Cancel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1">
+    <widget class="QComboBox" name="comboBox_labelling_class_index"/>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QLabel" name="label_instructions">
+     <property name="text">
+      <string>Drag to move the features, when finished press confirm.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_enable_labelling">
+     <property name="text">
+      <string>Enable Labelling</string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="0" colspan="2">
     <widget class="QLabel" name="label_model">
      <property name="text">
@@ -51,20 +75,22 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_title">
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
-     </property>
+   <item row="9" column="0">
+    <widget class="QPushButton" name="pushButton_labelling_confirm">
      <property name="text">
-      <string>Feature Detection</string>
+      <string>Confirm</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
-    <spacer name="verticalSpacer">
+   <item row="7" column="1">
+    <widget class="QLabel" name="label_labelling_model">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0" colspan="2">
+    <spacer name="verticalSpacer_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -75,6 +101,47 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="4" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_continue">
+     <property name="text">
+      <string>Confirm</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QCheckBox" name="checkBox_labelling_model_assist">
+     <property name="text">
+      <string>Segment Anything Assist</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QLabel" name="label_labelling_header">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Labelling</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label_title">
+     <property name="font">
+      <font>
+       <pointsize>9</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Feature Detection</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
