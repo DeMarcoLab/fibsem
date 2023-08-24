@@ -496,6 +496,7 @@ def take_image_and_detect_features(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     features: tuple[Feature],
+    point: Point = None,
 ) -> DetectedFeatures:
     
     from fibsem import acquire, utils
@@ -522,7 +523,7 @@ def take_image_and_detect_features(
 
     # detect features
     det = detect_features(
-        deepcopy(image), model, features=features, pixelsize=image.metadata.pixel_size.x
+        deepcopy(image), model, features=features, pixelsize=image.metadata.pixel_size.x, point = point
     )
     return det
 
@@ -617,18 +618,20 @@ def move_based_on_detection(
 
     from fibsem import movement
 
+    dx, dy = det.distance.x, det.distance.y
+
     # nulify movements in unsupported axes
     if not move_x:
-        det.distance.x = 0
+        dx = 0
     if not move_y:
-        det.distance.y = 0
+        dy = 0
 
     # f1 = move from, f2 = move to
     f1 = det.features[0]
     f2 = det.features[1]
 
     logging.debug(f"move_x: {move_x}, move_y: {move_y}")
-    logging.debug(f"movement: x={det.distance.x:.2e}, y={det.distance.y:.2e}")
+    logging.debug(f"movement: x={dx:.2e}, y={dy:.2e}")
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
     # these movements move the needle...
@@ -636,11 +639,11 @@ def move_based_on_detection(
 
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ION:
-            det.distance.y *= -1
+            dy *= -1
 
         microscope.move_manipulator_corrected(
-            dx=det.distance.x,
-            dy=det.distance.y,
+            dx=dx,
+            dy=dy,
             beam_type=beam_type,
         )
 
@@ -650,8 +653,8 @@ def move_based_on_detection(
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
                 settings=settings,
-                dx=-det.distance.x,
-                dy=det.distance.y,
+                dx=-dx,
+                dy=dy,
                 beam_type=beam_type,
             )
 
