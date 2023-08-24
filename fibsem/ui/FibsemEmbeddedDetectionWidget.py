@@ -19,6 +19,7 @@ from fibsem.structures import (
     FibsemImage,
     Point,
 )
+from fibsem import utils
 from fibsem.ui import _stylesheets
 from PyQt5.QtCore import pyqtSignal
 from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget
@@ -117,30 +118,38 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             self.pushButton_enable_labelling.setText("Enable Labelling")
             self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
 
-    def save_data(self):
+    def save_data(self, fname: str):
         
         # get the updated mask
         self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
         
         # save current data
-        det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=self.det.fibsem_image.metadata.image_settings.label)
+        det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=fname)
     
 
     def confirm_button_clicked(self, reset_camera=False):
-        
-        # save current data
-        try:
-            self.save_data()
-        except Exception as e:
-            logging.error(f"Error saving data: {e}")
     
         # log the difference between initial and final detections
-        fname = self.det.fibsem_image.metadata.image_settings.label
+        try:
+            fname = self.det.fibsem_image.metadata.image_settings.label
+            beam_type = self.det.fibsem_image.metadata.image_settings.beam_type
+        except:
+            fname = f"ml-{utils.current_timestamp_v2()}"
+            beam_type = "NULL"
+        
+
+        # save current data
+        try:
+            self.save_data(fname=fname)
+        except Exception as e:
+            logging.error(f"Error saving data: {e}")
+
+
         for f0, f1 in zip(self.det.features, self._intial_det.features):
             px_diff = f1.px - f0.px
             # FEATURE_NAME | PIXEL DIFFERENCE | METRE_DIFFERENCE | IS_CORRECT | BEAM_TYPE | FILENAME | PX
             # logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)} | {self.det.fibsem_image.metadata.image_settings.beam_type} | {fname}")
-            logging.info(f"{f0.name} | {px_diff.__to_dict__()} | {px_diff._to_metres(self.det.pixelsize).__to_dict__()}| {not np.any(px_diff)} | {self.det.fibsem_image.metadata.image_settings.beam_type} | {fname} | {f0.px.__to_dict__()}")
+            logging.info(f"{f0.name} | {px_diff.__to_dict__()} | {px_diff._to_metres(self.det.pixelsize).__to_dict__()}| {not np.any(px_diff)} | {beam_type} | {fname} | {f0.px.__to_dict__()}")
 
         # remove det layers
         if self._image_layer is not None:
