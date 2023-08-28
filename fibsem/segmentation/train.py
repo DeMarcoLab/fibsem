@@ -17,6 +17,8 @@ from tqdm import tqdm
 
 from fibsem.segmentation import dataset, utils
 
+from skimage.color import gray2rgb
+from skimage.util import img_as_ubyte
 
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
@@ -65,13 +67,27 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
 
         img_base = images[idx].detach().cpu().squeeze().numpy()
         gt_base = masks[idx].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
-        if WANDB: # TODO: reduce the frequency of this logging
-            wandb.log({"train_loss": loss.item()})
+        if WANDB and i % 4 == 0: # TODO: reduce the frequency of this logging
+            # wandb.log({"train_loss": loss.item()})
 
-            wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Input Image")
-            wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Ground Truth")
-            wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Output Mask")
-            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+            # wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Input Image")
+            # wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Ground Truth")
+            # wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Output Mask")
+            # wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+
+            # print("RAW: ", gray2rgb(img_base).dtype)
+            # print("GT: ", utils.decode_segmap(gt_base).dtype)
+
+            stack = wandb.Image(
+                np.hstack(
+                    [img_as_ubyte(gray2rgb(img_base)),  
+                    utils.decode_segmap(gt_base), 
+                    utils.decode_segmap(output_mask)
+                    ]
+                    ), caption="Train Image (Raw, GT, Pred)"
+            )
+            wandb.log({"train_loss": loss.item(), "train_image": stack})
+
 
         if ui:
             ui.emit({"stage": "train", "train_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
@@ -110,19 +126,29 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
         img_base = images[0].detach().cpu().squeeze().numpy()
         gt_base = masks[0].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
 
-        if WANDB:
-            wandb.log({"val_loss": loss.item()})
+        if WANDB and i % 8 == 0:
+            # wandb.log({"val_loss": loss.item()})
 
-            wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Validation Input Image")
-            wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Validation Ground Truth")
-            wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Validation Output Mask")
-            wandb.log(
-                {
-                    "Validation image": wb_img,
-                    "Validation mask": wb_mask,
-                    "Validation ground_truth": wb_gt,
-                }
+            stack = wandb.Image(
+                np.hstack(
+                    [img_as_ubyte(gray2rgb(img_base)),  
+                    utils.decode_segmap(gt_base), 
+                    utils.decode_segmap(output_mask)
+                    ]
+                    ), caption="Val Image (Raw, GT, Pred)"
             )
+            wandb.log({"val_loss": loss.item(), "val_image": stack})
+
+            # wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Validation Input Image")
+            # wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Validation Ground Truth")
+            # wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Validation Output Mask")
+            # wandb.log(
+            #     {
+            #         "Validation image": wb_img,
+            #         "Validation mask": wb_mask,
+            #         "Validation ground_truth": wb_gt,
+            #     }
+            # )
 
         if ui:
             ui.emit({"stage": "val", "val_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
@@ -178,7 +204,8 @@ def train_model(
         val_losses.append(val_loss / len(val_data_loader))
         
         # only save if val_loss is minimum
-        # if val_loss / len(val_data_loader) == min(val_losses):
+        if val_loss / len(val_data_loader) == min(val_losses):
+            print(f"LOWEST LOSS: {epoch}")
         save_model(save_dir, model, epoch)
 
         # TODO: add better ui updates
