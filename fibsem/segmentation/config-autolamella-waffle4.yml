@@ -1,0 +1,12 @@
+data_path:  /home/patrick/github/data/autolamella/train
+label_path: /home/patrick/github/data/autolamella/train/labels 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autolamella/v4
+checkpoint: null
+encoder: "resnet34" 
+epochs: 20
+batch_size: 4 
+num_classes: 3 
+lr: 3.0e-4
+wandb: true 
+wandb_project: "autolamella"
+wandb_entity: "demarcolab"
