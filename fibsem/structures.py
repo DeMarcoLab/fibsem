@@ -856,6 +856,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
         elif pattern == FibsemPattern.Line:
             self.start_x = kwargs["start_x"]
             self.start_y = kwargs["start_y"]
+            self.centre_x = kwargs["centre_x"]
+            self.centre_y = kwargs["centre_y"]
             self.end_x = kwargs["end_x"]
             self.end_y = kwargs["end_y"]
             self.depth = kwargs["depth"]
@@ -924,6 +926,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
         elif state_dict["pattern"] == "Line":
             return FibsemPatternSettings(
                 pattern=FibsemPattern.Line,
+                centre_x=state_dict["centre_x"],
+                centre_y=state_dict["centre_y"],
                 start_x=state_dict["start_x"],
                 start_y=state_dict["start_y"],
                 end_x=state_dict["end_x"],

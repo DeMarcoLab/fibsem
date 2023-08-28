@@ -192,8 +192,6 @@ class LinePattern(BasePattern):
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
         self.protocol = protocol
         self.point = point
-        self.protocol = protocol
-        self.point = point
         return self.patterns
 
 
