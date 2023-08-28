@@ -99,3 +99,112 @@ def run_eval(path: Path, checkpoint:str, encoder:str = "resnet34", num_classes: 
     df_eval.to_csv(os.path.join(path, "eval.csv"), index=False)
     
     return df_eval
+
+
+from fibsem.detection import detection
+from fibsem.segmentation.model import load_model
+from fibsem.structures import FibsemImage
+import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
+import glob
+import os
+from pprint import pprint
+
+
+from fibsem.structures import Point
+from fibsem.detection import detection
+import pandas as pd
+from copy import deepcopy
+
+
+
+def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[str], plot: bool = False):
+
+    # ground truth 
+    df = pd.read_csv(path)
+
+    df_eval = pd.DataFrame(columns=["checkpoint", "fname", "feature", "p.x", "p.y", "pixelsize", "gt.p.x", "gt.p.y", "gt.pixelsize", "distance","_is_corrected"])
+    df_eval["_is_corrected"] = df_eval["_is_corrected"].astype(bool)
+
+    _prog = tqdm(filenames)
+    for i, fname in enumerate(_prog):
+
+        image_fname = os.path.basename(fname)[:-7]
+        df_filt = df[df["image"]==image_fname]
+
+        if len(df_filt) == 0:
+            print(f"no ground truth for {fname}")
+            continue
+
+        _is_corrected = df_filt["corrected"].values[0]
+
+        # extract each row
+        gt_features = []
+        pixelsize = 25e-9
+        for _, row in df_filt.iterrows():
+
+            feature = detection.get_feature(row["feature"])
+            feature.px = Point(row["p.x"], row["p.y"])
+            pixelsize= row["pixelsize"]
+
+            gt_features.append(feature)
+        
+
+        image = FibsemImage.load(fname)
+
+        # plot
+        # TODO: updat when get gt mask / rgb
+        gt_det = detection.DetectedFeatures(
+            features = gt_features,
+            image=image.data,
+            mask=None,
+            rgb=None,
+            pixelsize=pixelsize, 
+            fibsem_image=image)
+
+        dets = [gt_det]
+        for k, CHECKPOINT in enumerate(checkpoints):
+
+            _prog.set_description(f"file ({i+1}/{len(filenames)}) {os.path.basename(fname)} - checkpoint: ({k+1}/{len(checkpoints)}) {os.path.basename(CHECKPOINT)}")
+            model = load_model(CHECKPOINT, encoder="resnet34", nc=3)
+
+            det  = detection.detect_features(image.data, model, features=deepcopy(gt_features), pixelsize=pixelsize, filter=True)
+            dets.append(det)
+        
+        if plot:
+            fig = detection.plot_detections(dets, titles=["Ground Truth"] + [os.path.basename(checkpoint) for checkpoint in checkpoints])
+
+        # evaluation against ground truth
+        for checkpoint, det in zip(checkpoints, dets[1:]):
+
+            for feature in det.features:
+                gt_feat = gt_det.get_feature(feature.name)
+                dpx = feature.px - gt_feat.px
+                    
+                df_eval2 = pd.DataFrame([{
+                    "checkpoint": os.path.basename(checkpoint),
+                    "fname": os.path.basename(fname),
+                    "gt_fname": image_fname,
+                    "feature": feature.name,
+                    "p.x": feature.px.x,
+                    "p.y": feature.px.y,
+                    "pixelsize": pixelsize,
+                    "gt.p.x": gt_feat.px.x,
+                    "gt.p.y": gt_feat.px.y,
+                    "gt.pixelsize": pixelsize,
+                    "distance": feature.px.euclidean(gt_feat.px),
+                    "d.p.x": dpx.x,
+                    "d.p.y": dpx.y,
+                    "_is_corrected": bool(_is_corrected), 
+                }])
+
+                # convert to bool type
+                df_eval2["_is_corrected"] = df_eval2["_is_corrected"].astype(bool)
+                df_eval = pd.concat([df_eval, df_eval2], axis=0, ignore_index=True)
+        
+        # print("-"*80, "\n")
+        # if i==3:
+            # break
+
+    return df_eval

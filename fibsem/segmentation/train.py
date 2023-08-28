@@ -22,7 +22,7 @@ def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
 
     # dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + f"_n{epoch+1:02d}"
-    model_save_file = os.path.join(save_dir, f"model.pt")
+    model_save_file = os.path.join(save_dir, f"model{epoch:02d}.pt")
     torch.save(model.state_dict(), model_save_file)
 
     print(f"Model saved to {model_save_file}")
@@ -178,8 +178,8 @@ def train_model(
         val_losses.append(val_loss / len(val_data_loader))
         
         # only save if val_loss is minimum
-        if val_loss / len(val_data_loader) == min(val_losses):
-            save_model(save_dir, model, epoch)
+        # if val_loss / len(val_data_loader) == min(val_losses):
+        save_model(save_dir, model, epoch)
 
         # TODO: add better ui updates
         if ui:

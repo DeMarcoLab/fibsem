@@ -143,7 +143,7 @@ class CoreFeature(Feature):
         return self.px
 
 
-__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, CoreFeature]
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, CoreFeature, LamellaTopEdge, LamellaBottomEdge]
  
 
 
@@ -548,7 +548,8 @@ def plot_detection(det: DetectedFeatures):
 
 def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", show: bool = True):
     ax.imshow(det.image, cmap="gray")
-    ax.imshow(det.rgb, alpha=0.3)
+    if det.rgb is not None:
+        ax.imshow(det.rgb, alpha=0.3)
     ax.set_title(title)
     
 

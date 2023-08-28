@@ -1,0 +1,12 @@
+data_path:  /home/patrick/github/data/liftout/train-waffle/train
+label_path: /home/patrick/github/data/liftout/train-waffle/train/labels 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/waffle/e10/
+checkpoint: /home/patrick/github/fibsem/fibsem/segmentation/models/openfibsem-baseline-34.pt 
+encoder: "resnet34" 
+epochs: 20
+batch_size: 4 
+num_classes: 3 
+lr: 3.0e-4
+wandb: true 
+wandb_project: "autoliftout"
+wandb_entity: "demarcolab"
