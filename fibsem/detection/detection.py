@@ -286,10 +286,13 @@ def detect_lamella(
         px = detect_centre_point(lamella_mask)
 
     if isinstance(feature, LamellaLeftEdge):
-        px = detect_corner(lamella_mask, left=True)
+        # px = detect_corner(lamella_mask, left=True)
+        px = detect_median_edge(lamella_mask, edge="left")
+
 
     if isinstance(feature, LamellaRightEdge):
-        px = detect_corner(lamella_mask, left=False)
+        # px = detect_corner(lamella_mask, left=False)
+        px = detect_median_edge(lamella_mask, edge="right")
 
 
     if isinstance(feature, LamellaTopEdge):
