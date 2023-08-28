@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 from typing import Union
+from pprint import pprint
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from PIL import Image
 
 from fibsem import constants
 from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern
+from fibsem.utils import save_yaml, load_yaml
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
@@ -719,3 +721,16 @@ def _get_text_ui(
     )
 
     return text, okPressed
+
+def export_milling_stages(milling_stages: list[FibsemMillingStage]) -> None:
+
+    stages = {}
+
+    for stage in milling_stages:
+        stages[stage.name] = stage.__to_dict__()
+    
+    path = _get_save_file_ui(msg="Select a file", path=cfg.LOG_PATH, _filter="*.yaml")
+
+    save_yaml(path=path,data=stages)
+
+   

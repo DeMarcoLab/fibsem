@@ -18,7 +18,7 @@ from fibsem.structures import (BeamType, FibsemMillingSettings,
                                Point, FibsemPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui, export_milling_stages
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
@@ -139,6 +139,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_milling_stage.clicked.connect(self.remove_milling_stage)
         self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_exportMilling.clicked.connect(lambda: export_milling_stages(self.milling_stages))
         
         # update ui
         self.pushButton.clicked.connect(lambda: self.update_ui())
