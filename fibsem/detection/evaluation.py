@@ -119,7 +119,7 @@ from copy import deepcopy
 
 
 
-def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[str], plot: bool = False):
+def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], plot: bool = False, _clip: bool=True):
 
     # ground truth 
     df = pd.read_csv(path)
@@ -129,9 +129,12 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[str], plo
 
     _prog = tqdm(filenames)
     for i, fname in enumerate(_prog):
+        
+        image_fname = os.path.basename(fname).removesuffix(".tif")
+        if _clip:
+            image_fname = image_fname[:-3]
 
-        image_fname = os.path.basename(fname)[:-7]
-        df_filt = df[df["image"]==image_fname]
+        df_filt = df[df["image"] == image_fname]
 
         if len(df_filt) == 0:
             print(f"no ground truth for {fname}")
@@ -164,20 +167,25 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[str], plo
             fibsem_image=image)
 
         dets = [gt_det]
-        for k, CHECKPOINT in enumerate(checkpoints):
+        for k, CKPT in enumerate(checkpoints):
+
+            CHECKPOINT = CKPT["checkpoint"]
+            ENCODER = CKPT["encoder"]
+            NC = CKPT["nc"]
+            
 
             _prog.set_description(f"file ({i+1}/{len(filenames)}) {os.path.basename(fname)} - checkpoint: ({k+1}/{len(checkpoints)}) {os.path.basename(CHECKPOINT)}")
-            model = load_model(CHECKPOINT, encoder="resnet34", nc=3)
+            model = load_model(CHECKPOINT, encoder=ENCODER, nc=NC)
 
             det  = detection.detect_features(image.data, model, features=deepcopy(gt_features), pixelsize=pixelsize, filter=True)
             dets.append(det)
         
         if plot:
-            fig = detection.plot_detections(dets, titles=["Ground Truth"] + [os.path.basename(checkpoint) for checkpoint in checkpoints])
+            fig = detection.plot_detections(dets, titles=["Ground Truth"] + [os.path.basename(ckpt["checkpoint"]) for ckpt in checkpoints])
 
         # evaluation against ground truth
-        for checkpoint, det in zip(checkpoints, dets[1:]):
-
+        for ckpt, det in zip(checkpoints, dets[1:]):
+            checkpoint = ckpt["checkpoint"]
             for feature in det.features:
                 gt_feat = gt_det.get_feature(feature.name)
                 dpx = feature.px - gt_feat.px
@@ -208,3 +216,82 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[str], plo
             # break
 
     return df_eval
+
+
+import plotly.express as px
+
+def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders = None, show: bool = True):
+    # scatter plot
+    fig = px.scatter(df, x="d.p.x", y="d.p.y", color="feature", facet_col="checkpoint", 
+        # facet_row="dataset", 
+        category_orders=category_orders,
+        title="Distance from Ground Truth", hover_data=df.columns)
+    if show:
+        fig.show()
+
+
+    # plot histogram
+    fig = px.histogram(df, x="distance", color="feature", facet_col="checkpoint", nbins=100, title="Distance from Ground Truth", hover_data=df.columns, 
+                    category_orders=category_orders)
+    if show:
+        fig.show()
+
+
+    # calculate mean, std per checkpoint  feature
+
+    df_group = df.groupby(["checkpoint", "feature"]).mean().reset_index()
+    # drop everything except distance
+    df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
+    # display(df_group)
+
+    # plot
+    fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Mean)", 
+                category_orders=category_orders, 
+                hover_data=df_group.columns)
+    if show:
+        fig.show()
+
+
+    df_group = df.groupby(["checkpoint", "feature"]).std().reset_index()
+    # drop everything except distance
+    df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
+    # display(df_group)
+
+    # plot
+    fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Std)", 
+                category_orders=category_orders, 
+                hover_data=df_group.columns)
+    if show:
+        fig.show()
+
+
+
+
+    # calculate if distance under threshold
+    THRESHOLD_1 = threshold
+    THRESHOLD_2 = 10
+    df[f"under_threshold_{THRESHOLD_1}px"] = df["distance"] < THRESHOLD_1
+    df[f"under_threshold_{THRESHOLD_2}px"] = df["distance"] < THRESHOLD_2
+
+    df_group = df.groupby(["checkpoint", "feature", f"under_threshold_{THRESHOLD_1}px"]).count().reset_index()
+
+    # pivot table
+    df_group = df_group.pivot(index=["checkpoint", "feature"], columns=f"under_threshold_{THRESHOLD_1}px", values="distance").reset_index()
+
+    # calc percentage
+    df_group[f"under_threshold_{THRESHOLD_1}px"] = df_group[True] / (df_group[True] + df_group[False])
+
+
+    # plot
+    fig = px.bar(df_group, x="checkpoint", y=f"under_threshold_{THRESHOLD_1}px", color="feature", barmode="group", title=f"Percentage Under Threshold ({THRESHOLD_1}px)", 
+                text=df_group[f"under_threshold_{THRESHOLD_1}px"].apply(lambda x: f"{x:.2f}"),
+                category_orders=category_orders, 
+                hover_data=df_group.columns)
+
+    # y limit 0-1
+    fig.update_yaxes(range=[0, 1])
+    if show:
+        fig.show()
+
+
+    # return 
