@@ -218,10 +218,8 @@ def convert_pattern_to_napari_rect(
         pattern_rotation = np.arctan2(
             pattern_height, pattern_width
         )  # TODO: line rotation doesnt work correctly, fix
-        # pattern_centre_x = (pattern_settings.end_x + pattern_settings.start_x) / 2
-        # pattern_centre_y = (pattern_settings.end_y + pattern_settings.start_y) / 2
-        pattern_centre_x = pattern_settings.centre_x
-        pattern_centre_y = pattern_settings.centre_y
+        pattern_centre_x = (pattern_settings.end_x + pattern_settings.start_x) / 2
+        pattern_centre_y = (pattern_settings.end_y + pattern_settings.start_y) / 2
 
     
     elif pattern_settings.pattern is FibsemPattern.Annulus: #only used for out of bounds check
