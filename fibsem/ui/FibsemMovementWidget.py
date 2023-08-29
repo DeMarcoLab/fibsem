@@ -196,18 +196,20 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             position = self.positions[self.comboBox_positions.currentIndex()]
             self.label_current_position.setText(f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}, y={position.y*constants.METRE_TO_MILLIMETRE:.3f}, z={position.z*constants.METRE_TO_MILLIMETRE:.3f}, r={position.r*constants.RADIANS_TO_DEGREES:.1f}, t={position.t*constants.RADIANS_TO_DEGREES:.1f}")
 
-    def add_position(self):
-        position = self.microscope.get_stage_position()
-        name = self.lineEdit_position_name.text()
-        if name == "":
-            napari.utils.notifications.show_warning("Please enter a name for the position")
-            return
-        position.name = name
+    def add_position(self, position: FibsemStagePosition = None):
+
+        if not isinstance(position, FibsemStagePosition):
+            position = self.microscope.get_stage_position()
+            name = self.lineEdit_position_name.text()
+            if name == "":
+                napari.utils.notifications.show_warning("Please enter a name for the position")
+                return
+            position.name = name
         self.positions.append(position)
-        self.comboBox_positions.addItem(name)
+        self.comboBox_positions.addItem(position.name)
         self.comboBox_positions.setCurrentIndex(self.comboBox_positions.count() - 1)
         self.lineEdit_position_name.setText("")
-        logging.info(f"Added position {name}")
+        logging.info(f"Added position {position.name}")
         self.minimap()
 
     def delete_position(self):
