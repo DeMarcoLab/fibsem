@@ -119,7 +119,7 @@ from copy import deepcopy
 
 
 
-def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], plot: bool = False, _clip: bool=True):
+def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], plot: bool = False, _clip: bool=True, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"]):
 
     # ground truth 
     df = pd.read_csv(path)
@@ -150,6 +150,9 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], pl
             feature = detection.get_feature(row["feature"])
             feature.px = Point(row["p.x"], row["p.y"])
             pixelsize= row["pixelsize"]
+            
+            if feature.name in _FEATURES_TO_IGNORE:
+                continue
 
             gt_features.append(feature)
         
