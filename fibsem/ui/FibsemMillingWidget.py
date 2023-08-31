@@ -250,6 +250,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui_pattern(self):
 
+        if self.sender().objectName() in ["start_x", "start_y", "end_x", "end_y"]:
+            self.doubleSpinBox_centre_x.setValue(0.5 * (self.spinboxes["start_x"].value() + self.spinboxes["end_x"].value()))
+            self.doubleSpinBox_centre_y.setValue(0.5 * (self.spinboxes["start_y"].value() + self.spinboxes["end_y"].value()))
+
         if self._UPDATING_PATTERN:
             return
 
@@ -309,6 +313,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # clear layout
         for i in reversed(range(self.gridLayout_patterns.count())):
             self.gridLayout_patterns.itemAt(i).widget().setParent(None)
+        self.spinboxes = {}
 
         # set widgets for each required key / value
         for i, key in enumerate(pattern.required_keys):
@@ -356,15 +361,21 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.passes_comboBox.setText("N/A")
                 self.passes_comboBox.editingFinished.connect(self.update_ui_pattern)
                 continue
+            
+            
+
             label = QtWidgets.QLabel(key)
             spinbox = QtWidgets.QDoubleSpinBox()
+            spinbox.setObjectName(key)
             spinbox.setDecimals(3)
             spinbox.setSingleStep(0.001)
-            spinbox.setRange(0, 1000)
+            spinbox.setRange(-1000, 1000)
             spinbox.setValue(0)
             self.gridLayout_patterns.addWidget(label, i, 0)
             self.gridLayout_patterns.addWidget(spinbox, i, 1)
             spinbox.setKeyboardTracking(False)
+
+            self.spinboxes[key] = spinbox
 
             # get default values from self.protocol and set values
             if key in pattern_protocol:
@@ -452,6 +463,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # only move the pattern if milling widget is activate and beamtype is ion?
         if self.checkBox_move_all_patterns.isChecked():
+            current_stage_index = self.comboBox_milling_stage.currentIndex()
+
             renewed_patterns = []
             for milling_stage in self.milling_stages:
                 # loop to check through all patterns to see if they are in bounds
@@ -474,7 +487,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                     milling_stage.pattern = pattern_renew
                     milling_stage.pattern.point = point
-
+                    
+                if "start_x" in self.spinboxes:
+                    pattern_updated_dict = self.milling_stages[current_stage_index].pattern.protocol
+                    vertices = ["start_x", "start_y", "end_x", "end_y"]
+                    for vertex in vertices:
+                        self.spinboxes[vertex].setValue(pattern_updated_dict[vertex] * constants.SI_TO_MICRO)
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
                 self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
                 logging.info(f"Moved patterns to {point} ")
@@ -495,6 +513,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 logging.info(f"MILL | {pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
 
                 # update ui
+                if "start_x" in self.spinboxes:
+                    pattern_updated_dict = self.milling_stages[current_stage_index].pattern.protocol
+                    vertices = ["start_x", "start_y", "end_x", "end_y"]
+                    for vertex in vertices:
+                        self.spinboxes[vertex].setValue(pattern_updated_dict[vertex] * constants.SI_TO_MICRO)
+
+
                 self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
                 self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
                 logging.info(f"Moved pattern to {point}")
