@@ -223,7 +223,7 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], pl
 
 import plotly.express as px
 
-def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders = None, show: bool = True):
+def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders = None, show: bool = True, thresholds: list[int] =  [50, 25, 10]):
     # scatter plot
     fig = px.scatter(df, x="d.p.x", y="d.p.y", color="feature", facet_col="checkpoint", 
         # facet_row="dataset", 
@@ -240,61 +240,77 @@ def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders 
         fig.show()
 
 
-    # calculate mean, std per checkpoint  feature
+    # plot box plot
+    fig = px.box(df, x="feature", y="distance", color="feature", facet_col="checkpoint", title="Distance from Ground Truth", hover_data=df.columns,
+                    category_orders=category_orders)
 
-    df_group = df.groupby(["checkpoint", "feature"]).mean().reset_index()
-    # drop everything except distance
-    df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
-    # display(df_group)
+    if show:
+        fig.show()
 
-    # plot
-    fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Mean)", 
-                category_orders=category_orders, 
-                hover_data=df_group.columns)
+    # # calculate mean, std per checkpoint  feature
+
+    # df_group = df.groupby(["checkpoint", "feature"]).mean().reset_index()
+    # # drop everything except distance
+    # df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
+    # # display(df_group)
+
+    # # plot
+    # fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Mean)", 
+    #             category_orders=category_orders, 
+    #             hover_data=df_group.columns)
+    # if show:
+    #     fig.show()
+
+
+    # df_group = df.groupby(["checkpoint", "feature"]).std().reset_index()
+    # # drop everything except distance
+    # df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
+    # # display(df_group)
+
+    # # plot
+    # fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Std)", 
+    #             category_orders=category_orders, 
+    #             hover_data=df_group.columns)
+    # if show:
+    #     fig.show()
+
+    # plot percentage of distance under threshold
+    df_ret = pd.DataFrame()
+    for threshold in thresholds:
+
+        df[f"under_threshold_{threshold}px"] = df["distance"] < threshold
+
+        df_group = df.groupby(["checkpoint", "feature", f"under_threshold_{threshold}px"]).count().reset_index()
+        # # pivot table
+        df_group = df_group.pivot(index=["checkpoint", "feature"], columns=f"under_threshold_{threshold}px", values="distance").reset_index()
+        
+        df_group["threshold"] = threshold
+        # fill na with 0
+        df_group.fillna(0, inplace=True)
+
+        # # calc percentage
+        df_group[f"under_threshold"] = df_group[True] / (df_group[True] + df_group[False])
+        
+        # concat to df_ret
+        df_ret = pd.concat([df_ret, df_group], axis=0)
+
+
+    df_ret = df_ret[["checkpoint", "feature", "threshold", "under_threshold"]]
+
+    # plot on bar chart with plotly express
+    # import plotly.express as px
+
+    fig = px.bar(df_ret, x="checkpoint", y="under_threshold", color="feature", facet_col="threshold",  barmode="group",                    
+                        text=df_ret[f"under_threshold"].apply(lambda x: f"{x:.2f}"),
+                        category_orders=category_orders, 
+                        hover_data=df_ret.columns,
+                        title="Percentage of distance under threshold (px)")
     if show:
         fig.show()
 
 
-    df_group = df.groupby(["checkpoint", "feature"]).std().reset_index()
-    # drop everything except distance
-    df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
-    # display(df_group)
-
-    # plot
-    fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Std)", 
-                category_orders=category_orders, 
-                hover_data=df_group.columns)
-    if show:
-        fig.show()
 
 
-
-
-    # calculate if distance under threshold
-    THRESHOLD_1 = threshold
-    THRESHOLD_2 = 10
-    df[f"under_threshold_{THRESHOLD_1}px"] = df["distance"] < THRESHOLD_1
-    df[f"under_threshold_{THRESHOLD_2}px"] = df["distance"] < THRESHOLD_2
-
-    df_group = df.groupby(["checkpoint", "feature", f"under_threshold_{THRESHOLD_1}px"]).count().reset_index()
-
-    # pivot table
-    df_group = df_group.pivot(index=["checkpoint", "feature"], columns=f"under_threshold_{THRESHOLD_1}px", values="distance").reset_index()
-
-    # calc percentage
-    df_group[f"under_threshold_{THRESHOLD_1}px"] = df_group[True] / (df_group[True] + df_group[False])
-
-
-    # plot
-    fig = px.bar(df_group, x="checkpoint", y=f"under_threshold_{THRESHOLD_1}px", color="feature", barmode="group", title=f"Percentage Under Threshold ({THRESHOLD_1}px)", 
-                text=df_group[f"under_threshold_{THRESHOLD_1}px"].apply(lambda x: f"{x:.2f}"),
-                category_orders=category_orders, 
-                hover_data=df_group.columns)
-
-    # y limit 0-1
-    fig.update_yaxes(range=[0, 1])
-    if show:
-        fig.show()
 
 
     # return 
