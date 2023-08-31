@@ -201,6 +201,33 @@ def convert_pattern_to_napari_circle(
     shape = [[ymin, xmin], [ymin, xmax], [ymax, xmax], [ymax, xmin]]  # ??
     return shape
 
+def convert_pattern_to_napari_line(pattern_settings: FibsemPatternSettings, image: FibsemImage) -> np.ndarray:
+
+# image centre
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
+    # pixel size
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+    # extract pattern information from settings
+
+
+    x_1 = int(icx + (pattern_settings.start_x / pixelsize_x))
+    y_1 = int(icy - (pattern_settings.start_y / pixelsize_y))
+    x_2 = int(icx + (pattern_settings.end_x / pixelsize_x))
+    y_2 = int(icy - (pattern_settings.end_y / pixelsize_y))
+
+    width = 10
+
+    top_left_x = int(x_1 - width/2)
+    top_left_y = int(y_1 - width/2)
+    bottom_left_x = int(x_1 - width/2)
+    bottom_left_y = int(y_1 + width/2)
+    bottom_right_x = int(x_2 + width/2)
+    bottom_right_y = int(y_2 + width/2)
+    top_right_x = int(x_2 + width/2)
+    top_right_y = int(y_2 - width/2)
+    
+    shape = [ [top_left_y,top_left_x], [bottom_left_y,bottom_left_x], [bottom_right_y,bottom_right_x], [top_right_y,top_right_x]]
+    return shape
 
 def convert_pattern_to_napari_rect(
     pattern_settings: FibsemPatternSettings, image: FibsemImage
@@ -428,6 +455,10 @@ def _draw_patterns_in_napari(
 
                 shape_types.append("ellipse")
                 _ignore.append(name)
+            elif pattern_settings.pattern is FibsemPattern.Line:
+                shape = convert_pattern_to_napari_line(pattern_settings=pattern_settings, image=ib_image)
+                shape_types.append("rectangle")
+                _ignore.append(name)
             else:
                 shape = convert_pattern_to_napari_rect(
                     pattern_settings=pattern_settings, image=ib_image
@@ -452,9 +483,26 @@ def _draw_patterns_in_napari(
 
 
             # _name = f"Stage {i+1:02d}"
-            if name in viewer.layers:
-                viewer.layers[name].data = shape_patterns
+            if "line" in shape_types:
+                _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=_ignore)#[stage.name for stage in milling_stages])
+
+                viewer.add_shapes(
+                    shape_patterns,
+                    name=name,
+                    shape_type=shape_types,
+                    edge_width=0.5,
+                    edge_color=COLOURS[i % len(COLOURS)],
+                    face_color=COLOURS[i % len(COLOURS)],
+                    opacity=0.5,
+                    blending="translucent",
+                )
+
+                # viewer.add_shapes([[400,200],[200,200]],shape_type ="line",edge_color = "yellow")
+
+                continue
+            elif name in viewer.layers:
                 viewer.layers[name].shape_type = shape_types
+                viewer.layers[name].data = shape_patterns
                 viewer.layers[name].edge_color = COLOURS[i % len(COLOURS)]
                 viewer.layers[name].face_color=COLOURS[i % len(COLOURS)]
             else:

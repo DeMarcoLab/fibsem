@@ -185,13 +185,26 @@ class LinePattern(BasePattern):
         protocol["pattern"] = "Line"  # redundant now
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
+
+        # calculating new start and end (x,y)
+
+        mid_x = (protocol["start_x"] + protocol["end_x"])*0.5
+        mid_y = (protocol["start_y"] + protocol["end_y"])*0.5
+
+        dif_x = point.x-mid_x
+        dif_y = point.y-mid_y
+
+        protocol["start_x"] = protocol["start_x"] + dif_x
+        protocol["end_x"] = protocol["end_x"] + dif_x
+        protocol["start_y"] = protocol["start_y"] + dif_y
+        protocol["end_y"] = protocol["end_y"] + dif_y        
+
+
         protocol["cleaning_cross_section"] = protocol.get(
             "cleaning_cross_section", False
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
-        self.protocol = protocol
-        self.point = point
         self.protocol = protocol
         self.point = point
         return self.patterns
