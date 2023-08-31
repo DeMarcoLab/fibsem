@@ -9,35 +9,94 @@ from torchvision import transforms
 import dask.array as da
 import os
 import tifffile as tff
+import random
+from PIL import Image
 
 # transformations
-transformation = transforms.Compose(
+ROT_ANGLE = 15
+PROB = 0.1
+
+transformations_input = transforms.Compose(
     [
-        transforms.ToTensor(),
+
+        transforms.RandomRotation(ROT_ANGLE),
+        transforms.RandomHorizontalFlip(p=PROB),
+        transforms.RandomVerticalFlip(p=PROB),
+        transforms.RandomAutocontrast(p=PROB),
+        transforms.RandomEqualize(p=PROB),
+        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+    ]
+)
+
+transformations_target = transforms.Compose(
+    [
+        transforms.RandomRotation(ROT_ANGLE),
+        transforms.RandomHorizontalFlip(p=PROB),
+        transforms.RandomVerticalFlip(p=PROB),
+
     ]
 )
 
 
 class SegmentationDataset(Dataset):
-    def __init__(self, images, masks, num_classes: int, transforms=None):
+    def __init__(self, images, masks, num_classes: int, transforms_input=None, transforms_target=None):
         self.images = images
         self.masks = masks
         self.num_classes = num_classes
-        self.transforms = transforms
+        self.transforms_input = transforms_input
+        self.transforms_target = transforms_target
+
+        assert len(self.images) == len(self.masks), "Images and masks are not the same length"
+        assert self.transforms_target is not None if self.transforms_input is not None else True, "transforms_target must be provided if transforms_input is provided"
+
+    def _set_seed(self, seed):
+        random.seed(seed)
+        torch.manual_seed(seed)
 
     def __getitem__(self, idx):
-        image = np.asarray(self.images[idx])
-        if self.transforms:
-            image = self.transforms(image)
 
+
+        image = np.asarray(self.images[idx])
         mask = np.asarray(self.masks[idx])
+
+        # image = Image.fromarray(self.images[idx])
+        # mask = Image.fromarray(self.masks[idx])
 
         # if mask > num_class, set to zero
         mask[mask >= self.num_classes] = 0
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
+        # mask = torch.tensor(mask).unsqueeze(0)
+        
+        image = torch.tensor(image).unsqueeze(0)
         mask = torch.tensor(mask).unsqueeze(0)
 
+        # print(image.dtype, mask.dtype)
+        
+        if self.transforms_input:
+            # print(self.transforms)
+            # apply transformation
+            # tensor conversion
+            # print("image shape", image.shape)
+            # print("mask shape", mask.shape)
+            seed = random.randint(0, 1000)
+            self._set_seed(seed)
+            image = self.transforms_input(image)
+            self._set_seed(seed)
+            mask = self.transforms_target(mask)
+
+            # print(image.dtype, mask.dtype)
+
+            # convert image to float32 scaled between 0-1
+            image = image.float() / 255.0
+
+            # image = torch.tensor(image)
+            # mask = torch.tensor(mask)
+            # print(image.dtype, mask.dtype)
+
+            # mask values should represent class index
+                        
         return image, mask
 
     def __len__(self):
@@ -71,7 +130,9 @@ def preprocess_data(data_path: str, label_path: str, num_classes: int = 3, batch
 
     # load dataset
     seg_dataset = SegmentationDataset(
-        images, masks, num_classes, transforms=transformation
+        images, masks, num_classes, 
+        transforms_input=transformations_input, 
+        transforms_target=transformations_target
     )
 
     # train/validation splits

@@ -67,16 +67,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
 
         img_base = images[idx].detach().cpu().squeeze().numpy()
         gt_base = masks[idx].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
-        if WANDB and i % 4 == 0: # TODO: reduce the frequency of this logging
-            # wandb.log({"train_loss": loss.item()})
-
-            # wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Input Image")
-            # wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Ground Truth")
-            # wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Output Mask")
-            # wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
-
-            # print("RAW: ", gray2rgb(img_base).dtype)
-            # print("GT: ", utils.decode_segmap(gt_base).dtype)
+        if WANDB and i % 8 == 0: 
 
             stack = wandb.Image(
                 np.hstack(
@@ -127,7 +118,6 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
         gt_base = masks[0].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
 
         if WANDB and i % 8 == 0:
-            # wandb.log({"val_loss": loss.item()})
 
             stack = wandb.Image(
                 np.hstack(
@@ -138,17 +128,6 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
                     ), caption="Val Image (Raw, GT, Pred)"
             )
             wandb.log({"val_loss": loss.item(), "val_image": stack})
-
-            # wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Validation Input Image")
-            # wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Validation Ground Truth")
-            # wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Validation Output Mask")
-            # wandb.log(
-            #     {
-            #         "Validation image": wb_img,
-            #         "Validation mask": wb_mask,
-            #         "Validation ground_truth": wb_gt,
-            #     }
-            # )
 
         if ui:
             ui.emit({"stage": "val", "val_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
@@ -203,9 +182,10 @@ def train_model(
         train_losses.append(train_loss / len(train_data_loader))
         val_losses.append(val_loss / len(val_data_loader))
         
-        # only save if val_loss is minimum
-        if val_loss / len(val_data_loader) == min(val_losses):
-            print(f"LOWEST LOSS: {epoch}")
+        # get index of lowest loss
+        print(f"MIN TRAIN LOSS at {train_losses.index(min(train_losses))}")
+        print(f"MIN VAL LOSS at {val_losses.index(min(val_losses))}")
+
         save_model(save_dir, model, epoch)
 
         # TODO: add better ui updates
