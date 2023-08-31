@@ -36,7 +36,7 @@ Alternatively, the pattern can be moved anywhere within the image by pressing th
 
 ## Multiple Stages
 
-
+Multiple stages can be setup at once. In this manner, once multiple stages are ready, clicking "Run Milling" will run all the stages sequentially without any more manual input. This avoids the repetitive nature of setting up and running stages individually. 
 
 
 
