@@ -269,18 +269,18 @@ def show_values(ten):
 import os
 
 def validate_config(config:dict):
-    if "data_path" not in config:
+    if "data_paths" not in config:
         raise ValueError("data_path is missing. Should point to path containing labelled images.")
     else:
-        path = config["data_path"]
-        if not os.path.exists(path):
-            raise ValueError(f"{path} directory does not exist. (data_path)")
-    if "label_path" not in config:
+        for path in config["data_paths"]:
+            if not os.path.exists(path):
+                raise ValueError(f"{path} directory does not exist. (data_path)")
+    if "label_paths" not in config:
         raise ValueError("label_path is missing. Should point to path containing labelled images.")
     else:
-        path = config["label_path"]
-        if not os.path.exists(path):
-            raise ValueError(f"{path} directory does not exist. (label_path)")
+        for path in config["label_paths"]:
+            if not os.path.exists(path):
+                raise ValueError(f"{path} directory does not exist. (label_path)")
     if "save_path" not in config:
         raise ValueError("save_path is missing. Should point to save the model.")
     else:

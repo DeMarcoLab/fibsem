@@ -60,9 +60,6 @@ class SegmentationDataset(Dataset):
         image = np.asarray(self.images[idx])
         mask = np.asarray(self.masks[idx])
 
-        # image = Image.fromarray(self.images[idx])
-        # mask = Image.fromarray(self.masks[idx])
-
         # if mask > num_class, set to zero
         mask[mask >= self.num_classes] = 0
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
@@ -72,30 +69,16 @@ class SegmentationDataset(Dataset):
         image = torch.tensor(image).unsqueeze(0)
         mask = torch.tensor(mask).unsqueeze(0)
 
-        # print(image.dtype, mask.dtype)
         
         if self.transforms_input:
-            # print(self.transforms)
-            # apply transformation
-            # tensor conversion
-            # print("image shape", image.shape)
-            # print("mask shape", mask.shape)
             seed = random.randint(0, 1000)
             self._set_seed(seed)
             image = self.transforms_input(image)
             self._set_seed(seed)
             mask = self.transforms_target(mask)
 
-            # print(image.dtype, mask.dtype)
-
             # convert image to float32 scaled between 0-1
             image = image.float() / 255.0
-
-            # image = torch.tensor(image)
-            # mask = torch.tensor(mask)
-            # print(image.dtype, mask.dtype)
-
-            # mask values should represent class index
                         
         return image, mask
 
@@ -104,7 +87,13 @@ class SegmentationDataset(Dataset):
 
 from pathlib import Path
 def load_dask_dataset(data_path: Path, label_path: Path):
-    
+
+    # TODO: allow for loading from multiple directories
+    # sorted_img_filenames, sorted_mask_filenames = [], []
+    # for data_path, label_paths in zip(data_paths, label_paths):
+    #     sorted_img_filenames += sorted(glob.glob(os.path.join(data_path, "*.tif*")))
+    #     sorted_mask_filenames += sorted(glob.glob(os.path.join(label_path, "*.tif*")))
+
     sorted_img_filenames = sorted(glob.glob(os.path.join(data_path, "*.tif*")))
     sorted_mask_filenames = sorted(glob.glob(os.path.join(label_path, "*.tif*")))
 
@@ -120,13 +109,44 @@ def load_dask_dataset(data_path: Path, label_path: Path):
 
     return images, masks
 
+def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
 
-def preprocess_data(data_path: str, label_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
+    sorted_img_filenames, sorted_mask_filenames = [], []
+    for data_path, label_path in zip(data_paths, label_paths):
+        sorted_img_filenames += sorted(glob.glob(os.path.join(data_path, "*.tif*")))
+        sorted_mask_filenames += sorted(glob.glob(os.path.join(label_path, "*.tif*")))
+
+    # TODO: change to dask-image
+    img_arr = tff.imread(sorted_img_filenames, aszarr=True)
+    mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
+
+    images = da.from_zarr(img_arr)
+    masks = da.from_zarr(mask_arr)
+
+    images = images.rechunk(chunks=(1, images.shape[1], images.shape[2]))
+    masks = masks.rechunk(chunks=(1, images.shape[1], images.shape[2]))
+
+    return images, masks
+
+
+def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes: int = 3, 
+                    batch_size: int = 1, val_split: float = 0.2, 
+                    _validate_dataset:bool = True):
     
-    validate_dataset(data_path, label_path)
-    images, masks = load_dask_dataset(data_path, label_path)
+    # if _validate_dataset:
+        # validate_dataset(data_path, label_path)
 
-    print(f"Loading dataset from {data_path} of length {images.shape[0]}")
+    if not isinstance(data_paths, list):
+        data_paths = [data_paths]
+    if not isinstance(label_paths, list):
+        label_paths = [label_paths]
+
+    images, masks = load_dask_dataset_v2(data_paths, label_paths)
+
+
+    print(f"Loading dataset from {len(data_paths)} paths: {images.shape[0]}")
+    for path in data_paths:
+        print(f"Loaded from {path}")
 
     # load dataset
     seg_dataset = SegmentationDataset(
@@ -150,6 +170,7 @@ def preprocess_data(data_path: str, label_path: str, num_classes: int = 3, batch
     )  # shuffle=True,
     print(f"Train dataset has {len(train_data_loader)} batches of size {batch_size}")
 
+    # TODO: try larger val batch size?
     val_data_loader = DataLoader(
         seg_dataset, batch_size=1, sampler=val_sampler
     )  # shuffle=True,
