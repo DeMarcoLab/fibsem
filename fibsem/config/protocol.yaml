@@ -22,6 +22,7 @@ patterns:
     rotation: 0.0
     cleaning_cross_section: False
     scan_direction: "ToptoBottom"
+    passes: 0 # means auto
   Line:
     start_x: 0.0
     start_y: 0.0
@@ -70,7 +71,16 @@ patterns:
     distance: 2.0e-6
     number: 3
     rotation: 0.0
-    passes: 1.0
+    passes: 1
+    scan_direction: "LeftToRight"
+  SpotWeldVertical:
+    height: 1.0e-6
+    width: 5.0e-6
+    depth: 5.0e-6
+    distance: 2.0e-6
+    number: 3
+    rotation: 0.0
+    passes: 1
     scan_direction: "ToptoBottom"
   MicroExpansion:
     height: 1.0e-6

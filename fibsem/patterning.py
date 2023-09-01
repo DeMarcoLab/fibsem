@@ -52,7 +52,7 @@ REQUIRED_KEYS = {
         "distance",
         "lamella_width",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes","scan_direction"),
+    "SpotWeld": ("height", "width", "depth", "distance", "number", "passes","scan_direction"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -636,6 +636,58 @@ class SpotWeldPattern(BasePattern):
         return self.patterns
 
 
+
+
+@dataclass
+class SpotWeldPatternVertical(BasePattern):
+    name: str = "SpotWeldVertical"
+    required_keys: tuple[str] = REQUIRED_KEYS["SpotWeld"]
+    patterns = None
+    # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
+    protocol = None
+    point = None
+
+    def define(
+        self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        check_keys(protocol, self.required_keys)
+        width = protocol["width"]
+        height = protocol["height"]
+        depth = protocol["depth"]
+        distance = protocol["distance"]
+        n_patterns = int(protocol["number"])
+        rotation = protocol.get("rotation", 0)
+        passes = protocol.get("passes", 1)
+        scan_direction = protocol.get("scan_direction", "TopToBottom")
+        passes = int(passes) if passes is not None else None
+
+
+        patterns = []
+        for i in range(n_patterns):
+            pattern_settings = FibsemPatternSettings(
+                pattern=FibsemPattern.Rectangle,
+                width=width,
+                height=height,
+                depth=depth,
+                centre_x=point.x + (i - (n_patterns - 1) / 2) * distance,
+                centre_y=point.y,  
+                cleaning_cross_section=False,
+                scan_direction=scan_direction,
+
+                rotation=rotation,
+                passes=passes,
+            )
+            patterns.append(pattern_settings)
+
+        self.patterns = patterns
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+
+
+
+
 @dataclass
 class WaffleNotchPattern(BasePattern):
     name: str = "WaffleNotch"
@@ -844,6 +896,7 @@ __PATTERNS__ = [
     UndercutPattern,
     FiducialPattern,
     SpotWeldPattern,
+    SpotWeldPatternVertical,
     MicroExpansionPattern,
     WaffleNotchPattern,
     CloverPattern,

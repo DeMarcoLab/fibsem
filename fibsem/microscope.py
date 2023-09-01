@@ -1469,9 +1469,9 @@ class ThermoMicroscope(FibsemMicroscope):
             pattern.scan_direction = "TopToBottom"
             logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
-        if pattern_settings.passes is not None:
+        if pattern_settings.passes: # not zero
             print(pattern.dwell_time, pattern.pass_count, pattern.time)
-            pattern.dwell_time = pattern.dwell_time * pattern.pass_count
+            pattern.dwell_time = np.clip(pattern.dwell_time * pattern.pass_count, 0, 25e-6)
             pattern.pass_count = pattern_settings.passes
             pattern.scan_type = "Raster"
             print(pattern.dwell_time, pattern.pass_count, pattern.time)
