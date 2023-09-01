@@ -232,7 +232,6 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
 def detect_landing_post_v4(mask: np.ndarray, point: Point = None) -> Point:
     if point is None:
         point = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
-    # edge = edge_detection(img, sigma=sigma)
     idx = 3
     landing_mask = mask == idx
 
@@ -240,9 +239,6 @@ def detect_landing_post_v4(mask: np.ndarray, point: Point = None) -> Point:
     idxs = int(landing_mask.shape[1] / 2.5)
     landing_mask[:, :idxs] = False
     landing_mask[:, -idxs:] = False
-
-    plt.imshow(landing_mask, cmap="gray")
-    plt.show()
 
     # get median edge to
     px = detect_median_edge(landing_mask, edge="top")
