@@ -1519,8 +1519,8 @@ class FibsemDetectorSettings:
 @dataclass
 class FibsemExperiment():
     id: str = None
-    type: str = None
-    date: float = datetime.timestamp(datetime.today())
+    method: str = None
+    date: float = datetime.timestamp(datetime.now())
     application: str = "OpenFIBSEM"
     fibsem_version: str = fibsem_version
     application_version: str = None
@@ -1529,7 +1529,8 @@ class FibsemExperiment():
     def __to_dict__(self) -> dict:
         """Converts to a dictionary."""
         return {
-            "type": self.type,
+            "id": self.id,
+            "method": self.method,
             "date": self.date,
             "application": self.application,
             "fibsem_version": self.fibsem_version,
@@ -1540,8 +1541,9 @@ class FibsemExperiment():
     def __from_dict__(settings: dict) -> "FibsemExperiment":
         """Converts from a dictionary."""
         return FibsemExperiment(
-            type = settings.get("type", "Unknown"),
-            date = settings.get("date", datetime.timestamp(datetime.today())),
+            id = settings.get("id", "Unknown"),
+            method = settings.get("method", "Unknown"),
+            date = settings["date"],
             application= settings.get("application", "OpenFIBSEM"),
             fibsem_version= settings.get("fibsem_version", fibsem_version),
             application_version= settings.get("application_version", None),

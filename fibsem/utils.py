@@ -355,7 +355,7 @@ def _get_positions(fname: str = None) -> list[str]:
     return [d["name"] for d in ddict]
 
 
-def _register_metadata(microscope: FibsemMicroscope, parent_type: str, parent_version: str, parent_ui) -> None:
+def _register_metadata(microscope: FibsemMicroscope, parent_type: str, parent_version: str, experiment_name: str, parent_ui) -> None:
     from PyQt5.QtWidgets import QInputDialog
     from fibsem.structures import FibsemUser, FibsemExperiment
     import fibsem
@@ -374,7 +374,8 @@ def _register_metadata(microscope: FibsemMicroscope, parent_type: str, parent_ve
     experiment_type = QInputDialog.getItem(parent_ui, "Experiment Type", "Please select experiment type", types)[0]
     
     experiment = FibsemExperiment(
-        type=experiment_type,
+        id = experiment_name,
+        method=experiment_type,
         application=parent_type, 
         fibsem_version=fibsem.__version__,
         application_version=parent_version,
