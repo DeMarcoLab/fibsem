@@ -1107,7 +1107,9 @@ def _get_protocol_from_stages(stages: list):
 
     for stage in stages:
         # join two dicts union
-        ddict = {**stage.__to_dict__()["milling"], **stage.__to_dict__()["pattern"]["protocol"]}
+        ddict = {**stage.__to_dict__()["milling"], 
+            **stage.__to_dict__()["pattern"]["protocol"], 
+            "type": stage.__to_dict__()["pattern"]["name"]}
         protocol["stages"].append(deepcopy(ddict))
 
     return protocol
