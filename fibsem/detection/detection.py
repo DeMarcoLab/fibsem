@@ -50,7 +50,7 @@ class NeedleTip(Feature):
     name: str = "NeedleTip"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-        self.px = detect_needle_v4(mask)
+        self.px = detect_needle_v5(mask)
         return self.px
 
 
@@ -138,7 +138,7 @@ class CoreFeature(Feature):
     color = "lime"
     name: str = "CoreFeature"
 
-    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CoreFature':
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CoreFeature':
         self.px = detect_core_feature(mask, self)
         return self.px
 
@@ -263,6 +263,61 @@ def detect_median_edge(mask: np.ndarray, edge: str, threshold: int = 250) -> Poi
             pass
     return Point(x=int(edge_px.x), y=int(edge_px.y))
 
+
+def detect_absolute_edge(mask, edge: str, _filter:str = "largest", _mode: str = "median", threshold: int = 150) -> Point:
+
+    # _mode: median or strict
+    #   median: take median of points with same extremity
+    #   strict: first best selection
+
+    # get individual objects
+    labels = measure.label(mask)
+    props = measure.regionprops(labels)
+
+    obj = props[0]
+    if _filter == "largest":
+        # get the largest object
+        for prop in props:
+            if prop.area > obj.area:
+                obj = prop
+
+
+    # get the coords of the most right pixel
+    px = obj.coords[0]
+    for coord in obj.coords:
+
+        if edge == "right":
+            if coord[1] > px[1]:
+                px = coord
+                
+        
+        if edge == "left":
+            if coord[1] < px[1]:
+                px = coord
+        
+        if edge == "top":
+            if coord[0] < px[0]:
+                px = coord
+        
+        if edge == "bottom":
+            if coord[0] > px[0]:
+                px = coord
+
+    # find coordinates that have same x or y value as the most right pixel
+    same_y = [coord for coord in obj.coords if coord[1] == px[1]]
+    same_x = [coord for coord in obj.coords if coord[0] == px[0]]
+
+    # TODO: could add some fuzz to the selection too (e..g +/- 2px)
+
+    if edge in ["left", "right"]:
+        # take median of points with same y value
+        px = np.median(same_y, axis=0)
+    else:
+        # take median of points with same x value
+        px = np.median(same_x, axis=0)
+
+    return Point(px[1], px[0])
+
 def detect_core_feature(
     mask: np.ndarray,
     feature: Feature,
@@ -308,6 +363,11 @@ def detect_needle_v4(mask: np.ndarray, idx:int=2) -> Point:
     needle_mask = mask == idx
     return detect_corner(needle_mask, threshold=100)
 
+
+
+def detect_needle_v5(mask: np.ndarray, idx:int=2) -> Point:
+    needle_mask = mask == idx
+    return detect_absolute_edge(needle_mask, edge="right", _filter="largest", _mode="median", threshold=150)
 
 def edge_detection(img: np.ndarray, sigma=3) -> np.ndarray:
     return feature.canny(img, sigma=sigma)  # sigma higher usually better
