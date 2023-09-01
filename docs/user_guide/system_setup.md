@@ -20,6 +20,26 @@ The stage parameters can be defined in this section. This section outlines the b
 
 ![Stage Parameters](../img/user_guide/setup/stage_params.png)
 
+![fibsem diagram](../img/user_guide/setup/FIBSEM_DIAGRAM.png)
+
+Referring to the diagram above, the stage parameters are defined as follows:
+
+* Rotation flat to electron/ion beam
+
+This is the rotation of the stage in degrees in which the sample will be flat to the respective beam, this comes into effect when a pre tilted shuttle is in use.
+
+* Tilt flat to electron/ion beam
+
+This is the core tilt of the stage in degrees in which the sample will be flat to the respective beam. On the diagram, the angle labelled alpha is the tilt flat to the ion beam. Typically a system will be perpendicular to the electron beam, so the tilt flat to the electron beam will be 0.
+
+* Shuttle pretilt
+
+This is the pre tilted angle of the shuttle if a pre tilted shuttle is used.
+
+* Needle Stage Height Limit
+
+This is the limit of the needle stage height in mm. This is used to prevent the needle stage from crashing into the sample or stage.
+
 ### Microscope Model Settings
 
 The microscope parameters can be defined in this section. This section specifies the main hardware inclusions available on the microscope. This lets the user enable or disable functionality depending on availablity. For example, if a system does not have a manipulator, this can be disabled here and other functionality can be used without errors
