@@ -202,11 +202,11 @@ def decode_segmap(image, nc=3):
     label_colors = np.zeros((8, 3))
     label_colors[1, :] = (255, 0, 0)
     label_colors[2, :] = (0, 255, 0)
-    label_colors[3, :] = (0, 0, 255)
-    label_colors[4, :] = (0, 255, 255)
-    label_colors[5, :] = (255, 255, 0)
-    label_colors[6, :] = (255, 0, 255)
-    label_colors[7, :] = (128, 0, 0)
+    label_colors[3, :] = (0, 255, 255)
+    label_colors[4, :] = (255, 255, 0)    
+    label_colors[5, :] = (255, 0, 255)
+    label_colors[6, :] = (0, 0, 255)
+    label_colors[7, :] = (128, 0, 0) # TODO: convert this to use CLASS_COLORS
 
     # pre-allocate r, g, b channels as zero
     r = np.zeros_like(image, dtype=np.uint8)
@@ -215,9 +215,9 @@ def decode_segmap(image, nc=3):
 
     # TODO: make this more efficient
     # apply the class label colours to each pixel
-    for class_idx in range(1, nc):
+    for class_idx in range(1, nc+1):
         idx = image == class_idx
-        class_idx = class_idx % 5
+        # class_idx = class_idx % len(label_colors)
         r[idx] = label_colors[class_idx, 0]
         g[idx] = label_colors[class_idx, 1]
         b[idx] = label_colors[class_idx, 2]

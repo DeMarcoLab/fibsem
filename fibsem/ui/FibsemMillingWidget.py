@@ -359,7 +359,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             # get default values from self.protocol and set values
             if key in pattern_protocol:
                 value = _scale_value(key, pattern_protocol[key], constants.SI_TO_MICRO)
-                spinbox.setValue(value)
+                spinbox.setValue(value if value is not None else 0)
             
             spinbox.valueChanged.connect(self.update_ui_pattern)
 
