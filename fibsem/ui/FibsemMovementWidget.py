@@ -123,7 +123,10 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_movement_stage_z.setValue(stage_position.z * constants.SI_TO_MILLI)
         self.doubleSpinBox_movement_stage_rotation.setValue(np.rad2deg(stage_position.r))
         self.doubleSpinBox_movement_stage_tilt.setValue(np.rad2deg(stage_position.t))
-        self.minimap()
+
+        # NOTE (pc): temporary to reduce number of updates    
+        if self.sender() is None:
+            self.minimap()
 
     
     def get_position_from_ui(self):
