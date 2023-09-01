@@ -60,7 +60,8 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
                                MicroscopeState, Point, FibsemDetectorSettings,
-                               ThermoGISLine,ThermoMultiChemLine, StageSettings)
+                               ThermoGISLine,ThermoMultiChemLine, StageSettings, 
+                               FibsemSystem)
 
 
 class FibsemMicroscope(ABC):
@@ -421,6 +422,8 @@ class ThermoMicroscope(FibsemMicroscope):
             self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
         else:
             self.stage_settings = stage_settings
+        self.user = None
+        self.experiment = None
 
     def disconnect(self):
         self.connection.disconnect()
@@ -457,6 +460,13 @@ class ThermoMicroscope(FibsemMicroscope):
         self.model = self.connection.service.system.name
         self.software_version = self.connection.service.system.version
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
+        self.system = FibsemSystem(
+            manufacturer="Thermo Fisher Scientific",
+            model=self.model,
+            serial_number=self.serial_number,
+            software_version=self.software_version,
+            hardware_settings=self.hardware_settings,
+        )
 
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
@@ -531,6 +541,9 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image = FibsemImage.fromAdornedImage(
             copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(state), detector = detector
         )
+        fibsem_image.metadata.user = self.user
+        fibsem_image.metadata.experiment = self.experiment
+        fibsem_image.metadata.system = self.system
 
         return fibsem_image
 
@@ -571,6 +584,10 @@ class ThermoMicroscope(FibsemMicroscope):
             )
 
         fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state, detector = detector) 
+
+        fibsem_image.metadata.user = self.user
+        fibsem_image.metadata.experiment = self.experiment
+        fibsem_image.metadata.system = self.system
 
         return fibsem_image
 
@@ -2663,6 +2680,8 @@ class TescanMicroscope(FibsemMicroscope):
             self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
         else:
             self.stage_settings = stage_settings
+        self.user = None
+        self.experiment = None
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -2691,6 +2710,14 @@ class TescanMicroscope(FibsemMicroscope):
         self.software_version = image.Header["MAIN"]["SoftwareVersion"]
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
 
+        self.system = FibsemSystem(
+            manufacturer="TESCAN",
+            model=self.model,
+            serial_number=self.serial_number,
+            software_version=self.software_version,
+            hardware_settings=self.hardware_settings,
+        )
+
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
         """
             Acquires an image using the specified image settings.
@@ -2710,6 +2737,10 @@ class TescanMicroscope(FibsemMicroscope):
             _check_beam(BeamType.ION, self.hardware_settings)
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
+
+        image.metadata.user = self.user
+        image.metadata.experiment = self.experiment
+        image.metadata.system = self.system
 
         return image
 
@@ -2948,6 +2979,11 @@ class TescanMicroscope(FibsemMicroscope):
             image = self.last_image_ib
         else:
             raise Exception("Beam type error")
+
+        image.metadata.user = self.user
+        image.metadata.experiment = self.experiment 
+        image.metadata.system = self.system
+
         return image
 
     def _get_presets(self):
@@ -4776,12 +4812,23 @@ class DemoMicroscope(FibsemMicroscope):
         else:
             self.stage_settings = stage_settings
 
+        self.user = None
+        self.experiment = None
 
 
     def connect_to_microscope(self):
         self.model = "Demo"
         logging.info(f"Connected to Demo Microscope")
         logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")
+        
+        self.system = FibsemSystem(
+            manufacturer="OpenFibsem",
+            model="Demo",
+            serial_number="123456",
+            software_version="0.1",
+            hardware_settings=self.hardware_settings,
+        )
+        
         return
 
     def disconnect(self):
@@ -4800,6 +4847,10 @@ class DemoMicroscope(FibsemMicroscope):
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
                                          microscope_state=MicroscopeState(),detector_settings=FibsemDetectorSettings()))
+
+        image.metadata.user = self.user
+        image.metadata.experiment = self.experiment
+        image.metadata.system = self.system
 
         if image_settings.beam_type is BeamType.ELECTRON:
             self._eb_image = image

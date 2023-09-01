@@ -54,3 +54,4 @@ dist/*
 scratch/tile-images/*
 fibsem/log/*
 fibsem/db/fibsem.db
+fibsem/notebook.ipynb

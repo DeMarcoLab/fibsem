@@ -353,3 +353,31 @@ def _get_positions(fname: str = None) -> list[str]:
     ddict = load_yaml(fname=fname)
 
     return [d["name"] for d in ddict]
+
+
+def _register_metadata(microscope: FibsemMicroscope, parent_type: str, parent_version: str, parent_ui) -> None:
+    from PyQt5.QtWidgets import QInputDialog
+    from fibsem.structures import FibsemUser, FibsemExperiment
+    import fibsem
+
+    user_name = QInputDialog.getText(parent_ui, "Name", "Please enter user name")[0]
+    email = QInputDialog.getText(parent_ui, "Email", "Please enter your email")[0]
+    organization = QInputDialog.getText(parent_ui, "Institution", "Please enter your institution")[0]
+    import socket 
+    computer = socket.gethostname()
+    user = FibsemUser(name=user_name, email=email, organization=organization, computer=computer)
+    
+    if parent_type == "autolamella":
+        types = ['Autolamella', "Autolamella Waffle"]
+    elif parent_type == "autoliftout":
+        types = ['Liftout', 'Serial Liftout']
+    experiment_type = QInputDialog.getItem(parent_ui, "Experiment Type", "Please select experiment type", types)[0]
+    
+    experiment = FibsemExperiment(
+        type=experiment_type,
+        application=parent_type, 
+        fibsem_version=fibsem.__version__,
+        application_version=parent_version,
+    )
+    microscope.user = user
+    microscope.experiment = experiment

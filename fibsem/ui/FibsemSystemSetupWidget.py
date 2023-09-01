@@ -6,16 +6,19 @@ import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
-
+from PyQt5.QtWidgets import QInputDialog
 import fibsem
 from fibsem import config as cfg
 from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
+from fibsem.structures import (MicroscopeSettings, StageSettings, 
+                               FibsemHardware, BeamSystemSettings, 
+                               BeamType, ImageSettings, 
+                               FibsemMillingSettings, SystemSettings,
+                               FibsemUser, FibsemExperiment)
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.ui import _stylesheets
-
 def log_status_message(step: str):
     logging.debug(
         f"STATUS | System Widget | {step}"
@@ -44,7 +47,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.settings = settings
         self.viewer = viewer
         self.config_path = config_path  # TODO: allow user to set this
-
+        
         settings_dict = utils.load_yaml(os.path.join(self.config_path))
         
         self.auto_connect = False
@@ -155,7 +158,6 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.get_model_from_ui()
         self.milling_widget.set_milling_settings_ui(microscope_settings.milling)
 
-
     def save_defaults(self, path: str = None):
         system_dict = {}
         system_dict["system"] = {}
@@ -207,7 +209,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["system"]["name"] = self.microscope.model
         system_dict["system"]["manufacturer"] = self.comboBox_manufacturer.currentText()
         system_dict["system"]["version"] = fibsem.__version__
-        from PyQt5.QtWidgets import QInputDialog
+        
         system_dict["system"]["id"] = QInputDialog.getText(self, "Microscope ID", "Please enter ID of microscope")[0]
         system_dict["system"]["description"] = QInputDialog.getText(self, "Description", "Please enter system description")[0]
     
@@ -330,7 +332,6 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         logging.debug(f"Updated hardware settings: {hardware_settings}")
         return hardware_settings
 
-
     def connect(self, ip_address: str = None, manufacturer: str = None) -> None:
 
         if not isinstance(ip_address, str):
@@ -363,8 +364,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             log_status_message(f"CONNECTED_AT_{ip_address}")
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
-            # self.connected_signal.emit()
             self.set_defaults_to_ui()
+
+            
 
         except Exception as e:
             msg = f"Unable to connect to the microscope: {traceback.format_exc()}"
