@@ -79,7 +79,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.checkBox_labelling_model_assist.stateChanged.connect(self._toggle_labelling)
         self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
 
-        self.checkBox_labelling_model_assist.setVisible(self._LABELLING_ENABLED)
+        self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
         self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
         self.pushButton_labelling_cancel.setVisible(self._MODEL_ASSIST)       
         self.label_labelling_class_index.setVisible(self._MODEL_ASSIST)
@@ -93,8 +93,9 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         if self.sender() != self.checkBox_labelling_model_assist:
             self._LABELLING_ENABLED = not self._LABELLING_ENABLED
 
-        self.checkBox_labelling_model_assist.setVisible(self._LABELLING_ENABLED)
-        self._MODEL_ASSIST = self.checkBox_labelling_model_assist.isChecked()
+        self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
+        # self._MODEL_ASSIST = self.checkBox_labelling_model_assist.isChecked()
+        self._MODEL_ASSIST = False
 
         self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
         self.pushButton_labelling_cancel.setVisible(self._MODEL_ASSIST)       
