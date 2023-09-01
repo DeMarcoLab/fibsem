@@ -88,7 +88,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         # positions
         self.comboBox_positions.currentIndexChanged.connect(self.select_position)
-        self.pushButton_save_position.clicked.connect(self.add_position)
+        self.pushButton_save_position.clicked.connect(lambda: self.add_position(position=None))
         self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_position.clicked.connect(self.delete_position)
         self.pushButton_remove_position.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
@@ -205,7 +205,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 napari.utils.notifications.show_warning("Please enter a name for the position")
                 return
             position.name = name
-        self.positions.append(position)
+        self.positions.append(deepcopy(position))
         self.comboBox_positions.addItem(position.name)
         self.comboBox_positions.setCurrentIndex(self.comboBox_positions.count() - 1)
         self.lineEdit_position_name.setText("")

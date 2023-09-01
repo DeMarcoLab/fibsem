@@ -335,7 +335,7 @@ def _minimap(minimap_image: FibsemImage, positions: list[FibsemStagePosition]):
         buf = canvas.buffer_rgba()
         # Convert the buffer to a PIL Image
         pil_image = Image.frombuffer('RGBA', canvas.get_width_height(), buf, 'raw', 'RGBA', 0, 1)
-        pil_image = pil_image.resize((400, 400), Image.ANTIALIAS)
+        pil_image = pil_image.resize((300, 300), Image.ANTIALIAS)
         # Convert the PIL image to a QImage
         image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
         # Convert the QImage to a QPixmap 
