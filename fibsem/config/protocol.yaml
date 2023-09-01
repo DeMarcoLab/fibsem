@@ -50,6 +50,14 @@ patterns:
     side_width: 5.0e-6
     side_offset: 0.0
     depth: 10.0e-6
+    scan_direction: TopToBottom
+  HorseshoeVertical:
+    depth: 4.0e-6
+    height: 5.0e-05
+    width: 2.0e-05
+    scan_direction: TopToBottom
+    side_trench_width: 5.0e-06
+    top_trench_height: 10.0e-6
   Undercut: 
     height: 10.0e-6
     width: 10.0e-6
@@ -74,8 +82,8 @@ patterns:
     passes: 1
     scan_direction: "LeftToRight"
   SpotWeldVertical:
-    height: 1.0e-6
-    width: 5.0e-6
+    height: 5.0e-6
+    width: 0.5e-6
     depth: 5.0e-6
     distance: 2.0e-6
     number: 3

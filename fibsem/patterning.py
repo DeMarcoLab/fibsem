@@ -34,6 +34,15 @@ REQUIRED_KEYS = {
         "side_offset",
         "side_width",
         "depth",
+        "scan_direction",
+    ),
+    "HorseshoeVertical": (
+        "width",
+        "height",
+        "side_trench_width",
+        "top_trench_height",
+        "depth",
+        "scan_direction",
     ),
     "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
     "Undercut": (
@@ -375,6 +384,69 @@ class HorseshoePattern(BasePattern):
         return self.patterns
 
 
+
+@dataclass
+class HorseshoePatternVertical(BasePattern):
+    name: str = "HorseshoeVertical"
+    required_keys: tuple[str] = REQUIRED_KEYS["HorseshoeVertical"]
+    patterns = None
+    # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
+    protocol = None
+    point = None
+
+    def define(
+        self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        """Calculate the horseshoe vertical milling patterns"""
+
+        check_keys(protocol, self.required_keys)
+
+        width = protocol["width"]
+        height = protocol["height"]
+        trench_width = protocol["side_trench_width"]
+        upper_trench_height = protocol["top_trench_height"]
+        depth = protocol["depth"]
+        scan_direction = protocol.get("scan_direction", "TopToBottom")
+
+        left_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=trench_width,
+            height=height,
+            depth=depth,
+            centre_x=point.x - (width / 2) - (trench_width / 2),
+            centre_y=point.y,
+            cleaning_cross_section=False,
+            scan_direction=scan_direction,
+        )
+
+        right_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=trench_width,
+            height=height,
+            depth=depth,
+            centre_x=point.x + (width / 2) + (trench_width / 2),
+            centre_y=point.y,
+            cleaning_cross_section=False,
+            scan_direction=scan_direction,
+        )
+
+        upper_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=width + (2 * trench_width),
+            height=upper_trench_height,
+            depth=depth,
+            centre_x=point.x,
+            centre_y=point.y + (height / 2) + (upper_trench_height / 2),
+            cleaning_cross_section=False,
+            scan_direction=scan_direction,
+        )
+        
+        self.patterns = [left_pattern,right_pattern, upper_pattern]
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+
 @dataclass
 class FiducialPattern(BasePattern):
     name: str = "Fiducial"
@@ -467,62 +539,6 @@ class UndercutPattern(BasePattern):
         )
 
 
-
-
-
-
-
-
-
-        # # top_jcut
-        # jcut_top_centre_x = point.x + jcut_width / 2 - jcut_h_offset
-        # jcut_top_centre_y = point.y + jcut_lamella_height
-        # jcut_top_width = jcut_width
-        # jcut_top_height = jcut_trench_thickness
-        # jcut_top_depth = jcut_depth
-
-        # top_pattern = FibsemPatternSettings(
-        #     pattern=FibsemPattern.Rectangle,
-        #     width=jcut_top_width,
-        #     height=jcut_top_height,
-        #     depth=jcut_top_depth,
-        #     centre_x=jcut_top_centre_x,
-        #     centre_y=jcut_top_centre_y,
-        #     cleaning_cross_section=use_cleaning_cross_section,
-        #     scan_direction="TopToBottom",
-        # )
-
-        # # lhs_jcut
-        # # jcut_lhs = microscope.patterning.create_rectangle(
-        # #     center_x=point.x - jcut_half_width - jcut_lhs_offset,
-        # #     center_y=point.y + jcut_half_height - (jcut_lhs_height / 2 - jcut_half_height),
-        # #     width=jcut_lhs_trench_thickness,
-        # #     height=jcut_lhs_height,
-        # #     depth=jcut_depth,
-        # # )  # depth
-
-        # # rhs jcut
-        # jcut_rhs_centre_x = point.x + jcut_half_width - jcut_h_offset
-        # jcut_rhs_centre_y = (
-        #     point.y
-        #     + jcut_half_height
-        #     - (jcut_rhs_height / 2 - jcut_half_height)
-        #     + jcut_trench_thickness / 2
-        # )
-        # jcut_rhs_width = jcut_trench_thickness
-        # jcut_rhs_height = jcut_rhs_height
-        # jcut_rhs_depth = jcut_depth
-
-        # rhs_pattern = FibsemPatternSettings(
-        #     pattern=FibsemPattern.Rectangle,
-        #     width=jcut_rhs_width,
-        #     height=jcut_rhs_height,
-        #     depth=jcut_rhs_depth,
-        #     centre_x=jcut_rhs_centre_x,
-        #     centre_y=jcut_rhs_centre_y,
-        #     cleaning_cross_section=use_cleaning_cross_section,
-        #     scan_direction="TopToBottom",
-        # )
 
         self.patterns = [top_pattern, rhs_pattern]
         self.protocol = protocol
@@ -893,6 +909,7 @@ __PATTERNS__ = [
     CirclePattern,
     TrenchPattern,
     HorseshoePattern,
+    HorseshoePatternVertical,
     UndercutPattern,
     FiducialPattern,
     SpotWeldPattern,
