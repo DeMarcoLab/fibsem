@@ -122,8 +122,8 @@ class LamellaTopEdge(Feature):
 class LamellaBottomEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (0, 0, 255)
-    color = "blue"
+    _color_UINT8: tuple = (255, 0, 255)
+    color = "hotpink"
     name: str = "LamellaBottomEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaBottomEdge':
@@ -195,7 +195,8 @@ class CopperAdapterBottomEdge(Feature):
 
 __FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, 
     CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
-    NeedleTipBottom, CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge]
+    NeedleTipBottom, 
+    CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge]
  
 
 
@@ -229,9 +230,10 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     px = detect_closest_edge_v2(edge, landing_pt)
     return px
 
+# TODO: generalise this to detect any edge
 def detect_landing_post_v4(mask: np.ndarray, point: Point = None) -> Point:
     if point is None:
-        point = Point(x=img.shape[1] // 2, y=img.shape[0] // 2)
+        point = Point(x=mask.shape[1] // 2, y=mask.shape[0] // 2)
     idx = 3
     landing_mask = mask == idx
 
@@ -741,6 +743,14 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
     return fig
 
 
+
+_DETECTIONS_THAT_MOVE_MANIPULATOR = (NeedleTip, LamellaRightEdge, LamellaBottomEdge, LamellaTopEdge, CopperAdapterTopEdge, CopperAdapterBottomEdge)
+_DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre)
+
+
+# isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
+
+
 def move_based_on_detection(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -748,8 +758,8 @@ def move_based_on_detection(
     beam_type: BeamType,
     move_x: bool = True,
     move_y: bool = True,
+    _move_system: str = None, # auto
 ):
-
     from fibsem import movement
 
     dx, dy = det.distance.x, det.distance.y
@@ -768,8 +778,17 @@ def move_based_on_detection(
     logging.debug(f"movement: x={dx:.2e}, y={dy:.2e}")
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
+    if _move_system is None:
+        if isinstance(f1, _DETECTIONS_THAT_MOVE_MANIPULATOR):
+            _move_system = "manipulator"
+        if isinstance(f1, _DETECTIONS_THAT_MOVE_STAGE):
+            _move_system = "stage"
+
+    if _move_system not in ["manipulator", "stage"]:
+        raise ValueError(f"move_system must be one of ['manipulator', 'stage'], not {_move_system}")
+
     # these movements move the needle...
-    if isinstance(f1, NeedleTip) or isinstance(f1, LamellaRightEdge):
+    if _move_system == "manipulator":
 
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ION:
@@ -781,9 +800,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if isinstance(f1, LamellaCentre) and isinstance(f2, ImageCentre):
-
-
+    if _move_system == "stage":
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
                 settings=settings,
