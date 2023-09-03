@@ -1082,16 +1082,24 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
     )
     return stage
 
+from typing import Optional, Union
 
-def _get_milling_stages(key, protocol, point: Point = Point()):
+def _get_milling_stages(key, protocol, point: Union[Point, list[Point]] = Point()):
     
     # TODO: maybe add support for defining point per stages?
 
+    # convert point to list of points, same length as stages
+
     if "stages" in protocol[key]:
-        stages = [
-            _get_stage(key, pstage, point=point, i=i)
-            for i, pstage in enumerate(protocol[key]["stages"])
-        ]
+        stages = []
+        for i, pstage in enumerate(protocol[key]["stages"]):
+            
+            if isinstance(point, list):
+                pt = point[i]
+            else:
+                pt = point
+
+            stages.append(_get_stage(key, pstage, point=pt, i=i))
     else:
         stages = [_get_stage(key, protocol[key], point=point)]
     return stages
