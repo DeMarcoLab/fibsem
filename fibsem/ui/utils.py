@@ -737,3 +737,16 @@ def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
         milling_stages.append(milling_stage)
 
     return milling_stages
+
+def _draw_milling_stages_helper(image: FibsemImage, milling_stages: list[FibsemMillingStage]):
+
+    viewer = napari.Viewer()
+    viewer.add_image(image.data, name='test_image')
+    _draw_patterns_in_napari(viewer=viewer,ib_image=image,eb_image=None,milling_stages=milling_stages)
+    screenshot = viewer.screenshot()
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.imshow(screenshot)
+    ax.axis('off')
+    plt.show()
+
+
