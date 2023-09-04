@@ -1,22 +1,31 @@
+import logging
+from pathlib import Path
+
 import napari
 import napari.utils.notifications
+
+import numpy as np
+from PIL import Image
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
+from scipy.ndimage import median_filter
+
+from fibsem import acquire, constants
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.structures import (BeamSettings, BeamType, FibsemDetectorSettings,
+                               FibsemImage, ImageSettings, Point)
+from fibsem.ui import utils as ui_utils
+
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope
 from fibsem import constants, acquire
 
 from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
 from fibsem.ui import utils as ui_utils 
 from fibsem.ui import _stylesheets
-from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
-from scipy.ndimage import median_filter
-from PIL import Image
-from scipy.ndimage import median_filter
-from PIL import Image
-import numpy as np
-from pathlib import Path
-import logging
+from fibsem.ui.qtdesigner_files import ImageSettingsWidget
+from fibsem.ui import _stylesheets
+from napari.qt.threading import thread_worker
 
 def log_status_message(step: str):
     logging.debug(
@@ -26,6 +35,8 @@ def log_status_message(step: str):
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
     viewer_update_signal = pyqtSignal()
+    image_notification_signal = pyqtSignal(str)
+
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -35,7 +46,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     ):
         super(FibsemImageSettingsWidget, self).__init__(parent=parent)
         self.setupUi(self)
-
+        self.parent = parent
         self.microscope = microscope
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
@@ -83,6 +94,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
+        self.image_notification_signal.connect(self.update_imaging_ui)
 
         if self._TESCAN:
 
@@ -211,7 +223,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope.set("detector_contrast", self.detector_settings.contrast, beam_type=beam)
         log_status_message("SET_DETECTOR_PARAMETERS")
         log_status_message(f"Detector Type: {self.detector_settings.type}, Mode: {self.detector_settings.mode}, Brightness: {self.detector_settings.brightness}, Contrast: {self.detector_settings.contrast}")
-        
+        napari.utils.notifications.show_info("Detector Settings Updated")
 
     def apply_beam_settings(self):
         beam = BeamType[self.selected_beam.currentText()]
@@ -224,6 +236,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message("SET_BEAM_PARAMETERS")
         log_status_message(f"Working Distance: {self.beam_settings.working_distance}, Current: {self.beam_settings.beam_current}, Voltage: {self.beam_settings.voltage}, Stigmation: {self.beam_settings.stigmation}, Shift: {self.beam_settings.shift}")
         self.set_ui_from_settings(self.image_settings,beam)
+        napari.utils.notifications.show_info("Beam Settings Updated")
 
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         contrast = self.microscope.get("detector_contrast", beam_type=beam_type)
@@ -354,8 +367,62 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.set_ui_from_settings(self.image_settings, beam_type)
 
     def take_image(self, beam_type: BeamType = None):
+        self.TAKING_IMAGES = True
+        print("helllo from thread")
+        worker = self.take_image_worker(beam_type)
+        worker.finished.connect(self.imaging_finished)
+        worker.start()
+        print("started thread")
+
+    def update_imaging_ui(self, msg: str):
+        logging.info(msg)
+        napari.utils.notifications.notification_manager.records.clear()
+        napari.utils.notifications.show_info(msg)
+
+    def imaging_finished(self):
+        if self.ib_image is not None:
+            self.update_viewer(self.ib_image.data, BeamType.ION.name)
+        if self.eb_image is not None:
+            self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
+        self._toggle_interactions(True)
+        self.TAKING_IMAGES = False
+
+    def _toggle_interactions(self, enable: bool, caller: str = None, imaging: bool = False):
+        self.pushButton_take_image.setEnabled(enable)
+        self.pushButton_take_all_images.setEnabled(enable)
+        self.set_detector_button.setEnabled(enable)
+        self.button_set_beam_settings.setEnabled(enable)
+        self.parent.movement_widget._toggle_interactions(enable, caller="ui")
+        if caller != "milling":
+            self.parent.milling_widget._toggle_interactions(enable, caller="ui")
+        if enable:
+            self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setText("Acquire Image")
+            self.pushButton_take_all_images.setText("Acquire All Images")
+        elif imaging:
+            self.pushButton_take_all_images.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setText("Acquiring Images...")
+            self.pushButton_take_all_images.setText("Acquiring Images...")
+            self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        else:
+            self.pushButton_take_all_images.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setText("Acquire Image")
+            self.pushButton_take_all_images.setText("Acquire All Images")
+
+    @thread_worker
+    def take_image_worker(self, beam_type: BeamType = None):
+        self._toggle_interactions(enable=False, imaging=True)
+        print("Taking image...")
         self.image_settings = self.get_settings_from_ui()[0]
-        
+        self.image_notification_signal.emit("Taking image...")
         if beam_type is not None:
             self.image_settings.beam_type = beam_type
 
@@ -368,20 +435,22 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.ib_image = arr
         
         self.picture_signal.emit()
-
-        self.update_viewer(arr.data, name)
-
         log_status_message("IMAGE_TAKEN_{beam_type}".format(beam_type=self.image_settings.beam_type.name))
         log_status_message("Settings used: {}".format(self.image_settings))
 
     def take_reference_images(self):
+        self.TAKING_IMAGES = True
+        worker = self.take_reference_images_worker()
+        worker.finished.connect(self.imaging_finished)
+        worker.start()
 
+    @thread_worker
+    def take_reference_images_worker(self):
+        self._toggle_interactions(enable=False,imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
+        self.image_notification_signal.emit("Taking Reference Images...")
 
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
-
-        self.update_viewer(self.ib_image.data, BeamType.ION.name)
-        self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
         self.picture_signal.emit()
         log_status_message("REFERENCE_IMAGES_TAKEN")
         log_status_message("Settings used: {}".format(self.image_settings))

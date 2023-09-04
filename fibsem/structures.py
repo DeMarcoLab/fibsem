@@ -445,8 +445,8 @@ Methods:
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    # r=0.0 if self.r is None else self.r,
-                    r=None,
+                    r=0.0 if self.r is None else self.r, # TODO figure this out, do we need it for real micrscope or just simulator ? 
+                    #r=None,
                     coordinate_system=coordinate_system,
                 )
     

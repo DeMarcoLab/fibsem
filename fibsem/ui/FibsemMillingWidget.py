@@ -38,6 +38,7 @@ def log_status_message(stage: FibsemMillingStage, step: str):
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
     _milling_finished = QtCore.pyqtSignal()
+    milling_notification = QtCore.pyqtSignal(str)
 
     def __init__(
         self,
@@ -51,7 +52,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     ):
         super(FibsemMillingWidget, self).__init__(parent=parent)
         self.setupUi(self)
-
+        self.parent = parent
         self.microscope = microscope
         self.settings = settings
         self.viewer = viewer
@@ -143,6 +144,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # update ui
         self.pushButton.clicked.connect(lambda: self.update_ui())
         self.pushButton.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.milling_notification.connect(self.update_milling_ui)
 
         # run milling
         self.pushButton_run_milling.clicked.connect(self.run_milling)
@@ -600,38 +602,54 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.debug(f"UPDATE_UI: GET: {t1-t0}, DRAW: {t2-t1}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
-    def _toggle_interaction(self, enabled: bool = True):
+    def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
 
         """Toggle microscope and pattern interactions."""
-
         self.pushButton.setEnabled(enabled)
         self.pushButton_add_milling_stage.setEnabled(enabled)
         self.pushButton_remove_milling_stage.setEnabled(enabled)
         # self.pushButton_save_milling_stage.setEnabled(enabled)
         self.pushButton_run_milling.setEnabled(enabled)
+        if enabled:
+            self.pushButton_run_milling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setText("Run Milling")
+            self.pushButton.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        elif milling:
+            self.pushButton_run_milling.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setText("Running...")
+        else:
+            self.pushButton_run_milling.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+
+        if caller is None:
+            self.parent.image_widget._toggle_interactions(enabled, caller="milling")
+            self.parent.movement_widget._toggle_interactions(enabled, caller="milling")
 
         # change run milling to Running... and turn orange
-        if enabled:
-            self.pushButton_run_milling.setText("Run Milling")
-            self.pushButton_run_milling.setStyleSheet("")
-        else:
-            self.pushButton_run_milling.setText("Running...")
-            self.pushButton_run_milling.setStyleSheet("background-color: orange")
+        # if enabled:
+        #     self.pushButton_run_milling.setText("Run Milling")
+        # else:
+        #     self.pushButton_run_milling.setText("Running...")
+        #     self.pushButton_run_milling.setStyleSheet("background-color: orange")
 
     def run_milling(self):
 
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
-        worker.yielded.connect(self.update_milling_ui)
+        # worker.yielded.connect(self.update_milling_ui)
         worker.start()
 
     @thread_worker
     def run_milling_step(self):
 
         milling_stages = self.get_milling_stages()
-        self._toggle_interaction(enabled=False)
+        self._toggle_interactions(enabled=False,milling=True)
         for stage in milling_stages:
-            yield f"Preparing: {stage.name}"
+            self.milling_notification.emit(f"Preparing: {stage.name}")
             if stage.pattern is not None:
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
@@ -640,15 +658,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                 milling.draw_patterns(self.microscope, stage.pattern.patterns)
 
-                yield f"Running {stage.name}..."
+                self.milling_notification.emit(f"Running {stage.name}...")
                 milling.run_milling(self.microscope, stage.milling.milling_current)
             
                 milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
                 log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
 
-            yield f"Milling stage complete: {stage.name}"
-        yield f"Milling complete. {len(self.milling_stages)} stages completed."
+            self.milling_notification.emit(f"Milling stage complete: {stage.name}")
+        self.milling_notification.emit(f"Milling complete. {len(self.milling_stages)} stages completed.")
 
     def update_milling_ui(self, msg: str):
         logging.info(msg)
@@ -659,7 +677,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def run_milling_finished(self):
 
         # take new images and update ui
-        self._toggle_interaction(enabled=True)
+        self._toggle_interactions(enabled=True)
         self.image_widget.take_reference_images()
         self.update_ui()
         self._milling_finished.emit()
