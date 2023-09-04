@@ -1471,9 +1471,9 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
         if pattern_settings.passes: # not zero
             print(pattern.dwell_time, pattern.pass_count, pattern.time)
-            pattern.dwell_time = np.clip(pattern.dwell_time * pattern.pass_count, 0, 25e-6)
-            pattern.pass_count = pattern_settings.passes
-            pattern.scan_type = "Raster"
+            # pattern.scan_type = "Raster"
+            pattern.dwell_time = pattern.dwell_time * pattern.pass_count
+            # pattern.pass_count = pattern_settings.passes
             print(pattern.dwell_time, pattern.pass_count, pattern.time)
             # TODO: setting passes directly doesnt work, need to scale by dwell time to get same time
         return pattern

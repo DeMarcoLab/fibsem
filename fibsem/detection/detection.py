@@ -791,8 +791,8 @@ def move_based_on_detection(
     if _move_system == "manipulator":
 
         # electron: neg = down, ion: neg = up
-        if beam_type is BeamType.ION:
-            dy *= -1
+        # if beam_type is BeamType.ION:
+        #     dy *= -1
 
         microscope.move_manipulator_corrected(
             dx=dx,
