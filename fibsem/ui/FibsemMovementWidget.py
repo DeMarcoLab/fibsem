@@ -96,7 +96,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_position.clicked.connect(self.delete_position)
         self.pushButton_remove_position.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
-        self.pushButton_go_to.clicked.connect(self.go_to_saved_position)
+        self.pushButton_go_to.clicked.connect(lambda: self.go_to_saved_position(None))
         self.pushButton_go_to.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.pushButton_export.clicked.connect(self.export_positions)
         self.pushButton_export.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
@@ -282,18 +282,21 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.info(f"Updated position {self.comboBox_positions.currentText()}")
         self.minimap()
 
-    def go_to_saved_position(self):
-        worker = self.go_to_saved_position_worker()
+    def go_to_saved_position(self, pos:FibsemStagePosition = None):
+        worker = self.go_to_saved_position_worker(pos)
         worker.finished.connect(self.run_moving_finished)
         # worker.yielded.connect(self.update_moving_ui)
         worker.start()
     
     @thread_worker
-    def go_to_saved_position_worker(self):
+    def go_to_saved_position_worker(self, pos: FibsemStagePosition = None):
+
+        if pos is None:
+            pos = self.positions[self.comboBox_positions.currentIndex()]
         self._toggle_interactions(False)
-        self.movement_notification_signal.emit(f"Moving to saved position {self.comboBox_positions.currentText()}")
-        self.microscope.move_stage_absolute(self.positions[self.comboBox_positions.currentIndex()])
-        logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
+        self.movement_notification_signal.emit(f"Moving to saved position {pos}")
+        self.microscope._safe_absolute_stage_movement(pos)
+        logging.info(f"Moved to position {pos}")
         self.update_ui_after_movement()
 
 
@@ -365,11 +368,12 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.label_minimap.setPixmap(qpixmap)
 
 
-    def update_ui_after_movement(self):
+    def update_ui_after_movement(self): # TODO: PPP Refactor
         # disable taking images after movement here
         if self.checkBox_movement_acquire_electron.isChecked() and self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_reference_images()
             while self.image_widget.TAKING_IMAGES:
+                # logging.info(f"TAKING_IMAGES: {self.image_widget.TAKING_IMAGES}")
                 time.sleep(0.2)
             self.update_ui()
             return
