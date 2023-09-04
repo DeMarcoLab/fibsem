@@ -15,6 +15,8 @@ from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 from fibsem.patterning import FibsemMillingStage
 import napari
+from fibsem.utils import load_yaml
+import fibsem.patterning as patterning
 
 # # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 # class _WidgetPlot(QWidget):
@@ -719,3 +721,19 @@ def _get_text_ui(
     )
 
     return text, okPressed
+
+
+def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
+
+    stages = load_yaml(path)
+
+    milling_stages = []
+
+    for stage in stages:
+        milling_stage = FibsemMillingStage.__from_dict__(stages[stage])
+        pattern = patterning.get_pattern(milling_stage.pattern.name)
+        pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
+        milling_stage.pattern = pattern
+        milling_stages.append(milling_stage)
+
+    return milling_stages
