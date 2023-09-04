@@ -909,6 +909,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
     def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
         
         if state_dict["pattern"] == "Rectangle":
+            passes = state_dict.get("passes", 0)
+            passes = passes if passes is not None else 0
             return FibsemPatternSettings(
                 pattern=FibsemPattern.Rectangle,
                 width=state_dict["width"],
@@ -919,7 +921,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 centre_y=state_dict["centre_y"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
-                passes=int(state_dict["passes"]) if state_dict.get("passes", None) is not None else None,# TODO: this line is crazy
+                passes=int(passes), 
             )
         elif state_dict["pattern"] == "Line":
             return FibsemPatternSettings(

@@ -53,6 +53,19 @@ class NeedleTip(Feature):
         self.px = detect_needle_v5(mask)
         return self.px
 
+@dataclass
+class NeedleTipBottom(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (0,255,0)
+    color = "green"
+    name: str = "NeedleTipBottom"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
+        self.px = detect_needle_v5(mask, edge="bottom")
+        return self.px
+
+
 
 
 @dataclass
@@ -109,8 +122,8 @@ class LamellaTopEdge(Feature):
 class LamellaBottomEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (0, 0, 255)
-    color = "blue"
+    _color_UINT8: tuple = (255, 0, 255)
+    color = "hotpink"
     name: str = "LamellaBottomEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaBottomEdge':
@@ -126,7 +139,7 @@ class LandingPost(Feature):
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-        self.px = detect_landing_post_v3(img, point)
+        self.px = detect_landing_post_v4(mask, point)
         return self.px
 
 
@@ -142,8 +155,48 @@ class CoreFeature(Feature):
         self.px = detect_core_feature(mask, self)
         return self.px
 
+@dataclass
+class CopperAdapterCentre(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255, 255, 0)
+    color = "yellow"
+    name: str = "CopperAdapterCentre"
 
-__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, CoreFeature, LamellaTopEdge, LamellaBottomEdge]
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterCentre':
+        self.px = detect_centre_point(mask == 4)
+        return self.px
+
+@dataclass
+class CopperAdapterTopEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255, 255, 0)
+    color = "yellow"
+    name: str = "CopperAdapterTopEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterTopEdge':
+        self.px = detect_median_edge(mask == 4, edge="top")
+        return self.px
+
+
+@dataclass
+class CopperAdapterBottomEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255, 255, 0)
+    color = "yellow"
+    name: str = "CopperAdapterBottomEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterBottomEdge':
+        self.px = detect_median_edge(mask == 4, edge="bottom")
+        return self.px
+
+
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, 
+    CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
+    NeedleTipBottom, 
+    CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge]
  
 
 
@@ -177,6 +230,23 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     px = detect_closest_edge_v2(edge, landing_pt)
     return px
 
+# TODO: generalise this to detect any edge
+def detect_landing_post_v4(mask: np.ndarray, point: Point = None) -> Point:
+    if point is None:
+        point = Point(x=mask.shape[1] // 2, y=mask.shape[0] // 2)
+    idx = 3
+    landing_mask = mask == idx
+
+    # mask out outside 1/3
+    idxs = int(landing_mask.shape[1] / 2.5)
+    landing_mask[:, :idxs] = False
+    landing_mask[:, -idxs:] = False
+
+    # get median edge to
+    px = detect_median_edge(landing_mask, edge="top")
+
+    # px = detect_closest_edge_v2(landing_mask, point)
+    return px
 
 def detect_centre_point(mask: np.ndarray, threshold: int = 500) -> Point:
     """ Detect the centre (mean) point of the mask for a given color (label)
@@ -274,6 +344,9 @@ def detect_absolute_edge(mask, edge: str, _filter:str = "largest", _mode: str = 
     labels = measure.label(mask)
     props = measure.regionprops(labels)
 
+    if len(props) == 0:
+        return Point(0,0)
+
     obj = props[0]
     if _filter == "largest":
         # get the largest object
@@ -363,11 +436,10 @@ def detect_needle_v4(mask: np.ndarray, idx:int=2) -> Point:
     needle_mask = mask == idx
     return detect_corner(needle_mask, threshold=100)
 
-
-
-def detect_needle_v5(mask: np.ndarray, idx:int=2) -> Point:
+def detect_needle_v5(mask: np.ndarray, idx:int=2, edge: str ="right") -> Point:
     needle_mask = mask == idx
-    return detect_absolute_edge(needle_mask, edge="right", _filter="largest", _mode="median", threshold=150)
+    return detect_absolute_edge(needle_mask, edge=edge, 
+        _filter="largest", _mode="median", threshold=150)
 
 def edge_detection(img: np.ndarray, sigma=3) -> np.ndarray:
     return feature.canny(img, sigma=sigma)  # sigma higher usually better
@@ -671,6 +743,14 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
     return fig
 
 
+
+_DETECTIONS_THAT_MOVE_MANIPULATOR = (NeedleTip, LamellaRightEdge, LamellaBottomEdge, LamellaTopEdge, CopperAdapterTopEdge, CopperAdapterBottomEdge)
+_DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre)
+
+
+# isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
+
+
 def move_based_on_detection(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -678,8 +758,8 @@ def move_based_on_detection(
     beam_type: BeamType,
     move_x: bool = True,
     move_y: bool = True,
+    _move_system: str = None, # auto
 ):
-
     from fibsem import movement
 
     dx, dy = det.distance.x, det.distance.y
@@ -698,8 +778,17 @@ def move_based_on_detection(
     logging.debug(f"movement: x={dx:.2e}, y={dy:.2e}")
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
+    if _move_system is None:
+        if isinstance(f1, _DETECTIONS_THAT_MOVE_MANIPULATOR):
+            _move_system = "manipulator"
+        if isinstance(f1, _DETECTIONS_THAT_MOVE_STAGE):
+            _move_system = "stage"
+
+    if _move_system not in ["manipulator", "stage"]:
+        raise ValueError(f"move_system must be one of ['manipulator', 'stage'], not {_move_system}")
+
     # these movements move the needle...
-    if isinstance(f1, NeedleTip) or isinstance(f1, LamellaRightEdge):
+    if _move_system == "manipulator":
 
         # electron: neg = down, ion: neg = up
         if beam_type is BeamType.ION:
@@ -711,9 +800,7 @@ def move_based_on_detection(
             beam_type=beam_type,
         )
 
-    if isinstance(f1, LamellaCentre) and isinstance(f2, ImageCentre):
-
-
+    if _move_system == "stage":
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
                 settings=settings,

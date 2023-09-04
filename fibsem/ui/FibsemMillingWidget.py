@@ -347,15 +347,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.checkbox_cleaning_cross_section.stateChanged.connect(self.update_ui_pattern)
                 continue
 
-            if key == "passes":
-                label = QtWidgets.QLabel(key)
-                self.passes_comboBox = QtWidgets.QLineEdit()
-                self.passes_comboBox.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-                self.gridLayout_patterns.addWidget(label, i, 0)
-                self.gridLayout_patterns.addWidget(self.passes_comboBox, i, 1)
-                self.passes_comboBox.setText("N/A")
-                self.passes_comboBox.editingFinished.connect(self.update_ui_pattern)
-                continue
+  
             label = QtWidgets.QLabel(key)
             spinbox = QtWidgets.QDoubleSpinBox()
             spinbox.setDecimals(3)
@@ -369,7 +361,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             # get default values from self.protocol and set values
             if key in pattern_protocol:
                 value = _scale_value(key, pattern_protocol[key], constants.SI_TO_MICRO)
-                spinbox.setValue(value)
+                spinbox.setValue(value if value is not None else 0)
             
             spinbox.valueChanged.connect(self.update_ui_pattern)
 
@@ -398,9 +390,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 if isinstance(self.microscope, ThermoMicroscope) and pattern.name == "Circle":
                     continue
                 pattern_dict[key] = self.checkbox_cleaning_cross_section.isChecked()
-                continue
-            if key == "passes":
-                pattern_dict[key] = self.passes_comboBox.text() if self.passes_comboBox.text() != "N/A" else None
                 continue
 
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
