@@ -26,7 +26,7 @@ Referring to the diagram above, the stage parameters are defined as follows:
 
 * Rotation flat to electron/ion beam
 
-This is the rotation of the stage in degrees in which the sample will be flat to the respective beam, this comes into effect when a pre tilted shuttle is in use.
+This is the rotation of the stage in degrees in which the sample will be flat to the respective beam, assuming a flat sample holder.
 
 * Tilt flat to electron/ion beam
 
