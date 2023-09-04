@@ -53,7 +53,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         if bool(settings_dict["connect_to_microscope_on_startup"]):
             self.auto_connect = True
             self.connect_to_microscope(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
-        if bool(settings_dict["load_positions_on_startup"]):
+        if bool(settings_dict.get("load_positions_on_startup", False)):
             self.load_positions_on_startup = True
         self.setup_connections(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
         self.update_ui()

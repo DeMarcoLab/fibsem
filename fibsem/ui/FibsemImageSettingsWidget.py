@@ -59,6 +59,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
         self.TAKING_IMAGES = False
+
         self.setup_connections()
 
         if image_settings is not None:
