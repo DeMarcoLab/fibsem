@@ -384,7 +384,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui()
     
     def _stage_position_moved(self, pos: FibsemStagePosition):
-        self.update_ui_after_movement()
+        # self.update_ui_after_movement()
+        self.update_ui() # TODO: fix taking images after movement
 
     def move_flat_to_beam(self):
         beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON
