@@ -354,10 +354,14 @@
         </property>
        </widget>
       </item>
-      <item row="25" column="0">
-       <widget class="QCheckBox" name="checkBox_move_all_patterns">
+      <item row="24" column="1">
+       <widget class="QCheckBox" name="checkBox_relative_move">
         <property name="text">
-         <string>Move All Patterns Together</string>
+         <string>Keep Relative Orientation</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+
         </property>
        </widget>
       </item>
@@ -372,7 +376,6 @@
   <tabstop>pushButton_add_milling_stage</tabstop>
   <tabstop>pushButton_remove_milling_stage</tabstop>
   <tabstop>checkBox_live_update</tabstop>
-  <tabstop>checkBox_move_all_patterns</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_run_milling</tabstop>
   <tabstop>comboBox_milling_current</tabstop>

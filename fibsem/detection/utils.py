@@ -238,7 +238,7 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
         dat = {"feature": feature.name, 
                         "p.x": feature.px.x, 
                         "p.y": feature.px.y, 
-                    "beam_type": "ELECTRON", 
+                    "beam_type": "NULL", 
                     "image": os.path.basename(fname), 
                     "pixelsize": det.pixelsize,
                     "corrected": corrected} # TODO: beamtype

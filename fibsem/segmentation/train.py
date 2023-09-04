@@ -17,12 +17,25 @@ from tqdm import tqdm
 
 from fibsem.segmentation import dataset, utils
 
+from skimage.color import gray2rgb
+from skimage.util import img_as_ubyte
+
+
+
+def _create_wandb_image(img, gt, pred, caption):
+    
+    img = img_as_ubyte(gray2rgb(img))  
+    gt = utils.decode_segmap(gt) 
+    pred = utils.decode_segmap(pred)
+
+    return wandb.Image(
+        np.hstack([img, gt, pred]), caption=caption)
 
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
 
     # dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S") + f"_n{epoch+1:02d}"
-    model_save_file = os.path.join(save_dir, f"model.pt")
+    model_save_file = os.path.join(save_dir, f"model{epoch:02d}.pt")
     torch.save(model.state_dict(), model_save_file)
 
     print(f"Model saved to {model_save_file}")
@@ -58,23 +71,32 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
 
         data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
-        idx = random.choice(np.arange(0, images.shape[0]))
 
-        output = model(images[idx][None, :, :, :])
-        output_mask = utils.decode_output(output)
+        if WANDB and i % 8 == 0: 
+            
+            # TODO: this is really inefficient, re-running the model on the same image, just use existing outputs
+            idx = random.choice(np.arange(0, images.shape[0]))
+            output = model(images[idx][None, :, :, :])
+            output_mask = utils.decode_output(output)
 
-        img_base = images[idx].detach().cpu().squeeze().numpy()
-        gt_base = masks[idx].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
-        if WANDB: # TODO: reduce the frequency of this logging
-            wandb.log({"train_loss": loss.item()})
+            img_base = images[idx].detach().cpu().squeeze().numpy()
+            # output_mask = utils.decode_output(outputs[idx])
+            gt_base = masks[idx].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
 
-            wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Input Image")
-            wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Ground Truth")
-            wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Output Mask")
-            wandb.log({"image": wb_img, "mask": wb_mask, "ground_truth": wb_gt})
+            # stack = wandb.Image(
+            #     np.hstack(
+            #         [img_as_ubyte(gray2rgb(img_base)),  
+            #         utils.decode_segmap(gt_base), 
+            #         utils.decode_segmap(output_mask)
+            #         ]
+            #         ), caption="Train Image (Raw, GT, Pred)"
+            # )
+            stack = _create_wandb_image(img_base, gt_base, output_mask, "Train Image (Raw, GT, Pred)")
+            wandb.log({"train_loss": loss.item(), "train_image": stack})
 
-        if ui:
-            ui.emit({"stage": "train", "train_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
+
+            if ui:
+                ui.emit({"stage": "train", "train_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
 
 
     return train_loss
@@ -86,7 +108,7 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
 
     for i, (images, masks) in enumerate(val_loader):
 
-        model.eval()
+        # model.eval()
 
         # move img and mask to device, reshape mask
         images = images.to(device)
@@ -104,28 +126,20 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
 
         val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
-        output = model(images[0][None, :, :, :])
-        output_mask = utils.decode_output(output)
 
-        img_base = images[0].detach().cpu().squeeze().numpy()
-        gt_base = masks[0].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
+        if WANDB and i % 8 == 0:
 
-        if WANDB:
-            wandb.log({"val_loss": loss.item()})
+            output = model(images[0][None, :, :, :])
+            output_mask = utils.decode_output(outputs)
 
-            wb_img = wandb.Image(np.dstack((img_base, img_base, img_base)), caption="Validation Input Image")
-            wb_gt = wandb.Image(utils.decode_segmap(gt_base), caption="Validation Ground Truth")
-            wb_mask = wandb.Image(utils.decode_segmap(output_mask), caption="Validation Output Mask")
-            wandb.log(
-                {
-                    "Validation image": wb_img,
-                    "Validation mask": wb_mask,
-                    "Validation ground_truth": wb_gt,
-                }
-            )
+            img_base = images[0].detach().cpu().squeeze().numpy()
+            gt_base = masks[0].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
 
-        if ui:
-            ui.emit({"stage": "val", "val_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
+            stack = _create_wandb_image(img_base, gt_base, output_mask, "Val Image (Raw, GT, Pred)")
+            wandb.log({"val_loss": loss.item(), "val_image": stack})
+
+            if ui:
+                ui.emit({"stage": "val", "val_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
 
 
     return val_loss
@@ -177,9 +191,11 @@ def train_model(
         train_losses.append(train_loss / len(train_data_loader))
         val_losses.append(val_loss / len(val_data_loader))
         
-        # only save if val_loss is minimum
-        if val_loss / len(val_data_loader) == min(val_losses):
-            save_model(save_dir, model, epoch)
+        # get index of lowest loss
+        print(f"MIN TRAIN LOSS at {train_losses.index(min(train_losses))}")
+        print(f"MIN VAL LOSS at {val_losses.index(min(val_losses))}")
+
+        save_model(save_dir, model, epoch)
 
         # TODO: add better ui updates
         if ui:
@@ -214,10 +230,12 @@ def _setup_model(config: dict) -> tuple:
 def _setup_dataset(config:dict):
 
     train_data_loader, val_data_loader = dataset.preprocess_data(
-        data_path = config["data_path"], 
-        label_path= config["label_path"], 
+        data_paths = config["data_paths"], 
+        label_paths= config["label_paths"], 
         num_classes=config["num_classes"], 
-        batch_size=config["batch_size"]
+        batch_size=config["batch_size"],
+        val_split=config.get("split", 0.2),
+        _validate_dataset=config.get("validate_dataset", True),
     )
 
     return train_data_loader, val_data_loader

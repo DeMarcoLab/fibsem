@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
-
+from typing import Optional
 import numpy as np
 import tifffile as tff
 
@@ -44,7 +44,7 @@ from fibsem.config import METADATA_VERSION
 class Point:
     x: float = 0.0
     y: float = 0.0
-
+    name: Optional[str] = None
 
     def __to_dict__(self) -> dict:
         return {"x": self.x, "y": self.y}

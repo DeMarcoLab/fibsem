@@ -1470,7 +1470,12 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
         if pattern_settings.passes is not None:
+            print(pattern.dwell_time, pattern.pass_count, pattern.time)
+            pattern.dwell_time = pattern.dwell_time * pattern.pass_count
             pattern.pass_count = pattern_settings.passes
+            pattern.scan_type = "Raster"
+            print(pattern.dwell_time, pattern.pass_count, pattern.time)
+            # TODO: setting passes directly doesnt work, need to scale by dwell time to get same time
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
