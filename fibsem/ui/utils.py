@@ -145,6 +145,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QGridLayout, QLabel
 
+COLOURS = ["yellow", "cyan", "magenta", "lime", "orange", "hotpink", "green", "blue", "red", "purple"]
+
 
 def set_arr_as_qlabel(
     arr: np.ndarray,
@@ -738,7 +740,7 @@ def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
 
     return milling_stages
 
-def _draw_milling_stages_helper(image: FibsemImage, milling_stages: list[FibsemMillingStage]):
+def _draw_milling_stages_helper(image: FibsemImage, milling_stages: list[FibsemMillingStage],show: bool = True):
 
     viewer = napari.Viewer()
     viewer.add_image(image.data, name='test_image')
@@ -746,7 +748,17 @@ def _draw_milling_stages_helper(image: FibsemImage, milling_stages: list[FibsemM
     screenshot = viewer.screenshot()
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(screenshot)
+    viewer.close()
+
+    for i,stage in enumerate(milling_stages):
+    
+        plt.plot(0,0,'-',color=COLOURS[i % len(COLOURS)],label=stage.name)
+
     ax.axis('off')
-    plt.show()
+    ax.legend()
+    if show:
+        plt.show()
+    
+    return fig
 
 
