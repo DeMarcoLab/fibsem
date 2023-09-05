@@ -1294,9 +1294,6 @@ class ThermoMicroscope(FibsemMicroscope):
         Configure the microscope for milling using the ion beam.
 
         Args:
-            application_file (str): Path to the milling application file.
-            patterning_mode (str): Patterning mode to use.
-            hfw (float): Desired horizontal field width in meters.
             mill_settings (FibsemMillingSettings): Milling settings.
 
         Returns:
@@ -1322,6 +1319,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
         self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
+
+        self.set("current", mill_settings.milling_current, BeamType.ION)
 
     def run_milling(self, milling_current: float, asynch: bool = False):
         """
@@ -1470,12 +1469,14 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
         if pattern_settings.passes: # not zero
-            print(pattern.dwell_time, pattern.pass_count, pattern.time)
+            # print("dwell_time: ", pattern.dwell_time, "passes: ", pattern.pass_count, "time: ", pattern.time)
             # pattern.scan_type = "Raster"
-            pattern.dwell_time = pattern.dwell_time * pattern.pass_count
+            pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
             # pattern.pass_count = pattern_settings.passes
-            print(pattern.dwell_time, pattern.pass_count, pattern.time)
-            # TODO: setting passes directly doesnt work, need to scale by dwell time to get same time
+            # print("dwell_time: ", pattern.dwell_time, "passes: ", pattern.pass_count, "time: ", pattern.time)
+            # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
+            # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
+            # NB: the current must be set before doing this, otherwise it will be out of range
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
