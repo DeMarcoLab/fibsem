@@ -740,7 +740,7 @@ def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
 
     return milling_stages
 
-def _draw_milling_stages_helper(image: FibsemImage, milling_stages: list[FibsemMillingStage],show: bool = True):
+def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[FibsemMillingStage], show: bool = True):
 
     viewer = napari.Viewer()
     viewer.add_image(image.data, name='test_image')
