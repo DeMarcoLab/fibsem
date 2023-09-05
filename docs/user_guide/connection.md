@@ -14,7 +14,7 @@ Once done, click connect to microscope. This will connect to the microscope and 
 
 If connection is unsuccessful, an error will arise. Please refer to the error messages for information on the error and troubleshooting solutions.
 
-Once connected to a microscope, other functionality is available. To take an image, click on the Image tab. Ensure the settings are as desired and click 'Acquire Image'. This will take an image and display it in the image viewer. Click 'Acquire Images' to take both an ion and electron image. Please see the [imaging section](imaging.md) for more information on the Imaging.
+Once connected to a microscope, other functionality is available. To take an image, click on the Image tab. Ensure the settings are as desired and click 'Acquire Image'. This will take an image and display it in the image viewer. Click 'Acquire All Images' to take both an ion and electron image. Please see the [imaging section](imaging.md) for more information on the Imaging.
 
 ![Image Tab](../img/user_guide/connection/image_example.png)
 

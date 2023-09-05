@@ -4,38 +4,31 @@ OpenFIBSEM hosts a variety of machine learning tools incorporated into the workf
 
 Through the use of detection and classification, OpenFIBSEM can be used to automate the process of lamella preparation. This is done by detecting the features of interest and classifying them into the relevant categories. This allows for the process to make decisions on its own regarding movement and milling ultimately reducing the need for human input. 
 
-OpenFIBSEM provides a baseline PyTorch model available on [huggingface](https://huggingface.co/patrickcleeve/openfibsem-baseline) for this purpose. This model has had  training on cryo biological samples. However, for best results, training on specific use case data is recommended. To serve this purpose, OpenFIBSEM is also constantly using the data collected to train the model to improve its accuracy. This process is further detailed below.
+OpenFIBSEM provides several baseline models for different methods and samples available on [huggingface](https://huggingface.co/patrickcleeve/openfibsem-baseline) for this purpose. These models have been finetuned for cryo-lamella preparation on different samples. You can also load from a local checkpoint, by specifying the full path. 
+
+To constantly improve the model, OpenFIBSEM also allows for user feedback to be incorporated into the model. This is done by allowing the user to verify the detection and classification of the features of interest. This feedback is then used to train the model to improve its accuracy. By default this data is logged to fibsem/log/data/ml. This can be changed in the config file.
 
 ## Model selection
 
-By default, if a model is not specified, the baseline model is used. This is done by loading the model from the huggingface repository. However, a model can also be specified or passed in by setting up the path of the model. 
+To load a baseline from huggingface, specify the checkpoint name, and matching encoder. The encoder to use can be determined by the naming scheme of the checkpont, (e.g. openfibsem-baseline-34.pt -> encoder="resnet34", openfibsem-01-18.pt -> encoder="resnet18")
 
-a model can be loaded like so by using the load_model function found in fibsem/segmentation/model.py
+A model can be loaded like so by using the load_model function found in fibsem/segmentation/model.py
 
 ```python
 
 from fibsem.segmentation.model import load_model
 
-model_path = "path/to/model" # Using model saved on disk
-encoder = "resnet18" # encoder used in model, default is resnet18
+# load model checkpoint from huggingface (openfibsem-baseline-34.pt)
+model = load_model(checkpoint="openfibsem-baseline-34.pt", encoder="resnet34")
 
-model_on_disk = load_model(checkpoint = model_path, encoder = encoder)
+# load base model (imagenet checkpoint)
+model = load_model(checkpoint=None, encoder="resnet34")
 
-# using model from huggingface
-
-# if no checkpoint is passed in, the default is obtained from huggingface and saved locally
-# by default, the resnet18 encoder is used
-
-default_model = load_model()
-
+# load a local checkpoint
+checkpoint_path = "path/to/model/checkpoint.pt" # Using model saved on disk
+model = load_model(checkpoint = checkpoint_path, encoder = "resnet18")
 
 ```
-
-
-
-
-
-
 ## Feature Detection in Automated Lamella Preparation
 
 Segmentation and feature detection is used in the automated lamellae preparation process to guide movement and milling. The regions of interest are segmented and detected, which are then used to control or make changes to position and milling parameters.
@@ -53,24 +46,8 @@ This process of user verification is enabled when the workflow is run in supervi
 
 ## Feedback and Model Training
 
-When in supervised mode, the user is prompted to verify the detection and position of the feature. In the background, the supervised actions performed are used to train the model. 
+When in supervised mode, the user is prompted to verify the detection and position of the feature. When the user makes changes to the detection, metrics such as the new correct position, and how far the detection was from the user corrected position is used to analyse the performance and retrain the model if and when necessary.
 
-I.e. when the detection is accurate and the user does not make any changes, this data is used to create training samples for the model. 
+Based on whether the detection was correct or not, the images can be split into a training and validation dataset. The training dataset is used to train the model and the validation dataset is used to evaluate the model.
 
-Based on whether the detection was correct or not, the images are split into a training and validation dataset. The training dataset is used to train the model and the validation dataset is used to evaluate the model.
-
-** load model code snippet to show how hugging face model or local model is used **
-
-When the user makes changes to the detection, this is also used to analyse and train the model. Metrics such as how far the detection was from the user corrected position is used to analyse the performance and retrain the model if and when necessary. The learning and training process is integrated within the use case of the program itself. 
-
-
-As large and case base datasets are usually the bottlenecks in a machine learning workflow, the openFIBSEM program is constantly collecting training and validation data which allows for datasets to be created very easily for the purposes of training. 
-
-
-
-
-
-
- 
-
-
+OpenFIBSEM programs are constantly collecting this training and validation data enabling the model to be trained and improved over time. This allows for the model to be constantly improved and updated to the latest data.

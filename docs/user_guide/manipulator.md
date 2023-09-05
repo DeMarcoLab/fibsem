@@ -10,7 +10,7 @@ If the manipulator is not calibrated, the subsystem will be disabled with the me
 
 ![calibration](../img/user_guide/manipulator/calibration.png)
 
-To calibrate the manipulator, click on the tools menu and select "Manipulator Calibration". This will begin the process of calibration, during which, the manipulator moves rapidly between the "Parking", "Standby" and "Working" positions. Ensure that the manipulator is free of obstructions so that no damage is done to the system. Follow the prompts on the screen to complete the calibration. It is completely automatic and requires no other user input. Once completed, it will be ready to use.
+To calibrate the manipulator, click on the tools menu and select "Manipulator Calibration". This will begin the process of calibration, during which, the manipulator moves rapidly between the "Parking", "Standby" and "Working" positions. Before calibrating it is recommend to move the stage down to ensure that the manipulator is free of obstructions so that no damage is done to the system. Follow the prompts on the screen to complete the calibration. It is completely automatic and requires no other user input. Once completed, it will be ready to use.
 
 ## Manipulator Control
 

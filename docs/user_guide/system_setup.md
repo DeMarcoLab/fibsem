@@ -30,15 +30,17 @@ This is the rotation of the stage in degrees in which the sample will be flat to
 
 * Tilt flat to electron/ion beam
 
-This is the core tilt of the stage in degrees in which the sample will be flat to the respective beam. On the diagram, the angle labelled alpha is the tilt flat to the ion beam. Typically a system will be perpendicular to the electron beam, so the tilt flat to the electron beam will be 0.
+This is the core tilt of the stage in degrees in which the sample will be flat to the respective beam (for a shuttle with NO pre-tilt). On the diagram, the angle labelled alpha is the tilt flat to the ion beam. Typically a system will be perpendicular to the electron beam, so the tilt flat to the electron beam will be 0.
 
-* Shuttle pretilt
+On ThermoFisher systems this is usually 52 degrees, and on TESCAN systems this is usually 55 degrees.
+
+* Shuttle Pre-Tilt
 
 This is the pre tilted angle of the shuttle if a pre tilted shuttle is used.
 
 * Needle Stage Height Limit
 
-This is the limit of the needle stage height in mm. This is used to prevent the needle stage from crashing into the sample or stage.
+This is the limit of the needle stage height in mm. This is used to prevent the needle stage from crashing into the sample or stage (ThermoFisher systems only).
 
 ### Microscope Model Settings
 
@@ -54,7 +56,7 @@ The system parameters related to the ion and electron beams can be defined and s
 
 ### User Settings
 
-The user parameters related to milling and imaging  can be specified in this section. 
+The default imaging and milling parameters are be specified in this section.  
 
 ![User Parameters](../img/user_guide/setup/user_params.png)
 
