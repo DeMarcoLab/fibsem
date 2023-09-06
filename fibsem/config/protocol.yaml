@@ -22,6 +22,7 @@ patterns:
     rotation: 0.0
     cleaning_cross_section: False
     scan_direction: "ToptoBottom"
+    passes: 0 # means auto
   Line:
     start_x: 0.0
     start_y: 0.0
@@ -49,6 +50,14 @@ patterns:
     side_width: 5.0e-6
     side_offset: 0.0
     depth: 10.0e-6
+    scan_direction: TopToBottom
+  HorseshoeVertical:
+    depth: 4.0e-6
+    height: 5.0e-05
+    width: 2.0e-05
+    scan_direction: TopToBottom
+    side_trench_width: 5.0e-06
+    top_trench_height: 10.0e-6
   Undercut: 
     height: 10.0e-6
     width: 10.0e-6
@@ -70,7 +79,16 @@ patterns:
     distance: 2.0e-6
     number: 3
     rotation: 0.0
-    passes: 1.0
+    passes: 1
+    scan_direction: "LeftToRight"
+  SpotWeldVertical:
+    height: 5.0e-6
+    width: 0.5e-6
+    depth: 5.0e-6
+    distance: 2.0e-6
+    number: 3
+    rotation: 0.0
+    passes: 1
     scan_direction: "ToptoBottom"
   MicroExpansion:
     height: 1.0e-6

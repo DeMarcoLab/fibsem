@@ -15,6 +15,8 @@ from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 from fibsem.patterning import FibsemMillingStage
 import napari
+from fibsem.utils import load_yaml
+import fibsem.patterning as patterning
 
 # # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 # class _WidgetPlot(QWidget):
@@ -142,6 +144,8 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QGridLayout, QLabel
+
+COLOURS = ["yellow", "cyan", "magenta", "lime", "orange", "hotpink", "green", "blue", "red", "purple"]
 
 
 def set_arr_as_qlabel(
@@ -719,3 +723,42 @@ def _get_text_ui(
     )
 
     return text, okPressed
+
+
+def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
+
+    stages = load_yaml(path)
+
+    milling_stages = []
+
+    for stage in stages:
+        milling_stage = FibsemMillingStage.__from_dict__(stages[stage])
+        pattern = patterning.get_pattern(milling_stage.pattern.name)
+        pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
+        milling_stage.pattern = pattern
+        milling_stages.append(milling_stage)
+
+    return milling_stages
+
+def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[FibsemMillingStage], show: bool = True):
+
+    viewer = napari.Viewer()
+    viewer.add_image(image.data, name='test_image')
+    _draw_patterns_in_napari(viewer=viewer,ib_image=image,eb_image=None,milling_stages=milling_stages)
+    screenshot = viewer.screenshot()
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.imshow(screenshot)
+    viewer.close()
+
+    for i,stage in enumerate(milling_stages):
+    
+        plt.plot(0,0,'-',color=COLOURS[i % len(COLOURS)],label=stage.name)
+
+    ax.axis('off')
+    ax.legend()
+    if show:
+        plt.show()
+    
+    return fig
+
+

@@ -1,7 +1,7 @@
 data_path:  /home/patrick/github/data/liftout/train-waffle/train
 label_path: /home/patrick/github/data/liftout/train-waffle/train/labels 
-save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/waffle/e10/
-checkpoint: /home/patrick/github/fibsem/fibsem/segmentation/models/openfibsem-baseline-34.pt 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/waffle/aug/finetune
+checkpoint: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/waffle/aug/base/combo/model29.pt
 encoder: "resnet34" 
 epochs: 20
 batch_size: 4 

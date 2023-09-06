@@ -470,6 +470,7 @@ class ThermoMicroscope(FibsemMicroscope):
             software_version=self.software_version,
             hardware_settings=self.hardware_settings,
         )
+        self.reset_beam_shifts()
 
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
@@ -1314,9 +1315,6 @@ class ThermoMicroscope(FibsemMicroscope):
         Configure the microscope for milling using the ion beam.
 
         Args:
-            application_file (str): Path to the milling application file.
-            patterning_mode (str): Patterning mode to use.
-            hfw (float): Desired horizontal field width in meters.
             mill_settings (FibsemMillingSettings): Milling settings.
 
         Returns:
@@ -1342,6 +1340,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
         self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
+
+        self.set("current", mill_settings.milling_current, BeamType.ION)
 
     def run_milling(self, milling_current: float, asynch: bool = False):
         """
@@ -1489,13 +1489,15 @@ class ThermoMicroscope(FibsemMicroscope):
             pattern.scan_direction = "TopToBottom"
             logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
-        if pattern_settings.passes is not None:
-            print(pattern.dwell_time, pattern.pass_count, pattern.time)
-            pattern.dwell_time = pattern.dwell_time * pattern.pass_count
-            pattern.pass_count = pattern_settings.passes
-            pattern.scan_type = "Raster"
-            print(pattern.dwell_time, pattern.pass_count, pattern.time)
-            # TODO: setting passes directly doesnt work, need to scale by dwell time to get same time
+        if pattern_settings.passes: # not zero
+            # print("dwell_time: ", pattern.dwell_time, "passes: ", pattern.pass_count, "time: ", pattern.time)
+            # pattern.scan_type = "Raster"
+            pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
+            # pattern.pass_count = pattern_settings.passes
+            # print("dwell_time: ", pattern.dwell_time, "passes: ", pattern.pass_count, "time: ", pattern.time)
+            # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
+            # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
+            # NB: the current must be set before doing this, otherwise it will be out of range
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
@@ -2715,6 +2717,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.model = image.Header["MAIN"]["DeviceModel"]
         self.software_version = image.Header["MAIN"]["SoftwareVersion"]
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
+        self.reset_beam_shifts()
 
         self.system = FibsemSystem(
             manufacturer="TESCAN",
@@ -2734,6 +2737,14 @@ class TescanMicroscope(FibsemMicroscope):
             Returns:
                 A `FibsemImage` object that represents the acquired image.
         """
+        if image_settings.beam_type.name == "ELECTRON":
+            image_settings.hfw = np.clip(
+                    image_settings.hfw, 1.0e-6, 2580.0e-6
+                )
+        else:
+            image_settings.hfw = np.clip(
+                    image_settings.hfw, 1.0e-6, 450.0e-6
+                )
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
         if image_settings.beam_type.name == "ELECTRON":
             _check_beam(BeamType.ELECTRON, self.hardware_settings)
@@ -3282,6 +3293,8 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             image_rotation = self.connection.FIB.Optics.GetImageRotation()
 
+        if np.isnan(image_rotation):
+            image_rotation = 0.0
         # if image_rotation == 0:
         #     dx_move = -dx
         #     dy_move = dy
@@ -4446,8 +4459,12 @@ class TescanMicroscope(FibsemMicroscope):
             microscope_state.eb_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
 
-        self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
+        if microscope_state.eb_settings.shift is not None:
+            print(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+            self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+            time.sleep(1)
+        if microscope_state.eb_settings.scan_rotation is not None:
+            self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
         # )
@@ -4459,9 +4476,12 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(
             microscope_state.ib_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-        self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
-        time.sleep(3)
+        if microscope_state.ib_settings.shift is not None:
+            self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+            time.sleep(1)
+        if microscope_state.eb_settings.scan_rotation is not None:
+            print("hello from the dark side scan rotation ib")
+            self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
         self.move_stage_absolute(microscope_state.absolute_position)
         logging.info(f"microscope state restored")
@@ -4828,8 +4848,7 @@ class DemoMicroscope(FibsemMicroscope):
     def connect_to_microscope(self):
         self.model = "Demo"
         logging.info(f"Connected to Demo Microscope")
-        logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")
-        
+        logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")       
         self.system = FibsemSystem(
             manufacturer="OpenFibsem",
             model="Demo",
@@ -4837,7 +4856,8 @@ class DemoMicroscope(FibsemMicroscope):
             software_version="0.1",
             hardware_settings=self.hardware_settings,
         )
-        
+        self.reset_beam_shifts()
+
         return
 
     def disconnect(self):

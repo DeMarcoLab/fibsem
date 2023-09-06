@@ -249,7 +249,7 @@ def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition]
 
 
 
-def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], show:bool=False, 
+def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], show:bool=False, minimap: bool=False, 
     _clip: bool=False, _bound: bool= True) -> plt.Figure:
 
     points = _reproject_positions(image, positions)
@@ -275,9 +275,12 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
 
         c =COLOURS[i%len(COLOURS)]
         plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
-
+        if minimap:
+            fontsize = 30
+        else:
+            fontsize = 14
         # draw label next to point
-        plt.text(pt.x-225, pt.y-50, pos.name, fontsize=18, color=c, alpha=0.75)
+        plt.text(pt.x-225, pt.y-50, pos.name, fontsize=fontsize, color=c, alpha=0.75)
 
     plt.axis("off")
     if show:
@@ -310,6 +313,35 @@ def _convert_image_coords_to_positions(microscope, settings, image, coords) -> l
         positions.append(_convert_image_coord_to_position(microscope, settings, image, coord))
         positions[i].name = f"Position {i:02d}"
     return positions
+
+
+def _minimap(minimap_image: FibsemImage, positions: list[FibsemStagePosition]):
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+        from PIL import Image
+        from PyQt5.QtGui import QImage, QPixmap
+        pil_image = None
+
+        import matplotlib.pyplot as plt
+        plt.close("all")
+        fig = _plot_positions(image=minimap_image, positions = positions, minimap=True)
+        plt.tight_layout(pad=0)
+        canvas = FigureCanvasAgg(fig)
+
+        # Render the figure onto the canvas
+        canvas.draw()
+
+        # Get the RGBA buffer from the canvas
+        buf = canvas.buffer_rgba()
+        # Convert the buffer to a PIL Image
+        pil_image = Image.frombuffer('RGBA', canvas.get_width_height(), buf, 'raw', 'RGBA', 0, 1)
+        pil_image = pil_image.resize((300, 300), Image.ANTIALIAS)
+        # Convert the PIL image to a QImage
+        image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
+        # Convert the QImage to a QPixmap 
+        qpixmap = QPixmap.fromImage(image_qt)
+        
+        return qpixmap
 
 
 

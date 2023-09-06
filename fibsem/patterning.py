@@ -34,6 +34,15 @@ REQUIRED_KEYS = {
         "side_offset",
         "side_width",
         "depth",
+        "scan_direction",
+    ),
+    "HorseshoeVertical": (
+        "width",
+        "height",
+        "side_trench_width",
+        "top_trench_height",
+        "depth",
+        "scan_direction",
     ),
     "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
     "Undercut": (
@@ -52,7 +61,7 @@ REQUIRED_KEYS = {
         "distance",
         "lamella_width",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number", "rotation", "passes","scan_direction"),
+    "SpotWeld": ("height", "width", "depth", "distance", "number", "passes","scan_direction"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -375,6 +384,69 @@ class HorseshoePattern(BasePattern):
         return self.patterns
 
 
+
+@dataclass
+class HorseshoePatternVertical(BasePattern):
+    name: str = "HorseshoeVertical"
+    required_keys: tuple[str] = REQUIRED_KEYS["HorseshoeVertical"]
+    patterns = None
+    # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
+    protocol = None
+    point = None
+
+    def define(
+        self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        """Calculate the horseshoe vertical milling patterns"""
+
+        check_keys(protocol, self.required_keys)
+
+        width = protocol["width"]
+        height = protocol["height"]
+        trench_width = protocol["side_trench_width"]
+        upper_trench_height = protocol["top_trench_height"]
+        depth = protocol["depth"]
+        scan_direction = protocol.get("scan_direction", "TopToBottom")
+
+        left_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=trench_width,
+            height=height,
+            depth=depth,
+            centre_x=point.x - (width / 2) - (trench_width / 2),
+            centre_y=point.y,
+            cleaning_cross_section=False,
+            scan_direction=scan_direction,
+        )
+
+        right_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=trench_width,
+            height=height,
+            depth=depth,
+            centre_x=point.x + (width / 2) + (trench_width / 2),
+            centre_y=point.y,
+            cleaning_cross_section=False,
+            scan_direction=scan_direction,
+        )
+
+        upper_pattern = FibsemPatternSettings(
+            pattern=FibsemPattern.Rectangle,
+            width=width + (2 * trench_width),
+            height=upper_trench_height,
+            depth=depth,
+            centre_x=point.x,
+            centre_y=point.y + (height / 2) + (upper_trench_height / 2),
+            cleaning_cross_section=False,
+            scan_direction=scan_direction,
+        )
+        
+        self.patterns = [left_pattern,right_pattern, upper_pattern]
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+
 @dataclass
 class FiducialPattern(BasePattern):
     name: str = "Fiducial"
@@ -467,62 +539,6 @@ class UndercutPattern(BasePattern):
         )
 
 
-
-
-
-
-
-
-
-        # # top_jcut
-        # jcut_top_centre_x = point.x + jcut_width / 2 - jcut_h_offset
-        # jcut_top_centre_y = point.y + jcut_lamella_height
-        # jcut_top_width = jcut_width
-        # jcut_top_height = jcut_trench_thickness
-        # jcut_top_depth = jcut_depth
-
-        # top_pattern = FibsemPatternSettings(
-        #     pattern=FibsemPattern.Rectangle,
-        #     width=jcut_top_width,
-        #     height=jcut_top_height,
-        #     depth=jcut_top_depth,
-        #     centre_x=jcut_top_centre_x,
-        #     centre_y=jcut_top_centre_y,
-        #     cleaning_cross_section=use_cleaning_cross_section,
-        #     scan_direction="TopToBottom",
-        # )
-
-        # # lhs_jcut
-        # # jcut_lhs = microscope.patterning.create_rectangle(
-        # #     center_x=point.x - jcut_half_width - jcut_lhs_offset,
-        # #     center_y=point.y + jcut_half_height - (jcut_lhs_height / 2 - jcut_half_height),
-        # #     width=jcut_lhs_trench_thickness,
-        # #     height=jcut_lhs_height,
-        # #     depth=jcut_depth,
-        # # )  # depth
-
-        # # rhs jcut
-        # jcut_rhs_centre_x = point.x + jcut_half_width - jcut_h_offset
-        # jcut_rhs_centre_y = (
-        #     point.y
-        #     + jcut_half_height
-        #     - (jcut_rhs_height / 2 - jcut_half_height)
-        #     + jcut_trench_thickness / 2
-        # )
-        # jcut_rhs_width = jcut_trench_thickness
-        # jcut_rhs_height = jcut_rhs_height
-        # jcut_rhs_depth = jcut_depth
-
-        # rhs_pattern = FibsemPatternSettings(
-        #     pattern=FibsemPattern.Rectangle,
-        #     width=jcut_rhs_width,
-        #     height=jcut_rhs_height,
-        #     depth=jcut_rhs_depth,
-        #     centre_x=jcut_rhs_centre_x,
-        #     centre_y=jcut_rhs_centre_y,
-        #     cleaning_cross_section=use_cleaning_cross_section,
-        #     scan_direction="TopToBottom",
-        # )
 
         self.patterns = [top_pattern, rhs_pattern]
         self.protocol = protocol
@@ -634,6 +650,58 @@ class SpotWeldPattern(BasePattern):
         self.protocol = protocol
         self.point = point
         return self.patterns
+
+
+
+
+@dataclass
+class SpotWeldPatternVertical(BasePattern):
+    name: str = "SpotWeldVertical"
+    required_keys: tuple[str] = REQUIRED_KEYS["SpotWeld"]
+    patterns = None
+    # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
+    protocol = None
+    point = None
+
+    def define(
+        self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemPatternSettings]:
+        check_keys(protocol, self.required_keys)
+        width = protocol["width"]
+        height = protocol["height"]
+        depth = protocol["depth"]
+        distance = protocol["distance"]
+        n_patterns = int(protocol["number"])
+        rotation = protocol.get("rotation", 0)
+        passes = protocol.get("passes", 1)
+        scan_direction = protocol.get("scan_direction", "TopToBottom")
+        passes = int(passes) if passes is not None else None
+
+
+        patterns = []
+        for i in range(n_patterns):
+            pattern_settings = FibsemPatternSettings(
+                pattern=FibsemPattern.Rectangle,
+                width=width,
+                height=height,
+                depth=depth,
+                centre_x=point.x + (i - (n_patterns - 1) / 2) * distance,
+                centre_y=point.y,  
+                cleaning_cross_section=False,
+                scan_direction=scan_direction,
+
+                rotation=rotation,
+                passes=passes,
+            )
+            patterns.append(pattern_settings)
+
+        self.patterns = patterns
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+
+
 
 
 @dataclass
@@ -841,9 +909,11 @@ __PATTERNS__ = [
     CirclePattern,
     TrenchPattern,
     HorseshoePattern,
+    HorseshoePatternVertical,
     UndercutPattern,
     FiducialPattern,
     SpotWeldPattern,
+    SpotWeldPatternVertical,
     MicroExpansionPattern,
     WaffleNotchPattern,
     CloverPattern,
@@ -1005,23 +1075,31 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
         milling_current=protocol["milling_current"], 
         hfw=float(protocol["hfw"]),
         application_file=protocol.get("application_file", "Si"),
-        preset=protocol.get("preset", "no preset"))
+        preset=protocol.get("preset", "30 keV; 20 nA"))
 
     stage = FibsemMillingStage(
         name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
     )
     return stage
 
+from typing import Optional, Union
 
-def _get_milling_stages(key, protocol, point: Point = Point()):
+def _get_milling_stages(key, protocol, point: Union[Point, list[Point]] = Point()):
     
     # TODO: maybe add support for defining point per stages?
 
+    # convert point to list of points, same length as stages
+
     if "stages" in protocol[key]:
-        stages = [
-            _get_stage(key, pstage, point=point, i=i)
-            for i, pstage in enumerate(protocol[key]["stages"])
-        ]
+        stages = []
+        for i, pstage in enumerate(protocol[key]["stages"]):
+            
+            if isinstance(point, list):
+                pt = point[i]
+            else:
+                pt = point
+
+            stages.append(_get_stage(key, pstage, point=pt, i=i))
     else:
         stages = [_get_stage(key, protocol[key], point=point)]
     return stages
@@ -1037,7 +1115,9 @@ def _get_protocol_from_stages(stages: list):
 
     for stage in stages:
         # join two dicts union
-        ddict = {**stage.__to_dict__()["milling"], **stage.__to_dict__()["pattern"]["protocol"]}
+        ddict = {**stage.__to_dict__()["milling"], 
+            **stage.__to_dict__()["pattern"]["protocol"], 
+            "type": stage.__to_dict__()["pattern"]["name"]}
         protocol["stages"].append(deepcopy(ddict))
 
     return protocol
