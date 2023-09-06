@@ -7,6 +7,9 @@ import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Union
+from queue import Queue
+import threading
+
 from napari.qt.threading import thread_worker
 
 import numpy as np
