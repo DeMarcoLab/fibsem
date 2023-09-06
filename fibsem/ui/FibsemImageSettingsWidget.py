@@ -3,7 +3,7 @@ from pathlib import Path
 
 import napari
 import napari.utils.notifications
-
+import threading
 import numpy as np
 from PIL import Image
 from PyQt5 import QtWidgets
@@ -83,6 +83,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
         self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_live_imaging.clicked.connect(self.live_imaging)
+        self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
         self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
@@ -365,6 +367,68 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.detector_mode_combobox.setCurrentText(self.microscope.get("detector_mode", beam_type=beam_type))
 
         self.set_ui_from_settings(self.image_settings, beam_type)
+
+    def live_imaging(self):
+        if self.stop_event.is_set():
+            self.pushButton_take_all_images.setEnabled(False)
+            self.pushButton_take_image.setEnabled(False)
+            self.pushButton_live_imaging.setText("Stop live imaging")
+            
+            self.pushButton_live_imaging.setStyleSheet("background-color: orange")
+            
+            self.stop_event.clear()
+            self.image_queue.queue.clear()
+            image_settings = self.get_settings_from_ui()[0]
+            image_settings.autocontrast = False
+            from copy import deepcopy
+            _thread = threading.Thread(
+                target=self.microscope.live_imaging,
+                args=(deepcopy(image_settings), self.image_queue, self.stop_event),
+            )
+            _thread.start()
+            sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
+            worker = self.microscope.consume_image_queue(parent_ui = self, sleep = sleep_time)
+            worker.returned.connect(self.update_live_finished)
+            import time
+            time.sleep(1)
+            worker.start()  
+            self.live_imaging = True
+            self.start_live_signal.emit()
+            
+        else:
+            self.live_imaging = False
+            self.live_imaging_stop_signal.emit()
+            self.stop_event.set()
+            self.pushButton_live_imaging.setStyleSheet("""
+                    QPushButton {
+                        background-color: green;
+                        color: white;
+                    }
+                    QPushButton:hover {
+                        background-color: gray;
+                    }
+                    QPushButton:pressed { """
+                )
+
+    def update_live_finished(self):
+        self.pushButton_live_imaging.setText("Live imaging")
+        self.pushButton_take_all_images.setEnabled(True)
+        self.pushButton_take_image.setEnabled(True)
+
+    def live_update(self, dict):
+        arr = dict["image"].data
+        name = BeamType[self.selected_beam.currentText()].name
+
+        try:
+            self.viewer.layers[name].data = arr
+        except:    
+            layer = self.viewer.add_image(arr, name = name)
+
+        if name == BeamType.ELECTRON.name:
+            self.eb_image = dict["image"]
+        if name == BeamType.ION.name:
+            self.ib_image = dict["image"]
+
 
     def take_image(self, beam_type: BeamType = None):
         self.TAKING_IMAGES = True
