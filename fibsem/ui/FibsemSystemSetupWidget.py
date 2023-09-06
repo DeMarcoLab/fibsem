@@ -367,6 +367,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             log_status_message(f"CONNECTED_AT_{ip_address}")
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
+
             # self.connected_signal.emit()
             self.set_defaults_to_ui()
 
