@@ -191,7 +191,7 @@ def decode_output(output):
     return mask
 
 
-def decode_segmap(image, nc=3):
+def decode_segmap(image, nc=5):
 
     """
     Decode segmentation class mask into an RGB image mask
