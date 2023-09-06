@@ -117,9 +117,9 @@ from fibsem.detection import detection
 import pandas as pd
 from copy import deepcopy
 
+from tqdm import tqdm
 
-
-def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], plot: bool = False, _clip: bool=True, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"]):
+def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], plot: bool = False, _clip: bool=True, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"], save: bool = False, save_path: Path = None):
 
     # ground truth 
     df = pd.read_csv(path)
@@ -184,7 +184,14 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], pl
             dets.append(det)
         
         if plot:
-            fig = detection.plot_detections(dets, titles=["Ground Truth"] + [os.path.basename(ckpt["checkpoint"]) for ckpt in checkpoints])
+            fig = detection.plot_detections(dets, titles=["Ground Truth"] + [os.path.basename(ckpt["checkpoint"].removesuffix(".pt")) for ckpt in checkpoints])
+
+            plt.show()
+
+            if save:
+                os.makedirs(save_path, exist_ok=True)
+                fig.savefig(os.path.join(save_path, f"{image_fname}.png"), dpi=300)
+                plt.close(fig)
 
         # evaluation against ground truth
         for ckpt, det in zip(checkpoints, dets[1:]):
@@ -218,12 +225,17 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], pl
         # if i==3:
             # break
 
+    df_eval["checkpoint"] = df_eval["checkpoint"].str.replace(".pt", "")
+
+    if save:
+        df_eval.to_csv(os.path.join(save_path, "eval.csv"), index=False)
+
     return df_eval
 
 
 import plotly.express as px
 
-def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders = None, show: bool = True, thresholds: list[int] =  [50, 25, 10]):
+def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = True, thresholds: list[int] =  [50, 25, 10]):
     # scatter plot
     fig = px.scatter(df, x="d.p.x", y="d.p.y", color="feature", facet_col="checkpoint", 
         # facet_row="dataset", 
@@ -247,33 +259,11 @@ def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders 
     if show:
         fig.show()
 
-    # # calculate mean, std per checkpoint  feature
+    # # calculate the mean and standard deviation in one aggregation per checkpoint, feature
+    df_agg = df.groupby(["checkpoint", "feature"]).agg({"distance": ["mean", "median", "std"]}).reset_index()
 
-    # df_group = df.groupby(["checkpoint", "feature"]).mean().reset_index()
-    # # drop everything except distance
-    # df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
-    # # display(df_group)
-
-    # # plot
-    # fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Mean)", 
-    #             category_orders=category_orders, 
-    #             hover_data=df_group.columns)
-    # if show:
-    #     fig.show()
-
-
-    # df_group = df.groupby(["checkpoint", "feature"]).std().reset_index()
-    # # drop everything except distance
-    # df_group = df_group[["checkpoint", "feature", "distance", "d.p.x", "d.p.y"]]
-    # # display(df_group)
-
-    # # plot
-    # fig = px.bar(df_group, x="checkpoint", y="distance", color="feature", barmode="group", title="Distance from Ground Truth (Std)", 
-    #             category_orders=category_orders, 
-    #             hover_data=df_group.columns)
-    # if show:
-    #     fig.show()
-
+    # display(df_agg)
+    
     # plot percentage of distance under threshold
     df_ret = pd.DataFrame()
     for threshold in thresholds:
@@ -285,6 +275,15 @@ def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders 
         df_group = df_group.pivot(index=["checkpoint", "feature"], columns=f"under_threshold_{threshold}px", values="distance").reset_index()
         
         df_group["threshold"] = threshold
+
+        # add false if not present
+        if False not in df_group.columns:
+            df_group[False] = 0
+
+        # add true if not present
+        if True not in df_group.columns:
+            df_group[True] = 0
+
         # fill na with 0
         df_group.fillna(0, inplace=True)
 
@@ -298,19 +297,38 @@ def _plot_evalution_data(df: pd.DataFrame, threshold: int = 25, category_orders 
     df_ret = df_ret[["checkpoint", "feature", "threshold", "under_threshold"]]
 
     # plot on bar chart with plotly express
-    # import plotly.express as px
 
-    fig = px.bar(df_ret, x="checkpoint", y="under_threshold", color="feature", facet_col="threshold",  barmode="group",                    
+    # sort column by category order
+    df_ret["feature"] = pd.Categorical(df_ret["feature"], category_orders["feature"])
+    df_ret["checkpoint"] = pd.Categorical(df_ret["checkpoint"], category_orders["checkpoint"])
+    df_ret.sort_values(["checkpoint", "feature"], inplace=True)
+    df_ret["threshold"] = df_ret["threshold"].astype(str)
+
+    fig = px.bar(df_ret, x="threshold", y="under_threshold", color="feature", facet_col="checkpoint", barmode="group",                    
                         text=df_ret[f"under_threshold"].apply(lambda x: f"{x:.2f}"),
                         category_orders=category_orders, 
                         hover_data=df_ret.columns,
-                        title="Percentage of distance under threshold (px)")
+                        title="Percentage of Distance under threshold (px)")
+    
+    if show:
+        fig.show()
+
+    df_ret["threshold"] = df_ret["threshold"].astype(int)
+
+    fig = px.line(df_ret, x="threshold", y="under_threshold", 
+                  color="feature",
+                    facet_col="checkpoint", 
+                    # #facet_col="checkpoint", 
+                    # text=df_ret[f"under_threshold"].apply(lambda x: f"{x:.2f}"),
+                    category_orders=category_orders,
+                    title="Percentage of Distance under threshold (px)")
+    
+    # reverse order of x axis
+    fig.update_xaxes(autorange="reversed")
     if show:
         fig.show()
 
 
-
-
-
+    # display(df_ret)
 
     # return 
