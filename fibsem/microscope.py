@@ -457,7 +457,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.model = self.connection.service.system.name
         self.software_version = self.connection.service.system.version
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
-
+        self.reset_beam_shifts()
+        
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
         Acquire a new image with the specified settings.
@@ -2690,6 +2691,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.model = image.Header["MAIN"]["DeviceModel"]
         self.software_version = image.Header["MAIN"]["SoftwareVersion"]
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
+        self.reset_beam_shifts()
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
         """
@@ -4782,6 +4784,8 @@ class DemoMicroscope(FibsemMicroscope):
         self.model = "Demo"
         logging.info(f"Connected to Demo Microscope")
         logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")
+        self.reset_beam_shifts()
+
         return
 
     def disconnect(self):

@@ -367,7 +367,6 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
 
-            self.microscope.reset_beam_shifts()
             # self.connected_signal.emit()
             self.set_defaults_to_ui()
 
