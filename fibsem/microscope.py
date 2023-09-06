@@ -61,7 +61,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
                                MicroscopeState, Point, FibsemDetectorSettings,
                                ThermoGISLine,ThermoMultiChemLine, StageSettings, 
-                               FibsemSystem)
+                               FibsemSystem, FibsemUser, FibsemExperiment)
 
 
 class FibsemMicroscope(ABC):
@@ -422,8 +422,11 @@ class ThermoMicroscope(FibsemMicroscope):
             self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
         else:
             self.stage_settings = stage_settings
-        self.user = None
-        self.experiment = None
+        self.user = FibsemUser(
+            computer =  str(os.environ['COMPUTERNAME']),
+            name = str(os.getlogin()),
+        )
+        self.experiment = FibsemExperiment()
 
     def disconnect(self):
         self.connection.disconnect()
@@ -2680,8 +2683,11 @@ class TescanMicroscope(FibsemMicroscope):
             self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
         else:
             self.stage_settings = stage_settings
-        self.user = None
-        self.experiment = None
+        self.user = FibsemUser(
+            computer =  str(os.environ['COMPUTERNAME']),
+            name = str(os.getlogin())
+        )
+        self.experiment = FibsemExperiment()
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -4812,8 +4818,11 @@ class DemoMicroscope(FibsemMicroscope):
         else:
             self.stage_settings = stage_settings
 
-        self.user = None
-        self.experiment = None
+        self.user = FibsemUser(
+            computer =  str(os.environ['COMPUTERNAME']),
+            name = str(os.getlogin())
+        )
+        self.experiment = FibsemExperiment()
 
 
     def connect_to_microscope(self):

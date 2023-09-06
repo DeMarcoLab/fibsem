@@ -363,8 +363,7 @@ def _register_metadata(microscope: FibsemMicroscope, parent_type: str, parent_ve
     user_name = QInputDialog.getText(parent_ui, "Name", "Please enter user name")[0]
     email = QInputDialog.getText(parent_ui, "Email", "Please enter your email")[0]
     organization = QInputDialog.getText(parent_ui, "Institution", "Please enter your institution")[0]
-    import socket 
-    computer = socket.gethostname()
+    computer =  os.environ['COMPUTERNAME']
     user = FibsemUser(name=user_name, email=email, organization=organization, computer=computer)
     
     if parent_type == "autolamella":

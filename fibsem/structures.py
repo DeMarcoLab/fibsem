@@ -11,7 +11,7 @@ from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
 from typing import Optional
 import numpy as np
 import tifffile as tff
-from fibsem import _version as fibsem_version
+import fibsem
 from fibsem.config import load_yaml
 
 try:
@@ -1522,7 +1522,7 @@ class FibsemExperiment():
     method: str = None
     date: float = datetime.timestamp(datetime.now())
     application: str = "OpenFIBSEM"
-    fibsem_version: str = fibsem_version
+    fibsem_version: str = fibsem.__version__
     application_version: str = None
     
 
@@ -1543,9 +1543,9 @@ class FibsemExperiment():
         return FibsemExperiment(
             id = settings.get("id", "Unknown"),
             method = settings.get("method", "Unknown"),
-            date = settings["date"],
+            date = settings.get("date", "Unknown"),
             application= settings.get("application", "OpenFIBSEM"),
-            fibsem_version= settings.get("fibsem_version", fibsem_version),
+            fibsem_version= settings.get("fibsem_version", fibsem.__version__),
             application_version= settings.get("application_version", None),
         )
     
@@ -1591,18 +1591,23 @@ class FibsemSystem():
             "model": self.model,
             "serial_number": self.serial_number,
             "software_version": self.software_version,
-            "hardware_settings": self.hardware_settings.__to_dict__(),
+            "hardware_settings": self.hardware_settings.__to_dict__() if self.hardware_settings is not None else None,
         }
     
     @staticmethod
     def __from_dict__(settings: dict) -> "FibsemSystem":
         """Converts from a dictionary."""
+        if "hardware_settings" not in settings:
+            hardware = None
+        else:
+            hardware = FibsemHardware.__from_dict__(settings["hardware_settings"])
+
         return FibsemSystem(
             manufacturer = settings.get("manufacturer", "Unknown"),
             model = settings.get("model", "Unknown"),
             serial_number = settings.get("serial_number", "Unknown"),
             software_version = settings.get("software_version", "Unknown"),
-            hardware_settings = FibsemHardware.__from_dict__(settings.get("hardware_settings", {})),
+            hardware_settings = hardware,
         )
     
 
@@ -1618,9 +1623,9 @@ class FibsemImageMetadata:
     microscope_state: MicroscopeState
     detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
-    user: FibsemUser = None
-    experiment: FibsemExperiment = None
-    system: FibsemSystem = None
+    user: FibsemUser = FibsemUser()
+    experiment: FibsemExperiment = FibsemExperiment()
+    system: FibsemSystem = FibsemSystem()
     
 
 
@@ -1640,12 +1645,9 @@ class FibsemImageMetadata:
             settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
         if self.detector_settings is not None:
             settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
-        if self.user is not None:
-            settings_dict["user"] = self.user.__to_dict__()
-        if self.experiment is not None:
-            settings_dict["experiment"] = self.experiment.__to_dict__()
-        if self.system is not None:
-            settings_dict["system"] = self.system.__to_dict__()
+        settings_dict["user"] = self.user.__to_dict__()
+        settings_dict["experiment"] = self.experiment.__to_dict__()
+        settings_dict["system"] = self.system.__to_dict__()
         return settings_dict
 
     @staticmethod
@@ -1659,12 +1661,9 @@ class FibsemImageMetadata:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
         if settings["microscope_state"] is not None:
             microscope_state = MicroscopeState.__from_dict__(settings["microscope_state"])
-        if settings["user"] is not None:
-            user = FibsemUser.__from_dict__(settings["user"])
-        if settings["experiment"] is not None:
-            experiment = FibsemExperiment.__from_dict__(settings["experiment"])
-        if settings["system"] is not None:
-            system = FibsemSystem.__from_dict__(settings["system"])
+        user = FibsemUser.__from_dict__(settings.get("user", {}))
+        experiment = FibsemExperiment.__from_dict__(settings.get("experiment", {}))
+        system = FibsemSystem.__from_dict__(settings.get("system", {}))
         
         detector_dict = settings.get("detector_settings", {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0})
         detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
