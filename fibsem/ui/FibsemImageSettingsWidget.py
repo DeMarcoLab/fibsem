@@ -5,6 +5,7 @@ import napari
 import napari.utils.notifications
 import threading
 import numpy as np
+from queue import Queue
 from PIL import Image
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
@@ -36,7 +37,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
     viewer_update_signal = pyqtSignal()
     image_notification_signal = pyqtSignal(str)
-
+    live_imaging_signal = pyqtSignal(dict)
+    live_imaging_stop_signal = pyqtSignal()
+    start_live_signal = pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -56,7 +59,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
 
         self._features_layer = None
-
+        self.stop_event = threading.Event()
+        self.stop_event.set()
+        self.image_queue = Queue()
+    
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
         self.TAKING_IMAGES = False
 
@@ -72,6 +78,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # register initial images
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ELECTRON.name)
+        self.live_imaging_signal.connect(self.live_update)
 
     def setup_connections(self):
 
