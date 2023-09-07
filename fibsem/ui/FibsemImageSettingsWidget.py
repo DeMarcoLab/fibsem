@@ -369,6 +369,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def live_imaging(self):
         if self.stop_event.is_set():
+            self._toggle_interactions(False)
             self.pushButton_take_all_images.setEnabled(False)
             self.pushButton_take_image.setEnabled(False)
             self.pushButton_live_imaging.setText("Stop live imaging")
@@ -413,6 +414,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_live_imaging.setText("Live imaging")
         self.pushButton_take_all_images.setEnabled(True)
         self.pushButton_take_image.setEnabled(True)
+        self._toggle_interactions(True)
 
     def live_update(self, dict):
         arr = dict["image"].data
