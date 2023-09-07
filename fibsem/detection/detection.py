@@ -651,10 +651,15 @@ def take_image_and_detect_features(
 
     # load model
     ml_protocol = settings.protocol.get("ml", {})
-    checkpoint = ml_protocol.get("checkpoint", None)
+    checkpoint = ml_protocol.get("checkpoint", "openfibsem-baseline-34.pt")
     encoder = ml_protocol.get("encoder", "resnet34")
     num_classes = int(ml_protocol.get("num_classes", 3))
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
+
+    if isinstance(point, FibsemStagePosition):
+        logging.info(f"Reprojecting point {point} to image coordinates...")
+        point = _tile._reproject_positions(image, [point], _bound=True)[0]
+        logging.info(f"Reprojected point: {point}")
 
     # detect features
     det = detect_features(
