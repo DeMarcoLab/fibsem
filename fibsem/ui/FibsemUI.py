@@ -62,6 +62,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
         if self.system_widget.microscope is not None:
             self.connect_to_microscope()
+            from fibsem import utils
             settings_dict = utils.load_yaml(cfg.SYSTEM_PATH)
             if bool(settings_dict["apply_settings_on_startup"]):
                 self.system_widget.apply_settings = True
