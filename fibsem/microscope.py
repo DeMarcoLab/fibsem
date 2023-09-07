@@ -1,25 +1,11 @@
 import copy
 import datetime
 import logging
-import sys
-import time
 import os
-from abc import ABC, abstractmethod
-from copy import deepcopy
-from typing import Union
-from queue import Queue
-import threading
-
+import sys
 from napari.qt.threading import thread_worker
 
-import numpy as np
-
-# for easier usage
-import fibsem.constants as constants
-
 try:
-    import re
-
     from tescanautomation import Automation
     from tescanautomation.Common import Bpp
     from tescanautomation.DrawBeam import IEtching
@@ -41,31 +27,35 @@ try:
     sys.path.append('C:\Program Files\Python36\envs\AutoScript')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
-    from autoscript_sdb_microscope_client.structures import (
-    BitmapPatternDefinition)
-    from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-        CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
     from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem,ManipulatorState,
-        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+        CoordinateSystem, ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition, ManipulatorState, PatterningState)
     from autoscript_sdb_microscope_client.structures import (
-        GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
-
-    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
+        BitmapPatternDefinition, GrabFrameSettings, MoveSettings) 
 except:
     logging.debug("Autoscript (ThermoFisher) not installed.")
 
 import sys
 
+import fibsem.constants as constants
 from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
+                               FibsemDetectorSettings, FibsemHardware,
                                FibsemImage, FibsemImageMetadata,
                                FibsemManipulatorPosition,
-                               FibsemMillingSettings, FibsemRectangle,
-                               FibsemPatternSettings, FibsemStagePosition,
-                               ImageSettings, MicroscopeSettings, FibsemHardware,
-                               MicroscopeState, Point, FibsemDetectorSettings,
-                               ThermoGISLine,ThermoMultiChemLine, StageSettings)
+                               FibsemMillingSettings, FibsemPatternSettings,
+                               FibsemRectangle, FibsemStagePosition,
+                               ImageSettings, MicroscopeSettings,
+                               MicroscopeState, Point, StageSettings,
+                               ThermoGISLine, ThermoMultiChemLine)
 
+import threading
+import time
+from abc import ABC, abstractmethod
+from copy import deepcopy
+from queue import Queue
+from typing import Union
+
+import numpy as np
 
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
@@ -421,8 +411,8 @@ class ThermoMicroscope(FibsemMicroscope):
     def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings =None,):
         self.connection = SdbMicroscopeClient()
         import fibsem
-        from fibsem.utils import load_protocol
         import fibsem.config as cfg
+        from fibsem.utils import load_protocol
         if hardware_settings is None:
             dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
             self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
@@ -676,7 +666,8 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             self (FibsemMicroscope): instance of the FibsemMicroscope object
         """
-        from autoscript_sdb_microscope_client.structures import Point as ThermoPoint
+        from autoscript_sdb_microscope_client.structures import \
+            Point as ThermoPoint
         _check_beam(beam_type = BeamType.ELECTRON, hardware_settings = self.hardware_settings)
         # reset zero beamshift
         logging.debug(
@@ -2096,7 +2087,8 @@ class ThermoMicroscope(FibsemMicroscope):
             in the `MicroscopeState` object, and then restores the electron and ion beam settings to their values in the `MicroscopeState`
             object. It also logs messages indicating the progress of the operation.
         """
-        from autoscript_sdb_microscope_client.structures import Point as ThermoPoint
+        from autoscript_sdb_microscope_client.structures import \
+            Point as ThermoPoint
 
         resolution = f"{microscope_state.eb_settings.resolution[0]}x{microscope_state.eb_settings.resolution[1]}"
         # Restore electron beam settings
@@ -3408,6 +3400,7 @@ class TescanMicroscope(FibsemMicroscope):
             
         PRETILT_SIGN = 1.0
         from fibsem import movement
+
         # current stage position
         current_stage_position = self.get_stage_position()
         stage_rotation = current_stage_position.r % (2 * np.pi)
@@ -3481,6 +3474,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         PRETILT_SIGN = 1.0
         from fibsem import movement
+
         # pretilt angle depends on rotation
         # if rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
         #     PRETILT_SIGN = 1.0
@@ -4879,9 +4873,10 @@ class DemoMicroscope(FibsemMicroscope):
             brightness=0.5,
             contrast=0.5,
         )
+        import os
+
         import fibsem.config as cfg
         from fibsem.utils import load_protocol
-        import os
         if hardware_settings is None:
             dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
             self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
@@ -5558,6 +5553,7 @@ def printProgressBar(
     print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\r")
 
 import warnings
+
 
 def _check_beam(beam_type: BeamType, hardware_settings: FibsemHardware):
     """

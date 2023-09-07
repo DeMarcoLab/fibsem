@@ -1,32 +1,24 @@
-import logging
-from pathlib import Path
-
 import napari
-import napari.utils.notifications
-import threading
-import numpy as np
-from queue import Queue
-from PIL import Image
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSignal
+
+import logging
+
 from scipy.ndimage import median_filter
 
 from fibsem import acquire, constants
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope
 from fibsem.structures import (BeamSettings, BeamType, FibsemDetectorSettings,
-                               FibsemImage, ImageSettings, Point)
+                               ImageSettings, Point)
+from fibsem.ui import _stylesheets
 from fibsem.ui import utils as ui_utils
-
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
-from fibsem import constants, acquire
-
-from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
-from fibsem.ui import utils as ui_utils 
-from fibsem.ui import _stylesheets
-
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
-from fibsem.ui import _stylesheets
-from napari.qt.threading import thread_worker
+
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
+import threading
+from pathlib import Path
+from queue import Queue
+
+import numpy as np
 
 def log_status_message(step: str):
     logging.debug(
@@ -487,6 +479,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
             self.pushButton_take_all_images.setText("Acquire All Images")
+
+    from napari.qt.threading import thread_worker
 
     @thread_worker
     def take_image_worker(self, beam_type: BeamType = None):
