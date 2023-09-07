@@ -1,0 +1,12 @@
+data_paths:  [/home/patrick/github/data/liftout/serial-liftout/data/train]
+label_paths: [/home/patrick/github/data/liftout/serial-liftout/data/train/labels] 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/serial/base
+checkpoint: null
+encoder: "resnet34" 
+epochs: 30
+batch_size: 4 
+num_classes: 5 
+lr: 3.0e-4
+wandb: true 
+wandb_project: "autoliftout-serial"
+wandb_entity: "demarcolab"
