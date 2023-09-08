@@ -1,5 +1,6 @@
 apply_settings_on_startup: false
 connect_to_microscope_on_startup: false
+load_positions_on_startup: false
 model:
     electron:
         enabled: true
@@ -75,3 +76,4 @@ user:
         milling_current: 2.0e-09
         rate: 3.0000000000000004e-09
         spot_size: 5.0000000000000004e-08
+        preset: "30 keV; 20 nA"

@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
-
+from typing import Optional
 import numpy as np
 import tifffile as tff
 
@@ -44,7 +44,7 @@ from fibsem.config import METADATA_VERSION
 class Point:
     x: float = 0.0
     y: float = 0.0
-
+    name: Optional[str] = None
 
     def __to_dict__(self) -> dict:
         return {"x": self.x, "y": self.y}
@@ -445,8 +445,8 @@ Methods:
                     x=self.x,
                     y=self.y,
                     z=self.z,
-                    # r=0.0 if self.r is None else self.r,
-                    r=None,
+                    r=None, # TODO figure this out, do we need it for real micrscope or just simulator ? 
+                    #r=None,
                     coordinate_system=coordinate_system,
                 )
     
@@ -909,6 +909,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
     def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
         
         if state_dict["pattern"] == "Rectangle":
+            passes = state_dict.get("passes", 0)
+            passes = passes if passes is not None else 0
             return FibsemPatternSettings(
                 pattern=FibsemPattern.Rectangle,
                 width=state_dict["width"],
@@ -919,7 +921,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 centre_y=state_dict["centre_y"],
                 scan_direction=state_dict["scan_direction"],
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
-                passes=int(state_dict["passes"]) if state_dict.get("passes", None) is not None else None,# TODO: this line is crazy
+                passes=int(passes), 
             )
         elif state_dict["pattern"] == "Line":
             return FibsemPatternSettings(
@@ -1945,8 +1947,8 @@ class ThermoMultiChemLine():
         self.line = line
         self.status = status
         self.positions = [
-            "ELECTRON_DEFAULT",
-            "ION_DEFAULT",
+            "Electron Default",
+            "Ion Default",
             "Retract"
         ]
         self.current_position = "Retract"
@@ -1954,10 +1956,10 @@ class ThermoMultiChemLine():
 
     def insert(self,position):
 
-        position_str = getattr(MultiChemInsertPosition,position)
+        # position_str = getattr(MultiChemInsertPosition,position)
 
         if self.line is not None:
-            self.line.insert(position_str)
+            self.line.insert(position)
 
         self.current_position = position
         self.status = "Inserted"

@@ -26,3 +26,45 @@
     x: -0.003231
     y: 0.00415
     z: 0.03186721965020576
+-   coordinate_system: Raw
+    name: autoliftout-pre-tilt-35-deg-grid-01-lamella
+    r: -2.28636643635382
+    t: 0.2967058527613453
+    x: 0.0023149166666666665
+    y: -0.0019699166666666667
+    z: 0.031954218106995884
+-   coordinate_system: Raw
+    name: autoliftout-pre-tilt-35-deg-grid-02-landing
+    r: -2.286298510029761
+    t: 0.5585004974916625
+    x: -0.003933166666666666
+    y: -0.0023545
+    z: 0.031787004886831276
+-   coordinate_system: RAW
+    name: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
+    r: -2.2863324731917913
+    t: 0.2967019502363577
+    x: 0.00238175
+    y: -0.0025256666666666665
+    z: 0.031839988425925926
+-   coordinate_system: RAW
+    name: autoliftout-serial-pre-tilt-35-deg-grid-02-lamella
+    r: -2.2863324731917913
+    t: 0.2967019502363577
+    x: -0.00364925
+    y: -0.0025468333333333332
+    z: 0.031784593621399175
+-   coordinate_system: RAW
+    name: autoliftout-serial-pre-tilt-35-deg-grid-01-landing
+    r: 0.8551927515811997
+    t: 0.45378482501352835
+    x: -0.0034078333333333335
+    y: 0.004113083333333333
+    z: 0.031839988425925926
+-   coordinate_system: RAW
+    name: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
+    r: 0.8551927515811997
+    t: 0.4537750687010593
+    x: 0.0029505833333333333
+    y: 0.004088416666666666
+    z: 0.03178491512345679

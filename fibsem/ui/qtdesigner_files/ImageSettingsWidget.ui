@@ -185,7 +185,7 @@
     <widget class="QLabel" name="label_title">
      <property name="font">
       <font>
-       <pointsize>12</pointsize>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
@@ -302,13 +302,6 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="1">
-    <widget class="QCheckBox" name="checkBox_image_use_autogamma">
-     <property name="text">
-      <string>AutoGamma</string>
-     </property>
-    </widget>
-   </item>
    <item row="19" column="0">
     <widget class="QLabel" name="label_9">
      <property name="text">
@@ -377,7 +370,7 @@
     <widget class="QLabel" name="label">
      <property name="font">
       <font>
-       <pointsize>12</pointsize>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
@@ -407,7 +400,7 @@
     <widget class="QLabel" name="label_6">
      <property name="font">
       <font>
-       <pointsize>12</pointsize>
+       <pointsize>10</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
@@ -451,8 +444,46 @@
      </property>
     </widget>
    </item>
+   <item row="8" column="1" colspan="2">
+    <widget class="QCheckBox" name="checkBox_image_use_autogamma">
+     <property name="text">
+      <string>AutoGamma</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>selected_beam</tabstop>
+  <tabstop>spinBox_resolution_x</tabstop>
+  <tabstop>spinBox_resolution_y</tabstop>
+  <tabstop>doubleSpinBox_image_dwell_time</tabstop>
+  <tabstop>doubleSpinBox_image_hfw</tabstop>
+  <tabstop>comboBox_presets</tabstop>
+  <tabstop>checkBox_image_use_autocontrast</tabstop>
+  <tabstop>checkBox_image_use_autogamma</tabstop>
+  <tabstop>checkBox_image_save_image</tabstop>
+  <tabstop>lineEdit_image_path</tabstop>
+  <tabstop>lineEdit_image_label</tabstop>
+  <tabstop>set_detector_button</tabstop>
+  <tabstop>detector_type_combobox</tabstop>
+  <tabstop>detector_mode_combobox</tabstop>
+  <tabstop>detector_brightness_slider</tabstop>
+  <tabstop>detector_contrast_slider</tabstop>
+  <tabstop>button_set_beam_settings</tabstop>
+  <tabstop>working_distance</tabstop>
+  <tabstop>beam_current</tabstop>
+  <tabstop>beam_voltage</tabstop>
+  <tabstop>stigmation_x</tabstop>
+  <tabstop>stigmation_y</tabstop>
+  <tabstop>shift_x</tabstop>
+  <tabstop>shift_y</tabstop>
+  <tabstop>ion_ruler_checkBox</tabstop>
+  <tabstop>scalebar_checkbox</tabstop>
+  <tabstop>crosshair_checkbox</tabstop>
+  <tabstop>pushButton_take_image</tabstop>
+  <tabstop>pushButton_take_all_images</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

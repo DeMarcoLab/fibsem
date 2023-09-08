@@ -53,3 +53,5 @@ fibsem/chat/secret.txt
 dist/*
 scratch/tile-images/*
 fibsem/log/*
+fibsem/db/fibsem.db
+fibsem/notebook.ipynb

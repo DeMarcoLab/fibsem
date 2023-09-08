@@ -12,7 +12,6 @@ from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemGISWidget import FibsemGISWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 
-from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
 
@@ -21,7 +20,6 @@ from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicros
 from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
-from fibsem.utils import load_yaml
 from fibsem.ui.utils import message_box_ui
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
@@ -192,18 +190,21 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 microscope=self.microscope,
                 image_settings=self.settings.image,
                 viewer=self.viewer,
+                parent=self,
             )
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
             if self.microscope.hardware_settings.manipulator_enabled:
                 self.manipulator_widget = FibsemManipulatorWidget(
@@ -211,18 +212,11 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                     settings=self.settings,
                     viewer=self.viewer,
                     image_widget=self.image_widget,
+                    parent=self,
                 )
             else:
                 self.manipulator_widget = None
-            if self.microscope.hardware_settings.gis_enabled:
-                self.GIS_widget = FibsemGISWidget(
-                    microscope=self.microscope,
-                    settings=self.settings,
-                    viewer=self.viewer,
-                    image_widget=self.image_widget,
-                )
-            else:
-                self.GIS_widget = None
+  
 
 
             # add widgets to tabs
@@ -232,8 +226,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             if self.microscope.hardware_settings.manipulator_enabled:
                 self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
-            if self.microscope.hardware_settings.gis_enabled:
-                self.tabWidget.addTab(self.GIS_widget, "GIS")
+
             self.system_widget.image_widget = self.image_widget
             self.system_widget.milling_widget = self.milling_widget
 
@@ -244,7 +237,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 return
             
             # remove tabs
-            self.tabWidget.removeTab(5)
             self.tabWidget.removeTab(4)
             self.tabWidget.removeTab(3)
             self.tabWidget.removeTab(2)
@@ -255,8 +247,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.milling_widget.deleteLater()
             if self.manipulator_widget is not None:
                 self.manipulator_widget.deleteLater() 
-            if self.GIS_widget is not None:
-                self.GIS_widget.deleteLater()
+
 
 
 def main():
@@ -266,7 +257,7 @@ def main():
     viewer.window.add_dock_widget(fibsem_ui, 
                                   area="right", 
                                   add_vertical_stretch=True, 
-                                  name="OpenFIBSEM")
+                                  name=f"OpenFIBSEM v{fibsem.__version__}")
     napari.run()
 
 

@@ -10,6 +10,7 @@ from fibsem.segmentation.utils import decode_segmap
 from pathlib import Path
 from fibsem import config as cfg
 import os
+from huggingface_hub import hf_hub_download
 
 
 class SegmentationModel:
@@ -49,7 +50,15 @@ class SegmentationModel:
     def load_weights(self, checkpoint: Optional[str]):
         if checkpoint:
             
-            checkpoint = os.path.join(cfg.MODELS_PATH, checkpoint)
+
+            # TODO, STORE CONFIG INFO IN HF (e.g. num_classes, encoder)
+            # check if checkpoint is an actual path, otherwise load from HF
+            if os.path.exists(checkpoint):
+                checkpoint = checkpoint
+            else:
+                REPO_ID = "patrickcleeve/openfibsem-baseline"
+                checkpoint = hf_hub_download(repo_id=REPO_ID, filename=checkpoint)
+
             self.checkpoint = checkpoint
             checkpoint_state = torch.load(checkpoint, map_location=self.device)
             self.model.load_state_dict(checkpoint_state)

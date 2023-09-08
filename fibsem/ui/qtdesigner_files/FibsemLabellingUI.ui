@@ -227,6 +227,21 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>lineEdit_raw_data</tabstop>
+  <tabstop>rawData_button</tabstop>
+  <tabstop>lineEdit_save_path</tabstop>
+  <tabstop>savePath_button</tabstop>
+  <tabstop>spinBox_num_classes</tabstop>
+  <tabstop>pushButton_load_data</tabstop>
+  <tabstop>checkBox_model_assist</tabstop>
+  <tabstop>comboBox_model_class_index</tabstop>
+  <tabstop>pushButton_model_confirm</tabstop>
+  <tabstop>pushButton_model_clear</tabstop>
+  <tabstop>pushButton_previous</tabstop>
+  <tabstop>pushButton_next</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

@@ -100,6 +100,14 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>checkBox_overlay</tabstop>
+  <tabstop>comboBox_ref_current</tabstop>
+  <tabstop>comboBox_aligned_current</tabstop>
+  <tabstop>pushButton_take_images</tabstop>
+  <tabstop>pushButton_align_beam</tabstop>
+  <tabstop>listdone</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

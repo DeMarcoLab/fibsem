@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from fibsem.config import load_microscope_manufacturer
 from fibsem import constants
 from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -16,6 +15,8 @@ from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 from fibsem.patterning import FibsemMillingStage
 import napari
+from fibsem.utils import load_yaml
+import fibsem.patterning as patterning
 
 # # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
 # class _WidgetPlot(QWidget):
@@ -144,6 +145,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QGridLayout, QLabel
 
+COLOURS = ["yellow", "cyan", "magenta", "lime", "orange", "hotpink", "green", "blue", "red", "purple"]
+
 
 def set_arr_as_qlabel(
     arr: np.ndarray,
@@ -182,11 +185,7 @@ def convert_pattern_to_napari_circle(
     pattern_settings: FibsemPatternSettings, image: FibsemImage
 ):
     # image centre
-    icy, icx = (
-        image.metadata.image_settings.resolution[1] // 2,
-        image.metadata.image_settings.resolution[0] // 2,
-    )  # TODO; this should be the actual shape of the image
-
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
@@ -208,10 +207,7 @@ def convert_pattern_to_napari_rect(
     pattern_settings: FibsemPatternSettings, image: FibsemImage
 ) -> np.ndarray:
     # image centre
-    icy, icx = (
-        image.metadata.image_settings.resolution[1] // 2,
-        image.metadata.image_settings.resolution[0] // 2,
-    )
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
     # extract pattern information from settings
@@ -262,10 +258,7 @@ def convert_pattern_to_napari_rect(
 
 def create_crosshair_shape(centre_point: Point, image: FibsemImage,eb_image: FibsemImage):
 
-    icy, icx = (
-        image.metadata.image_settings.resolution[1] // 2,
-        image.metadata.image_settings.resolution[0] // 2,
-    )
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
 
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
@@ -309,7 +302,7 @@ def convert_bitmap_pattern_to_napari_image(
         pattern_settings: FibsemPatternSettings, image: FibsemImage
 ) -> np.ndarray:
     # image centre
-    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
@@ -336,7 +329,7 @@ def convert_bitmap_pattern_to_napari_image(
 def convert_pattern_to_napari_image(pattern_settings: FibsemPatternSettings, image: FibsemImage) -> np.ndarray:
 
     # image centre
-    icy, icx = image.metadata.image_settings.resolution[1] // 2, image.metadata.image_settings.resolution[0] // 2
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
@@ -400,6 +393,7 @@ def _draw_patterns_in_napari(
     import time
 
     t_1 = time.time()
+    _ignore = []
     for i, stage in enumerate(milling_stages):
         shape_patterns = []
         shape_types = []
@@ -415,24 +409,32 @@ def _draw_patterns_in_napari(
                     continue
 
                 bmp_Image, translate_position = convert_bitmap_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
+                if "bmp_Image" in viewer.layers:
+                    viewer.layers.remove(viewer.layers["bmp_Image"])
                 viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
                 shape_patterns = []
+                _ignore.append("bmp_Image")
                 continue
             elif pattern_settings.pattern is FibsemPattern.Annulus:
                 annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
+                if "annulus_Image" in viewer.layers:
+                    viewer.layers.remove(viewer.layers["annulus_Image"])
                 viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=COLOURS[i % len(COLOURS)],opacity=0.4)
                 shape_patterns = []
+                _ignore.append("annulus_Image")
                 continue
 
             elif pattern_settings.pattern is FibsemPattern.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
 
                 shape_types.append("ellipse")
+                _ignore.append(name)
             else:
                 shape = convert_pattern_to_napari_rect(
                     pattern_settings=pattern_settings, image=ib_image
                 )
                 shape_types.append("rectangle")
+                _ignore.append(name)
 
             # offset the x coord by image width
             if eb_image is not None:
@@ -470,11 +472,11 @@ def _draw_patterns_in_napari(
 
         t2 = time.time()
         # remove all un-updated layers (assume they have been deleted)        
-        _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=[stage.name for stage in milling_stages])
+        _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=_ignore)#[stage.name for stage in milling_stages])
         t3 = time.time()
-        logging.warning(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}, REMOVE: {t3-t2}")
+        logging.debug(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}, REMOVE: {t3-t2}")
     t_2 = time.time()
-    logging.warning(f"_DRAW_SHAPES: total time: {t_2-t_1}")
+    logging.debug(f"_DRAW_SHAPES: total time: {t_2-t_1}")
 
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()
@@ -721,3 +723,42 @@ def _get_text_ui(
     )
 
     return text, okPressed
+
+
+def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
+
+    stages = load_yaml(path)
+
+    milling_stages = []
+
+    for stage in stages:
+        milling_stage = FibsemMillingStage.__from_dict__(stages[stage])
+        pattern = patterning.get_pattern(milling_stage.pattern.name)
+        pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
+        milling_stage.pattern = pattern
+        milling_stages.append(milling_stage)
+
+    return milling_stages
+
+def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[FibsemMillingStage], show: bool = True):
+
+    viewer = napari.Viewer()
+    viewer.add_image(image.data, name='test_image')
+    _draw_patterns_in_napari(viewer=viewer,ib_image=image,eb_image=None,milling_stages=milling_stages)
+    screenshot = viewer.screenshot()
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.imshow(screenshot)
+    viewer.close()
+
+    for i,stage in enumerate(milling_stages):
+    
+        plt.plot(0,0,'-',color=COLOURS[i % len(COLOURS)],label=stage.name)
+
+    ax.axis('off')
+    ax.legend()
+    if show:
+        plt.show()
+    
+    return fig
+
+

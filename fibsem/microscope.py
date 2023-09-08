@@ -127,12 +127,13 @@ class FibsemMicroscope(ABC):
     def eucentric_move(self,
         settings: MicroscopeSettings,
         dy: float,
+        dx: float = 0,
         static_wd: bool = True,
     ) -> None:
         pass
 
     @abstractmethod
-    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType, _safe: bool = True) -> None:
         pass
 
     @abstractmethod
@@ -319,7 +320,7 @@ class ThermoMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, static_wd: bool = True) -> None:
+        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -456,7 +457,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.model = self.connection.service.system.name
         self.software_version = self.connection.service.system.version
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
-
+        self.reset_beam_shifts()
+        
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
         Acquire a new image with the specified settings.
@@ -471,6 +473,8 @@ class ThermoMicroscope(FibsemMicroscope):
         # set frame settings
         if image_settings.reduced_area is not None:
             reduced_area = image_settings.reduced_area.__to_FEI__()
+            logging.warning(f"----------- REDUCED AREA: {reduced_area} -----------")
+            logging.warning(f"----------- BEAM_TYPE {image_settings.beam_type} -----------")
         else:
             reduced_area = None
             if image_settings.beam_type == BeamType.ELECTRON:
@@ -667,8 +671,9 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.specimen.stage.set_default_coordinate_system(
             CoordinateSystem.SPECIMEN
         )
-        return FibsemStagePosition.from_autoscript_position(stage_position)
-
+        pos = FibsemStagePosition.from_autoscript_position(stage_position)
+        logging.debug(f"CURRENT_POSITION | {pos.__to_dict__()}")
+        return pos
     def get_current_microscope_state(self) -> MicroscopeState:
         """
         Get the current microscope state
@@ -732,6 +737,8 @@ class ThermoMicroscope(FibsemMicroscope):
             ib_settings=ib_settings,
         )
 
+        logging.debug(f"CURRENT_MICROSCOPE_STATE | {current_microscope_state.__to_dict__()}")
+
         return current_microscope_state
 
     def move_stage_absolute(self, position: FibsemStagePosition):
@@ -758,6 +765,7 @@ class ThermoMicroscope(FibsemMicroscope):
             tilt = False
         _check_stage(self.hardware_settings, rotation=rotation, tilt=tilt)
         logging.info(f"Moving stage to {position}.")
+        logging.debug(f"MOVE_ABSOLUTE | {position.__to_dict__()}.")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
@@ -787,6 +795,7 @@ class ThermoMicroscope(FibsemMicroscope):
             tilt = False
         _check_stage(self.hardware_settings, rotation=rotation, tilt=tilt)
         logging.info(f"Moving stage by {position}.")
+        logging.debug(f"MOVE_RELATIVE | {position.__to_dict__()}")
         stage = self.connection.specimen.stage
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
@@ -858,6 +867,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self,
         settings: MicroscopeSettings,
         dy: float,
+        dx: float = 0.0,
         static_wd: bool = True,
     ) -> None:
         """
@@ -880,10 +890,14 @@ class ThermoMicroscope(FibsemMicroscope):
 
         move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(
+            x=dx,
             z=z_move, coordinate_system="Specimen"
         ).to_autoscript_position()
         self.connection.specimen.stage.relative_move(z_move, move_settings)
         logging.info(f"eucentric movement: {z_move}")
+
+        # x-move
+        # self.move_stage_relative(FibsemStagePosition(x=dx, y=0, z=0))
 
         if static_wd:
             self.connection.beams.electron_beam.working_distance.value = (
@@ -977,7 +991,7 @@ class ThermoMicroscope(FibsemMicroscope):
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
     def move_flat_to_beam(
-        self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON
+        self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
     ) -> None:
         """
         Moves the microscope stage to the tilt angle corresponding to the given beam type,
@@ -1004,12 +1018,13 @@ class ThermoMicroscope(FibsemMicroscope):
                 stage_settings.tilt_flat_to_ion - stage_settings.pre_tilt
             )
 
-        position = self.get_stage_position()
-
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
         stage_position = FibsemStagePosition(r=rotation, t=tilt)
-        self._safe_absolute_stage_movement(stage_position)
+        if _safe:
+            self._safe_absolute_stage_movement(stage_position)
+        else:
+            self.move_stage_absolute(stage_position)
 
     
     def _safe_rotation_movement(
@@ -1045,10 +1060,10 @@ class ThermoMicroscope(FibsemMicroscope):
         # move to compucentric rotation
         self.move_stage_absolute(FibsemStagePosition(r=stage_position.r))
 
-        logging.info(f"safe moving to {stage_position}")
+        logging.debug(f"safe moving to {stage_position}")
         self.move_stage_absolute(stage_position)
 
-        logging.info(f"safe movement complete.")
+        logging.debug(f"safe movement complete.")
 
         return
 
@@ -1280,9 +1295,6 @@ class ThermoMicroscope(FibsemMicroscope):
         Configure the microscope for milling using the ion beam.
 
         Args:
-            application_file (str): Path to the milling application file.
-            patterning_mode (str): Patterning mode to use.
-            hfw (float): Desired horizontal field width in meters.
             mill_settings (FibsemMillingSettings): Milling settings.
 
         Returns:
@@ -1308,6 +1320,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
         self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
+
+        self.set("current", mill_settings.milling_current, BeamType.ION)
 
     def run_milling(self, milling_current: float, asynch: bool = False):
         """
@@ -1455,8 +1469,15 @@ class ThermoMicroscope(FibsemMicroscope):
             pattern.scan_direction = "TopToBottom"
             logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.info(f"Supported scan directions are: BottomToTop, DynamicAllDirections, DynamicInnerToOuter, DynamicLeftToRight, DynamicTopToBottom, InnerToOuter, LeftToRight, OuterToInner, RightToLeft, TopToBottom")        
-        if pattern_settings.passes is not None:
-            pattern.pass_count = pattern_settings.passes
+        if pattern_settings.passes: # not zero
+            # print("dwell_time: ", pattern.dwell_time, "passes: ", pattern.pass_count, "time: ", pattern.time)
+            # pattern.scan_type = "Raster"
+            pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
+            # pattern.pass_count = pattern_settings.passes
+            # print("dwell_time: ", pattern.dwell_time, "passes: ", pattern.pass_count, "time: ", pattern.time)
+            # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
+            # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
+            # NB: the current must be set before doing this, otherwise it will be out of range
         return pattern
 
     def draw_line(self, pattern_settings: FibsemPatternSettings):
@@ -1734,8 +1755,14 @@ class ThermoMicroscope(FibsemMicroscope):
         gis_line = protocol["gas"]
         sputter_time = protocol["sputter_time"]
 
+        blank =protocol["blank_beam"]
 
-        self.connection.beams.electron_beam.blank()
+        print(f"blank beam: {blank}") 
+
+        if protocol["blank_beam"]:
+            self.connection.beams.electron_beam.blank()
+
+
         if self.connection.patterning.state == "Idle":
             logging.info(f"Sputtering with {gis_line} for {sputter_time} seconds...")
             self.connection.patterning.start()  # asynchronous patterning
@@ -1941,12 +1968,16 @@ class ThermoMicroscope(FibsemMicroscope):
         Moves the multichem object to a specified position.
         """
 
+        logging.info(f"Moving multichem to position: {position}" )
+
         _check_sputter(self.hardware_settings)
 
         if position == "Retract":
             self.multichem.retract()
         else:
             self.multichem.insert(position=position)
+
+        
 
 
     def multichem_position(self) -> str:
@@ -2524,7 +2555,7 @@ class TescanMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, static_wd: bool = True) -> None:
+        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0.0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -2661,6 +2692,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.model = image.Header["MAIN"]["DeviceModel"]
         self.software_version = image.Header["MAIN"]["SoftwareVersion"]
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
+        self.reset_beam_shifts()
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
         """
@@ -2672,6 +2704,14 @@ class TescanMicroscope(FibsemMicroscope):
             Returns:
                 A `FibsemImage` object that represents the acquired image.
         """
+        if image_settings.beam_type.name == "ELECTRON":
+            image_settings.hfw = np.clip(
+                    image_settings.hfw, 1.0e-6, 2580.0e-6
+                )
+        else:
+            image_settings.hfw = np.clip(
+                    image_settings.hfw, 1.0e-6, 450.0e-6
+                )
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
         if image_settings.beam_type.name == "ELECTRON":
             _check_beam(BeamType.ELECTRON, self.hardware_settings)
@@ -3211,6 +3251,8 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             image_rotation = self.connection.FIB.Optics.GetImageRotation()
 
+        if np.isnan(image_rotation):
+            image_rotation = 0.0
         # if image_rotation == 0:
         #     dx_move = -dx
         #     dy_move = dy
@@ -3246,6 +3288,7 @@ class TescanMicroscope(FibsemMicroscope):
         self,
         settings: MicroscopeSettings,
         dy: float,
+        dx: float = 0.0,
         static_wd: bool = True,
     ) -> None:
         """
@@ -3295,7 +3338,7 @@ class TescanMicroscope(FibsemMicroscope):
         #     np.deg2rad(90 - self.stage_settingse.tilt_flat_to_ion + self.stage_settings.pre_tilt)
         # )  # TODO: MAGIC NUMBER, 90 - fib tilt
         logging.info(f"eucentric movement: {z_move}")
-        z_move = FibsemStagePosition(x=0, y=0, z=z_move, r=0, t=0)
+        z_move = FibsemStagePosition(x=dx, y=0, z=z_move, r=0, t=0)
         self.move_stage_relative(z_move)
 
         self.connection.SEM.Optics.SetWD(wd)
@@ -3361,7 +3404,7 @@ class TescanMicroscope(FibsemMicroscope):
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
     def move_flat_to_beam(
-        self, settings=MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON
+        self, settings=MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
     ):
         """
         Moves the microscope stage to the tilt angle corresponding to the given beam type,
@@ -4028,10 +4071,11 @@ class TescanMicroscope(FibsemMicroscope):
             This function also waits for 3 seconds to allow the heater to warm up.
         """
         _check_sputter(self.hardware_settings)
+        gas = protocol["gas"]
         self.connection.FIB.Beam.On()
         lines = self.connection.GIS.Enum()
         for line in lines:
-            if line.name == "Platinum":
+            if line.name == gas:
                 self.line = line
 
                 # Start GIS heating
@@ -4373,8 +4417,12 @@ class TescanMicroscope(FibsemMicroscope):
             microscope_state.eb_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
 
-        self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
+        if microscope_state.eb_settings.shift is not None:
+            print(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+            self.connection.SEM.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+            time.sleep(1)
+        if microscope_state.eb_settings.scan_rotation is not None:
+            self.connection.SEM.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
         # )
@@ -4386,9 +4434,12 @@ class TescanMicroscope(FibsemMicroscope):
         self.connection.FIB.Optics.SetViewfield(
             microscope_state.ib_settings.hfw * constants.METRE_TO_MILLIMETRE
         )
-        self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
-        self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
-        time.sleep(3)
+        if microscope_state.ib_settings.shift is not None:
+            self.connection.FIB.Optics.SetImageShift(microscope_state.eb_settings.shift.x, microscope_state.eb_settings.shift.y)
+            time.sleep(1)
+        if microscope_state.eb_settings.scan_rotation is not None:
+            print("hello from the dark side scan rotation ib")
+            self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
         self.move_stage_absolute(microscope_state.absolute_position)
         logging.info(f"microscope state restored")
@@ -4748,8 +4799,11 @@ class DemoMicroscope(FibsemMicroscope):
 
 
     def connect_to_microscope(self):
+        self.model = "Demo"
         logging.info(f"Connected to Demo Microscope")
         logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")
+        self.reset_beam_shifts()
+
         return
 
     def disconnect(self):
@@ -4868,12 +4922,13 @@ class DemoMicroscope(FibsemMicroscope):
         return stage_position
 
 
-    def eucentric_move(self, settings:MicroscopeSettings, dy: float, static_wd: bool=True) -> None:
+    def eucentric_move(self, settings:MicroscopeSettings, dy: float, dx:float = 0.0, static_wd: bool=True) -> None:
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
+        self.stage_position.x += dx
         self.stage_position.z += dy / np.cos(np.deg2rad(90-self.stage_settings.tilt_flat_to_ion))
 
-    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType) -> None:
+    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType, _safe:bool = True) -> None:
         _check_stage(self.hardware_settings, tilt = True)
                 
         if beam_type is BeamType.ELECTRON:
@@ -5022,6 +5077,28 @@ class DemoMicroscope(FibsemMicroscope):
     def finish_sputter(self, **kwargs):
         _check_sputter(self.hardware_settings)
         logging.info(f"Finishing sputter: {kwargs}")
+
+    def setup_GIS(self, protocol) -> None:
+
+        beamtype = protocol["beam_type"]
+
+        logging.info(f"Setting up GIS for {beamtype}")
+
+
+    def setup_GIS_pattern(self,protocol) -> None:
+
+        length = protocol["length"]
+
+        logging.info(f"Setting up line pattern with length: {length}m")
+
+    def run_GIS(self, protocol) -> None:
+
+        blank = protocol["blank_beam"]
+
+
+        logging.info(f"Running GIS")
+        time.sleep(3)
+        logging.info(f"GIS finished")
 
     def GIS_available_lines(self) -> list[str]:
 

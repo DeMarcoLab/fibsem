@@ -12,7 +12,7 @@ from fibsem import conversions
 from fibsem.imaging import masks
 from fibsem.microscope import FibsemMicroscope
 from fibsem.segmentation.model import SegmentationModel
-from fibsem.structures import BeamType, MicroscopeSettings, Point
+from fibsem.structures import FibsemImage, BeamType, MicroscopeSettings, Point
 import matplotlib.pyplot as plt
 
 @dataclass
@@ -50,8 +50,21 @@ class NeedleTip(Feature):
     name: str = "NeedleTip"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-        self.px = detect_needle_v4(mask)
+        self.px = detect_needle_v5(mask)
         return self.px
+
+@dataclass
+class NeedleTipBottom(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (0,255,0)
+    color = "green"
+    name: str = "NeedleTipBottom"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
+        self.px = detect_needle_v5(mask, edge="bottom")
+        return self.px
+
 
 
 
@@ -93,6 +106,29 @@ class LamellaRightEdge(Feature):
         self.px = detect_lamella(mask, self)
         return self.px
 
+@dataclass
+class LamellaTopEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255,0,255)
+    color = "hotpink"
+    name: str = "LamellaTopEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaTopEdge':
+        self.px = detect_lamella(mask, self)
+        return self.px
+
+@dataclass
+class LamellaBottomEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255, 0, 255)
+    color = "hotpink"
+    name: str = "LamellaBottomEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaBottomEdge':
+        self.px = detect_lamella(mask, self)
+        return self.px
 
 @dataclass
 class LandingPost(Feature):
@@ -103,7 +139,7 @@ class LandingPost(Feature):
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-        self.px = detect_landing_post_v3(img, point)
+        self.px = detect_landing_post_v4(mask, point)
         return self.px
 
 
@@ -115,12 +151,52 @@ class CoreFeature(Feature):
     color = "lime"
     name: str = "CoreFeature"
 
-    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CoreFature':
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CoreFeature':
         self.px = detect_core_feature(mask, self)
         return self.px
 
+@dataclass
+class CopperAdapterCentre(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255, 255, 0)
+    color = "yellow"
+    name: str = "CopperAdapterCentre"
 
-__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, CoreFeature]
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterCentre':
+        self.px = detect_centre_point(mask == 4)
+        return self.px
+
+@dataclass
+class CopperAdapterTopEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255, 255, 0)
+    color = "yellow"
+    name: str = "CopperAdapterTopEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterTopEdge':
+        self.px = detect_median_edge(mask == 4, edge="top")
+        return self.px
+
+
+@dataclass
+class CopperAdapterBottomEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255, 255, 0)
+    color = "yellow"
+    name: str = "CopperAdapterBottomEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterBottomEdge':
+        self.px = detect_median_edge(mask == 4, edge="bottom")
+        return self.px
+
+
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, 
+    CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
+    NeedleTipBottom, 
+    CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge]
  
 
 
@@ -154,8 +230,25 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     px = detect_closest_edge_v2(edge, landing_pt)
     return px
 
+# TODO: generalise this to detect any edge
+def detect_landing_post_v4(mask: np.ndarray, point: Point = None) -> Point:
+    if point is None:
+        point = Point(x=mask.shape[1] // 2, y=mask.shape[0] // 2)
+    idx = 3
+    landing_mask = mask == idx
 
-def detect_centre_point(mask: np.ndarray, threshold: int = 25) -> Point:
+    # mask out outside 1/3
+    idxs = int(landing_mask.shape[1] / 2.5)
+    landing_mask[:, :idxs] = False
+    landing_mask[:, -idxs:] = False
+
+    # get median edge to
+    px = detect_median_edge(landing_mask, edge="top")
+
+    # px = detect_closest_edge_v2(landing_mask, point)
+    return px
+
+def detect_centre_point(mask: np.ndarray, threshold: int = 500) -> Point:
     """ Detect the centre (mean) point of the mask for a given color (label)
 
     args:
@@ -209,6 +302,95 @@ def detect_corner(
     return Point(x=int(edge_px[1]), y=int(edge_px[0]))
 
 
+def detect_median_edge(mask: np.ndarray, edge: str, threshold: int = 250) -> Point:
+
+    # get mask px coordindates
+    edge_mask = np.where(mask)
+    edge_px = Point(0, 0)
+
+    if len(edge_mask[0]) > threshold:
+        try:
+            # get the centre point of each coordinate
+            py = int(np.mean(edge_mask[0]))
+            px = int(np.mean(edge_mask[1]))
+
+            # get the min and max x and y coordinates at these median points
+            x_min = np.min(edge_mask[1][edge_mask[0] == py])
+            x_max = np.max(edge_mask[1][edge_mask[0] == py])
+            y_min = np.min(edge_mask[0][edge_mask[1] == px])
+            y_max = np.max(edge_mask[0][edge_mask[1] == px])
+
+
+            if edge == "left":
+                edge_px = Point(x=x_min, y=py)
+            if edge == "right":
+                edge_px = Point(x=x_max, y=py)
+            if edge == "top":
+                edge_px = Point(x=px, y=y_min)
+            if edge == "bottom":
+                edge_px = Point(x=px, y=y_max)
+        except:
+            pass
+    return Point(x=int(edge_px.x), y=int(edge_px.y))
+
+
+def detect_absolute_edge(mask, edge: str, _filter:str = "largest", _mode: str = "median", threshold: int = 150) -> Point:
+
+    # _mode: median or strict
+    #   median: take median of points with same extremity
+    #   strict: first best selection
+
+    # get individual objects
+    labels = measure.label(mask)
+    props = measure.regionprops(labels)
+
+    if len(props) == 0:
+        return Point(0,0)
+
+    obj = props[0]
+    if _filter == "largest":
+        # get the largest object
+        for prop in props:
+            if prop.area > obj.area:
+                obj = prop
+
+
+    # get the coords of the most right pixel
+    px = obj.coords[0]
+    for coord in obj.coords:
+
+        if edge == "right":
+            if coord[1] > px[1]:
+                px = coord
+                
+        
+        if edge == "left":
+            if coord[1] < px[1]:
+                px = coord
+        
+        if edge == "top":
+            if coord[0] < px[0]:
+                px = coord
+        
+        if edge == "bottom":
+            if coord[0] > px[0]:
+                px = coord
+
+    # find coordinates that have same x or y value as the most right pixel
+    same_y = [coord for coord in obj.coords if coord[1] == px[1]]
+    same_x = [coord for coord in obj.coords if coord[0] == px[0]]
+
+    # TODO: could add some fuzz to the selection too (e..g +/- 2px)
+
+    if edge in ["left", "right"]:
+        # take median of points with same y value
+        px = np.median(same_y, axis=0)
+    else:
+        # take median of points with same x value
+        px = np.median(same_x, axis=0)
+
+    return Point(px[1], px[0])
+
 def detect_core_feature(
     mask: np.ndarray,
     feature: Feature,
@@ -232,10 +414,21 @@ def detect_lamella(
         px = detect_centre_point(lamella_mask)
 
     if isinstance(feature, LamellaLeftEdge):
-        px = detect_corner(lamella_mask, left=True)
+        # px = detect_corner(lamella_mask, left=True)
+        px = detect_median_edge(lamella_mask, edge="left")
+
 
     if isinstance(feature, LamellaRightEdge):
-        px = detect_corner(lamella_mask, left=False)
+        # px = detect_corner(lamella_mask, left=False)
+        px = detect_median_edge(lamella_mask, edge="right")
+
+
+    if isinstance(feature, LamellaTopEdge):
+        px = detect_median_edge(lamella_mask, edge="top")
+
+    if isinstance(feature, LamellaBottomEdge):
+        px = detect_median_edge(lamella_mask, edge="bottom")
+    
     return px
 
 
@@ -243,6 +436,10 @@ def detect_needle_v4(mask: np.ndarray, idx:int=2) -> Point:
     needle_mask = mask == idx
     return detect_corner(needle_mask, threshold=100)
 
+def detect_needle_v5(mask: np.ndarray, idx:int=2, edge: str ="right") -> Point:
+    needle_mask = mask == idx
+    return detect_absolute_edge(needle_mask, edge=edge, 
+        _filter="largest", _mode="median", threshold=150)
 
 def edge_detection(img: np.ndarray, sigma=3) -> np.ndarray:
     return feature.canny(img, sigma=sigma)  # sigma higher usually better
@@ -342,12 +539,14 @@ class DetectedFeatures:
     mask: np.ndarray # class binary mask
     rgb: np.ndarray # rgb mask
     pixelsize: float
-    _distance: Point = Point(x=0, y=0)
+    _distance: Point = None
+    _offset: Point = Point(0, 0)
+    fibsem_image: FibsemImage = None
 
     @property
     def distance(self):
         assert len(self.features) >= 2, "Need at least two features to calculate distance"
-        return self.features[0].px.distance(self.features[1].px)._to_metres(self.pixelsize)
+        return self.features[0].px.distance(self.features[1].px)._to_metres(self.pixelsize) + self._offset        
         
     @distance.setter
     def distance(self, value: Point) -> None:
@@ -366,7 +565,7 @@ def detect_features_v2(
 
     for feature in features:
         
-        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, CoreFeature)):
+        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
             feature = detect_multi_features(img, mask, feature)
             if filter:
                 feature = filter_best_feature(mask, feature, 
@@ -385,13 +584,19 @@ def detect_features_v2(
 
 
 def detect_features(
-    image: np.ndarray,
+    image: Union[np.ndarray, FibsemImage],
     model: SegmentationModel,
     features: tuple[Feature],
     pixelsize: float,
     filter: bool = True,
     point: Point = None
 ) -> DetectedFeatures:
+
+    if isinstance(image, FibsemImage):
+        fibsem_image = deepcopy(image)
+        image = image.data
+    else:
+        fibsem_image = None
 
     # model inference
     mask = model.inference(image, rgb=False)
@@ -410,6 +615,7 @@ def detect_features(
         mask=mask,
         rgb=rgb,
         pixelsize=pixelsize,
+        fibsem_image=fibsem_image
     )
 
     # distance in metres (from centre)
@@ -425,6 +631,7 @@ def take_image_and_detect_features(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     features: tuple[Feature],
+    point: Point = None,
 ) -> DetectedFeatures:
     
     from fibsem import acquire, utils
@@ -444,14 +651,19 @@ def take_image_and_detect_features(
 
     # load model
     ml_protocol = settings.protocol.get("ml", {})
-    checkpoint = ml_protocol.get("weights", None)
+    checkpoint = ml_protocol.get("checkpoint", "openfibsem-baseline-34.pt")
     encoder = ml_protocol.get("encoder", "resnet34")
     num_classes = int(ml_protocol.get("num_classes", 3))
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
+    if isinstance(point, FibsemStagePosition):
+        logging.info(f"Reprojecting point {point} to image coordinates...")
+        point = _tile._reproject_positions(image, [point], _bound=True)[0]
+        logging.info(f"Reprojected point: {point}")
+
     # detect features
     det = detect_features(
-        deepcopy(image.data), model, features=features, pixelsize=image.metadata.pixel_size.x
+        deepcopy(image), model, features=features, pixelsize=image.metadata.pixel_size.x, point = point
     )
     return det
 
@@ -469,27 +681,44 @@ def plot_detection(det: DetectedFeatures):
 
     fig, ax = plt.subplots(1, 1, figsize=(12, 7))
 
-    plot_det(det, ax)
+    fig = plot_det(det, ax)
+    
+    return fig
 
 
 def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", show: bool = True):
     ax.imshow(det.image, cmap="gray")
-    ax.imshow(det.rgb, alpha=0.3)
+    if det.rgb is not None:
+        ax.imshow(det.rgb, alpha=0.3)
     ax.set_title(title)
     
+
+    # get unique feature names
+    names = []
+    for f in det.features:
+        if f.name not in names:
+            names.append(f.name)
+    
+
     for f in det.features:
         ax.plot(f.px.x, f.px.y, 
                 "o",  color=f.color, 
                 markersize=5, markeredgecolor="w", 
-                label=f.name)
-    if len(det.features) < 10:
-        ax.legend(loc="best")
+                label=f.name if names.count(f.name) == 1 else None)
+        
+        # remove from names list
+        if names.count(f.name) == 1:
+            names.remove(f.name)
 
-    if len(det.features) == 2:
-        # plot white line between features
-        ax.plot([det.features[0].px.x, det.features[1].px.x],
-                [det.features[0].px.y, det.features[1].px.y], 
-                color="w", linestyle="--")
+    # if len(det.features) < 5:
+    ax.legend(loc="best")
+    ax.axis("off")
+
+    # if len(det.features) == 2:
+    #     # plot white line between features
+    #     ax.plot([det.features[0].px.x, det.features[1].px.x],
+    #             [det.features[0].px.y, det.features[1].px.y], 
+    #             color="w", linestyle="--")
 
     if show:
         plt.show()
@@ -507,15 +736,24 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
     if titles is None:
         titles = [f"Prediction {i}" for i in range(len(dets))]
 
-    fig, ax = plt.subplots(1, len(dets), figsize=(12, 7))
+    fig, ax = plt.subplots(1, len(dets), figsize=(25, 10))
 
     for i, det in enumerate(dets):
 
         plot_det(det, ax[i], title=titles[i], show=False)
     
+    plt.subplots_adjust(wspace=0.05, hspace=0.05)
     plt.show()
 
     return fig
+
+
+
+_DETECTIONS_THAT_MOVE_MANIPULATOR = (NeedleTip, LamellaRightEdge, LamellaBottomEdge, LamellaTopEdge, CopperAdapterTopEdge, CopperAdapterBottomEdge)
+_DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre)
+
+
+# isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
 
 
 def move_based_on_detection(
@@ -525,45 +763,54 @@ def move_based_on_detection(
     beam_type: BeamType,
     move_x: bool = True,
     move_y: bool = True,
+    _move_system: str = None, # auto
 ):
-
     from fibsem import movement
+
+    dx, dy = det.distance.x, det.distance.y
 
     # nulify movements in unsupported axes
     if not move_x:
-        det.distance.x = 0
+        dx = 0
     if not move_y:
-        det.distance.y = 0
+        dy = 0
 
     # f1 = move from, f2 = move to
     f1 = det.features[0]
     f2 = det.features[1]
 
     logging.debug(f"move_x: {move_x}, move_y: {move_y}")
-    logging.debug(f"movement: x={det.distance.x:.2e}, y={det.distance.y:.2e}")
+    logging.debug(f"movement: x={dx:.2e}, y={dy:.2e}")
     logging.debug(f"features: {f1}, {f2}, beam_type: {beam_type}")
 
+    if _move_system is None:
+        if isinstance(f1, _DETECTIONS_THAT_MOVE_MANIPULATOR):
+            _move_system = "manipulator"
+        if isinstance(f1, _DETECTIONS_THAT_MOVE_STAGE):
+            _move_system = "stage"
+
+    if _move_system not in ["manipulator", "stage"]:
+        raise ValueError(f"move_system must be one of ['manipulator', 'stage'], not {_move_system}")
+
     # these movements move the needle...
-    if isinstance(f1, NeedleTip) or isinstance(f1, LamellaRightEdge):
+    if _move_system == "manipulator":
 
         # electron: neg = down, ion: neg = up
-        if beam_type is BeamType.ION:
-            det.distance.y *= -1
+        # if beam_type is BeamType.ION:
+        #     dy *= -1
 
         microscope.move_manipulator_corrected(
-            dx=det.distance.x,
-            dy=det.distance.y,
+            dx=dx,
+            dy=dy,
             beam_type=beam_type,
         )
 
-    if isinstance(f1, LamellaCentre) and isinstance(f2, ImageCentre):
-
-
+    if _move_system == "stage":
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
                 settings=settings,
-                dx=-det.distance.x,
-                dy=det.distance.y,
+                dx=-dx,
+                dy=dy,
                 beam_type=beam_type,
             )
 

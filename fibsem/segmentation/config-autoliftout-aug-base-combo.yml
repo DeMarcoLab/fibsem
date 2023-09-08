@@ -1,0 +1,15 @@
+data_paths:  [/home/patrick/github/data/liftout/training/train/images, /home/patrick/github/data/liftout/train-new/train] 
+label_paths: [/home/patrick/github/data/liftout/training/train/labels, /home/patrick/github/data/liftout/train-new/train/labels]
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/aug/base/combo
+checkpoint: null 
+encoder: "resnet50" 
+epochs: 30
+batch_size: 2
+num_classes: 3 # Number of classes in segmentation labels. Includes background as class 0.
+lr: 3.0e-4
+wandb: true 
+wandb_project: "autoliftout"
+wandb_entity: "demarcolab"
+
+
+

@@ -9,33 +9,77 @@ from torchvision import transforms
 import dask.array as da
 import os
 import tifffile as tff
+import random
+from PIL import Image
 
 # transformations
-transformation = transforms.Compose(
+ROT_ANGLE = 15
+PROB = 0.1
+
+transformations_input = transforms.Compose(
     [
-        transforms.ToTensor(),
+
+        transforms.RandomRotation(ROT_ANGLE),
+        transforms.RandomHorizontalFlip(p=PROB),
+        transforms.RandomVerticalFlip(p=PROB),
+        transforms.RandomAutocontrast(p=PROB),
+        transforms.RandomEqualize(p=PROB),
+        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+    ]
+)
+
+transformations_target = transforms.Compose(
+    [
+        transforms.RandomRotation(ROT_ANGLE),
+        transforms.RandomHorizontalFlip(p=PROB),
+        transforms.RandomVerticalFlip(p=PROB),
+
     ]
 )
 
 
 class SegmentationDataset(Dataset):
-    def __init__(self, images, masks, num_classes: int, transforms=None):
+    def __init__(self, images, masks, num_classes: int, transforms_input=None, transforms_target=None):
         self.images = images
         self.masks = masks
         self.num_classes = num_classes
-        self.transforms = transforms
+        self.transforms_input = transforms_input
+        self.transforms_target = transforms_target
+
+        assert len(self.images) == len(self.masks), "Images and masks are not the same length"
+        assert self.transforms_target is not None if self.transforms_input is not None else True, "transforms_target must be provided if transforms_input is provided"
+
+    def _set_seed(self, seed):
+        random.seed(seed)
+        torch.manual_seed(seed)
 
     def __getitem__(self, idx):
-        image = np.asarray(self.images[idx])
-        if self.transforms:
-            image = self.transforms(image)
 
+
+        image = np.asarray(self.images[idx])
         mask = np.asarray(self.masks[idx])
 
+        # if mask > num_class, set to zero
+        mask[mask >= self.num_classes] = 0
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
+        # mask = torch.tensor(mask).unsqueeze(0)
+        
+        image = torch.tensor(image).unsqueeze(0)
         mask = torch.tensor(mask).unsqueeze(0)
 
+        
+        if self.transforms_input:
+            seed = random.randint(0, 1000)
+            self._set_seed(seed)
+            image = self.transforms_input(image)
+            self._set_seed(seed)
+            mask = self.transforms_target(mask)
+
+            # convert image to float32 scaled between 0-1
+            image = image.float() / 255.0
+                        
         return image, mask
 
     def __len__(self):
@@ -43,7 +87,13 @@ class SegmentationDataset(Dataset):
 
 from pathlib import Path
 def load_dask_dataset(data_path: Path, label_path: Path):
-    
+
+    # TODO: allow for loading from multiple directories
+    # sorted_img_filenames, sorted_mask_filenames = [], []
+    # for data_path, label_paths in zip(data_paths, label_paths):
+    #     sorted_img_filenames += sorted(glob.glob(os.path.join(data_path, "*.tif*")))
+    #     sorted_mask_filenames += sorted(glob.glob(os.path.join(label_path, "*.tif*")))
+
     sorted_img_filenames = sorted(glob.glob(os.path.join(data_path, "*.tif*")))
     sorted_mask_filenames = sorted(glob.glob(os.path.join(label_path, "*.tif*")))
 
@@ -59,17 +109,50 @@ def load_dask_dataset(data_path: Path, label_path: Path):
 
     return images, masks
 
+def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
 
-def preprocess_data(data_path: str, label_path: str, num_classes: int = 3, batch_size: int = 1, val_split: float = 0.2):
+    sorted_img_filenames, sorted_mask_filenames = [], []
+    for data_path, label_path in zip(data_paths, label_paths):
+        sorted_img_filenames += sorted(glob.glob(os.path.join(data_path, "*.tif*")))
+        sorted_mask_filenames += sorted(glob.glob(os.path.join(label_path, "*.tif*")))
+
+    # TODO: change to dask-image
+    img_arr = tff.imread(sorted_img_filenames, aszarr=True)
+    mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
+
+    images = da.from_zarr(img_arr)
+    masks = da.from_zarr(mask_arr)
+
+    images = images.rechunk(chunks=(1, images.shape[1], images.shape[2]))
+    masks = masks.rechunk(chunks=(1, images.shape[1], images.shape[2]))
+
+    return images, masks
+
+
+def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes: int = 3, 
+                    batch_size: int = 1, val_split: float = 0.2, 
+                    _validate_dataset:bool = True):
     
-    validate_dataset(data_path, label_path)
-    images, masks = load_dask_dataset(data_path, label_path)
+    # if _validate_dataset:
+        # validate_dataset(data_path, label_path)
 
-    print(f"Loading dataset from {data_path} of length {images.shape[0]}")
+    if not isinstance(data_paths, list):
+        data_paths = [data_paths]
+    if not isinstance(label_paths, list):
+        label_paths = [label_paths]
+
+    images, masks = load_dask_dataset_v2(data_paths, label_paths)
+
+
+    print(f"Loading dataset from {len(data_paths)} paths: {images.shape[0]}")
+    for path in data_paths:
+        print(f"Loaded from {path}")
 
     # load dataset
     seg_dataset = SegmentationDataset(
-        images, masks, num_classes, transforms=transformation
+        images, masks, num_classes, 
+        transforms_input=transformations_input, 
+        transforms_target=transformations_target
     )
 
     # train/validation splits
@@ -87,6 +170,7 @@ def preprocess_data(data_path: str, label_path: str, num_classes: int = 3, batch
     )  # shuffle=True,
     print(f"Train dataset has {len(train_data_loader)} batches of size {batch_size}")
 
+    # TODO: try larger val batch size?
     val_data_loader = DataLoader(
         seg_dataset, batch_size=1, sampler=val_sampler
     )  # shuffle=True,

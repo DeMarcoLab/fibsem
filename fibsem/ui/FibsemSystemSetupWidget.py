@@ -14,6 +14,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
+from fibsem.ui import _stylesheets
 
 def log_status_message(step: str):
     logging.debug(
@@ -48,10 +49,12 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         
         self.auto_connect = False
         self.apply_settings = False
-        if bool(settings_dict["connect_to_microscope_on_startup"]):
+        self.load_positions_on_startup = False
+        if bool(settings_dict.get("connect_to_microscope_on_startup", False)):
             self.auto_connect = True
             self.connect_to_microscope(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
-
+        if bool(settings_dict.get("load_positions_on_startup", False)):
+            self.load_positions_on_startup = True
         self.setup_connections(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
         self.update_ui()
         
@@ -212,7 +215,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     
         system_dict["connect_to_microscope_on_startup"] = bool(self.checkBox_connect_automatically.isChecked())
         system_dict["apply_settings_on_startup"] = bool(self.checkBox_apply_settings.isChecked())
-
+        system_dict["load_positions_on_startup"] = bool(self.checkBox_load_positions.isChecked())
         if path is None:
             path = _get_save_file_ui(msg="Save system file", path=cfg.CONFIG_PATH)
         
@@ -264,6 +267,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         self.checkBox_connect_automatically.setCheckState( self.auto_connect)
         self.checkBox_apply_settings.setCheckState( self.apply_settings)
+        self.checkBox_load_positions.setCheckState( self.load_positions_on_startup)
 
     def get_stage_settings_from_ui(self):
         if self.microscope is None:
@@ -283,6 +287,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.rotationFlatToIonSpinBox.value()
         )
         self.settings.system.stage.pre_tilt = self.preTiltSpinBox.value()
+        napari.utils.notifications.show_info("Stage Parameters Updated")
         self.set_stage_signal.emit()
 
     def set_stage_settings_to_ui(self, stage_settings: StageSettings) -> None:
@@ -362,6 +367,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             log_status_message(f"CONNECTED_AT_{ip_address}")
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
+
             # self.connected_signal.emit()
             self.set_defaults_to_ui()
 
@@ -391,14 +397,14 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         if _microscope_connected:
             self.microscope_button.setText("Microscope Connected")
-            self.microscope_button.setStyleSheet("background-color: green")
+            self.microscope_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_stage_settings_to_ui(self.microscope.stage_settings)
             self.set_model_to_ui(self.settings.hardware)
             self.connected_signal.emit()
 
         else:
             self.microscope_button.setText("Connect To Microscope")
-            self.microscope_button.setStyleSheet("background-color: gray")
+            self.microscope_button.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
             self.disconnected_signal.emit()
 
 

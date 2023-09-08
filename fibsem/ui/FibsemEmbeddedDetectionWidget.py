@@ -19,12 +19,15 @@ from fibsem.structures import (
     FibsemImage,
     Point,
 )
+from fibsem import utils
+from fibsem.ui import _stylesheets
 from PyQt5.QtCore import pyqtSignal
 from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget
 import logging
 
-CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
-CLASS_COLORS = {0: "black", 1: "red", 2: "green", 3: "cyan", 4: "yellow", 5: "magenta", 6: "blue"}
+from fibsem.segmentation.config import CLASS_COLORS
+# CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
+# CLASS_COLORS = {0: "black", 1: "red", 2: "green", 3: "cyan", 4: "yellow", 5: "magenta", 6: "blue"}
 
 class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets.QWidget):
     continue_signal = pyqtSignal(DetectedFeatures)
@@ -39,11 +42,15 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         super(FibsemEmbeddedDetectionUI, self).__init__(parent=parent)
         self.setupUi(self)
 
+        self.parent = parent
         self.viewer = viewer
+        self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
+        self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
         self.model = model
 
         self._USER_CORRECTED = False
-
+        self._LABELLING_ENABLED = False
+        self._MODEL_ASSIST = False
 
         self._image_layer = None
         self._mask_layer = None
@@ -63,25 +70,87 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             """Drag the detected feature positions to move them. Press Continue when finished."""
         )
         self.pushButton_continue.clicked.connect(self.confirm_button_clicked)
-        self.pushButton_continue.setVisible(False)
+        self.pushButton_continue.setVisible(self.parent is None)
 
-    def save_data(self):
+
+        # labelling
+        self.viewer.bind_key("L", self._toggle_labelling)
+        self.pushButton_enable_labelling.clicked.connect(self._toggle_labelling)
+        self.checkBox_labelling_model_assist.stateChanged.connect(self._toggle_labelling)
+        self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
+
+        self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
+        self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
+        self.pushButton_labelling_cancel.setVisible(self._MODEL_ASSIST)       
+        self.label_labelling_class_index.setVisible(self._MODEL_ASSIST)
+        self.label_labelling_instructions.setVisible(self._MODEL_ASSIST)
+        self.label_labelling_model.setVisible(self._MODEL_ASSIST)
+        self.comboBox_labelling_class_index.setVisible(self._MODEL_ASSIST)
+
+
+    def _toggle_labelling(self, event=None):
+
+        if self.sender() != self.checkBox_labelling_model_assist:
+            self._LABELLING_ENABLED = not self._LABELLING_ENABLED
+
+        self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
+        # self._MODEL_ASSIST = self.checkBox_labelling_model_assist.isChecked()
+        self._MODEL_ASSIST = False
+
+        self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
+        self.pushButton_labelling_cancel.setVisible(self._MODEL_ASSIST)       
+        self.label_labelling_class_index.setVisible(self._MODEL_ASSIST)
+        self.label_labelling_instructions.setVisible(self._MODEL_ASSIST)
+        self.label_labelling_model.setVisible(self._MODEL_ASSIST)
+        self.comboBox_labelling_class_index.setVisible(self._MODEL_ASSIST)
+
+        # show layer controls
+        self.viewer.window._qt_viewer.dockLayerList.setVisible(self._LABELLING_ENABLED)
+        self.viewer.window._qt_viewer.dockLayerControls.setVisible(self._LABELLING_ENABLED)
+
+        if self._LABELLING_ENABLED:
+            self.viewer.layers.selection.active = self._mask_layer
+            self._mask_layer.mode = "paint"
+            self.pushButton_enable_labelling.setText("Disable Labelling")
+            self.pushButton_enable_labelling.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)        
+        else:
+            self.viewer.layers.selection.active = self._features_layer
+            self._features_layer.mode = "select"
+            self.pushButton_enable_labelling.setText("Enable Labelling")
+            self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
+
+    def save_data(self, fname: str):
         
         # get the updated mask
         self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
         
         # save current data
-        det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=None)
+        det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=fname)
     
 
     def confirm_button_clicked(self, reset_camera=False):
+    
+        # log the difference between initial and final detections
+        try:
+            fname = self.det.fibsem_image.metadata.image_settings.label
+            beam_type = self.det.fibsem_image.metadata.image_settings.beam_type
+        except:
+            fname = f"ml-{utils.current_timestamp_v2()}"
+            beam_type = "NULL"
         
+
         # save current data
         try:
-            self.save_data()
+            self.save_data(fname=fname)
         except Exception as e:
             logging.error(f"Error saving data: {e}")
-    
+
+
+        for f0, f1 in zip(self.det.features, self._intial_det.features):
+            px_diff = f1.px - f0.px
+            # FEATURE_NAME | PIXEL DIFFERENCE | METRE_DIFFERENCE | IS_CORRECT | BEAM_TYPE | FILENAME | PX
+            # logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)} | {self.det.fibsem_image.metadata.image_settings.beam_type} | {fname}")
+            logging.info(f"{f0.name} | {px_diff.__to_dict__()} | {px_diff._to_metres(self.det.pixelsize).__to_dict__()}| {not np.any(px_diff)} | {beam_type} | {fname} | {f0.px.__to_dict__()}")
 
         # remove det layers
         if self._image_layer is not None:
@@ -102,6 +171,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
 
     def set_detected_features(self, det_features: DetectedFeatures):
         self.det = det_features
+        self._intial_det = deepcopy(det_features)
         self._USER_CORRECTED = False
 
         self.update_features_ui()
@@ -190,7 +260,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             return
 
     def update_point(self, event):
-        logging.info(f"{event.source.name} changed its data!")
+        logging.debug(f"{event.source.name} changed its data!")
 
         layer = self.viewer.layers[f"{event.source.name}"]  # type: ignore
 
@@ -223,7 +293,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
     def _set_model(self, model: fibsem_model.SegmentationModel):
         self.model = model
         # update model info
-        self.label_model.setText(f"Model: {self.model.model.name}, Checkpont: {self.model.checkpoint}")
+        self.label_model.setText(f"Model: {self.model.model.name} \nCheckpont: {os.path.basename(self.model.checkpoint)}")
 
     def _get_detected_features(self):
 
@@ -244,7 +314,7 @@ from fibsem import acquire
 
 def main():
     # load model
-    checkpoint = str(CHECKPOINT_PATH)
+    checkpoint = "openfibsem-baseline-34.pt"
     encoder="resnet34"
     num_classes = 3
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)

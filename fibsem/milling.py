@@ -72,7 +72,7 @@ def finish_milling(
 
     """
     # restore imaging current
-    logging.info(f"Changing to Imaging Settings")
+    logging.info(f"Changing to Imaging Current: {imaging_current:.2e}")
     microscope.finish_milling(imaging_current)
     logging.info("Finished Ion Beam Milling.")
 
@@ -338,10 +338,6 @@ def mill_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings, stage
     for pattern in stage.pattern.patterns:
         draw_pattern(microscope, pattern)
 
-    # run milling
-    # if drift_correction:
-    #     run_milling_drift_corrected(microscope, mill_settings.milling_current, image_settings, ref_image, reduced_area)
-    # else:
     run_milling(microscope, stage.milling.milling_current, asynch)
 
     # finish milling
