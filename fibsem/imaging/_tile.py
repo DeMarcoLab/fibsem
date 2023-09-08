@@ -225,6 +225,19 @@ def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition]
     points = []
     for pos in positions:
 
+
+        # hotfix (pat): demo returns None positions #240
+        if image.metadata.microscope_state.absolute_position.x is None:
+            image.metadata.microscope_state.absolute_position.x = 0
+        if image.metadata.microscope_state.absolute_position.y is None:
+            image.metadata.microscope_state.absolute_position.y = 0
+        if image.metadata.microscope_state.absolute_position.z is None:
+            image.metadata.microscope_state.absolute_position.z = 0
+        if image.metadata.microscope_state.absolute_position.r is None:
+            image.metadata.microscope_state.absolute_position.r = 0
+        if image.metadata.microscope_state.absolute_position.t is None:
+            image.metadata.microscope_state.absolute_position.t = 0      
+                
         # automate logic for transforming positions
         # assume only two valid positions are when stage is flat to either beam...  
         # r needs to be 180 degrees different
