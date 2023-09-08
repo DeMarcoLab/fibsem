@@ -30,8 +30,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     viewer_update_signal = pyqtSignal()
     image_notification_signal = pyqtSignal(str)
     live_imaging_signal = pyqtSignal(dict)
-    live_imaging_stop_signal = pyqtSignal()
-    start_live_signal = pyqtSignal()
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -57,6 +55,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
         self.TAKING_IMAGES = False
+        self._LIVE_IMAGING = False
 
         self.setup_connections()
 
@@ -171,7 +170,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         while event.type == 'mouse_move':
 
-
             if self._features_layer.selected_data is not None:
                 data = self._features_layer.data
 
@@ -203,13 +201,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 self.ion_ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
                 self.viewer.layers.selection.active = self._features_layer
                 self.viewer.layers['ruler_line'].refresh()
-
-                
+   
                 dragged = True
                 yield
-            
-
-
 
     def update_labels(self):
         self.detector_contrast_label.setText(f"{self.detector_contrast_slider.value()}%")
@@ -337,8 +331,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.lineEdit_image_path.setVisible(self.checkBox_image_save_image.isChecked())
         self.label_image_label.setVisible(self.checkBox_image_save_image.isChecked())
         self.lineEdit_image_label.setVisible(self.checkBox_image_save_image.isChecked())
-        
-  
+          
     def update_detector_ui(self):
         beam_type = BeamType[self.selected_beam.currentText()]
         # if beam_type is BeamType.ELECTRON:
@@ -373,7 +366,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_all_images.setEnabled(False)
             self.pushButton_take_image.setEnabled(False)
             self.pushButton_live_imaging.setText("Stop live imaging")
-            
+            self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(False)
+            self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked(False)
             self.pushButton_live_imaging.setStyleSheet("background-color: orange")
             
             self.stop_event.clear()
@@ -392,12 +386,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             import time
             time.sleep(1)
             worker.start()  
-            self.live_imaging = True
-            self.start_live_signal.emit()
+            self._LIVE_IMAGING = True
             
         else:
-            self.live_imaging = False
-            self.live_imaging_stop_signal.emit()
+            self._LIVE_IMAGING = False
             self.stop_event.set()
             self.pushButton_live_imaging.setStyleSheet("""
                     QPushButton {
@@ -409,6 +401,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                     }
                     QPushButton:pressed { """
                 )
+            self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(False)
+            self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked(False)
+
 
     def update_live_finished(self):
         self.pushButton_live_imaging.setText("Live imaging")
