@@ -1,7 +1,7 @@
 import napari
 
 import logging
-
+from copy import deepcopy
 from scipy.ndimage import median_filter
 
 from fibsem import acquire, constants
@@ -444,6 +444,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.update_viewer(self.ib_image.data, BeamType.ION.name)
         if self.eb_image is not None:
             self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
+
         self._toggle_interactions(True)
         self.TAKING_IMAGES = False
 
@@ -488,7 +489,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if beam_type is not None:
             self.image_settings.beam_type = beam_type
 
-        arr =  acquire.new_image(self.microscope, self.image_settings)
+        arr =  acquire.new_image(self.microscope, deepcopy(self.image_settings))
         name = f"{self.image_settings.beam_type.name}"
 
         if self.image_settings.beam_type == BeamType.ELECTRON:
@@ -511,7 +512,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self._toggle_interactions(enable=False,imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
         self.image_notification_signal.emit("Taking Reference Images...")
-        self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
+        self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, deepcopy(self.image_settings))
 
         self.picture_signal.emit()
         log_status_message("REFERENCE_IMAGES_TAKEN")

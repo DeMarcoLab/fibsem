@@ -153,6 +153,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def run_moving_finished(self):
         self._toggle_interactions(True)
         if self.parent.image_widget._LIVE_IMAGING:
+            time.sleep(1)
             self.parent.image_widget.live_imaging()
 
     def update_moving_ui(self, msg: str):
