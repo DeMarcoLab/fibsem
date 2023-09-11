@@ -443,12 +443,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         worker = self.take_reference_images_worker()
         worker.finished.connect(self.imaging_finished)
         worker.start()
+        print("started thread")
 
     @thread_worker
     def take_reference_images_worker(self):
         self._toggle_interactions(enable=False,imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
         self.image_notification_signal.emit("Taking Reference Images...")
+        print("Taking reference images...")
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
         self.picture_signal.emit()

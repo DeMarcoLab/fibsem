@@ -372,24 +372,16 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # disable taking images after movement here
         if self.checkBox_movement_acquire_electron.isChecked() and self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_reference_images()
-            while self.image_widget.TAKING_IMAGES:
-                # logging.info(f"TAKING_IMAGES: {self.image_widget.TAKING_IMAGES}")
-                time.sleep(0.2)
-            self.update_ui()
             return
         if self.checkBox_movement_acquire_electron.isChecked():
             self.image_widget.take_image(BeamType.ELECTRON)
-        while self.image_widget.TAKING_IMAGES:
-                time.sleep(0.2)
-        if self.checkBox_movement_acquire_ion.isChecked():
+        elif self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_image(BeamType.ION)
-        while self.image_widget.TAKING_IMAGES:
-                time.sleep(0.2)    
-        self.update_ui()
+        else: 
+            self.update_ui()
     
     def _stage_position_moved(self, pos: FibsemStagePosition):
-        # self.update_ui_after_movement()
-        self.update_ui() # TODO: fix taking images after movement
+        self.update_ui_after_movement()
 
     def move_flat_to_beam(self):
         beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON

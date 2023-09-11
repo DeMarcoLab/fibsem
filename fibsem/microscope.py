@@ -34,6 +34,8 @@ except:
     logging.debug("Automation (TESCAN) not installed.")
 
 try:
+    sys.path.append('C:\Program Files\Thermo Scientific AutoScript')
+    sys.path.append('C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
@@ -512,7 +514,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_view(image_settings.beam_type.value)
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
         image = self.connection.imaging.grab_frame(frame_settings)
-
+        print("image metadata right after grab_frame: ", image.metadata)
         if image_settings.reduced_area is not None:
             if image_settings.beam_type == BeamType.ELECTRON:
                 self.connection.beams.electron_beam.scanning.mode.set_full_frame()

@@ -21,13 +21,12 @@ except:
     TESCAN = False
 
 try:
+    sys.path.append('C:\Program Files\Thermo Scientific AutoScript')
+    sys.path.append('C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage, ManipulatorPosition, Rectangle, StagePosition)
-    from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
 
     THERMO = True
 except:
@@ -1739,7 +1738,8 @@ class FibsemImage:
             Returns:
                 FibsemImage: instance of FibsemImage from AdornedImage
             """
-
+            print("Creating FibsemImage from AdornedImage")
+            print("Adorned Image Metadata: ", adorned.metadata)
             if state is None:
                 state = MicroscopeState(
                     timestamp=adorned.metadata.acquisition.acquisition_datetime,
