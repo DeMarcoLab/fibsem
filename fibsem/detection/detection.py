@@ -140,6 +140,7 @@ class LandingPost(Feature):
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
         self.px = detect_landing_post_v4(mask, point)
+        # self.px = detect_landing_post_v3(img, landing_pt=None)
         return self.px
 
 
