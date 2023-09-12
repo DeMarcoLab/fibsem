@@ -2803,7 +2803,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ELECTRON,
                 working_distance=float(image.Header["SEM"]["WD"]),
                 beam_current=float(image.Header["SEM"]["PredictedBeamCurrent"]),
-                voltage=float(self.connection.FIB.Beam.GetVoltage()),
+                voltage=float(self.connection.SEM.Beam.GetVoltage()),
                 resolution=[imageWidth, imageHeight], #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["SEM"]["DwellTime"]),
                 stigmation=Point(
