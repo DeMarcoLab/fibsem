@@ -38,6 +38,7 @@ def log_status_message(step: str):
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     move_signal = QtCore.pyqtSignal()
     movement_notification_signal = QtCore.pyqtSignal(str)
+    positions_signal = QtCore.pyqtSignal(list)
 
     def __init__(
         self,
@@ -152,6 +153,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def run_moving_finished(self):
         self._toggle_interactions(True)
+        self.move_signal.emit()
 
     def update_moving_ui(self, msg: str):
         logging.info(msg)
@@ -265,6 +267,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_positions.setCurrentIndex(self.comboBox_positions.count() - 1)
         self.lineEdit_position_name.setText("")
         logging.info(f"Added position {position.name}")
+        self.positions_signal.emit(self.positions)
         self.minimap()
 
     def delete_position(self):
@@ -272,6 +275,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         name = self.comboBox_positions.currentText()
         self.comboBox_positions.removeItem(self.comboBox_positions.currentIndex())
         logging.info(f"Removed position {name}")
+        self.positions_signal.emit(self.positions)
         self.minimap()
 
     def update_saved_position(self):
@@ -280,6 +284,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.positions[self.comboBox_positions.currentIndex()] = position
         self.select_position()
         logging.info(f"Updated position {self.comboBox_positions.currentText()}")
+        self.positions_signal.emit(self.positions)
         self.minimap()
 
     def go_to_saved_position(self, pos:FibsemStagePosition = None):
@@ -319,6 +324,13 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         logging.info("Positions saved to file")
 
+
+    def minimap_window_positions(self,positions):
+
+        self.positions = positions
+        self.comboBox_positions.clear()
+        for position in positions:
+            self.comboBox_positions.addItem(position.name)
 
     def import_positions(self, path: str = None):
         if not isinstance(path, str):
