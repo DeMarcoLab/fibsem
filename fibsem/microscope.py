@@ -34,9 +34,17 @@ except:
     logging.debug("Automation (TESCAN) not installed.")
 
 try:
+    sys.path.append('C:\Program Files\Thermo Scientific AutoScript')
+    sys.path.append('C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
+    import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
+    version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
+    VERSION = float(version[:3])
+    if VERSION < 4.6:
+        raise NameError("Please update your AutoScript version to 4.6 or higher.")
+    
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
@@ -48,8 +56,10 @@ try:
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 
     from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
-except:
+except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
+    if isinstance(e, NameError):
+        raise e 
 
 import sys
 
@@ -1102,7 +1112,8 @@ class ThermoMicroscope(FibsemMicroscope):
          
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
-
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         insert_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         needle = self.connection.specimen.manipulator
         insert_position = needle.get_saved_position(
@@ -1116,6 +1127,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # retract multichem
         # retract_multichem(microscope) # TODO:?
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         if self.hardware_settings.manipulator_enabled is False:
             raise NotImplementedError("Manipulator not enabled.")
         # Retract the needle, preserving the correct parking postiion
@@ -1279,6 +1292,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         position = self.connection.specimen.manipulator.get_saved_position(
