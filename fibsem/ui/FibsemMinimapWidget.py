@@ -364,8 +364,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         logging.info(f"Removing position...")
         _position = self.positions[self.comboBox_tile_position.currentIndex()]
         self.positions.remove(_position)
+        self._minimap_positions.emit(self.positions)
         self._update_position_info()
         self._update_viewer()
+        
 
 
     def _move_position_pressed(self):
