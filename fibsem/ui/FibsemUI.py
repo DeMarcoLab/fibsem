@@ -16,6 +16,7 @@ from PyQt5 import QtWidgets
 from fibsem import config as cfg
 
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtCore import pyqtSignal
 from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
 from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
@@ -23,6 +24,7 @@ from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.utils import message_box_ui
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
+    _minimap_signal = pyqtSignal(object)
 
     def __init__(self, viewer: napari.Viewer):
         super(FibsemUI, self).__init__()
@@ -75,14 +77,11 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def minimap_connection(self,positions=None):
 
-        if positions is None:
-            self.minimap_widget._update_position_info()
-            self.minimap_widget._update_viewer()
+        if self.minimap_widget is None:
+            return
+        else:
+            self._minimap_signal.emit(positions)
 
-        elif self.minimap_widget is not None:
-            self.minimap_widget.positions = positions
-            self.minimap_widget._update_position_info()
-            self.minimap_widget._update_viewer()
 
 
 

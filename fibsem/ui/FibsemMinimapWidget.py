@@ -43,6 +43,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.microscope = microscope
         self.settings = settings
 
+        self.parent = parent
+
         self.viewer = viewer
 
         self.image = None
@@ -79,6 +81,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
         self._update_tile_collection.connect(self._update_tile_collection_callback)
+        self.parent._minimap_signal.connect(self.update_positions_from_parent)
 
 
         # pattern overlay
@@ -105,6 +108,15 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
 
         self.lineEdit_tile_path.setText(self.settings.image.save_path)
+
+
+    def update_positions_from_parent(self, positions):
+        
+        if positions is not None:
+            self.positions = positions
+            
+        self._update_position_info()
+        self._update_viewer()
 
 
     def run_tile_collection(self):
@@ -461,6 +473,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 self._reprojection_layer.text = text
 
             self._reprojection_layer.face_color= colors_rgba
+
 
             _SHOW_PATTERNS:bool = self.checkBox_pattern_overlay.isChecked()
             if _SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
