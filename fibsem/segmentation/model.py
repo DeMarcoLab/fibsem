@@ -17,7 +17,7 @@ class SegmentationModel:
     def __init__(
         self,
         checkpoint: str = None,
-        encoder: str = "resnet18",
+        encoder: str = "resnet34",
         mode: str = "eval",
         num_classes: int = 3,
     ) -> None:
@@ -105,7 +105,7 @@ class SegmentationModel:
 
 
 def load_model(
-    checkpoint: Path, encoder: str = "resnet18", nc: int = 3
+    checkpoint: Path, encoder: str = "resnet34", nc: int = 3
 ) -> SegmentationModel:
 
     # load model
