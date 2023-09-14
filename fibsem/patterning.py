@@ -72,6 +72,7 @@ REQUIRED_KEYS = {
     ),
     "Clover": ("radius", "depth"),
     "TriForce": ("height", "width", "depth"),
+    "Trapezoid": ("top_width", "bottom_width", "height", "depth", "distance", "n_rectangles", "overlap","scan_direction"),
 }
 
 
@@ -903,6 +904,44 @@ class TriForcePattern(BasePattern):
         return self.patterns
 
 
+@dataclass
+class TrapezoidPattern(BasePattern):
+    name: str = "Trapezoid"
+    required_keys: tuple[str] = REQUIRED_KEYS["Trapezoid"]
+    patterns = None
+    protocol = None
+    point = None
+
+    def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
+        check_keys(protocol, self.required_keys)
+        self.patterns = []
+        width_increments = (protocol["top_width"] - protocol["bottom_width"]) / (protocol["n_rectangles"])
+        dict = {}
+        dict["height"] = protocol["height"] / protocol["n_rectangles"]
+        dict["depth"] = protocol["depth"]
+        for i in range(int(protocol["n_rectangles"])+1):
+            dict["width"] = protocol["top_width"] + i * width_increments/2
+            pattern = RectanglePattern()
+            y = point.y + (i * dict["height"] * (1-protocol["overlap"])) - protocol["distance"] - protocol["height"]
+            centre = Point(point.x, y)
+            pattern = FibsemPatternSettings(
+                pattern=FibsemPattern.Rectangle,
+                width=dict["width"],
+                height=dict["height"],
+                depth=dict["depth"],
+                centre_x=centre.x,
+                centre_y=centre.y,
+                cleaning_cross_section=False,
+                scan_direction="TopToBottom",
+            )
+            self.patterns.append(deepcopy(pattern))
+        self.protocol = protocol
+        self.point = point
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+
 __PATTERNS__ = [
     RectanglePattern,
     LinePattern,
@@ -920,6 +959,7 @@ __PATTERNS__ = [
     TriForcePattern,
     BitmapPattern,
     AnnulusPattern,
+    TrapezoidPattern,
 ]
 
 
