@@ -525,6 +525,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         worker = self.take_reference_images_worker()
         worker.finished.connect(self.imaging_finished)
         worker.start()
+        print("started thread")
 
     @thread_worker
     def take_reference_images_worker(self):
