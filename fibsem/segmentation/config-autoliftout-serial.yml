@@ -1,6 +1,6 @@
 data_paths:  [/home/patrick/github/data/liftout/serial-liftout/data/train]
 label_paths: [/home/patrick/github/data/liftout/serial-liftout/data/train/labels] 
-save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/serial/base
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/serial/base/v3
 checkpoint: null
 encoder: "resnet34" 
 epochs: 30
