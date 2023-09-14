@@ -385,7 +385,23 @@ def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show
     metadata_lines += (f'{img.metadata.image_settings.resolution[0]} x {img.metadata.image_settings.resolution[1]}  |  ')
 
     desired_timezone = pytz.timezone(timezone)  
-    metadata_lines += (f"{datetime.datetime.fromtimestamp(img.metadata.microscope_state.timestamp, tz=desired_timezone).strftime('%Y-%m-%d %I:%M %p')}     ")
+    timestamp = img.metadata.microscope_state.timestamp
+
+    if isinstance(timestamp, str):
+        timestamp_format = "%m/%d/%Y %H:%M:%S"
+        timestamp = datetime.datetime.strptime(img.metadata.microscope_state.timestamp, timestamp_format)
+
+    if isinstance(timestamp, int):
+        timestamp_str = datetime.datetime.fromtimestamp(timestamp, tz=desired_timezone).strftime('%Y-%m-%d %I:%M %p')    
+    
+    if isinstance(timestamp, datetime.datetime):
+        timestamp_str = timestamp.astimezone(desired_timezone).strftime('%Y-%m-%d %I:%M %p')         
+
+    metadata_lines += (f"{timestamp_str}")
+
+    # add empty char to second line to fill up space
+    _line2 = metadata_lines.split("\n")[1]
+    metadata_lines += " " * (70 - len(_line2))
 
     metadata_rect = plt.text(
             0.01, 0.03, metadata_lines,
@@ -398,7 +414,11 @@ def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show
 
     metadata_rect.set_clip_box(dict(width=1.0))
     scale = (img.metadata.image_settings.hfw * constants.SI_TO_MICRO) / img.data.shape[1]
-    scalebar = ScaleBar(scale, "um") 
+    
+    # transparent background
+    scalebar = ScaleBar(scale, "um", 
+        color="black", box_color="white", box_alpha=0.3) 
+
     plt.gca().add_artist(scalebar)
 
     if show:
