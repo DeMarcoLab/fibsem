@@ -1738,8 +1738,6 @@ class FibsemImage:
             Returns:
                 FibsemImage: instance of FibsemImage from AdornedImage
             """
-            print("Creating FibsemImage from AdornedImage")
-            print("Adorned Image Metadata: ", adorned.metadata)
             if state is None:
                 state = MicroscopeState(
                     timestamp=adorned.metadata.acquisition.acquisition_datetime,
