@@ -28,6 +28,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     _stage_position_moved = pyqtSignal(FibsemStagePosition)
     _stage_position_added = pyqtSignal(FibsemStagePosition)
     _update_tile_collection = pyqtSignal(dict)
+    _minimap_positions = pyqtSignal(list)
     
     def __init__(
         self,
@@ -41,6 +42,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self.microscope = microscope
         self.settings = settings
+
+        self.parent = parent
 
         self.viewer = viewer
 
@@ -78,6 +81,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
         self._update_tile_collection.connect(self._update_tile_collection_callback)
+        self.parent._minimap_signal.connect(self.update_positions_from_parent)
 
 
         # pattern overlay
@@ -104,6 +108,15 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
 
         self.lineEdit_tile_path.setText(self.settings.image.save_path)
+
+
+    def update_positions_from_parent(self, positions):
+        
+        if positions is not None:
+            self.positions = positions
+            
+        self._update_position_info()
+        self._update_viewer()
 
 
     def run_tile_collection(self):
@@ -289,6 +302,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self._stage_position_added.emit(_new_position)
 
+        self._minimap_positions.emit(self.positions)
+
     def _on_double_click(self, layer, event):
         
         if event.button !=1:
@@ -302,6 +317,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             base_position=self.image.metadata.microscope_state.absolute_position)   
 
         self._move_to_position(_new_position)
+        self._minimap_positions.emit(self.positions)
 
     def _update_current_position_info(self):
 
@@ -348,8 +364,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         logging.info(f"Removing position...")
         _position = self.positions[self.comboBox_tile_position.currentIndex()]
         self.positions.remove(_position)
+        self._minimap_positions.emit(self.positions)
         self._update_position_info()
         self._update_viewer()
+        
 
 
     def _move_position_pressed(self):
@@ -380,7 +398,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         pdict = utils.load_yaml(path)
         
         positions = [FibsemStagePosition.__from_dict__(p) for p in pdict]
-        self.positions = self.positions + positions # append? or overwrite
+        # self.positions = self.positions + positions # append? or overwrite
+        # overwrite 
+        self.positions = positions
+        self._minimap_positions.emit(self.positions)
 
         self._update_position_info()
         self._update_viewer()
@@ -413,7 +434,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _draw_positions(self):
         
         logging.info(f"Drawing Reprojected Positions...")
-        current_position = self.microscope.get_stage_position()
+        current_position = deepcopy(self.microscope.get_stage_position())
         current_position.name = f"Current Position"
 
         if self.image:
@@ -426,11 +447,18 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 # reverse to list
                 data.append([pt.y, pt.x])
 
+            colors = ["lime"] * (len(drawn_positions)-1)
+            colors.append("red")
+
+            colors_rgba = [[0,1,0,1] for _ in range(len(drawn_positions)-1)]
+            colors_rgba.append([1,0,0,1])
+
             text = {
                 "string": [pos.name for pos in drawn_positions],
-                "color": "lime", # TODO: separate colour for current position
+                "color": colors, # TODO: separate colour for current position
                 "translation": np.array([-50, 0]),
             }
+
             if self._reprojection_layer is None:
             
                  self._reprojection_layer = self.viewer.add_points(
@@ -448,6 +476,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             else:
                 self._reprojection_layer.data = data
                 self._reprojection_layer.text = text
+
+            self._reprojection_layer.face_color= colors_rgba
+
 
             _SHOW_PATTERNS:bool = self.checkBox_pattern_overlay.isChecked()
             if _SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
