@@ -331,6 +331,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_positions.clear()
         for position in positions:
             self.comboBox_positions.addItem(position.name)
+        self.minimap()
 
     def import_positions(self, path: str = None):
         if not isinstance(path, str):
