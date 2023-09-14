@@ -353,3 +353,75 @@ def _get_positions(fname: str = None) -> list[str]:
     ddict = load_yaml(fname=fname)
 
     return [d["name"] for d in ddict]
+
+def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show: bool = True):
+    import pytz
+    from matplotlib_scalebar.scalebar import ScaleBar
+    import matplotlib.pyplot as plt
+    import fibsem.constants as constants
+    fig, ax = plt.subplots()
+
+    # Display the image
+    ax.imshow(img.data, cmap='gray')
+    image_height, image_width = img.data.shape
+    # Hide axis
+    ax.axis('off')
+    ax.set_xlim(0, image_width)  # Set the width of the image
+    ax.set_ylim(0, image_height)  # Set the height of the image
+    # Create a list to store metadata lines
+    if img.metadata.image_settings.beam_type == BeamType.ELECTRON:
+        metadata_lines = "Electron Beam \n"
+    else: 
+        metadata_lines = "Ion Beam \n"
+
+    # add metadata lines
+    if img.metadata.image_settings.beam_type == BeamType.ELECTRON and img.metadata.microscope_state.eb_settings.voltage is not None:
+        metadata_lines += f'{img.metadata.microscope_state.eb_settings.voltage * constants.SI_TO_KILO} kV  |  '
+    elif img.metadata.image_settings.beam_type == BeamType.ION and img.metadata.microscope_state.ib_settings.voltage is not None:
+        metadata_lines += f'{img.metadata.microscope_state.ib_settings.voltage * constants.SI_TO_KILO} kV  |  '
+    else:
+        metadata_lines += 'Voltage: Unknown  |  '
+    metadata_lines += (f'HFW: {img.metadata.image_settings.hfw * constants.SI_TO_MICRO} μm  | ')
+    metadata_lines += (f'{img.metadata.image_settings.resolution[0]} x {img.metadata.image_settings.resolution[1]}  |  ')
+
+    desired_timezone = pytz.timezone(timezone)  
+    timestamp = img.metadata.microscope_state.timestamp
+
+    if isinstance(timestamp, str):
+        timestamp_format = "%m/%d/%Y %H:%M:%S"
+        timestamp = datetime.datetime.strptime(img.metadata.microscope_state.timestamp, timestamp_format)
+
+    if isinstance(timestamp, int):
+        timestamp_str = datetime.datetime.fromtimestamp(timestamp, tz=desired_timezone).strftime('%Y-%m-%d %I:%M %p')    
+    
+    if isinstance(timestamp, datetime.datetime):
+        timestamp_str = timestamp.astimezone(desired_timezone).strftime('%Y-%m-%d %I:%M %p')         
+
+    metadata_lines += (f"{timestamp_str}")
+
+    # add empty char to second line to fill up space
+    _line2 = metadata_lines.split("\n")[1]
+    metadata_lines += " " * (70 - len(_line2))
+
+    metadata_rect = plt.text(
+            0.01, 0.03, metadata_lines,
+            transform=ax.transAxes,
+            fontsize=10,
+            color='white',
+            bbox=dict(facecolor='black', alpha=0.7),
+            ha='left',
+        )
+
+    metadata_rect.set_clip_box(dict(width=1.0))
+    scale = (img.metadata.image_settings.hfw * constants.SI_TO_MICRO) / img.data.shape[1]
+    
+    # transparent background
+    scalebar = ScaleBar(scale, "um", 
+        color="black", box_color="white", box_alpha=0.3) 
+
+    plt.gca().add_artist(scalebar)
+
+    if show:
+        plt.show()
+
+    return fig

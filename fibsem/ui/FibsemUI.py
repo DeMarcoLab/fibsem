@@ -1,20 +1,24 @@
-import logging
-import os
 import napari
+
+import logging
+
 import fibsem
-import napari.utils.notifications
-from fibsem import utils
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem import config as cfg
+from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
+                               MicroscopeSettings, TescanMicroscope,
+                               ThermoMicroscope)
+from fibsem.structures import BeamType
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
-from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
-from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
-from fibsem.ui.FibsemGISWidget import FibsemGISWidget
+from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
+from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
+from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
+from fibsem.ui.qtdesigner_files import FibsemUI
+from fibsem.ui.utils import message_box_ui
 
 from PyQt5 import QtWidgets
-from fibsem import config as cfg
-
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import pyqtSignal
 from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
@@ -22,6 +26,7 @@ from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.utils import message_box_ui
+
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     _minimap_signal = pyqtSignal(object)
@@ -59,7 +64,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def setup_connections(self):
-
+        from fibsem import utils
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)

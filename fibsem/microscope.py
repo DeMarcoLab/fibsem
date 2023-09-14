@@ -2,13 +2,8 @@ import copy
 import datetime
 import logging
 import sys
-import time
+from napari.qt.threading import thread_worker
 import os
-from abc import ABC, abstractmethod
-from copy import deepcopy
-from typing import Union
-
-import numpy as np
 
 # for easier usage
 import fibsem.constants as constants
@@ -34,9 +29,17 @@ except:
     logging.debug("Automation (TESCAN) not installed.")
 
 try:
+    sys.path.append('C:\Program Files\Thermo Scientific AutoScript')
+    sys.path.append('C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
+    import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
+    version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
+    VERSION = float(version[:3])
+    if VERSION < 4.6:
+        raise NameError("Please update your AutoScript version to 4.6 or higher.")
+    
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
@@ -48,8 +51,10 @@ try:
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 
     from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
-except:
+except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
+    if isinstance(e, NameError):
+        raise e 
 
 import sys
 
@@ -62,6 +67,14 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                MicroscopeState, Point, FibsemDetectorSettings,
                                ThermoGISLine,ThermoMultiChemLine, StageSettings)
 
+import threading
+import time
+from abc import ABC, abstractmethod
+from copy import deepcopy
+from queue import Queue
+from typing import Union
+import numpy as np
+    
 
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
@@ -81,7 +94,16 @@ class FibsemMicroscope(ABC):
     @abstractmethod
     def last_image(self, beam_type: BeamType) -> FibsemImage:
         pass
+    
+    @abstractmethod
+    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
+        pass
 
+    @abstractmethod
+    @thread_worker
+    def consume_image_queue(self, parent_ui = None, sleep: float = 0.1):
+        pass
+    
     @abstractmethod
     def autocontrast(self, beam_type: BeamType) -> None:
         pass
@@ -409,8 +431,8 @@ class ThermoMicroscope(FibsemMicroscope):
     def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings =None,):
         self.connection = SdbMicroscopeClient()
         import fibsem
-        from fibsem.utils import load_protocol
         import fibsem.config as cfg
+        from fibsem.utils import load_protocol
         if hardware_settings is None:
             dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
             self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
@@ -512,7 +534,6 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_view(image_settings.beam_type.value)
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
         image = self.connection.imaging.grab_frame(frame_settings)
-
         if image_settings.reduced_area is not None:
             if image_settings.beam_type == BeamType.ELECTRON:
                 self.connection.beams.electron_beam.scanning.mode.set_full_frame()
@@ -574,6 +595,48 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state, detector = detector) 
 
         return fibsem_image
+
+    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
+            self.image_queue = image_queue
+            self.stop_event = stop_event
+            _check_beam(image_settings.beam_type, self.hardware_settings)
+            logging.info(f"Live imaging: {image_settings.beam_type}")
+            while not self.stop_event.is_set():
+                image = self.acquire_image(deepcopy(image_settings))
+                image_queue.put(image)
+
+
+
+    @thread_worker
+    def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+
+        logging.info("Consuming image queue")
+
+        while not self.stop_event.is_set():
+            try:
+                time.sleep(sleep)
+                if not self.image_queue.empty():
+                    image = self.image_queue.get(timeout=1)
+                    if image.metadata.image_settings.save:
+                        image.metadata.image_settings.label = f"{image.metadata.image_settings.label}_{utils.current_timestamp()}"
+                        filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
+                        image.save(save_path=filename)
+                        logging.info(f"Saved image to {filename}")
+
+                    logging.info(f"Image: {image.data.shape}")
+                    logging.info(f"-" * 50)
+
+                    if parent_ui is not None:
+                            parent_ui.live_imaging_signal.emit({"image": image})
+
+
+            except KeyboardInterrupt:
+                self.stop_event
+                logging.info("Keyboard interrupt, stopping live imaging")
+            except Exception as e:
+                self.stop_event.set()
+                import traceback
+                logging.error(traceback.format_exc())
 
     def autocontrast(self, beam_type=BeamType.ELECTRON) -> None:
         """
@@ -1102,7 +1165,8 @@ class ThermoMicroscope(FibsemMicroscope):
          
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
-
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         insert_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         needle = self.connection.specimen.manipulator
         insert_position = needle.get_saved_position(
@@ -1116,6 +1180,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # retract multichem
         # retract_multichem(microscope) # TODO:?
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         if self.hardware_settings.manipulator_enabled is False:
             raise NotImplementedError("Manipulator not enabled.")
         # Retract the needle, preserving the correct parking postiion
@@ -1279,6 +1345,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         position = self.connection.specimen.manipulator.get_saved_position(
@@ -2803,6 +2871,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ELECTRON,
                 working_distance=float(image.Header["SEM"]["WD"]),
                 beam_current=float(image.Header["SEM"]["PredictedBeamCurrent"]),
+                voltage=float(self.connection.SEM.Beam.GetVoltage()),
                 resolution=[imageWidth, imageHeight], #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["SEM"]["DwellTime"]),
                 stigmation=Point(
@@ -2910,6 +2979,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ION,
                 working_distance=float(image.Header["FIB"]["WD"]),
                 beam_current=float(self.connection.FIB.Beam.ReadProbeCurrent()),
+                voltage = float(self.connection.FIB.Beam.GetVoltage()),
                 resolution=[imageWidth, imageHeight], #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["FIB"]["DwellTime"]),
                 stigmation=Point(
@@ -2965,6 +3035,48 @@ class TescanMicroscope(FibsemMicroscope):
         presets = self.connection.FIB.Preset.Enum()	
         return presets
 
+    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
+        self.image_queue = image_queue
+        self.stop_event = stop_event
+        _check_beam(image_settings.beam_type, self.hardware_settings)
+        logging.info(f"Live imaging: {image_settings.beam_type}")
+        while not self.stop_event.is_set():
+            image = self.acquire_image(deepcopy(image_settings))
+            image_queue.put(image)
+
+
+
+    @thread_worker
+    def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+
+        logging.info("Consuming image queue")
+
+        while not self.stop_event.is_set():
+            try:
+                time.sleep(sleep)
+                if not self.image_queue.empty():
+                    image = self.image_queue.get(timeout=1)
+                    if image.metadata.image_settings.save:
+                        image.metadata.image_settings.label = f"{image.metadata.image_settings.label}_{utils.current_timestamp()}"                        
+                        filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
+                        image.save(save_path=filename)
+                        logging.info(f"Saved image to {filename}")
+
+                    logging.info(f"Image: {image.data.shape}")
+                    logging.info(f"-" * 50)
+
+                    if parent_ui is not None:
+                            parent_ui.live_imaging_signal.emit({"image": image})
+
+
+            except KeyboardInterrupt:
+                self.stop_event
+                logging.info("Keyboard interrupt, stopping live imaging")
+            except Exception as e:
+                self.stop_event.set()
+                import traceback
+                logging.error(traceback.format_exc())
+        
     def autocontrast(self, beam_type: BeamType) -> None:
         """Automatically adjust the microscope image contrast for the specified beam type.
 
@@ -3137,8 +3249,26 @@ class TescanMicroscope(FibsemMicroscope):
         self.move_stage_absolute(stage_position)
     
     def _calculate_new_position(self, settings: MicroscopeSettings, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
+        if beam_type == BeamType.ELECTRON:
+            image_rotation = self.connection.SEM.Optics.GetImageRotation()
+        else:
+            image_rotation = self.connection.FIB.Optics.GetImageRotation()
 
-        return base_position # TODO: implement
+        if np.isnan(image_rotation):
+            image_rotation = 0.0
+
+        dx =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
+        dy = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
+        point_yz = self._y_corrected_stage_movement(settings, dy, beam_type)
+        dy, dz = point_yz.y, point_yz.z
+
+        # calculate the corrected move to reach that point from base-state?
+        _new_position = deepcopy(base_position)
+        _new_position.x += dx
+        _new_position.y += dy
+        _new_position.z += dz
+
+        return _new_position # TODO: implement
 
     def move_stage_absolute(self, position: FibsemStagePosition):
         """
@@ -4836,6 +4966,47 @@ class DemoMicroscope(FibsemMicroscope):
         _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Getting last image: {beam_type}")
         return self._eb_image if beam_type is BeamType.ELECTRON else self._ib_image
+    
+    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
+        self.image_queue = image_queue
+        self.stop_event = stop_event
+        _check_beam(image_settings.beam_type, self.hardware_settings)
+        logging.info(f"Live imaging: {image_settings.beam_type}")
+        while not stop_event.is_set():
+            image = self.acquire_image(image_settings)
+            image_queue.put(image)
+            self.sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
+            time.sleep(self.sleep_time)
+
+    @thread_worker
+    def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+
+        logging.info("Consuming image queue")
+
+        try:
+            while not self.stop_event.is_set():
+                image = self.image_queue.get(timeout=1)
+                if image.metadata.image_settings.save:
+                    image.metadata.image_settings.label = f"{image.metadata.image_settings.label}_{utils.current_timestamp()}"
+                    filename = os.path.join(image.metadata.image_settings.save_path, image.metadata.image_settings.label)
+                    image.save(save_path=filename)
+                    logging.info(f"Saved image to {filename}")
+
+                logging.info(f"Image: {image.data.shape}")
+                logging.info(f"-" * 50)
+
+                if parent_ui is not None:
+                        parent_ui.live_imaging_signal.emit({"image": image})
+                time.sleep(sleep)
+        except KeyboardInterrupt:
+            self.stop_event
+            logging.info("Keyboard interrupt, stopping live imaging")
+        except Exception as e:
+            self.stop_event.set()
+            import traceback
+            logging.error(traceback.format_exc())
+        finally:
+            logging.info("Stopped thread image consumption")
     
     def autocontrast(self, beam_type: BeamType) -> None:
         _check_beam(beam_type, self.hardware_settings)

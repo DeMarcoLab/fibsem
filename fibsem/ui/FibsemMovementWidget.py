@@ -152,8 +152,12 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui_after_movement()
 
     def run_moving_finished(self):
+        if self.parent.image_widget.TAKING_IMAGES:
+            return
         self._toggle_interactions(True)
-        self.move_signal.emit()
+        if self.parent.image_widget._LIVE_IMAGING:
+            self.parent.image_widget.live_imaging()
+
 
     def update_moving_ui(self, msg: str):
         logging.info(msg)
@@ -193,6 +197,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         worker = self._double_click_worker(layer, event)
         worker.finished.connect(self.run_moving_finished)
         # worker.yielded.connect(self.update_moving_ui)
+        if self.parent.image_widget._LIVE_IMAGING:
+            self.parent.image_widget.stop_event.set()
         worker.start()
 
     @thread_worker
@@ -245,7 +251,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 dy=point.y,
                 beam_type=beam_type,
             )
-        self.movement_notification_signal.emit("Move finished, taking new images")
+        self.movement_notification_signal.emit("Move finished, updating UI")
         self.update_ui_after_movement()
 
     def select_position(self):
@@ -386,24 +392,16 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # disable taking images after movement here
         if self.checkBox_movement_acquire_electron.isChecked() and self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_reference_images()
-            while self.image_widget.TAKING_IMAGES:
-                # logging.info(f"TAKING_IMAGES: {self.image_widget.TAKING_IMAGES}")
-                time.sleep(0.2)
-            self.update_ui()
             return
         if self.checkBox_movement_acquire_electron.isChecked():
             self.image_widget.take_image(BeamType.ELECTRON)
-        while self.image_widget.TAKING_IMAGES:
-                time.sleep(0.2)
-        if self.checkBox_movement_acquire_ion.isChecked():
+        elif self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_image(BeamType.ION)
-        while self.image_widget.TAKING_IMAGES:
-                time.sleep(0.2)    
-        self.update_ui()
+        else: 
+            self.update_ui()
     
     def _stage_position_moved(self, pos: FibsemStagePosition):
-        # self.update_ui_after_movement()
-        self.update_ui() # TODO: fix taking images after movement
+        self.update_ui_after_movement()
 
     def move_flat_to_beam(self):
         beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON
