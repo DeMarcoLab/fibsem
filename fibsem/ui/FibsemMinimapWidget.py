@@ -13,7 +13,7 @@ from fibsem import patterning
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 from fibsem.imaging import _tile
-from scipy.ndimage import median_filter
+from scipy.ndimage import median_filter,rotate
 
 from copy import deepcopy
 
@@ -75,6 +75,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
 
+        
+
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
         self._update_tile_collection.connect(self._update_tile_collection_callback)
@@ -104,6 +106,29 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
 
         self.lineEdit_tile_path.setText(self.settings.image.save_path)
+
+        # gridbar
+
+        self.checkBox_gridbar.stateChanged.connect(self._gridbar_set)
+        self.doubleSpinBox_gb_width.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_spacing.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_x.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_y.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_r.valueChanged.connect(self._update_gridbar)
+
+        self.doubleSpinBox_gb_width.setVisible(False)
+        self.doubleSpinBox_gb_spacing.setVisible(False)
+        self.doubleSpinBox_gb_x.setVisible(False)
+        self.doubleSpinBox_gb_y.setVisible(False)
+        self.doubleSpinBox_gb_r.setVisible(False)
+
+        self.gb_r.setVisible(False)
+        self.gb_spacing.setVisible(False)
+        self.gb_width.setVisible(False)
+        self.gb_x.setVisible(False)
+        self.gb_y.setVisible(False)
+
+
 
 
     def run_tile_collection(self):
@@ -141,6 +166,110 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         worker.finished.connect(self._tile_collection_finished)
         worker.start()
+
+
+    def _gridbar_set(self):
+
+        if self.checkBox_gridbar.isChecked():
+
+            self.doubleSpinBox_gb_width.setVisible(True)
+            self.doubleSpinBox_gb_spacing.setVisible(True)
+            self.doubleSpinBox_gb_x.setVisible(True)
+            self.doubleSpinBox_gb_y.setVisible(True)
+            self.doubleSpinBox_gb_r.setVisible(True)
+
+            self.gb_r.setVisible(True)
+            self.gb_spacing.setVisible(True)
+            self.gb_width.setVisible(True)
+            self.gb_x.setVisible(True)
+            self.gb_y.setVisible(True)
+
+            self.doubleSpinBox_gb_width.setValue(90)
+            self.doubleSpinBox_gb_spacing.setValue(400)
+
+            grid_shape = self.image.data.shape
+            arr = np.zeros(shape=grid_shape, dtype=np.uint8)
+
+
+            # create grid, grid bars thickness = 10px
+            BAR_THICKNESS_PX = 90
+            BAR_SPACING_PX = 400
+            for i in range(0, arr.shape[0], BAR_SPACING_PX ):
+                arr[i:i+BAR_THICKNESS_PX, :] = 255
+                arr[:, i:i+BAR_THICKNESS_PX] = 255
+
+            
+
+            self.viewer.add_image(arr, name="grid-bar", colormap="yellow", blending="additive",opacity=0.15,translate=(0,0))
+            image_layer = self.viewer.layers["overview-image"]
+            self.viewer.layers.selection.active = image_layer
+
+
+
+        else:
+
+            self.doubleSpinBox_gb_width.setVisible(False)
+            self.doubleSpinBox_gb_spacing.setVisible(False)
+            self.doubleSpinBox_gb_x.setVisible(False)
+            self.doubleSpinBox_gb_y.setVisible(False)
+            self.doubleSpinBox_gb_r.setVisible(False)
+
+            self.gb_r.setVisible(False)
+            self.gb_spacing.setVisible(False)
+            self.gb_width.setVisible(False)
+            self.gb_x.setVisible(False)
+            self.gb_y.setVisible(False)
+
+            self.viewer.layers.remove("grid-bar")
+
+
+
+    def _update_gridbar(self):
+
+        BAR_THICKNESS_PX = int(self.doubleSpinBox_gb_width.value())
+        BAR_SPACING_PX = int(self.doubleSpinBox_gb_spacing.value())
+
+
+        if self.sender() == self.doubleSpinBox_gb_width or self.sender() == self.doubleSpinBox_gb_spacing:
+
+            grid_shape = self.image.data.shape
+            arr = np.zeros(shape=grid_shape, dtype=np.uint8)
+            for i in range(0, arr.shape[0], BAR_SPACING_PX ):
+                arr[i:i+BAR_THICKNESS_PX, :] = 255
+                arr[:, i:i+BAR_THICKNESS_PX] = 255
+            self.viewer.layers["grid-bar"].data = arr
+
+        
+
+        else:
+
+            print("rotate")
+
+            angle = np.deg2rad(self.doubleSpinBox_gb_r.value())
+
+            rows = self.image.data.shape[0]*0.5 
+            cols = self.image.data.shape[1]*0.5
+
+            # the proof is marvelous but i dont have enough space in the comments
+
+            new_x = int(np.cos(angle) * rows - np.sin(angle) * cols) 
+            new_y =  int(np.sin(angle) * rows + np.cos(angle) * cols) 
+
+            tx = new_x -rows 
+            ty = new_y -cols 
+
+            translate = (-self.doubleSpinBox_gb_y.value()-tx, self.doubleSpinBox_gb_x.value()-ty)
+
+            print(f'tx {tx}, ty {ty}  translate {translate}')
+
+            self.viewer.layers["grid-bar"].rotate = self.doubleSpinBox_gb_r.value()
+            self.viewer.layers["grid-bar"].translate = translate
+            
+
+
+
+        
+
 
     def _tile_collection_finished(self):
 
