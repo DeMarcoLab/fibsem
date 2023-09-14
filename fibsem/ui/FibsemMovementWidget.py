@@ -152,6 +152,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def run_moving_finished(self):
         self._toggle_interactions(True)
+        if self.parent.image_widget._LIVE_IMAGING:
+            self.parent.image_widget.live_imaging()
 
     def update_moving_ui(self, msg: str):
         logging.info(msg)
@@ -191,6 +193,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         worker = self._double_click_worker(layer, event)
         worker.finished.connect(self.run_moving_finished)
         # worker.yielded.connect(self.update_moving_ui)
+        if self.parent.image_widget._LIVE_IMAGING:
+            self.parent.image_widget.stop_event.set()
         worker.start()
 
     @thread_worker
@@ -243,7 +247,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 dy=point.y,
                 beam_type=beam_type,
             )
-        self.movement_notification_signal.emit("Move finished, taking new images")
+        self.movement_notification_signal.emit("Move finished, updating UI")
         self.update_ui_after_movement()
 
     def select_position(self):
