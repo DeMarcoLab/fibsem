@@ -38,7 +38,7 @@ def log_status_message(step: str):
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     move_signal = QtCore.pyqtSignal()
     movement_notification_signal = QtCore.pyqtSignal(str)
-    positions_signal = QtCore.pyqtSignal(list)
+    positions_signal = QtCore.pyqtSignal(object)
 
     def __init__(
         self,
@@ -347,6 +347,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
         self.minimap()
+        self.positions_signal.emit(self.positions)
 
     def load_image(self):
 
