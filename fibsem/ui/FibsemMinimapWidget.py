@@ -398,7 +398,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         pdict = utils.load_yaml(path)
         
         positions = [FibsemStagePosition.__from_dict__(p) for p in pdict]
-        self.positions = self.positions + positions # append? or overwrite
+        # self.positions = self.positions + positions # append? or overwrite
+        # overwrite 
+        self.positions = positions
+        self._minimap_positions.emit(self.positions)
 
         self._update_position_info()
         self._update_viewer()
