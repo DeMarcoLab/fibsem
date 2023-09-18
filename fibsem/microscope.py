@@ -814,6 +814,10 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             ib_settings=None
 
+        eb_detector = self.get_detector_settings(beam_type=BeamType.ELECTRON)
+        ib_detector = self.get_detector_settings(beam_type=BeamType.ION)
+
+
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
@@ -822,6 +826,10 @@ class ThermoMicroscope(FibsemMicroscope):
             eb_settings=eb_settings,
             # ion beam settings
             ib_settings=ib_settings,
+            # electron beam detector settings
+            eb_detector=eb_detector,
+            # ion beam detector settings
+            ib_detector=ib_detector,
         )
 
         logging.debug(f"CURRENT_MICROSCOPE_STATE | {current_microscope_state.__to_dict__()}")
@@ -3277,6 +3285,10 @@ class TescanMicroscope(FibsemMicroscope):
                 ib_settings = BeamSettings(BeamType.ION)
         else:
             ib_settings = BeamSettings(BeamType.ION)
+    
+        eb_detector = self.get_detector_settings(BeamType.ELECTRON)
+        ib_detector = self.get_detector_settings(BeamType.ION)
+
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
@@ -3285,6 +3297,10 @@ class TescanMicroscope(FibsemMicroscope):
             eb_settings=eb_settings,
             # ion beam settings
             ib_settings=ib_settings,
+            # electron detector settings
+            eb_detector=eb_detector,
+            # ion detector settings
+            ib_detector=ib_detector,
         )
 
         return current_microscope_state
