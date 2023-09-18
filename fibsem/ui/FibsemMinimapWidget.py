@@ -295,12 +295,13 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         elif 'Alt' in event.modifiers:
             _new_position.name = f"Position {len(self.positions)+1:02d}" 
             self.positions.append(_new_position)
+            self._stage_position_added.emit(_new_position)
+
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
         self._update_position_info()
         self._update_viewer()
 
-        self._stage_position_added.emit(_new_position)
 
         self._minimap_positions.emit(self.positions)
 
@@ -322,12 +323,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _update_current_position_info(self):
 
         idx = self.comboBox_tile_position.currentIndex()
-        if idx != -1:
+        if idx != -1 and len(self.positions) > 0:
             self.lineEdit_tile_position_name.setText(self.positions[idx].name)
+            self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
         else:
             self.lineEdit_tile_position_name.setText("")
         
-        self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
 
     def _update_position_info(self):
         idx = self.comboBox_tile_position.currentIndex()
@@ -451,7 +452,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             colors.append("red")
 
             colors_rgba = [[0,1,0,1] for _ in range(len(drawn_positions)-1)]
-            colors_rgba.append([1,0,0,1])
+            colors_rgba.append([1,1,0,1]) # yellow
 
             text = {
                 "string": [pos.name for pos in drawn_positions],
