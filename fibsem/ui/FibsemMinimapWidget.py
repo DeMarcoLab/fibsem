@@ -696,21 +696,18 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         trans_x = new_x -rows 
         trans_y = new_y -cols 
 
-        tx = tx - trans_y
-        ty = -ty - trans_x
+        # translation for central rotation + translation
+        corrected_tx = tx - trans_y
+        corrected_ty = -ty - trans_x
 
 
         self._correlation[layer_name] = deepcopy([tx, ty, sx, sy, r])
 
         # apply to selected layer
-        self.viewer.layers[layer_name].translate = [ty, tx]
+        self.viewer.layers[layer_name].translate = [corrected_ty, corrected_tx]
         self.viewer.layers[layer_name].scale = [sy, sx]
         self.viewer.layers[layer_name].rotate = r
 
-
-
-# TODO: allow multiple correlation images
-# TODO: change name: tile to minimap
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 
 
