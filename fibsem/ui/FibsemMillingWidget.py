@@ -22,7 +22,7 @@ from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, conver
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
-_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes"]
+_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes", "n_rectangles", "overlap"]
 _ANGLE_KEYS = ["rotation"]
 
 def _scale_value(key, value, scale):

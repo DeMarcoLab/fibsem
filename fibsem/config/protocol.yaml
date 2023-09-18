@@ -121,5 +121,14 @@ patterns:
     thickness: 2.0e-6
     radius: 10.0e-6
     depth: 1.0e-6  
-
+  Trapezoid:
+    inner_width: 10.0e-6
+    outer_width: 20.0e-6
+    trench_height: 5.0e-6
+    depth: 1.0e-6
+    distance: 1.0e-6
+    n_rectangles: 10
+    overlap: 0.0
+    scan_direction: "ToptoBottom"
+    type: "Trapezoid"
   

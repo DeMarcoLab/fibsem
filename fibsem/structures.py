@@ -11,6 +11,7 @@ from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
 from typing import Optional
 import numpy as np
 import tifffile as tff
+import fibsem
 
 from fibsem.config import load_yaml
 
@@ -1516,6 +1517,101 @@ class FibsemDetectorSettings:
             brightness = settings.get("brightness", 0.0),
             contrast = settings.get("contrast", 0.0),
         )
+@dataclass
+class FibsemExperiment:
+    id: str = None
+    method: str = None
+    date: float = datetime.timestamp(datetime.now())
+    application: str = "OpenFIBSEM"
+    fibsem_version: str = fibsem.__version__
+    application_version: str = None
+
+
+    def __to_dict__(self) -> dict:
+        """Converts to a dictionary."""
+        return {
+            "id": self.id,
+            "method": self.method,
+            "date": self.date,
+            "application": self.application,
+            "fibsem_version": self.fibsem_version,
+            "application_version": self.application_version,
+        }
+
+    @staticmethod
+    def __from_dict__(settings: dict) -> "FibsemExperiment":
+        """Converts from a dictionary."""
+        return FibsemExperiment(
+            id = settings.get("id", "Unknown"),
+            method = settings.get("method", "Unknown"),
+            date = settings.get("date", "Unknown"),
+            application= settings.get("application", "OpenFIBSEM"),
+            fibsem_version= settings.get("fibsem_version", fibsem.__version__),
+            application_version= settings.get("application_version", None),
+        )
+
+
+@dataclass
+class FibsemUser:
+    name: str = None
+    email: str = None
+    organization: str = None
+    computer: str = None
+
+    def __to_dict__(self) -> dict:
+        """Converts to a dictionary."""
+        return {
+            "name": self.name,
+            "email": self.email,
+            "organization": self.organization,
+            "computer": self.computer,
+        }
+
+    @staticmethod
+    def __from_dict__(settings: dict) -> "FibsemUser":
+        """Converts from a dictionary."""
+        return FibsemUser(
+            name = settings.get("name", "Unknown"),
+            email = settings.get("email", "Unknown"),
+            organization = settings.get("organization", "Unknown"),
+            computer = settings.get("computer", "Unknown"),
+        )
+
+@dataclass
+class FibsemSystem:
+    manufacturer: str = None
+    model: str = None
+    serial_number: str = None
+    software_version: str = None
+    hardware_settings: FibsemHardware = None
+
+    def __to_dict__(self) -> dict:
+        """Converts to a dictionary."""
+        return {
+            "manufacturer": self.manufacturer,
+            "model": self.model,
+            "serial_number": self.serial_number,
+            "software_version": self.software_version,
+            "hardware_settings": self.hardware_settings.__to_dict__() if self.hardware_settings is not None else None,
+        }
+
+    @staticmethod
+    def __from_dict__(settings: dict) -> "FibsemSystem":
+        """Converts from a dictionary."""
+        if "hardware_settings" not in settings:
+            hardware = None
+        else:
+            hardware = FibsemHardware.__from_dict__(settings["hardware_settings"])
+
+        return FibsemSystem(
+            manufacturer = settings.get("manufacturer", "Unknown"),
+            model = settings.get("model", "Unknown"),
+            serial_number = settings.get("serial_number", "Unknown"),
+            software_version = settings.get("software_version", "Unknown"),
+            hardware_settings = hardware,
+
+        )
+
 
 @dataclass
 class FibsemImageMetadata:
@@ -1526,6 +1622,9 @@ class FibsemImageMetadata:
     microscope_state: MicroscopeState
     detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
+    user: FibsemUser = FibsemUser()
+    experiment: FibsemExperiment = FibsemExperiment()
+    system: FibsemSystem = FibsemSystem()
     
 
 
@@ -1536,7 +1635,8 @@ class FibsemImageMetadata:
             dictionary: self as a dictionary
         """
         if self.image_settings is not None:
-            settings_dict = self.image_settings.__to_dict__()
+            settings_dict = self.image_settings.__to_dict__() # TODO: gracefully depreceate this
+            settings_dict["image"] = self.image_settings.__to_dict__()
         if self.version is not None:
             settings_dict["version"] = self.version
         if self.pixel_size is not None:
@@ -1545,6 +1645,10 @@ class FibsemImageMetadata:
             settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
         if self.detector_settings is not None:
             settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
+        settings_dict["user"] = self.user.__to_dict__()
+        settings_dict["experiment"] = self.experiment.__to_dict__()
+        settings_dict["system"] = self.system.__to_dict__()
+        
         return settings_dict
 
     @staticmethod
@@ -1568,6 +1672,9 @@ class FibsemImageMetadata:
             pixel_size=pixel_size,
             microscope_state=microscope_state,
             detector_settings=detector_settings,
+            user = FibsemUser.__from_dict__(settings.get("user", {})),
+            experiment = FibsemExperiment.__from_dict__(settings.get("experiment", {})),
+            system = FibsemSystem.__from_dict__(settings.get("system", {})),
         )
         return metadata
 
@@ -1695,7 +1802,9 @@ class FibsemImage:
                 metadata = FibsemImageMetadata.__from_dict__(metadata)
             except Exception as e:
                 metadata = None
-                # print(f"Error: {e}")
+                print(f"Error: {e}")
+                import traceback
+                traceback.print_exc()
         return cls(data=data, metadata=metadata)
 
     def save(self, save_path: Path = None) -> None:

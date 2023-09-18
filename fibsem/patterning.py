@@ -72,6 +72,7 @@ REQUIRED_KEYS = {
     ),
     "Clover": ("radius", "depth"),
     "TriForce": ("height", "width", "depth"),
+    "Trapezoid": ("inner_width", "outer_width", "trench_height", "depth", "distance", "n_rectangles", "overlap"),
 }
 
 
@@ -903,6 +904,62 @@ class TriForcePattern(BasePattern):
         return self.patterns
 
 
+@dataclass
+class TrapezoidPattern(BasePattern):
+    name: str = "Trapezoid"
+    required_keys: tuple[str] = REQUIRED_KEYS["Trapezoid"]
+    patterns = None
+    protocol = None
+    point = None
+
+    def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
+        check_keys(protocol, self.required_keys)
+        self.patterns = []
+        width_increments = (protocol["outer_width"] - protocol["inner_width"]) / (protocol["n_rectangles"]-1)
+        dict = {}
+        dict["trench_height"] = protocol["trench_height"] / protocol["n_rectangles"] * (1+protocol["overlap"])
+        dict["depth"] = protocol["depth"]
+        # bottom half
+        for i in range(int(protocol["n_rectangles"])):
+            dict["width"] = protocol["outer_width"] - i * width_increments
+            pattern = RectanglePattern()
+            y = point.y + (i * dict["trench_height"] * (1-protocol["overlap"])) - protocol["distance"] - protocol["trench_height"]
+            centre = Point(point.x, y)
+            pattern = FibsemPatternSettings(
+                pattern=FibsemPattern.Rectangle,
+                width=dict["width"],
+                height=dict["trench_height"],
+                depth=dict["depth"],
+                centre_x=centre.x,
+                centre_y=centre.y,
+                cleaning_cross_section=False,
+                scan_direction="BottomToTop",
+            )
+            self.patterns.append(deepcopy(pattern))
+        # top half
+        for i in range(int(protocol["n_rectangles"])):
+            dict["width"] = protocol["outer_width"] - i * width_increments
+            pattern = RectanglePattern()
+            y = point.y - (i * dict["trench_height"] * (1-protocol["overlap"])) + protocol["distance"] + protocol["trench_height"]
+            centre = Point(point.x, y)
+            pattern = FibsemPatternSettings(
+                pattern=FibsemPattern.Rectangle,
+                width=dict["width"],
+                height=dict["trench_height"],
+                depth=dict["depth"],
+                centre_x=centre.x,
+                centre_y=centre.y,
+                cleaning_cross_section=False,
+                scan_direction="TopToBottom",
+            )
+            self.patterns.append(deepcopy(pattern))
+        self.protocol = protocol
+        self.point = point
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+
 __PATTERNS__ = [
     RectanglePattern,
     LinePattern,
@@ -920,6 +977,7 @@ __PATTERNS__ = [
     TriForcePattern,
     BitmapPattern,
     AnnulusPattern,
+    TrapezoidPattern,
 ]
 
 
