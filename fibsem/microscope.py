@@ -2169,6 +2169,13 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.electron_beam.beam_shift.value = ThermoPoint(x=microscope_state.eb_settings.shift.x, y=microscope_state.eb_settings.shift.y)
             self.connection.beams.electron_beam.stigmator.value = ThermoPoint(x=microscope_state.eb_settings.stigmation.x, y=microscope_state.eb_settings.stigmation.y)
 
+            # restore detector settings
+            eb_detector = microscope_state.eb_detector
+            self.set("detector_type", eb_detector.type, BeamType.ELECTRON)
+            self.set("detector_mode", eb_detector.mode, BeamType.ELECTRON)
+            self.set("detector_brightness", eb_detector.brightness, BeamType.ELECTRON)
+            self.set("detector_contrast", eb_detector.contrast, BeamType.ELECTRON)    
+            
         # Restore ion beam settings
         resolution = f"{microscope_state.ib_settings.resolution[0]}x{microscope_state.ib_settings.resolution[1]}"
         if self.hardware_settings.ion_beam is False:
@@ -2194,6 +2201,12 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.ion_beam.beam_shift.value = ThermoPoint(x=microscope_state.ib_settings.shift.x, y=microscope_state.ib_settings.shift.y)
             self.connection.beams.ion_beam.stigmator.value = ThermoPoint(x=microscope_state.ib_settings.stigmation.x, y=microscope_state.ib_settings.stigmation.y)
 
+            # restore detector settings
+            ib_detector = microscope_state.ib_detector
+            self.set("detector_type", ib_detector.type, BeamType.ION)
+            self.set("detector_mode", ib_detector.mode, BeamType.ION)
+            self.set("detector_brightness", ib_detector.brightness, BeamType.ION)
+            self.set("detector_contrast", ib_detector.contrast, BeamType.ION)
 
         # Link the specimen stage
         if self.hardware_settings.stage_enabled is False:
@@ -2310,7 +2323,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             None.
         """
-        logging.info(f"Getting {beam_type.value} detector settings...")
+        logging.debug(f"Getting {beam_type} detector settings...")
         detector_settings = FibsemDetectorSettings(
             type=self.get("detector_type", beam_type),
             mode=self.get("detector_mode", beam_type),
@@ -2512,14 +2525,14 @@ class ThermoMicroscope(FibsemMicroscope):
                     logging.warning(f"Detector type {value} not available.")
                 return
             if key == "detector_brightness":
-                if 0 <= value <= 1 :
+                if 0 < value <= 1 :
                     self.connection.detector.brightness.value = value
                     logging.info(f"Detector brightness set to {value}.")
                 else:
                     logging.warning(f"Detector brightness {value} not available, must be between 0 and 1.")
                 return
             if key == "detector_contrast":
-                if 0 <= value <= 1 :
+                if 0 < value <= 1 :
                     self.connection.detector.contrast.value = value
                     logging.info(f"Detector contrast set to {value}.")
                 else:
