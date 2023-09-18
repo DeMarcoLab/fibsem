@@ -122,9 +122,9 @@ patterns:
     radius: 10.0e-6
     depth: 1.0e-6  
   Trapezoid:
-    top_width: 10.0e-6
-    bottom_width: 20.0e-6
-    height: 5.0e-6
+    inner_width: 10.0e-6
+    outer_width: 20.0e-6
+    trench_height: 5.0e-6
     depth: 1.0e-6
     distance: 1.0e-6
     n_rectangles: 10

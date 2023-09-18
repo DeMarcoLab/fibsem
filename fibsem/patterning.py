@@ -72,7 +72,7 @@ REQUIRED_KEYS = {
     ),
     "Clover": ("radius", "depth"),
     "TriForce": ("height", "width", "depth"),
-    "Trapezoid": ("top_width", "bottom_width", "height", "depth", "distance", "n_rectangles", "overlap","scan_direction"),
+    "Trapezoid": ("inner_width", "outer_width", "trench_height", "depth", "distance", "n_rectangles", "overlap"),
 }
 
 
@@ -915,37 +915,37 @@ class TrapezoidPattern(BasePattern):
     def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
         check_keys(protocol, self.required_keys)
         self.patterns = []
-        width_increments = (protocol["bottom_width"] - protocol["top_width"]) / (protocol["n_rectangles"]-1)
+        width_increments = (protocol["outer_width"] - protocol["inner_width"]) / (protocol["n_rectangles"]-1)
         dict = {}
-        dict["height"] = protocol["height"] / protocol["n_rectangles"] * (1+protocol["overlap"])
+        dict["trench_height"] = protocol["trench_height"] / protocol["n_rectangles"] * (1+protocol["overlap"])
         dict["depth"] = protocol["depth"]
+        # bottom half
         for i in range(int(protocol["n_rectangles"])):
-            dict["width"] = protocol["bottom_width"] - i * width_increments
-            print(dict["width"])
+            dict["width"] = protocol["outer_width"] - i * width_increments
             pattern = RectanglePattern()
-            y = point.y + (i * dict["height"] * (1-protocol["overlap"])) - protocol["distance"] - protocol["height"]
+            y = point.y + (i * dict["trench_height"] * (1-protocol["overlap"])) - protocol["distance"] - protocol["trench_height"]
             centre = Point(point.x, y)
             pattern = FibsemPatternSettings(
                 pattern=FibsemPattern.Rectangle,
                 width=dict["width"],
-                height=dict["height"],
+                height=dict["trench_height"],
                 depth=dict["depth"],
                 centre_x=centre.x,
                 centre_y=centre.y,
                 cleaning_cross_section=False,
-                scan_direction="TopToBottom",
+                scan_direction="BottomToTop",
             )
             self.patterns.append(deepcopy(pattern))
-
+        # top half
         for i in range(int(protocol["n_rectangles"])):
-            dict["width"] = protocol["bottom_width"] - i * width_increments
+            dict["width"] = protocol["outer_width"] - i * width_increments
             pattern = RectanglePattern()
-            y = point.y - (i * dict["height"] * (1-protocol["overlap"])) + protocol["distance"] + protocol["height"]
+            y = point.y - (i * dict["trench_height"] * (1-protocol["overlap"])) + protocol["distance"] + protocol["trench_height"]
             centre = Point(point.x, y)
             pattern = FibsemPatternSettings(
                 pattern=FibsemPattern.Rectangle,
                 width=dict["width"],
-                height=dict["height"],
+                height=dict["trench_height"],
                 depth=dict["depth"],
                 centre_x=centre.x,
                 centre_y=centre.y,
