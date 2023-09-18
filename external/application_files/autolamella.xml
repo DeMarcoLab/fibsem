@@ -1,0 +1,72 @@
+<Content Version="Fei ApplicationFile 1.1">
+
+    <!-- Application file for milling silicon (Si) without any gas for Xe PFIB -->
+
+
+    <!-- Client tag determines where file is displayed to user. 
+         Can be XTUI, iFast or a combination separated by comma -->
+    <Client xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="string">
+	XTUI, iFast
+    </Client >
+
+
+    <!-- Beam, must be Electron or Ion -->
+    <Beam xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="string">
+	Ion
+    </Beam>
+
+
+    <!-- Pattern filter sets if file will be displayed for a given pattern type.
+         Can be set to Line, Circle, Rectangle, CCS, RCS, Bitmap, StreamFile, Polygon
+         Can be a combination separated by comma(s) -->
+    <PatternType xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="string">
+	Line, Circle, Rectangle, Bitmap, Streamfile, Polygon, CCS, RCS
+    </PatternType>
+
+
+    <!-- Gas type, must match name of gas in UI or empty for no gas -->
+    <GasType xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="string">
+    </GasType>
+
+
+    <!-- Dwell time per point, in seconds, minimum is 50e-9 (50ns), maximum is 4.5e-3 (4.5 ms) -->
+    <DwellTime xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="r8">
+        1.000E-6
+    </DwellTime>
+
+
+    <!-- Overlap between points as percentage of the spot diameter. Must be < 100%. -->
+    <Overlap xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="r8">
+	98
+    </Overlap>
+
+
+    <!-- Volume per Dose, the volume of material that is deposited or removed per dose of the beam in m^3/Coulomb.
+         1e-9 m^3/C = 1 um^3/nC. (Si) is 0.27 um^3/nc = 0.27e-9 m^3/C -->
+    <VolumePerDose xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="r8">
+        0.00000000038
+    </VolumePerDose>
+
+
+    <!-- Blur and Defocus.  
+         Blur- the additional beam diameter that is caused by defocussing in m. 
+         Note that the total beam diameter is the root of the sum of the 
+         squared beam, interaction and blur diameters.
+         
+         Defocus- Defocus the beam in m to longer or shorter working distance while patterning.
+         Positive values will set focus value to a longer working distance.
+         Negative values will set focus value to a shorter working distance.
+
+         Only use a Blur or a Defocus value.  Do not use both.
+         If no value is to be set for patterning a Blur or Defocus must be set to a 0 -->
+    <Blur xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="r8">
+        0
+    </Blur>
+
+
+    <!-- Relative Interaction Diameter must always be set to 0. -->
+    <RelativeInteractionDiameter xmlns:dt="urn:schemas-microsoft-com:datatypes" dt:dt="r8">
+        0
+    </RelativeInteractionDiameter>
+    
+</Content> 

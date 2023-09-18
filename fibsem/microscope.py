@@ -29,9 +29,17 @@ except:
     logging.debug("Automation (TESCAN) not installed.")
 
 try:
+    sys.path.append('C:\Program Files\Thermo Scientific AutoScript')
+    sys.path.append('C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript')
     sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
+    import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
+    version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
+    VERSION = float(version[:3])
+    if VERSION < 4.6:
+        raise NameError("Please update your AutoScript version to 4.6 or higher.")
+    
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
@@ -43,8 +51,10 @@ try:
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 
     from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
-except:
+except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
+    if isinstance(e, NameError):
+        raise e 
 
 import sys
 
@@ -55,7 +65,8 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemPatternSettings, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemHardware,
                                MicroscopeState, Point, FibsemDetectorSettings,
-                               ThermoGISLine,ThermoMultiChemLine, StageSettings)
+                               ThermoGISLine,ThermoMultiChemLine, StageSettings,
+                            FibsemSystem, FibsemUser, FibsemExperiment)
 
 import threading
 import time
@@ -433,6 +444,12 @@ class ThermoMicroscope(FibsemMicroscope):
             self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
         else:
             self.stage_settings = stage_settings
+    
+        self.user = FibsemUser(
+            computer =  str(os.environ.get('COMPUTERNAME', "ComputerName")),
+            name = str(os.getlogin()),
+        )
+        self.experiment = FibsemExperiment()
 
     def disconnect(self):
         self.connection.disconnect()
@@ -469,6 +486,15 @@ class ThermoMicroscope(FibsemMicroscope):
         self.model = self.connection.service.system.name
         self.software_version = self.connection.service.system.version
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
+            
+        self.system = FibsemSystem(
+            manufacturer="Thermo Fisher Scientific",
+            model=self.model,
+            serial_number=self.serial_number,
+            software_version=self.software_version,
+            hardware_settings=self.hardware_settings,
+        )
+
         self.reset_beam_shifts()
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
@@ -524,7 +550,6 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_view(image_settings.beam_type.value)
         self.connection.imaging.set_active_device(image_settings.beam_type.value)
         image = self.connection.imaging.grab_frame(frame_settings)
-
         if image_settings.reduced_area is not None:
             if image_settings.beam_type == BeamType.ELECTRON:
                 self.connection.beams.electron_beam.scanning.mode.set_full_frame()
@@ -544,6 +569,10 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image = FibsemImage.fromAdornedImage(
             copy.deepcopy(image), copy.deepcopy(image_settings), copy.deepcopy(state), detector = detector
         )
+
+        fibsem_image.metadata.user = self.user
+        fibsem_image.metadata.experiment = self.experiment
+        fibsem_image.metadata.system = self.system
 
         return fibsem_image
 
@@ -584,6 +613,10 @@ class ThermoMicroscope(FibsemMicroscope):
             )
 
         fibsem_image = FibsemImage.fromAdornedImage(image, image_settings, state, detector = detector) 
+
+        fibsem_image.metadata.user = self.user
+        fibsem_image.metadata.experiment = self.experiment
+        fibsem_image.metadata.system = self.system
 
         return fibsem_image
 
@@ -1156,7 +1189,8 @@ class ThermoMicroscope(FibsemMicroscope):
          
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
-
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         insert_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         needle = self.connection.specimen.manipulator
         insert_position = needle.get_saved_position(
@@ -1170,6 +1204,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # retract multichem
         # retract_multichem(microscope) # TODO:?
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         if self.hardware_settings.manipulator_enabled is False:
             raise NotImplementedError("Manipulator not enabled.")
         # Retract the needle, preserving the correct parking postiion
@@ -1333,6 +1369,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
+        if VERSION < 4.7:
+            raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         position = self.connection.specimen.manipulator.get_saved_position(
@@ -2719,6 +2757,12 @@ class TescanMicroscope(FibsemMicroscope):
             self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
         else:
             self.stage_settings = stage_settings
+    
+        self.user = FibsemUser(
+            computer =  str(os.environ.get('COMPUTERNAME', "ComputerName")),
+            name = str(os.getlogin())
+        )
+        self.experiment = FibsemExperiment()
 
     def disconnect(self):
         self.connection.Disconnect()
@@ -2746,6 +2790,14 @@ class TescanMicroscope(FibsemMicroscope):
         self.model = image.Header["MAIN"]["DeviceModel"]
         self.software_version = image.Header["MAIN"]["SoftwareVersion"]
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
+        self.system = FibsemSystem(
+            manufacturer="TESCAN",
+            model=self.model,
+            serial_number=self.serial_number,
+            software_version=self.software_version,
+            hardware_settings=self.hardware_settings,
+        )    
+    
         self.reset_beam_shifts()
 
     def acquire_image(self, image_settings=ImageSettings) -> FibsemImage:
@@ -2775,6 +2827,10 @@ class TescanMicroscope(FibsemMicroscope):
             _check_beam(BeamType.ION, self.hardware_settings)
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
+
+        image.metadata.user = self.user
+        image.metadata.experiment = self.experiment 
+        image.metadata.system = self.system
 
         return image
 
@@ -2857,6 +2913,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ELECTRON,
                 working_distance=float(image.Header["SEM"]["WD"]),
                 beam_current=float(image.Header["SEM"]["PredictedBeamCurrent"]),
+                voltage=float(self.connection.SEM.Beam.GetVoltage()),
                 resolution=[imageWidth, imageHeight], #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["SEM"]["DwellTime"]),
                 stigmation=Point(
@@ -2964,6 +3021,7 @@ class TescanMicroscope(FibsemMicroscope):
                 beam_type=BeamType.ION,
                 working_distance=float(image.Header["FIB"]["WD"]),
                 beam_current=float(self.connection.FIB.Beam.ReadProbeCurrent()),
+                voltage = float(self.connection.FIB.Beam.GetVoltage()),
                 resolution=[imageWidth, imageHeight], #"{}x{}".format(imageWidth, imageHeight),
                 dwell_time=float(image.Header["FIB"]["DwellTime"]),
                 stigmation=Point(
@@ -3013,6 +3071,11 @@ class TescanMicroscope(FibsemMicroscope):
             image = self.last_image_ib
         else:
             raise Exception("Beam type error")
+            
+        image.metadata.user = self.user
+        image.metadata.experiment = self.experiment 
+        image.metadata.system = self.system
+        
         return image
 
     def _get_presets(self):
@@ -3233,8 +3296,26 @@ class TescanMicroscope(FibsemMicroscope):
         self.move_stage_absolute(stage_position)
     
     def _calculate_new_position(self, settings: MicroscopeSettings, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
+        if beam_type == BeamType.ELECTRON:
+            image_rotation = self.connection.SEM.Optics.GetImageRotation()
+        else:
+            image_rotation = self.connection.FIB.Optics.GetImageRotation()
 
-        return base_position # TODO: implement
+        if np.isnan(image_rotation):
+            image_rotation = 0.0
+
+        dx =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
+        dy = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
+        point_yz = self._y_corrected_stage_movement(settings, dy, beam_type)
+        dy, dz = point_yz.y, point_yz.z
+
+        # calculate the corrected move to reach that point from base-state?
+        _new_position = deepcopy(base_position)
+        _new_position.x += dx
+        _new_position.y += dy
+        _new_position.z += dz
+
+        return _new_position # TODO: implement
 
     def move_stage_absolute(self, position: FibsemStagePosition):
         """
@@ -4892,12 +4973,23 @@ class DemoMicroscope(FibsemMicroscope):
         else:
             self.stage_settings = stage_settings
 
-
+        self.user = FibsemUser(
+            computer =  str(os.environ.get('COMPUTERNAME', "ComputerName")),
+            name = str(os.getlogin())
+        )
+        self.experiment = FibsemExperiment()
 
     def connect_to_microscope(self):
         self.model = "Demo"
         logging.info(f"Connected to Demo Microscope")
-        logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")
+        logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")       
+        self.system = FibsemSystem(
+            manufacturer="OpenFibsem",
+            model="Demo",
+            serial_number="123456",
+            software_version="0.1",
+            hardware_settings=self.hardware_settings,
+        )
         self.reset_beam_shifts()
 
         return
@@ -4921,10 +5013,16 @@ class DemoMicroscope(FibsemMicroscope):
                                             absolute_position=self.stage_position,
                                          ),detector_settings=FibsemDetectorSettings()))
 
+        image.metadata.user = self.user
+        image.metadata.experiment = self.experiment
+        image.metadata.system = self.system
+
         if image_settings.beam_type is BeamType.ELECTRON:
             self._eb_image = image
         else:
             self._ib_image = image
+    
+
 
         return image
 

@@ -38,6 +38,7 @@ def log_status_message(step: str):
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     move_signal = QtCore.pyqtSignal()
     movement_notification_signal = QtCore.pyqtSignal(str)
+    positions_signal = QtCore.pyqtSignal(object)
 
     def __init__(
         self,
@@ -151,9 +152,13 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui_after_movement()
 
     def run_moving_finished(self):
+        self.positions_signal.emit(None)
+        if self.parent.image_widget.TAKING_IMAGES:
+            return
         self._toggle_interactions(True)
         if self.parent.image_widget._LIVE_IMAGING:
             self.parent.image_widget.live_imaging()
+
 
     def update_moving_ui(self, msg: str):
         logging.info(msg)
@@ -269,6 +274,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_positions.setCurrentIndex(self.comboBox_positions.count() - 1)
         self.lineEdit_position_name.setText("")
         logging.info(f"Added position {position.name}")
+        self.positions_signal.emit(self.positions)
         self.minimap()
 
     def delete_position(self):
@@ -276,6 +282,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         name = self.comboBox_positions.currentText()
         self.comboBox_positions.removeItem(self.comboBox_positions.currentIndex())
         logging.info(f"Removed position {name}")
+        self.positions_signal.emit(self.positions)
         self.minimap()
 
     def update_saved_position(self):
@@ -284,6 +291,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.positions[self.comboBox_positions.currentIndex()] = position
         self.select_position()
         logging.info(f"Updated position {self.comboBox_positions.currentText()}")
+        self.positions_signal.emit(self.positions)
         self.minimap()
 
     def go_to_saved_position(self, pos:FibsemStagePosition = None):
@@ -324,6 +332,14 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.info("Positions saved to file")
 
 
+    def minimap_window_positions(self,positions):
+
+        self.positions = positions
+        self.comboBox_positions.clear()
+        for position in positions:
+            self.comboBox_positions.addItem(position.name)
+        self.minimap()
+
     def import_positions(self, path: str = None):
         if not isinstance(path, str):
             protocol_path = _get_file_ui(msg="Select or create file")
@@ -339,6 +355,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
         self.minimap()
+        self.positions_signal.emit(self.positions)
 
     def load_image(self):
 
@@ -376,24 +393,16 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # disable taking images after movement here
         if self.checkBox_movement_acquire_electron.isChecked() and self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_reference_images()
-            while self.image_widget.TAKING_IMAGES:
-                # logging.info(f"TAKING_IMAGES: {self.image_widget.TAKING_IMAGES}")
-                time.sleep(0.2)
-            self.update_ui()
             return
         if self.checkBox_movement_acquire_electron.isChecked():
             self.image_widget.take_image(BeamType.ELECTRON)
-        while self.image_widget.TAKING_IMAGES:
-                time.sleep(0.2)
-        if self.checkBox_movement_acquire_ion.isChecked():
+        elif self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_image(BeamType.ION)
-        while self.image_widget.TAKING_IMAGES:
-                time.sleep(0.2)    
-        self.update_ui()
+        else: 
+            self.update_ui()
     
     def _stage_position_moved(self, pos: FibsemStagePosition):
-        # self.update_ui_after_movement()
-        self.update_ui() # TODO: fix taking images after movement
+        self.update_ui_after_movement()
 
     def move_flat_to_beam(self):
         beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON

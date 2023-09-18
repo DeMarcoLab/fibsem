@@ -384,8 +384,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def live_imaging(self):
         if self.stop_event.is_set():
             self._toggle_interactions(False)
-            self.pushButton_take_all_images.setEnabled(False)
-            self.pushButton_take_image.setEnabled(False)
+            self.pushButton_live_imaging.setEnabled(True)
             self.pushButton_live_imaging.setText("Stop live imaging")
             self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(False)
             self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked(False)
@@ -469,6 +468,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def _toggle_interactions(self, enable: bool, caller: str = None, imaging: bool = False):
         self.pushButton_take_image.setEnabled(enable)
+        self.pushButton_live_imaging.setEnabled(enable)
         self.pushButton_take_all_images.setEnabled(enable)
         self.set_detector_button.setEnabled(enable)
         self.button_set_beam_settings.setEnabled(enable)
@@ -478,6 +478,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if enable:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
@@ -489,6 +490,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_all_images.setText("Acquiring Images...")
             self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_live_imaging.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         else:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
@@ -525,6 +527,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         worker = self.take_reference_images_worker()
         worker.finished.connect(self.imaging_finished)
         worker.start()
+        print("started thread")
 
     @thread_worker
     def take_reference_images_worker(self):
