@@ -624,6 +624,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 idx+=1
                 _name = f"{_basename}-{idx:02d}"
 
+            # if grid bar in _name, idx = 3
+            if gridbar:
+                idx = 3
 
             COLOURS = ["green", "cyan", "magenta", "red", "yellow"]
 
