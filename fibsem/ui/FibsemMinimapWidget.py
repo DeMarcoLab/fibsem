@@ -110,23 +110,17 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # gridbar
 
         self.checkBox_gridbar.stateChanged.connect(self._gridbar_set)
-        self.doubleSpinBox_gb_width.valueChanged.connect(self._update_gridbar)
-        self.doubleSpinBox_gb_spacing.valueChanged.connect(self._update_gridbar)
-        self.doubleSpinBox_gb_x.valueChanged.connect(self._update_gridbar)
-        self.doubleSpinBox_gb_y.valueChanged.connect(self._update_gridbar)
-        self.doubleSpinBox_gb_r.valueChanged.connect(self._update_gridbar)
-
-        self.doubleSpinBox_gb_width.setVisible(False)
+        self.label_gb_spacing.setVisible(False)
+        self.label_gb_width.setVisible(False)
         self.doubleSpinBox_gb_spacing.setVisible(False)
-        self.doubleSpinBox_gb_x.setVisible(False)
-        self.doubleSpinBox_gb_y.setVisible(False)
-        self.doubleSpinBox_gb_r.setVisible(False)
+        self.doubleSpinBox_gb_width.setVisible(False)
 
-        self.gb_r.setVisible(False)
-        self.gb_spacing.setVisible(False)
-        self.gb_width.setVisible(False)
-        self.gb_x.setVisible(False)
-        self.gb_y.setVisible(False)
+        self.doubleSpinBox_gb_spacing.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_width.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_spacing.setKeyboardTracking(False)
+        self.doubleSpinBox_gb_width.setKeyboardTracking(False)
+
+
 
 
 
@@ -172,21 +166,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         if self.checkBox_gridbar.isChecked():
 
-            self.doubleSpinBox_gb_width.setVisible(True)
-            self.doubleSpinBox_gb_spacing.setVisible(True)
-            self.doubleSpinBox_gb_x.setVisible(True)
-            self.doubleSpinBox_gb_y.setVisible(True)
-            self.doubleSpinBox_gb_r.setVisible(True)
-
-            self.gb_r.setVisible(True)
-            self.gb_spacing.setVisible(True)
-            self.gb_width.setVisible(True)
-            self.gb_x.setVisible(True)
-            self.gb_y.setVisible(True)
-
-            self.doubleSpinBox_gb_width.setValue(90)
-            self.doubleSpinBox_gb_spacing.setValue(400)
-
             grid_shape = self.image.data.shape
             arr = np.zeros(shape=grid_shape, dtype=np.uint8)
 
@@ -198,77 +177,60 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 arr[i:i+BAR_THICKNESS_PX, :] = 255
                 arr[:, i:i+BAR_THICKNESS_PX] = 255
 
+            gridbar_image = FibsemImage(data=arr)
+
+            self._update_correlation_image(gridbar_image, gridbar=True)
+
+            self.label_gb_spacing.setVisible(True)
+            self.label_gb_width.setVisible(True)
+            self.doubleSpinBox_gb_spacing.setVisible(True)
+            self.doubleSpinBox_gb_width.setVisible(True)
+
+            self.doubleSpinBox_gb_spacing.setValue(BAR_SPACING_PX)
+            self.doubleSpinBox_gb_width.setValue(BAR_THICKNESS_PX)
             
 
-            self.viewer.add_image(arr, name="grid-bar", colormap="yellow", blending="additive",opacity=0.15,translate=(0,0))
-            image_layer = self.viewer.layers["overview-image"]
-            self.viewer.layers.selection.active = image_layer
-
-
-
         else:
-
-            self.doubleSpinBox_gb_width.setVisible(False)
+            
+            layer_to_remove = ""
+            for layer in self.viewer.layers:
+                if "gridbar" in layer.name:
+                    layer_to_remove = layer.name
+            
+            self.label_gb_spacing.setVisible(False)
+            self.label_gb_width.setVisible(False)
             self.doubleSpinBox_gb_spacing.setVisible(False)
-            self.doubleSpinBox_gb_x.setVisible(False)
-            self.doubleSpinBox_gb_y.setVisible(False)
-            self.doubleSpinBox_gb_r.setVisible(False)
+            self.doubleSpinBox_gb_width.setVisible(False)
 
-            self.gb_r.setVisible(False)
-            self.gb_spacing.setVisible(False)
-            self.gb_width.setVisible(False)
-            self.gb_x.setVisible(False)
-            self.gb_y.setVisible(False)
-
-            self.viewer.layers.remove("grid-bar")
+            self.viewer.layers.remove(layer_to_remove)
+            self.comboBox_correlation_selected_layer.clear()
+            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name ])
 
 
 
     def _update_gridbar(self):
 
+        pass
+
         BAR_THICKNESS_PX = int(self.doubleSpinBox_gb_width.value())
         BAR_SPACING_PX = int(self.doubleSpinBox_gb_spacing.value())
 
+        gridbar_layer = ''
 
-        if self.sender() == self.doubleSpinBox_gb_width or self.sender() == self.doubleSpinBox_gb_spacing:
-
-            grid_shape = self.image.data.shape
-            arr = np.zeros(shape=grid_shape, dtype=np.uint8)
-            for i in range(0, arr.shape[0], BAR_SPACING_PX ):
-                arr[i:i+BAR_THICKNESS_PX, :] = 255
-                arr[:, i:i+BAR_THICKNESS_PX] = 255
-            self.viewer.layers["grid-bar"].data = arr
-
+        for layer in self.viewer.layers:
+            if "gridbar" in layer.name:
+                gridbar_layer = layer.name
         
+        grid_shape = self.viewer.layers[gridbar_layer].data.shape
 
-        else:
+        arr = np.zeros(shape=grid_shape, dtype=np.uint8)
+        for i in range(0, arr.shape[0], BAR_SPACING_PX ):
+            arr[i:i+BAR_THICKNESS_PX, :] = 255
+            arr[:, i:i+BAR_THICKNESS_PX] = 255
 
-            print("rotate")
-
-            angle = np.deg2rad(self.doubleSpinBox_gb_r.value())
-
-            rows = self.image.data.shape[0]*0.5 
-            cols = self.image.data.shape[1]*0.5
-
-            # the proof is marvelous but i dont have enough space in the comments
-
-            new_x = int(np.cos(angle) * rows - np.sin(angle) * cols) 
-            new_y =  int(np.sin(angle) * rows + np.cos(angle) * cols) 
-
-            tx = new_x -rows 
-            ty = new_y -cols 
-
-            translate = (-self.doubleSpinBox_gb_y.value()-tx, self.doubleSpinBox_gb_x.value()-ty)
-
-            print(f'tx {tx}, ty {ty}  translate {translate}')
-
-            self.viewer.layers["grid-bar"].rotate = self.doubleSpinBox_gb_r.value()
-            self.viewer.layers["grid-bar"].translate = translate
-            
+        self.viewer.layers[gridbar_layer].data = arr
 
 
-
-        
 
 
     def _tile_collection_finished(self):
@@ -614,11 +576,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._update_correlation_image(image)
 
 
-    def _update_correlation_image(self, image: FibsemImage = None):
+    def _update_correlation_image(self, image: FibsemImage = None,gridbar:bool=False):
 
         if image is not None:
             
-            _basename = f"correlation-image" 
+            _basename = f"correlation-image" if not gridbar else f"gridbar-image"
             idx = 1
             _name = f"{_basename}-{idx:02d}"
             while _name in self.viewer.layers:
@@ -640,7 +602,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
             idx = self.comboBox_correlation_selected_layer.currentIndex()
             self.comboBox_correlation_selected_layer.clear()
-            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name])
+            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name or "gridbar-image" in layer.name])
             if idx != -1:
                 self.comboBox_correlation_selected_layer.setCurrentIndex(idx)
             self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
@@ -678,6 +640,28 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         tx, ty = self.doubleSpinBox_correlation_translation_x.value(), self.doubleSpinBox_correlation_translation_y.value()
         sx, sy = self.doubleSpinBox_correlation_scale_x.value(), self.doubleSpinBox_correlation_scale_y.value()
         r = self.doubleSpinBox_correlation_rotation.value()
+
+        
+
+        angle = np.deg2rad(r)
+
+        rows = self.viewer.layers[layer_name].data.shape[0]*0.5 
+        cols = self.viewer.layers[layer_name].data.shape[1]*0.5
+
+
+        print(f' rows: {rows}, cols: {cols}')
+
+    #     # the proof is marvelous but i dont have enough space in the comments
+
+        new_x = int(np.cos(angle) * rows - np.sin(angle) * cols) 
+        new_y =  int(np.sin(angle) * rows + np.cos(angle) * cols) 
+
+        trans_x = new_x -rows 
+        trans_y = new_y -cols 
+
+        tx = tx - trans_y
+        ty = -ty - trans_x
+
 
         self._correlation[layer_name] = deepcopy([tx, ty, sx, sy, r])
 
