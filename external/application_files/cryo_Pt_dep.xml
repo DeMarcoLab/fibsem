@@ -1,0 +1,16 @@
+<Content Version="Fei ApplicationFile 1.1" xmlns:dt="urn:schemas-microsoft-com:datatypes">
+  <PatternType dt:dt="string">Line</PatternType>
+  <Beam dt:dt="string">Electron</Beam>
+  <GasType dt:dt="string">Pt cryo</GasType>
+  <GasDutyCycle dt:dt="string">1:0.2</GasDutyCycle>
+  <GasNeedlePosition dt:dt="string">1:cryo</GasNeedlePosition>
+  <DwellTime dt:dt="r8">1E-07</DwellTime>
+  <Overlap dt:dt="r8">-90</Overlap>
+  <VolumePerDose dt:dt="r8">5E-11</VolumePerDose>
+  <SaturationSputterRate dt:dt="r8">0</SaturationSputterRate>
+  <RefreshTime dt:dt="r8">0</RefreshTime>
+  <Defocus dt:dt="r8">0</Defocus>
+  <InteractionDiameter dt:dt="r8">0</InteractionDiameter>
+  <MaximumDosePerArea dt:dt="r8">0</MaximumDosePerArea>
+  <SaturationCurrentDensity dt:dt="r8">1</SaturationCurrentDensity>
+</Content>
