@@ -3079,10 +3079,10 @@ class TescanMicroscope(FibsemMicroscope):
             image = self.last_image_ib
         else:
             raise Exception("Beam type error")
-            
-        image.metadata.user = self.user
-        image.metadata.experiment = self.experiment 
-        image.metadata.system = self.system
+        if image is not None:
+            image.metadata.user = self.user
+            image.metadata.experiment = self.experiment 
+            image.metadata.system = self.system
         
         return image
 
