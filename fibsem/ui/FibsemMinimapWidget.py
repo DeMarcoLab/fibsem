@@ -169,10 +169,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             grid_shape = self.image.data.shape
             arr = np.zeros(shape=grid_shape, dtype=np.uint8)
 
+            pixelsize = self.image.metadata.pixel_size.x
 
             # create grid, grid bars thickness = 10px
-            BAR_THICKNESS_PX = 90
-            BAR_SPACING_PX = 400
+            BAR_THICKNESS_PX = int(5 * constants.MICRO_TO_SI / pixelsize)
+            BAR_SPACING_PX = int(50 * constants.MICRO_TO_SI / pixelsize)   
             for i in range(0, arr.shape[0], BAR_SPACING_PX ):
                 arr[i:i+BAR_THICKNESS_PX, :] = 255
                 arr[:, i:i+BAR_THICKNESS_PX] = 255
@@ -186,8 +187,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.doubleSpinBox_gb_spacing.setVisible(True)
             self.doubleSpinBox_gb_width.setVisible(True)
 
-            self.doubleSpinBox_gb_spacing.setValue(BAR_SPACING_PX)
-            self.doubleSpinBox_gb_width.setValue(BAR_THICKNESS_PX)
+            self.doubleSpinBox_gb_spacing.setValue(50)
+            self.doubleSpinBox_gb_width.setValue(5)
             
 
         else:
@@ -203,17 +204,21 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.doubleSpinBox_gb_width.setVisible(False)
 
             self.viewer.layers.remove(layer_to_remove)
+            self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
             self.comboBox_correlation_selected_layer.clear()
             self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name ])
-
+            self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
 
 
     def _update_gridbar(self):
 
-        pass
+        pixel_size = self.image.metadata.pixel_size.x
 
-        BAR_THICKNESS_PX = int(self.doubleSpinBox_gb_width.value())
-        BAR_SPACING_PX = int(self.doubleSpinBox_gb_spacing.value())
+        print(f'pixel size: {pixel_size}')
+
+
+        BAR_THICKNESS_PX = int(self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI / pixel_size)
+        BAR_SPACING_PX = int(self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI / pixel_size)
 
         gridbar_layer = ''
 
@@ -593,7 +598,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self._corr_image_layers.append(
                 self.viewer.add_image(image.data, 
                 name=_name, colormap=COLOURS[idx%len(COLOURS)], 
-                blending="translucent", opacity=0.5)
+                blending="translucent", opacity=0.2)
             )
 
             self._correlation[_name] = deepcopy([0, 0, 1.0, 1.0, 0])
@@ -615,7 +620,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # set ui
         layer_name = self.comboBox_correlation_selected_layer.currentText()
         if layer_name == "":
-            napari.utils.notifications.show_info(f"Please select a layer to correlate with...")
+            napari.utils.notifications.show_info(f"Please select a layer to correlate with  update data...")
             return
 
         tx, ty, sx, sy, r = self._correlation[layer_name]
@@ -634,14 +639,16 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # select layer
         layer_name = self.comboBox_correlation_selected_layer.currentText()
         if layer_name == "":
-            napari.utils.notifications.show_info(f"Please select a layer to correlate with...")
+            napari.utils.notifications.show_info(f"Please select a layer to correlate with update ui...")
             return
 
         tx, ty = self.doubleSpinBox_correlation_translation_x.value(), self.doubleSpinBox_correlation_translation_y.value()
         sx, sy = self.doubleSpinBox_correlation_scale_x.value(), self.doubleSpinBox_correlation_scale_y.value()
         r = self.doubleSpinBox_correlation_rotation.value()
 
-        
+        if sx == 0 or sy == 0:
+            sx =1
+            sy =1
 
         angle = np.deg2rad(r)
 
@@ -649,9 +656,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         cols = self.viewer.layers[layer_name].data.shape[1]*0.5
 
 
-        print(f' rows: {rows}, cols: {cols}')
-
-    #     # the proof is marvelous but i dont have enough space in the comments
+        # the proof for this is marvelous but i dont have enough space in the comments
 
         new_x = int(np.cos(angle) * rows - np.sin(angle) * cols) 
         new_y =  int(np.sin(angle) * rows + np.cos(angle) * cols) 
