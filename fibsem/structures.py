@@ -1635,7 +1635,8 @@ class FibsemImageMetadata:
             dictionary: self as a dictionary
         """
         if self.image_settings is not None:
-            settings_dict = self.image_settings.__to_dict__()
+            settings_dict = self.image_settings.__to_dict__() # TODO: gracefully depreceate this
+            settings_dict["image"] = self.image_settings.__to_dict__()
         if self.version is not None:
             settings_dict["version"] = self.version
         if self.pixel_size is not None:
