@@ -547,7 +547,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
 
 
-    def update_viewer(self, arr: np.ndarray, name: str):
+    def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
 
 
         if name == BeamType.ELECTRON.name:
@@ -616,8 +616,19 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
             
-        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])      
         
+        # set ui from image metadata
+        if _set_ui:
+            if name == BeamType.ELECTRON.name:
+                self.image_settings = self.eb_image.metadata.image_settings
+                beam_type = BeamType.ELECTRON
+            if name == BeamType.ION.name:
+                self.image_settings = self.ib_image.metadata.image_settings
+                beam_type = BeamType.ION            
+        else:
+            beam_type = BeamType[self.selected_beam.currentText()]
+        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type)  
+            
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
             self.viewer.layers.selection.active = self.eb_layer

@@ -13,7 +13,7 @@ from fibsem import patterning
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 from fibsem.imaging import _tile
-from scipy.ndimage import median_filter
+from scipy.ndimage import median_filter,rotate
 
 from copy import deepcopy
 
@@ -78,6 +78,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
 
+        
+
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
         self._update_tile_collection.connect(self._update_tile_collection_callback)
@@ -108,6 +110,23 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
 
         self.lineEdit_tile_path.setText(self.settings.image.save_path)
+
+        # gridbar
+
+        self.checkBox_gridbar.stateChanged.connect(self._gridbar_set)
+        self.label_gb_spacing.setVisible(False)
+        self.label_gb_width.setVisible(False)
+        self.doubleSpinBox_gb_spacing.setVisible(False)
+        self.doubleSpinBox_gb_width.setVisible(False)
+
+        self.doubleSpinBox_gb_spacing.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_width.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_spacing.setKeyboardTracking(False)
+        self.doubleSpinBox_gb_width.setKeyboardTracking(False)
+
+
+
+
 
 
     def update_positions_from_parent(self, positions):
@@ -154,6 +173,83 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         worker.finished.connect(self._tile_collection_finished)
         worker.start()
+
+
+    def _gridbar_set(self):
+
+        if self.checkBox_gridbar.isChecked():
+
+            grid_shape = self.image.data.shape
+            arr = np.zeros(shape=grid_shape, dtype=np.uint8)
+
+            pixelsize = self.image.metadata.pixel_size.x
+
+            # create grid, grid bars thickness = 10px
+            BAR_THICKNESS_PX = int(5 * constants.MICRO_TO_SI / pixelsize)
+            BAR_SPACING_PX = int(50 * constants.MICRO_TO_SI / pixelsize)   
+            for i in range(0, arr.shape[0], BAR_SPACING_PX ):
+                arr[i:i+BAR_THICKNESS_PX, :] = 255
+                arr[:, i:i+BAR_THICKNESS_PX] = 255
+
+            gridbar_image = FibsemImage(data=arr)
+
+            self._update_correlation_image(gridbar_image, gridbar=True)
+
+            self.label_gb_spacing.setVisible(True)
+            self.label_gb_width.setVisible(True)
+            self.doubleSpinBox_gb_spacing.setVisible(True)
+            self.doubleSpinBox_gb_width.setVisible(True)
+
+            self.doubleSpinBox_gb_spacing.setValue(50)
+            self.doubleSpinBox_gb_width.setValue(5)
+            
+
+        else:
+            
+            layer_to_remove = ""
+            for layer in self.viewer.layers:
+                if "gridbar" in layer.name:
+                    layer_to_remove = layer.name
+            
+            self.label_gb_spacing.setVisible(False)
+            self.label_gb_width.setVisible(False)
+            self.doubleSpinBox_gb_spacing.setVisible(False)
+            self.doubleSpinBox_gb_width.setVisible(False)
+
+            self.viewer.layers.remove(layer_to_remove)
+            self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
+            self.comboBox_correlation_selected_layer.clear()
+            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name ])
+            self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
+
+
+    def _update_gridbar(self):
+
+        pixel_size = self.image.metadata.pixel_size.x
+
+        print(f'pixel size: {pixel_size}')
+
+
+        BAR_THICKNESS_PX = int(self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI / pixel_size)
+        BAR_SPACING_PX = int(self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI / pixel_size)
+
+        gridbar_layer = ''
+
+        for layer in self.viewer.layers:
+            if "gridbar" in layer.name:
+                gridbar_layer = layer.name
+        
+        grid_shape = self.viewer.layers[gridbar_layer].data.shape
+
+        arr = np.zeros(shape=grid_shape, dtype=np.uint8)
+        for i in range(0, arr.shape[0], BAR_SPACING_PX ):
+            arr[i:i+BAR_THICKNESS_PX, :] = 255
+            arr[:, i:i+BAR_THICKNESS_PX] = 255
+
+        self.viewer.layers[gridbar_layer].data = arr
+
+
+
 
     def _tile_collection_finished(self):
 
@@ -295,12 +391,13 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         elif 'Alt' in event.modifiers:
             _new_position.name = f"Position {len(self.positions)+1:02d}" 
             self.positions.append(_new_position)
+            self._stage_position_added.emit(_new_position)
+
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
         self._update_position_info()
         self._update_viewer()
 
-        self._stage_position_added.emit(_new_position)
 
         self._minimap_positions.emit(self.positions)
 
@@ -322,12 +419,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _update_current_position_info(self):
 
         idx = self.comboBox_tile_position.currentIndex()
-        if idx != -1:
+        if idx != -1 and len(self.positions) > 0:
             self.lineEdit_tile_position_name.setText(self.positions[idx].name)
+            self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
         else:
             self.lineEdit_tile_position_name.setText("")
         
-        self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
 
     def _update_position_info(self):
         idx = self.comboBox_tile_position.currentIndex()
@@ -451,7 +548,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             colors.append("red")
 
             colors_rgba = [[0,1,0,1] for _ in range(len(drawn_positions)-1)]
-            colors_rgba.append([1,0,0,1])
+            colors_rgba.append([1,1,0,1]) # yellow
 
             text = {
                 "string": [pos.name for pos in drawn_positions],
@@ -516,24 +613,27 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._update_correlation_image(image)
 
 
-    def _update_correlation_image(self, image: FibsemImage = None):
+    def _update_correlation_image(self, image: FibsemImage = None,gridbar:bool=False):
 
         if image is not None:
             
-            _basename = f"correlation-image" 
+            _basename = f"correlation-image" if not gridbar else f"gridbar-image"
             idx = 1
             _name = f"{_basename}-{idx:02d}"
             while _name in self.viewer.layers:
                 idx+=1
                 _name = f"{_basename}-{idx:02d}"
 
+            # if grid bar in _name, idx = 3
+            if gridbar:
+                idx = 3
 
             COLOURS = ["green", "cyan", "magenta", "red", "yellow"]
 
             self._corr_image_layers.append(
                 self.viewer.add_image(image.data, 
                 name=_name, colormap=COLOURS[idx%len(COLOURS)], 
-                blending="translucent", opacity=0.5)
+                blending="translucent", opacity=0.2)
             )
 
             self._correlation[_name] = deepcopy([0, 0, 1.0, 1.0, 0])
@@ -542,7 +642,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
             idx = self.comboBox_correlation_selected_layer.currentIndex()
             self.comboBox_correlation_selected_layer.clear()
-            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name])
+            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name or "gridbar-image" in layer.name])
             if idx != -1:
                 self.comboBox_correlation_selected_layer.setCurrentIndex(idx)
             self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
@@ -555,7 +655,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # set ui
         layer_name = self.comboBox_correlation_selected_layer.currentText()
         if layer_name == "":
-            napari.utils.notifications.show_info(f"Please select a layer to correlate with...")
+            napari.utils.notifications.show_info(f"Please select a layer to correlate with  update data...")
             return
 
         tx, ty, sx, sy, r = self._correlation[layer_name]
@@ -574,24 +674,43 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # select layer
         layer_name = self.comboBox_correlation_selected_layer.currentText()
         if layer_name == "":
-            napari.utils.notifications.show_info(f"Please select a layer to correlate with...")
+            napari.utils.notifications.show_info(f"Please select a layer to correlate with update ui...")
             return
 
         tx, ty = self.doubleSpinBox_correlation_translation_x.value(), self.doubleSpinBox_correlation_translation_y.value()
         sx, sy = self.doubleSpinBox_correlation_scale_x.value(), self.doubleSpinBox_correlation_scale_y.value()
         r = self.doubleSpinBox_correlation_rotation.value()
 
+        if sx == 0 or sy == 0:
+            sx =1
+            sy =1
+
+        angle = np.deg2rad(r)
+
+        rows = self.viewer.layers[layer_name].data.shape[0]*0.5 
+        cols = self.viewer.layers[layer_name].data.shape[1]*0.5
+
+
+        # the proof for this is marvelous but i dont have enough space in the comments
+
+        new_x = int(np.cos(angle) * rows - np.sin(angle) * cols) 
+        new_y =  int(np.sin(angle) * rows + np.cos(angle) * cols) 
+
+        trans_x = new_x -rows 
+        trans_y = new_y -cols 
+
+        # translation for central rotation + translation
+        corrected_tx = tx - trans_y
+        corrected_ty = -ty - trans_x
+
+
         self._correlation[layer_name] = deepcopy([tx, ty, sx, sy, r])
 
         # apply to selected layer
-        self.viewer.layers[layer_name].translate = [ty, tx]
+        self.viewer.layers[layer_name].translate = [corrected_ty, corrected_tx]
         self.viewer.layers[layer_name].scale = [sy, sx]
         self.viewer.layers[layer_name].rotate = r
 
-
-
-# TODO: allow multiple correlation images
-# TODO: change name: tile to minimap
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 
 
