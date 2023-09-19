@@ -55,6 +55,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 settings=self.settings,
                 viewer=self.viewer,
                 config_path = cfg.SYSTEM_PATH,
+                parent=self,
             )
         
         self.tabWidget.addTab(self.system_widget, "System")
