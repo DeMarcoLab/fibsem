@@ -2220,6 +2220,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         self._safe_absolute_stage_movement(microscope_state.absolute_position)
 
+            
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
     
@@ -4643,7 +4644,7 @@ class TescanMicroscope(FibsemMicroscope):
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
         # )
-
+        self.set_detector_settings(state.eb_detector, BeamType.ELECTRON)
         # restore ion beam
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"restoring ion beam settings...")
@@ -4658,6 +4659,8 @@ class TescanMicroscope(FibsemMicroscope):
             print("hello from the dark side scan rotation ib")
             self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
+        self.set_detector_settings(state.ib_detector, BeamType.ION)
+
         self.move_stage_absolute(microscope_state.absolute_position)
         logging.info(f"microscope state restored")
         return
@@ -5486,6 +5489,8 @@ class DemoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.hardware_settings)
         _check_beam(BeamType.ELECTRON, self.hardware_settings)
         _check_stage(self.hardware_settings)
+        self.set_detector_settings(state.eb_detector, BeamType.ELECTRON)
+        self.set_detector_settings(state.ib_detector, BeamType.ION)
         self.move_stage_absolute(state.absolute_position)
         logging.info(f"Setting microscope state")
         
