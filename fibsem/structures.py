@@ -567,6 +567,10 @@ class ImageSettings:
     gamma_enabled: bool = None
     save_path: Path = None
     reduced_area: FibsemRectangle = None
+    line_integration: int = None # (int32) 2 - 255
+    scan_interlacing: int = None # (int32) 2 - 8
+    frame_integration: int  = None # (int32) 2 - 512
+    drift_correction: bool = False # (bool) # requires frame_integration > 1
 
     def __post_init__(self):
 
@@ -603,6 +607,10 @@ class ImageSettings:
             save_path=settings.get("save_path", os.getcwd()),
             label=settings.get("label", "default_image"),
             reduced_area=reduced_area,
+            line_integration=settings.get("line_integration", None),
+            scan_interlacing=settings.get("scan_interlacing", None),
+            frame_integration=settings.get("frame_integration", None),
+            drift_correction=settings.get("drift_correction", False),
         )
 
         return image_settings
@@ -629,6 +637,10 @@ class ImageSettings:
             }
             if self.reduced_area is not None
             else None,
+            "line_integration": self.line_integration,
+            "scan_interlacing": self.scan_interlacing,
+            "frame_integration": self.frame_integration,
+            "drift_correction": self.drift_correction,
         }
 
         return settings_dict
@@ -679,11 +691,10 @@ class BeamSettings:
     hfw: float = None
     resolution: list = None
     dwell_time: float = None
-    stigmation: Point = None # should be list of points?
-    shift: Point = None # same? it is being turned to fibsem rectangle? needs 4 points?
+    stigmation: Point = None 
+    shift: Point = None 
     scan_rotation: float = None
 
-    ## FROM DICT AND TO DICT DOES NOT HAVE VOLTAGE (ADDED IN)
 
     def __post_init__(self):
 
@@ -709,6 +720,7 @@ class BeamSettings:
             "dwell_time": self.dwell_time,
             "stigmation": self.stigmation.__to_dict__() if self.stigmation is not None else None,
             "shift": self.shift.__to_dict__() if self.shift is not None else None,
+            "scan_rotation": self.scan_rotation,
         }
 
         return state_dict
@@ -736,6 +748,7 @@ class BeamSettings:
             dwell_time=state_dict["dwell_time"],
             stigmation=stigmation,
             shift=shift,
+            scan_rotation=state_dict.get("scan_rotation", 0.0),
             )
 
         return beam_settings
