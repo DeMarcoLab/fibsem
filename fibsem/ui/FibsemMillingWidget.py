@@ -438,6 +438,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         point = conversions.image_to_microscope_image_coordinates(
                 Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
             )
+        
+        clicked = deepcopy(point)
 
         # only move the pattern if milling widget is activate and beamtype is ion?
         renewed_patterns = []
@@ -486,8 +488,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 _redraw = True
 
         if _redraw:
-            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
+            self.doubleSpinBox_centre_x.setValue(clicked.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(clicked.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
             logging.info(f"Moved patterns to {point} ")
             logging.info(f"MILL | {self.milling_stages[current_stage_index].pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
             self.update_ui(milling_stages=self.milling_stages)
