@@ -744,8 +744,8 @@ class BeamSettings:
 class FibsemDetectorSettings:
     type: str = None
     mode: str = None
-    brightness: float = None
-    contrast: float = None
+    brightness: float = 0.5
+    contrast: float = 0.5
 
     def __post_init__(self):
 

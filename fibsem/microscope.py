@@ -5061,7 +5061,14 @@ class DemoMicroscope(FibsemMicroscope):
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
                                          microscope_state=MicroscopeState(
                                             absolute_position=self.stage_position,
-                                         ),detector_settings=FibsemDetectorSettings()))
+                                            eb_settings=self.electron_beam,
+                                            ib_settings=self.ion_beam,
+                                            eb_detector=self.electron_detector_settings,
+                                            ib_detector=self.ion_detector_settings
+                                        ),
+                                        detector_settings=FibsemDetectorSettings(type="Unknown", mode="Unknown", brightness=0.5, contrast=0.5),
+                                        )
+        )
 
         image.metadata.user = self.user
         image.metadata.experiment = self.experiment
@@ -5154,7 +5161,14 @@ class DemoMicroscope(FibsemMicroscope):
     def get_current_microscope_state(self) -> MicroscopeState:
         _check_stage(self.hardware_settings)
         logging.info(f"Getting microscope state")
-        return MicroscopeState(absolute_position=self.stage_position)
+        microscope_state=MicroscopeState(
+            absolute_position=self.stage_position,
+            eb_settings=self.electron_beam,
+            ib_settings=self.ion_beam,
+            eb_detector=self.electron_detector_settings,
+            ib_detector=self.ion_detector_settings
+            )
+        return microscope_state
 
     def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
 
