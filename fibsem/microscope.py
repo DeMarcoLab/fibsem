@@ -862,6 +862,9 @@ class ThermoMicroscope(FibsemMicroscope):
             tilt = True
         else:
             tilt = False
+                   
+        wd = self.connection.beams.electron_beam.working_distance.value
+
         _check_stage(self.hardware_settings, rotation=rotation, tilt=tilt)
         logging.info(f"Moving stage to {position}.")
         logging.debug(f"MOVE_ABSOLUTE | {position.__to_dict__()}.")
@@ -869,7 +872,12 @@ class ThermoMicroscope(FibsemMicroscope):
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
         stage.absolute_move(thermo_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
-
+                   
+        # adjust working distance for microscope compenstation
+        self.connection.beams.electron_beam.working_distance.value = wd
+        self.connection.specimen.stage.link()
+            
+        
     def move_stage_relative(self, position: FibsemStagePosition):
         """
         Move the stage by the specified relative move.
