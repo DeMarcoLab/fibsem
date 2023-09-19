@@ -8,6 +8,12 @@ import os
 # for easier usage
 import fibsem.constants as constants
 
+_TESCAN_API_AVAILABLE = False
+_THERMO_API_AVAILABLE = False
+
+# DEVELOPMENT
+_OVERWRITE_AUTOSCRIPT_VERSION = False
+    
 try:
     import re
 
@@ -25,6 +31,7 @@ try:
     sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
     sys.modules.pop("PySide6.QtCore")
+    _TESCAN_API_AVAILABLE = True
 except:
     logging.debug("Automation (TESCAN) not installed.")
 
@@ -40,6 +47,9 @@ try:
     if VERSION < 4.6:
         raise NameError("Please update your AutoScript version to 4.6 or higher.")
     
+    if _OVERWRITE_AUTOSCRIPT_VERSION:
+        VERSION = 4.7
+        
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
@@ -50,7 +60,8 @@ try:
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 
-    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
+    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition
+    _THERMO_API_AVAILABLE = True 
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
     if isinstance(e, NameError):
@@ -434,6 +445,8 @@ class ThermoMicroscope(FibsemMicroscope):
     """
 
     def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings =None,):
+        if _THERMO_API_AVAILABLE == False:
+            raise Exception("Autoscript (ThermoFisher) not installed. Please see the user guide for installation instructions.")            
         self.connection = SdbMicroscopeClient()
         import fibsem
         import fibsem.config as cfg
@@ -528,6 +541,10 @@ class ThermoMicroscope(FibsemMicroscope):
             resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
             dwell_time=image_settings.dwell_time,
             reduced_area=reduced_area,
+            line_integration=image_settings.line_integration,
+            scan_interlacing=image_settings.scan_interlacing,
+            frame_integration=image_settings.frame_integration,
+            drift_correction=image_settings.drift_correction,
         )
 
         if image_settings.beam_type == BeamType.ELECTRON:
@@ -2776,6 +2793,8 @@ class TescanMicroscope(FibsemMicroscope):
     """
 
     def __init__(self, ip_address: str = "localhost", hardware_settings: FibsemHardware = None, stage_settings: StageSettings = None):
+        if _TESCAN_API_AVAILABLE == False:
+            raise ImportError("The TESCAN Automation API is not available. Please see the user guide for installation instructions.")
         self.connection = Automation(ip_address)
         detectors = self.connection.FIB.Detector.Enum()
         self.ion_detector_active = detectors[0]
