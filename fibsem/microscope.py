@@ -276,6 +276,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        pass
+
+    @abstractmethod
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
@@ -2311,6 +2315,13 @@ class ThermoMicroscope(FibsemMicroscope):
         if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas is True:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
     
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        self.set("detector_type", detector_settings.type, beam_type)
+        self.set("detector_mode", detector_settings.mode, beam_type)
+        self.set("detector_brightness", detector_settings.brightness, beam_type)
+        self.set("detector_contrast", detector_settings.contrast, beam_type)
+
+        
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the specified beam type.
 
@@ -4727,6 +4738,13 @@ class TescanMicroscope(FibsemMicroscope):
         if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
 
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        self.set("detector_type", detector_settings.type, beam_type)
+        self.set("detector_mode", detector_settings.mode, beam_type)
+        self.set("detector_brightness", detector_settings.brightness, beam_type)
+        self.set("detector_contrast", detector_settings.contrast, beam_type)
+                    
+
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the microscope.
 
@@ -5531,7 +5549,14 @@ class DemoMicroscope(FibsemMicroscope):
         self.set("current", beam_settings.current, beam_settings.beam_type)
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
         self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
-        
+
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        self.set("detector_type", detector_settings.type, beam_type)
+        self.set("detector_mode", detector_settings.mode, beam_type)
+        self.set("detector_brightness", detector_settings.brightness, beam_type)
+        self.set("detector_contrast", detector_settings.contrast, beam_type)
+
+
     def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
         detector_settings = FibsemDetectorSettings(
             dtype=self.get("detector_type", beam_type),
