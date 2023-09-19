@@ -152,6 +152,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui_after_movement()
 
     def run_moving_finished(self):
+        self.positions_signal.emit(None)
         if self.parent.image_widget.TAKING_IMAGES:
             return
         self._toggle_interactions(True)
