@@ -39,6 +39,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
     _milling_finished = QtCore.pyqtSignal()
     milling_notification = QtCore.pyqtSignal(str)
+    _progress_bar_update = QtCore.pyqtSignal(float)
 
     def __init__(
         self,
@@ -154,6 +155,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
             self.update_milling_stage_ui()
         self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_milling_stage_ui())
+
+        # progress bar
+        self.progressBar_milling.setVisible(False)
+        self._progress_bar_update.connect(self.update_progress_bar)
 
         # last
         self.doubleSpinBox_centre_x.setKeyboardTracking(False)
@@ -628,7 +633,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         #     self.pushButton_run_milling.setStyleSheet("background-color: orange")
 
     def run_milling(self):
-
+        
+        self.progressBar_milling.setVisible(True)
+        self.progressBar_milling.setValue(0)
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
         # worker.yielded.connect(self.update_milling_ui)
@@ -639,7 +646,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         milling_stages = self.get_milling_stages()
         self._toggle_interactions(enabled=False,milling=True)
-        for stage in milling_stages:
+        for idx,stage in enumerate(milling_stages):
             self.milling_notification.emit(f"Preparing: {stage.name}")
             if stage.pattern is not None:
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
@@ -656,8 +663,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                 log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
 
+            progress_value = (idx / len(milling_stages))
+            self._progress_bar_update.emit(progress_value)
             self.milling_notification.emit(f"Milling stage complete: {stage.name}")
         self.milling_notification.emit(f"Milling complete. {len(self.milling_stages)} stages completed.")
+
+    def update_progress_bar(self, value: float):
+
+        self.progressBar_milling.setValue(value*100)
 
     def update_milling_ui(self, msg: str):
         logging.info(msg)
@@ -670,6 +683,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # take new images and update ui
         self._toggle_interactions(enabled=True)
         self.image_widget.take_reference_images()
+        self.progressBar_milling.setVisible(False)
         self.update_ui()
         self._milling_finished.emit()
 
