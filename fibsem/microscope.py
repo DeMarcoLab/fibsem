@@ -4052,6 +4052,14 @@ class TescanMicroscope(FibsemMicroscope):
         except:
             pass
 
+    def _milling_estimate(self,milling_stages):
+        
+        self.connection.DrawBeam.LoadLayer(self.layer)
+        time = self.connection.DrawBeam.EstimateTime()
+        self.connection.DrawBeam.UnloadLayer()
+
+        return time
+
     def draw_rectangle(
         self,
         pattern_settings: FibsemPatternSettings,
