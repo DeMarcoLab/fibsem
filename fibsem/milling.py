@@ -15,6 +15,7 @@ from fibsem.structures import (
 from typing import Union
 from fibsem.microscope import FibsemMicroscope
 
+
 ########################### SETUP
 
 
@@ -60,16 +61,24 @@ def run_milling(
         asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
     """
     microscope.run_milling(milling_current, asynch)
-
-def milling_time_estimate(microscope: FibsemMicroscope, milling_stages) -> int:
+from fibsem.patterning import FibsemMillingStage
+def milling_time_estimate(microscope: FibsemMicroscope, milling_stages: list[FibsemMillingStage]) -> float:
     """Get the milling status.
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
 
     """
-    microscope._milling_estimate(milling_stages)
-    pass
+    total_time = 0
+    for stage in milling_stages:
+        setup_milling(microscope, stage.milling)
+        
+        draw_patterns(microscope, stage.pattern.patterns)
+        total_time += microscope._milling_estimate(milling_stages)
+        
+    if total_time > 50: #while testing
+        total_time = 20
+    return total_time
 
 def finish_milling(
     microscope: FibsemMicroscope, imaging_current: float = 20e-12

@@ -67,7 +67,6 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                MicroscopeState, Point, FibsemDetectorSettings,
                                ThermoGISLine,ThermoMultiChemLine, StageSettings,
                             FibsemSystem, FibsemUser, FibsemExperiment)
-
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -210,6 +209,9 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def finish_milling(self, imaging_current: float) -> None:
+        pass
+    @abstractmethod
+    def _milling_estimate(self,milling_stages) -> float:
         pass
 
     @abstractmethod
@@ -1507,6 +1509,15 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.clear_patterns()
         self.connection.beams.ion_beam.beam_current.value = imaging_current
         self.connection.patterning.mode = "Serial"
+
+    def _milling_estimate(self,milling_stages ) -> float:
+        
+        # total_time = 0
+
+        # for stage in milling_stages:
+
+
+        pass
 
     def draw_rectangle(
         self,
@@ -4051,14 +4062,15 @@ class TescanMicroscope(FibsemMicroscope):
             print("hello")
         except:
             pass
-
+    
     def _milling_estimate(self,milling_stages):
         
+        # load and unload layer to check time
         self.connection.DrawBeam.LoadLayer(self.layer)
-        time = self.connection.DrawBeam.EstimateTime()
+        est_time = self.connection.DrawBeam.EstimateTime() 
         self.connection.DrawBeam.UnloadLayer()
 
-        return time
+        return est_time
 
     def draw_rectangle(
         self,
@@ -5272,6 +5284,17 @@ class DemoMicroscope(FibsemMicroscope):
     def finish_milling(self, imaging_current: float) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
+
+
+    def _milling_estimate(self,milling_stages) -> float:
+
+        total_time = 0
+        for stage in milling_stages:
+            for pattern in stage.pattern.patterns:
+                total_time += 5
+        
+        return total_time
+        
 
     def draw_rectangle(self, pattern_settings: FibsemPatternSettings) -> None:
         logging.info(f"Drawing rectangle: {pattern_settings}")
