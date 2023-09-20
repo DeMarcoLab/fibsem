@@ -211,7 +211,7 @@ class FibsemMicroscope(ABC):
     def finish_milling(self, imaging_current: float) -> None:
         pass
     @abstractmethod
-    def _milling_estimate(self,milling_stages) -> float:
+    def _milling_estimate(self,patterns) -> float:
         pass
 
     @abstractmethod
@@ -1510,14 +1510,17 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.beam_current.value = imaging_current
         self.connection.patterning.mode = "Serial"
 
-    def _milling_estimate(self,milling_stages ) -> float:
+    def _milling_estimate(self,patterns ) -> float:
         
+        total_time = 0
+        for pattern in patterns:
+            total_time += pattern.time
         # total_time = 0
 
         # for stage in milling_stages:
 
 
-        pass
+        return total_time
 
     def draw_rectangle(
         self,
@@ -4063,7 +4066,7 @@ class TescanMicroscope(FibsemMicroscope):
         except:
             pass
     
-    def _milling_estimate(self,milling_stages):
+    def _milling_estimate(self,patterns):
         
         # load and unload layer to check time
         self.connection.DrawBeam.LoadLayer(self.layer)
@@ -5286,12 +5289,11 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Finishing milling: {imaging_current:.2e}")
 
 
-    def _milling_estimate(self,milling_stages) -> float:
+    def _milling_estimate(self,patterns) -> float:
 
         total_time = 0
-        for stage in milling_stages:
-            for pattern in stage.pattern.patterns:
-                total_time += 5
+        for pattern in patterns:
+            total_time += 5
         
         return total_time
         
