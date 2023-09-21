@@ -78,8 +78,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.viewer_update_signal.connect(self.update_ui) # this happens after every time the viewer is updated
 
         # milling
-        available_currents = self.microscope.get_available_values("current", BeamType.ION)
-        self.comboBox_milling_current.addItems([str(current) for current in available_currents])
+        self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
+        self.comboBox_milling_current.addItems([str(current) for current in self.AVAILABLE_MILLING_CURRENTS])
 
         _THERMO = isinstance(self.microscope, ThermoMicroscope)
         _TESCAN = isinstance(self.microscope, TescanMicroscope)
@@ -515,10 +515,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
    
     def set_milling_settings_ui(self, milling: FibsemMillingSettings) -> None:
 
-        if self.comboBox_milling_current.findText(str(milling.milling_current)) == -1:
-            napari.utils.notifications.show_warning(f"Could not find milling current {milling.milling_current} in list of available currents.")
-        else:
-            self.comboBox_milling_current.setCurrentText(str(milling.milling_current))
+        # match to closest available milling current
+        idx = np.argmin(np.abs(np.array(self.AVAILABLE_MILLING_CURRENTS) - milling.milling_current))
+        self.comboBox_milling_current.setCurrentIndex(idx)
         self.comboBox_application_file.setCurrentText(milling.application_file)
         self.doubleSpinBox_rate.setValue(milling.rate*constants.SI_TO_NANO)
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)

@@ -6,7 +6,6 @@ import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
-# from playsound import playsound
 
 import fibsem
 from fibsem import config as cfg
@@ -393,7 +392,6 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.connect(ip_address, manufacturer )
 
         self.update_ui()
-        # playsound(r"C:\Users\Rohit\Documents\UNI\DEMARCO\code\fibsem\fibsem\ui\startup.mp3")
 
     def update_ui(self):
 
