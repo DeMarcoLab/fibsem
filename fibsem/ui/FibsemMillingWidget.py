@@ -507,6 +507,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._UPDATING_PATTERN = False
 
     def valid_pattern_location(self,stage_pattern):
+
+        if stage_pattern.name == "Fiducial":
+            # checking if reduced area for fiducial is valid
+            stage_pattern.patterns[0].height *= 3
+            stage_pattern.patterns[1].height *= 3
         
         for pattern_settings in stage_pattern.patterns:
             if pattern_settings.pattern is FibsemPattern.Circle:
@@ -518,6 +523,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             if not output:
                 return False
         
+        if stage_pattern.name == "Fiducial":
+            stage_pattern.patterns[0].height /= 3
+            stage_pattern.patterns[1].height /= 3
+
         return True
    
     def set_milling_settings_ui(self, milling: FibsemMillingSettings) -> None:
