@@ -449,11 +449,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         
     def take_image(self, beam_type: BeamType = None):
         self.TAKING_IMAGES = True
-        print("helllo from thread")
         worker = self.take_image_worker(beam_type)
         worker.finished.connect(self.imaging_finished)
         worker.start()
-        print("started thread")
 
     def update_imaging_ui(self, msg: str):
         logging.info(msg)
@@ -506,7 +504,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     @thread_worker
     def take_image_worker(self, beam_type: BeamType = None):
         self._toggle_interactions(enable=False, imaging=True)
-        print("Taking image...")
         self.image_settings = self.get_settings_from_ui()[0]
         self.image_notification_signal.emit("Taking image...")
         if beam_type is not None:
@@ -529,7 +526,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         worker = self.take_reference_images_worker()
         worker.finished.connect(self.imaging_finished)
         worker.start()
-        print("started thread")
 
     @thread_worker
     def take_reference_images_worker(self):
