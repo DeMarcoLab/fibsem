@@ -61,30 +61,18 @@ def run_milling(
         asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
     """
     microscope.run_milling(milling_current, asynch)
-from fibsem.patterning import FibsemMillingStage
-def milling_time_estimate(microscope: FibsemMicroscope, milling_stages: list[FibsemMillingStage]) -> float:
+
+
+def milling_time_estimate(microscope: FibsemMicroscope, microscope_patterns) -> float:
     """Get the milling status.
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
 
     """
-    total_time = 0
-    for stage in milling_stages:
 
-        setup_milling(microscope, stage.milling)
+    total_time = microscope._milling_estimate(microscope_patterns)
         
-        # for thermo, needs to return the pattern objects to check for time
-        # for tescan, needs to load layer which is done in draw patterns
-        
-        microscope_patterns = draw_patterns(microscope, stage.pattern.patterns)
-
-        if microscope_patterns is None:
-            microscope_patterns = [1*len(stage.pattern.patterns)]
-        total_time = microscope._milling_estimate(microscope_patterns)
-        
-    if total_time > 50: #while testing
-        total_time = 20
     return total_time
 
 def finish_milling(

@@ -40,6 +40,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     _milling_finished = QtCore.pyqtSignal()
     milling_notification = QtCore.pyqtSignal(str)
     _progress_bar_update = QtCore.pyqtSignal(float)
+    _progress_bar_start = QtCore.pyqtSignal(object)
 
     def __init__(
         self,
@@ -159,6 +160,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # progress bar
         self.progressBar_milling.setVisible(False)
         self._progress_bar_update.connect(self.update_progress_bar)
+        self._progress_bar_start.connect(self.start_progress_thread)
 
         # last
         self.doubleSpinBox_centre_x.setKeyboardTracking(False)
@@ -635,16 +637,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def run_milling(self):
         
         worker = self.run_milling_step()
-        milling_stages = self.get_milling_stages()
-        est_time = milling.milling_time_estimate(self.microscope, milling_stages)
-        print(f'------------Estimated time total for milling: {est_time}--------------------------')
-        worker2 = self.start_progress_bar(est_time=est_time)
         worker.finished.connect(self.run_milling_finished)
-        worker2.finished.connect(self.finish_progress_bar)
-        # worker.yielded.connect(self.update_milling_ui)
+        # worker.finished.connect(self.finish_progress_bar)
         worker.start()
-        worker2.start()
         
+
+    def start_progress_thread(self,est_time):
+        worker = self.start_progress_bar(est_time=est_time)
+        worker.finished.connect(self.finish_progress_bar)
+
+        worker.start()
 
     @thread_worker
     def start_progress_bar(self,est_time):
@@ -652,10 +654,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.progressBar_milling.setVisible(True)
         self.progressBar_milling.setValue(0)
         i = 0
+        # time.sleep(2)
+        inc = 0.5
         while i < est_time:
-            time.sleep(0.5)
-            self._progress_bar_update.emit((i+0.5)/est_time)
-            i += 0.5 
+            time.sleep(inc)
+            self._progress_bar_update.emit((i+inc)/est_time)
+            i += inc 
 
     def finish_progress_bar(self):
         self.progressBar_milling.setVisible(False)
@@ -666,6 +670,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         milling_stages = self.get_milling_stages()
         self._toggle_interactions(enabled=False,milling=True)
+            
         for idx,stage in enumerate(milling_stages):
             self.milling_notification.emit(f"Preparing: {stage.name}")
             if stage.pattern is not None:
@@ -674,7 +679,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
-                milling.draw_patterns(self.microscope, stage.pattern.patterns)
+                microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
+                estimated_time = milling.milling_time_estimate(self.microscope, microscope_patterns)
+                print(f'------------------------- estimated time: {estimated_time}------------------------------')
+                self._progress_bar_start.emit(estimated_time)
 
                 self.milling_notification.emit(f"Running {stage.name}...")
                 milling.run_milling(self.microscope, stage.milling.milling_current)

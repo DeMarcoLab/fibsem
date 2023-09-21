@@ -1516,7 +1516,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         total_time = 0
         for pattern in patterns:
-            total_time += pattern.time
+            print(f'------------------\nPattern time: {pattern.time}\n------------------')
+            est_time = pattern.time
+            total_time += est_time
 
         return total_time
 
