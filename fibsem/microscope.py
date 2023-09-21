@@ -1512,13 +1512,11 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def _milling_estimate(self,patterns ) -> float:
         
+        # goes through pattern object and returns time
+
         total_time = 0
         for pattern in patterns:
             total_time += pattern.time
-        # total_time = 0
-
-        # for stage in milling_stages:
-
 
         return total_time
 

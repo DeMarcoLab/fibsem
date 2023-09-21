@@ -634,8 +634,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def run_milling(self):
         
-        self.progressBar_milling.setVisible(True)
-        self.progressBar_milling.setValue(0)
         worker = self.run_milling_step()
         milling_stages = self.get_milling_stages()
         est_time = milling.milling_time_estimate(self.microscope, milling_stages)
@@ -650,6 +648,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     @thread_worker
     def start_progress_bar(self,est_time):
+        
+        self.progressBar_milling.setVisible(True)
+        self.progressBar_milling.setValue(0)
         i = 0
         while i < est_time:
             time.sleep(0.5)
