@@ -567,6 +567,10 @@ class ImageSettings:
     gamma_enabled: bool = None
     save_path: Path = None
     reduced_area: FibsemRectangle = None
+    line_integration: int = None # (int32) 2 - 255
+    scan_interlacing: int = None # (int32) 2 - 8
+    frame_integration: int  = None # (int32) 2 - 512
+    drift_correction: bool = False # (bool) # requires frame_integration > 1
 
     def __post_init__(self):
 
@@ -603,6 +607,10 @@ class ImageSettings:
             save_path=settings.get("save_path", os.getcwd()),
             label=settings.get("label", "default_image"),
             reduced_area=reduced_area,
+            line_integration=settings.get("line_integration", None),
+            scan_interlacing=settings.get("scan_interlacing", None),
+            frame_integration=settings.get("frame_integration", None),
+            drift_correction=settings.get("drift_correction", False),
         )
 
         return image_settings
@@ -629,6 +637,10 @@ class ImageSettings:
             }
             if self.reduced_area is not None
             else None,
+            "line_integration": self.line_integration,
+            "scan_interlacing": self.scan_interlacing,
+            "frame_integration": self.frame_integration,
+            "drift_correction": self.drift_correction,
         }
 
         return settings_dict
@@ -679,11 +691,10 @@ class BeamSettings:
     hfw: float = None
     resolution: list = None
     dwell_time: float = None
-    stigmation: Point = None # should be list of points?
-    shift: Point = None # same? it is being turned to fibsem rectangle? needs 4 points?
+    stigmation: Point = None 
+    shift: Point = None 
     scan_rotation: float = None
 
-    ## FROM DICT AND TO DICT DOES NOT HAVE VOLTAGE (ADDED IN)
 
     def __post_init__(self):
 
@@ -709,6 +720,7 @@ class BeamSettings:
             "dwell_time": self.dwell_time,
             "stigmation": self.stigmation.__to_dict__() if self.stigmation is not None else None,
             "shift": self.shift.__to_dict__() if self.shift is not None else None,
+            "scan_rotation": self.scan_rotation,
         }
 
         return state_dict
@@ -736,11 +748,50 @@ class BeamSettings:
             dwell_time=state_dict["dwell_time"],
             stigmation=stigmation,
             shift=shift,
+            scan_rotation=state_dict.get("scan_rotation", 0.0),
             )
 
         return beam_settings
     
+@dataclass
+class FibsemDetectorSettings:
+    type: str = None
+    mode: str = None
+    brightness: float = 0.5
+    contrast: float = 0.5
 
+    def __post_init__(self):
+
+        assert isinstance(self.type,str) or self.type is None, f"type must be input as str, currently is {type(self.type)}"
+        assert isinstance(self.mode,str) or self.mode is None, f"mode must be input as str, currently is {type(self.mode)}"
+        assert isinstance(self.brightness,(float,int)) or self.brightness is None, f"brightness must be int or float value, currently is {type(self.brightness)}"
+        assert isinstance(self.contrast,(float,int)) or self.contrast is None, f"contrast must be int or float value, currently is {type(self.contrast)}"
+
+    if TESCAN:
+        def to_tescan(self):
+            """Converts to tescan format."""
+            tescan_brightness = self.brightness * 100
+            tescan_contrast = self.contrast * 100
+            return tescan_brightness, tescan_contrast
+
+    def __to_dict__(self) -> dict:
+        """Converts to a dictionary."""
+        return {
+            "type": self.type,
+            "mode": self.mode,
+            "brightness": self.brightness,
+            "contrast": self.contrast,
+        }
+    
+    @staticmethod
+    def __from_dict__(settings: dict) -> "FibsemDetectorSettings":
+        """Converts from a dictionary."""
+        return FibsemDetectorSettings(
+            type = settings.get("type", "Unknown"),
+            mode = settings.get("mode", "Unknown"),
+            brightness = settings.get("brightness", 0.0),
+            contrast = settings.get("contrast", 0.0),
+        )
 
 @dataclass
 class MicroscopeState:
@@ -764,12 +815,16 @@ class MicroscopeState:
     absolute_position: FibsemStagePosition = FibsemStagePosition()
     eb_settings: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
     ib_settings: BeamSettings = BeamSettings(beam_type=BeamType.ION)
+    eb_detector: FibsemDetectorSettings = FibsemDetectorSettings()
+    ib_detector: FibsemDetectorSettings = FibsemDetectorSettings()
 
     def __post_init__(self):
         assert isinstance(self.absolute_position,FibsemStagePosition) or self.absolute_position is None, f"absolute position must be of type FibsemStagePosition, currently is {type(self.absolute_position)}"
         assert isinstance(self.eb_settings,BeamSettings) or self.eb_settings is None, f"eb_settings must be of type BeamSettings, currently is {type(self.eb_settings)}"
         assert isinstance(self.ib_settings,BeamSettings) or self.ib_settings is None, f"ib_settings must be of type BeamSettings, currently us {type(self.ib_settings)}"
-
+        assert isinstance(self.eb_detector,FibsemDetectorSettings) or self.eb_detector is None, f"eb_detector must be of type FibsemDetectorSettings, currently is {type(self.eb_detector)}"
+        assert isinstance(self.ib_detector,FibsemDetectorSettings) or self.ib_detector is None, f"ib_detector must be of type FibsemDetectorSettings, currently is {type(self.ib_detector)}"
+                    
 
     def __to_dict__(self) -> dict:
 
@@ -778,6 +833,8 @@ class MicroscopeState:
             "absolute_position": self.absolute_position.__to_dict__() if self.absolute_position is not None else "Not defined",
             "eb_settings": self.eb_settings.__to_dict__() if self.eb_settings is not None else "Not defined",
             "ib_settings": self.ib_settings.__to_dict__() if self.ib_settings is not None else "Not defined",
+            "eb_detector": self.eb_detector.__to_dict__() if self.eb_detector is not None else "Not defined",
+            "ib_detector": self.ib_detector.__to_dict__() if self.ib_detector is not None else "Not defined",
         }
 
         return state_dict
@@ -789,6 +846,8 @@ class MicroscopeState:
             absolute_position=FibsemStagePosition.__from_dict__(state_dict["absolute_position"]),
             eb_settings=BeamSettings.__from_dict__(state_dict["eb_settings"]),
             ib_settings=BeamSettings.__from_dict__(state_dict["ib_settings"]),
+            eb_detector=FibsemDetectorSettings.__from_dict__(state_dict.get("eb_detector",{})),
+            ib_detector=FibsemDetectorSettings.__from_dict__(state_dict.get("ib_detector",{})),
         )
 
         return microscope_state
@@ -1478,45 +1537,7 @@ class FibsemState:
 
         return autoliftout_state
 
-@dataclass
-class FibsemDetectorSettings:
-    type: str = None
-    mode: str = None
-    brightness: float = None
-    contrast: float = None
 
-    def __post_init__(self):
-
-        assert isinstance(self.type,str) or self.type is None, f"type must be input as str, currently is {type(self.type)}"
-        assert isinstance(self.mode,str) or self.mode is None, f"mode must be input as str, currently is {type(self.mode)}"
-        assert isinstance(self.brightness,(float,int)) or self.brightness is None, f"brightness must be int or float value, currently is {type(self.brightness)}"
-        assert isinstance(self.contrast,(float,int)) or self.contrast is None, f"contrast must be int or float value, currently is {type(self.contrast)}"
-
-    if TESCAN:
-        def to_tescan(self):
-            """Converts to tescan format."""
-            tescan_brightness = self.brightness * 100
-            tescan_contrast = self.contrast * 100
-            return tescan_brightness, tescan_contrast
-
-    def __to_dict__(self) -> dict:
-        """Converts to a dictionary."""
-        return {
-            "type": self.type,
-            "mode": self.mode,
-            "brightness": self.brightness,
-            "contrast": self.contrast,
-        }
-    
-    @staticmethod
-    def __from_dict__(settings: dict) -> "FibsemDetectorSettings":
-        """Converts from a dictionary."""
-        return FibsemDetectorSettings(
-            type = settings.get("type", "Unknown"),
-            mode = settings.get("mode", "Unknown"),
-            brightness = settings.get("brightness", 0.0),
-            contrast = settings.get("contrast", 0.0),
-        )
 @dataclass
 class FibsemExperiment:
     id: str = None

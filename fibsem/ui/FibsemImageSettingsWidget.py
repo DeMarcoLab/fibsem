@@ -306,15 +306,17 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         )
         return self.image_settings, self.detector_settings, self.beam_settings
 
-    def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType):
+    def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType, beam_settings: BeamSettings=None, detector_settings: FibsemDetectorSettings=None ):
 
         # disconnect beam type combobox
         self.selected_beam.currentIndexChanged.disconnect()
         self.selected_beam.setCurrentText(beam_type.name)
         self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
         
-        beam_settings = self.get_beam_settings(beam_type)
-        detector_settings = self.get_detector_settings(beam_type)
+        if beam_settings is None:
+            beam_settings = self.get_beam_settings(beam_type)
+        if detector_settings is None:
+            detector_settings = self.get_detector_settings(beam_type)
 
         self.spinBox_resolution_x.setValue(image_settings.resolution[0])
         self.spinBox_resolution_y.setValue(image_settings.resolution[1])
@@ -447,11 +449,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         
     def take_image(self, beam_type: BeamType = None):
         self.TAKING_IMAGES = True
-        print("helllo from thread")
         worker = self.take_image_worker(beam_type)
         worker.finished.connect(self.imaging_finished)
         worker.start()
-        print("started thread")
 
     def update_imaging_ui(self, msg: str):
         logging.info(msg)
@@ -504,7 +504,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     @thread_worker
     def take_image_worker(self, beam_type: BeamType = None):
         self._toggle_interactions(enable=False, imaging=True)
-        print("Taking image...")
         self.image_settings = self.get_settings_from_ui()[0]
         self.image_notification_signal.emit("Taking image...")
         if beam_type is not None:
@@ -527,7 +526,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         worker = self.take_reference_images_worker()
         worker.finished.connect(self.imaging_finished)
         worker.start()
-        print("started thread")
 
     @thread_worker
     def take_reference_images_worker(self):
@@ -621,13 +619,20 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if _set_ui:
             if name == BeamType.ELECTRON.name:
                 self.image_settings = self.eb_image.metadata.image_settings
+                beam_settings = self.eb_image.metadata.microscope_state.eb_settings
+                detector_settings = self.eb_image.metadata.microscope_state.eb_detector
                 beam_type = BeamType.ELECTRON
             if name == BeamType.ION.name:
                 self.image_settings = self.ib_image.metadata.image_settings
+                beam_settings = self.ib_image.metadata.microscope_state.ib_settings
+                detector_settings = self.ib_image.metadata.microscope_state.ib_detector
                 beam_type = BeamType.ION            
         else:
             beam_type = BeamType[self.selected_beam.currentText()]
-        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type)  
+            beam_settings, detector_settings = None, None    
+    
+        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type, 
+            beam_settings=beam_settings, detector_settings=detector_settings)  
             
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:

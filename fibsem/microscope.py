@@ -8,6 +8,12 @@ import os
 # for easier usage
 import fibsem.constants as constants
 
+_TESCAN_API_AVAILABLE = False
+_THERMO_API_AVAILABLE = False
+
+# DEVELOPMENT
+_OVERWRITE_AUTOSCRIPT_VERSION = False
+    
 try:
     import re
 
@@ -25,6 +31,7 @@ try:
     sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
     sys.modules.pop("PySide6.QtCore")
+    _TESCAN_API_AVAILABLE = True
 except:
     logging.debug("Automation (TESCAN) not installed.")
 
@@ -40,6 +47,9 @@ try:
     if VERSION < 4.6:
         raise NameError("Please update your AutoScript version to 4.6 or higher.")
     
+    if _OVERWRITE_AUTOSCRIPT_VERSION:
+        VERSION = 4.7
+        
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
@@ -50,7 +60,8 @@ try:
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
 
-    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition 
+    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition
+    _THERMO_API_AVAILABLE = True 
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
     if isinstance(e, NameError):
@@ -278,6 +289,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        pass
+
+    @abstractmethod
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
 
@@ -432,6 +447,8 @@ class ThermoMicroscope(FibsemMicroscope):
     """
 
     def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings =None,):
+        if _THERMO_API_AVAILABLE == False:
+            raise Exception("Autoscript (ThermoFisher) not installed. Please see the user guide for installation instructions.")            
         self.connection = SdbMicroscopeClient()
         import fibsem
         import fibsem.config as cfg
@@ -526,6 +543,10 @@ class ThermoMicroscope(FibsemMicroscope):
             resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
             dwell_time=image_settings.dwell_time,
             reduced_area=reduced_area,
+            line_integration=image_settings.line_integration,
+            scan_interlacing=image_settings.scan_interlacing,
+            frame_integration=image_settings.frame_integration,
+            drift_correction=image_settings.drift_correction,
         )
 
         if image_settings.beam_type == BeamType.ELECTRON:
@@ -816,6 +837,10 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             ib_settings=None
 
+        eb_detector = self.get_detector_settings(beam_type=BeamType.ELECTRON)
+        ib_detector = self.get_detector_settings(beam_type=BeamType.ION)
+
+
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
@@ -824,6 +849,10 @@ class ThermoMicroscope(FibsemMicroscope):
             eb_settings=eb_settings,
             # ion beam settings
             ib_settings=ib_settings,
+            # electron beam detector settings
+            eb_detector=eb_detector,
+            # ion beam detector settings
+            ib_detector=ib_detector,
         )
 
         logging.debug(f"CURRENT_MICROSCOPE_STATE | {current_microscope_state.__to_dict__()}")
@@ -852,6 +881,9 @@ class ThermoMicroscope(FibsemMicroscope):
             tilt = True
         else:
             tilt = False
+                   
+        wd = self.connection.beams.electron_beam.working_distance.value
+
         _check_stage(self.hardware_settings, rotation=rotation, tilt=tilt)
         logging.info(f"Moving stage to {position}.")
         logging.debug(f"MOVE_ABSOLUTE | {position.__to_dict__()}.")
@@ -859,7 +891,12 @@ class ThermoMicroscope(FibsemMicroscope):
         thermo_position = position.to_autoscript_position()
         thermo_position.coordinate_system = CoordinateSystem.RAW
         stage.absolute_move(thermo_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
-
+                   
+        # adjust working distance for microscope compenstation
+        self.connection.beams.electron_beam.working_distance.value = wd
+        self.connection.specimen.stage.link()
+            
+        
     def move_stage_relative(self, position: FibsemStagePosition):
         """
         Move the stage by the specified relative move.
@@ -2175,6 +2212,13 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.electron_beam.beam_shift.value = ThermoPoint(x=microscope_state.eb_settings.shift.x, y=microscope_state.eb_settings.shift.y)
             self.connection.beams.electron_beam.stigmator.value = ThermoPoint(x=microscope_state.eb_settings.stigmation.x, y=microscope_state.eb_settings.stigmation.y)
 
+            # restore detector settings
+            eb_detector = microscope_state.eb_detector
+            self.set("detector_type", eb_detector.type, BeamType.ELECTRON)
+            self.set("detector_mode", eb_detector.mode, BeamType.ELECTRON)
+            self.set("detector_brightness", eb_detector.brightness, BeamType.ELECTRON)
+            self.set("detector_contrast", eb_detector.contrast, BeamType.ELECTRON)    
+            
         # Restore ion beam settings
         resolution = f"{microscope_state.ib_settings.resolution[0]}x{microscope_state.ib_settings.resolution[1]}"
         if self.hardware_settings.ion_beam is False:
@@ -2200,6 +2244,12 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.ion_beam.beam_shift.value = ThermoPoint(x=microscope_state.ib_settings.shift.x, y=microscope_state.ib_settings.shift.y)
             self.connection.beams.ion_beam.stigmator.value = ThermoPoint(x=microscope_state.ib_settings.stigmation.x, y=microscope_state.ib_settings.stigmation.y)
 
+            # restore detector settings
+            ib_detector = microscope_state.ib_detector
+            self.set("detector_type", ib_detector.type, BeamType.ION)
+            self.set("detector_mode", ib_detector.mode, BeamType.ION)
+            self.set("detector_brightness", ib_detector.brightness, BeamType.ION)
+            self.set("detector_contrast", ib_detector.contrast, BeamType.ION)
 
         # Link the specimen stage
         if self.hardware_settings.stage_enabled is False:
@@ -2209,6 +2259,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         self._safe_absolute_stage_movement(microscope_state.absolute_position)
 
+            
         # Log the completion of the operation
         logging.info(f"Microscope state restored.")
     
@@ -2304,6 +2355,13 @@ class ThermoMicroscope(FibsemMicroscope):
         if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas is True:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
     
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        self.set("detector_type", detector_settings.type, beam_type)
+        self.set("detector_mode", detector_settings.mode, beam_type)
+        self.set("detector_brightness", detector_settings.brightness, beam_type)
+        self.set("detector_contrast", detector_settings.contrast, beam_type)
+
+        
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the specified beam type.
 
@@ -2316,7 +2374,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             None.
         """
-        logging.info(f"Getting {beam_type.value} detector settings...")
+        logging.debug(f"Getting {beam_type} detector settings...")
         detector_settings = FibsemDetectorSettings(
             type=self.get("detector_type", beam_type),
             mode=self.get("detector_mode", beam_type),
@@ -2518,14 +2576,14 @@ class ThermoMicroscope(FibsemMicroscope):
                     logging.warning(f"Detector type {value} not available.")
                 return
             if key == "detector_brightness":
-                if 0 <= value <= 1 :
+                if 0 < value <= 1 :
                     self.connection.detector.brightness.value = value
                     logging.info(f"Detector brightness set to {value}.")
                 else:
                     logging.warning(f"Detector brightness {value} not available, must be between 0 and 1.")
                 return
             if key == "detector_contrast":
-                if 0 <= value <= 1 :
+                if 0 < value <= 1 :
                     self.connection.detector.contrast.value = value
                     logging.info(f"Detector contrast set to {value}.")
                 else:
@@ -2749,6 +2807,8 @@ class TescanMicroscope(FibsemMicroscope):
     """
 
     def __init__(self, ip_address: str = "localhost", hardware_settings: FibsemHardware = None, stage_settings: StageSettings = None):
+        if _TESCAN_API_AVAILABLE == False:
+            raise ImportError("The TESCAN Automation API is not available. Please see the user guide for installation instructions.")
         self.connection = Automation(ip_address)
         detectors = self.connection.FIB.Detector.Enum()
         self.ion_detector_active = detectors[0]
@@ -3085,10 +3145,10 @@ class TescanMicroscope(FibsemMicroscope):
             image = self.last_image_ib
         else:
             raise Exception("Beam type error")
-            
-        image.metadata.user = self.user
-        image.metadata.experiment = self.experiment 
-        image.metadata.system = self.system
+        if image is not None:
+            image.metadata.user = self.user
+            image.metadata.experiment = self.experiment 
+            image.metadata.system = self.system
         
         return image
 
@@ -3291,6 +3351,10 @@ class TescanMicroscope(FibsemMicroscope):
                 ib_settings = BeamSettings(BeamType.ION)
         else:
             ib_settings = BeamSettings(BeamType.ION)
+    
+        eb_detector = self.get_detector_settings(BeamType.ELECTRON)
+        ib_detector = self.get_detector_settings(BeamType.ION)
+
         current_microscope_state = MicroscopeState(
             timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
             # get absolute stage coordinates (RAW)
@@ -3299,6 +3363,10 @@ class TescanMicroscope(FibsemMicroscope):
             eb_settings=eb_settings,
             # ion beam settings
             ib_settings=ib_settings,
+            # electron detector settings
+            eb_detector=eb_detector,
+            # ion detector settings
+            ib_detector=ib_detector,
         )
 
         return current_microscope_state
@@ -4626,7 +4694,7 @@ class TescanMicroscope(FibsemMicroscope):
         # microscope.beams.electron_beam.stigmator.value = (
         #     microscope_state.eb_settings.stigmation
         # )
-
+        self.set_detector_settings(state.eb_detector, BeamType.ELECTRON)
         # restore ion beam
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"restoring ion beam settings...")
@@ -4641,6 +4709,8 @@ class TescanMicroscope(FibsemMicroscope):
             print("hello from the dark side scan rotation ib")
             self.connection.FIB.Optics.SetImageRotation(microscope_state.eb_settings.scan_rotation)
         # microscope.beams.ion_beam.stigmator.value = microscope_state.ib_settings.stigmation
+        self.set_detector_settings(state.ib_detector, BeamType.ION)
+
         self.move_stage_absolute(microscope_state.absolute_position)
         logging.info(f"microscope state restored")
         return
@@ -4720,6 +4790,13 @@ class TescanMicroscope(FibsemMicroscope):
 
         if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
+
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        self.set("detector_type", detector_settings.type, beam_type)
+        self.set("detector_mode", detector_settings.mode, beam_type)
+        self.set("detector_brightness", detector_settings.brightness, beam_type)
+        self.set("detector_contrast", detector_settings.contrast, beam_type)
+                    
 
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
         """Get the current detector settings for the microscope.
@@ -5034,7 +5111,14 @@ class DemoMicroscope(FibsemMicroscope):
             metadata=FibsemImageMetadata(image_settings=image_settings, pixel_size=pixelsize,
                                          microscope_state=MicroscopeState(
                                             absolute_position=self.stage_position,
-                                         ),detector_settings=FibsemDetectorSettings()))
+                                            eb_settings=self.electron_beam,
+                                            ib_settings=self.ion_beam,
+                                            eb_detector=self.electron_detector_settings,
+                                            ib_detector=self.ion_detector_settings
+                                        ),
+                                        detector_settings=FibsemDetectorSettings(type="Unknown", mode="Unknown", brightness=0.5, contrast=0.5),
+                                        )
+        )
 
         image.metadata.user = self.user
         image.metadata.experiment = self.experiment
@@ -5127,7 +5211,14 @@ class DemoMicroscope(FibsemMicroscope):
     def get_current_microscope_state(self) -> MicroscopeState:
         _check_stage(self.hardware_settings)
         logging.info(f"Getting microscope state")
-        return MicroscopeState(absolute_position=self.stage_position)
+        microscope_state=MicroscopeState(
+            absolute_position=self.stage_position,
+            eb_settings=self.electron_beam,
+            ib_settings=self.ion_beam,
+            eb_detector=self.electron_detector_settings,
+            ib_detector=self.ion_detector_settings
+            )
+        return microscope_state
 
     def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
 
@@ -5472,6 +5563,8 @@ class DemoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.hardware_settings)
         _check_beam(BeamType.ELECTRON, self.hardware_settings)
         _check_stage(self.hardware_settings)
+        self.set_detector_settings(state.eb_detector, BeamType.ELECTRON)
+        self.set_detector_settings(state.ib_detector, BeamType.ION)
         self.move_stage_absolute(state.absolute_position)
         logging.info(f"Setting microscope state")
         
@@ -5535,7 +5628,14 @@ class DemoMicroscope(FibsemMicroscope):
         self.set("current", beam_settings.current, beam_settings.beam_type)
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
         self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
-        
+
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        self.set("detector_type", detector_settings.type, beam_type)
+        self.set("detector_mode", detector_settings.mode, beam_type)
+        self.set("detector_brightness", detector_settings.brightness, beam_type)
+        self.set("detector_contrast", detector_settings.contrast, beam_type)
+
+
     def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
         detector_settings = FibsemDetectorSettings(
             dtype=self.get("detector_type", beam_type),

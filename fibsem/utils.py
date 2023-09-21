@@ -426,30 +426,31 @@ def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show
 
     return fig
 
-
-def _register_metadata(microscope: FibsemMicroscope, parent_type: str, parent_version: str, experiment_name: str, parent_ui) -> None:
-    from PyQt5.QtWidgets import QInputDialog
+# TODO: re-think this, dont like the pop ups
+def _register_metadata(microscope: FibsemMicroscope, application_software: str, application_software_version: str, experiment_name: str, experiment_method: str) -> None:
     from fibsem.structures import FibsemUser, FibsemExperiment
     import fibsem
 
-    user_name = QInputDialog.getText(parent_ui, "Name", "Please enter user name")[0]
-    email = QInputDialog.getText(parent_ui, "Email", "Please enter your email")[0]
-    organization = QInputDialog.getText(parent_ui, "Institution", "Please enter your institution")[0]
-    computer =  os.environ.get('COMPUTERNAME', "ComputerName")
-    user = FibsemUser(name=user_name, email=email, organization=organization, computer=computer)
+    import platform
+    username = os.environ.get("USERNAME", "username")
 
-    if parent_type == "autolamella":
-        types = ['Autolamella', "Autolamella Waffle"]
-    elif parent_type == "autoliftout":
-        types = ['AutoLiftout', 'Serial Liftout']
-    experiment_type = QInputDialog.getItem(parent_ui, "Experiment Type", "Please select experiment type", types)[0]
-
+    if platform.system() == "Windows":
+        hostname = os.environ.get("COMPUTERNAME", "hostname")
+    elif platform.system() == "Linux":
+        hostname = os.environ.get("HOSTNAME", "hostname")
+    elif platform.system() == "Darwin":
+        hostname = os.environ.get("HOSTNAME", "hostname")
+    else:
+        hostname = "hostname"
+        
+    user = FibsemUser(name=username, email="null", organization="null", computer=hostname)
+        
     experiment = FibsemExperiment(
         id = experiment_name,
-        method=experiment_type,
-        application=parent_type, 
+        method=experiment_method,
+        application=application_software, 
         fibsem_version=fibsem.__version__,
-        application_version=parent_version,
+        application_version=application_software_version,
     )
     microscope.user = user
     microscope.experiment = experiment
