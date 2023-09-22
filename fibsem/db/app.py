@@ -124,6 +124,12 @@ with tab_ml:
     st.subheader("Machine Learning")
 
     df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
+    
+    UNIQUE_FEATURES_IN_EXPERIMENT = df[df["name"] == EXPERIMENT_NAME]["feature"].unique()
+
+    # filter df
+    df = df[df["feature"].isin(UNIQUE_FEATURES_IN_EXPERIMENT)]
+
     df_group = df.groupby(["name", "date", "feature", "is_correct"]).count().reset_index()
 
     df_group = df_group.pivot(index=["name", "date", "feature"], columns="is_correct", values="petname")
@@ -195,6 +201,9 @@ with tab_ml:
     # select all detections
     df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
 
+    # filter df
+    df = df[df["feature"].isin(UNIQUE_FEATURES_IN_EXPERIMENT)]
+
     # calculate average accuracy
     df_group = df.groupby(["name", "date", "is_correct"]).count().reset_index()
     df_group = df_group.pivot(index=["name", "date"], columns="is_correct", values="petname")
@@ -223,13 +232,12 @@ with tab_ml:
 
     SELECTED_ACCURACY = df_group[df_group["name"] == EXPERIMENT_NAME]["percent_correct"].values[0]
 
-    # st.markdown(f"**Selected Accuracy:** {SELECTED_ACCURACY:.2f}")
-    # st.markdown(f"**Overall Accuracy:** {ACCURACY:.2f}")
-    cols = st.columns(len(df["feature"].unique())+1)
+    # UNIQUE_FEATURES_IN_EXPERIMENT = df[df["name"] == EXPERIMENT_NAME]["feature"].unique()
+
+    cols = st.columns(len(UNIQUE_FEATURES_IN_EXPERIMENT)+1)
     cols[0].metric("ML Accuracy", f"{SELECTED_ACCURACY*100:.2f}%", delta=f"{(SELECTED_ACCURACY - ACCURACY)*100:.2f}%")
 
-
-    for i, FEATURE_NAME in enumerate(df["feature"].unique(), 1):
+    for i, FEATURE_NAME in enumerate(UNIQUE_FEATURES_IN_EXPERIMENT, 1):
         df_det_filt = df[df["feature"] == FEATURE_NAME]
 
         # calculate average accuracy
@@ -269,6 +277,17 @@ with tab_duration:
     st.subheader("Stage Duration")
     df_history = conn.query(f"SELECT e.name, e.date, e.id, h.petname, h.start, h.end, h.duration, h.stage FROM history h JOIN experiments e ON e.id = h.experiment_id")
 
+    UNIQUE_STAGES_IN_EXPERIMENT =  df_history[df_history["name"]==EXPERIMENT_NAME]["stage"].unique()
+
+    SETUP_STAGES = ["SetupTrench", "ReadyTrench", "SetupLamella", "Finished", "Setup"]
+
+    # filter out setup stages from unique stages
+    UNIQUE_STAGES_IN_EXPERIMENT = [x for x in UNIQUE_STAGES_IN_EXPERIMENT if x not in SETUP_STAGES]
+
+    # filter out other stages
+    df_history = df_history[df_history["stage"].isin(UNIQUE_STAGES_IN_EXPERIMENT)]
+    # df_history = df_history[~df_history["stage"].isin(SETUP_STAGES)] # FILTER OUT SETUP
+
     # calculate average duration # fill missing values with zero
     df_group = df_history.groupby(["name", "date", "stage"]).mean().reset_index()
     df_group.fillna(0, inplace=True)
@@ -298,7 +317,7 @@ with tab_duration:
 
 
     st.subheader("Stage Duration")
-    cols = st.columns(len(df_history_filter["stage"].unique())+1)
+
 
     # OVERALL DURATION
     df_group = df_history_filter.groupby(["name", "date"]).mean().reset_index()
@@ -309,18 +328,19 @@ with tab_duration:
     # drop id column
     df_group.drop(columns="id", inplace=True)
 
-    st.dataframe(df_group, use_container_width=True)
-
     SELECTED_DURATION = df_group[df_group["name"] == EXPERIMENT_NAME]["duration"].values[0]
     AVERAGE_DURATION = df_group['duration'].mean()
     DURATION_DELTA = (SELECTED_DURATION - AVERAGE_DURATION) / AVERAGE_DURATION * 100
 
+
+    cols = st.columns(len(UNIQUE_STAGES_IN_EXPERIMENT)+1)
     cols[0].metric(f"Average", f"{SELECTED_DURATION/60:.2f} mins", 
         delta=f"{DURATION_DELTA:.2f}%", delta_color="inverse")
 
+    st.dataframe(df_group, use_container_width=True)
 
     # PER STAGE DURATION
-    for i, STAGE_NAME in enumerate(df_history_filter["stage"].unique(), 1):
+    for i, STAGE_NAME in enumerate(UNIQUE_STAGES_IN_EXPERIMENT, 1):
         df_history_filter2 = df_history_filter[df_history_filter["stage"] == STAGE_NAME]
 
         df_group = df_history_filter2.groupby(["name", "date"]).mean().reset_index()
