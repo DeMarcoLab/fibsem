@@ -1,0 +1,1716 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../started/">
+      
+      
+        <link rel="next" href="../ml/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.0">
+    
+    
+      
+        <title>Automation - FIBSEM Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.9f615399.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#automation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FIBSEM Docs" class="md-header__button md-logo" aria-label="FIBSEM Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FIBSEM Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Automation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FIBSEM Docs" class="md-nav__button md-logo" aria-label="FIBSEM Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    FIBSEM Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OpenFIBSEM
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../started/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Automation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Automation
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#image-processing" class="md-nav__link">
+    Image Processing
+  </a>
+  
+    <nav class="md-nav" aria-label="Image Processing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#autogamma" class="md-nav__link">
+    AutoGamma:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autoclahe" class="md-nav__link">
+    AutoCLAHE:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alignment" class="md-nav__link">
+    Alignment
+  </a>
+  
+    <nav class="md-nav" aria-label="Alignment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cross-correlation" class="md-nav__link">
+    Cross Correlation
+  </a>
+  
+    <nav class="md-nav" aria-label="Cross Correlation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering" class="md-nav__link">
+    Filtering
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#masking" class="md-nav__link">
+    Masking
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#movement" class="md-nav__link">
+    Movement
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utilities" class="md-nav__link">
+    Utilities
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#helper-functions" class="md-nav__link">
+    Helper Functions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-detection" class="md-nav__link">
+    Feature Detection
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.Feature" class="md-nav__link">
+    Feature
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LamellaCentre" class="md-nav__link">
+    LamellaCentre
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.ImageCentre" class="md-nav__link">
+    ImageCentre
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LamellaRightEdge" class="md-nav__link">
+    LamellaRightEdge
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LamellaLeftEdge" class="md-nav__link">
+    LamellaLeftEdge
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.NeedleTip" class="md-nav__link">
+    NeedleTip
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LandingPost" class="md-nav__link">
+    LandingPost
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#machine-learning" class="md-nav__link">
+    Machine Learning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#movement_1" class="md-nav__link">
+    Movement
+  </a>
+  
+    <nav class="md-nav" aria-label="Movement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eucentric-movement" class="md-nav__link">
+    Eucentric Movement
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.microscope.ThermoMicroscope.eucentric_move" class="md-nav__link">
+    eucentric_move
+  </a>
+  
+    <nav class="md-nav" aria-label="eucentric_move">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stable-movement" class="md-nav__link">
+    Stable Movement
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.microscope.ThermoMicroscope.stable_move" class="md-nav__link">
+    stable_move
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Machine Learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Project Roadmap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#image-processing" class="md-nav__link">
+    Image Processing
+  </a>
+  
+    <nav class="md-nav" aria-label="Image Processing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#autogamma" class="md-nav__link">
+    AutoGamma:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autoclahe" class="md-nav__link">
+    AutoCLAHE:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alignment" class="md-nav__link">
+    Alignment
+  </a>
+  
+    <nav class="md-nav" aria-label="Alignment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cross-correlation" class="md-nav__link">
+    Cross Correlation
+  </a>
+  
+    <nav class="md-nav" aria-label="Cross Correlation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering" class="md-nav__link">
+    Filtering
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#masking" class="md-nav__link">
+    Masking
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#movement" class="md-nav__link">
+    Movement
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utilities" class="md-nav__link">
+    Utilities
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#helper-functions" class="md-nav__link">
+    Helper Functions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-detection" class="md-nav__link">
+    Feature Detection
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.Feature" class="md-nav__link">
+    Feature
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LamellaCentre" class="md-nav__link">
+    LamellaCentre
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.ImageCentre" class="md-nav__link">
+    ImageCentre
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LamellaRightEdge" class="md-nav__link">
+    LamellaRightEdge
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LamellaLeftEdge" class="md-nav__link">
+    LamellaLeftEdge
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.NeedleTip" class="md-nav__link">
+    NeedleTip
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.detection.detection.LandingPost" class="md-nav__link">
+    LandingPost
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#machine-learning" class="md-nav__link">
+    Machine Learning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#movement_1" class="md-nav__link">
+    Movement
+  </a>
+  
+    <nav class="md-nav" aria-label="Movement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eucentric-movement" class="md-nav__link">
+    Eucentric Movement
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.microscope.ThermoMicroscope.eucentric_move" class="md-nav__link">
+    eucentric_move
+  </a>
+  
+    <nav class="md-nav" aria-label="eucentric_move">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stable-movement" class="md-nav__link">
+    Stable Movement
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.microscope.ThermoMicroscope.stable_move" class="md-nav__link">
+    stable_move
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="automation">Automation</h1>
+<p>OpenFIBSEM provides a number of modules to support automation.</p>
+<h2 id="image-processing">Image Processing</h2>
+<p>We provide a number of image processing functions to support automation. These are available in <code>fibsem.imaging</code>  or <code>fibsem.acquire</code>.</p>
+<h4 id="autogamma">AutoGamma:</h4>
+<p>Adjusting the gamma of the image can improve the contrast of the image. This is useful for aligning images, and can be used to improve the contrast of the image for feature detection. The following figure shows the effect of adjusting the gamma of the image. When the <code>autogamma</code> flag is enabled in <code>ImageSettings</code> the gamma of the images taken will be automatically adjusted with this method. </p>
+<p><img alt="AutoGamma" src="../img/gamma/gamma_adjustment.gif" />
+Gamma Adjustment</p>
+<h4 id="autoclahe">AutoCLAHE:</h4>
+<p>Contrast Limited Adaptive Histogram Equalization (CLAHE) is a method for improving the contrast of an image. When the <code>autoclahe</code> flag is enabled in <code>ImageSettings</code> the gamma of the images taken will be automatically adjusted with this method. AutoCLAHE has many parameters that can be tuned. The following figures shows the difference between the different autogamma methods. </p>
+<p><img alt="AutoCLAHE" src="../img/gamma/gamma_comparison.png" />
+AutoGamma Functions</p>
+<p><img alt="AutoCLAHE" src="../img/gamma/gamma_comparison2.png" />
+AutoGamma Functions</p>
+<h2 id="alignment">Alignment</h2>
+<p>The alignment module contains functions are aligning reference images, and tools and parameters for adjusting these alignments.</p>
+<p>WIP: images</p>
+<h3 id="cross-correlation">Cross Correlation</h3>
+<p>The primary alignment method is fourier cross-correlation to a reference image. The following helper function provides the the methods for alignment, and the required movements, as well as parameters for tuning.</p>
+<pre><code class="language-python">def align_using_reference_images(
+    microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
+    ref_image: AdornedImage,
+    new_image: AdornedImage,
+    ref_mask: np.ndarray = None,
+    xcorr_limit: int = None,
+    constrain_vertical: bool = False,
+    beam_shift: bool = False,
+    lp_px: int  = 128, 
+    hp_px: int = 8,  
+    sigma: int = 6,
+) -&gt; bool:
+    &quot;&quot;&quot;Align new image to reference image using crosscorrelation
+
+    Args:
+        microscope (SdbMicroscopeClient): microscope client
+        settings (MicroscopeSettings): microscope settings
+        ref_image (AdornedImage): reference image
+        new_image (AdornedImage): new image
+        ref_mask (np.ndarray, optional): reference mask. Defaults to None.
+        xcorr_limit (int, optional): crosscorrelation limit. Defaults to None.
+        constrain_vertical (bool, optional): constrain vertical movement. Defaults to False.
+        beam_shift (bool, optional): use beam shift. Defaults to False.
+        lp_px (int, optional): lowpass filter size. Defaults to 128.
+        hp_px (int, optional): highpass filter size. Defaults to 8.
+        sigma (int, optional): gaussian filter sigma. Defaults to 6.
+    Returns:
+        bool: True if alignment was successful, False otherwise
+    &quot;&quot;&quot;
+</code></pre>
+<p>In order to tune the alignment the user can adjust the following:</p>
+<h4 id="filtering">Filtering</h4>
+<p>The cross correlation alignment can be tuned by adjusting the bandpass filters; lowpass, highpass; and sigma. These filters are applied in fourier space.
+- <code>lowpass</code>: upper pixel distance bound
+- <code>highpass</code>: lower pixel distance bound
+- <code>sigma</code>: blur applied to bandpass mask boundary</p>
+<p>The effect of these filters on the bandpass mask is shown below:</p>
+<p><img alt="Filters" src="../img/alignment/filters.png" /></p>
+<h4 id="masking">Masking</h4>
+<p>We provide a number of masking utilities: </p>
+<ul>
+<li><code>circle_mask</code>: mask a circular area of the image. </li>
+<li><code>bandpass_mask</code>: mask a bandpass area of the image (donut)</li>
+<li><code>rect_mask</code>: mask a rectangular area of the image</li>
+<li><code>area_mask</code>: mask quarters of the image specified by left, right, upper, and lower params</li>
+<li><code>vertical_mask</code>: mask a central vertical area of the image</li>
+<li><code>invert</code>: invert the mask</li>
+</ul>
+<p>These masks can be passed to the <code>ref_mask</code>for use in the alignment, and are available in <code>fibsem.imaging.masks</code>. Many of these masking functions contain additional parameters, so please see the implementation for details. </p>
+<h4 id="movement">Movement</h4>
+<p>By default, the function will move the stage to align the reference image. The following parameters adjust this movement. </p>
+<ul>
+<li><code>constrain_vertical</code>: this flag will constrain the stage to move only vertically (z). This is useful when attempting to correct the eucentric position using alignment.</li>
+<li><code>beam_shift</code>: this flag will adjust the shift the beam instead of moving the stage. The beam shift is more precise than the mechanical stage, but has a much lower range of movement (~10um?, check this)</li>
+</ul>
+<h3 id="utilities">Utilities</h3>
+<p>We also provide a number of utility functions that can help with crosscorrelation. For example:</p>
+<ul>
+<li><code>rotate_image</code>: rotate the image 180deg while preserving metadata</li>
+<li><code>fromFibsemImage</code>: match the image settings used for reference image</li>
+</ul>
+<p>These utilities are available in <code>fibsem.imaging.utils</code>.</p>
+<h3 id="helper-functions">Helper Functions</h3>
+<p>The <code>fibsem.alignment</code> module contains more helper functions for performing alignment workflows:</p>
+<ul>
+<li><code>correct_stage_drift</code>: multi-step alignment</li>
+<li><code>eucentric_correct_stage_drift</code>: multi-step alignment + eucentric alignment</li>
+</ul>
+<h2 id="feature-detection">Feature Detection</h2>
+<p>We provide some feature detection functions and workflows primarly centred around the liftout workflow. These are customisable to the user's needs.</p>
+<p>The primary detection workflow uses the following to run the feature detection, transform coordinate systems, and optionally allows the user to validate the result. For more information on the user validation please see <a href="../ml/">ml.md</a>.</p>
+<pre><code class="language-python">def detect_features_v2(
+    microscope: SdbMicroscopeClient,
+    settings: MicroscopeSettings,
+    features: tuple[Feature],
+    validate: bool = True,
+    mask_radius: int = 256,
+) -&gt; DetectedFeatures:
+
+    &quot;&quot;&quot;Detect features in microscope image.
+
+    Args:
+        microscope (SdbMicroscopeClient): microscope client
+        settings (MicroscopeSettings): microscope settings
+        features (tuple[Feature]): features to detect
+        validate (bool, optional): whether to validate features. Defaults to True.
+        mask_radius (int, optional): radius of mask to apply to image. Defaults to 256.
+
+    Returns:
+        DetectedFeatures: detected features
+    &quot;&quot;&quot;
+    ...
+
+</code></pre>
+<p><img alt="Feature Detection" src="../img/ml/ui_detection_success.png" /></p>
+<p>The supported Feature Types are as follows:</p>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.detection.detection.Feature"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/detection/detection.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Feature</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="n">px</span><span class="p">:</span> <span class="n">Point</span> 
+    <span class="n">feature_m</span><span class="p">:</span> <span class="n">Point</span>
+    <span class="n">_color_UINT8</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Feature&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.detection.detection.LamellaCentre"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="fibsem.detection.detection.Feature" href="#fibsem.detection.detection.Feature">Feature</a></code></p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/detection/detection.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">LamellaCentre</span><span class="p">(</span><span class="n">Feature</span><span class="p">):</span>
+    <span class="n">feature_m</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">px</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_color_UINT8</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;LamellaCentre&quot;</span>
+
+    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;LamellaCentre&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">px</span> <span class="o">=</span> <span class="n">detect_lamella</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.detection.detection.ImageCentre"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="fibsem.detection.detection.Feature" href="#fibsem.detection.detection.Feature">Feature</a></code></p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/detection/detection.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ImageCentre</span><span class="p">(</span><span class="n">Feature</span><span class="p">):</span>
+    <span class="n">feature_m</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">px</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_color_UINT8</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ImageCentre&quot;</span>
+
+    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ImageCentre&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">px</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.detection.detection.LamellaRightEdge"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="fibsem.detection.detection.Feature" href="#fibsem.detection.detection.Feature">Feature</a></code></p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/detection/detection.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">LamellaRightEdge</span><span class="p">(</span><span class="n">Feature</span><span class="p">):</span>
+    <span class="n">feature_m</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">px</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_color_UINT8</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">165</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;orange&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;LamellaRightEdge&quot;</span>
+
+    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;LamellaRightEdge&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">px</span> <span class="o">=</span> <span class="n">detect_lamella</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.detection.detection.LamellaLeftEdge"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="fibsem.detection.detection.Feature" href="#fibsem.detection.detection.Feature">Feature</a></code></p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/detection/detection.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">LamellaLeftEdge</span><span class="p">(</span><span class="n">Feature</span><span class="p">):</span>
+    <span class="n">feature_m</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">px</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_color_UINT8</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;magenta&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;LamellaLeftEdge&quot;</span>
+
+    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;LamellaLeftEdge&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">px</span> <span class="o">=</span> <span class="n">detect_lamella</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.detection.detection.NeedleTip"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="fibsem.detection.detection.Feature" href="#fibsem.detection.detection.Feature">Feature</a></code></p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/detection/detection.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">NeedleTip</span><span class="p">(</span><span class="n">Feature</span><span class="p">):</span>
+    <span class="n">feature_m</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">px</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_color_UINT8</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;green&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;NeedleTip&quot;</span>
+
+    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;NeedleTip&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">px</span> <span class="o">=</span> <span class="n">detect_needle_v5</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.detection.detection.LandingPost"></a>
+  <div class="doc doc-contents first">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="fibsem.detection.detection.Feature" href="#fibsem.detection.detection.Feature">Feature</a></code></p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/detection/detection.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">LandingPost</span><span class="p">(</span><span class="n">Feature</span><span class="p">):</span>
+    <span class="n">feature_m</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">px</span><span class="p">:</span> <span class="n">Point</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_color_UINT8</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s2">&quot;cyan&quot;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;LandingPost&quot;</span>
+
+    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;LandingPost&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">px</span> <span class="o">=</span> <span class="n">detect_landing_post_v4</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
+        <span class="c1"># self.px = detect_landing_post_v3(img, landing_pt=None)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div><h2 id="machine-learning">Machine Learning</h2>
+<p>We provide a basic machine learning pipeline and workflow. Currently only segmentation models are supported, but more will be added in the future.</p>
+<p>For detailed information on the machine learning tools, please see <a href="../ml/">Machine Learning</a>.</p>
+<h2 id="movement_1">Movement</h2>
+<p>The movement module contains functions for moving the microscope stage. </p>
+<p>We provide a number of advanced movement functions that are useful for correcting and maintianing the eucentricity of the microscope.</p>
+<p><img alt="Movement Axes" src="../img/movement/movement_axes.svg" /></p>
+<h3 id="eucentric-movement">Eucentric Movement</h3>
+<p>Eucentric movements correct the eucentric position of the microscope. This is useful when initially setting up the microscope, or when the eucentric position has been lost. The eucentric movements move the stage vertically in the chamber to correct the eucentric position.</p>
+<p><img alt="Eucentric Movement" src="../img/movement/eucentric/eucentric.gif" /></p>
+<p>To use eucentric movements, use: </p>
+<pre><code class="language-python">microscope.eucentric_move(settings, dy)
+</code></pre>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="fibsem.microscope.ThermoMicroscope.eucentric_move"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Move the stage vertically to correct eucentric point</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>settings</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.MicroscopeSettings" href="../started/#fibsem.structures.MicroscopeSettings">MicroscopeSettings</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>microscope settings</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>dy</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>distance in y-axis (image coordinates)</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>fibsem/microscope.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 990</span>
+<span class="normal"> 991</span>
+<span class="normal"> 992</span>
+<span class="normal"> 993</span>
+<span class="normal"> 994</span>
+<span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span>
+<span class="normal">1001</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span>
+<span class="normal">1019</span>
+<span class="normal">1020</span>
+<span class="normal">1021</span>
+<span class="normal">1022</span>
+<span class="normal">1023</span>
+<span class="normal">1024</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">eucentric_move</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">MicroscopeSettings</span><span class="p">,</span>
+    <span class="n">dy</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">static_wd</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Move the stage vertically to correct eucentric point</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (MicroscopeSettings): microscope settings</span>
+<span class="sd">        dy (float): distance in y-axis (image coordinates)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_check_stage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hardware_settings</span><span class="p">)</span>
+    <span class="n">wd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">electron_beam</span><span class="o">.</span><span class="n">working_distance</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">image_rotation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">ion_beam</span><span class="o">.</span><span class="n">scanning</span><span class="o">.</span><span class="n">rotation</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">image_rotation</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">image_rotation</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="o">-</span><span class="n">dy</span>
+    <span class="c1"># TODO: does this need the perspective correction too?</span>
+
+    <span class="n">z_move</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mi">90</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">stage_settings</span><span class="o">.</span><span class="n">tilt_flat_to_ion</span><span class="p">))</span>  <span class="c1"># TODO: MAGIC NUMBER, 90 - fib tilt</span>
+
+    <span class="n">move_settings</span> <span class="o">=</span> <span class="n">MoveSettings</span><span class="p">(</span><span class="n">link_z_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">z_move</span> <span class="o">=</span> <span class="n">FibsemStagePosition</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span>
+        <span class="n">z</span><span class="o">=</span><span class="n">z_move</span><span class="p">,</span> <span class="n">coordinate_system</span><span class="o">=</span><span class="s2">&quot;Specimen&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">to_autoscript_position</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">specimen</span><span class="o">.</span><span class="n">stage</span><span class="o">.</span><span class="n">relative_move</span><span class="p">(</span><span class="n">z_move</span><span class="p">,</span> <span class="n">move_settings</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;eucentric movement: </span><span class="si">{</span><span class="n">z_move</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># x-move</span>
+    <span class="c1"># self.move_stage_relative(FibsemStagePosition(x=dx, y=0, z=0))</span>
+
+    <span class="k">if</span> <span class="n">static_wd</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">electron_beam</span><span class="o">.</span><span class="n">working_distance</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">electron</span><span class="o">.</span><span class="n">eucentric_height</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">ion_beam</span><span class="o">.</span><span class="n">working_distance</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">ion</span><span class="o">.</span><span class="n">eucentric_height</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">electron_beam</span><span class="o">.</span><span class="n">working_distance</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">wd</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">specimen</span><span class="o">.</span><span class="n">stage</span><span class="o">.</span><span class="n">link</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div><p>where dy is the distance to move in the image plane (eucentric movements are always calculated from the ion beam perspective).</p>
+<h3 id="stable-movement">Stable Movement</h3>
+<p>Stable movements maintain the sample at the eucentric position, allowing for movement along the sample plane without losing the eucentric position. This is useful for performing liftout, and other tasks that require movement along the sample plane.</p>
+<p><img alt="Stable Movement" src="../img/movement/stable/stable.gif" /></p>
+<p>To use stable movements, use: </p>
+<pre><code class="language-python">microscope.stable_move(settings, dx, dy, beam_type)
+</code></pre>
+<p>where dx, dy are the distance to move in the image plane, and beam_type is the beam type to use for the movement.</p>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="fibsem.microscope.ThermoMicroscope.stable_move"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>settings</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.MicroscopeSettings" href="../started/#fibsem.structures.MicroscopeSettings">MicroscopeSettings</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>microscope settings</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>dx</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>distance along the x-axis (image coordinates)</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>dy</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>distance along the y-axis (image coordinates)</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>beam_type</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.BeamType" href="../reference/#fibsem.structures.BeamType">BeamType</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>beam type to move in</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>_fixed</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>whether to fix the working distance. Defaults to False.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>fibsem/microscope.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">928</span>
+<span class="normal">929</span>
+<span class="normal">930</span>
+<span class="normal">931</span>
+<span class="normal">932</span>
+<span class="normal">933</span>
+<span class="normal">934</span>
+<span class="normal">935</span>
+<span class="normal">936</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span>
+<span class="normal">965</span>
+<span class="normal">966</span>
+<span class="normal">967</span>
+<span class="normal">968</span>
+<span class="normal">969</span>
+<span class="normal">970</span>
+<span class="normal">971</span>
+<span class="normal">972</span>
+<span class="normal">973</span>
+<span class="normal">974</span>
+<span class="normal">975</span>
+<span class="normal">976</span>
+<span class="normal">977</span>
+<span class="normal">978</span>
+<span class="normal">979</span>
+<span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">stable_move</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">MicroscopeSettings</span><span class="p">,</span>
+    <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">dy</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">beam_type</span><span class="p">:</span> <span class="n">BeamType</span><span class="p">,</span>
+    <span class="n">_fixed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (MicroscopeSettings): microscope settings</span>
+<span class="sd">        dx (float): distance along the x-axis (image coordinates)</span>
+<span class="sd">        dy (float): distance along the y-axis (image coordinates)</span>
+<span class="sd">        beam_type (BeamType): beam type to move in</span>
+<span class="sd">        _fixed (bool, optional): whether to fix the working distance. Defaults to False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_check_stage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hardware_settings</span><span class="p">)</span>
+    <span class="n">wd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">electron_beam</span><span class="o">.</span><span class="n">working_distance</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">if</span> <span class="n">beam_type</span> <span class="o">==</span> <span class="n">BeamType</span><span class="o">.</span><span class="n">ELECTRON</span><span class="p">:</span>
+        <span class="n">image_rotation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">electron_beam</span><span class="o">.</span><span class="n">scanning</span><span class="o">.</span><span class="n">rotation</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">elif</span> <span class="n">beam_type</span> <span class="o">==</span> <span class="n">BeamType</span><span class="o">.</span><span class="n">ION</span><span class="p">:</span>
+        <span class="n">image_rotation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">ion_beam</span><span class="o">.</span><span class="n">scanning</span><span class="o">.</span><span class="n">rotation</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">image_rotation</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">dx</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">image_rotation</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+        <span class="n">dx</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="n">dy</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
+
+    <span class="c1"># calculate stage movement</span>
+    <span class="n">x_move</span> <span class="o">=</span> <span class="n">FibsemStagePosition</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">yz_move</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_corrected_stage_movement</span><span class="p">(</span>
+        <span class="n">settings</span><span class="o">=</span><span class="n">settings</span><span class="p">,</span>
+        <span class="n">expected_y</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span>
+        <span class="n">beam_type</span><span class="o">=</span><span class="n">beam_type</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># move stage</span>
+    <span class="n">stage_position</span> <span class="o">=</span> <span class="n">FibsemStagePosition</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">x_move</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">yz_move</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+        <span class="n">z</span><span class="o">=</span><span class="n">yz_move</span><span class="o">.</span><span class="n">z</span><span class="p">,</span>
+        <span class="n">r</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">coordinate_system</span><span class="o">=</span><span class="s2">&quot;RAW&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;moving stage (</span><span class="si">{</span><span class="n">beam_type</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">stage_position</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">move_stage_relative</span><span class="p">(</span><span class="n">stage_position</span><span class="p">)</span>
+
+    <span class="c1"># adjust working distance to compensate for stage movement</span>
+    <span class="k">if</span> <span class="n">_fixed</span><span class="p">:</span>
+        <span class="n">wd</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">electron</span><span class="o">.</span><span class="n">eucentric_height</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">beams</span><span class="o">.</span><span class="n">electron_beam</span><span class="o">.</span><span class="n">working_distance</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">wd</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">specimen</span><span class="o">.</span><span class="n">stage</span><span class="o">.</span><span class="n">link</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">stage_position</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.4e0fa4ba.min.js"></script>
+      
+    
+  </body>
+</html>

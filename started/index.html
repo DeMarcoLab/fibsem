@@ -1,0 +1,1686 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../automation/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.0">
+    
+    
+      
+        <title>Getting Started - FIBSEM Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.9f615399.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#getting-started" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="FIBSEM Docs" class="md-header__button md-logo" aria-label="FIBSEM Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            FIBSEM Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting Started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="FIBSEM Docs" class="md-nav__button md-logo" aria-label="FIBSEM Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    FIBSEM Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OpenFIBSEM
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#desktop-shortcut" class="md-nav__link">
+    Desktop Shortcut
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-configuration" class="md-nav__link">
+    System Configuration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-basics" class="md-nav__link">
+    The Basics
+  </a>
+  
+    <nav class="md-nav" aria-label="The Basics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#microscope-connection" class="md-nav__link">
+    Microscope Connection
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microscopesettings" class="md-nav__link">
+    MicroscopeSettings
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.structures.MicroscopeSettings" class="md-nav__link">
+    MicroscopeSettings
+  </a>
+  
+    <nav class="md-nav" aria-label="MicroscopeSettings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#taking-an-image" class="md-nav__link">
+    Taking an Image
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.acquire.new_image" class="md-nav__link">
+    new_image
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.structures.ImageSettings" class="md-nav__link">
+    ImageSettings
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.structures.ImageSettings.fromFibsemImage" class="md-nav__link">
+    fromFibsemImage()
+  </a>
+  
+    <nav class="md-nav" aria-label="fromFibsemImage()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#movement" class="md-nav__link">
+    Movement
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#milling" class="md-nav__link">
+    Milling
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Automation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ml/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Machine Learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Project Roadmap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#desktop-shortcut" class="md-nav__link">
+    Desktop Shortcut
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-configuration" class="md-nav__link">
+    System Configuration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-basics" class="md-nav__link">
+    The Basics
+  </a>
+  
+    <nav class="md-nav" aria-label="The Basics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#microscope-connection" class="md-nav__link">
+    Microscope Connection
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microscopesettings" class="md-nav__link">
+    MicroscopeSettings
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.structures.MicroscopeSettings" class="md-nav__link">
+    MicroscopeSettings
+  </a>
+  
+    <nav class="md-nav" aria-label="MicroscopeSettings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#taking-an-image" class="md-nav__link">
+    Taking an Image
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.acquire.new_image" class="md-nav__link">
+    new_image
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.structures.ImageSettings" class="md-nav__link">
+    ImageSettings
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fibsem.structures.ImageSettings.fromFibsemImage" class="md-nav__link">
+    fromFibsemImage()
+  </a>
+  
+    <nav class="md-nav" aria-label="fromFibsemImage()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#movement" class="md-nav__link">
+    Movement
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#milling" class="md-nav__link">
+    Milling
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="getting-started">Getting Started</h1>
+<h3 id="installation">Installation</h3>
+<p>Please see README.md</p>
+<h3 id="desktop-shortcut">Desktop Shortcut</h3>
+<p>To create a desktop shortcut for FibsemUI, simply run the shortcut.py file.</p>
+<h3 id="system-configuration">System Configuration</h3>
+<p>The system configuration is defined by a system.yaml file. This defines various system settings, including connection details, beam, imaging, and stage settings. </p>
+<p>You will need to change the ip_address to connect to your microscope. </p>
+<p>The default file can be found in fibsem/config/system.yaml. When you call utils.setup_session() with no arguments, the default file is used. You can either edit the default file, or provide the config_path to your own system.yaml file in setup_session.</p>
+<p>WIP: update for v2</p>
+<pre><code class="language-yaml"># system
+system:
+  ip_address: 10.0.0.1
+  application_file: autolamella
+  manufacturer: Thermo # Thermo or Tescan
+  # beams
+  ion:
+    voltage: 30000
+    current: 20.e-12
+    plasma_gas: &quot;Argon&quot; # proper case, e.g. Argon, Oxygen
+    eucentric_height: 16.5e-3
+    detector_type: ETD
+    detector_mode: SecondaryElectrons
+  electron:
+    voltage: 2000
+    current: 1.0e-12
+    eucentric_height: 4.0e-3
+    detector_type: ETD
+    detector_mode: SecondaryElectrons
+  # stage
+  stage:
+    rotation_flat_to_electron: 50 # degrees
+    rotation_flat_to_ion: 230 # degrees
+    tilt_flat_to_electron: 35 # degrees (pre-tilt)
+    tilt_flat_to_ion: 52 # degrees
+    pre_tilt: 35
+    needle_stage_height_limit: 3.7e-3
+# user config settings
+user:
+  imaging_current: 20.e-12
+  milling_current: 2.e-9
+  resolution: &quot;1536x1024&quot;
+  hfw: 150.e-6  
+  beam_type: &quot;Electron&quot;
+  autocontrast: True
+  dwell_time: 1.e-6
+  save: False
+  gamma: # gamma correction parameters
+    enabled: True
+    min_gamma: 0.15
+    max_gamma: 1.8
+    scale_factor: 0.01
+    threshold: 46 # px
+</code></pre>
+<p>Note: setup_session will not automatically switch to these settings. To do so, you need to call validation.validate_initial_microscope_state.</p>
+<h3 id="example">Example</h3>
+<p>Once you have changed your system.yaml file, you should be able to run example/example.py to take images with both beams, and plot.</p>
+<pre><code class="language-python">from fibsem import utils, acquire
+import matplotlib.pyplot as plt
+
+
+def main():
+
+    # connect to microscope
+    microscope, settings = utils.setup_session()
+
+    # take image with both beams
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+
+    # show images
+    fig, ax = plt.subplots(1, 2, figsize=(7, 5))
+    ax[0].imshow(eb_image.data, cmap=&quot;gray&quot;)
+    ax[1].imshow(ib_image.data, cmap=&quot;gray&quot;)
+    plt.show()
+
+if __name__ == &quot;__main__&quot;:
+    main()
+
+</code></pre>
+<h2 id="the-basics">The Basics</h2>
+<h3 id="microscope-connection">Microscope Connection</h3>
+<p>The microscope is a client connection to the Microscope Server. At the moment, only ThermoFisher AutoScript Client is supported. </p>
+<h3 id="microscopesettings">MicroscopeSettings</h3>
+<p>MicroscopeSettings is a large structure containing the settings for the different microscope systems.</p>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.structures.MicroscopeSettings"></a>
+  <div class="doc doc-contents first">
+
+  
+      <p>A data class representing the settings for a microscope system.</p>
+
+
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>system</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.SystemSettings" href="../reference/#fibsem.structures.SystemSettings">SystemSettings</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An instance of the <code>SystemSettings</code> class that holds the system settings.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>image</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.ImageSettings" href="#fibsem.structures.ImageSettings">ImageSettings</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An instance of the <code>ImageSettings</code> class that holds the image settings.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>protocol</code></td>
+          <td>
+                <code>dict</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A dictionary representing the protocol settings. Defaults to None.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>milling</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.FibsemMillingSettings" href="../reference/#fibsem.structures.FibsemMillingSettings">FibsemMillingSettings</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An instance of the <code>FibsemMillingSettings</code> class that holds the fibsem milling settings. Defaults to None.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Methods:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+          <tr>
+            <td><code>__to_dict__</code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>Returns a dictionary representation of the <code>MicroscopeSettings</code> object.</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><code>__from_dict__</code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>dict, protocol: dict = None) -&gt; "MicroscopeSettings": Returns an instance of the <code>MicroscopeSettings</code> class from a dictionary.</p>
+              </div>
+            </td>
+          </tr>
+    </tbody>
+  </table>
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/structures.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1435</span>
+<span class="normal">1436</span>
+<span class="normal">1437</span>
+<span class="normal">1438</span>
+<span class="normal">1439</span>
+<span class="normal">1440</span>
+<span class="normal">1441</span>
+<span class="normal">1442</span>
+<span class="normal">1443</span>
+<span class="normal">1444</span>
+<span class="normal">1445</span>
+<span class="normal">1446</span>
+<span class="normal">1447</span>
+<span class="normal">1448</span>
+<span class="normal">1449</span>
+<span class="normal">1450</span>
+<span class="normal">1451</span>
+<span class="normal">1452</span>
+<span class="normal">1453</span>
+<span class="normal">1454</span>
+<span class="normal">1455</span>
+<span class="normal">1456</span>
+<span class="normal">1457</span>
+<span class="normal">1458</span>
+<span class="normal">1459</span>
+<span class="normal">1460</span>
+<span class="normal">1461</span>
+<span class="normal">1462</span>
+<span class="normal">1463</span>
+<span class="normal">1464</span>
+<span class="normal">1465</span>
+<span class="normal">1466</span>
+<span class="normal">1467</span>
+<span class="normal">1468</span>
+<span class="normal">1469</span>
+<span class="normal">1470</span>
+<span class="normal">1471</span>
+<span class="normal">1472</span>
+<span class="normal">1473</span>
+<span class="normal">1474</span>
+<span class="normal">1475</span>
+<span class="normal">1476</span>
+<span class="normal">1477</span>
+<span class="normal">1478</span>
+<span class="normal">1479</span>
+<span class="normal">1480</span>
+<span class="normal">1481</span>
+<span class="normal">1482</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">MicroscopeSettings</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A data class representing the settings for a microscope system.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        system (SystemSettings): An instance of the `SystemSettings` class that holds the system settings.</span>
+<span class="sd">        image (ImageSettings): An instance of the `ImageSettings` class that holds the image settings.</span>
+<span class="sd">        protocol (dict, optional): A dictionary representing the protocol settings. Defaults to None.</span>
+<span class="sd">        milling (FibsemMillingSettings, optional): An instance of the `FibsemMillingSettings` class that holds the fibsem milling settings. Defaults to None.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __to_dict__(): Returns a dictionary representation of the `MicroscopeSettings` object.</span>
+<span class="sd">        __from_dict__(settings: dict, protocol: dict = None) -&gt; &quot;MicroscopeSettings&quot;: Returns an instance of the `MicroscopeSettings` class from a dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">system</span><span class="p">:</span> <span class="n">SystemSettings</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n">ImageSettings</span>
+    <span class="n">protocol</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">milling</span><span class="p">:</span> <span class="n">FibsemMillingSettings</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">hardware</span><span class="p">:</span> <span class="n">FibsemHardware</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span> <span class="nf">__to_dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+        <span class="n">settings_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">__to_dict__</span><span class="p">(),</span>
+            <span class="s2">&quot;user&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">__to_dict__</span><span class="p">(),</span>
+            <span class="s2">&quot;protocol&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">,</span>
+            <span class="s2">&quot;milling&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">milling</span><span class="o">.</span><span class="n">__to_dict__</span><span class="p">(),</span>
+            <span class="s2">&quot;hardware&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">hardware</span><span class="o">.</span><span class="n">__to_dict__</span><span class="p">(),</span>
+
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">settings_dict</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__from_dict__</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">protocol</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hardware</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;MicroscopeSettings&quot;</span><span class="p">:</span>
+
+        <span class="k">return</span> <span class="n">MicroscopeSettings</span><span class="p">(</span>
+            <span class="n">system</span><span class="o">=</span><span class="n">SystemSettings</span><span class="o">.</span><span class="n">__from_dict__</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;system&quot;</span><span class="p">]),</span>
+            <span class="n">image</span><span class="o">=</span><span class="n">ImageSettings</span><span class="o">.</span><span class="n">__from_dict__</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]),</span>
+            <span class="n">protocol</span><span class="o">=</span><span class="n">protocol</span> <span class="k">if</span> <span class="n">protocol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">settings</span><span class="p">[</span><span class="s2">&quot;protocol&quot;</span><span class="p">],</span>
+            <span class="n">milling</span><span class="o">=</span><span class="n">FibsemMillingSettings</span><span class="o">.</span><span class="n">__from_dict__</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;milling&quot;</span><span class="p">]),</span>
+            <span class="n">hardware</span><span class="o">=</span><span class="n">FibsemHardware</span><span class="o">.</span><span class="n">__from_dict__</span><span class="p">(</span><span class="n">hardware</span><span class="p">)</span> <span class="k">if</span> <span class="n">hardware</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">FibsemHardware</span><span class="o">.</span><span class="n">__from_dict__</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;hardware&quot;</span><span class="p">]),</span>
+
+        <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div><p>It is populated from your configuration in system.yaml. Most functions take a combination of the microscope client, and settings as arguments. </p>
+<h3 id="taking-an-image">Taking an Image</h3>
+<p>The most basic use case for the package is taking an image. Imaging functions are contained in fibsem.acquire, and imaging conditions are controlled by modifying the ImageSettings struct.</p>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="fibsem.acquire.new_image"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Apply the given image settings and acquire a new image.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>microscope</code></td>
+          <td>
+                <code><span title="fibsem.microscope.FibsemMicroscope">FibsemMicroscope</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The FibsemMicroscope instance used to acquire the image.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>settings</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.ImageSettings" href="#fibsem.structures.ImageSettings">ImageSettings</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The image settings used to acquire the image.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>FibsemImage</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.FibsemImage" href="../reference/#fibsem.structures.FibsemImage">FibsemImage</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The acquired image.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>fibsem/acquire.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">new_image</span><span class="p">(</span>
+    <span class="n">microscope</span><span class="p">:</span> <span class="n">FibsemMicroscope</span><span class="p">,</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">ImageSettings</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FibsemImage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply the given image settings and acquire a new image.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        microscope (FibsemMicroscope): The FibsemMicroscope instance used to acquire the image.</span>
+<span class="sd">        settings (ImageSettings): The image settings used to acquire the image.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        FibsemImage: The acquired image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># set label</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">beam_type</span> <span class="ow">is</span> <span class="n">BeamType</span><span class="o">.</span><span class="n">ELECTRON</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">_eb&quot;</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">beam_type</span> <span class="ow">is</span> <span class="n">BeamType</span><span class="o">.</span><span class="n">ION</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">_ib&quot;</span>
+
+    <span class="c1"># run autocontrast</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">:</span>
+        <span class="n">microscope</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">(</span><span class="n">beam_type</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">beam_type</span><span class="p">)</span>
+
+    <span class="c1"># acquire the image</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">microscope</span><span class="o">.</span><span class="n">acquire_image</span><span class="p">(</span>
+        <span class="n">image_settings</span><span class="o">=</span><span class="n">settings</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">gamma_enabled</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">auto_gamma</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+    <span class="c1"># save image</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">save</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+        <span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">save_path</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">image</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="fibsem.structures.ImageSettings"></a>
+  <div class="doc doc-contents first">
+
+  
+      <p>A data class representing the settings for an image acquisition.</p>
+
+
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>resolution</code></td>
+          <td>
+                <code>list of int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The resolution of the acquired image in pixels, [x, y].</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>dwell_time</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The time spent per pixel during image acquisition, in seconds.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hfw</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The horizontal field width of the acquired image, in microns.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>autocontrast</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether or not to apply automatic contrast enhancement to the acquired image.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>beam_type</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.BeamType" href="../reference/#fibsem.structures.BeamType">BeamType</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The type of beam to use for image acquisition.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>save</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether or not to save the acquired image to disk.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>label</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The label to use when saving the acquired image.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>gamma_enabled</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether or not to apply gamma correction to the acquired image.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>save_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The path to the directory where the acquired image should be saved.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>reduced_area</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.FibsemRectangle" href="../reference/#fibsem.structures.FibsemRectangle">FibsemRectangle</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The rectangular region of interest within the acquired image, if any.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Methods:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+          <tr>
+            <td><code>__from_dict__</code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>dict) -&gt; ImageSettings:
+Converts a dictionary of image settings to an ImageSettings object.</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><code>__to_dict__</code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>Converts the ImageSettings object to a dictionary of image settings.</p>
+              </div>
+            </td>
+          </tr>
+    </tbody>
+  </table>
+
+            <details class="quote">
+              <summary>Source code in <code>fibsem/structures.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ImageSettings</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A data class representing the settings for an image acquisition.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        resolution (list of int): The resolution of the acquired image in pixels, [x, y].</span>
+<span class="sd">        dwell_time (float): The time spent per pixel during image acquisition, in seconds.</span>
+<span class="sd">        hfw (float): The horizontal field width of the acquired image, in microns.</span>
+<span class="sd">        autocontrast (bool): Whether or not to apply automatic contrast enhancement to the acquired image.</span>
+<span class="sd">        beam_type (BeamType): The type of beam to use for image acquisition.</span>
+<span class="sd">        save (bool): Whether or not to save the acquired image to disk.</span>
+<span class="sd">        label (str): The label to use when saving the acquired image.</span>
+<span class="sd">        gamma_enabled (bool): Whether or not to apply gamma correction to the acquired image.</span>
+<span class="sd">        save_path (Path): The path to the directory where the acquired image should be saved.</span>
+<span class="sd">        reduced_area (FibsemRectangle): The rectangular region of interest within the acquired image, if any.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __from_dict__(settings: dict) -&gt; ImageSettings:</span>
+<span class="sd">            Converts a dictionary of image settings to an ImageSettings object.</span>
+<span class="sd">        __to_dict__() -&gt; dict:</span>
+<span class="sd">            Converts the ImageSettings object to a dictionary of image settings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">resolution</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dwell_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">hfw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">autocontrast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">beam_type</span><span class="p">:</span> <span class="n">BeamType</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">gamma_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">reduced_area</span><span class="p">:</span> <span class="n">FibsemRectangle</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">line_integration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># (int32) 2 - 255</span>
+    <span class="n">scan_interlacing</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># (int32) 2 - 8</span>
+    <span class="n">frame_integration</span><span class="p">:</span> <span class="nb">int</span>  <span class="o">=</span> <span class="kc">None</span> <span class="c1"># (int32) 2 - 512</span>
+    <span class="n">drift_correction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># (bool) # requires frame_integration &gt; 1</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;resolution must be a list, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dwell_time</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dwell_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;dwell time must be of type float, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dwell_time</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hfw</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hfw</span><span class="p">,</span><span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfw</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;hfw must be int or float, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hfw</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocontrast</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;autocontrast setting must be bool, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beam_type</span><span class="p">,</span><span class="n">BeamType</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;beam type must be a BeamType object, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beam_type</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">,</span><span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">save</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;save option must be a bool, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;label must b str, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma_enabled</span><span class="p">,</span><span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma_enabled</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;gamma enabled setting must be bool, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma_enabled</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">,(</span><span class="n">Path</span><span class="p">,</span><span class="nb">str</span><span class="p">))</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;save path must be Path or str, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span><span class="p">,</span><span class="n">FibsemRectangle</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;reduced area must be a fibsemRectangle object, currently is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__from_dict__</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ImageSettings&quot;</span><span class="p">:</span>
+
+
+        <span class="k">if</span> <span class="s2">&quot;reduced_area&quot;</span> <span class="ow">in</span> <span class="n">settings</span> <span class="ow">and</span> <span class="n">settings</span><span class="p">[</span><span class="s2">&quot;reduced_area&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reduced_area</span> <span class="o">=</span> <span class="n">FibsemRectangle</span><span class="o">.</span><span class="n">__from_dict__</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;reduced_area&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reduced_area</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+        <span class="n">image_settings</span> <span class="o">=</span> <span class="n">ImageSettings</span><span class="p">(</span>
+            <span class="n">resolution</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resolution&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1536</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)),</span>
+            <span class="n">dwell_time</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dwell_time&quot;</span><span class="p">,</span> <span class="mf">1.0e-6</span><span class="p">),</span>
+            <span class="n">hfw</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hfw&quot;</span><span class="p">,</span> <span class="mf">150e-6</span><span class="p">),</span>
+            <span class="n">autocontrast</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;autocontrast&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="n">beam_type</span><span class="o">=</span><span class="n">BeamType</span><span class="p">[</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beam_type&quot;</span><span class="p">,</span> <span class="s2">&quot;Electron&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()],</span>
+            <span class="n">gamma_enabled</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gamma_enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="n">save</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="n">save_path</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save_path&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()),</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="s2">&quot;default_image&quot;</span><span class="p">),</span>
+            <span class="n">reduced_area</span><span class="o">=</span><span class="n">reduced_area</span><span class="p">,</span>
+            <span class="n">line_integration</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;line_integration&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">scan_interlacing</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scan_interlacing&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">frame_integration</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;frame_integration&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">drift_correction</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drift_correction&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">image_settings</span>
+
+    <span class="k">def</span> <span class="nf">__to_dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+        <span class="n">settings_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;beam_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_type</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">beam_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;resolution&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;dwell_time&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dwell_time</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dwell_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;hfw&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfw</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hfw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;autocontrast&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocontrast</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocontrast</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;gamma_enabled&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma_enabled</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma_enabled</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;save&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">save</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;save_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_path</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;reduced_area&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                <span class="s2">&quot;top&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span><span class="o">.</span><span class="n">top</span><span class="p">,</span>
+                <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
+                <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span><span class="o">.</span><span class="n">height</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_area</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;line_integration&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_integration</span><span class="p">,</span>
+            <span class="s2">&quot;scan_interlacing&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_interlacing</span><span class="p">,</span>
+            <span class="s2">&quot;frame_integration&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">frame_integration</span><span class="p">,</span>
+            <span class="s2">&quot;drift_correction&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">drift_correction</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">settings_dict</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">fromFibsemImage</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="s1">&#39;FibsemImage&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ImageSettings&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the image settings for a FibsemImage object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (FibsemImage): The FibsemImage object to get the image settings from.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ImageSettings: The image settings for the given FibsemImage object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">fibsem</span> <span class="kn">import</span> <span class="n">utils</span>
+        <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+        <span class="n">image_settings</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">image_settings</span><span class="p">)</span>
+        <span class="n">image_settings</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">current_timestamp</span><span class="p">()</span>
+        <span class="n">image_settings</span><span class="o">.</span><span class="n">save</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">image_settings</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h2 id="fibsem.structures.ImageSettings.fromFibsemImage" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">fromFibsemImage</span><span class="p">(</span><span class="n">image</span><span class="p">)</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Returns the image settings for a FibsemImage object.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>image</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.FibsemImage" href="../reference/#fibsem.structures.FibsemImage">FibsemImage</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The FibsemImage object to get the image settings from.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>ImageSettings</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="fibsem.structures.ImageSettings" href="#fibsem.structures.ImageSettings">ImageSettings</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The image settings for the given FibsemImage object.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+          <details class="quote">
+            <summary>Source code in <code>fibsem/structures.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span> <span class="nf">fromFibsemImage</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="s1">&#39;FibsemImage&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ImageSettings&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the image settings for a FibsemImage object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        image (FibsemImage): The FibsemImage object to get the image settings from.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ImageSettings: The image settings for the given FibsemImage object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">fibsem</span> <span class="kn">import</span> <span class="n">utils</span>
+    <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+    <span class="n">image_settings</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">image_settings</span><span class="p">)</span>
+    <span class="n">image_settings</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">current_timestamp</span><span class="p">()</span>
+    <span class="n">image_settings</span><span class="o">.</span><span class="n">save</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="n">image_settings</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div><p>ImageSettings is part of the MicroscopeSettings, and can be accessed by settings.image. For example, to change the hfw of the image and take an image (snippet):</p>
+<pre><code class="language-python">
+# change hfw to 400e-6
+settings.image.hfw = 400e-6
+
+# take image
+image = acquire.new_image(microscope, settings.image)
+
+
+</code></pre>
+<h3 id="movement">Movement</h3>
+<p>...</p>
+<h3 id="milling">Milling</h3>
+<p>...</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.4e0fa4ba.min.js"></script>
+      
+    
+  </body>
+</html>
