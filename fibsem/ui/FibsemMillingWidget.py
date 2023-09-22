@@ -22,7 +22,7 @@ from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, conver
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
-_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes"]
+_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes", "n_rectangles", "overlap"]
 _ANGLE_KEYS = ["rotation"]
 
 def _scale_value(key, value, scale):
@@ -78,8 +78,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.viewer_update_signal.connect(self.update_ui) # this happens after every time the viewer is updated
 
         # milling
-        available_currents = self.microscope.get_available_values("current", BeamType.ION)
-        self.comboBox_milling_current.addItems([str(current) for current in available_currents])
+        self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
+        self.comboBox_milling_current.addItems([str(current) for current in self.AVAILABLE_MILLING_CURRENTS])
 
         _THERMO = isinstance(self.microscope, ThermoMicroscope)
         _TESCAN = isinstance(self.microscope, TescanMicroscope)
@@ -438,6 +438,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         point = conversions.image_to_microscope_image_coordinates(
                 Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
             )
+        
+        clicked = deepcopy(point)
 
         # only move the pattern if milling widget is activate and beamtype is ion?
         renewed_patterns = []
@@ -486,8 +488,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 _redraw = True
 
         if _redraw:
-            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
+            self.doubleSpinBox_centre_x.setValue(clicked.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(clicked.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
             logging.info(f"Moved patterns to {point} ")
             logging.info(f"MILL | {self.milling_stages[current_stage_index].pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
             self.update_ui(milling_stages=self.milling_stages)
@@ -513,10 +515,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
    
     def set_milling_settings_ui(self, milling: FibsemMillingSettings) -> None:
 
-        if self.comboBox_milling_current.findText(str(milling.milling_current)) == -1:
-            napari.utils.notifications.show_warning(f"Could not find milling current {milling.milling_current} in list of available currents.")
-        else:
-            self.comboBox_milling_current.setCurrentText(str(milling.milling_current))
+        # match to closest available milling current
+        idx = np.argmin(np.abs(np.array(self.AVAILABLE_MILLING_CURRENTS) - milling.milling_current))
+        self.comboBox_milling_current.setCurrentIndex(idx)
         self.comboBox_application_file.setCurrentText(milling.application_file)
         self.doubleSpinBox_rate.setValue(milling.rate*constants.SI_TO_NANO)
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)

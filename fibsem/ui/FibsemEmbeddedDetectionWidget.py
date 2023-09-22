@@ -70,11 +70,11 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             """Drag the detected feature positions to move them. Press Continue when finished."""
         )
         self.pushButton_continue.clicked.connect(self.confirm_button_clicked)
-        self.pushButton_continue.setVisible(self.parent is None)
+        self.pushButton_continue.setVisible(False)
 
 
         # labelling
-        self.viewer.bind_key("L", self._toggle_labelling)
+        self.viewer.bind_key("L", self._toggle_labelling, overwrite=True)
         self.pushButton_enable_labelling.clicked.connect(self._toggle_labelling)
         self.checkBox_labelling_model_assist.stateChanged.connect(self._toggle_labelling)
         self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  

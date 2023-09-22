@@ -5,6 +5,10 @@
 
 Please see README.md
 
+### Desktop Shortcut
+
+To create a desktop shortcut for FibsemUI, simply run the shortcut.py file.
+
 ### System Configuration
 
 The system configuration is defined by a system.yaml file. This defines various system settings, including connection details, beam, imaging, and stage settings. 

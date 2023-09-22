@@ -1,28 +1,35 @@
-import logging
-import os
 import napari
+
+import logging
+
 import fibsem
-import napari.utils.notifications
-from fibsem import utils
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem import config as cfg
+from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
+                               MicroscopeSettings, TescanMicroscope,
+                               ThermoMicroscope)
+from fibsem.structures import BeamType
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
-from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
-from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
-from fibsem.ui.FibsemGISWidget import FibsemGISWidget
+from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
+from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
+from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
+from fibsem.ui.qtdesigner_files import FibsemUI
+from fibsem.ui.utils import message_box_ui
 
 from PyQt5 import QtWidgets
-from fibsem import config as cfg
-
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtCore import pyqtSignal
 from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
 from fibsem.ui.qtdesigner_files import FibsemUI
 from fibsem.structures import BeamType
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.utils import message_box_ui
 
+
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
+    _minimap_signal = pyqtSignal(object)
 
     def __init__(self, viewer: napari.Viewer):
         super(FibsemUI, self).__init__()
@@ -41,11 +48,14 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
 
+        self.minimap_widget: FibsemMinimapWidget = None
+
         self.system_widget = FibsemSystemSetupWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 config_path = cfg.SYSTEM_PATH,
+                parent=self,
             )
         
         self.tabWidget.addTab(self.system_widget, "System")
@@ -55,7 +65,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def setup_connections(self):
-
+        from fibsem import utils
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
@@ -68,6 +78,18 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 self.system_widget.apply_settings = True
                 self.system_widget.apply_defaults_settings() 
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
+
+        
+
+    def minimap_connection(self,positions=None):
+
+        if self.minimap_widget is None:
+            return
+        else:
+            self._minimap_signal.emit(positions)
+
+
+
 
     def _open_minimap(self):
         if self.microscope is None:
@@ -85,6 +107,13 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
         self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
+
+        self.minimap_widget._minimap_positions.connect(self.movement_widget.minimap_window_positions)
+
+        self.minimap_widget.positions = self.movement_widget.positions
+        self.minimap_widget._update_position_info()
+        self.minimap_widget._update_viewer()
+
         napari.run(max_loop_level=2)
 
 
@@ -229,8 +258,10 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             self.system_widget.image_widget = self.image_widget
             self.system_widget.milling_widget = self.milling_widget
-
-
+        
+            # connect movement widget signal
+            self.movement_widget.positions_signal.connect(self.minimap_connection)
+            self.movement_widget.move_signal.connect(self.minimap_connection)
 
         else:
             if self.image_widget is None:

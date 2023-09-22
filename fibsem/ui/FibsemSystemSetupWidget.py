@@ -32,14 +32,13 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         microscope: FibsemMicroscope = None,
         settings: MicroscopeSettings = None,
         viewer: napari.Viewer = None,
-        image_widget: QtWidgets.QWidget = None,
-        milling_widget: QtWidgets.QWidget = None,
         parent=None,
         config_path: str = None,
     ):
         super(FibsemSystemSetupWidget, self).__init__(parent=parent)
         self.setupUi(self)
 
+        self.parent = parent
         self.microscope = microscope
         self.settings = settings
         self.viewer = viewer
@@ -151,11 +150,15 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.microscope.set_beam_settings(microscope_settings.system.ion)
         self.microscope.set_beam_settings(microscope_settings.system.electron)
         
-        self.image_widget.set_ui_from_settings(microscope_settings.image, beam_type=microscope_settings.image.beam_type)
+        # TODO: complete this system setting
+        if self.parent:
+            if self.parent.image_widget:
+                self.parent.image_widget.set_ui_from_settings(microscope_settings.image, beam_type=microscope_settings.image.beam_type)
+            if self.parent.milling_widget:
+                self.parent.milling_widget.set_milling_settings_ui(microscope_settings.milling)
 
         self.get_stage_settings_from_ui()
         self.get_model_from_ui()
-        self.milling_widget.set_milling_settings_ui(microscope_settings.milling)
 
 
     def save_defaults(self, path: str = None):
@@ -368,6 +371,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
 
+
             # self.connected_signal.emit()
             self.set_defaults_to_ui()
 
@@ -394,6 +398,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         _microscope_connected = bool(self.microscope)
 
         self.setStage_button.setEnabled(_microscope_connected)
+        self.pushButton_apply_settings.setEnabled(_microscope_connected)
 
         if _microscope_connected:
             self.microscope_button.setText("Microscope Connected")

@@ -1,13 +1,11 @@
+import napari
 import logging
 from pathlib import Path
 
-import napari
 import napari.utils.notifications
 
 import numpy as np
 from PIL import Image
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSignal
 from scipy.ndimage import median_filter
 
 from fibsem import acquire, constants
@@ -25,7 +23,16 @@ from fibsem.ui import _stylesheets
 
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 from fibsem.ui import _stylesheets
-from napari.qt.threading import thread_worker
+# from napari.qt.threading import thread_worker
+   
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
+import threading
+from queue import Queue
+
+import numpy as np
+        
+    
 
 def log_status_message(step: str):
     logging.debug(
@@ -36,6 +43,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
     viewer_update_signal = pyqtSignal()
     image_notification_signal = pyqtSignal(str)
+    live_imaging_signal = pyqtSignal(dict)
 
     def __init__(
         self,
@@ -56,9 +64,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
 
         self._features_layer = None
+        self.stop_event = threading.Event()
+        self.stop_event.set()
+        self.image_queue = Queue()
 
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
         self.TAKING_IMAGES = False
+        self._LIVE_IMAGING = False
 
         self.setup_connections()
 
@@ -72,7 +84,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # register initial images
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ELECTRON.name)
-
+        self.live_imaging_signal.connect(self.live_update)
+    
     def setup_connections(self):
 
         # set ui elements
@@ -83,6 +96,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
         self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_live_imaging.clicked.connect(self.live_imaging)
+        self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
         self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
@@ -291,15 +306,17 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         )
         return self.image_settings, self.detector_settings, self.beam_settings
 
-    def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType):
+    def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType, beam_settings: BeamSettings=None, detector_settings: FibsemDetectorSettings=None ):
 
         # disconnect beam type combobox
         self.selected_beam.currentIndexChanged.disconnect()
         self.selected_beam.setCurrentText(beam_type.name)
         self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
         
-        beam_settings = self.get_beam_settings(beam_type)
-        detector_settings = self.get_detector_settings(beam_type)
+        if beam_settings is None:
+            beam_settings = self.get_beam_settings(beam_type)
+        if detector_settings is None:
+            detector_settings = self.get_detector_settings(beam_type)
 
         self.spinBox_resolution_x.setValue(image_settings.resolution[0])
         self.spinBox_resolution_y.setValue(image_settings.resolution[1])
@@ -366,13 +383,75 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         self.set_ui_from_settings(self.image_settings, beam_type)
 
+    def live_imaging(self):
+        if self.stop_event.is_set():
+            self._toggle_interactions(False)
+            self.pushButton_live_imaging.setEnabled(True)
+            self.pushButton_live_imaging.setText("Stop live imaging")
+            self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(False)
+            self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked(False)
+            self.pushButton_live_imaging.setStyleSheet("background-color: orange")
+
+            self.stop_event.clear()
+            self.image_queue.queue.clear()
+            image_settings = self.get_settings_from_ui()[0]
+            image_settings.autocontrast = False
+            from copy import deepcopy
+            _thread = threading.Thread(
+                target=self.microscope.live_imaging,
+                args=(deepcopy(image_settings), self.image_queue, self.stop_event),
+            )
+            _thread.start()
+            sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
+            worker = self.microscope.consume_image_queue(parent_ui = self, sleep = sleep_time)
+            worker.returned.connect(self.update_live_finished)
+            import time
+            time.sleep(1)
+            worker.start()  
+            self._LIVE_IMAGING = True
+
+        else:
+            self._LIVE_IMAGING = False
+            self.stop_event.set()
+            self.pushButton_live_imaging.setStyleSheet("""
+                    QPushButton {
+                        background-color: green;
+                        color: white;
+                    }
+                    QPushButton:hover {
+                        background-color: gray;
+                    }
+                    QPushButton:pressed { """
+                )
+            self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(False)
+            self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked(False)
+
+
+    def update_live_finished(self):
+        self.pushButton_live_imaging.setText("Live imaging")
+        self.pushButton_take_all_images.setEnabled(True)
+        self.pushButton_take_image.setEnabled(True)
+        self._toggle_interactions(True)
+
+    def live_update(self, dict):
+        arr = dict["image"].data
+        name = BeamType[self.selected_beam.currentText()].name
+
+        try:
+            self.viewer.layers[name].data = arr
+        except:    
+            layer = self.viewer.add_image(arr, name = name)
+
+        if name == BeamType.ELECTRON.name:
+            self.eb_image = dict["image"]
+        if name == BeamType.ION.name:
+            self.ib_image = dict["image"]    
+        
     def take_image(self, beam_type: BeamType = None):
         self.TAKING_IMAGES = True
-        print("helllo from thread")
         worker = self.take_image_worker(beam_type)
         worker.finished.connect(self.imaging_finished)
         worker.start()
-        print("started thread")
 
     def update_imaging_ui(self, msg: str):
         logging.info(msg)
@@ -389,6 +468,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def _toggle_interactions(self, enable: bool, caller: str = None, imaging: bool = False):
         self.pushButton_take_image.setEnabled(enable)
+        self.pushButton_live_imaging.setEnabled(enable)
         self.pushButton_take_all_images.setEnabled(enable)
         self.set_detector_button.setEnabled(enable)
         self.button_set_beam_settings.setEnabled(enable)
@@ -398,6 +478,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if enable:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
@@ -409,6 +490,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_all_images.setText("Acquiring Images...")
             self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_live_imaging.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         else:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
@@ -417,10 +499,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_image.setText("Acquire Image")
             self.pushButton_take_all_images.setText("Acquire All Images")
 
+    from napari.qt.threading import thread_worker
+                
     @thread_worker
     def take_image_worker(self, beam_type: BeamType = None):
         self._toggle_interactions(enable=False, imaging=True)
-        print("Taking image...")
         self.image_settings = self.get_settings_from_ui()[0]
         self.image_notification_signal.emit("Taking image...")
         if beam_type is not None:
@@ -462,7 +545,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
 
 
-    def update_viewer(self, arr: np.ndarray, name: str):
+    def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
 
 
         if name == BeamType.ELECTRON.name:
@@ -531,8 +614,26 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
             
-        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= BeamType[self.selected_beam.currentText()])      
         
+        # set ui from image metadata
+        if _set_ui:
+            if name == BeamType.ELECTRON.name:
+                self.image_settings = self.eb_image.metadata.image_settings
+                beam_settings = self.eb_image.metadata.microscope_state.eb_settings
+                detector_settings = self.eb_image.metadata.microscope_state.eb_detector
+                beam_type = BeamType.ELECTRON
+            if name == BeamType.ION.name:
+                self.image_settings = self.ib_image.metadata.image_settings
+                beam_settings = self.ib_image.metadata.microscope_state.ib_settings
+                detector_settings = self.ib_image.metadata.microscope_state.ib_detector
+                beam_type = BeamType.ION            
+        else:
+            beam_type = BeamType[self.selected_beam.currentText()]
+            beam_settings, detector_settings = None, None    
+    
+        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type, 
+            beam_settings=beam_settings, detector_settings=detector_settings)  
+            
         # set the active layer to the electron beam (for movement)
         if self.eb_layer:
             self.viewer.layers.selection.active = self.eb_layer

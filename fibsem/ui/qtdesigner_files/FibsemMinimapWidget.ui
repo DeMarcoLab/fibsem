@@ -39,19 +39,8 @@
         <string>Collection</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="7" column="0">
-         <widget class="QLabel" name="label_tile_label">
-          <property name="text">
-           <string>Filename</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="label_tile_path">
-          <property name="text">
-           <string>Path</string>
-          </property>
-         </widget>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboBox_tile_beam_type"/>
         </item>
         <item row="0" column="0">
          <widget class="QLabel" name="label_tile_beam_type">
@@ -60,16 +49,33 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
-         <widget class="QLineEdit" name="lineEdit_tile_label">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
+        <item row="5" column="1">
+         <widget class="QCheckBox" name="checkBox_tile_autogamma">
           <property name="text">
-           <string>overview-image</string>
+           <string>AutoGamma</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_tile_tile_size">
+          <property name="text">
+           <string>Tile Size (um)</string>
           </property>
          </widget>
         </item>
@@ -96,33 +102,6 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_tile_tile_size">
-          <property name="text">
-           <string>Tile Size (um)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_tile_resolution">
-          <property name="text">
-           <string>Resolution</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="0" colspan="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="4" column="0">
          <widget class="QLabel" name="label_tile_overlap">
           <property name="text">
@@ -140,26 +119,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_tile_grid_size">
-          <property name="text">
-           <string>Grid Size (um)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="comboBox_tile_beam_type"/>
-        </item>
-        <item row="5" column="1">
-         <widget class="QCheckBox" name="checkBox_tile_autogamma">
-          <property name="text">
-           <string>AutoGamma</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
         <item row="6" column="1">
          <widget class="QLineEdit" name="lineEdit_tile_path">
           <property name="sizePolicy">
@@ -170,7 +129,41 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="0" colspan="2">
+        <item row="7" column="1">
+         <widget class="QLineEdit" name="lineEdit_tile_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>overview-image</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_tile_grid_size">
+          <property name="text">
+           <string>Grid Size (um)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_tile_label">
+          <property name="text">
+           <string>Filename</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_tile_path">
+          <property name="text">
+           <string>Path</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_tile_collection">
           <property name="text">
            <string>Run Tile Collection</string>
@@ -184,6 +177,13 @@
           </property>
           <property name="checked">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_tile_resolution">
+          <property name="text">
+           <string>Resolution</string>
           </property>
          </widget>
         </item>
@@ -305,6 +305,53 @@
         <string>Correlation</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_correlation_selected_layer">
+          <property name="text">
+           <string>Selected Layer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_correlation_scale_x">
+          <property name="text">
+           <string>Scale x, y (%)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QCheckBox" name="checkBox_gridbar">
+          <property name="text">
+           <string>Overlay Gridbar</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0" colspan="2">
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>483</width>
+            <height>261</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_x">
+          <property name="decimals">
+           <number>0</number>
+          </property>
+          <property name="minimum">
+           <double>-100000000.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
         <item row="4" column="0">
          <widget class="QLabel" name="label_correlation_rotation">
           <property name="text">
@@ -319,25 +366,8 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_correlation_selected_layer">
-          <property name="text">
-           <string>Selected Layer</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_y">
-          <property name="decimals">
-           <number>0</number>
-          </property>
-          <property name="minimum">
-           <double>-100000000.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>1000000000.000000000000000</double>
-          </property>
-         </widget>
+        <item row="1" column="1" colspan="2">
+         <widget class="QComboBox" name="comboBox_correlation_selected_layer"/>
         </item>
         <item row="3" column="2">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_scale_y">
@@ -355,21 +385,15 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0" colspan="2">
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_gb_width">
+          <property name="text">
+           <string>Gridbar Width (um)</string>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>483</width>
-            <height>261</height>
-           </size>
-          </property>
-         </spacer>
+         </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_x">
+        <item row="2" column="2">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_y">
           <property name="decimals">
            <number>0</number>
           </property>
@@ -397,22 +421,12 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_correlation_scale_x">
-          <property name="text">
-           <string>Scale x, y (%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="1" colspan="2">
+        <item row="8" column="1" colspan="2">
          <widget class="QPushButton" name="pushButton_update_correlation_image">
           <property name="text">
            <string>Update Correlation Image</string>
           </property>
          </widget>
-        </item>
-        <item row="1" column="1" colspan="2">
-         <widget class="QComboBox" name="comboBox_correlation_selected_layer"/>
         </item>
         <item row="4" column="1" colspan="2">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_rotation">
@@ -424,6 +438,27 @@
           </property>
           <property name="maximum">
            <double>360.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_gb_spacing">
+          <property name="text">
+           <string>Gridbar Spacing (um)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_gb_width">
+          <property name="maximum">
+           <double>10000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_gb_spacing">
+          <property name="maximum">
+           <double>10000.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -439,7 +474,7 @@
      <x>0</x>
      <y>0</y>
      <width>660</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
