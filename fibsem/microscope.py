@@ -3678,7 +3678,7 @@ class TescanMicroscope(FibsemMicroscope):
 
     def get_manipulator_state(self,settings=MicroscopeSettings) -> bool:
 
-        """returns true if nanomanipulator is inserted. Manipulator positions must be calibrated and stored in model.yaml file if not done so
+        """returns true if nanomanipulator is inserted. Manipulator positions must be calibrated and stored in system.yaml file if not done so
 
         Raises:
             ValueError: _description_
