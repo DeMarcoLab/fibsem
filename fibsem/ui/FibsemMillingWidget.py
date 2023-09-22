@@ -653,16 +653,24 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
 
     def start_progress_thread(self,est_time):
-        worker = self.start_progress_bar(est_time=est_time)
-        worker.finished.connect(self.finish_progress_bar)
 
-        worker.start()
+        self.progressBar_milling.setVisible(True)
+        self.progressBar_milling.setValue(0)
+        self.progressBar_milling.setStyleSheet("QProgressBar::chunk "
+                          "{"
+                          "background-color: green;"
+                          "}")
+
+        self.progress_bar_worker = self.start_progress_bar(est_time=est_time)
+        self.progress_bar_worker.finished.connect(self.finish_progress_bar)
+
+        self.progress_bar_worker.start()
 
     @thread_worker
     def start_progress_bar(self,est_time):
         
-        self.progressBar_milling.setVisible(True)
-        self.progressBar_milling.setValue(0)
+
+ 
         i = 0
         # time.sleep(2)
         inc = 0.5
@@ -670,6 +678,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             time.sleep(inc)
             self._progress_bar_update.emit((i+inc)/est_time)
             i += inc 
+            yield
 
     def finish_progress_bar(self):
         self.progressBar_milling.setVisible(False)
@@ -721,6 +730,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.take_reference_images()
         self.update_ui()
         self._milling_finished.emit()
+        self.progress_bar_worker.quit()
+        # print(f'self.progress_bar_worker: {self.progress_bar_worker}')
+        # self.progress_bar_worker.join()
+        # del self.progress_bar_worker
+        # self.progress_bar_worker = None
+        # self.progressBar_milling.deleteLater()
+
 
 
 def main():
