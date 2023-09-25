@@ -15,7 +15,7 @@ from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 from fibsem.patterning import FibsemMillingStage
 import napari
-from fibsem.utils import load_yaml
+from fibsem.utils import load_yaml, save_yaml
 import fibsem.patterning as patterning
 
 # # TODO: clean up and refactor these (_WidgetPlot and _PlotCanvas)
@@ -761,4 +761,40 @@ def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[Fibse
     
     return fig
 
+
+
+def export_milling_stages_yaml(milling_stages: list[FibsemMillingStage]) -> None:
+
+    stages = {}
+
+    for stage in milling_stages:
+        stages[stage.name] = stage.__to_dict__()
+
+        if "required_keys" in stages[stage.name]["pattern"].keys():
+            del stages[stage.name]["pattern"]["required_keys"]
+    
+    path = _get_save_file_ui(msg="Select a file", path=cfg.LOG_PATH, _filter="*.yaml")
+
+    if path == '':
+        napari.utils.notifications.show_info("No file selected, exiting")
+        return
+
+    save_yaml(path=path,data=stages)
+    napari.utils.notifications.show_info(f"Exported Milling stages to yaml file.")
+
+
+def import_milling_stages_yaml() -> list[FibsemMillingStage]:
+
+    stages = load_yaml(_get_file_ui(msg="Select a file", path=cfg.LOG_PATH, _filter="*.yaml"))
+
+    milling_stages = []
+
+    for stage in stages:
+        milling_stage = FibsemMillingStage.__from_dict__(stages[stage])
+        pattern = patterning.get_pattern(milling_stage.pattern.name)
+        pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
+        milling_stage.pattern = pattern
+        milling_stages.append(milling_stage)
+
+    return milling_stages
 
