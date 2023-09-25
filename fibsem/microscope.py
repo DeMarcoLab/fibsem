@@ -5373,7 +5373,8 @@ class DemoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
         import random
-        time.sleep(random.randint(1, 5))
+        # time.sleep(random.randint(1, 5))
+        time.sleep(5)
 
     def finish_milling(self, imaging_current: float) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)
