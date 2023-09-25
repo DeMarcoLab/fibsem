@@ -246,6 +246,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # get the selected milling stage
         current_index = self.comboBox_milling_stage.currentIndex()
         if current_index == -1:
+            _remove_all_layers(self.viewer)
             return
 
         milling_stage: FibsemMillingStage = self.milling_stages[current_index]
