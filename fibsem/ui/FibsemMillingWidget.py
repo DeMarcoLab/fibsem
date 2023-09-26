@@ -703,7 +703,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self.progressBar_milling.setVisible(True)
         self.progressBar_milling.setValue(value*100)
-        self.progressBar_milling.setFormat(f"Milling stage {idx+1} of {total}: {est_time:.1f}s")
+        self.progressBar_milling.setFormat(f"Milling Stage {idx+1}/{total}: {est_time:.1f}s remaining...")
 
     def finish_progress_bar(self):
         self.progressBar_milling.setVisible(False)
