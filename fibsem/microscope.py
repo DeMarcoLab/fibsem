@@ -1012,7 +1012,8 @@ class ThermoMicroscope(FibsemMicroscope):
             dy = -dy
         # TODO: does this need the perspective correction too?
 
-        z_move = dy / np.cos(np.deg2rad(90 - self.stage_settings.tilt_flat_to_ion))  # TODO: MAGIC NUMBER, 90 - fib tilt
+        PERSPECTIVE_CORRECTION = 0.9
+        z_move = dy / np.cos(np.deg2rad(90 - self.stage_settings.tilt_flat_to_ion)) *  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         move_settings = MoveSettings(link_z_y=True)
         z_move = FibsemStagePosition(
