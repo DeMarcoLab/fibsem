@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from fibsem import constants
-from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern
+from fibsem import constants, conversions
+from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern, FibsemRectangle
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
@@ -761,6 +761,36 @@ def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[Fibse
     
     return fig
 
+def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
+    pixelsize = image.metadata.pixel_size.x
+    
+    fiducial_centre.y = -fiducial_centre.y
+    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
+        fiducial_centre, pixelsize
+    )
+
+    rcx = fiducial_centre_px.x / image.metadata.image_settings.resolution[0] + 0.5
+    rcy = fiducial_centre_px.y / image.metadata.image_settings.resolution[1] + 0.5
+
+    fiducial_length_px = (
+        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 2 # SCALE_FACTOR
+    )
+    h_offset = fiducial_length_px / image.metadata.image_settings.resolution[0] / 2
+    v_offset = fiducial_length_px / image.metadata.image_settings.resolution[1] / 2
+
+    left = rcx - h_offset
+    top = rcy - v_offset
+    width = 2 * h_offset
+    height = 2 * v_offset
+
+    if left < 0 or (left + width) > 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+
+    fiducial_area = FibsemRectangle(left, top, width, height)
+
+    return fiducial_area, flag
 
 
 def export_milling_stages_yaml(milling_stages: list[FibsemMillingStage]) -> None:
@@ -797,4 +827,3 @@ def import_milling_stages_yaml() -> list[FibsemMillingStage]:
         milling_stages.append(milling_stage)
 
     return milling_stages
-

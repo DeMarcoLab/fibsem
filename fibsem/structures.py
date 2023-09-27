@@ -574,7 +574,7 @@ class ImageSettings:
 
     def __post_init__(self):
 
-        assert isinstance(self.resolution,list) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
+        assert isinstance(self.resolution,(list, tuple)) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
         assert isinstance(self.dwell_time,float) or self.dwell_time is None, f"dwell time must be of type float, currently is {type(self.dwell_time)}"
         assert isinstance(self.hfw, float) or isinstance(self.hfw,int) or self.hfw is None, f"hfw must be int or float, currently is {type(self.hfw)}"
         assert isinstance(self.autocontrast, bool) or self.autocontrast is None, f"autocontrast setting must be bool, currently is {type(self.autocontrast)}"
@@ -1677,8 +1677,7 @@ class FibsemImageMetadata:
         """Converts a dictionary to metadata."""
 
         image_settings = ImageSettings.__from_dict__(settings)
-        if settings["version"] is not None:
-            version = settings["version"]
+        version = settings.get("version", METADATA_VERSION)
         if settings["pixel_size"] is not None:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
         if settings["microscope_state"] is not None:
@@ -1823,9 +1822,9 @@ class FibsemImage:
                 metadata = FibsemImageMetadata.__from_dict__(metadata)
             except Exception as e:
                 metadata = None
-                print(f"Error: {e}")
-                import traceback
-                traceback.print_exc()
+                # print(f"Error: {e}")
+                # import traceback
+                # traceback.print_exc()
         return cls(data=data, metadata=metadata)
 
     def save(self, save_path: Path = None) -> None:

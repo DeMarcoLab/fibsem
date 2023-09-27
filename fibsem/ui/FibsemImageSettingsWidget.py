@@ -31,6 +31,7 @@ import threading
 from queue import Queue
 
 import numpy as np
+from fibsem import config as cfg
         
     
 
@@ -98,6 +99,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_live_imaging.clicked.connect(self.live_imaging)
         self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_live_imaging.setVisible(cfg._LIVE_IMAGING_ENABLED)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
         self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
