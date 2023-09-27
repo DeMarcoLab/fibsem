@@ -161,7 +161,7 @@ class CopperAdapterCentre(Feature):
     feature_m: Point = None
     px: Point = None
     _color_UINT8: tuple = (255, 255, 0)
-    color = "yellow"
+    color = "gold"
     name: str = "CopperAdapterCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterCentre':
@@ -173,7 +173,7 @@ class CopperAdapterTopEdge(Feature):
     feature_m: Point = None
     px: Point = None
     _color_UINT8: tuple = (255, 255, 0)
-    color = "yellow"
+    color = "gold"
     name: str = "CopperAdapterTopEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterTopEdge':
@@ -186,7 +186,7 @@ class CopperAdapterBottomEdge(Feature):
     feature_m: Point = None
     px: Point = None
     _color_UINT8: tuple = (255, 255, 0)
-    color = "yellow"
+    color = "gold"
     name: str = "CopperAdapterBottomEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterBottomEdge':
@@ -741,11 +741,13 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
     fig, ax = plt.subplots(1, len(dets), figsize=(25, 10))
 
     for i, det in enumerate(dets):
-
-        plot_det(det, ax[i], title=titles[i], show=False)
+        if len(dets) == 1:
+            fig = plot_det(det, ax, title=titles[i], show=False)
+        else:
+            plot_det(det, ax[i], title=titles[i], show=False)
     
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
-    plt.show()
+    # plt.show()
 
     return fig
 
