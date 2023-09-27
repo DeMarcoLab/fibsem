@@ -729,7 +729,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                 microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
                 estimated_time = milling.milling_time_estimate(self.microscope, microscope_patterns)
-                print(f'------------------------- estimated time: {estimated_time}------------------------------')
                 progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
                 self._progress_bar_start.emit(progress_bar_dict)
 
@@ -749,7 +748,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.info(msg)
         napari.utils.notifications.notification_manager.records.clear()
         napari.utils.notifications.show_info(msg)
-        # TODO: progress bar?
 
     def run_milling_finished(self):
 
@@ -760,11 +758,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._milling_finished.emit()
         self._quit_progress_bar()
         self.finish_progress_bar()
-        # print(f'self.progress_bar_worker: {self.progress_bar_worker}')
-        # self.progress_bar_worker.join()
-        # del self.progress_bar_worker
-        # self.progress_bar_worker = None
-        # self.progressBar_milling.deleteLater()
+
 
 
 
