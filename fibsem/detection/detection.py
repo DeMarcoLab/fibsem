@@ -139,8 +139,22 @@ class LandingPost(Feature):
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-        self.px = detect_landing_post_v4(mask, point)
-        # self.px = detect_landing_post_v3(img, landing_pt=None)
+        # self.px = detect_landing_post_v4(mask, point)
+        self.px = detect_landing_post_v3(img, landing_pt=None)
+        return self.px
+
+
+@dataclass
+class LandingGridCentre(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255,255,255)
+    color = "cyan"
+    name: str = "LandingGridCentre"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingGridCentre':
+        mask = mask == 3  
+        self.px = detect_centre_point(mask, threshold=500)
         return self.px
 
 
@@ -194,7 +208,8 @@ class CopperAdapterBottomEdge(Feature):
         return self.px
 
 
-__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, 
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, 
+        LandingPost, LandingGridCentre, 
     CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
     NeedleTipBottom, 
     CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge]
@@ -754,7 +769,7 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
 
 
 _DETECTIONS_THAT_MOVE_MANIPULATOR = (NeedleTip, LamellaRightEdge, LamellaBottomEdge, LamellaTopEdge, CopperAdapterTopEdge, CopperAdapterBottomEdge)
-_DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre)
+_DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre, LandingGridCentre)
 
 
 # isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
