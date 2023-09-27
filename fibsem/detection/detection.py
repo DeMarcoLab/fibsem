@@ -659,7 +659,8 @@ def take_image_and_detect_features(
 
     if isinstance(point, FibsemStagePosition):
         logging.info(f"Reprojecting point {point} to image coordinates...")
-        point = _tile._reproject_positions(image, [point], _bound=True)[0]
+        points = _tile._reproject_positions(image, [point], _bound=True)
+        point = points[0] if len(points) == 1 else None
         logging.info(f"Reprojected point: {point}")
 
     # detect features

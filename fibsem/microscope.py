@@ -5238,7 +5238,19 @@ class DemoMicroscope(FibsemMicroscope):
             tilt = False
         _check_stage(self.hardware_settings, rotation=rotation, tilt=tilt)
         logging.info(f"Moving stage: {position} (Absolute)")
-        self.stage_position = position
+        
+        # only assign if not None
+        if position.x is not None:
+            self.stage_position.x = position.x
+        if position.y is not None:
+            self.stage_position.y = position.y
+        if position.z is not None:
+            self.stage_position.z = position.z
+        if position.r is not None:
+            self.stage_position.r = position.r
+        if position.t is not None:
+            self.stage_position.t = position.t
+        
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
         if position.r is not None:
@@ -5267,6 +5279,7 @@ class DemoMicroscope(FibsemMicroscope):
         )
 
         logging.info(f"Moving stage: {stage_position}, beam_type = {beam_type.name} (Stable)")
+        
 
         self.stage_position += stage_position
         return stage_position
