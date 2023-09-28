@@ -372,7 +372,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         r_top = int(position_point.y)-rows//2
         c_left = int(position_point.x)-cols//2
 
-        minimap_picture.data[r_top:r_top+rows, c_left:c_left+cols] = 0 #region_image.data
+        minimap_picture.data[r_top:r_top+rows, c_left:c_left+cols] = region_image.data # TODO: dream up maths
 
         self.image = minimap_picture
 
