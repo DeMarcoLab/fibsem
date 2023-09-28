@@ -5199,9 +5199,9 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
         logging.debug(f"{beam_type.name} | {dx}|{dy}") 
         if beam_type == BeamType.ELECTRON:
-            self.electron_beam.shift += Point(dx, dy)
+            self.electron_beam.shift += Point(float(dx), float(dy))
         elif beam_type == BeamType.ION:
-            self.ion_beam.shift += Point(dx, dy)
+            self.ion_beam.shift += Point(float(dx), float(dy))
 
     def get_stage_position(self) -> FibsemStagePosition:
         _check_stage(self.hardware_settings)
