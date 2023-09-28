@@ -152,7 +152,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._tile_info["tile_size"] = tile_size
         self._tile_info["resolution"] = resolution
         self._tile_info["beam_type"] = beam_type
-        self._tile_info["cryo"] = cryo
         
         self.settings.image.hfw = tile_size
         self.settings.image.beam_type = beam_type
@@ -349,12 +348,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _update_region(self, position:FibsemStagePosition):
         
         beam_type = self._tile_info["beam_type"]
-        grid_size = self._tile_info["grid_size"]
+        tile_size = self._tile_info["tile_size"]
         resolution = self._tile_info["resolution"]
 
         self.settings.image.beam_type = beam_type
 
-        self.settings.image.hfw = grid_size
+        self.settings.image.hfw = tile_size
         self.settings.image.beam_type = beam_type
         self.settings.image.resolution = [resolution, resolution]
         self.settings.image.save = False
@@ -375,7 +374,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         minimap_picture.data[r_top:r_top+rows, c_left:c_left+cols] = 0 #region_image.data
 
-        # self._update_viewer(minimap_picture)
+        self.image = minimap_picture
+
+        self._update_viewer(minimap_picture)
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
@@ -585,7 +586,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 data.append([pt.y, pt.x])
 
             colors = ["lime"] * (len(drawn_positions)-1)
-            colors.append("red")
+            colors.append("yellow")
 
             colors_rgba = [[0,1,0,1] for _ in range(len(drawn_positions)-1)]
             colors_rgba.append([1,1,0,1]) # yellow
