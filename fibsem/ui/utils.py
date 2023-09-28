@@ -367,7 +367,7 @@ def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.
 
     # remove all shapes layers
     layers_to_remove = []
-    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value"] + _ignore
+    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value", "label"] + _ignore
     for layer in viewer.layers:
 
         if layer.name in layers_to_ignore:
