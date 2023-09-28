@@ -18,9 +18,7 @@ from fibsem.structures import (BeamType, FibsemMillingSettings,
                                Point, FibsemPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import (_draw_patterns_in_napari, _remove_all_layers, 
-                                convert_pattern_to_napari_circle, convert_pattern_to_napari_rect,
-                            validate_pattern_placement,_get_directory_ui,_get_file_ui, _calculate_fiducial_area_v2)
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui, import_milling_stages_yaml, export_milling_stages_yaml, _calculate_fiducial_area_v2
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
@@ -133,6 +131,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
         self.image_widget.ib_layer.mouse_drag_callbacks.append(self._single_click)
 
+        #import/export milling stages
+        self.pushButton_exportMilling.clicked.connect(self.export_milling_stages)
+        self.pushButton_importMilling.clicked.connect(self.import_milling_stages)
+
+
         # new patterns
         self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
         if _TESCAN and not _THERMO:
@@ -203,7 +206,40 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
-        napari.utils.notifications.show_info(f"Removed milling stage.")            
+        napari.utils.notifications.show_info(f"Removed milling stage.")     
+
+    def export_milling_stages(self):
+
+        if len(self.milling_stages) < 1:
+            napari.utils.notifications.show_warning(f"No milling stages to export.")
+            return
+
+        export_milling_stages_yaml(self.milling_stages)
+
+    def import_milling_stages(self):
+
+        if self.image_widget.ib_image is None:
+            napari.utils.notifications.show_warning(f"No Ion image, cannot import and draw milling stages.")
+            return
+
+        self.milling_stages = import_milling_stages_yaml()
+        
+        self.comboBox_milling_stage.clear()
+
+        self.update_pattern_ui(milling_stage=self.milling_stages[0])
+
+        for stage in self.milling_stages:
+            name = stage.name
+            self.comboBox_milling_stage.addItem(name)
+            if stage.num == 1:
+                self.comboBox_milling_stage.setCurrentText(name)
+        
+        self.update_ui(milling_stages=self.milling_stages)
+
+        napari.utils.notifications.show_info(f"Imported Milling stages from yaml file.")
+
+
+
 
     def _remove_all_stages(self):
 
