@@ -25,6 +25,8 @@ from fibsem.ui import _stylesheets
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes", "n_rectangles", "overlap"]
 _ANGLE_KEYS = ["rotation"]
 
+_MILLING_WIDGET_INSTRUCTIONS = """Controls:\nShift + Left Click to Move Selected Pattern\nCtrl + Shift + Left Click to Move All Patterns\nPress Run Milling to Start Milling"""
+
 def _scale_value(key, value, scale):
     if key not in _UNSCALED_VALUES:
         return value * scale    
@@ -178,6 +180,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
 
         self._AVAILABLE_SCAN_DIRECTIONS = self.microscope.get_available_values(key="scan_direction")
+            
+    
+        self.label_milling_instructions.setText(_MILLING_WIDGET_INSTRUCTIONS)
 
     def update_settings(self):
         settings = self.get_milling_settings_from_ui()
