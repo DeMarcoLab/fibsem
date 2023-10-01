@@ -112,6 +112,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
         self.image_notification_signal.connect(self.update_imaging_ui)
+        self.radioButton_beginner_mode.clicked.connect(self.toggle_mode)
+        self.radioButton_2.clicked.connect(self.toggle_mode)
 
         if self._TESCAN:
 
@@ -127,6 +129,26 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.comboBox_presets.hide()
             self.label_presets.hide()
   
+    def toggle_mode(self):
+        advanced_mode = not self.radioButton_beginner_mode.isChecked()
+
+        self.label_detector_type.setVisible(advanced_mode)
+        self.detector_type_combobox.setVisible(advanced_mode)
+        self.label_detector_mode.setVisible(advanced_mode)
+        self.detector_mode_combobox.setVisible(advanced_mode)
+        self.label_stigmation.setVisible(advanced_mode)
+        self.stigmation_x.setVisible(advanced_mode)
+        self.stigmation_y.setVisible(advanced_mode)
+        self.shift_x.setVisible(advanced_mode)
+        self.shift_y.setVisible(advanced_mode)
+        self.label_shift.setVisible(advanced_mode)
+        self.beam_voltage.setVisible(advanced_mode)
+        self.label_beam_voltage.setVisible(advanced_mode)
+        self.checkBox_image_use_autocontrast.setVisible(advanced_mode)
+        self.checkBox_image_use_autogamma.setVisible(advanced_mode)
+            
+
+
     def update_presets(self):
         beam_type = BeamType[self.selected_beam.currentText()]
         self.microscope.set("preset", self.comboBox_presets.currentText(), beam_type)
