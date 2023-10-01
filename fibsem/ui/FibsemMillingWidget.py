@@ -692,9 +692,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
-        # worker.finished.connect(self.finish_progress_bar)
+        worker.errored.connect(self.milling_errored_out)
         worker.start()
         
+    def milling_errored_out(self):
+         napari.utils.notifications.show_warning(f"Error running milling. Switching back to imaging current")
+        milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
     def start_progress_thread(self,info):
 
