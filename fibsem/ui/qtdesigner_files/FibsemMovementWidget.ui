@@ -347,8 +347,6 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="2" colspan="2">
-        <widget class="QLabel" name="label_current_position">
        <item row="4" column="1">
         <widget class="QPushButton" name="pushButton_save_position">
          <property name="styleSheet">
@@ -395,7 +393,6 @@
   <tabstop>checkBox_movement_acquire_ion</tabstop>
   <tabstop>pushButton_continue</tabstop>
   <tabstop>comboBox_positions</tabstop>
-  <tabstop>pushButton_go_to</tabstop>
   <tabstop>pushButton_save_position</tabstop>
   <tabstop>lineEdit_position_name</tabstop>
   <tabstop>pushButton_update_position</tabstop>
