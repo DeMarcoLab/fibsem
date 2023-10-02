@@ -692,10 +692,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
-        # worker.finished.connect(self.finish_progress_bar)
         worker.start()
         
-
+    
     def start_progress_thread(self,info):
 
         est_time = info['estimated_time']
@@ -766,17 +765,20 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
-                milling.setup_milling(self.microscope, mill_settings=stage.milling)
+                try:
+                    milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
-                microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
-                estimated_time = milling.milling_time_estimate(self.microscope, microscope_patterns)
-                progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
-                self._progress_bar_start.emit(progress_bar_dict)
+                    microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
+                    estimated_time = milling.milling_time_estimate(self.microscope, microscope_patterns)
+                    progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
+                    self._progress_bar_start.emit(progress_bar_dict)
 
-                self.milling_notification.emit(f"Running {stage.name}...")
-                milling.run_milling(self.microscope, stage.milling.milling_current)
-            
-                milling.finish_milling(self.microscope, self.settings.system.ion.current)
+                    self.milling_notification.emit(f"Running {stage.name}...")
+                    milling.run_milling(self.microscope, stage.milling.milling_current)
+                except:
+                    napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
+                finally:
+                    milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
                 log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
                 self._progress_bar_quit.emit()
