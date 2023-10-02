@@ -112,8 +112,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
         self.image_notification_signal.connect(self.update_imaging_ui)
-        self.radioButton_beginner_mode.clicked.connect(self.toggle_mode)
-        self.radioButton_2.clicked.connect(self.toggle_mode)
+        self.checkBox_advanced_settings.stateChanged.connect(self.toggle_mode)
+        self.toggle_mode()
 
         if self._TESCAN:
 
@@ -130,7 +130,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.label_presets.hide()
   
     def toggle_mode(self):
-        advanced_mode = not self.radioButton_beginner_mode.isChecked()
+        advanced_mode = self.checkBox_advanced_settings.isChecked()
 
         self.label_detector_type.setVisible(advanced_mode)
         self.detector_type_combobox.setVisible(advanced_mode)
