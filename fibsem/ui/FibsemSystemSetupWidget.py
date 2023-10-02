@@ -16,6 +16,8 @@ from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.ui import _stylesheets
 
+from superqt import QCollapsible
+
 def log_status_message(step: str):
     logging.debug(
         f"STATUS | System Widget | {step}"
@@ -56,6 +58,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.load_positions_on_startup = True
         self.setup_connections(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
         self.update_ui()
+        self.setup_collapsible()
         
 
     def setup_connections(self, ip_address: str, manufacturer: str):
@@ -83,6 +86,19 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_needle_tilt.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_gis_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
+
+
+    def setup_collapsible(self):    
+
+        label = QtWidgets.QLabel("Stage Settings label")
+        layout = self.gridLayout
+
+        collapsible = QCollapsible("Stage Settings")
+        collapsible.setContent(self.tabWidget)
+        layout.addWidget(collapsible,0,0,1,2)
+        collapsible.show()
+        # collapsible.setContent(self.stageSettings_verticalLayout)
+
 
     def import_yaml(self):
         path = _get_file_ui(msg="Select system file", path=cfg.CONFIG_PATH)
