@@ -52,6 +52,7 @@ def beam_shift_alignment(
     image_settings: ImageSettings,
     ref_image: FibsemImage,
     reduced_area: Optional[FibsemRectangle] = None,
+    alignment_current: Optional[float] = None,
 ):
     """Aligns the images by adjusting the beam shift instead of moving the stage.
 
@@ -71,6 +72,10 @@ def beam_shift_alignment(
         ValueError: If `image_settings.beam_type` is not set to `BeamType.ION`.
 
     """
+    if alignment_current is not None:
+        initial_current = microscope.get("current", image_settings.beam_type)
+        microscope.set("current", alignment_current, image_settings.beam_type)
+
     import time
     time.sleep(3) # threading is too fast?
     image_settings = ImageSettings.fromFibsemImage(ref_image)
@@ -85,6 +90,10 @@ def beam_shift_alignment(
 
     # adjust beamshift 
     microscope.beam_shift(dx, dy, image_settings.beam_type)
+
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, image_settings.beam_type)
 
 
 def correct_stage_drift(
