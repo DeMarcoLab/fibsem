@@ -117,7 +117,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         if self._TESCAN:
 
-            self.label_11.hide()
+            self.label_stigmation.hide()
             self.stigmation_x.hide()
             self.stigmation_y.hide()
             self.stigmation_x.setEnabled(False)
