@@ -89,15 +89,16 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
 
     def setup_collapsible(self):    
+        self.tabWidget.hide()
+        # pass
 
         label = QtWidgets.QLabel("Stage Settings label")
         layout = self.gridLayout
 
         collapsible = QCollapsible("Stage Settings")
-        collapsible.setContent(self.tabWidget)
-        layout.addWidget(collapsible,0,0,1,2)
+        collapsible.addWidget(self.scrollAreaWidgetContents_2)
         collapsible.show()
-        # collapsible.setContent(self.stageSettings_verticalLayout)
+        layout.addWidget(collapsible,3,0,1,2)
 
 
     def import_yaml(self):
