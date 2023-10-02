@@ -125,6 +125,10 @@ with tab_ml:
 
     df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
     
+
+    # drop if Autoliftout in e.name
+    df = df[~df["name"].str.contains("AUTOLIFTOUT")]
+
     UNIQUE_FEATURES_IN_EXPERIMENT = df[df["name"] == EXPERIMENT_NAME]["feature"].unique()
 
     # filter df
@@ -200,6 +204,7 @@ with tab_ml:
 
     # select all detections
     df = conn.query(f"SELECT e.name, e.date, d.timestamp, d.petname, d.stage, d.step, d.feature, d.is_correct, d.dpx_x, d.dpx_y FROM detections d JOIN experiments e ON e.id = d.experiment_id")
+    df = df[~df["name"].str.contains("AUTOLIFTOUT")]
 
     # filter df
     df = df[df["feature"].isin(UNIQUE_FEATURES_IN_EXPERIMENT)]
