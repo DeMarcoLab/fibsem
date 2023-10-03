@@ -59,6 +59,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.setup_connections(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
         self.update_ui()
         self.setup_collapsible()
+        self.show_advanced()
+        self.show_beam_settings()
         
 
     def setup_connections(self, ip_address: str, manufacturer: str):
@@ -76,7 +78,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         #checkboxes
         self.checkBox_eb.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_eb.stateChanged.connect(self.show_beam_settings)
         self.checkBox_ib.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_ib.stateChanged.connect(self.show_beam_settings)
         self.checkBox_select_plasma_gas.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_stage_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_stage_rotation.stateChanged.connect(self.get_model_from_ui)
@@ -86,36 +90,59 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_needle_tilt.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_gis_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
+        self.checkBox_advanced.stateChanged.connect(self.show_advanced)
+
+
+    def show_advanced(self):
+
+        if self.checkBox_advanced.isChecked():
+            self.scrollArea_main.show()
+        else:
+            self.scrollArea_main.hide()
+
+    def show_beam_settings(self):
+
+        if self.checkBox_eb.isChecked():
+            self.eb_collapsible.show()
+        else:
+            self.eb_collapsible.hide()
+
+        if self.checkBox_ib.isChecked():
+            self.ib_collapsible.show()
+        else:
+            self.ib_collapsible.hide()
 
 
     def setup_collapsible(self):   
         # pass 
         self.tabWidget.hide()
-        # self.scrollArea_main.hide()
-        # pass
 
-        label = QtWidgets.QLabel("Stage Settings label")
         layout = self.gridLayout_6
 
         stage_collapsible = QCollapsible("Stage Settings")
         stage_collapsible.addWidget(self.scrollAreaWidgetContents_2)
-        # stage_collapsible.show()
 
         microscope_collapsible = QCollapsible("Microscope Settings")
         microscope_collapsible.addWidget(self.scrollAreaWidgetContents_4)
-        # microscope_collapsible.show()
 
-        eb_collapsible = QCollapsible("Electron Beam Settings")
-        eb_collapsible.addWidget(self.scrollAreaWidgetContents_6)
-        # eb_collapsible.show()
+        self.eb_collapsible = QCollapsible("Electron Beam Settings")
+        self.eb_collapsible.addWidget(self.scrollAreaWidgetContents_6)
 
-        ib_collapsible = QCollapsible("Ion Beam Settings")
-        ib_collapsible.addWidget(self.scrollAreaWidgetContents_5)
+        self.ib_collapsible = QCollapsible("Ion Beam Settings")
+        self.ib_collapsible.addWidget(self.scrollAreaWidgetContents_5)
+
+        milling_collapsible = QCollapsible("Milling Settings")
+        milling_collapsible.addWidget(self.scrollAreaWidgetContents_7)
+
+        imaging_collapsible = QCollapsible("Imaging Settings")
+        imaging_collapsible.addWidget(self.scrollAreaWidgetContents_8)
 
         layout.addWidget(stage_collapsible,4,0,1,2)
         layout.addWidget(microscope_collapsible,5,0,1,2)
-        layout.addWidget(eb_collapsible,7,0,1,2)
-        layout.addWidget(ib_collapsible,9,0,1,2)
+        layout.addWidget(self.eb_collapsible,7,0,1,2)
+        layout.addWidget(self.ib_collapsible,9,0,1,2)
+        layout.addWidget(milling_collapsible,10,0,1,2)
+        layout.addWidget(imaging_collapsible,11,0,1,2)
 
     def import_yaml(self):
         path = _get_file_ui(msg="Select system file", path=cfg.CONFIG_PATH)
