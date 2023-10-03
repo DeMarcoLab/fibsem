@@ -88,18 +88,34 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
 
 
-    def setup_collapsible(self):    
+    def setup_collapsible(self):   
+        # pass 
         self.tabWidget.hide()
+        # self.scrollArea_main.hide()
         # pass
 
         label = QtWidgets.QLabel("Stage Settings label")
-        layout = self.gridLayout
+        layout = self.gridLayout_6
 
-        collapsible = QCollapsible("Stage Settings")
-        collapsible.addWidget(self.scrollAreaWidgetContents_2)
-        collapsible.show()
-        layout.addWidget(collapsible,3,0,1,2)
+        stage_collapsible = QCollapsible("Stage Settings")
+        stage_collapsible.addWidget(self.scrollAreaWidgetContents_2)
+        # stage_collapsible.show()
 
+        microscope_collapsible = QCollapsible("Microscope Settings")
+        microscope_collapsible.addWidget(self.scrollAreaWidgetContents_4)
+        # microscope_collapsible.show()
+
+        eb_collapsible = QCollapsible("Electron Beam Settings")
+        eb_collapsible.addWidget(self.scrollAreaWidgetContents_6)
+        # eb_collapsible.show()
+
+        ib_collapsible = QCollapsible("Ion Beam Settings")
+        ib_collapsible.addWidget(self.scrollAreaWidgetContents_5)
+
+        layout.addWidget(stage_collapsible,4,0,1,2)
+        layout.addWidget(microscope_collapsible,5,0,1,2)
+        layout.addWidget(eb_collapsible,7,0,1,2)
+        layout.addWidget(ib_collapsible,9,0,1,2)
 
     def import_yaml(self):
         path = _get_file_ui(msg="Select system file", path=cfg.CONFIG_PATH)
