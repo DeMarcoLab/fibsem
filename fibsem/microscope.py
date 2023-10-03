@@ -1455,7 +1455,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         self.set("current", mill_settings.milling_current, BeamType.ION)
 
-    def run_milling(self, milling_current: float, asynch: bool = False):
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False):
         """
         Run ion beam milling using the specified milling current.
 
@@ -1473,6 +1473,9 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.hardware_settings)
         # change to milling current
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
+        if self.connection.beams.ion_beam.high_voltage.value != milling_voltage:
+            logging.info(f"changing to milling voltage: {milling_voltage:.2e}")
+            self.connection.beams.ion_beam.high_voltage.value = milling_voltage
         if self.connection.beams.ion_beam.beam_current.value != milling_current:
             logging.info(f"changing to milling current: {milling_current:.2e}")
             self.connection.beams.ion_beam.beam_current.value = milling_current
@@ -4009,7 +4012,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
         
 
-    def run_milling(self, milling_current: float, asynch: bool = False):
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False):
         """
         Runs the ion beam milling process using the specified milling current.
 
@@ -5382,9 +5385,9 @@ class DemoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
 
-    def run_milling(self, milling_current: float, asynch: bool = False) -> None:
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)
-        logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
+        logging.info(f"Running milling: {milling_current:.2e}, {milling_voltage:.2e}, {asynch}")
         import random
         # time.sleep(random.randint(1, 5))
         time.sleep(5)

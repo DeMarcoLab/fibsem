@@ -101,6 +101,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.label_preset.setVisible(_THERMO)
         self.comboBox_milling_current.setVisible(_THERMO)
         self.label_milling_current.setVisible(_THERMO)
+        self.label_voltage.setVisible(_THERMO)
+        self.spinBox_voltage.setVisible(_THERMO)
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.comboBox_milling_current.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
@@ -127,6 +129,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_dwell_time.valueChanged.connect(self.update_settings)  
         self.comboBox_preset.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_spacing.valueChanged.connect(self.update_settings)
+        self.spinBox_voltage.valueChanged.connect(self.update_settings)
         
 
         # register mouse callbacks
@@ -586,6 +589,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_spot_size.setValue(milling.spot_size * constants.SI_TO_MICRO)
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
         self.comboBox_preset.setCurrentText(str(milling.preset))
+        self.spinBox_voltage.setValue(milling.milling_voltage)
 
     def get_milling_settings_from_ui(self):
 
@@ -598,7 +602,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             hfw=self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI,
             preset= self.comboBox_preset.currentText(),
             spacing=self.doubleSpinBox_spacing.value(),
-
+            milling_voltage=self.spinBox_voltage.value(),
         )
 
         return milling_settings
@@ -774,9 +778,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     self._progress_bar_start.emit(progress_bar_dict)
 
                     self.milling_notification.emit(f"Running {stage.name}...")
-                    milling.run_milling(self.microscope, stage.milling.milling_current)
-                except:
+                    milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
+                except Exception as e:
                     napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
+                    logging.info(e)
                 finally:
                     milling.finish_milling(self.microscope, self.settings.system.ion.current)
 
