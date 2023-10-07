@@ -46,6 +46,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.parent = parent
 
         self.viewer = viewer
+        self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
+        self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
         self.image = None
         self._image_layer = None
@@ -354,20 +356,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.settings.image.hfw = self._tile_info["tile_size"]
         self.settings.image.save = False
 
-        region_image = acquire.new_image(self.microscope,self.settings.image)
-        rows,cols = region_image.data.shape[0], region_image.data.shape[1]
+        # TODO: this assumes the image is taken with the same settings as the tile collection
+        self.image = _tile._update_image_region(self.microscope, self.settings.image, self.image, position)
 
-        minimap_image = self.image
-        position_point = _tile._reproject_positions(minimap_image, [position])[0]
-
-        r_top = int(position_point.y)-rows//2
-        c_left = int(position_point.x)-cols//2
-
-        minimap_image.data[r_top:r_top+rows, c_left:c_left+cols] = region_image.data 
-
-        self.image = minimap_image
-
-        self._update_viewer(minimap_image)
+        self._update_viewer(self.image)
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
@@ -389,10 +381,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         _inside_image = self.get_data_from_coord(coords)
 
         if _inside_image is False:
-            napari.utils.notifications.show_info(
+            napari.utils.notifications.show_warning(
                 f"Clicked outside image dimensions. Please click inside the image to move."
             )
-            return
+            return False, False
 
         point = conversions.image_to_microscope_image_coordinates(
             Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x,
@@ -407,6 +399,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             return 
 
         coords, point = self._validate_mouse_click(layer, event)
+
+        if point is False: # clicked outside image
+            return
 
         _new_position = self.microscope._calculate_new_position( 
                     settings=self.settings, 
@@ -437,6 +432,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         if event.button !=1:
             return
         coords, point = self._validate_mouse_click(layer, event)
+
+        if point is False: # clicked outside image
+            return
 
         _new_position = self.microscope._calculate_new_position( 
             settings=self.settings, 
