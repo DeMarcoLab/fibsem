@@ -68,7 +68,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def setup_connections(self):
 
         # set ui elements
-        self.comboBox_movement_mode.addItems([mode.name for mode in MovementMode])
         self.comboBox_movement_stage_coordinate_system.addItems(["SPECIMEN", "RAW"])
 
         # buttons
@@ -78,15 +77,23 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_move_flat_ion.clicked.connect(self.move_flat_to_beam)
         self.pushButton_move_flat_ion.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.pushButton_move_flat_electron.clicked.connect(self.move_flat_to_beam)
-        self.pushButton_load_image_minimap.clicked.connect(self.load_image)
         self.pushButton_move_flat_electron.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        
+        # minimap
+        self.pushButton_load_image_minimap.clicked.connect(self.load_image)
+        self.pushButton_load_image_minimap.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
+        self.label_4.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
+        self.label_minimap.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
+
+        self.pushButton_refresh_stage_position_data.clicked.connect(self.update_ui)
+        self.pushButton_refresh_stage_position_data.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_double_click_callbacks.append(self._double_click)
         self.image_widget.ib_layer.mouse_double_click_callbacks.append(self._double_click)
 
         # disable ui elements
-        self.label_movement_instructions.setText("Double click to move.")
+        self.label_movement_instructions.setText("Double click to move. Alt + Double Click in the Ion Beam to Move Vertically")
         self.pushButton_continue.setVisible(False)
         self.comboBox_movement_stage_coordinate_system.setVisible(False)
         self.label_movement_stage_coordinate_system.setVisible(False)
@@ -225,10 +232,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         # move
-        if "Alt" in event.modifiers:
-            self.movement_mode = MovementMode.Eucentric
-        else:
-            self.movement_mode = MovementMode[self.comboBox_movement_mode.currentText()]
+        self.movement_mode = MovementMode.Eucentric if "Alt" in event.modifiers else MovementMode.Stable
 
         logging.debug(
             f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
