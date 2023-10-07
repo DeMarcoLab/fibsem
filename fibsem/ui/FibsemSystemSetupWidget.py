@@ -330,10 +330,13 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         hardware_settings.manipulator_tilt = self.checkBox_needle_tilt.isChecked()
         hardware_settings.gis_enabled = self.checkBox_gis_enabled.isChecked()
         hardware_settings.gis_multichem = self.checkBox_multichem.isChecked()
-        hardware_settings.manipulator_positions = self.settings.hardware.manipulator_positions
+        if self.settings is not None:
+            hardware_settings.manipulator_positions = self.settings.hardware.manipulator_positions
 
-        self.settings.hardware = hardware_settings
-        self.microscope.hardware_settings = hardware_settings
+            self.settings.hardware = hardware_settings
+            self.microscope.hardware_settings = hardware_settings
+        else:
+            hardware_settings.manipulator_positions = {"calibrated": False, "positions": {}}
         logging.debug(f"Updated hardware settings: {hardware_settings}")
         return hardware_settings
 
