@@ -555,7 +555,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def take_reference_images_worker(self):
         self._toggle_interactions(enable=False,imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
-        self.image_notification_signal.emit("Taking Reference Images...")
+        self.image_notification_signal.emit("Acquiring Images...")
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
         self.picture_signal.emit()

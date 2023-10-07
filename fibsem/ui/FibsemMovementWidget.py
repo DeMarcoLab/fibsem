@@ -67,13 +67,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def setup_connections(self):
 
-        # set ui elements
-        self.comboBox_movement_stage_coordinate_system.addItems(["SPECIMEN", "RAW"])
-
         # buttons
         self.pushButton_move.clicked.connect(self.move_to_position)
         self.pushButton_move.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_continue.clicked.connect(self.continue_pressed)
         self.pushButton_move_flat_ion.clicked.connect(self.move_flat_to_beam)
         self.pushButton_move_flat_ion.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.pushButton_move_flat_electron.clicked.connect(self.move_flat_to_beam)
@@ -94,9 +90,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         # disable ui elements
         self.label_movement_instructions.setText("Double click to move. Alt + Double Click in the Ion Beam to Move Vertically")
-        self.pushButton_continue.setVisible(False)
-        self.comboBox_movement_stage_coordinate_system.setVisible(False)
-        self.label_movement_stage_coordinate_system.setVisible(False)
 
         # positions
         self.comboBox_positions.currentIndexChanged.connect(self.select_position)
@@ -114,13 +107,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_update_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
 
         self.movement_notification_signal.connect(self.update_moving_ui)
-
-    def auto_eucentric_correction(self):
-
-        print("auto eucentric")
-
-    def continue_pressed(self):
-        print("continue pressed")
 
     def _toggle_interactions(self, enable: bool, caller: str = None):
         
@@ -186,6 +172,17 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if self.sender() is None:
             self.minimap()
 
+        _SAVED_POSITIONS = bool(len(self.positions))
+        # self.pushButton_save_position.setVisible(_SAVED_POSITIONS) # always visible
+        self.pushButton_remove_position.setEnabled(_SAVED_POSITIONS)
+        self.pushButton_go_to.setVisible(_SAVED_POSITIONS)
+        self.pushButton_update_position.setVisible(_SAVED_POSITIONS)
+        self.pushButton_export.setVisible(_SAVED_POSITIONS)
+        self.comboBox_positions.setVisible(_SAVED_POSITIONS)
+        self.pushButton_import.setVisible(_SAVED_POSITIONS)
+        self.label_saved_positions.setVisible(_SAVED_POSITIONS)
+        self.label_current_position.setVisible(_SAVED_POSITIONS)
+        self.lineEdit_position_name.setVisible(_SAVED_POSITIONS)
     
     def get_position_from_ui(self):
 
@@ -195,7 +192,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             z=self.doubleSpinBox_movement_stage_z.value() * constants.MILLI_TO_SI,
             r=np.deg2rad(self.doubleSpinBox_movement_stage_rotation.value()),
             t=np.deg2rad(self.doubleSpinBox_movement_stage_tilt.value()),
-            coordinate_system=self.comboBox_movement_stage_coordinate_system.currentText(),
+            coordinate_system="RAW",
 
         )
 
@@ -263,23 +260,25 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if self.comboBox_positions.currentIndex() != -1:
             position = self.positions[self.comboBox_positions.currentIndex()]
             self.label_current_position.setText(f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}, y={position.y*constants.METRE_TO_MILLIMETRE:.3f}, z={position.z*constants.METRE_TO_MILLIMETRE:.3f}, r={position.r*constants.RADIANS_TO_DEGREES:.1f}, t={position.t*constants.RADIANS_TO_DEGREES:.1f}")
+            self.lineEdit_position_name.setText(position.name)
 
     def add_position(self, position: FibsemStagePosition = None):
 
         if not isinstance(position, FibsemStagePosition):
             position = self.microscope.get_stage_position()
-            name = self.lineEdit_position_name.text()
-            if name == "":
-                napari.utils.notifications.show_warning("Please enter a name for the position")
-                return
+            name = f"Position {len(self.positions):02d}"
+            # if name == "":
+                # napari.utils.notifications.show_warning("Please enter a name for the position")
+                # return
             position.name = name
         self.positions.append(deepcopy(position))
         self.comboBox_positions.addItem(position.name)
         self.comboBox_positions.setCurrentIndex(self.comboBox_positions.count() - 1)
-        self.lineEdit_position_name.setText("")
+        self.lineEdit_position_name.setText(position.name)
         logging.info(f"Added position {position.name}")
         self.positions_signal.emit(self.positions)
         self.minimap()
+        self.update_ui()
 
     def delete_position(self):
         del self.positions[self.comboBox_positions.currentIndex()]
@@ -288,11 +287,19 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.info(f"Removed position {name}")
         self.positions_signal.emit(self.positions)
         self.minimap()
+        self.update_ui()
 
     def update_saved_position(self):
         position = self.microscope.get_stage_position()
-        position.name = self.comboBox_positions.currentText()
-        self.positions[self.comboBox_positions.currentIndex()] = position
+        position.name = self.lineEdit_position_name.text()
+        if position.name == "":
+            napari.utils.notifications.show_warning("Please enter a name for the position")
+            return
+        self.positions[self.comboBox_positions.currentIndex()] = deepcopy(position)
+
+        # update combobox
+        self.comboBox_positions.setItemText(self.comboBox_positions.currentIndex(), position.name)
+
         self.select_position()
         logging.info(f"Updated position {self.comboBox_positions.currentText()}")
         self.positions_signal.emit(self.positions)
