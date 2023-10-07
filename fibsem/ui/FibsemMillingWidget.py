@@ -102,7 +102,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_current.setVisible(_THERMO)
         self.label_milling_current.setVisible(_THERMO)
         self.label_voltage.setVisible(_THERMO)
-        self.spinBox_voltage.setVisible(_THERMO)
+        self.spinBox_voltage.setVisible(_THERMO) # TODO: set this to the available voltages
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.comboBox_milling_current.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
