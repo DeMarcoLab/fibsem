@@ -389,8 +389,11 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.label_minimap.setPixmap(qpixmap)
 
 
-    def update_ui_after_movement(self): # TODO: PPP Refactor
+    def update_ui_after_movement(self,retake:bool = True): # TODO: PPP Refactor
         # disable taking images after movement here
+        if retake is False:
+            self.update_ui()
+            return
         if self.checkBox_movement_acquire_electron.isChecked() and self.checkBox_movement_acquire_ion.isChecked():
             self.image_widget.take_reference_images()
             return
@@ -402,7 +405,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             self.update_ui()
     
     def _stage_position_moved(self, pos: FibsemStagePosition):
-        self.update_ui_after_movement()
+        self.update_ui_after_movement(retake=False)
 
     def move_flat_to_beam(self):
         beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON
