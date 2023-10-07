@@ -90,3 +90,6 @@ def load_yaml(fname):
 __SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
 __DEFAULT_MANUFACTURER__ = "Thermo"
 __DEFAULT_IP_ADDRESS__ = "10.0.0.1"
+
+
+_LIVE_IMAGING_ENABLED = False

@@ -139,8 +139,22 @@ class LandingPost(Feature):
     name: str = "LandingPost"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-        self.px = detect_landing_post_v4(mask, point)
-        # self.px = detect_landing_post_v3(img, landing_pt=None)
+        # self.px = detect_landing_post_v4(mask, point)
+        self.px = detect_landing_post_v3(img, landing_pt=None)
+        return self.px
+
+
+@dataclass
+class LandingGridCentre(Feature):
+    feature_m: Point = None
+    px: Point = None
+    _color_UINT8: tuple = (255,255,255)
+    color = "cyan"
+    name: str = "LandingGridCentre"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingGridCentre':
+        mask = mask == 3  
+        self.px = detect_centre_point(mask, threshold=500)
         return self.px
 
 
@@ -161,7 +175,7 @@ class CopperAdapterCentre(Feature):
     feature_m: Point = None
     px: Point = None
     _color_UINT8: tuple = (255, 255, 0)
-    color = "yellow"
+    color = "gold"
     name: str = "CopperAdapterCentre"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterCentre':
@@ -173,7 +187,7 @@ class CopperAdapterTopEdge(Feature):
     feature_m: Point = None
     px: Point = None
     _color_UINT8: tuple = (255, 255, 0)
-    color = "yellow"
+    color = "gold"
     name: str = "CopperAdapterTopEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterTopEdge':
@@ -186,7 +200,7 @@ class CopperAdapterBottomEdge(Feature):
     feature_m: Point = None
     px: Point = None
     _color_UINT8: tuple = (255, 255, 0)
-    color = "yellow"
+    color = "gold"
     name: str = "CopperAdapterBottomEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CopperAdapterBottomEdge':
@@ -194,7 +208,8 @@ class CopperAdapterBottomEdge(Feature):
         return self.px
 
 
-__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LandingPost, 
+__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, 
+        LandingPost, LandingGridCentre, 
     CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
     NeedleTipBottom, 
     CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge]
@@ -659,7 +674,8 @@ def take_image_and_detect_features(
 
     if isinstance(point, FibsemStagePosition):
         logging.info(f"Reprojecting point {point} to image coordinates...")
-        point = _tile._reproject_positions(image, [point], _bound=True)[0]
+        points = _tile._reproject_positions(image, [point], _bound=True)
+        point = points[0] if len(points) == 1 else None
         logging.info(f"Reprojected point: {point}")
 
     # detect features
@@ -740,18 +756,20 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
     fig, ax = plt.subplots(1, len(dets), figsize=(25, 10))
 
     for i, det in enumerate(dets):
-
-        plot_det(det, ax[i], title=titles[i], show=False)
+        if len(dets) == 1:
+            fig = plot_det(det, ax, title=titles[i], show=False)
+        else:
+            plot_det(det, ax[i], title=titles[i], show=False)
     
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
-    plt.show()
+    # plt.show()
 
     return fig
 
 
 
 _DETECTIONS_THAT_MOVE_MANIPULATOR = (NeedleTip, LamellaRightEdge, LamellaBottomEdge, LamellaTopEdge, CopperAdapterTopEdge, CopperAdapterBottomEdge)
-_DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre)
+_DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre, LandingGridCentre)
 
 
 # isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
