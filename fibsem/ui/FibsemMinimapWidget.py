@@ -346,37 +346,28 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
 
     def _update_region(self, position:FibsemStagePosition):
-        
-        beam_type = self._tile_info["beam_type"]
-        tile_size = self._tile_info["tile_size"]
+    
+
         resolution = self._tile_info["resolution"]
-
-        self.settings.image.beam_type = beam_type
-
-        self.settings.image.hfw = tile_size
-        self.settings.image.beam_type = beam_type
         self.settings.image.resolution = [resolution, resolution]
+        self.settings.image.beam_type = self._tile_info["beam_type"]
+        self.settings.image.hfw = self._tile_info["tile_size"]
         self.settings.image.save = False
 
-
         region_image = acquire.new_image(self.microscope,self.settings.image)
-
-        # region_image = images[0] if beam_type == BeamType.ELECTRON else images[1] 
-
-        minimap_picture = self.image
-
-        position_point = _tile._reproject_positions(minimap_picture, [position])[0]
-
         rows,cols = region_image.data.shape[0], region_image.data.shape[1]
+
+        minimap_image = self.image
+        position_point = _tile._reproject_positions(minimap_image, [position])[0]
 
         r_top = int(position_point.y)-rows//2
         c_left = int(position_point.x)-cols//2
 
-        minimap_picture.data[r_top:r_top+rows, c_left:c_left+cols] = region_image.data # TODO: dream up maths
+        minimap_image.data[r_top:r_top+rows, c_left:c_left+cols] = region_image.data 
 
-        self.image = minimap_picture
+        self.image = minimap_image
 
-        self._update_viewer(minimap_picture)
+        self._update_viewer(minimap_image)
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
@@ -517,7 +508,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _move_to_position(self, _position:FibsemStagePosition)->None:
         self.microscope._safe_absolute_stage_movement(_position)
         self._stage_position_moved.emit(_position)
-        self._update_region(_position)
+        if self.checkBox_options_acquire_after_movement.isChecked():
+            self._update_region(_position)
         self._update_viewer()
 
 
