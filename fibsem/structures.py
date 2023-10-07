@@ -1129,6 +1129,7 @@ class FibsemMillingSettings:
     application_file: str = "Si"
     preset: str = "30 keV; UHR imaging"
     spacing: float = 1.0
+    milling_voltage: float = 30e3
 
     def __post_init__(self):
 
@@ -1153,6 +1154,8 @@ class FibsemMillingSettings:
             "patterning_mode": self.patterning_mode,
             "application_file": self.application_file,
             "preset": self.preset,
+            "spacing": self.spacing,
+            "milling_voltage": self.milling_voltage,
         }
 
         return settings_dict
@@ -1170,6 +1173,7 @@ class FibsemMillingSettings:
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; UHR imaging"),
             spacing=settings.get("spacing", 1.0),
+            milling_voltage=settings.get("milling_voltage", 30e3),
         )
 
         return milling_settings

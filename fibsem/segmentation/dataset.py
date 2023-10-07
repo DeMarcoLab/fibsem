@@ -86,28 +86,6 @@ class SegmentationDataset(Dataset):
         return len(self.images)
 
 from pathlib import Path
-def load_dask_dataset(data_path: Path, label_path: Path):
-
-    # TODO: allow for loading from multiple directories
-    # sorted_img_filenames, sorted_mask_filenames = [], []
-    # for data_path, label_paths in zip(data_paths, label_paths):
-    #     sorted_img_filenames += sorted(glob.glob(os.path.join(data_path, "*.tif*")))
-    #     sorted_mask_filenames += sorted(glob.glob(os.path.join(label_path, "*.tif*")))
-
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_path, "*.tif*")))
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(label_path, "*.tif*")))
-
-    # TODO: change to dask-image
-    img_arr = tff.imread(sorted_img_filenames, aszarr=True)
-    mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
-
-    images = da.from_zarr(img_arr)
-    masks = da.from_zarr(mask_arr)
-
-    images = images.rechunk(chunks=(1, images.shape[1], images.shape[2]))
-    masks = masks.rechunk(chunks=(1, images.shape[1], images.shape[2]))
-
-    return images, masks
 
 def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
 

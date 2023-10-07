@@ -51,6 +51,7 @@ def run_milling_drift_corrected(
 def run_milling(
     microscope: FibsemMicroscope,
     milling_current: float,
+    milling_voltage: float,
     asynch: bool = False,
 ) -> None:
     """Run Ion Beam Milling.
@@ -60,7 +61,7 @@ def run_milling(
         milling_current (float, optional): ion beam milling current. Defaults to None.
         asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
     """
-    microscope.run_milling(milling_current, asynch)
+    microscope.run_milling(milling_current, milling_voltage, asynch)
 
 
 def milling_time_estimate(microscope: FibsemMicroscope, microscope_patterns) -> float:
@@ -76,7 +77,7 @@ def milling_time_estimate(microscope: FibsemMicroscope, microscope_patterns) -> 
     return total_time
 
 def finish_milling(
-    microscope: FibsemMicroscope, imaging_current: float = 20e-12
+    microscope: FibsemMicroscope, imaging_current: float = 20e-12, imaging_voltage: float = 30e3
 ) -> None:
     """Clear milling patterns, and restore to the imaging current.
 
@@ -87,7 +88,7 @@ def finish_milling(
     """
     # restore imaging current
     logging.info(f"Changing to Imaging Current: {imaging_current:.2e}")
-    microscope.finish_milling(imaging_current)
+    microscope.finish_milling(imaging_current=imaging_current, imaging_voltage=imaging_voltage)
     logging.info("Finished Ion Beam Milling.")
 
 def draw_patterns(microscope: FibsemMicroscope, patterns: list[FibsemPatternSettings]) -> None:
@@ -338,7 +339,7 @@ def milling_protocol(
     if drift_correction:
         run_milling_drift_corrected(microscope, mill_settings.milling_current, image_settings, ref_image, reduced_area)
     else:
-        run_milling(microscope, mill_settings.milling_current, asynch)
+        run_milling(microscope, mill_settings.milling_current, mill_settings.milling_voltage, asynch)
 
     # finish milling
     finish_milling(microscope)
