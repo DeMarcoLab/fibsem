@@ -781,9 +781,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
                 except Exception as e:
                     napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
-                    logging.info(e)
+                    logging.error(e)
                 finally:
-                    milling.finish_milling(self.microscope, self.settings.system.ion.current)
+                    milling.finish_milling(self.microscope, 
+                                           imaging_current=self.settings.system.ion.current, 
+                                           imaging_voltage=self.settings.system.ion.voltage)
 
                 log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
                 self._progress_bar_quit.emit()
