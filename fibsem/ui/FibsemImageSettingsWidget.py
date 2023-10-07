@@ -529,7 +529,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def take_image_worker(self, beam_type: BeamType = None):
         self._toggle_interactions(enable=False, imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
-        self.image_notification_signal.emit("Taking image...")
+        self.image_notification_signal.emit("Acquiring Image...")
         if beam_type is not None:
             self.image_settings.beam_type = beam_type
 
