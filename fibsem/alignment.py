@@ -242,7 +242,7 @@ def align_using_reference_images(
 
         # vertical constraint = eucentric movement
         if constrain_vertical:
-            microscope.eucentric_move(
+            microscope.vertical_move(
                 settings=settings, dx=0, dy=-dy
             )  # FLAG_TEST
         else:

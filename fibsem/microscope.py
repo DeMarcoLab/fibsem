@@ -157,7 +157,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def eucentric_move(self,
+    def vertical_move(self,
         settings: MicroscopeSettings,
         dy: float,
         dx: float = 0,
@@ -360,7 +360,7 @@ class ThermoMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0, static_wd: bool = True) -> None:
+        vertical_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -989,7 +989,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return stage_position
 
-    def eucentric_move(
+    def vertical_move(
         self,
         settings: MicroscopeSettings,
         dy: float,
@@ -2724,7 +2724,7 @@ class TescanMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0.0, static_wd: bool = True) -> None:
+        vertical_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0.0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -3548,7 +3548,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         return
 
-    def eucentric_move(
+    def vertical_move(
         self,
         settings: MicroscopeSettings,
         dy: float,
@@ -5291,7 +5291,7 @@ class DemoMicroscope(FibsemMicroscope):
         return stage_position
 
 
-    def eucentric_move(self, settings:MicroscopeSettings, dy: float, dx:float = 0.0, static_wd: bool=True) -> None:
+    def vertical_move(self, settings:MicroscopeSettings, dy: float, dx:float = 0.0, static_wd: bool=True) -> None:
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
         self.stage_position.x += dx
