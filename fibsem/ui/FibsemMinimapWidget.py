@@ -82,7 +82,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
 
-        
+        # checkbox
+        self.checkBox_options_move_with_translation.stateChanged.connect(self._update_ui)
+        self.checkBox_options_move_with_translation.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
+        self.label_options_move_with_translate_info.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
@@ -319,6 +322,13 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         _positions_loaded = len(self.positions) > 0
         self.pushButton_move_to_position.setEnabled(_positions_loaded)
 
+        _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
+        self.label_translation_x.setVisible(_MOVE_WITH_TRANSLATION)
+        self.label_translation_y.setVisible(_MOVE_WITH_TRANSLATION)
+        self.label_translation_z.setVisible(_MOVE_WITH_TRANSLATION)
+        self.doubleSpinBox_translation_x.setVisible(_MOVE_WITH_TRANSLATION)
+        self.doubleSpinBox_translation_y.setVisible(_MOVE_WITH_TRANSLATION)
+        self.doubleSpinBox_translation_z.setVisible(_MOVE_WITH_TRANSLATION)
 
     def _update_viewer(self, image: FibsemImage =  None):
 
@@ -435,6 +445,16 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         if point is False: # clicked outside image
             return
+
+
+        _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
+        if _MOVE_WITH_TRANSLATION:
+            dx = self.doubleSpinBox_translation_x.value() * constants.MILLI_TO_SI
+            dy = self.doubleSpinBox_translation_y.value() * constants.MILLI_TO_SI
+            dz = self.doubleSpinBox_translation_z.value() * constants.MILLI_TO_SI
+            translation = FibsemStagePosition(x=dx, y=dy, z=dz)
+            logging.info(f"[NOT ENABLED] Moving to position with translation: {translation}")
+            napari.utils.notifications.show_warning(f" [NOT ENABLED] Moving to position with translation: {translation}")
 
         _new_position = self.microscope._calculate_new_position( 
             settings=self.settings, 
