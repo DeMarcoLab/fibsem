@@ -446,6 +446,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         if point is False: # clicked outside image
             return
 
+        _new_position = self.microscope._calculate_new_position( 
+            settings=self.settings, 
+            dx=point.x, dy=point.y, 
+            beam_type=self.image.metadata.image_settings.beam_type, 
+            base_position=self.image.metadata.microscope_state.absolute_position)   
+
 
         _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
         if _MOVE_WITH_TRANSLATION:
@@ -456,11 +462,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             logging.info(f"[NOT ENABLED] Moving to position with translation: {translation}")
             napari.utils.notifications.show_warning(f" [NOT ENABLED] Moving to position with translation: {translation}")
 
-        _new_position = self.microscope._calculate_new_position( 
-            settings=self.settings, 
-            dx=point.x, dy=point.y, 
-            beam_type=self.image.metadata.image_settings.beam_type, 
-            base_position=self.image.metadata.microscope_state.absolute_position)   
+            if cfg._MINIMAP_MOVE_WITH_TRANSLATION:
+                _new_position += translation
 
         self._move_to_position(_new_position)
         self._minimap_positions.emit(self.positions)
