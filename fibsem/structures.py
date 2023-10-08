@@ -694,6 +694,7 @@ class BeamSettings:
     stigmation: Point = None 
     shift: Point = None 
     scan_rotation: float = None
+    plasma_gas: str = None
 
 
     def __post_init__(self):
@@ -721,6 +722,7 @@ class BeamSettings:
             "stigmation": self.stigmation.__to_dict__() if self.stigmation is not None else None,
             "shift": self.shift.__to_dict__() if self.shift is not None else None,
             "scan_rotation": self.scan_rotation,
+            "plasma_gas": self.plasma_gas,
         }
 
         return state_dict
@@ -749,6 +751,7 @@ class BeamSettings:
             stigmation=stigmation,
             shift=shift,
             scan_rotation=state_dict.get("scan_rotation", 0.0),
+            plasma_gas=state_dict.get("plasma_gas", None),
             )
 
         return beam_settings
