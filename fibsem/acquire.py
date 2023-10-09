@@ -255,7 +255,7 @@ def new_image(
         label = f"{settings.label}_ib"
 
     # run autocontrast
-    if settings.autocontrast:
+    if settings.autocontrast and settings.beam_type in [BeamType.ELECTRON, BeamType.ION]:
         microscope.autocontrast(beam_type=settings.beam_type)
 
     # acquire the image

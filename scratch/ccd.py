@@ -1,7 +1,4 @@
 
-%load_ext autoreload
-%autoreload 2
-
 from fibsem import utils, acquire
 from fibsem.structures import BeamType
 

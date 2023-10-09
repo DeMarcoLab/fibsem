@@ -2906,6 +2906,9 @@ class TescanMicroscope(FibsemMicroscope):
             _check_beam(BeamType.ION, self.hardware_settings)
             image = self._get_ib_image(image_settings)
             self.last_image_ib = image
+        if image_settings.beam_type.name == "NavCam":
+            image = self._get_navcam_image(image_settings)
+            self.last_image_nav_cam = image
 
         image.metadata.user = self.user
         image.metadata.experiment = self.experiment 
@@ -3128,6 +3131,39 @@ class TescanMicroscope(FibsemMicroscope):
         )
 
         # fibsem_image.metadata.image_settings.resolution = [imageWidth, imageHeight]
+
+        return fibsem_image
+
+    def _get_navcam_image(self, image_settings: ImageSettings):
+        
+        image = self.connection.Camera.AcquireImage()
+
+        microscope_state = MicroscopeState(
+            timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
+            absolute_position=FibsemStagePosition(
+                x=float(image.Header["FIB"]["StageX"]),
+                y=float(image.Header["FIB"]["StageY"]),
+                z=float(image.Header["FIB"]["StageZ"]),
+                r=float(image.Header["FIB"]["StageRotation"]),
+                t=float(image.Header["FIB"]["StageTilt"]),
+                coordinate_system="RAW",
+            ),
+            eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
+            ib_settings=BeamSettings(beam_type=BeamType.ION),
+        )
+
+        detector = FibsemDetectorSettings(
+                type = "N/A",
+                mode = "N/A",
+                contrast = "N/A",
+                brightness= "N/A",
+
+            )
+        fibsem_image = FibsemImage.fromTescanImage(
+            image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
+        )
+
+        fibsem_image.metadata.image_settings.resolution = [fibsem_image.data.size[1], fibsem_image.data.size[0]]
 
         return fibsem_image
 
@@ -5131,11 +5167,11 @@ class DemoMicroscope(FibsemMicroscope):
 
         if image_settings.beam_type is BeamType.ELECTRON:
             self._eb_image = image
-        else:
+        elif image_settings.beam_type is BeamType.ION:
             self._ib_image = image
+        elif image_settings.beam_type is BeamType.NavCam:
+            self._nav_image = image
     
-
-
         return image
 
     def last_image(self, beam_type: BeamType) -> FibsemImage:

@@ -60,9 +60,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
         self.eb_image, self.ib_image = None, None
+        self.nav_cam_image, self.nav_cam_layer = None, None 
 
         self.eb_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
         self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
+        self.nav_cam_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
 
         self._features_layer = None
         self.stop_event = threading.Event()
@@ -487,6 +489,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.update_viewer(self.ib_image.data, BeamType.ION.name)
         if self.eb_image is not None:
             self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
+        if self.nav_cam_image is not None:
+            self.update_viewer(self.nav_cam_image.data, BeamType.NavCam.name)
         self._toggle_interactions(True)
         self.TAKING_IMAGES = False
 
@@ -540,6 +544,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_image = arr
         if self.image_settings.beam_type == BeamType.ION:
             self.ib_image = arr
+        if self.image_settings.beam_type == BeamType.NavCam:
+            self.nav_cam_image = arr
         
         self.picture_signal.emit()
         log_status_message("IMAGE_TAKEN_{beam_type}".format(beam_type=self.image_settings.beam_type.name))
@@ -576,6 +582,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_last = arr
         if name == BeamType.ION.name:
             self.ib_last = arr
+        if name == BeamType.NavCam.name:
+            self.nav_cam_last = arr
 
         # median filter for display
         arr = median_filter(arr, size=3)
@@ -591,6 +599,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_layer = layer
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
+        if self.nav_cam_layer is None and name == BeamType.NavCam.name:
+            self.nav_cam_layer = layer
         
 
         # centre the camera
@@ -608,11 +618,18 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 if self.eb_layer
                 else arr.shape[1]
             )
-            self.ib_layer.translate = [0.0, translation]       
+            self.ib_layer.translate = [0.0, translation]   
+        if self.nav_cam_layer:
+            translation = (
+                self.viewer.layers["ELECTRON"].data.shape[0] + 150
+                if self.eb_layer
+                else arr.shape[0] +150
+            )
+            self.nav_cam_layer.translate = [translation, 0.0]    
 
         if self.eb_layer:
-            points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150]])
-            string = ["ELECTRON BEAM", "ION BEAM"]
+            points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150], [self.eb_layer.data.shape[0] + 100, 200]])
+            string = ["ELECTRON BEAM", "ION BEAM", "NAV CAM"]
             text = {
                 "string": string,
                 "color": "white"
