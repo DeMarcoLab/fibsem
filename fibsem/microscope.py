@@ -2333,7 +2333,7 @@ class ThermoMicroscope(FibsemMicroscope):
             resolution=[width, height],
             dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.dwell_time.value,
             stigmation=self.get("stigmation", beam_type),
-            beam_shift=self.get("shift", beam_type),
+            shift=self.get("shift", beam_type),
             scan_rotation=self.get("scan_rotation", beam_type),
         )
 
