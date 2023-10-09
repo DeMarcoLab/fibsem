@@ -280,21 +280,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         napari.utils.notifications.show_info("Beam Settings Updated")
 
     def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
-        contrast = self.microscope.get("detector_contrast", beam_type=beam_type)
-        brightness = self.microscope.get("detector_brightness", beam_type=beam_type)
-        type = self.microscope.get("detector_type", beam_type=beam_type)
-        mode = self.microscope.get("detector_mode", beam_type=beam_type)
-        return FibsemDetectorSettings(type, mode, brightness, contrast)
+        detector_settings = self.microscope.get_detector_settings(beam_type)
+        return detector_settings
     
     def get_beam_settings(self, beam_type: BeamType= BeamType.ELECTRON) -> BeamSettings:
-        beam_settings = BeamSettings(
-            beam_type = beam_type,
-            working_distance=self.microscope.get("working_distance", beam_type=beam_type),
-            beam_current = self.microscope.get("current", beam_type=beam_type),
-            voltage = self.microscope.get("voltage", beam_type=beam_type),
-            shift=self.microscope.get("shift", beam_type=beam_type),
-            stigmation=self.microscope.get("stigmation", beam_type=beam_type),
-        )
+        beam_settings = self.microscope.get_beam_settings(beam_type)
         return beam_settings
 
     def get_settings_from_ui(self):

@@ -4796,6 +4796,20 @@ class TescanMicroscope(FibsemMicroscope):
         """Get the current beam settings for the microscope.
 
         """
+        if beam_type not in [BeamType.ELECTRON, BeamType.ION]:
+            return BeamSettings(
+                beam_type = beam_type,
+                beam_current = 0.0,
+                working_distance = 0.0,
+                hfw = 0.0,
+                stigmation = Point(),
+                shift = Point(),
+                resolution = [1536, 1024],
+                voltage = 0.0,
+                dwell_time = 0.0,
+                scan_rotation = 0.0,
+            )
+        
         beam_settings = BeamSettings(
             beam_type=beam_type,
             beam_current=self.get("current", beam_type),
@@ -4803,9 +4817,9 @@ class TescanMicroscope(FibsemMicroscope):
             hfw=self.get("hfw", beam_type),
             stigmation=self.get("stigmation", beam_type),
             shift=self.get("shift", beam_type),
-            resolution=self.last_image(beam_type).metadata.image_settings.resolution,
+            resolution=self.last_image(beam_type).metadata.image_settings.resolution if self.last_image(beam_type) is not None else [1536, 1024],
             voltage=self.get("voltage", beam_type),
-            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time,
+            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time if self.last_image(beam_type) is not None else 0.0,
             scan_rotation=self.get("scan_rotation", beam_type), 
         )
 
@@ -4843,6 +4857,13 @@ class TescanMicroscope(FibsemMicroscope):
         """Get the current detector settings for the microscope.
 
         """
+        if beam_type not in [BeamType.ELECTRON, BeamType.ION]:
+                return FibsemDetectorSettings(
+                    type = None,
+                    mode = None,
+                    brightness = 0.0,
+                    contrast = 0.0,
+                )
         detector_settings = FibsemDetectorSettings(
             type = self.get("detector_type", beam_type),
             mode = self.get("detector_mode", beam_type),
@@ -4854,6 +4875,10 @@ class TescanMicroscope(FibsemMicroscope):
     
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
 
+            
+        if beam_type not in [BeamType.ELECTRON, BeamType.ION]:
+                return None
+        
         beam = self.connection.SEM if beam_type == BeamType.ELECTRON else self.connection.FIB
 
         # beam properties 
