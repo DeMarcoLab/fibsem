@@ -1,9 +1,9 @@
 import napari
-from qtdesigner_files import image_viewer
 from PyQt5 import QtWidgets
 from datetime import datetime
 from pathlib import Path
 from fibsem import constants
+from fibsem.ui.qtdesigner_files import image_viewer
 class FibsemImageViewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
 
     def __init__(self, viewer: napari.Viewer):
