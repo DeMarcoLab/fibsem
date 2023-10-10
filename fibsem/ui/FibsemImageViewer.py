@@ -18,7 +18,6 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
         self.image = None
 
         # signal when image is dragged and dropped into viewer
-        self.viewer.layers.events.inserted.connect(self.update_layer_list)
 
         self.viewer.layers.selection.events.changed.connect(self.update_selected_layer)
 
@@ -51,13 +50,6 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
             filter=_filter,
         )
         return path
-
-    def update_layer_list(self, event):
-
-        for layer in self.viewer.layers:
-            print(layer.name)
-
-        layer1 = self.viewer.layers[0]
 
 
     def update_selected_layer(self,event):
