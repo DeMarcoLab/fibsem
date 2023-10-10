@@ -526,58 +526,64 @@ class ThermoMicroscope(FibsemMicroscope):
         Returns:
             FibsemImage: A new FibsemImage object representing the acquired image.
         """
-        _check_beam(beam_type = image_settings.beam_type, hardware_settings = self.hardware_settings)
-        # set frame settings
-        if image_settings.reduced_area is not None:
-            reduced_area = image_settings.reduced_area.__to_FEI__()
-            logging.warning(f"----------- REDUCED AREA: {reduced_area} -----------")
-            logging.warning(f"----------- BEAM_TYPE {image_settings.beam_type} -----------")
+
+        if image_settings.beam_type == BeamType.CCD_CAM:
+            self.connection.imaging.set_active_view(4)
+            self.connection.imaging.set_active_device(3)
+            image = self.connection.imaging.get_image()
         else:
-            reduced_area = None
-            if image_settings.beam_type == BeamType.ELECTRON:
-                self.connection.beams.electron_beam.scanning.mode.set_full_frame()
-            if image_settings.beam_type == BeamType.ION :
-                self.connection.beams.ion_beam.scanning.mode.set_full_frame()
-        
-        frame_settings = GrabFrameSettings(
-            resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
-            dwell_time=image_settings.dwell_time,
-            reduced_area=reduced_area,
-            line_integration=image_settings.line_integration,
-            scan_interlacing=image_settings.scan_interlacing,
-            frame_integration=image_settings.frame_integration,
-            drift_correction=image_settings.drift_correction,
-        )
-
-        if image_settings.beam_type == BeamType.ELECTRON:
-            hfw_limits = (
-                self.connection.beams.electron_beam.horizontal_field_width.limits
-            )
-            image_settings.hfw = np.clip(
-                image_settings.hfw, hfw_limits.min, hfw_limits.max
-            )
-            self.connection.beams.electron_beam.horizontal_field_width.value = (
-                image_settings.hfw
-            )
-
-        if image_settings.beam_type == BeamType.ION:
-            hfw_limits = self.connection.beams.ion_beam.horizontal_field_width.limits
-            image_settings.hfw = np.clip(
-                image_settings.hfw, hfw_limits.min, hfw_limits.max
-            )
-            self.connection.beams.ion_beam.horizontal_field_width.value = (
-                image_settings.hfw
-            )
-
-        logging.info(f"acquiring new {image_settings.beam_type.name} image.")
-        self.connection.imaging.set_active_view(image_settings.beam_type.value)
-        self.connection.imaging.set_active_device(image_settings.beam_type.value)
-        image = self.connection.imaging.grab_frame(frame_settings)
-        if image_settings.reduced_area is not None:
-            if image_settings.beam_type == BeamType.ELECTRON:
-                self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+            _check_beam(beam_type = image_settings.beam_type, hardware_settings = self.hardware_settings)
+            # set frame settings
+            if image_settings.reduced_area is not None:
+                reduced_area = image_settings.reduced_area.__to_FEI__()
+                logging.warning(f"----------- REDUCED AREA: {reduced_area} -----------")
+                logging.warning(f"----------- BEAM_TYPE {image_settings.beam_type} -----------")
             else:
-                self.connection.beams.ion_beam.scanning.mode.set_full_frame()
+                reduced_area = None
+                if image_settings.beam_type == BeamType.ELECTRON:
+                    self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+                if image_settings.beam_type == BeamType.ION :
+                    self.connection.beams.ion_beam.scanning.mode.set_full_frame()
+            
+            frame_settings = GrabFrameSettings(
+                resolution=f"{image_settings.resolution[0]}x{image_settings.resolution[1]}",
+                dwell_time=image_settings.dwell_time,
+                reduced_area=reduced_area,
+                line_integration=image_settings.line_integration,
+                scan_interlacing=image_settings.scan_interlacing,
+                frame_integration=image_settings.frame_integration,
+                drift_correction=image_settings.drift_correction,
+            )
+
+            if image_settings.beam_type == BeamType.ELECTRON:
+                hfw_limits = (
+                    self.connection.beams.electron_beam.horizontal_field_width.limits
+                )
+                image_settings.hfw = np.clip(
+                    image_settings.hfw, hfw_limits.min, hfw_limits.max
+                )
+                self.connection.beams.electron_beam.horizontal_field_width.value = (
+                    image_settings.hfw
+                )
+
+            if image_settings.beam_type == BeamType.ION:
+                hfw_limits = self.connection.beams.ion_beam.horizontal_field_width.limits
+                image_settings.hfw = np.clip(
+                    image_settings.hfw, hfw_limits.min, hfw_limits.max
+                )
+                self.connection.beams.ion_beam.horizontal_field_width.value = (
+                    image_settings.hfw
+                )
+
+            logging.info(f"acquiring new {image_settings.beam_type.name} image.")
+            self.connection.imaging.set_active_view(image_settings.beam_type.value)
+            self.connection.imaging.set_active_device(image_settings.beam_type.value)
+            image = self.connection.imaging.grab_frame(frame_settings)
+            if image_settings.reduced_area is not None:
+                if image_settings.beam_type == BeamType.ELECTRON:
+                    self.connection.beams.electron_beam.scanning.mode.set_full_frame()
+                else:
+                    self.connection.beams.ion_beam.scanning.mode.set_full_frame()
 
         state = self.get_current_microscope_state()
 
