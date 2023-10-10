@@ -106,8 +106,8 @@ class BeamType(Enum):
     """
     ELECTRON = 1  # Electron
     ION = 2  # Ion
-    CCD_CAM = 3
-    NavCam = 4 # see enumerations/ImagingDevice
+    CHAMBER_CAMERA = 3
+    # NavCam = 4 # see enumerations/ImagingDevice
 
 class MovementMode(Enum):
     Stable = 1
@@ -699,7 +699,7 @@ class BeamSettings:
 
     def __post_init__(self):
 
-        assert self.beam_type in [BeamType.ELECTRON,BeamType.ION, BeamType.NavCam] or self.beam_type is None, f"beam_type must be instance of BeamType, currently {type(self.beam_type)}"
+        assert self.beam_type in [BeamType.ELECTRON,BeamType.ION, BeamType.CHAMBER_CAMERA] or self.beam_type is None, f"beam_type must be instance of BeamType, currently {type(self.beam_type)}"
         assert isinstance(self.working_distance,(float,int)) or self.working_distance is None, f"Working distance must be float or int, currently is {type(self.working_distance)}"
         assert isinstance(self.beam_current,(float,int)) or self.beam_current is None, f"beam current must be float or int, currently is {type(self.beam_current)}"
         assert isinstance(self.voltage,(float,int)) or self.voltage is None, f"voltage must be float or int, currently is {type(self.voltage)}"

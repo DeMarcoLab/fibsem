@@ -60,7 +60,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.eb_layer, self.ib_layer = None, None
         self.eb_image, self.ib_image = None, None
-        self.nav_cam_image, self.nav_cam_layer = None, None 
+        self.nav_cam_image, self.chamber_cam_layer = None, None 
 
         self.eb_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
         self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
@@ -324,6 +324,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType, beam_settings: BeamSettings=None, detector_settings: FibsemDetectorSettings=None ):
 
+        if beam_type is BeamType.CHAMBER_CAMERA:
+            return
+        
         # disconnect beam type combobox
         self.selected_beam.currentIndexChanged.disconnect()
         self.selected_beam.setCurrentText(beam_type.name)
@@ -387,7 +390,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.label_presets.setVisible(_is_ion and _is_tescan)
 
 
-        self.detector_type = self.microscope.get_available_values("detector_type", beam_type=beam_type)
+        self.detector_type = self.microscope.get_available_values("detector_type", beam_type=beam_type)        
         self.detector_type_combobox.clear()
         self.detector_type_combobox.addItems(self.detector_type)
         self.detector_type_combobox.setCurrentText(self.microscope.get("detector_type", beam_type=beam_type))
@@ -480,7 +483,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.eb_image is not None:
             self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
         if self.nav_cam_image is not None:
-            self.update_viewer(self.nav_cam_image.data, BeamType.NavCam.name)
+            self.update_viewer(self.nav_cam_image.data, BeamType.CHAMBER_CAMERA.name)
         self._toggle_interactions(True)
         self.TAKING_IMAGES = False
 
@@ -534,7 +537,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_image = arr
         if self.image_settings.beam_type == BeamType.ION:
             self.ib_image = arr
-        if self.image_settings.beam_type == BeamType.NavCam:
+        if self.image_settings.beam_type == BeamType.CHAMBER_CAMERA:
             self.nav_cam_image = arr
         
         self.picture_signal.emit()
@@ -572,7 +575,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_last = arr
         if name == BeamType.ION.name:
             self.ib_last = arr
-        if name == BeamType.NavCam.name:
+        if name == BeamType.CHAMBER_CAMERA.name:
             self.nav_cam_last = arr
 
         # median filter for display
@@ -589,8 +592,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_layer = layer
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
-        if self.nav_cam_layer is None and name == BeamType.NavCam.name:
-            self.nav_cam_layer = layer
+        if self.chamber_cam_layer is None and name == BeamType.CHAMBER_CAMERA.name:
+            self.chamber_cam_layer = layer
         
 
         # centre the camera
@@ -609,17 +612,17 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 else arr.shape[1]
             )
             self.ib_layer.translate = [0.0, translation]   
-        if self.nav_cam_layer:
+        if self.chamber_cam_layer:
             translation = (
                 self.viewer.layers["ELECTRON"].data.shape[0] + 150
                 if self.eb_layer
                 else arr.shape[0] +150
             )
-            self.nav_cam_layer.translate = [translation, 0.0]    
+            self.chamber_cam_layer.translate = [translation, 0.0]    
 
         if self.eb_layer:
             points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150], [self.eb_layer.data.shape[0] + 100, 200]])
-            string = ["ELECTRON BEAM", "ION BEAM", "NAV CAM"]
+            string = ["ELECTRON BEAM", "ION BEAM", "CHAMBER CAM"]
             text = {
                 "string": string,
                 "color": "white"
