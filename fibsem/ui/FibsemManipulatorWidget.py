@@ -58,10 +58,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 
                 
             except :
-                napari.notifications.show_warning("Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.")
-                # message_box_ui(title="Error loading positions",
-                #     text="Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.",
-                #     buttons=QMessageBox.Ok)
+                napari.utils.notifications.show_warning("Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.")
             
             self.manipulator_inserted = self.microscope.get_manipulator_state(settings=self.settings)
                 
