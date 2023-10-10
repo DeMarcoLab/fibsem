@@ -219,7 +219,14 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
 
 
 def main():
-    pass
+    viewer = napari.Viewer(ndisplay=2)
+    image_viewer_window = image_viewer(viewer=viewer)
+    viewer.window.add_dock_widget(image_viewer_window, 
+                                    area="right", 
+                                        add_vertical_stretch=True, 
+                                        name=f"OpenFIBSEM Image Viewer")
+
+    napari.run(max_loop_level=2)
 
 
 if __name__ == "__main__":
