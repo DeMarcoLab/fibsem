@@ -157,7 +157,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def eucentric_move(self,
+    def vertical_move(self,
         settings: MicroscopeSettings,
         dy: float,
         dx: float = 0,
@@ -219,7 +219,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def finish_milling(self, imaging_current: float) -> None:
+    def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         pass
     @abstractmethod
     def _milling_estimate(self,patterns) -> float:
@@ -360,7 +360,7 @@ class ThermoMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0, static_wd: bool = True) -> None:
+        vertical_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -989,7 +989,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return stage_position
 
-    def eucentric_move(
+    def vertical_move(
         self,
         settings: MicroscopeSettings,
         dy: float,
@@ -1454,8 +1454,9 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
 
         self.set("current", mill_settings.milling_current, BeamType.ION)
+        self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
 
-    def run_milling(self, milling_current: float, asynch: bool = False):
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False):
         """
         Run ion beam milling using the specified milling current.
 
@@ -1473,6 +1474,9 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.hardware_settings)
         # change to milling current
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
+        if self.connection.beams.ion_beam.high_voltage.value != milling_voltage:
+            logging.info(f"changing to milling voltage: {milling_voltage:.2e}")
+            self.connection.beams.ion_beam.high_voltage.value = milling_voltage
         if self.connection.beams.ion_beam.beam_current.value != milling_current:
             logging.info(f"changing to milling current: {milling_current:.2e}")
             self.connection.beams.ion_beam.beam_current.value = milling_current
@@ -1536,7 +1540,7 @@ class ThermoMicroscope(FibsemMicroscope):
             print(self.connection.patterning.state)
 
 
-    def finish_milling(self, imaging_current: float):
+    def finish_milling(self, imaging_current: float, imaging_voltage: float):
         """
         Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
 
@@ -1545,7 +1549,8 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         _check_beam(BeamType.ION, self.hardware_settings)
         self.connection.patterning.clear_patterns()
-        self.connection.beams.ion_beam.beam_current.value = imaging_current
+        self.set("current", imaging_current, BeamType.ION)
+        self.set("voltage", imaging_voltage, BeamType.ION)
         self.connection.patterning.mode = "Serial"
 
     def _milling_estimate(self,patterns ) -> float:
@@ -2719,7 +2724,7 @@ class TescanMicroscope(FibsemMicroscope):
         stable_move(self, settings: MicroscopeSettings, dx: float, dy: float, beam_type: BeamType,) -> None:
             Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
-        eucentric_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0.0, static_wd: bool = True) -> None:
+        vertical_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0.0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
         move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
@@ -3543,7 +3548,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         return
 
-    def eucentric_move(
+    def vertical_move(
         self,
         settings: MicroscopeSettings,
         dy: float,
@@ -4009,7 +4014,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
         
 
-    def run_milling(self, milling_current: float, asynch: bool = False):
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False):
         """
         Runs the ion beam milling process using the specified milling current.
 
@@ -5286,7 +5291,7 @@ class DemoMicroscope(FibsemMicroscope):
         return stage_position
 
 
-    def eucentric_move(self, settings:MicroscopeSettings, dy: float, dx:float = 0.0, static_wd: bool=True) -> None:
+    def vertical_move(self, settings:MicroscopeSettings, dy: float, dx:float = 0.0, static_wd: bool=True) -> None:
         _check_stage(self.hardware_settings)
         logging.info(f"Moving stage: dy={dy:.2e} (Eucentric)")
         self.stage_position.x += dx
@@ -5381,17 +5386,21 @@ class DemoMicroscope(FibsemMicroscope):
     def setup_milling(self, mill_settings: FibsemMillingSettings):
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
+        self.set("current", mill_settings.milling_current, BeamType.ION)
+        self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
 
-    def run_milling(self, milling_current: float, asynch: bool = False) -> None:
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)
-        logging.info(f"Running milling: {milling_current:.2e}, {asynch}")
+        logging.info(f"Running milling: {milling_current:.2e}, {milling_voltage:.2e}, {asynch}")
         import random
         # time.sleep(random.randint(1, 5))
         time.sleep(5)
 
-    def finish_milling(self, imaging_current: float) -> None:
+    def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         _check_beam(BeamType.ION, self.hardware_settings)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
+        self.set("current", imaging_current, BeamType.ION)
+        self.set("voltage", imaging_voltage, BeamType.ION)
 
 
     def _milling_estimate(self,patterns) -> float:

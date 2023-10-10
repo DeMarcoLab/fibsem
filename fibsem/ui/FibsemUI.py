@@ -22,11 +22,6 @@ from fibsem.ui.utils import message_box_ui
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import pyqtSignal
-from fibsem.microscope import FibsemMicroscope, MicroscopeSettings, ThermoMicroscope, DemoMicroscope, TescanMicroscope
-from fibsem.ui.qtdesigner_files import FibsemUI
-from fibsem.structures import BeamType
-from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
-from fibsem.ui.utils import message_box_ui
 
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):

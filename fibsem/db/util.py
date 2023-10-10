@@ -66,74 +66,12 @@ def create_experiment(conn, experiment):
     :param experiment:
     :return: experiment id
     """
-    sql = ''' INSERT INTO experiments(name,project_id,date,user,sample_id)
-              VALUES(?,?,?,?,?) '''
+    sql = ''' INSERT INTO experiments(name,project_id,date,user,sample_id,program,method,path)
+              VALUES(?,?,?,?,?,?,?,?) '''
     cur = conn.cursor()
     cur.execute(sql, experiment)
     conn.commit()
     return cur.lastrowid
-
-
-
-
-def create_task(conn, task):
-    """
-    Create a new task
-    :param conn:
-    :param task:
-    :return:
-    """
-
-    sql = ''' INSERT INTO tasks(name,priority,status_id,project_id,begin_date,end_date)
-              VALUES(?,?,?,?,?,?) '''
-    cur = conn.cursor()
-    cur.execute(sql, task)
-    conn.commit()
-    return cur.lastrowid
-
-
-
-def update_task(conn, task):
-    """
-    update priority, begin_date, and end date of a task
-    :param conn:
-    :param task:
-    :return: project id
-    """
-    sql = ''' UPDATE tasks
-              SET priority = ? ,
-                  begin_date = ? ,
-                  end_date = ?
-              WHERE id = ?'''
-    cur = conn.cursor()
-    cur.execute(sql, task)
-    conn.commit()
-
-
-
-def delete_task(conn, id):
-    """
-    Delete a task by task id
-    :param conn:  Connection to the SQLite database
-    :param id: id of the task
-    :return:
-    """
-    sql = 'DELETE FROM tasks WHERE id=?'
-    cur = conn.cursor()
-    cur.execute(sql, (id,))
-    conn.commit()
-
-
-def delete_all_tasks(conn):
-    """
-    Delete all rows in the tasks table
-    :param conn: Connection to the SQLite database
-    :return:
-    """
-    sql = 'DELETE FROM tasks'
-    cur = conn.cursor()
-    cur.execute(sql)
-    conn.commit()
 
 def create_connection(db_file):
     """ create a database connection to the SQLite database
@@ -152,17 +90,128 @@ def create_connection(db_file):
     return conn
 
 
-def select_all_tasks(conn):
-    """
-    Query all rows in the tasks table
-    :param conn: the Connection object
-    :return:
-    """
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM tasks")
+#####
+SQL_CREATE_PROJECTS_TABLE = """ CREATE TABLE IF NOT EXISTS projects (
+                                    id INTEGER PRIMARY KEY,
+                                    name VARCHAR(100) NOT NULL,
+                                    date TIMESTAMP NOT NULL,
+                                    user VARCHAR(100) NOT NULL
+                                ); """
 
-    rows = cur.fetchall()
+SQL_CREATE_USERS_TABLES = """CREATE TABLE IF NOT EXISTS users (
+                                id INTEGER PRIMARY KEY,
+                                name VARCHAR(100) NOT NULL,
+                                email VARCHAR(100) NOT NULL,
+                                password VARCHAR(100) NOT NULL
+                            );"""
 
-    for row in rows:
-        print(row)
 
+SQL_CREATE_SAMPLES_TABLE = """CREATE TABLE IF NOT EXISTS samples (
+                                id INTEGER PRIMARY KEY,
+                                name VARCHAR(100) NOT NULL,
+                                project_id INTEGER NOT NULL,
+                                date TIMESTAMP NOT NULL,
+                                user VARCHAR(100) NOT NULL,
+                                FOREIGN KEY (project_id) REFERENCES projects (id)
+                                );"""
+
+
+SQL_CREATE_EXPERIMENTS_TABLE = """CREATE TABLE IF NOT EXISTS experiments (
+                                id INTEGER PRIMARY KEY,
+                                name VARCHAR(100) NOT NULL,
+                                project_id INTEGER NOT NULL,
+                                date TIMESTAMP NOT NULL,
+                                user VARCHAR(100) NOT NULL,
+                                sample_id INTEGER NOT NULL,
+                                program VARCHAR(100) NOT NULL,
+                                method VARCHAR(100) NOT NULL,
+                                path VARCHAR(100) NOT NULL,
+                                FOREIGN KEY (project_id) REFERENCES projects (id)
+                                FOREIGN KEY (sample_id) REFERENCES samples (id)
+                            );"""
+
+
+
+SQL_CREATE_HISTORY_TABLE = """CREATE TABLE IF NOT EXISTS history (
+                                id INTEGER PRIMARY KEY,
+                                petname VARCHAR(100) NOT NULL,
+                                stage VARCHAR(100) NOT NULL,
+                                start TIMESTAMP NOT NULL,
+                                end TIMESTAMP NOT NULL,
+                                duration FLOAT NOT NULL,
+                                experiment_id INTEGER NOT NULL,
+                                FOREIGN KEY (experiment_id) REFERENCES experiment (id)
+                                
+                            );"""
+
+SQL_CREATE_STEPS_TABLE = """CREATE TABLE IF NOT EXISTS steps (
+                                id INTEGER PRIMARY KEY,
+                                petname VARCHAR(100) NOT NULL,
+                                stage VARCHAR(100) NOT NULL,
+                                step VARCHAR(100) NOT NULL,
+                                step_n INTEGER NOT NULL,
+                                timestamp TIMESTAMP NOT NULL,
+                                duration FLOAT NOT NULL,
+                                experiment_id INTEGER NOT NULL,
+                                FOREIGN KEY (experiment_id) REFERENCES experiment (id)
+                                
+                            );"""
+
+
+
+SQL_CREATE_DETECTIONS_TABLE = """CREATE TABLE IF NOT EXISTS detections (
+                                id INTEGER PRIMARY KEY,
+                                petname VARCHAR(100) NOT NULL,
+                                stage VARCHAR(100) NOT NULL,
+                                step VARCHAR(100) NOT NULL,
+                                feature VARCHAR(100) NOT NULL,
+                                px_x INTEGER NOT NULL,
+                                px_y INTEGER NOT NULL,
+                                dpx_x INTEGER NOT NULL,
+                                dpx_y INTEGER NOT NULL,
+                                dm_x FLOAT NOT NULL,
+                                dm_y FLOAT NOT NULL,
+                                is_correct BOOL NOT NULL,
+                                beam_type VARCHAR(100) NOT NULL,
+                                fname VARCHAR(100) NOT NULL,
+                                timestamp TIMESTAMP NOT NULL,
+                                experiment_id INTEGER NOT NULL,
+                                FOREIGN KEY (experiment_id) REFERENCES experiment (id)
+                                
+                            );"""
+
+
+SQL_CREATE_INTERACTIONS_TABLE = """CREATE TABLE IF NOT EXISTS interactions (
+                                id INTEGER PRIMARY KEY,
+                                petname VARCHAR(100) NOT NULL,
+                                stage VARCHAR(100) NOT NULL,
+                                step VARCHAR(100) NOT NULL,
+                                type VARCHAR(100) NOT NULL,
+                                subtype VARCHAR(100) NOT NULL, 
+                                dm_x FLOAT NOT NULL,
+                                dm_y FLOAT NOT NULL,
+                                beam_type VARCHAR(100) NOT NULL,
+                                timestamp TIMESTAMP NOT NULL,
+                                experiment_id INTEGER NOT NULL,
+                                FOREIGN KEY (experiment_id) REFERENCES experiment (id)
+                                
+                            );"""
+
+from fibsem import config as cfg
+import os
+
+def _create_database():
+
+    # create / connect to db
+    database = cfg.DATABASE_PATH
+    conn = create_connection(database)
+
+    # create tables
+    create_table(conn, SQL_CREATE_PROJECTS_TABLE)
+    create_table(conn, SQL_CREATE_USERS_TABLES)
+    create_table(conn, SQL_CREATE_SAMPLES_TABLE)
+    create_table(conn, SQL_CREATE_EXPERIMENTS_TABLE)
+    create_table(conn, SQL_CREATE_HISTORY_TABLE)
+    create_table(conn, SQL_CREATE_STEPS_TABLE)
+    create_table(conn, SQL_CREATE_DETECTIONS_TABLE)
+    create_table(conn, SQL_CREATE_INTERACTIONS_TABLE)

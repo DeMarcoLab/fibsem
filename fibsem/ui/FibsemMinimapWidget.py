@@ -4,7 +4,7 @@ import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
-from fibsem import constants, conversions, utils
+from fibsem import constants, conversions, utils, acquire
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point, FibsemStagePosition
 from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
@@ -46,6 +46,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.parent = parent
 
         self.viewer = viewer
+        self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
+        self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
         self.image = None
         self._image_layer = None
@@ -54,6 +56,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self.positions = []
         self._correlation = {}
+
+        self._tile_info = {}
 
         self.setup_connections()
 
@@ -78,7 +82,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
 
-        
+        # checkbox
+        self.checkBox_options_move_with_translation.stateChanged.connect(self._update_ui)
+        self.checkBox_options_move_with_translation.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
+        self.label_options_move_with_translate_info.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
@@ -125,15 +132,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.doubleSpinBox_gb_width.setKeyboardTracking(False)
 
 
-
-
-
-
     def update_positions_from_parent(self, positions):
         
         if positions is not None:
             self.positions = positions
-            
+
         self._update_position_info()
         self._update_viewer()
 
@@ -149,6 +152,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         tile_size = self.doubleSpinBox_tile_tile_size.value() * constants.MICRO_TO_SI
         resolution = int(self.spinBox_tile_resolution.value())
         cryo = self.checkBox_tile_autogamma.isChecked()
+
+        self._tile_info["grid_size"] = grid_size
+        self._tile_info["tile_size"] = tile_size
+        self._tile_info["resolution"] = resolution
+        self._tile_info["beam_type"] = beam_type
         
         self.settings.image.hfw = tile_size
         self.settings.image.beam_type = beam_type
@@ -293,6 +301,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         image = FibsemImage.load(path)
 
+        self._tile_info["tile_size"] = image.metadata.image_settings.hfw
+        self._tile_info["resolution"] = image.metadata.image_settings.resolution[0]
+        self._tile_info["beam_type"] = image.metadata.image_settings.beam_type
+
         self._update_viewer(image)
 
     def _update_ui(self):
@@ -310,6 +322,13 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         _positions_loaded = len(self.positions) > 0
         self.pushButton_move_to_position.setEnabled(_positions_loaded)
 
+        _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
+        self.label_translation_x.setVisible(_MOVE_WITH_TRANSLATION)
+        self.label_translation_y.setVisible(_MOVE_WITH_TRANSLATION)
+        self.label_translation_z.setVisible(_MOVE_WITH_TRANSLATION)
+        self.doubleSpinBox_translation_x.setVisible(_MOVE_WITH_TRANSLATION)
+        self.doubleSpinBox_translation_y.setVisible(_MOVE_WITH_TRANSLATION)
+        self.doubleSpinBox_translation_z.setVisible(_MOVE_WITH_TRANSLATION)
 
     def _update_viewer(self, image: FibsemImage =  None):
 
@@ -338,6 +357,20 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._update_ui()
 
 
+    def _update_region(self, position:FibsemStagePosition):
+    
+
+        resolution = self._tile_info["resolution"]
+        self.settings.image.resolution = [resolution, resolution]
+        self.settings.image.beam_type = self._tile_info["beam_type"]
+        self.settings.image.hfw = self._tile_info["tile_size"]
+        self.settings.image.save = False
+
+        # TODO: this assumes the image is taken with the same settings as the tile collection
+        self.image = _tile._update_image_region(self.microscope, self.settings.image, self.image, position)
+
+        self._update_viewer(self.image)
+
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
         shape = self.image.data.shape[0], self.image.data.shape[1]
@@ -358,10 +391,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         _inside_image = self.get_data_from_coord(coords)
 
         if _inside_image is False:
-            napari.utils.notifications.show_info(
+            napari.utils.notifications.show_warning(
                 f"Clicked outside image dimensions. Please click inside the image to move."
             )
-            return
+            return False, False
 
         point = conversions.image_to_microscope_image_coordinates(
             Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x,
@@ -376,6 +409,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             return 
 
         coords, point = self._validate_mouse_click(layer, event)
+
+        if point is False: # clicked outside image
+            return
 
         _new_position = self.microscope._calculate_new_position( 
                     settings=self.settings, 
@@ -407,11 +443,27 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             return
         coords, point = self._validate_mouse_click(layer, event)
 
+        if point is False: # clicked outside image
+            return
+
         _new_position = self.microscope._calculate_new_position( 
             settings=self.settings, 
             dx=point.x, dy=point.y, 
             beam_type=self.image.metadata.image_settings.beam_type, 
             base_position=self.image.metadata.microscope_state.absolute_position)   
+
+
+        _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
+        if _MOVE_WITH_TRANSLATION:
+            dx = self.doubleSpinBox_translation_x.value() * constants.MILLI_TO_SI
+            dy = self.doubleSpinBox_translation_y.value() * constants.MILLI_TO_SI
+            dz = self.doubleSpinBox_translation_z.value() * constants.MILLI_TO_SI
+            translation = FibsemStagePosition(x=dx, y=dy, z=dz)
+            logging.info(f"[NOT ENABLED] Moving to position with translation: {translation}")
+            napari.utils.notifications.show_warning(f" [NOT ENABLED] Moving to position with translation: {translation}")
+
+            if cfg._MINIMAP_MOVE_WITH_TRANSLATION:
+                _new_position += translation
 
         self._move_to_position(_new_position)
         self._minimap_positions.emit(self.positions)
@@ -477,6 +529,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _move_to_position(self, _position:FibsemStagePosition)->None:
         self.microscope._safe_absolute_stage_movement(_position)
         self._stage_position_moved.emit(_position)
+        if self.checkBox_options_acquire_after_movement.isChecked():
+            self._update_region(_position)
         self._update_viewer()
 
 
@@ -545,7 +599,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 data.append([pt.y, pt.x])
 
             colors = ["lime"] * (len(drawn_positions)-1)
-            colors.append("red")
+            colors.append("yellow")
 
             colors_rgba = [[0,1,0,1] for _ in range(len(drawn_positions)-1)]
             colors_rgba.append([1,1,0,1]) # yellow
