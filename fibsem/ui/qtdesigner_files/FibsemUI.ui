@@ -76,6 +76,7 @@
     <addaction name="actionCurrent_alignment"/>
     <addaction name="actionManipulator_Positions_Calibration"/>
     <addaction name="actionOpen_Minimap"/>
+    <addaction name="actionImage_Viewer"/>
    </widget>
    <addaction name="menuTools"/>
   </widget>
@@ -98,6 +99,11 @@
   <action name="actionOpen_Minimap">
    <property name="text">
     <string>Open Minimap</string>
+   </property>
+  </action>
+  <action name="actionImage_Viewer">
+   <property name="text">
+    <string>Image Viewer</string>
    </property>
   </action>
  </widget>

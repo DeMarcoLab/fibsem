@@ -9,6 +9,7 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                ThermoMicroscope)
 from fibsem.structures import BeamType
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
+from fibsem.ui.FibsemImageViewer import image_viewer
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
@@ -47,6 +48,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.milling_widget: FibsemMillingWidget = None
         self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
+        self.image_viewer: image_viewer = None
 
         self.minimap_widget: FibsemMinimapWidget = None
 
@@ -70,6 +72,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
         self.actionCurrent_alignment.triggered.connect(self.align_currents)
+        self.actionImage_Viewer.triggered.connect(self._open_image_viewer)
         self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
         if self.system_widget.microscope is not None:
             self.connect_to_microscope()
@@ -89,7 +92,15 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self._minimap_signal.emit(positions)
 
 
+    def _open_image_viewer(self):
+        viewer2 = napari.Viewer(ndisplay=2)
+        self.image_viewer = image_viewer(viewer=viewer2)
+        viewer2.window.add_dock_widget(self.image_viewer, 
+                                        area="right", 
+                                        add_vertical_stretch=True, 
+                                        name=f"OpenFIBSEM Image Viewer")
 
+        napari.run(max_loop_level=2)
 
     def _open_minimap(self):
         if self.microscope is None:
