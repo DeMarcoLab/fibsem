@@ -33,9 +33,13 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
         
         path = self._get_save_file_ui()
 
+        if path is None or path == "":
+            napari.utils.notifications.show_info(f"No save location selected. Image not saved")
+            return
+
         fig = _display_metadata(self.image,show=False)
 
-        fig.savefig(path)
+        fig.savefig(path,bbox_inches='tight',pad_inches = 0.05)
 
         napari.utils.notifications.show_info(f"Image Saved with metadata")
 
@@ -68,7 +72,7 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
             return
 
         for layer in self.viewer.layers:
-            
+
             layer.visible = False
 
         selected_layer.visible = True
