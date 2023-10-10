@@ -3,11 +3,11 @@ from qtdesigner_files import image_viewer
 from PyQt5 import QtWidgets
 from datetime import datetime
 from pathlib import Path
-
-class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
+from fibsem import constants
+class FibsemImageViewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
 
     def __init__(self, viewer: napari.Viewer):
-        super(image_viewer, self).__init__()
+        super(FibsemImageViewer, self).__init__()
         self.setupUi(self)
 
         self.setMinimumWidth(400)
@@ -72,47 +72,68 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
 
         self.image = FibsemImage.load(selected_layer.source.path)
 
-        image_settings = self.image.metadata.image_settings
+        try:
+            image_settings = self.image.metadata.image_settings
 
-        beam_type = image_settings.beam_type.name
-        resolution = f'{image_settings.resolution[0]} x {image_settings.resolution[1]}'
-        hfw = image_settings.hfw * constants.SI_TO_MICRO
-        name = image_settings.label
+            beam_type = image_settings.beam_type.name
+            resolution = f'{image_settings.resolution[0]} x {image_settings.resolution[1]}'
+            hfw = image_settings.hfw * constants.SI_TO_MICRO
+            name = image_settings.label
 
-        self.label_beamType.setText(beam_type)
-        self.label_resolution.setText(resolution)
-        self.label_hfw.setText(f'{hfw:.2f}')
-        self.label_name.setText(name)
-        self.label_metadata_version.setText(self.image.metadata.version)
+            self.label_beamType.setText(beam_type)
+            self.label_resolution.setText(resolution)
+            self.label_hfw.setText(f'{hfw:.2f}')
+            self.label_name.setText(name)
+            self.label_metadata_version.setText(self.image.metadata.version)
 
-        timestamp = datetime.fromtimestamp(self.image.metadata.microscope_state.timestamp)
-        self.label_timestamp.setText(timestamp.strftime("%Y-%m-%d %H:%M:%S"))
-
-        experiment_data = self.image.metadata.experiment
-        self._load_experiment_info(experiment_data)
-
-        position = self.image.metadata.microscope_state.absolute_position
-
-        self.label_position.setText(f'x: {position.x:.2f} y: {position.y:.2f} z: {position.z:.2f} r: {position.r:.2f} t: {position.t:.2f}')
-
-        if beam_type == "ION":
-
-            detector_data = self.image.metadata.microscope_state.ib_detector
-            beam_data = self.image.metadata.microscope_state.ib_settings
+            timestamp = datetime.fromtimestamp(self.image.metadata.microscope_state.timestamp)
+            self.label_timestamp.setText(timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+        except:
+            pass
         
-        else:
+        try:
+            experiment_data = self.image.metadata.experiment
+            self._load_experiment_info(experiment_data)
+        except:
+            pass
 
-            detector_data = self.image.metadata.microscope_state.eb_detector
-            beam_data = self.image.metadata.microscope_state.eb_settings
+        try:
 
-        self._load_detector_info(detector_data)
+            position = self.image.metadata.microscope_state.absolute_position
 
-        self._load_beam_info(beam_data)
+            self.label_position.setText(f'x: {position.x:.2f} y: {position.y:.2f} z: {position.z:.2f} r: {position.r:.2f} t: {position.t:.2f}')
+        except:
+            pass
 
-        self._load_system_info(self.image.metadata.system)
+        try:
+            if beam_type == "ION":
 
-        self._load_user_info(self.image.metadata.user)
+                detector_data = self.image.metadata.microscope_state.ib_detector
+                beam_data = self.image.metadata.microscope_state.ib_settings
+            
+            else:
 
+                detector_data = self.image.metadata.microscope_state.eb_detector
+                beam_data = self.image.metadata.microscope_state.eb_settings
+
+            self._load_detector_info(detector_data)
+        except:
+            pass
+
+        try:
+            self._load_beam_info(beam_data)
+        except:
+            pass
+        
+        try:
+            self._load_system_info(self.image.metadata.system)
+        except:
+            pass
+
+        try:
+            self._load_user_info(self.image.metadata.user)
+        except:
+            pass
 
 
     def _load_experiment_info(self,experiment):
@@ -165,17 +186,17 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
 
         else:
 
-            self.label_beam_current.setText(f'{beam.beam_current:.2f}' if beam.beam_current is not None else "")
-            self.label_voltage.setText(f'{beam.voltage:.2f}' if beam.voltage is not None else "")
-            self.label_working_distance.setText(f'{beam.working_distance:.2f}' if beam.working_distance is not None else "")
-            self.label_dwell_time.setText(f'{beam.dwell_time:.2f}' if beam.dwell_time is not None else "")
+            self.label_beam_current.setText(f'{beam.beam_current*constants.SI_TO_NANO:.2f} nA' if beam.beam_current is not None else "")
+            self.label_voltage.setText(f'{beam.voltage*constants.SI_TO_KILO:.2f} kV' if beam.voltage is not None else "")
+            self.label_working_distance.setText(f'{beam.working_distance*constants.SI_TO_MILLI:.2f} mm' if beam.working_distance is not None else "")
+            self.label_dwell_time.setText(f'{beam.dwell_time*constants.SI_TO_MICRO:.2f} us' if beam.dwell_time is not None else "")
             self.label_scan_rotation.setText(f'{beam.scan_rotation:.2f}' if beam.scan_rotation is not None else "")
 
-            shift_text = f'x: {beam.shift.x:.2f} y: {beam.shift.y:.2f}' if beam.shift is not None else ""
+            shift_text = f'x: {beam.shift.x*constants.SI_TO_MICRO:.2f}um y: {beam.shift.y*constants.SI_TO_MICRO:.2f}um' if beam.shift is not None else ""
             
             self.label_shift.setText(shift_text)
 
-            stigmation_text = f'x: {beam.stigmation.x:.2f} y: {beam.stigmation.y:.2f}' if beam.stigmation is not None else ''
+            stigmation_text = f'x: {beam.stigmation.x*constants.SI_TO_MICRO:.2f}um y: {beam.stigmation.y*constants.SI_TO_MICRO:.2f}um' if beam.stigmation is not None else ''
 
             self.label_stigmation.setText(stigmation_text)
 
@@ -224,7 +245,7 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
 
 def main():
     viewer = napari.Viewer(ndisplay=2)
-    image_viewer_window = image_viewer(viewer=viewer)
+    image_viewer_window = FibsemImageViewer(viewer=viewer)
     viewer.window.add_dock_widget(image_viewer_window, 
                                     area="right", 
                                         add_vertical_stretch=True, 

@@ -31,8 +31,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>566</width>
-         <height>811</height>
+         <width>569</width>
+         <height>845</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
@@ -97,8 +97,8 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -159,11 +159,11 @@
          <widget class="QLabel" name="label_14">
           <property name="font">
            <font>
-            <italic>true</italic>
+            <italic>false</italic>
            </font>
           </property>
           <property name="text">
-           <string>FIBSEM version</string>
+           <string>OpenFIBSEM Version</string>
           </property>
          </widget>
         </item>
@@ -179,8 +179,8 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -316,9 +316,9 @@
          <widget class="QLabel" name="label_2">
           <property name="font">
            <font>
-            <pointsize>11</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <pointsize>9</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -350,9 +350,9 @@
          <widget class="QLabel" name="label_6">
           <property name="font">
            <font>
-            <pointsize>11</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <pointsize>9</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -491,8 +491,8 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -559,8 +559,8 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -579,9 +579,9 @@
          <widget class="QLabel" name="label_5">
           <property name="font">
            <font>
-            <pointsize>11</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <pointsize>9</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -613,7 +613,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Microscope Position</string>
+           <string>Stage Position</string>
           </property>
          </widget>
         </item>
@@ -635,13 +635,13 @@
          <widget class="QLabel" name="label_7">
           <property name="font">
            <font>
-            <pointsize>11</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <pointsize>9</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
-           <string>Label</string>
+           <string>Filename</string>
           </property>
          </widget>
         </item>
@@ -650,8 +650,8 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -662,7 +662,7 @@
         <item row="13" column="0">
          <widget class="QLabel" name="label_13">
           <property name="text">
-           <string>Application</string>
+           <string>Application (Version)</string>
           </property>
          </widget>
         </item>
@@ -670,9 +670,9 @@
          <widget class="QLabel" name="label_9">
           <property name="font">
            <font>
-            <pointsize>11</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
+            <pointsize>9</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="text">
@@ -762,7 +762,7 @@
      <x>0</x>
      <y>0</y>
      <width>603</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>
