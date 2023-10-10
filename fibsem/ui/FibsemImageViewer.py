@@ -61,10 +61,18 @@ class image_viewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
         from fibsem.structures import FibsemImage, FibsemImageMetadata
         from fibsem import constants
 
+
         selected_layer = self.viewer.layers.selection.active
 
         if selected_layer is None:
             return
+
+        for layer in self.viewer.layers:
+            
+            layer.visible = False
+
+        selected_layer.visible = True
+
 
         self.image = FibsemImage.load(selected_layer.source.path)
 
