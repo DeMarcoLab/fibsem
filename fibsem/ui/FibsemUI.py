@@ -9,7 +9,7 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                ThermoMicroscope)
 from fibsem.structures import BeamType
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
-from fibsem.ui.FibsemImageViewer import image_viewer
+from fibsem.ui.FibsemImageViewer import FibsemImageViewer
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
@@ -43,7 +43,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.milling_widget: FibsemMillingWidget = None
         self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
-        self.image_viewer: image_viewer = None
+        self.image_viewer: FibsemImageViewer = None
 
         self.minimap_widget: FibsemMinimapWidget = None
 
@@ -89,7 +89,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def _open_image_viewer(self):
         viewer2 = napari.Viewer(ndisplay=2)
-        self.image_viewer = image_viewer(viewer=viewer2)
+        self.image_viewer = FibsemImageViewer(viewer=viewer2)
         viewer2.window.add_dock_widget(self.image_viewer, 
                                         area="right", 
                                         add_vertical_stretch=True, 
