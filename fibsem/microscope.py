@@ -103,6 +103,10 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
+    def camera_view(self) -> FibsemImage:
+        pass
+
+    @abstractmethod
     def last_image(self, beam_type: BeamType) -> FibsemImage:
         pass
     
@@ -527,12 +531,6 @@ class ThermoMicroscope(FibsemMicroscope):
             FibsemImage: A new FibsemImage object representing the acquired image.
         """
 
-        if image_settings.beam_type == BeamType.CHAMBER_CAMERA:
-            self.connection.imaging.set_active_view(4)
-            self.connection.imaging.set_active_device(3)
-            image = self.connection.imaging.get_image()
-            return FibsemImage(data=image.data, metadata=None)
-       
         _check_beam(beam_type = image_settings.beam_type, hardware_settings = self.hardware_settings)
         # set frame settings
         if image_settings.reduced_area is not None:
@@ -599,6 +597,12 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image.metadata.system = self.system
 
         return fibsem_image
+    
+    def camera_view(self) -> FibsemImage:
+        self.connection.imaging.set_active_view(4)
+        self.connection.imaging.set_active_device(3)
+        image = self.connection.imaging.get_image()
+        return FibsemImage(data=image.data, metadata=None)
 
     def last_image(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemImage:
         """
@@ -2324,7 +2328,7 @@ class ThermoMicroscope(FibsemMicroscope):
         resolution = self.connection.beams.electron_beam.scanning.resolution.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.resolution.value
         width, height = int(resolution.split("x")[0]), int(resolution.split("x")[-1])
 
-        logging.info(f"Getting {beam_type.value} beam settings...")
+        # logging.info(f"Getting {beam_type.value} beam settings...")
         beam_settings = BeamSettings(
             beam_type=beam_type,
             working_distance=self.get("working_distance", beam_type),
@@ -3135,36 +3139,11 @@ class TescanMicroscope(FibsemMicroscope):
 
         return fibsem_image
 
-    def _get_navcam_image(self, image_settings: ImageSettings):
+    def camera_view(self):
         
         image = self.connection.Camera.AcquireImage()
 
-        microscope_state = MicroscopeState(
-            timestamp=datetime.datetime.timestamp(datetime.datetime.now()),
-            absolute_position=FibsemStagePosition(
-                x=float(image.Header["FIB"]["StageX"]),
-                y=float(image.Header["FIB"]["StageY"]),
-                z=float(image.Header["FIB"]["StageZ"]),
-                r=float(image.Header["FIB"]["StageRotation"]),
-                t=float(image.Header["FIB"]["StageTilt"]),
-                coordinate_system="RAW",
-            ),
-            eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
-            ib_settings=BeamSettings(beam_type=BeamType.ION),
-        )
-
-        detector = FibsemDetectorSettings(
-                type = "N/A",
-                mode = "N/A",
-                contrast = "N/A",
-                brightness= "N/A",
-
-            )
-        fibsem_image = FibsemImage.fromTescanImage(
-            image, deepcopy(image_settings), deepcopy(microscope_state), detector= detector
-        )
-
-        fibsem_image.metadata.image_settings.resolution = [fibsem_image.data.size[1], fibsem_image.data.size[0]]
+        fibsem_image = FibsemImage(data=np.array(image.Image), metadata=None)
 
         return fibsem_image
 
@@ -4796,21 +4775,7 @@ class TescanMicroscope(FibsemMicroscope):
     def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:
         """Get the current beam settings for the microscope.
 
-        """
-        if beam_type not in [BeamType.ELECTRON, BeamType.ION]:
-            return BeamSettings(
-                beam_type = beam_type,
-                beam_current = 0.0,
-                working_distance = 0.0,
-                hfw = 0.0,
-                stigmation = Point(),
-                shift = Point(),
-                resolution = [1536, 1024],
-                voltage = 0.0,
-                dwell_time = 0.0,
-                scan_rotation = 0.0,
-            )
-        
+        """      
         beam_settings = BeamSettings(
             beam_type=beam_type,
             beam_current=self.get("current", beam_type),
@@ -5193,11 +5158,17 @@ class DemoMicroscope(FibsemMicroscope):
 
         if image_settings.beam_type is BeamType.ELECTRON:
             self._eb_image = image
-        elif image_settings.beam_type is BeamType.ION:
+        else:
             self._ib_image = image
-        elif image_settings.beam_type is BeamType.CHAMBER_CAMERA:
-            self._nav_image = image
     
+        return image
+
+    def camera_view(self):
+        image = FibsemImage(
+            data=np.random.randint(low=0, high=256, 
+                size=(1024,1536), 
+                dtype=np.uint8),
+                metadata=None)
         return image
 
     def last_image(self, beam_type: BeamType) -> FibsemImage:
@@ -5723,7 +5694,7 @@ class DemoMicroscope(FibsemMicroscope):
 
     def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
         detector_settings = FibsemDetectorSettings(
-            dtype=self.get("detector_type", beam_type),
+            type=self.get("detector_type", beam_type),
             mode=self.get("detector_mode", beam_type),
             brightness=self.get("detector_brightness", beam_type),
             contrast=self.get("detector_contrast", beam_type),
@@ -5762,6 +5733,20 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "scan_rotation":
             _check_beam(beam_type, self.hardware_settings)
             return beam.scan_rotation
+    
+        if key =="hfw":
+            _check_beam(beam_type, self.hardware_settings)
+            return beam.hfw 
+        
+        if key == "resolution":
+            _check_beam(beam_type, self.hardware_settings)
+            return beam.resolution
+        
+        if key == "dwell_time":
+            _check_beam(beam_type, self.hardware_settings)
+            return beam.dwell_time
+        
+
 
         if key == "detector_type":
             return detector.type

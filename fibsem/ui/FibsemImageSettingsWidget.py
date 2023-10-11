@@ -102,6 +102,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_live_imaging.clicked.connect(self.live_imaging)
         self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_live_imaging.setVisible(cfg._LIVE_IMAGING_ENABLED)
+        self.pushButton_chamber_camera.clicked.connect(self.chamber_camera)
+        self.pushButton_chamber_camera.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
         self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
@@ -324,9 +326,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType, beam_settings: BeamSettings=None, detector_settings: FibsemDetectorSettings=None ):
 
-        if beam_type is BeamType.CHAMBER_CAMERA:
-            return
-        
         # disconnect beam type combobox
         self.selected_beam.currentIndexChanged.disconnect()
         self.selected_beam.setCurrentText(beam_type.name)
@@ -465,7 +464,23 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_image = dict["image"]
         if name == BeamType.ION.name:
             self.ib_image = dict["image"]    
-        
+    
+    def chamber_camera(self):
+        image = self.microscope.camera_view()
+
+        try:
+            self.chamber_cam_layer = self.viewer.layers["Chamber Camera"].data = image.data
+        except:    
+            self.chamber_cam_layer = self.viewer.add_image(image.data, name = "Chamber Camera")
+
+        if self.chamber_cam_layer:
+            translation = (
+                self.viewer.layers["ELECTRON"].data.shape[0] + 150
+                if self.eb_layer
+                else image.data.shape[0] +150
+            )
+            self.chamber_cam_layer.translate = [translation, 0.0]  
+
     def take_image(self, beam_type: BeamType = None):
         self.TAKING_IMAGES = True
         worker = self.take_image_worker(beam_type)
@@ -482,8 +497,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.update_viewer(self.ib_image.data, BeamType.ION.name)
         if self.eb_image is not None:
             self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
-        if self.nav_cam_image is not None:
-            self.update_viewer(self.nav_cam_image.data, BeamType.CHAMBER_CAMERA.name)
         self._toggle_interactions(True)
         self.TAKING_IMAGES = False
 
@@ -493,6 +506,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_all_images.setEnabled(enable)
         self.set_detector_button.setEnabled(enable)
         self.button_set_beam_settings.setEnabled(enable)
+        self.pushButton_chamber_camera.setEnabled(enable)
         self.parent.movement_widget._toggle_interactions(enable, caller="ui")
         if caller != "milling":
             self.parent.milling_widget._toggle_interactions(enable, caller="ui")
@@ -500,6 +514,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_chamber_camera.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
@@ -512,9 +527,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_live_imaging.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_chamber_camera.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)   
         else:
             self.pushButton_take_all_images.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_chamber_camera.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
@@ -537,8 +554,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_image = arr
         if self.image_settings.beam_type == BeamType.ION:
             self.ib_image = arr
-        if self.image_settings.beam_type == BeamType.CHAMBER_CAMERA:
-            self.nav_cam_image = arr
         
         self.picture_signal.emit()
         log_status_message("IMAGE_TAKEN_{beam_type}".format(beam_type=self.image_settings.beam_type.name))
@@ -575,8 +590,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_last = arr
         if name == BeamType.ION.name:
             self.ib_last = arr
-        if name == BeamType.CHAMBER_CAMERA.name:
-            self.nav_cam_last = arr
 
         # median filter for display
         arr = median_filter(arr, size=3)
@@ -592,8 +605,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.eb_layer = layer
         if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
-        if self.chamber_cam_layer is None and name == BeamType.CHAMBER_CAMERA.name:
-            self.chamber_cam_layer = layer
         
 
         # centre the camera
@@ -612,17 +623,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 else arr.shape[1]
             )
             self.ib_layer.translate = [0.0, translation]   
-        if self.chamber_cam_layer:
-            translation = (
-                self.viewer.layers["ELECTRON"].data.shape[0] + 150
-                if self.eb_layer
-                else arr.shape[0] +150
-            )
-            self.chamber_cam_layer.translate = [translation, 0.0]    
+          
 
         if self.eb_layer:
             points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150], [self.eb_layer.data.shape[0] + 100, 200]])
-            string = ["ELECTRON BEAM", "ION BEAM", "CHAMBER CAM"]
+            string = ["ELECTRON BEAM", "ION BEAM", "CHAMBER CAMERA"]
             text = {
                 "string": string,
                 "color": "white"
