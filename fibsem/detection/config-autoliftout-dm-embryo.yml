@@ -1,6 +1,6 @@
-data_path: "eval/dm-embryo/data/data3.csv" # test data csv
-images_path: "eval/dm-embryo/data/images"  # test data image directory
-save_path: "evaluation/baseline"           # save path for evaluation results
+data_path: "eval/dm-embryo/data.csv"    # test data csv
+images_path: "eval/dm-embryo/images"    # test data image directory
+save_path: "eval/dm-embryo/eval"        # save path for evaluation results
 
 checkpoints: # list of checkpoints to evaluate
   - checkpoint: "openfibsem-01-18.pt"

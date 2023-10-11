@@ -391,7 +391,7 @@ def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show
         timestamp_format = "%m/%d/%Y %H:%M:%S"
         timestamp = datetime.datetime.strptime(img.metadata.microscope_state.timestamp, timestamp_format)
 
-    if isinstance(timestamp, int):
+    if isinstance(timestamp, (int,float)):
         timestamp_str = datetime.datetime.fromtimestamp(timestamp, tz=desired_timezone).strftime('%Y-%m-%d %I:%M %p')    
     
     if isinstance(timestamp, datetime.datetime):

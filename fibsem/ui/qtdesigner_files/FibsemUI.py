@@ -53,9 +53,12 @@ class Ui_MainWindow(object):
         self.actionMinimap.setObjectName("actionMinimap")
         self.actionOpen_Minimap = QtWidgets.QAction(MainWindow)
         self.actionOpen_Minimap.setObjectName("actionOpen_Minimap")
+        self.actionImage_Viewer = QtWidgets.QAction(MainWindow)
+        self.actionImage_Viewer.setObjectName("actionImage_Viewer")
         self.menuTools.addAction(self.actionCurrent_alignment)
         self.menuTools.addAction(self.actionManipulator_Positions_Calibration)
         self.menuTools.addAction(self.actionOpen_Minimap)
+        self.menuTools.addAction(self.actionImage_Viewer)
         self.menubar.addAction(self.menuTools.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -71,3 +74,4 @@ class Ui_MainWindow(object):
         self.actionManipulator_Positions_Calibration.setText(_translate("MainWindow", "Manipulator Callibration"))
         self.actionMinimap.setText(_translate("MainWindow", "Minimap"))
         self.actionOpen_Minimap.setText(_translate("MainWindow", "Open Minimap"))
+        self.actionImage_Viewer.setText(_translate("MainWindow", "Image Viewer"))

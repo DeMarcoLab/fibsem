@@ -1492,59 +1492,6 @@ class MicroscopeSettings:
 # state
 from abc import ABC, abstractmethod, abstractstaticmethod
 
-# TODO: convert to ABC
-class FibsemStage(Enum):
-    Base = 1
-
-
-@dataclass
-class FibsemState:
-    """
-    FibsemState data class that represents the current state of FIBSEM system 
-
-    Attributes:
-    stage (FibsemStage): The current stage of the autoliftout workflow, as a `FibsemStage` enum member.
-    microscope_state (MicroscopeState): The current state of the microscope, as a `MicroscopeState` object.
-    start_timestamp (float): The timestamp when the autoliftout workflow began, as a Unix timestamp.
-    end_timestamp (float): The timestamp when the autoliftout workflow ended, as a Unix timestamp.
-
-    Methods:
-    __to_dict__(): Serializes the `FibsemState` object to a dictionary.
-    __from_dict__(state_dict: dict) -> FibsemState: Deserializes a dictionary to a `FibsemState` object.
-
-    """
-
-    stage: FibsemStage = FibsemStage.Base
-    microscope_state: MicroscopeState = MicroscopeState()
-    start_timestamp: float = None
-    end_timestamp: float = None
-
-    def __to_dict__(self) -> dict:
-
-        state_dict = {
-            "stage": self.stage.name,
-            "microscope_state": self.microscope_state.__to_dict__(),
-            "start_timestamp": self.start_timestamp,
-            "end_timestamp": self.end_timestamp,
-        }
-
-        return state_dict
-
-    @staticmethod
-    def __from_dict__(state_dict: dict) -> "FibsemState":
-
-        autoliftout_state = FibsemState(
-            stage=FibsemStage[state_dict["stage"]],
-            microscope_state=MicroscopeState.__from_dict__(
-                state_dict["microscope_state"]
-            ),
-            start_timestamp=state_dict["start_timestamp"],
-            end_timestamp=state_dict["end_timestamp"],
-        )
-
-        return autoliftout_state
-
-
 @dataclass
 class FibsemExperiment:
     id: str = None

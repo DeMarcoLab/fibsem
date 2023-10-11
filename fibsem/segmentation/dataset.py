@@ -108,7 +108,7 @@ def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
 
 
 def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes: int = 3, 
-                    batch_size: int = 1, val_split: float = 0.2, 
+                    batch_size: int = 1, val_split: float = 0.15, 
                     _validate_dataset:bool = True):
     
     # if _validate_dataset:
@@ -148,7 +148,7 @@ def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes
     )  # shuffle=True,
     print(f"Train dataset has {len(train_data_loader)} batches of size {batch_size}")
 
-    # TODO: try larger val batch size?
+    # TODO: try larger val batch size? TODO: turn off transformations for validation set
     val_data_loader = DataLoader(
         seg_dataset, batch_size=1, sampler=val_sampler
     )  # shuffle=True,

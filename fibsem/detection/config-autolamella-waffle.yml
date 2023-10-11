@@ -1,6 +1,6 @@
-data_path: "eval/autolamella-waffle/data/data.csv" # test data csv
-images_path: "eval/autolamella-waffle/data/test"  # 
-save_path: "evaluation/waffle"
+data_path: "eval/autolamella-waffle/data.csv"   # test data csv
+images_path: "eval/autolamella-waffle/images"   # test images
+save_path: "eval/autolamella-waffle/eval"       # save path for evaluation results
 
 checkpoints:
   - checkpoint: "openfibsem-baseline-34.pt"
@@ -29,6 +29,6 @@ run_eval: True
 plot_eval: True
 
 show_det_plot: False
-save_det_plot: False
+save_det_plot: True
 show_eval_plot: False
 save_eval_plot: True
