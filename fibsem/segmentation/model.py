@@ -13,6 +13,21 @@ import os
 from huggingface_hub import hf_hub_download
 
 
+# NOTE: these models contain numeric training bugs that were fixed in later versions. For reproducibility, we need to re-implement the bug for these models...
+# please contact (pat) if these models arent working as expected. 
+__DEPRECIATED_CHECKPOINTS__ = [
+    "autolamella-02-34.pt",
+    "autolamella-03-34.pt",
+    "autolamella-04-34.pt",
+    "autolamella-05-34.pt",
+    "openfibsem-01-18.pt",
+    "openfibsem-02-18.pt",
+    "openfibsem-03-18.pt",
+    "openfibsem-baseline-34.pt"
+    "autoliftout-serial-01-34.pt",
+]
+
+
 class SegmentationModel:
     def __init__(
         self,
@@ -30,6 +45,9 @@ class SegmentationModel:
         self._fix_numeric_scaling = _fix_numeric_scaling
 
         self.load_model(checkpoint=checkpoint, encoder=encoder)
+
+        if self.checkpoint in __DEPRECIATED_CHECKPOINTS__:
+            self._fix_numeric_scaling = False
 
     def load_model(self, checkpoint: Optional[str], encoder: str = "resnet18") -> None:
         """Load the model, and optionally load a checkpoint"""
@@ -65,6 +83,7 @@ class SegmentationModel:
             self.checkpoint = checkpoint
             checkpoint_state = torch.load(checkpoint, map_location=self.device)
             self.model.load_state_dict(checkpoint_state)
+
 
     def pre_process(self, img: np.ndarray) -> torch.Tensor:
         """Pre-process the image for inference"""
