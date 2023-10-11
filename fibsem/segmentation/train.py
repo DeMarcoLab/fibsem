@@ -117,7 +117,7 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
         val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
 
-        if WANDB and i % 16 == 0:
+        if WANDB and i % 32 == 0:
 
             output = model(images[0][None, :, :, :])
             output_mask = utils.decode_output(outputs)
