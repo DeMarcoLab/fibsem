@@ -469,15 +469,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         image = self.microscope.camera_view()
 
         try:
-            self.chamber_cam_layer = self.viewer.layers["Chamber Camera"].data = image.data
+            self.chamber_cam_layer.data = image.data
         except:    
             self.chamber_cam_layer = self.viewer.add_image(image.data, name = "Chamber Camera")
 
-        if self.chamber_cam_layer:
+        if self.chamber_cam_layer is not None:
             translation = (
                 self.viewer.layers["ELECTRON"].data.shape[0] + 150
                 if self.eb_layer
-                else image.data.shape[0] +150
+                else image.data.shape[0] + 150
             )
             self.chamber_cam_layer.translate = [translation, 0.0]  
 
