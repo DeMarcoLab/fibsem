@@ -768,7 +768,7 @@ def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> p
 
 
 
-_DETECTIONS_THAT_MOVE_MANIPULATOR = (NeedleTip, LamellaRightEdge, LamellaBottomEdge, LamellaTopEdge, CopperAdapterTopEdge, CopperAdapterBottomEdge)
+_DETECTIONS_THAT_MOVE_MANIPULATOR = (NeedleTip, NeedleTipBottom, LamellaRightEdge, LamellaBottomEdge, LamellaTopEdge, CopperAdapterTopEdge, CopperAdapterBottomEdge)
 _DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre, LandingGridCentre)
 
 
@@ -814,9 +814,11 @@ def move_based_on_detection(
     # these movements move the needle...
     if _move_system == "manipulator":
 
-        # electron: neg = down, ion: neg = up
-        # if beam_type is BeamType.ION:
-        #     dy *= -1
+        # account for scan_rotation
+        if np.isclose(microscope.get("scan_rotation", beam_type), np.pi):
+            dx *= -1.0
+            dy *= -1.0
+
 
         microscope.move_manipulator_corrected(
             dx=dx,

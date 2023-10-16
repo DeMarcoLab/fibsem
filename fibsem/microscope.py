@@ -1350,10 +1350,7 @@ class ThermoMicroscope(FibsemMicroscope):
         needle = self.connection.specimen.manipulator
         stage_tilt = self.connection.specimen.stage.current_position.t
 
-        # account for scan_rotation
-        if np.isclose(self.get("scan_rotation", beam_type), np.pi):
-            dx *= -1.0
-            dy *= -1.0
+
 
         # xy
         if beam_type is BeamType.ELECTRON:
