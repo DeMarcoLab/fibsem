@@ -265,3 +265,37 @@ def auto_home_and_link_v2(
     # move to saved linked state
     microscope.set_microscope_state(state)
 
+
+def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:MicroscopeSettings, parent_ui = None):
+    from fibsem.detection import detection
+    from fibsem.segmentation.model import load_model
+    import matplotlib.pyplot as plt
+
+    from autolamella.workflows.ui import _validate_det_ui_v2
+
+    model = load_model("autolamella-mega-01-nc5-34.pt", encoder="resnet34", nc=5)
+
+    hfws = [900e-6, 400e-6, 150e-6]
+
+    for hfw in hfws:
+        for beam_type in [BeamType.ELECTRON, BeamType.ION]:
+            settings.image.hfw = hfw
+            settings.image.beam_type = beam_type
+
+            features = [detection.NeedleTip(), detection.ImageCentre()] if np.isclose(microscope.get("scan_rotation", beam_type), 0) else [detection.NeedleTipBottom(), detection.ImageCentre()]
+            
+            if parent_ui:
+                det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate = True, msg = f"Confirm Feature Detection. Press Continue to proceed.")
+            else:
+                image = acquire.new_image(microscope, settings.image)
+                det = detection.detect_features(image, model, features=features, pixelsize=image.metadata.pixel_size.x)
+                detection.plot_detection(det)
+                ret  = input("continue? (y/n)")
+                
+                if ret != "y":
+                    return
+
+            move_x = bool(beam_type == BeamType.ELECTRON) # ION calibration only in z
+            detection.move_based_on_detection(microscope, settings, det, beam_type, move_x=move_x, _move_system="manipulator")
+
+    print(f"The manipulator should now be centred in both beams.")

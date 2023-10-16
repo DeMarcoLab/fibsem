@@ -818,8 +818,11 @@ def move_based_on_detection(
         if np.isclose(microscope.get("scan_rotation", beam_type), np.pi):
             dx *= -1.0
             dy *= -1.0
-
-
+        
+        # NOTE (pat): double check this on liftout?
+        if beam_type == BeamType.ELECTRON:
+            dy *= -1.0
+                
         microscope.move_manipulator_corrected(
             dx=dx,
             dy=dy,
