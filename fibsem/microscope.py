@@ -948,15 +948,8 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_stage(self.hardware_settings)
         wd = self.connection.beams.electron_beam.working_distance.value
 
-        if beam_type == BeamType.ELECTRON:
-            image_rotation = self.connection.beams.electron_beam.scanning.rotation.value
-        elif beam_type == BeamType.ION:
-            image_rotation = self.connection.beams.ion_beam.scanning.rotation.value
-
-        if np.isclose(image_rotation, 0.0):
-            dx = dx
-            dy = dy
-        elif np.isclose(image_rotation, np.pi):
+        scan_rotation = self.get("scan_rotation", beam_type)
+        if np.isclose(scan_rotation, np.pi):
             dx *= -1.0
             dy *= -1.0
         
@@ -1357,6 +1350,11 @@ class ThermoMicroscope(FibsemMicroscope):
         needle = self.connection.specimen.manipulator
         stage_tilt = self.connection.specimen.stage.current_position.t
 
+        # account for scan_rotation
+        if np.isclose(self.get("scan_rotation", beam_type), np.pi):
+            dx *= -1.0
+            dy *= -1.0
+
         # xy
         if beam_type is BeamType.ELECTRON:
             x_move = self._x_corrected_needle_movement(expected_x=dx)
@@ -1367,6 +1365,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
             x_move = self._x_corrected_needle_movement(expected_x=dx)
             yz_move = self._z_corrected_needle_movement(expected_z=dy, stage_tilt=stage_tilt)
+
+
 
         # move needle (relative)
         # explicitly set the coordinate system
