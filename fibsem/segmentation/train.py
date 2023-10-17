@@ -21,6 +21,21 @@ from skimage.color import gray2rgb
 from skimage.util import img_as_ubyte
 
 
+def _convert_checkpoint_format(checkpoint: str, encoder:str, nc: int, output_filename: str):
+    """Converts a checkpoint from the old format to the new format"""
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    REPO_ID = "patrickcleeve/openfibsem-baseline"
+    checkpoint = hf_hub_download(repo_id=REPO_ID, filename=checkpoint)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    checkpoint_state = torch.load(checkpoint, map_location=device)
+    state_dict = {"checkpoint": checkpoint_state, "encoder": encoder, "nc": nc}
+
+    # save
+    torch.save(state_dict, output_filename)
+    print(f"Saved as {output_filename}")
 
 def _create_wandb_image(img, gt, pred, caption):
     
@@ -30,7 +45,7 @@ def _create_wandb_image(img, gt, pred, caption):
 
     return wandb.Image(
         np.hstack([img, gt, pred]), caption=caption)
-
+# TODO: update save model to new checkpoint format
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
 
