@@ -20,10 +20,12 @@ __DEPRECIATED_CHECKPOINTS__ = [
     "autolamella-03-34.pt",
     "autolamella-04-34.pt",
     "autolamella-05-34.pt",
+    "autolamella-latest.pt",
     "openfibsem-01-18.pt",
     "openfibsem-02-18.pt",
     "openfibsem-03-18.pt",
     "openfibsem-baseline-34.pt"
+    "openfibsem-baseline-latest.pt",
     "autoliftout-serial-01-34.pt",
 ]
 
