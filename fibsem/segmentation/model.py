@@ -44,10 +44,15 @@ class SegmentationModel:
         self.num_classes = num_classes
         self._fix_numeric_scaling = _fix_numeric_scaling
 
-        self.load_model(checkpoint=checkpoint, encoder=encoder)
-
-        if self.checkpoint in __DEPRECIATED_CHECKPOINTS__:
+        if checkpoint in __DEPRECIATED_CHECKPOINTS__:
             self._fix_numeric_scaling = False
+
+        if "latest" in checkpoint:
+            print(f"using latest checkpoint: {checkpoint}")
+            self.model = self.load_model_v2(checkpoint=checkpoint)
+        else:
+            self.load_model(checkpoint=checkpoint, encoder=encoder)
+
 
     def load_model(self, checkpoint: Optional[str], encoder: str = "resnet18") -> None:
         """Load the model, and optionally load a checkpoint"""
@@ -57,6 +62,38 @@ class SegmentationModel:
             self.model.eval() # this causes a bug? why -> input needs to be scaled between 0-1
         if self.mode == "train":
             self.model.train()
+
+    def load_model_v2(self, checkpoint: str):
+
+        if os.path.exists(checkpoint):
+            checkpoint = checkpoint
+        else:
+            REPO_ID = "patrickcleeve/openfibsem-baseline"
+            checkpoint = hf_hub_download(repo_id=REPO_ID, filename=checkpoint)
+        
+        checkpoint_dict = torch.load(checkpoint, map_location=self.device)
+
+        self.model = smp.Unet(
+            encoder_name=checkpoint_dict["encoder"],
+            encoder_weights="imagenet",
+            in_channels=1,  # grayscale images
+            classes=checkpoint_dict["nc"],
+        )
+        self.model.to(self.device)
+
+        self.model.load_state_dict(checkpoint_dict["checkpoint"])
+
+        if self._fix_numeric_scaling:
+            self.model.eval() # this causes a bug? why -> input needs to be scaled between 0-1
+        if self.mode == "train":
+            self.model.train()
+
+        # metadata
+        self.checkpoint = checkpoint
+        self.num_classes = checkpoint_dict["nc"]
+        self.encoder = checkpoint_dict["encoder"]
+
+        return self.model
 
     def load_encoder(self, encoder: str = "resnet18"):
         model = smp.Unet(
@@ -143,3 +180,4 @@ def load_model(
 if __name__ == "__main__":
 
     model = SegmentationModel(checkpoint="checkpoint_train.pth.tar", mode="train")
+
