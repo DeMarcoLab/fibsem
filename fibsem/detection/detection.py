@@ -948,6 +948,11 @@ def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature,
         feature.detect(image, feature_mask)
         features.append(deepcopy(feature))
 
+    if features == []:
+        logging.info(f"No features detected for {feature.name}")
+        feature.px = Point(0, 0)
+        features = [deepcopy(feature)]
+    
     return features
 
 
