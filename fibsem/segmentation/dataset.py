@@ -86,28 +86,6 @@ class SegmentationDataset(Dataset):
         return len(self.images)
 
 from pathlib import Path
-def load_dask_dataset(data_path: Path, label_path: Path):
-
-    # TODO: allow for loading from multiple directories
-    # sorted_img_filenames, sorted_mask_filenames = [], []
-    # for data_path, label_paths in zip(data_paths, label_paths):
-    #     sorted_img_filenames += sorted(glob.glob(os.path.join(data_path, "*.tif*")))
-    #     sorted_mask_filenames += sorted(glob.glob(os.path.join(label_path, "*.tif*")))
-
-    sorted_img_filenames = sorted(glob.glob(os.path.join(data_path, "*.tif*")))
-    sorted_mask_filenames = sorted(glob.glob(os.path.join(label_path, "*.tif*")))
-
-    # TODO: change to dask-image
-    img_arr = tff.imread(sorted_img_filenames, aszarr=True)
-    mask_arr = tff.imread(sorted_mask_filenames, aszarr=True)
-
-    images = da.from_zarr(img_arr)
-    masks = da.from_zarr(mask_arr)
-
-    images = images.rechunk(chunks=(1, images.shape[1], images.shape[2]))
-    masks = masks.rechunk(chunks=(1, images.shape[1], images.shape[2]))
-
-    return images, masks
 
 def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
 
@@ -130,7 +108,7 @@ def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
 
 
 def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes: int = 3, 
-                    batch_size: int = 1, val_split: float = 0.2, 
+                    batch_size: int = 1, val_split: float = 0.15, 
                     _validate_dataset:bool = True):
     
     # if _validate_dataset:
@@ -170,7 +148,7 @@ def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes
     )  # shuffle=True,
     print(f"Train dataset has {len(train_data_loader)} batches of size {batch_size}")
 
-    # TODO: try larger val batch size?
+    # TODO: try larger val batch size? TODO: turn off transformations for validation set
     val_data_loader = DataLoader(
         seg_dataset, batch_size=1, sampler=val_sampler
     )  # shuffle=True,

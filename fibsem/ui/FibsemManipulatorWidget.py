@@ -58,10 +58,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                 
                 
             except :
-                
-                message_box_ui(title="Error loading positions",
-                    text="Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.",
-                    buttons=QMessageBox.Ok)
+                napari.utils.notifications.show_warning("Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.")
             
             self.manipulator_inserted = self.microscope.get_manipulator_state(settings=self.settings)
                 
@@ -154,7 +151,18 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.moveRelative_button.clicked.connect(self.move_relative)
         self.moveRelative_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
+        self.pushButton_refresh_data.clicked.connect(self.refresh_data)
+        self.pushButton_refresh_data.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
 
+
+    def refresh_data(self):
+        self.manipulator_inserted = self.microscope.get_manipulator_state(settings=self.settings)
+        
+        self._hide_show_buttons(self.manipulator_inserted)
+        self.insertManipulator_button.setText("Retract" if self.manipulator_inserted else "Insert")
+        self.insertManipulator_button.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE if self.manipulator_inserted else _stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")        
+        
 
     def move_relative(self):
 

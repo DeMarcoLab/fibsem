@@ -574,7 +574,7 @@ class ImageSettings:
 
     def __post_init__(self):
 
-        assert isinstance(self.resolution,list) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
+        assert isinstance(self.resolution,(list, tuple)) or self.resolution is None, f"resolution must be a list, currently is {type(self.resolution)}"
         assert isinstance(self.dwell_time,float) or self.dwell_time is None, f"dwell time must be of type float, currently is {type(self.dwell_time)}"
         assert isinstance(self.hfw, float) or isinstance(self.hfw,int) or self.hfw is None, f"hfw must be int or float, currently is {type(self.hfw)}"
         assert isinstance(self.autocontrast, bool) or self.autocontrast is None, f"autocontrast setting must be bool, currently is {type(self.autocontrast)}"
@@ -694,6 +694,7 @@ class BeamSettings:
     stigmation: Point = None 
     shift: Point = None 
     scan_rotation: float = None
+    plasma_gas: str = None
 
 
     def __post_init__(self):
@@ -721,6 +722,7 @@ class BeamSettings:
             "stigmation": self.stigmation.__to_dict__() if self.stigmation is not None else None,
             "shift": self.shift.__to_dict__() if self.shift is not None else None,
             "scan_rotation": self.scan_rotation,
+            "plasma_gas": self.plasma_gas,
         }
 
         return state_dict
@@ -749,6 +751,7 @@ class BeamSettings:
             stigmation=stigmation,
             shift=shift,
             scan_rotation=state_dict.get("scan_rotation", 0.0),
+            plasma_gas=state_dict.get("plasma_gas", None),
             )
 
         return beam_settings
@@ -1129,6 +1132,7 @@ class FibsemMillingSettings:
     application_file: str = "Si"
     preset: str = "30 keV; UHR imaging"
     spacing: float = 1.0
+    milling_voltage: float = 30e3
 
     def __post_init__(self):
 
@@ -1153,6 +1157,8 @@ class FibsemMillingSettings:
             "patterning_mode": self.patterning_mode,
             "application_file": self.application_file,
             "preset": self.preset,
+            "spacing": self.spacing,
+            "milling_voltage": self.milling_voltage,
         }
 
         return settings_dict
@@ -1170,6 +1176,7 @@ class FibsemMillingSettings:
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; UHR imaging"),
             spacing=settings.get("spacing", 1.0),
+            milling_voltage=settings.get("milling_voltage", 30e3),
         )
 
         return milling_settings
@@ -1485,59 +1492,6 @@ class MicroscopeSettings:
 # state
 from abc import ABC, abstractmethod, abstractstaticmethod
 
-# TODO: convert to ABC
-class FibsemStage(Enum):
-    Base = 1
-
-
-@dataclass
-class FibsemState:
-    """
-    FibsemState data class that represents the current state of FIBSEM system 
-
-    Attributes:
-    stage (FibsemStage): The current stage of the autoliftout workflow, as a `FibsemStage` enum member.
-    microscope_state (MicroscopeState): The current state of the microscope, as a `MicroscopeState` object.
-    start_timestamp (float): The timestamp when the autoliftout workflow began, as a Unix timestamp.
-    end_timestamp (float): The timestamp when the autoliftout workflow ended, as a Unix timestamp.
-
-    Methods:
-    __to_dict__(): Serializes the `FibsemState` object to a dictionary.
-    __from_dict__(state_dict: dict) -> FibsemState: Deserializes a dictionary to a `FibsemState` object.
-
-    """
-
-    stage: FibsemStage = FibsemStage.Base
-    microscope_state: MicroscopeState = MicroscopeState()
-    start_timestamp: float = None
-    end_timestamp: float = None
-
-    def __to_dict__(self) -> dict:
-
-        state_dict = {
-            "stage": self.stage.name,
-            "microscope_state": self.microscope_state.__to_dict__(),
-            "start_timestamp": self.start_timestamp,
-            "end_timestamp": self.end_timestamp,
-        }
-
-        return state_dict
-
-    @staticmethod
-    def __from_dict__(state_dict: dict) -> "FibsemState":
-
-        autoliftout_state = FibsemState(
-            stage=FibsemStage[state_dict["stage"]],
-            microscope_state=MicroscopeState.__from_dict__(
-                state_dict["microscope_state"]
-            ),
-            start_timestamp=state_dict["start_timestamp"],
-            end_timestamp=state_dict["end_timestamp"],
-        )
-
-        return autoliftout_state
-
-
 @dataclass
 class FibsemExperiment:
     id: str = None
@@ -1677,8 +1631,7 @@ class FibsemImageMetadata:
         """Converts a dictionary to metadata."""
 
         image_settings = ImageSettings.__from_dict__(settings)
-        if settings["version"] is not None:
-            version = settings["version"]
+        version = settings.get("version", METADATA_VERSION)
         if settings["pixel_size"] is not None:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
         if settings["microscope_state"] is not None:
@@ -1823,9 +1776,9 @@ class FibsemImage:
                 metadata = FibsemImageMetadata.__from_dict__(metadata)
             except Exception as e:
                 metadata = None
-                print(f"Error: {e}")
-                import traceback
-                traceback.print_exc()
+                # print(f"Error: {e}")
+                # import traceback
+                # traceback.print_exc()
         return cls(data=data, metadata=metadata)
 
     def save(self, save_path: Path = None) -> None:

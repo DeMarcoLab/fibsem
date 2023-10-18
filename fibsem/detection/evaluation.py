@@ -1,137 +1,48 @@
 
-import os
-import sys
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import glob
-
-
-from fibsem.structures import FibsemImage
-
-from fibsem.detection import detection
-
 import os
 from copy import deepcopy
 from pathlib import Path
-import numpy as np
-
-from fibsem.detection import detection
-from fibsem.detection import utils as det_utils
-from fibsem.detection.detection import DetectedFeatures
-from fibsem.segmentation import model as fibsem_model
-from fibsem.segmentation.model import load_model
-from fibsem.structures import (
-    BeamType,
-    FibsemImage,
-    Point,
-)
-import logging
-from tqdm import tqdm
-# from stqdm import stqdm
-
-def run_eval(path: Path, checkpoint:str, encoder:str = "resnet34", num_classes: int = 3, show: bool = False):
-
-    df = pd.read_csv(os.path.join(path, "data.csv"))
-
-    model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
-
-
-    # get filenames from image column
-    filenames = df["image"].unique()
-
-    data_list = []
-
-
-    # USE_DATAFRAME = True
-    # gt_model = load_model(checkpoint=None, encoder=encoder, nc=num_classes)
-    # print(gt_model.device)
-    # features = ["NeedleTip", "LamellaCentre", "LamellaLeftEdge", "LamellaRightEdge", "ImageCentre", "LandingPost"]
-
-    for fname in tqdm(filenames):
-        
-        
-        image = FibsemImage.load(os.path.join(path, f"{fname}.tif"))
-
-        # should be able to get gt from model or from df
-
-        # get ground truth
-        gt = df[df["image"] == fname]
-        features = gt["feature"].to_list()
-        pixelsize = gt["pixelsize"].to_list()[0]
-        features = [detection.get_feature(feature) for feature in features]
-        gt_det = detection._det_from_df(gt, path, fname)
-
-        det = detection.detect_features(image.data, model, features, pixelsize=pixelsize)
-
-        for det_f in det.features:
-
-            # compare the equivalent ground truth feature
-            gt_f = gt_det.get_feature(det_f.name)
-
-            # get the distance between the two features
-            dist = det_f.px.euclidean(gt_f.px)
-            sub = det_f.px - gt_f.px
-
-
-            dat = {
-                "fname": fname,
-                "feature": det_f.name, 
-                "f.px.x": det_f.px.x,
-                "f.px.y": det_f.px.y,
-                "gt.px.x": gt_f.px.x,
-                "gt.px.y": gt_f.px.y,
-                "dx": sub.x,
-                "dy": sub.y,
-                "distance": dist,
-                "checkpoint": os.path.basename(checkpoint),
-                "encoder": encoder, 
-                }
-
-            data_list.append(dat)
-        if show:
-            detection.plot_detections([gt_det, det], titles=["Ground Truth", "Prediction"])
-
-
-    df_eval = pd.DataFrame(data_list)
-
-    # save to csv
-    df_eval.to_csv(os.path.join(path, "eval.csv"), index=False)
-    
-    return df_eval
-
-
-from fibsem.detection import detection
-from fibsem.segmentation.model import load_model
-from fibsem.structures import FibsemImage
-import numpy as np
-import matplotlib.pyplot as plt
-from pathlib import Path
-import glob
-import os
 from pprint import pprint
 
-
-from fibsem.structures import Point
-from fibsem.detection import detection
+import matplotlib.pyplot as plt
 import pandas as pd
-from copy import deepcopy
-
 from tqdm import tqdm
 
-def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], plot: bool = False, _clip: bool=True, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"], save: bool = False, save_path: Path = None):
+from fibsem.detection import detection
+from fibsem.segmentation.model import load_model
+from fibsem.structures import FibsemImage, Point
+
+
+def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: bool = False, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"], save: bool = False, save_path: Path = None):
 
     # ground truth 
     df = pd.read_csv(path)
+    image_fnames = df["image"].unique().tolist()
 
+    # glob each image in the image_path and add to filenames
+    filenames = []
+    
+    for fname in image_fnames:
+        filenames += glob.glob(os.path.join(image_path, f"{fname}*.tif"))
+    
+    print(f"Found {len(filenames)} images (test)")
+
+    import random
+    random.shuffle(filenames)
+    filenames = filenames[:5]
+
+    # setup eval dataframe
     df_eval = pd.DataFrame(columns=["checkpoint", "fname", "feature", "p.x", "p.y", "pixelsize", "gt.p.x", "gt.p.y", "gt.pixelsize", "distance","_is_corrected"])
     df_eval["_is_corrected"] = df_eval["_is_corrected"].astype(bool)
 
-    _prog = tqdm(filenames)
+    _prog = tqdm(sorted(filenames))
     for i, fname in enumerate(_prog):
         
         image_fname = os.path.basename(fname).removesuffix(".tif")
-        if _clip:
+
+        # if suffix is either _eb or _ib, remove it
+        if image_fname.endswith("_eb") or image_fname.endswith("_ib"):
             image_fname = image_fname[:-3]
 
         df_filt = df[df["image"] == image_fname]
@@ -183,10 +94,10 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], pl
             det  = detection.detect_features(image.data, model, features=deepcopy(gt_features), pixelsize=pixelsize, filter=True)
             dets.append(det)
         
-        if plot:
+        if plot or save:
             fig = detection.plot_detections(dets, titles=["Ground Truth"] + [os.path.basename(ckpt["checkpoint"].removesuffix(".pt")) for ckpt in checkpoints])
-
-            plt.show()
+            if plot:
+                plt.show()
 
             if save:
                 os.makedirs(save_path, exist_ok=True)
@@ -235,12 +146,19 @@ def _run_evaluation(path:Path, filenames: list[str], checkpoints: list[dict], pl
 
 import plotly.express as px
 
-def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = True, thresholds: list[int] =  [50, 25, 10]):
+
+def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = True, 
+                            thresholds: list[int] =  [50, 25, 10], save: bool=False, save_path: Path = None):
     # scatter plot
     fig = px.scatter(df, x="d.p.x", y="d.p.y", color="feature", facet_col="checkpoint", 
         # facet_row="dataset", 
         category_orders=category_orders,
         title="Distance from Ground Truth", hover_data=df.columns)
+    
+    if save:
+        # save fig as png
+        fig.write_image(os.path.join(save_path, "eval00.png"))
+    
     if show:
         fig.show()
 
@@ -251,6 +169,10 @@ def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = T
     if show:
         fig.show()
 
+    if save:
+        # save fig as png
+        fig.write_image(os.path.join(save_path, "eval01.png"))
+    
 
     # plot box plot
     fig = px.box(df, x="feature", y="distance", color="feature", facet_col="checkpoint", title="Distance from Ground Truth", hover_data=df.columns,
@@ -258,7 +180,11 @@ def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = T
 
     if show:
         fig.show()
-
+    
+    if save:
+        # save fig as png
+        fig.write_image(os.path.join(save_path, "eval02.png"))
+    
     # # calculate the mean and standard deviation in one aggregation per checkpoint, feature
     df_agg = df.groupby(["checkpoint", "feature"]).agg({"distance": ["mean", "median", "std"]}).reset_index()
 
@@ -312,6 +238,11 @@ def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = T
     
     if show:
         fig.show()
+    
+    if save:
+        # save fig as png
+        fig.write_image(os.path.join(save_path, "eval03.png"))
+    
 
     df_ret["threshold"] = df_ret["threshold"].astype(int)
 
@@ -328,6 +259,10 @@ def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = T
     if show:
         fig.show()
 
+    if save:
+        # save fig as png
+        fig.write_image(os.path.join(save_path, "eval04.png"))
+    
 
     # display(df_ret)
 

@@ -586,7 +586,7 @@ class MicroExpansionPattern(BasePattern):
             - protocol["distance"],
             centre_y=point.y,
             cleaning_cross_section=True,
-            scan_direction="LeftToRight",
+            scan_direction="TopToBottom",
         )
 
         right_pattern_settings = FibsemPatternSettings(
@@ -597,7 +597,7 @@ class MicroExpansionPattern(BasePattern):
             centre_x=point.x + protocol["lamella_width"] / 2 + protocol["distance"],
             centre_y=point.y,
             cleaning_cross_section=True,
-            scan_direction="RightToLeft",
+            scan_direction="TopToBottom",
         )
 
         self.patterns = [left_pattern_settings, right_pattern_settings]

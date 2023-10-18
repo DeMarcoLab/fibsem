@@ -21,6 +21,21 @@ from skimage.color import gray2rgb
 from skimage.util import img_as_ubyte
 
 
+def _convert_checkpoint_format(checkpoint: str, encoder:str, nc: int, output_filename: str):
+    """Converts a checkpoint from the old format to the new format"""
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    REPO_ID = "patrickcleeve/openfibsem-baseline"
+    checkpoint = hf_hub_download(repo_id=REPO_ID, filename=checkpoint)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    checkpoint_state = torch.load(checkpoint, map_location=device)
+    state_dict = {"checkpoint": checkpoint_state, "encoder": encoder, "nc": nc}
+
+    # save
+    torch.save(state_dict, output_filename)
+    print(f"Saved as {output_filename}")
 
 def _create_wandb_image(img, gt, pred, caption):
     
@@ -30,7 +45,7 @@ def _create_wandb_image(img, gt, pred, caption):
 
     return wandb.Image(
         np.hstack([img, gt, pred]), caption=caption)
-
+# TODO: update save model to new checkpoint format
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
 
@@ -72,7 +87,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
         data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
 
-        if WANDB and i % 8 == 0: 
+        if WANDB and i % 16 == 0: 
             
             # TODO: this is really inefficient, re-running the model on the same image, just use existing outputs
             idx = random.choice(np.arange(0, images.shape[0]))
@@ -80,17 +95,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
             output_mask = utils.decode_output(output)
 
             img_base = images[idx].detach().cpu().squeeze().numpy()
-            # output_mask = utils.decode_output(outputs[idx])
             gt_base = masks[idx].detach().cpu()[:, :, None].permute(2, 0, 1).numpy()
-
-            # stack = wandb.Image(
-            #     np.hstack(
-            #         [img_as_ubyte(gray2rgb(img_base)),  
-            #         utils.decode_segmap(gt_base), 
-            #         utils.decode_segmap(output_mask)
-            #         ]
-            #         ), caption="Train Image (Raw, GT, Pred)"
-            # )
             stack = _create_wandb_image(img_base, gt_base, output_mask, "Train Image (Raw, GT, Pred)")
             wandb.log({"train_loss": loss.item(), "train_image": stack})
 
@@ -108,7 +113,7 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
 
     for i, (images, masks) in enumerate(val_loader):
 
-        # model.eval()
+        model.eval()
 
         # move img and mask to device, reshape mask
         images = images.to(device)
@@ -127,7 +132,7 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
         val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
 
-        if WANDB and i % 8 == 0:
+        if WANDB and i % 32 == 0:
 
             output = model(images[0][None, :, :, :])
             output_mask = utils.decode_output(outputs)
@@ -234,7 +239,7 @@ def _setup_dataset(config:dict):
         label_paths= config["label_paths"], 
         num_classes=config["num_classes"], 
         batch_size=config["batch_size"],
-        val_split=config.get("split", 0.2),
+        val_split=config.get("split", 0.15),
         _validate_dataset=config.get("validate_dataset", True),
     )
 

@@ -404,3 +404,25 @@ def _transform_position(pos: FibsemStagePosition):
     # print("trans   pos: ", transformed_position)
 
     return transformed_position
+
+from fibsem.structures import ImageSettings
+def _update_image_region(microscope: FibsemMicroscope, image_settings: ImageSettings, image: FibsemImage, position: FibsemStagePosition) -> FibsemImage:
+    
+    region_image = acquire.new_image(microscope, image_settings)
+    rows,cols = region_image.data.shape[0], region_image.data.shape[1]
+
+    position_point = _reproject_positions(image, [position])[0]
+
+    ymin = max(0, int(position_point.y)-rows//2)
+    xmin = max(0, int(position_point.x)-cols//2)
+
+    ymax = min(ymin+rows, image.data.shape[0])
+    xmax = min(xmin+cols, image.data.shape[1])
+
+    width = xmax - xmin
+    height = ymax - ymin
+
+    # overwrite the image with the region image, but only inside the image dimensions
+    image.data[ymin:ymax, xmin:xmax] = region_image.data[:height, :width]
+
+    return image

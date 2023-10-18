@@ -31,6 +31,7 @@ import threading
 from queue import Queue
 
 import numpy as np
+from fibsem import config as cfg
         
     
 
@@ -98,6 +99,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_live_imaging.clicked.connect(self.live_imaging)
         self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_live_imaging.setVisible(cfg._LIVE_IMAGING_ENABLED)
         self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.set_detector_button.clicked.connect(self.apply_detector_settings)
         self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
@@ -110,10 +112,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
         self.image_notification_signal.connect(self.update_imaging_ui)
+        self.checkBox_advanced_settings.stateChanged.connect(self.toggle_mode)
+        self.toggle_mode()
 
         if self._TESCAN:
 
-            self.label_11.hide()
+            self.label_stigmation.hide()
             self.stigmation_x.hide()
             self.stigmation_y.hide()
             self.stigmation_x.setEnabled(False)
@@ -125,6 +129,26 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.comboBox_presets.hide()
             self.label_presets.hide()
   
+    def toggle_mode(self):
+        advanced_mode = self.checkBox_advanced_settings.isChecked()
+
+        self.label_detector_type.setVisible(advanced_mode)
+        self.detector_type_combobox.setVisible(advanced_mode)
+        self.label_detector_mode.setVisible(advanced_mode)
+        self.detector_mode_combobox.setVisible(advanced_mode)
+        self.label_stigmation.setVisible(advanced_mode)
+        self.stigmation_x.setVisible(advanced_mode)
+        self.stigmation_y.setVisible(advanced_mode)
+        self.shift_x.setVisible(advanced_mode)
+        self.shift_y.setVisible(advanced_mode)
+        self.label_shift.setVisible(advanced_mode)
+        self.beam_voltage.setVisible(advanced_mode)
+        self.label_beam_voltage.setVisible(advanced_mode)
+        self.checkBox_image_use_autocontrast.setVisible(advanced_mode)
+        self.checkBox_image_use_autogamma.setVisible(advanced_mode)
+            
+
+
     def update_presets(self):
         beam_type = BeamType[self.selected_beam.currentText()]
         self.microscope.set("preset", self.comboBox_presets.currentText(), beam_type)
@@ -505,7 +529,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def take_image_worker(self, beam_type: BeamType = None):
         self._toggle_interactions(enable=False, imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
-        self.image_notification_signal.emit("Taking image...")
+        self.image_notification_signal.emit("Acquiring Image...")
         if beam_type is not None:
             self.image_settings.beam_type = beam_type
 
@@ -531,7 +555,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def take_reference_images_worker(self):
         self._toggle_interactions(enable=False,imaging=True)
         self.image_settings = self.get_settings_from_ui()[0]
-        self.image_notification_signal.emit("Taking Reference Images...")
+        self.image_notification_signal.emit("Acquiring Images...")
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
         self.picture_signal.emit()

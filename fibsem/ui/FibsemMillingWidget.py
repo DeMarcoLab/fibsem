@@ -18,12 +18,14 @@ from fibsem.structures import (BeamType, FibsemMillingSettings,
                                Point, FibsemPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui
+from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui, import_milling_stages_yaml, export_milling_stages_yaml, _calculate_fiducial_area_v2
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes", "n_rectangles", "overlap"]
 _ANGLE_KEYS = ["rotation"]
+
+_MILLING_WIDGET_INSTRUCTIONS = """Controls:\nShift + Left Click to Move Selected Pattern\nCtrl + Shift + Left Click to Move All Patterns\nPress Run Milling to Start Milling"""
 
 def _scale_value(key, value, scale):
     if key not in _UNSCALED_VALUES:
@@ -39,6 +41,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
     _milling_finished = QtCore.pyqtSignal()
     milling_notification = QtCore.pyqtSignal(str)
+    _progress_bar_update = QtCore.pyqtSignal(object)
+    _progress_bar_start = QtCore.pyqtSignal(object)
+    _progress_bar_quit = QtCore.pyqtSignal()
 
     def __init__(
         self,
@@ -96,6 +101,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.label_preset.setVisible(_THERMO)
         self.comboBox_milling_current.setVisible(_THERMO)
         self.label_milling_current.setVisible(_THERMO)
+        self.label_voltage.setVisible(_THERMO)
+        self.spinBox_voltage.setVisible(_THERMO) # TODO: set this to the available voltages
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.comboBox_milling_current.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
@@ -122,11 +129,17 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_dwell_time.valueChanged.connect(self.update_settings)  
         self.comboBox_preset.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_spacing.valueChanged.connect(self.update_settings)
+        self.spinBox_voltage.valueChanged.connect(self.update_settings)
         
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
         self.image_widget.ib_layer.mouse_drag_callbacks.append(self._single_click)
+
+        #import/export milling stages
+        self.pushButton_exportMilling.clicked.connect(self.export_milling_stages)
+        self.pushButton_importMilling.clicked.connect(self.import_milling_stages)
+
 
         # new patterns
         self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
@@ -155,6 +168,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.update_milling_stage_ui()
         self.comboBox_milling_stage.currentIndexChanged.connect(lambda: self.update_milling_stage_ui())
 
+        # progress bar
+        self.progressBar_milling.setVisible(False)
+        self._progress_bar_update.connect(self.update_progress_bar)
+        self._progress_bar_start.connect(self.start_progress_thread)
+        self._progress_bar_quit.connect(self._quit_progress_bar)
+
         # last
         self.doubleSpinBox_centre_x.setKeyboardTracking(False)
         self.doubleSpinBox_centre_y.setKeyboardTracking(False)
@@ -164,6 +183,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
 
         self._AVAILABLE_SCAN_DIRECTIONS = self.microscope.get_available_values(key="scan_direction")
+            
+    
+        self.label_milling_instructions.setText(_MILLING_WIDGET_INSTRUCTIONS)
 
     def update_settings(self):
         settings = self.get_milling_settings_from_ui()
@@ -192,7 +214,40 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
-        napari.utils.notifications.show_info(f"Removed milling stage.")            
+        napari.utils.notifications.show_info(f"Removed milling stage.")     
+
+    def export_milling_stages(self):
+
+        if len(self.milling_stages) < 1:
+            napari.utils.notifications.show_warning(f"No milling stages to export.")
+            return
+
+        export_milling_stages_yaml(self.milling_stages)
+
+    def import_milling_stages(self):
+
+        if self.image_widget.ib_image is None:
+            napari.utils.notifications.show_warning(f"No Ion image, cannot import and draw milling stages.")
+            return
+
+        self.milling_stages = import_milling_stages_yaml()
+        
+        self.comboBox_milling_stage.clear()
+
+        self.update_pattern_ui(milling_stage=self.milling_stages[0])
+
+        for stage in self.milling_stages:
+            name = stage.name
+            self.comboBox_milling_stage.addItem(name)
+            if stage.num == 1:
+                self.comboBox_milling_stage.setCurrentText(name)
+        
+        self.update_ui(milling_stages=self.milling_stages)
+
+        napari.utils.notifications.show_info(f"Imported Milling stages from yaml file.")
+
+
+
 
     def _remove_all_stages(self):
 
@@ -237,6 +292,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # get the selected milling stage
         current_index = self.comboBox_milling_stage.currentIndex()
         if current_index == -1:
+            _remove_all_layers(self.viewer)
             return
 
         milling_stage: FibsemMillingStage = self.milling_stages[current_index]
@@ -500,6 +556,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._UPDATING_PATTERN = False
 
     def valid_pattern_location(self,stage_pattern):
+
+        if stage_pattern.name == "Fiducial":
+            _,flag = _calculate_fiducial_area_v2(image=self.image_widget.ib_image, fiducial_centre = deepcopy(stage_pattern.point), fiducial_length = stage_pattern.patterns[0].height)
+            
+            if flag:
+                napari.utils.notifications.show_warning(f"Fiducial reduce area is not within the image.")
+                return False
+            else:
+                return True    
         
         for pattern_settings in stage_pattern.patterns:
             if pattern_settings.pattern is FibsemPattern.Circle:
@@ -524,6 +589,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_spot_size.setValue(milling.spot_size * constants.SI_TO_MICRO)
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
         self.comboBox_preset.setCurrentText(str(milling.preset))
+        self.spinBox_voltage.setValue(milling.milling_voltage)
 
     def get_milling_settings_from_ui(self):
 
@@ -536,7 +602,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             hfw=self.doubleSpinBox_hfw.value() * constants.MICRO_TO_SI,
             preset= self.comboBox_preset.currentText(),
             spacing=self.doubleSpinBox_spacing.value(),
-
+            milling_voltage=self.spinBox_voltage.value(),
         )
 
         return milling_settings
@@ -627,42 +693,111 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         #     self.pushButton_run_milling.setStyleSheet("background-color: orange")
 
     def run_milling(self):
-
+        
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
-        # worker.yielded.connect(self.update_milling_ui)
         worker.start()
+        
+    
+    def start_progress_thread(self,info):
+
+        est_time = info['estimated_time']
+        idx = info['idx']
+        total = info['total']
+
+        self.progressBar_milling.setVisible(True)
+        self.progressBar_milling.setValue(0)
+        self.progressBar_milling.setStyleSheet("QProgressBar::chunk "
+                          "{"
+                          "background-color: green;"
+                          "}")
+        self.progressBar_milling.setFormat(f"Milling stage {idx+1} of {total}: {est_time:.1f}s")
+
+        # info = [idx, total, est_time]
+
+        self.progress_bar_worker = self.start_progress_bar(info)
+        self.progress_bar_worker.finished.connect(self.finish_progress_bar)
+
+        self.progress_bar_worker.start()
+
+    @thread_worker
+    def start_progress_bar(self,info):
+        
+        est_time = info['estimated_time']
+        info['progress_percent'] = 0
+ 
+        i = 0
+        # time.sleep(2)
+        inc = 0.5
+        while i < est_time:
+            time.sleep(inc)
+            progress_percent = (i+inc)/est_time
+            info['progress_percent'] = progress_percent
+            info['est_time'] = est_time - i
+            self._progress_bar_update.emit(info)
+            i += inc 
+            yield
+
+
+    def update_progress_bar(self, info):
+        
+        value = info['progress_percent']
+        idx = info['idx']
+        total = info['total']
+        est_time = info['est_time']
+
+        self.progressBar_milling.setVisible(True)
+        self.progressBar_milling.setValue(value*100)
+        self.progressBar_milling.setFormat(f"Milling Stage {idx+1}/{total}: {est_time:.1f}s remaining...")
+
+    def finish_progress_bar(self):
+        self.progressBar_milling.setVisible(False)
+        self.progressBar_milling.setValue(0)
+
+    def _quit_progress_bar(self):
+        self.progress_bar_worker.quit()
 
     @thread_worker
     def run_milling_step(self):
 
         milling_stages = self.get_milling_stages()
         self._toggle_interactions(enabled=False,milling=True)
-        for stage in milling_stages:
+            
+        for idx,stage in enumerate(milling_stages):
             self.milling_notification.emit(f"Preparing: {stage.name}")
             if stage.pattern is not None:
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
-                milling.setup_milling(self.microscope, mill_settings=stage.milling)
+                try:
+                    milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
-                milling.draw_patterns(self.microscope, stage.pattern.patterns)
+                    microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
+                    estimated_time = milling.milling_time_estimate(self.microscope, microscope_patterns)
+                    progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
+                    self._progress_bar_start.emit(progress_bar_dict)
 
-                self.milling_notification.emit(f"Running {stage.name}...")
-                milling.run_milling(self.microscope, stage.milling.milling_current)
-            
-                milling.finish_milling(self.microscope, self.settings.system.ion.current)
+                    self.milling_notification.emit(f"Running {stage.name}...")
+                    milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
+                except Exception as e:
+                    napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
+                    logging.error(e)
+                finally:
+                    milling.finish_milling(self.microscope, 
+                                           imaging_current=self.settings.system.ion.current, 
+                                           imaging_voltage=self.settings.system.ion.voltage)
 
                 log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
+                self._progress_bar_quit.emit()
 
             self.milling_notification.emit(f"Milling stage complete: {stage.name}")
         self.milling_notification.emit(f"Milling complete. {len(self.milling_stages)} stages completed.")
+
 
     def update_milling_ui(self, msg: str):
         logging.info(msg)
         napari.utils.notifications.notification_manager.records.clear()
         napari.utils.notifications.show_info(msg)
-        # TODO: progress bar?
 
     def run_milling_finished(self):
 
@@ -671,6 +806,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.take_reference_images()
         self.update_ui()
         self._milling_finished.emit()
+        self._quit_progress_bar()
+        self.finish_progress_bar()
+
+
 
 
 def main():

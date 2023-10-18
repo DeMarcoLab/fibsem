@@ -213,7 +213,7 @@ def eucentric_correct_stage_drift(
 
     # target images
     targets = (BeamType.ELECTRON, BeamType.ELECTRON, BeamType.ION)#, BeamType.ELECTRON, BeamType.ION)
-    eucentric_move = (False, False, True) 
+    vertical_move = (False, False, True) 
 
     # lp, hp, sigma
     params = [
@@ -237,7 +237,7 @@ def eucentric_correct_stage_drift(
         # TODO: this is wrong now
 
     # align lowres, then highres
-    for i, (ref_image, target, euc_move) in enumerate(zip(ref_order, targets, eucentric_move)):
+    for i, (ref_image, target, euc_move) in enumerate(zip(ref_order, targets, vertical_move)):
 
         ref_mask = masks.create_circle_mask(ref_image.data.shape, radius=512)
 

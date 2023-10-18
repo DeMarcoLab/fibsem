@@ -65,8 +65,9 @@ os.makedirs(DATA_ML_PATH, exist_ok=True)
 os.makedirs(DATA_CC_PATH, exist_ok=True)
 os.makedirs(DATA_TILE_PATH, exist_ok=True)
 
+DATABASE_PATH = os.path.join(BASE_PATH, "fibsem", "db", "fibsem.db")
+os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
 import yaml
-
 
 def load_yaml(fname):
     """
@@ -90,3 +91,8 @@ def load_yaml(fname):
 __SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
 __DEFAULT_MANUFACTURER__ = "Thermo"
 __DEFAULT_IP_ADDRESS__ = "10.0.0.1"
+
+
+_LIVE_IMAGING_ENABLED = False
+_MINIMAP_VISUALISATION = False
+_MINIMAP_MOVE_WITH_TRANSLATION = True

@@ -1,0 +1,25 @@
+data_paths:  [
+              /home/patrick/github/data/autolamella/train, 
+              /home/patrick/github/data/liftout/training/train-relabelled/images, 
+              /home/patrick/github/data/liftout/train-new/train, 
+              /home/patrick/github/data/liftout/train-waffle/train,
+              /home/patrick/github/data/liftout/serial-liftout/data/train
+              ]
+label_paths: [
+              /home/patrick/github/data/autolamella/train/labels, 
+              /home/patrick/github/data/liftout/training/train-relabelled/labels, 
+              /home/patrick/github/data/liftout/train-new/train/labels, 
+              /home/patrick/github/data/liftout/train-waffle/train/labels,
+              /home/patrick/github/data/liftout/serial-liftout/data/train/labels
+              ] 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autolamella/mega/base/v4/xl
+checkpoint: null
+encoder: "resnet50" 
+epochs: 50
+batch_size: 2 
+num_classes: 5  
+lr: 3.0e-4
+wandb: true 
+wandb_project: "autolamella-mega" 
+wandb_entity: "demarcolab"
+# re-labelled data, fixed numerical bug in pre-processing

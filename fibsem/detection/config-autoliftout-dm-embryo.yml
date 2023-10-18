@@ -1,0 +1,34 @@
+data_path: "eval/dm-embryo/data.csv"    # test data csv
+images_path: "eval/dm-embryo/images"    # test data image directory
+save_path: "eval/dm-embryo/eval"        # save path for evaluation results
+
+checkpoints: # list of checkpoints to evaluate
+  - checkpoint: "openfibsem-01-18.pt"
+    encoder: "resnet18"
+    nc: 3
+  - checkpoint: "openfibsem-02-18.pt"
+    encoder: "resnet18"
+    nc: 3
+  - checkpoint: "openfibsem-03-18.pt"
+    encoder: "resnet18"
+    nc: 3
+  - checkpoint: "openfibsem-baseline-34.pt"
+    encoder: "resnet34"
+    nc: 3
+
+# plot 
+thresholds:
+- 250
+- 100
+- 50
+- 25
+- 10
+
+# options
+run_eval: False
+plot_eval: True
+
+show_det_plot: False
+save_det_plot: True
+show_eval_plot: False
+save_eval_plot: True
