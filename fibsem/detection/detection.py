@@ -667,7 +667,7 @@ def take_image_and_detect_features(
 
     # load model
     ml_protocol = settings.protocol.get("ml", {})
-    checkpoint = ml_protocol.get("checkpoint", "openfibsem-baseline-34.pt")
+    checkpoint = ml_protocol.get("checkpoint", "autolamella-mega-latest.pt")
     encoder = ml_protocol.get("encoder", "resnet34")
     num_classes = int(ml_protocol.get("num_classes", 3))
     model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
@@ -950,7 +950,8 @@ def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature,
 
     if features == []:
         logging.info(f"No features detected for {feature.name}")
-        feature.px = Point(0, 0)
+        # set at centre of image
+        feature.px = Point(x=image.shape[1]//2, y=image.shape[0]//2)
         features = [deepcopy(feature)]
     
     return features
