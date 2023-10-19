@@ -170,18 +170,18 @@ We provide a number of advanced movement functions that are useful for correctin
 
 ![Movement Axes](img/movement/movement_axes.svg)
 
-### Eucentric Movement
+### Vertical Movement
 
-Eucentric movements correct the eucentric position of the microscope. This is useful when initially setting up the microscope, or when the eucentric position has been lost. The eucentric movements move the stage vertically in the chamber to correct the eucentric position.
+Vertical movements correct the eucentric position of the microscope. This is useful when initially setting up the microscope, or when the eucentric position has been lost. The vertical movements move the stage vertically in the chamber to correct the eucentric position.
 
 ![Eucentric Movement](img/movement/eucentric/eucentric.gif)
 
 To use eucentric movements, use: 
 ```python
-microscope.eucentric_move(settings, dy)
+microscope.vertical_move(settings, dy)
 ```
 
-::: fibsem.microscope.ThermoMicroscope.eucentric_move
+::: fibsem.microscope.ThermoMicroscope.vertical_move
 
 where dy is the distance to move in the image plane (eucentric movements are always calculated from the ion beam perspective).
 
