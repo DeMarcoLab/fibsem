@@ -79,8 +79,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.model_widget = FibsemSegmentationModelWidget()
         self.train_widget = FibsemModelTrainingWidget(viewer=self.viewer)
-
-         # save path buttons
+        
+        # save path buttons
 
         self.rawData_button.clicked.connect(self.select_filepath)
         self.savePath_button.clicked.connect(self.select_filepath)
@@ -93,6 +93,10 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.tabWidget.addTab(self.model_widget, "Model")
         self.tabWidget.addTab(self.train_widget, "Train")
+        
+        # set tab 3 invisible (until fixed)
+        self.tabWidget.setTabEnabled(2, False)
+        self.tabWidget.setTabVisible(2, False)        
 
         self.model_widget.pushButton_load_model.clicked.connect(self.load_model)
 
