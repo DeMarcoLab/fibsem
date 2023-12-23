@@ -71,7 +71,7 @@ class FibsemFeatureDetectionUI(
         self.pts_layer = None
 
         self.feature = None
-        self.features = []
+        self.features: list[dict] = []
 
         self.setup_connections()
 
@@ -146,7 +146,7 @@ class FibsemFeatureDetectionUI(
             napari.utils.notifications.show_warning(f"No CSV file selected. Exiting.")
             return
 
-        df.to_csv(csv_path, index=True)
+        df.to_csv(csv_path, index=False)
 
         # load data
         self.load_data(df, filenames, path, csv_path)
@@ -257,7 +257,7 @@ class FibsemFeatureDetectionUI(
 
     def _get_feature(self):
         """Get the currently selected feature"""
-        self.feature = get_feature(self.comboBox_features.currentText())
+        self.feature = {"name": self.comboBox_features.currentText()}
         return self.feature
 
     def _add_feature_mode(self):
@@ -293,33 +293,34 @@ class FibsemFeatureDetectionUI(
         if len(points) > len(self.features):
             # get latest feature
             feature = copy.deepcopy(self.feature)
-            feature.px = napari_pt_to_point(points[-1])
-
-            self.features.append(feature)
+            feature.update(napari_pt_to_point(points[-1]).__to_dict__())
+            feature["color"] = get_feature(feature["name"]).color
+            self.features.append(copy.deepcopy(feature))
 
         # feature was deleted
         elif len(points) < len(self.features):
             # deleted
 
             for idx in index[::-1]:
-                logging.info(f"point deleted: {self.features[idx].name}")
+                logging.info(f"point deleted: {self.features[idx]['name']}")
                 self.features.pop(idx)
 
         # feature was moved
         else:
             # moved
             for idx in index:
-                self.features[idx].px = napari_pt_to_point(points[idx])
+                self.features[idx].update(
+                    copy.deepcopy(napari_pt_to_point(points[idx])).__to_dict__())
 
         #
         text = {
-            "string": [f.name for f in self.features],
+            "string": [f["name"] for f in self.features],
             "color": "white",
             "translation": np.array([-30, 0]),
         }
 
         self.pts_layer.text = text
-        self.pts_layer.face_color = [f.color for f in self.features]
+        self.pts_layer.face_color = [f["color"] for f in self.features]
 
         # update dataframe, write to csv
         self.update_dataframe()
@@ -350,9 +351,9 @@ class FibsemFeatureDetectionUI(
             ]
         )
         df_new["filename"] = [os.path.basename(fname)] * len(features)
-        df_new["feature"] = [f.name for f in features]
-        df_new["px.x"] = [f.px.x for f in features]
-        df_new["px.y"] = [f.px.y for f in features]
+        df_new["feature"] = [f['name'] for f in features]
+        df_new["px.x"] = [f['x'] for f in features]
+        df_new["px.y"] = [f['y'] for f in features]
         df_new["pixelsize"] = [None] * len(features)  # pixel size is not known
         df_new["corrected"] = [True] * len(features)
         df_new["method"] = [df_filt["method"].values[0]] * len(features)
@@ -364,15 +365,13 @@ class FibsemFeatureDetectionUI(
         df.reset_index(drop=True, inplace=True) # mind your index
 
         # save dataframe
-        df.to_csv(self.csv_path.replace("data.csv", "data-new.csv"), index=True)
+        df.to_csv(self.csv_path, index=False)
 
         # update dataframe
         self.df = df
 
     def update_points_from_dataframe(self, idx: int):
-        
-        print(f"Updating points from dataframe: {idx}")
-
+        """Update the points layer from the dataframe"""
         # get dataframe for current image
         fname = self.filenames[idx]
         df_filt = self.df[self.df["filename"] == os.path.basename(fname)]
@@ -384,25 +383,27 @@ class FibsemFeatureDetectionUI(
 
         # load features from dataframe
         for _, row in df_filt.iterrows():
-            x, y = row["px.x"], row["px.y"]
-            name = row["feature"]
-
-            feature = get_feature(name)
-            feature.px = Point(x, y)
-            self.features.append(feature)
+            
+            d = {
+                "name": row["feature"],
+                "x": row["px.x"], 
+                "y": row["px.y"],
+                "color": get_feature(row["feature"]).color,
+            }
+            self.features.append(copy.deepcopy(d))
 
         # update points layer
-        self.pts_layer.data = np.array([[f.px.y, f.px.x] for f in self.features])
+        self.pts_layer.data = np.array([[f['y'], f['x']] for f in self.features])
 
         # update text
         text = {
-            "string": [f.name for f in self.features],
+            "string": [f['name'] for f in self.features],
             "color": "white",
             "translation": np.array([-30, 0]),
         }
 
         self.pts_layer.text = text
-        self.pts_layer.face_color = [f.color for f in self.features]
+        self.pts_layer.face_color = [f['color'] for f in self.features]
 
 
 def main():
