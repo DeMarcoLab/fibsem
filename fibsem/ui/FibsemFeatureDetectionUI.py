@@ -56,6 +56,84 @@ def create_dataframe(filenames, method="null"):
 # TODO: remove this debug path
 TEST_PATH_DEBUG = "/home/patrick/github/data/autolamella-paper/model-development/train/serial-liftout/test"
 
+# new line char in html
+NL = "<br>"
+
+DATA_LOADED_INSTRUCTIONS = f"""
+<h3>Instructions</h3>
+Use the Slider to Change Images{NL}{NL}
+
+<strong>Add Mode</strong>{NL}
+Select Feature from Dropdown{NL}
+Left Click to Add Feature{NL}{NL}
+
+<strong>Edit Mode</strong>{NL}
+Press Edit to enter Edit Mode{NL}
+Select and Drag the Feature to move it.{NL}
+Select a Feature and pPress Delete Key{NL}{NL}
+
+<strong>HotKeys</strong>{NL}
+Press 2 to enter Add Mode{NL}
+Press 3 to enter Edit Mode{NL}
+Press 4 to enter Pan/Zoom Mode{NL}
+Press Delete in Edit Mode to Delete Feature{NL}{NL}
+
+<strong>Save</strong>{NL}
+Data is automatically saved to csv file when a feature is added, edited or deleted.
+"""
+START_INSTRUCTIONS = f"""
+<h3>Instructions</h3>
+Load Data from File Menu{NL}{NL}
+
+<strong>Image Directory</strong>{NL}
+If starting from scratch, load a directory of images and a csv file will be created for you.
+Features will be saved to the csv file.{NL}{NL}
+
+<strong>CSV File</strong>{NL}
+If you are resuming work, load the csv file and the images will be loaded for you.
+Features will be reloaded from the csv file.{NL}{NL}
+"""
+
+INSTRUCTIONS = {"START": START_INSTRUCTIONS, "DATA_LOADED": DATA_LOADED_INSTRUCTIONS}
+
+FEATURES_TO_IGNORE = ["ImageCentre", "CoreFeature"]
+USABLE_FEATURES = sorted([f.name for f in __FEATURES__ if f.name not in FEATURES_TO_IGNORE])
+
+CONFIGURATION = {
+    
+    "FEATURES": USABLE_FEATURES,
+
+    "UI": {
+        "IMAGE_LAYER_NAME": "Image",
+        "POINT_LAYER_NAME": "Features",
+        "SHAPE_LAYER_NAME": "Bounding Boxes",
+        "POINT_SIZE": 20,
+        "TEXT_COLOR": "white",
+        "TEXT_TRANSLATION": np.array([-30, 0]),
+        "FACE_COLOR": "white",
+        "ADD_BUTTON_COLOR": _stylesheets._GREEN_PUSHBUTTON_STYLE,
+        "EDIT_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
+    },
+
+}
+
+
+# TODO:
+# add support for custom features
+# import features from txt file
+# import features from yaml file (with color map)
+
+
+def get_feature_color(feature: str) -> str:
+    """try to get the feature color 
+    from the feature name, with fallback 
+    to base colour"""
+
+    try:
+        return get_feature(feature).color # only for fibsem features
+    except:
+        return CONFIGURATION["UI"]["FACE_COLOR"]
+
 
 class FibsemFeatureDetectionUI(
     FibsemFeatureDetectionUI.Ui_MainWindow, QtWidgets.QMainWindow
@@ -83,16 +161,26 @@ class FibsemFeatureDetectionUI(
         self.spinBox_data_progress.valueChanged.connect(self._change_image)
         self.spinBox_data_progress.setKeyboardTracking(False)
 
-        self.comboBox_features.addItems(sorted([f.name for f in __FEATURES__]))
+        self.comboBox_features.addItems(CONFIGURATION["FEATURES"])
         self.comboBox_features.currentIndexChanged.connect(self._get_feature)
         self.pushButton_add_feature.clicked.connect(self._add_feature_mode)
         self.pushButton_edit_feature.clicked.connect(self._edit_feature_mode)
 
-        self.pushButton_add_feature.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_edit_feature.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_add_feature.setStyleSheet(CONFIGURATION["UI"]["ADD_BUTTON_COLOR"])
+        self.pushButton_edit_feature.setStyleSheet(CONFIGURATION["UI"]["EDIT_BUTTON_COLOR"])
+
+        self.update_ui_elements()
 
     def update_ui_elements(self):
         _data_loaded = self.img_layer is not None
+
+        self.label_features_header.setVisible(_data_loaded)
+        self.pushButton_add_feature.setVisible(_data_loaded)
+        self.pushButton_edit_feature.setVisible(_data_loaded)
+        self.comboBox_features.setVisible(_data_loaded)
+        self.label_data_progress.setVisible(_data_loaded)
+        self.spinBox_data_progress.setVisible(_data_loaded)
+
         self.spinBox_data_progress.setEnabled(_data_loaded)
 
         if _data_loaded:
@@ -101,6 +189,11 @@ class FibsemFeatureDetectionUI(
             )
             self.spinBox_data_progress.setMaximum(len(self.filenames) - 1)
             self.spinBox_data_progress.setValue(0)
+
+            instructions = INSTRUCTIONS["DATA_LOADED"]
+        else:
+            instructions = INSTRUCTIONS["START"]
+        self.label_instructions.setText(instructions)
 
     def load_image_directory(self):
         """Load a directory of images into napari"""
@@ -168,6 +261,9 @@ class FibsemFeatureDetectionUI(
 
         df = pd.read_csv(csv_path)
 
+        # sort on filenames
+        df.sort_values(by=["filename"], inplace=True)
+
         # get image path from user
         path = _get_directory_ui(
             msg="Select image directory (*.tif)",
@@ -182,7 +278,7 @@ class FibsemFeatureDetectionUI(
             return
 
         filenames = []
-        for fname in df["filename"].values:
+        for fname in pd.unique(df["filename"].values):
             filenames += glob.glob(os.path.join(path, f"*{fname}*"))
 
         if len(filenames) == 0:
@@ -196,13 +292,12 @@ class FibsemFeatureDetectionUI(
     def load_data(
         self, df: pd.DataFrame, filenames: list[str], path: str, csv_path: str
     ):
-        
         # set attributes
         self.filenames = filenames
         self.path = path
         self.csv_path = csv_path
         self.df = df
-        
+
         # load filenames as single layer
         self.img_layer = self.viewer.open(filenames, stack=True)[0]
 
@@ -211,7 +306,9 @@ class FibsemFeatureDetectionUI(
 
         # load empty points layer
         self.pts_layer = self.viewer.add_points(
-            name="Features", face_color="white", size=20
+            name=CONFIGURATION["UI"]["POINT_LAYER_NAME"], 
+            face_color=CONFIGURATION["UI"]["FACE_COLOR"], 
+            size=CONFIGURATION["UI"]["POINT_SIZE"]
         )
 
         self.pts_layer.events.data.connect(self._features_updated)
@@ -220,7 +317,7 @@ class FibsemFeatureDetectionUI(
         self.update_viewer_to_image(0)
 
         # metadata
-        self.img_layer.name = "Image"
+        self.img_layer.name = CONFIGURATION["UI"]["IMAGE_LAYER_NAME"]
         self.img_layer.metadata["path"] = path
         self.img_layer.metadata["csv_path"] = csv_path
 
@@ -271,8 +368,6 @@ class FibsemFeatureDetectionUI(
         self.pts_layer.mode = "select"
 
     def _features_updated(self, event: Optional[Any] = None) -> None:
-
-
         if self.feature is None:
             self._get_feature()
 
@@ -294,7 +389,7 @@ class FibsemFeatureDetectionUI(
             # get latest feature
             feature = copy.deepcopy(self.feature)
             feature.update(napari_pt_to_point(points[-1]).__to_dict__())
-            feature["color"] = get_feature(feature["name"]).color
+            feature["color"] = get_feature_color(feature["name"])
             self.features.append(copy.deepcopy(feature))
 
         # feature was deleted
@@ -310,13 +405,14 @@ class FibsemFeatureDetectionUI(
             # moved
             for idx in index:
                 self.features[idx].update(
-                    copy.deepcopy(napari_pt_to_point(points[idx])).__to_dict__())
+                    copy.deepcopy(napari_pt_to_point(points[idx])).__to_dict__()
+                )
 
         #
         text = {
             "string": [f["name"] for f in self.features],
-            "color": "white",
-            "translation": np.array([-30, 0]),
+            "color": CONFIGURATION["UI"]["TEXT_COLOR"],
+            "translation": CONFIGURATION["UI"]["TEXT_TRANSLATION"],
         }
 
         self.pts_layer.text = text
@@ -351,9 +447,9 @@ class FibsemFeatureDetectionUI(
             ]
         )
         df_new["filename"] = [os.path.basename(fname)] * len(features)
-        df_new["feature"] = [f['name'] for f in features]
-        df_new["px.x"] = [f['x'] for f in features]
-        df_new["px.y"] = [f['y'] for f in features]
+        df_new["feature"] = [f["name"] for f in features]
+        df_new["px.x"] = [f["x"] for f in features]
+        df_new["px.y"] = [f["y"] for f in features]
         df_new["pixelsize"] = [None] * len(features)  # pixel size is not known
         df_new["corrected"] = [True] * len(features)
         df_new["method"] = [df_filt["method"].values[0]] * len(features)
@@ -362,7 +458,7 @@ class FibsemFeatureDetectionUI(
         # update dataframe
         df.drop(df_filt.index, inplace=True)
         df = pd.concat([df, df_new], axis=0)
-        df.reset_index(drop=True, inplace=True) # mind your index
+        df.reset_index(drop=True, inplace=True)  # mind your index
 
         # save dataframe
         df.to_csv(self.csv_path, index=False)
@@ -378,32 +474,36 @@ class FibsemFeatureDetectionUI(
 
         # initial empty df, then no features were added
         if len(df_filt) == 1 and pd.isna(df_filt["feature"].values[0]):
-            napari.utils.notifications.show_info(f"No features yet for {os.path.basename(fname)}")
+            napari.utils.notifications.show_info(
+                f"No features yet for {os.path.basename(fname)}"
+            )
             return
 
         # load features from dataframe
         for _, row in df_filt.iterrows():
-            
             d = {
                 "name": row["feature"],
-                "x": row["px.x"], 
+                "x": row["px.x"],
                 "y": row["px.y"],
-                "color": get_feature(row["feature"]).color,
+                "color": get_feature_color(row["feature"]),
             }
             self.features.append(copy.deepcopy(d))
 
         # update points layer
-        self.pts_layer.data = np.array([[f['y'], f['x']] for f in self.features])
+        self.pts_layer.data = np.array([[f["y"], f["x"]] for f in self.features])
 
         # update text
         text = {
-            "string": [f['name'] for f in self.features],
+            "string": [f["name"] for f in self.features],
             "color": "white",
             "translation": np.array([-30, 0]),
         }
 
         self.pts_layer.text = text
-        self.pts_layer.face_color = [f['color'] for f in self.features]
+        self.pts_layer.face_color = [f["color"] for f in self.features]
+        napari.utils.notifications.show_info(
+            f"Loaded {len(self.features)} features from {os.path.basename(fname)}"
+        )
 
 
 def main():
