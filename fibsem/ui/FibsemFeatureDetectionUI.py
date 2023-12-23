@@ -430,6 +430,10 @@ class FibsemFeatureDetectionUI(
         # get features
         features = self.features
 
+        # if features is empty, add empty row to maintain image in dataframe
+        if len(features) == 0:
+            features = [{"name": np.nan, "x": np.nan, "y": np.nan}]
+
         # get dataframe for current image
         df_filt = df[df["filename"] == os.path.basename(fname)]
 
