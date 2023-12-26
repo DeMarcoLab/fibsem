@@ -1,43 +1,13 @@
-CLASS_COLORS = {
-    0: "black",
-    1: "red",
-    2: "green",
-    3: "cyan",
-    4: "yellow",
-    5: "magenta",
-    6: "blue",
-    7: "white",
-    8: "orange",
-    9: "purple",
-    10: "pink",
-    11: "brown",
-    12: "gray",
-    13: "olive",
-    14: "maroon",
-    15: "navy",
-    16: "teal",
-    17: "lime",
-    18: "aqua",
-    19: "silver",
-    20: "gold",
-    21: "indigo",
-    22: "violet",
-    23: "turquoise",
-    24: "tan",
-    25: "orchid",
-    26: "salmon",
-    27: "khaki",
-    28: "coral",
-    29: "crimson",
-    30: "plum",
-    31: "lavender",
-    32: "darkgreen",
-    33: "darkblue",
-    34: "darkred",
-    35: "darkgray",
-    36: "darkorange",
-}
+import os
 
+CLASS_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "segmentation_config.yaml")
+
+import yaml
+with open(CLASS_CONFIG_PATH) as f:
+    CLASS_CONFIG = yaml.load(f, Loader=yaml.FullLoader)
+    
+CLASS_COLORS = CLASS_CONFIG["CLASS_COLORS"]
+CLASS_LABELS = CLASS_CONFIG["CLASS_LABELS"]
 
 import matplotlib.colors as mcolors
 def convert_color_names_to_rgb(color_names):
@@ -49,9 +19,11 @@ def convert_color_names_to_rgb(color_names):
 # map color names to rgb values
 CLASS_COLORS_RGB = convert_color_names_to_rgb(CLASS_COLORS.values())
 
-# TODO: enable configuration
+
 def get_colormap():
     return CLASS_COLORS_RGB
 
-import os
+def get_class_labels():
+    return CLASS_LABELS
+
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.yml")

@@ -37,7 +37,7 @@ def load_image(fname) -> np.ndarray:
     return SimpleITKIO().read_images([fname])[0]
 
 
-def inference(model, image: np.ndarray):
+def inference(model: nnUNetPredictor, image: np.ndarray):
     # todo: dont' return scores by defaults
     IMAGE_PROPERTIES = {
         "sitk_stuff": {
@@ -76,6 +76,7 @@ def load_from_checkpoint(
     from torch._dynamo import OptimizedModule
 
     # check if nnunetPredictor has method called load_from_checkpoint
+    # TODO: remove once the change is upstreamed
     method_deprecated = hasattr(model, "load_from_checkpoint")
     print(f"this method is deprecated: {method_deprecated}")
     if method_deprecated:
