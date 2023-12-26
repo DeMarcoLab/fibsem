@@ -28,7 +28,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Feature Detection</string>
+       <string>OpenFIBSEM Feature Labelling</string>
       </property>
      </widget>
     </item>

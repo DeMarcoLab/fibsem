@@ -517,7 +517,7 @@ def main():
         fibsem_ui,
         area="right",
         add_vertical_stretch=True,
-        name=f"OpenFIBSEM v{fibsem.__version__} - Feature Detection",
+        name=f"OpenFIBSEM v{fibsem.__version__} - Feature Labelling",
     )
     napari.run()
 

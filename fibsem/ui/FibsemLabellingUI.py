@@ -3,7 +3,7 @@ import os
 import sys
 import glob
 
-# import fibsem
+import fibsem
 import napari
 import napari.utils.notifications
 import numpy as np
@@ -17,27 +17,80 @@ from fibsem.segmentation.config import CLASS_COLORS, CLASS_LABELS, convert_color
 from fibsem.segmentation import utils as seg_utils
 
 from fibsem.ui.FibsemSegmentationModelWidget import FibsemSegmentationModelWidget
-
+from fibsem.ui import _stylesheets
 from fibsem.ui.utils import _get_directory_ui,_get_file_ui
 # BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
 from napari.layers import Points
 from typing import Any, Generator, Optional
 
-
-logging.basicConfig(level=logging.INFO)
+# setup a basic logger
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 _DEBUG = True
 
+# new line char in html
+NL = "<br>"
+
+START_INSTRUCTIONS = f"""
+<h3>Instructions</h3>
+Welcome to the OpenFIBSEM Labelling Tool.{NL}
+This tool is designed to assist with labelling 2D images for segmentation.{NL}
+
+<h4>Getting Started</h4>
+Select the folder containing the image data.{NL}
+Select the folder to save the labels to.{NL}
+Select a custom colormap [Optional].{NL}
+
+"""
+READY_INSTRUCTIONS = f"""
+<h4>Ready to Label</h4>
+Use the paintbrush to label the image.{NL}
+Use the eraser to remove labels.{NL}
+Press R/E to go to the next/previous image.{NL}
+Press D/F to change the selected class label.{NL}{NL}
+
+<h4>Saving</h4>
+The image will be saved when you move to the next image.{NL}
+You can also save the image by pressing S.{NL}{NL}
+
+"""
+
+MODEL_NOT_LOADED_INSTRUCTIONS = f"""
+<h4>Model Assisted Labelling</h4>
+You can use a model to assist with labelling.{NL}
+Select the model to use for segmentation.{NL}
+The model will be used to generate a mask for the image.{NL}
+You are then able to use the paintbrush to correct the mask.{NL}{NL}
+"""
+
+MODEL_LOADED_INSTRUCTIONS = f"""
+<h4>Model Assisted Labelling</h4>
+The Segmentation Model will assist with labelling images.{NL}
+The model will be used to generate a mask for the image.{NL}
+You are then able to use the paintbrush to correct the mask.{NL}{NL}
+"""
+
+SAM_MODEL_LOADED_INSTRUCTIONS = f"""
+<h4>Segment Anything Model</h4>
+The SAM Model will assist with labelling images.{NL}
+Left Click to add a point to the mask.{NL}
+Right Click to remove a point from the mask.{NL}
+Press C to confirm the SAM mask.{NL}
+Press X to clear the SAM mask.{NL}{NL}
+
+
+"""
+
 INSTRUCTIONS = {
-    "data": "Select the folder containing the raw data\n",
-    "model": "Select the model to use for segmentation\n",
-    "ready": "Use the paintbrush to label the image.\n Press R/E to go to the next/previous image.\n ",
-    "model_loaded": "The Segmentation Model will assist with labelling images.\n",
-    "sam": "Click a point to segment the image.\nConfirm adds the SAM mask to the mask for the selected class.\nPress C to confirm, X to clear, D/F to increment the class\n",
+    "START": START_INSTRUCTIONS,
+    "READY": READY_INSTRUCTIONS,
+    "MODEL_NOT_LOADED": MODEL_NOT_LOADED_INSTRUCTIONS,
+    "MODEL_LOADED": MODEL_LOADED_INSTRUCTIONS,
+    "SAM_MODEL_LOADED": SAM_MODEL_LOADED_INSTRUCTIONS,
 }
 
-CONFIG = {
+CONFIGURATION = {
     "IMAGES": {
         "FILE_EXT": ".tif",
     },
@@ -48,6 +101,15 @@ CONFIG = {
     "SAVE": {
         "SAVE_RGB": True,
     },
+    "UI": {
+        "INSTRUCTIONS": INSTRUCTIONS,
+        "LOAD_DATA_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
+        "LOAD_MODEL_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
+        "CONFIRM_BUTTON_COLOR": _stylesheets._GREEN_PUSHBUTTON_STYLE,
+        "CLEAR_BUTTON_COLOR": _stylesheets._RED_PUSHBUTTON_STYLE,
+
+    },
+
 }
 
 # ref: https://github.com/JoOkuma/napari-segment-anything (Apache License 2.0)
@@ -66,7 +128,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.model_assist = False
         self.DATA_LOADED = False
 
-        self.SAM_IMAGE_SET = False
+        self.img_layer = None
+        self.mask_layer = None
         self.sam_mask_layer = None
         self.sam_pts_layer = None
 
@@ -100,14 +163,21 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.viewer.bind_key("R", self.next_image)
         self.viewer.bind_key("E", self.previous_image)
+        self.viewer.bind_key("S", self.save_image)
+        self.viewer.bind_key("D", self.decrement_class_index)
+        self.viewer.bind_key("F", self.increment_class_index)
 
         # SAM
         self.pushButton_model_confirm.setVisible(False)
-        self.comboBox_model_class_index.setVisible(False)
-        self.label_model_class_index.setVisible(False)
         self.pushButton_model_clear.setVisible(False)
 
-        self._update_instructions()
+        # style
+        self.pushButton_load_data.setStyleSheet(CONFIGURATION["UI"]["LOAD_DATA_BUTTON_COLOR"])
+        self.model_widget.pushButton_load_model.setStyleSheet(CONFIGURATION["UI"]["LOAD_MODEL_BUTTON_COLOR"])
+        self.pushButton_model_confirm.setStyleSheet(CONFIGURATION["UI"]["CONFIRM_BUTTON_COLOR"])
+        self.pushButton_model_clear.setStyleSheet(CONFIGURATION["UI"]["CLEAR_BUTTON_COLOR"])
+
+        self.update_instructions()
 
     def select_filepath(self):
 
@@ -139,7 +209,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             return
             
         # get filenames
-        FILE_EXT = CONFIG["IMAGES"]["FILE_EXT"]
+        FILE_EXT = CONFIGURATION["IMAGES"]["FILE_EXT"]
         filenames = sorted(glob.glob(os.path.join(data_path, f"*{FILE_EXT}*")))
         if len(filenames) == 0:
             napari.utils.notifications.show_error(f"No images found in {data_path}")
@@ -151,57 +221,67 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.filenames = filenames
         self.DATA_LOADED = True
 
+        # remove existing layers
+        try:
+            self.viewer.layers.remove(self.img_layer)
+            self.viewer.layers.remove(self.mask_layer)
+            self.viewer.layers.remove(self.sam_pts_layer)
+            self.viewer.layers.remove(self.sam_mask_layer)
+        except:
+            pass
 
         # load filenames as single layer
         self.img_layer = self.viewer.open(filenames, name="Image", stack=True)[0]
         self.img_layer.opacity = 0.7
         self.img_layer.blending="additive"
 
-        # label_image = self.get_label_image()
         arr = np.zeros_like(np.asarray(self.img_layer.data[0]))
         self.mask_layer = self.viewer.add_labels(
             arr,
             name="Mask",
             opacity=0.7,
             blending="additive",
-            color=CONFIG["LABELS"]["COLOR_MAP"],
+            color=CONFIGURATION["LABELS"]["COLOR_MAP"],
         )
 
         self.viewer.dims.events.current_step.connect(self.update_image)
         self.update_viewer_to_image(0)
-        
 
-        # this event just doesn't work?
+        self.update_ui_elements()
+
+        self.update_instructions()
+
+        # TODO: fix this event, it just doesn't work?
         # self.mask_layer.events.data.connect(self.save_image) 
 
+    def update_ui_elements(self):
+        # update ui elements on data loaded
+        n_labels = len(CONFIGURATION["LABELS"]["LABEL_MAP"])
+        ldict = CONFIGURATION['LABELS']['LABEL_MAP']
+        cdict = CONFIGURATION['LABELS']['COLOR_MAP']
+        label_map = [f"{i:02d} - {ldict.get(i, 'Unspecified')} ({cdict.get(i, 'Unspecified')})" for i in range(n_labels)]
+        self.comboBox_model_class_index.clear()
+        self.comboBox_model_class_index.addItems(label_map)
+        self.model_widget.spinBox_num_classes.setValue(n_labels)
+
+    def previous_image(self , _: Optional[Any] = None) -> None:
+        idx = int(self.viewer.dims.point[0])
+        idx -= 1
+        idx = np.clip(idx, 0, len(self.filenames) - 1)
+        self.update_viewer_to_image(idx)
 
     def next_image(self, _: Optional[Any] = None) -> None:
-        self.save_image()
+        idx = int(self.viewer.dims.point[0])
+        idx += 1
+        idx = np.clip(idx, 0, len(self.filenames) - 1)
+        self.update_viewer_to_image(idx)
 
-        # advance index
-        self.idx += 1
-        self.idx = np.clip(self.idx, 0, len(self.filenames) - 1)
-
-        self.update_image()
-
-    def previous_image(self, _: Optional[Any] = None) -> None:
-        self.save_image()
-
-        # decrement index
-        self.idx -= 1
-        self.idx = np.clip(self.idx, 0, len(self.filenames) - 1)
-
-        self.update_image()
-
-    def save_image(self, event: Optional[Any] = None) -> None:
-
-        idx = self.last_idx
-        fname = self.filenames[idx]
-        print(f"IDX: {idx}, Saving image to {os.path.basename(fname)}")
-        print(event)
+    def save_image(self, _: Optional[Any] = None) -> None:
 
         # save current image
-        FILE_EXT = CONFIG["IMAGES"]["FILE_EXT"]
+        idx = self.last_idx
+        fname = self.filenames[idx]
+        FILE_EXT = CONFIGURATION["IMAGES"]["FILE_EXT"]
         bname = os.path.basename(fname).removesuffix(FILE_EXT)
 
         # only resave the labels...
@@ -209,10 +289,12 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         im = Image.fromarray(label) # TODO: replace with tifffile?
         im.save(os.path.join(self.labels_path, f"{bname}{FILE_EXT}"))
+        
+        logging.info(f"Saving mask to {os.path.basename(fname)}")
 
-        if CONFIG["SAVE"]["SAVE_RGB"]:
+        if CONFIGURATION["SAVE"]["SAVE_RGB"]:
             
-            colormap = CONFIG["LABELS"]["COLOR_MAP"]
+            colormap = CONFIGURATION["LABELS"]["COLOR_MAP"]
             colormap_rgb = convert_color_names_to_rgb(colormap)
 
             rgb = seg_utils.decode_segmap_v2(label, colormap_rgb)
@@ -222,6 +304,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             os.makedirs(RGB_PATH, exist_ok=True)
             rgb.save(os.path.join(RGB_PATH, f"{bname}.png"))
 
+            logging.info(f"Saving RGB mask to {os.path.join(RGB_PATH, f'{bname}.png')}")
+
     
     def update_viewer_to_image(self, idx: int):
         self.viewer.dims.set_point(0, idx)
@@ -229,42 +313,51 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
     def update_image(self):
         
         idx = int(self.viewer.dims.point[0])
-        print("UPDATING IMAGE")
-        print("LAST IDX: ", self.last_idx)
-        print("CURRENT IDX: ", idx)
-
+        logging.info(f"UPDATING IMAGE: LAST IDX: {self.last_idx}, CURRENT IDX {idx}")
+        
         # save previous image
         if self.last_idx != idx:
             self.save_image()
-
-            # update index
-            self.last_idx = idx
+            self.last_idx = idx # update last index
         
         # update mask layer
-        self.mask_layer.data =  self.get_label_image()
+        self.mask_layer.data = self.get_label_image()
 
-        # update SAM layers
-        self.SAM_IMAGE_SET = False
-        self.set_sam_active()
-
-
-    def _update_instructions(self):
-        if not self.DATA_LOADED:
-            self.label_instructions.setText(INSTRUCTIONS["data"])
-            return
-
-        if self.model is None:
-            msg = INSTRUCTIONS["ready"] + INSTRUCTIONS["model"]
-            self.label_instructions.setText(msg)
-            return
-
+        # set active layers
         if self.model is not None:
-            msg = INSTRUCTIONS["ready"] + INSTRUCTIONS["model_loaded"]
-            self.label_instructions.setText(msg)
+            if self.model_type == "SegmentAnythingModel":
+                self.model.is_image_set = False
+        self.set_active_layers()
 
-        if self.model_type == "SegmentAnythingModel":
-            msg = INSTRUCTIONS["ready"] + INSTRUCTIONS["sam"]
-            self.label_instructions.setText(msg)
+    def set_active_layers(self):
+        model_assist = self.checkBox_model_assist.isChecked()
+        if model_assist and self.sam_pts_layer is not None:
+            self.viewer.layers.selection.active = self.sam_pts_layer
+            self.sam_pts_layer.mode = "add"
+        else:
+            self.viewer.layers.selection.active = self.mask_layer
+            self.mask_layer.mode = "paint"
+
+    def update_instructions(self):
+        # display instructions
+        msg=""
+
+        if not self.DATA_LOADED:
+            msg = INSTRUCTIONS["START"]
+        else: 
+            msg = INSTRUCTIONS["READY"]
+
+            if self.model is None: 
+                msg += INSTRUCTIONS["MODEL_NOT_LOADED"]
+
+            elif self.model is not None:
+
+                if self.model_type == "SegmentAnythingModel":
+                    msg += INSTRUCTIONS["SAM_MODEL_LOADED"]
+                else:
+                    msg += INSTRUCTIONS["MODEL_LOADED"]
+
+        self.label_instructions.setText(msg)
 
     def get_label_image(self) -> np.ndarray:
 
@@ -275,8 +368,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         logging.info(f"IDX: {idx}, Loading image from {os.path.basename(fname)}")
 
         if os.path.basename(fname) in os.listdir(os.path.join(self.labels_path)):
-            label_fname = os.path.join(self.labels_path, os.path.basename(fname)
-            )
+            label_fname = os.path.join(self.labels_path, os.path.basename(fname))
             label_image = tff.imread(label_fname)
             label_image = np.array(label_image, dtype=np.uint8)
 
@@ -316,27 +408,21 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         # specific layers for SAM model
         if self.model_type == "SegmentAnythingModel":
             self._add_sam_pts_layer()
-
-            N_LABELS = self.model.num_classes
-            self.comboBox_model_class_index.addItems(
-                [f"{i:02d} - {CONFIG['LABELS']['LABEL_MAP'].get(i, 'Unspecified')}" for i in range(N_LABELS)]
-            )
             
             self.pushButton_model_confirm.clicked.connect(self._confirm_model_class)
             self.pushButton_model_clear.clicked.connect(self._clear_sam_data)
             self.pushButton_model_confirm.setVisible(True)
-            self.comboBox_model_class_index.setVisible(True)
-            self.label_model_class_index.setVisible(True)
+
             self.pushButton_model_clear.setVisible(True)
 
             self.viewer.bind_key("C", self._confirm_model_class)
             self.viewer.bind_key("X", self._clear_sam_data)
-            self.viewer.bind_key("D", self._decrement_sam_class)
-            self.viewer.bind_key("F", self._increment_sam_class)
 
         napari.utils.notifications.show_info(
             f"Loaded {self.model_type}: {os.path.basename(self.model.checkpoint)}"
         )
+
+        self.update_instructions()
 
         if self.DATA_LOADED:
             self.update_image()
@@ -355,8 +441,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             self.sam_pts_layer.current_face_color = "blue"
         else:
             self.sam_pts_layer.current_face_color = "red"
-
-        logging.info(f"Color: {self.sam_pts_layer.current_face_color}")
 
     def _update_sam_mask(self, _: Optional[Any] = None) -> None:
         points = self.sam_pts_layer.data
@@ -378,7 +462,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         # this only needs to happen once when the image is loaded
         # double chcek when the image is saved that it is grayscale
-        if not self.SAM_IMAGE_SET:
+        if not self.model.is_image_set:
             import cv2
 
             logging.info("setting image embedding")
@@ -391,7 +475,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             
             # set embedding
             self.model.set_image(gray_img)
-            self.SAM_IMAGE_SET = True
             self.logits = None
 
         mask, scores, self.logits = self.model.predict(
@@ -432,10 +515,10 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         sam_mask = self.sam_mask_layer.data
 
         # get the current class index
-        class_index = self.comboBox_model_class_index.currentIndex()
+        cidx = self.comboBox_model_class_index.currentIndex()
 
         # set all values of sam mask to class index
-        sam_mask[sam_mask > 0] = class_index
+        sam_mask[sam_mask > 0] = cidx
 
         # add to, and update mask layer
         mask = self.mask_layer.data
@@ -444,24 +527,27 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self._clear_sam_data()
 
-    def _increment_sam_class(self, _: Optional[Any] = None) -> None:
-        self._change_sam_class(1)
+    def increment_class_index(self, _: Optional[Any] = None) -> None:
+        self.change_class_index(1)
 
-    def _decrement_sam_class(self, _: Optional[Any] = None) -> None:
-        self._change_sam_class(-1)
+    def decrement_class_index(self, _: Optional[Any] = None) -> None:
+        self.change_class_index(-1)
 
-    def _change_sam_class(self, val: int = 0) -> None:
+    def change_class_index(self, val: int = 0) -> None:
         # get the current class index
-        self._sam_class_index = self.comboBox_model_class_index.currentIndex()
-
-        self._sam_class_index += val
+        cidx = self.comboBox_model_class_index.currentIndex()
+        cidx += val
 
         # clip to 0,number of classes
-        n_classes = self.comboBox_model_class_index.count()
-        self._sam_class_index = np.clip(self._sam_class_index, 0, n_classes - 1)
+        n_labels = len(CONFIGURATION["LABELS"]["LABEL_MAP"])
+        cidx = np.clip(cidx, 0, n_labels - 1)
 
-        self.comboBox_model_class_index.setCurrentIndex(self._sam_class_index)
-        self.viewer.status = f"Current Class: {self._sam_class_index}"
+        self.comboBox_model_class_index.setCurrentIndex(cidx)
+        self.viewer.status = f"Current Class: {cidx}"
+
+        # set the label index for the mask layer
+        if self.mask_layer is not None:
+            self.mask_layer.selected_label = cidx
 
     def _clear_sam_data(self, _: Optional[Any] = None) -> None:
         # clear points
@@ -494,7 +580,8 @@ def main():
         fibsem_labelling_ui,
         area="right",
         add_vertical_stretch=True,
-        name="Fibsem Labelling",
+        name=f"OpenFIBSEM v{fibsem.__version__} - Image Labelling",
+
     )
     napari.run()
 

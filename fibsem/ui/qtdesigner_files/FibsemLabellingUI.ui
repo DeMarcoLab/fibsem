@@ -19,6 +19,9 @@
      <property name="text">
       <string>Instructions</string>
      </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item row="1" column="0" colspan="2">
@@ -134,11 +137,11 @@
       </font>
      </property>
      <property name="text">
-      <string>FIBSEM Labelling</string>
+      <string>OpenFIBSEM Labelling</string>
      </property>
     </widget>
    </item>
-   <item row="13" column="0" colspan="2">
+   <item row="12" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -154,17 +157,7 @@
    <item row="3" column="0">
     <widget class="QLabel" name="label_model_class_index">
      <property name="text">
-      <string>Class Index</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="1">
-    <widget class="QSpinBox" name="spinBox_data_progress"/>
-   </item>
-   <item row="11" column="0">
-    <widget class="QLabel" name="label_data_progress">
-     <property name="text">
-      <string>Current Image (Total: N)</string>
+      <string>Class Map</string>
      </property>
     </widget>
    </item>
