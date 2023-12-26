@@ -277,6 +277,12 @@ def convert_to_nnunet_dataset(
             for fname in tqdm(filenames):
                 # copy file to new directory
                 basename = os.path.basename(fname)
+
+                # if this is the images, we need to prepend _0000 before the fileextension
+                # because nnunet expects the images to be named like this??
+                if "imagesTr" in out_path:
+                    basename = basename.replace(FILETYPE, f"_0000{FILETYPE}")
+
                 new_fname = os.path.join(out_path, basename)
                 shutil.copy(fname, new_fname)
 
