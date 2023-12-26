@@ -10,7 +10,9 @@ CLASS_COLORS = CLASS_CONFIG["CLASS_COLORS"]
 CLASS_LABELS = CLASS_CONFIG["CLASS_LABELS"]
 
 import matplotlib.colors as mcolors
-def convert_color_names_to_rgb(color_names):
+def convert_color_names_to_rgb(color_names: list[str]):
+    if isinstance(color_names, dict):
+        color_names = color_names.values()
     rgb_colors = [mcolors.to_rgb(color) for color in color_names]
     # Convert to 0-255 scale
     rgb_colors = [(int(r*255), int(g*255), int(b*255)) for r, g, b in rgb_colors]
