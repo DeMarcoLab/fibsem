@@ -8,6 +8,14 @@ import matplotlib.pyplot as plt
 from nnunetv2.imageio.simpleitk_reader_writer import SimpleITKIO
 from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
 
+import glob
+import PIL.Image
+from tqdm import tqdm
+import os
+import shutil
+
+import json
+
 
 def load_model(path: str) -> nnUNetPredictor:
     # instantiate the nnUNetPredictor
@@ -199,3 +207,156 @@ def export_model_checkpoint(path: str, checkpoint_path: str = None) -> None:
         checkpoint_path = os.path.join(path, "model_checkpoint.pth")
     torch.save(MODEL_CHECKPOINT, checkpoint_path)
     print(f"Saved model checkpoint to {checkpoint_path}")
+
+
+def convert_to_nnunet_dataset(
+    data_path, label_path, nnunet_data_path, label_map=None, filetype=".tif"
+):
+    """
+    Convert a directory of images and labels to an nnunet dataset.
+    """
+
+    DATA_PATH = data_path
+    LABEL_PATH = label_path
+    LABEL_MAP = label_map
+    NNUNET_DATA_PATH = nnunet_data_path
+    FILETYPE = filetype
+
+    # check if the NNUNET_DATA_PATH has a prefix of DATASET
+
+    # check if is directory
+    if os.path.exists(NNUNET_DATA_PATH) and not os.path.isdir(NNUNET_DATA_PATH):
+        NNUNET_DATA_PATH = os.path.dirname(NNUNET_DATA_PATH)
+
+    folder_basename = os.path.basename(NNUNET_DATA_PATH)
+
+    if not folder_basename.startswith("Dataset"):
+        # get the dirname of NNUNET_DATA_PATH
+        dirname = os.path.dirname(NNUNET_DATA_PATH)
+        # get all the folders in dirname
+        n_folders = len(glob.glob(os.path.join(dirname, "Dataset*")))
+        # get the next dataset number
+        next_dataset_number = n_folders + 1
+
+        # rename the folder
+        new_nnunet_path = os.path.join(
+            dirname, f"Dataset{next_dataset_number:03d}_{folder_basename}"
+        )
+
+        print(
+            f"NNUnet requires the dataset folder to begin with DatasetXXX, where XXX is the number of the dataset."
+        )
+        ret = input(f"Rename {NNUNET_DATA_PATH} to {new_nnunet_path}? (y/n)")
+
+        if ret.lower() == "y":
+            NNUNET_DATA_PATH = new_nnunet_path
+
+    NNUNET_IMAGES_PATH = os.path.join(NNUNET_DATA_PATH, "imagesTr")
+    NNUNET_LABELS_PATH = os.path.join(NNUNET_DATA_PATH, "labelsTr")
+
+    GLOB_PATTERN = f"*{FILETYPE}"
+    SUPPORTED_PATTERNS = ["*.tif", "*.png"]
+
+    if GLOB_PATTERN not in SUPPORTED_PATTERNS:
+        raise ValueError(
+            f"glob pattern {GLOB_PATTERN} not supported. Supported filetypes are: {SUPPORTED_PATTERNS}"
+        )
+
+    os.makedirs(NNUNET_IMAGES_PATH, exist_ok=True)
+    os.makedirs(NNUNET_LABELS_PATH, exist_ok=True)
+
+    paths = zip([DATA_PATH, LABEL_PATH], [NNUNET_IMAGES_PATH, NNUNET_LABELS_PATH])
+
+    for path, out_path in paths:
+        print(f"Copying files from {path}...")
+        filenames = glob.glob(os.path.join(path, f"{GLOB_PATTERN}"))
+
+        ret = input(f"Copy {len(filenames)} files to {out_path}? (y/n)")
+
+        if ret == "y":
+            for fname in tqdm(filenames):
+                # copy file to new directory
+                basename = os.path.basename(fname)
+                new_fname = os.path.join(out_path, basename)
+                shutil.copy(fname, new_fname)
+
+    ret = input(f"Write dataset json to {NNUNET_DATA_PATH}? (y/n)")
+
+    if ret.lower() == "y":
+        # NOTE: could also use nnunetv2.dataset_conversion.generate_dataset_json.generate_dataset_json
+        # but we have to get most of the info manually anyway...
+
+        # load labels, get number of unique classes
+        filenames = glob.glob(os.path.join(NNUNET_LABELS_PATH, f"{GLOB_PATTERN}"))
+        dataset_json = {}
+        dataset_json["channel_names"] = {"0": "map"}  # only support one channel for now
+        dataset_json["numTraining"] = len(filenames)
+        dataset_json["file_ending"] = FILETYPE
+
+        # get unique labels
+        unique_labels = set()
+        for fname in tqdm(filenames):
+            im = np.asarray(PIL.Image.open(fname))
+            unique_labels.update(np.unique(im))
+
+        # check if number of unique labels matches number of labels in LABEL_MAP
+        if LABEL_MAP is not None:
+            matched_labels = (len(unique_labels) == len(LABEL_MAP),)
+            if not matched_labels:
+                print(
+                    f"WARNING: Number of unique labels ({len(unique_labels)}) does not match number of labels in LABEL_MAP ({len(LABEL_MAP)})"
+                )
+        else:
+            print(f"WARNING: No label map provided. Using default label map.")
+            LABEL_MAP = [f"label_{i:02d}" for i in range(len(unique_labels))]
+
+        dataset_json["labels"] = {label: i for i, label in enumerate(LABEL_MAP)}
+
+        DATASET_PATH = os.path.join(NNUNET_DATA_PATH, "dataset.json")
+        print(f"Writing dataset json to: {DATASET_PATH}")
+
+        with open(DATASET_PATH, "w") as f:
+            json.dump(dataset_json, f, indent=4)
+
+    # FINISHED
+    n_images = len(glob.glob(os.path.join(NNUNET_IMAGES_PATH, f"{GLOB_PATTERN}")))
+    n_labels = len(glob.glob(os.path.join(NNUNET_LABELS_PATH, f"{GLOB_PATTERN}")))
+
+    print(f"-" * 50)
+    print(f"Summary: ")
+    print(f"{n_images} images in {NNUNET_IMAGES_PATH}")
+    print(f"{n_labels} labels in {NNUNET_LABELS_PATH}")
+    print(f"Number of unique labels: {len(unique_labels)}")
+    print(f"Label Map used {LABEL_MAP}")
+    print(f"FileType: {FILETYPE}")
+    print(f"Dataset json written to: {DATASET_PATH}")
+
+    # get last 3 chars, convert to int
+    nnUnetRaw = os.path.dirname(os.path.dirname(NNUNET_DATA_PATH))
+    DATASET_ID = int(os.path.basename(NNUNET_DATA_PATH)[7:10])  # DatasetXXX always
+
+    print("-" * 50)
+    print("To train nnUNet with this dataset:")
+    print(f"Dataset ID: {DATASET_ID}")
+    print(f"Dataset Path: {NNUNET_DATA_PATH}")
+
+    print(f"\n1. Set the following environment variables:")
+    print(f"nnUNet_raw={nnUnetRaw}")
+
+    print(f"Currently, the environment variables are set to:")
+    print(f"nnUNet_raw: {os.environ.get('nnUNet_raw')}")
+    print(f"nnUNet_preprocessed: {os.environ.get('nnUNet_preprocessed')}")
+    print(f"nnUNet_preprocessed: {os.environ.get('nnUNet_preprocessed')}")
+
+    # pre-process the dataset
+    print(f"\n2. Pre-Process the Dataset: ")
+    print(f"nnUNetv2_plan_and_preprocess -d {DATASET_ID} --verify_dataset_integrity")
+
+    # train the dataset
+    print(f"\n3. Train the Model on the Dataset {DATASET_ID}: ")
+    print(f"nnUNet_train {DATASET_ID} 2d all")
+
+    print(f"Post Training: ")
+    print(f"\nOnce training is complete, you can run inference on the dataset:")
+    print(f"See doc/nnunet_inference.md for more details.")
+    print(f"-" * 50)
