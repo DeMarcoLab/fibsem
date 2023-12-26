@@ -78,8 +78,8 @@ def load_from_checkpoint(
     # check if nnunetPredictor has method called load_from_checkpoint
     # TODO: remove once the change is upstreamed
     method_deprecated = hasattr(model, "load_from_checkpoint")
-    print(f"this method is deprecated: {method_deprecated}")
     if method_deprecated:
+        print(f"this method is deprecated: {method_deprecated}")
         print("please update nnunetv2 to the latest version, and update...")
 
     # load the full checkpoint
@@ -92,11 +92,12 @@ def load_from_checkpoint(
 
     # load the model parameters
     parameters = []
-    checkpoint_name = "final"  # always use final checkpoint for now
-    for k in sorted(model_checkpoint["folds"]):
-        checkpoint = model_checkpoint["folds"][k][checkpoint_name]
+    checkpoint_name = "final" # always use final checkpoint for now
+    for i, k in enumerate(sorted(model_checkpoint['folds'])):
 
-        if k == "fold_0":
+        checkpoint = model_checkpoint['folds'][k][checkpoint_name]
+        
+        if i == 0: # use first fold to get trainer and configuration name
             trainer_name = checkpoint["trainer_name"]
             configuration_name = checkpoint["init_args"]["configuration"]
             inference_allowed_mirroring_axes = (

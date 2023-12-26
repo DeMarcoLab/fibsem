@@ -1,10 +1,7 @@
 import argparse
 from fibsem.segmentation._nnunet import convert_to_nnunet_dataset
 
-NNUNET_DATA_PATH = "/home/patrick/github/data/spacetomo/seg/nnUnetRaw/spaceTomo"
-DATA_PATH = "/home/patrick/github/data/spacetomo/seg/new_dataset/images"
-LABEL_PATH = "/home/patrick/github/data/spacetomo/seg/new_dataset/labels"
-
+# Convert a fibsem dataset to nnunet format
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a dataset to nnunet format")
@@ -27,11 +24,11 @@ def main():
             labels = [line.rstrip("\n") for line in f]
         args.label_map = labels
 
-    print(args.data_path)
-    print(args.label_path)
-    print(args.nnunet_data_path)
-    print(args.label_map)
-    print(args.filetype)
+    # print(args.data_path)
+    # print(args.label_path)
+    # print(args.nnunet_data_path)
+    # print(args.label_map)
+    # print(args.filetype)
 
     # return
     convert_to_nnunet_dataset(
