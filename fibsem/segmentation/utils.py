@@ -225,7 +225,27 @@ def decode_segmap(image, nc=5):
     # stack rgb channels to form an image
     rgb_mask = np.stack([r, g, b], axis=-1).squeeze()
     return rgb_mask
+   
+def decode_segmap_v2(image, colormap: list[tuple] = None) -> np.ndarray:
+    """
+    Decode segmentation class mask into an RGB image mask
+    ref: https://learnopencv.com/pytorch-for-beginners-semantic-segmentation-using-torchvision/
+    """
 
+    if colormap is None:
+        from fibsem.segmentation.config import CLASS_COLORS_RGB
+        colormap = CLASS_COLORS_RGB
+
+    # convert class masks to rgb values
+    rgb_mask = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+    unique_labels = np.unique(image)
+
+    for class_idx in unique_labels:
+        idx = image == class_idx
+        rgb = colormap[class_idx]
+        rgb_mask[idx] = rgb
+
+    return rgb_mask
 
 def show_img_and_mask(imgs, gts, mask, title="Image, Ground Truth and Mask"):
     """Show a plot of the image, ground truth mask, and predicted mask"""

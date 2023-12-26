@@ -49,5 +49,9 @@ def convert_color_names_to_rgb(color_names):
 # map color names to rgb values
 CLASS_COLORS_RGB = convert_color_names_to_rgb(CLASS_COLORS.values())
 
+# TODO: enable configuration
+def get_colormap():
+    return CLASS_COLORS_RGB
+
 import os
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.yml")

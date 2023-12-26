@@ -170,11 +170,15 @@ class SegmentationModel:
 
 
 def load_model(
-    checkpoint: Path, encoder: str = "resnet34", nc: int = 3, _fix_numeric_scaling: bool = True
+    checkpoint: Path, encoder: str = "resnet34", nc: int = 3, _fix_numeric_scaling: bool = True, base = "smp"
 ) -> SegmentationModel:
 
     # load model
-    model = SegmentationModel(checkpoint=checkpoint, encoder=encoder, num_classes=nc, _fix_numeric_scaling=_fix_numeric_scaling)
+    if base == "nnunet":
+        from fibsem.segmentation.nnunet_model import SegmentationModelNNUnet
+        model = SegmentationModelNNUnet(checkpoint=checkpoint)
+    else:
+        model = SegmentationModel(checkpoint=checkpoint, encoder=encoder, num_classes=nc, _fix_numeric_scaling=_fix_numeric_scaling)
 
     return model
 
