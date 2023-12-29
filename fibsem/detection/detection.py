@@ -1008,3 +1008,111 @@ def _calculate_intersection(masks: list[np.ndarray]) -> np.ndarray:
         intersection[intersection < 2] = 0
         intersection[intersection == 2] = 1
     return intersection
+
+
+### SEGMENTATION TOOLS
+
+import copy
+import glob
+import os
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+
+from skimage import measure
+
+from fibsem.segmentation import config as segcfg
+from fibsem.segmentation.utils import decode_segmap_v2
+
+
+
+def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict], show: bool = True):
+    """Plot image with instance masks overlayed"""
+    # plot instance masks
+    fig, ax = plt.subplots(1, len(objects), figsize=(15, 7))
+    for i, obj in enumerate(objects):
+        c = obj["class"]
+        instance = obj["instance"]
+        imask = obj["mask"]
+
+        mask = np.zeros_like(mask)
+        mask[imask[:, 0], imask[:, 1]] = 1
+
+        tmp_cmap_rgb = [(0, 0, 0), segcfg.CLASS_COLORS_RGB[c]] # black and class color
+
+        # plot image
+        if len(objects) == 1:
+            axx = ax
+        else:
+            axx = ax[i]
+            
+        axx.imshow(image, cmap="gray", alpha=0.7)
+        axx.imshow(decode_segmap_v2(mask, tmp_cmap_rgb), alpha=0.3)
+        axx.set_title(f"{segcfg.CLASS_LABELS[c]}_{instance}")
+    
+    if show:
+        plt.show()
+
+    return fig
+
+
+def plot_bounding_boxes(image: np.ndarray, mask: np.ndarray, objects: list[dict], show:bool = True):
+    """Plot image with bounding boxes around detected objects"""
+    
+    # plot bounding boxes
+    fig = plt.figure(figsize=(10, 10))
+    plt.imshow(image, cmap="gray", alpha=0.7)
+    plt.imshow(decode_segmap_v2(mask, segcfg.CLASS_COLORS_RGB), alpha=0.3)            
+    
+    for obj in objects:
+        c = obj["class"]
+        instance = obj["instance"]
+        (ystart, xstart), (ystop, xstop) = obj["bbox"]
+        # plot bounding box as rectangle
+        rect = patches.Rectangle((xstart, ystart), xstop - xstart, ystop - ystart, 
+                                linewidth=1, linestyle="--", 
+                                edgecolor=segcfg.CLASS_COLORS[c], 
+                                facecolor='none', label=f"{segcfg.CLASS_LABELS[c]}_{instance}")
+        plt.gca().add_patch(rect)
+
+    plt.legend(loc="best")
+    if show:
+        plt.show()
+
+    return fig
+
+
+
+def get_objects(mask: np.ndarray, ignore_classes: list[int] = [0, 3], min_pixels: int = 100):
+    """ Extract individual objects from a mask """
+
+    classes = np.unique(mask)
+    ignore_classes = [0, 3]
+    classes = [c for c in classes if c not in ignore_classes]
+
+    objects = []
+    for c in classes:
+        mask_c = mask == c
+
+        # extract instance labels
+        label = measure.label(mask_c).astype(np.uint8)
+        instances = np.unique(label)  # 0 = background, 1 = instance 1, 2 = instance 2, etc.
+        for instance in instances[1:]: # skip background
+            
+            # get bounding box
+            instance_mask = np.argwhere(label==instance)
+
+            # check how many pixels are in the instance mask
+            if len(instance_mask) < min_pixels:
+                print(f"skipping instance {instance} of class {c} because it has {len(instance_mask)} pixels. The minimum is {min_pixels}")
+                continue
+
+            (ystart, xstart), (ystop, xstop) = instance_mask.min(0), instance_mask.max(0) + 1
+            bbox = [(ystart, xstart), (ystop, xstop)]
+
+            # save instance masks
+            odict = {"class": c, "instance": instance, "mask": instance_mask, "bbox": bbox}
+            objects.append(copy.deepcopy(odict))
+
+    return objects
