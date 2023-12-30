@@ -1,13 +1,13 @@
 
 
+import os
 import numpy as np
 import onnx
 import onnxruntime
 
+from huggingface_hub import hf_hub_download
 from fibsem.segmentation.utils import decode_segmap_v2
 
-import os
-from huggingface_hub import hf_hub_download
 
 ### ONNX
 def download_checkpoint(checkpoint: str):
@@ -36,33 +36,20 @@ class SegmentationModelONNX:
 
     def inference(self, img: np.ndarray, rgb: bool = True):
         # preprocess
-        # imgt = torch.Tensor(img).float().unsqueeze(0).unsqueeze(0)
-        # imgt /= 255.0 # training data is 0-255
         imgt = img.astype(np.float32)
         imgt = np.expand_dims(imgt, axis=0)
         imgt = np.expand_dims(imgt, axis=0)
         imgt /= 255.0
 
-        # def to_numpy(tensor):
-        #     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
-
         # inference
         ort_inputs = {self.session.get_inputs()[0].name: imgt}
         ort_outs = self.session.run(None, ort_inputs)
 
-        # softmax
-        # outputs = torch.from_numpy(ort_outs[0]) # assume batch_size = 1
-        # outputs = F.softmax(outputs, dim=1)
 
-        # softmax fun without torch
+        # softmax
         outputs = ort_outs[0] # TODO: support batch size > 1
         outputs = np.exp(outputs) / np.sum(np.exp(outputs), axis=1, keepdims=True)
         masks = np.argmax(outputs, axis=1)
-
-        # argmax 
-
-        # masks = torch.argmax(outputs, dim=1).detach().cpu().numpy()
-        
         mask = masks[0, :, :]
 
         # convert to rgb
