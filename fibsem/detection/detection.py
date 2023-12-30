@@ -1027,11 +1027,16 @@ from fibsem.segmentation.utils import decode_segmap_v2
 
 
 
-def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict], show: bool = True):
+def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict], ncols:int = 10, show: bool = True):
     """Plot image with instance masks overlayed"""
     # plot instance masks
-    fig, ax = plt.subplots(1, len(objects), figsize=(15, 7))
+    n_objects = min(len(objects), ncols) # limit to 10 objects
+    fig, ax = plt.subplots(1, n_objects, figsize=(15, 7))
     for i, obj in enumerate(objects):
+
+        if i >= n_objects:
+            break
+
         c = obj["class"]
         instance = obj["instance"]
         imask = obj["mask"]
@@ -1050,12 +1055,91 @@ def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict]
         axx.imshow(image, cmap="gray", alpha=0.7)
         axx.imshow(decode_segmap_v2(mask, tmp_cmap_rgb), alpha=0.3)
         axx.set_title(f"{segcfg.CLASS_LABELS[c]}_{instance}")
+
+        # axes off
+        axx.axis("off")
+
+    plt.subplots_adjust(wspace=0.05, hspace=0.05)
     
     if show:
         plt.show()
 
     return fig
 
+
+def plot_instance_masks_grid(image: np.ndarray, mask: np.ndarray, 
+                             objects: list[dict], ncols: int = 5, 
+                             show: bool = True):
+    """Plot image with instance masks overlayed"""
+    # plot instance masks
+    # craete grid from objects list, with
+    #  nrows = n unique classes, and 
+    # ncols = n unique instance of eaach class
+    
+    # get unique classes and instances
+
+    # TODO: add class names to title / axes
+
+    plot_objects = {}
+    for obj in objects:
+        c = obj["class"]
+        instance = obj["instance"]
+        if c not in plot_objects.keys():
+            plot_objects[c] = []
+        plot_objects[c].append(obj)
+
+    nr = len(plot_objects.keys())
+    nc = min(ncols, max([len(plot_objects[c]) for c in plot_objects.keys()])) # limit to ncols objects
+    fig, ax = plt.subplots(nr, nc, figsize=(20, 20))
+
+    for i, c in enumerate(plot_objects.keys()):
+
+        for j, obj in enumerate(plot_objects[c]):
+
+            if j >= nc:
+                continue
+
+            c = obj["class"]
+            instance = obj["instance"]
+            imask = obj["mask"]
+
+            mask = np.zeros_like(mask)
+            mask[imask[:, 0], imask[:, 1]] = 1
+
+            tmp_cmap_rgb = [(0, 0, 0), segcfg.CLASS_COLORS_RGB[c]] # black and class color
+
+            # plot image
+            if len(objects) == 1:
+                axx = ax
+            elif nc == 1:
+                axx = ax[i]
+            else:
+                axx = ax[i][j]
+
+
+            axx.imshow(image, cmap="gray", alpha=0.7)
+            axx.imshow(decode_segmap_v2(mask, tmp_cmap_rgb), alpha=0.3)
+            # axx.set_title(f"{segcfg.CLASS_LABELS[c]}_{instance}")
+
+            # axes off
+            axx.axis("off")
+
+            # set class label has yaxis title
+            if j == 0:
+                axx.set_ylabel(segcfg.CLASS_LABELS[c], rotation=0, ha="right", va="center", fontsize=20)
+                
+
+        # if not enough objects to fill the grid, remove the remaining axes
+        if len(plot_objects[c]) < nc:
+            for j in range(len(plot_objects[c]), nc):
+                ax[i][j].axis("off")
+
+    plt.subplots_adjust(wspace=0.05, hspace=0.05)
+    
+    if show:
+        plt.show()
+
+    return fig
 
 def plot_bounding_boxes(image: np.ndarray, mask: np.ndarray, objects: list[dict], show:bool = True):
     """Plot image with bounding boxes around detected objects"""
@@ -1065,15 +1149,30 @@ def plot_bounding_boxes(image: np.ndarray, mask: np.ndarray, objects: list[dict]
     plt.imshow(image, cmap="gray", alpha=0.7)
     plt.imshow(decode_segmap_v2(mask, segcfg.CLASS_COLORS_RGB), alpha=0.3)            
     
+
+    n_objects = len(objects)
+    classes = []
+
     for obj in objects:
         c = obj["class"]
         instance = obj["instance"]
         (ystart, xstart), (ystop, xstop) = obj["bbox"]
+
+        # if the class is the same as the name, only plot the label once
+        if segcfg.CLASS_LABELS[c] in classes:
+            label = None
+        else: 
+            cls_name = segcfg.CLASS_LABELS[c]
+            # limit the number of instances to 5
+            label = f"{cls_name}_{instance}" if n_objects <= 5 else f"{cls_name}"
+            classes.append(cls_name)
+
         # plot bounding box as rectangle
         rect = patches.Rectangle((xstart, ystart), xstop - xstart, ystop - ystart, 
                                 linewidth=1, linestyle="--", 
                                 edgecolor=segcfg.CLASS_COLORS[c], 
-                                facecolor='none', label=f"{segcfg.CLASS_LABELS[c]}_{instance}")
+                                facecolor='none', 
+                                label=label)
         plt.gca().add_patch(rect)
 
     plt.legend(loc="best")
@@ -1088,7 +1187,6 @@ def get_objects(mask: np.ndarray, ignore_classes: list[int] = [0, 3], min_pixels
     """ Extract individual objects from a mask """
 
     classes = np.unique(mask)
-    ignore_classes = [0, 3]
     classes = [c for c in classes if c not in ignore_classes]
 
     objects = []
