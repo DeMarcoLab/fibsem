@@ -3,7 +3,7 @@ import napari
 import logging
 
 import fibsem
-from fibsem.ui.qtdesigner_files import FibsemFeatureDetectionUI
+from fibsem.ui.qtdesigner_files import FibsemFeatureDetectionUI as FibsemFeatureLabellingUI
 from fibsem.ui.utils import (
     _get_directory_ui,
     _get_file_ui,
@@ -135,13 +135,12 @@ def get_feature_color(feature: str) -> str:
         return CONFIGURATION["UI"]["FACE_COLOR"]
 
 
-class FibsemFeatureDetectionUI(
-    FibsemFeatureDetectionUI.Ui_MainWindow, QtWidgets.QMainWindow
+class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets.QMainWindow
 ):
     _minimap_signal = pyqtSignal(object)
 
     def __init__(self, viewer: napari.Viewer):
-        super(FibsemFeatureDetectionUI, self).__init__()
+        super(FibsemFeatureLabellingUI, self).__init__()
         self.setupUi(self)
 
         self.viewer = viewer
@@ -512,7 +511,7 @@ class FibsemFeatureDetectionUI(
 
 def main():
     viewer = napari.Viewer(ndisplay=2)
-    fibsem_ui = FibsemFeatureDetectionUI(viewer=viewer)
+    fibsem_ui = FibsemFeatureLabellingUI(viewer=viewer)
     viewer.window.add_dock_widget(
         fibsem_ui,
         area="right",
