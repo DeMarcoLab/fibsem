@@ -1039,7 +1039,7 @@ def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict]
 
         c = obj["class"]
         instance = obj["instance"]
-        imask = obj["mask"]
+        imask = np.array(obj["mask"])
 
         mask = np.zeros_like(mask)
         mask[imask[:, 0], imask[:, 1]] = 1
@@ -1090,7 +1090,7 @@ def plot_instance_masks_grid(image: np.ndarray, mask: np.ndarray,
 
     nr = len(plot_objects.keys())
     nc = min(ncols, max([len(plot_objects[c]) for c in plot_objects.keys()])) # limit to ncols objects
-    fig, ax = plt.subplots(nr, nc, figsize=(20, 20))
+    fig, ax = plt.subplots(nr, nc, figsize=(10, 10))
 
     for i, c in enumerate(plot_objects.keys()):
 
@@ -1101,7 +1101,7 @@ def plot_instance_masks_grid(image: np.ndarray, mask: np.ndarray,
 
             c = obj["class"]
             instance = obj["instance"]
-            imask = obj["mask"]
+            imask = np.array(obj["mask"])
 
             mask = np.zeros_like(mask)
             mask[imask[:, 0], imask[:, 1]] = 1
@@ -1113,6 +1113,8 @@ def plot_instance_masks_grid(image: np.ndarray, mask: np.ndarray,
                 axx = ax
             elif nc == 1:
                 axx = ax[i]
+            elif nr == 1:
+                axx = ax[j]
             else:
                 axx = ax[i][j]
 
@@ -1181,13 +1183,47 @@ def plot_bounding_boxes(image: np.ndarray, mask: np.ndarray, objects: list[dict]
 
     return fig
 
+def plot_keypoints(mask: np.ndarray, objects: list[dict]):
+    for obj in objects:
 
+        c = obj["class"]
+        instance = obj["instance"]
+        imask = np.array(obj["mask"])
+        keypoints = obj["keypoints"]
+
+        mask = np.zeros_like(mask)
+        mask[imask[:, 0], imask[:, 1]] = 1   
+        
+        # filter points for specific classes
+        mmap = {
+            "lamella": ["centre", "bottom_edge", "top_edge", "left_edge", "right_edge"],
+            "manipulator": ["top_left", "top_right", "bottom_left", "bottom_right"],
+            "copper_adaptor": ["centre", "bottom_edge", "top_edge"],
+        }   
+
+        cname = segcfg.CLASS_LABELS[c]
+
+        if cname not in mmap.keys():
+            mmap = {cname: ["centre"]}
+
+        plt.title(f"{cname}_{instance}")
+        plt.imshow(mask, cmap="gray") # TODO: decode segmap?
+            
+        for l, p in keypoints.items():
+            
+            if l not in mmap[cname]:
+                continue
+                
+            l = l.title().replace("_", "")
+            c = cname.title().replace("_", "")
+            plt.plot(p[0], p[1], "+", label=f"{c}{l}")
+        plt.legend()
+        plt.show()
 
 def get_objects(mask: np.ndarray, ignore_classes: list[int] = [0, 3], min_pixels: int = 100):
     """ Extract individual objects from a mask """
 
-    classes = np.unique(mask)
-    classes = [c for c in classes if c not in ignore_classes]
+    classes = [c for c in np.unique(mask) if c not in ignore_classes] # TODO: make this more granular, e.g. ignore-bbox, ignore-keypoints, etc.
 
     objects = []
     for c in classes:
@@ -1203,14 +1239,89 @@ def get_objects(mask: np.ndarray, ignore_classes: list[int] = [0, 3], min_pixels
 
             # check how many pixels are in the instance mask
             if len(instance_mask) < min_pixels:
-                print(f"skipping instance {instance} of class {c} because it has {len(instance_mask)} pixels. The minimum is {min_pixels}")
+                logging.debug(f"skipping instance {instance} of class {c} because it has {len(instance_mask)} pixels. The minimum is {min_pixels}")
                 continue
 
             (ystart, xstart), (ystop, xstop) = instance_mask.min(0), instance_mask.max(0) + 1
             bbox = [(ystart, xstart), (ystop, xstop)]
+            
+            # get keypoints
+            kmask = np.zeros_like(mask)
+            kmask[instance_mask[:, 0], instance_mask[:, 1]] = 1   
+            keypoints = get_keypoints(kmask) # TODO: fix inefficiency here
 
             # save instance masks
-            odict = {"class": c, "instance": instance, "mask": instance_mask, "bbox": bbox}
+            odict = {"class": c, "instance": instance, 
+                     "mask": instance_mask, 
+                     "bbox": bbox, "keypoints": keypoints}
             objects.append(copy.deepcopy(odict))
 
     return objects
+
+from scipy import ndimage
+
+def get_keypoints(mask: np.ndarray) -> dict:
+        """Get keypoints from instance mask.
+        Args:
+            mask (np.ndarray): instance mask    
+        """
+
+        # get center of mass, from list of points
+        cy, cx = np.array(ndimage.center_of_mass(mask))
+
+        # get edges
+        imask = np.argwhere(mask==1) # probably inefficient to recompute this
+
+        ymin = np.max(imask[:, 0])
+        ymax = np.min(imask[:, 0])
+        xmin = np.min(imask[:, 1])
+        xmax = np.max(imask[:, 1])
+
+        centre = cx, cy
+        bot = cx, ymin
+        top = cx, ymax
+        left = xmin, cy
+        right = xmax, cy
+
+        # get width and height
+        w = xmax - xmin
+        h = ymax - ymin   
+        
+        # corners
+        tl = xmin, ymin
+        tr = xmax, ymin
+        bl = xmin, ymax
+        br = xmax, ymax
+
+        pts = [centre, bot, top, left, right, tl, tr, bl, br]
+        labels = ["centre", "bottom_edge", "top_edge", "left_edge", "right_edge", 
+                "top_left", "top_right", "bottom_left", "bottom_right"]
+
+        keypoints = dict(zip(labels, pts))
+
+        return keypoints 
+
+
+# SAVE/ LOAD data as json
+import json
+
+def save_json(data, filename):
+    # write np array to json
+    # https://stackoverflow.com/questions/26646362/numpy-array-is-not-json-serializable
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            if isinstance(obj, (np.uint8, np.int64, np.uint64)):
+                return int(obj)
+            return json.JSONEncoder.default(self, obj)
+    
+
+    # save json  to file 
+    with open(filename, "w") as f:
+        json.dump(data, f, cls=NumpyEncoder, indent=4)
+
+def load_json(filename):
+    with open(filename, "r") as f:
+        data = json.load(f)
+    return data

@@ -283,7 +283,9 @@ def convert_to_nnunet_dataset(
                 # if this is the images, we need to prepend _0000 before the fileextension
                 # because nnunet expects the images to be named like this??
                 if "imagesTr" in out_path:
-                    basename = basename.replace(FILETYPE, f"_0000{FILETYPE}")
+                    # check if it has _0000 already
+                    if "_0000" not in basename:
+                        basename = basename.replace(FILETYPE, f"_0000{FILETYPE}")
 
                 new_fname = os.path.join(out_path, basename)
                 shutil.copy(fname, new_fname)
