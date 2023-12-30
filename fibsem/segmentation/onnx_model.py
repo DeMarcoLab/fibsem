@@ -56,9 +56,6 @@ class SegmentationModelONNX:
         if rgb: 
             mask = decode_segmap_v2(mask)
         return mask
-    
-
-
 
 def export_model_to_onnx(checkpoint: str, onnx_path: str):
     

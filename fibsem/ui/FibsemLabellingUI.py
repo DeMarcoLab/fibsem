@@ -112,7 +112,9 @@ CONFIGURATION = {
 
 }
 
-# ref: https://github.com/JoOkuma/napari-segment-anything (Apache License 2.0)
+# ref (other sam labelling tools):
+# https://github.com/JoOkuma/napari-segment-anything (Apache License 2.0)
+# https://github.com/MIC-DKFZ/napari-sam (Apache License 2.0)
 class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
@@ -402,7 +404,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
     def load_model(self):
         self.model = self.model_widget.model
-        self.model_type = self.model_widget.model_type
+        self.model_type = "SegmentAnythingModel" if self.model_widget.model_type in ["SegmentAnythingModel","MobileSAMModel"] else "SegmentationModel"
         self.label_model_info.setText(f"Model: {os.path.basename(self.model.checkpoint)}")
 
         # specific layers for SAM model
@@ -415,8 +417,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
             self.pushButton_model_clear.setVisible(True)
 
-            self.viewer.bind_key("C", self._confirm_model_class)
-            self.viewer.bind_key("X", self._clear_sam_data)
+            self.viewer.bind_key("C", self._confirm_model_class, overwrite=True)
+            self.viewer.bind_key("X", self._clear_sam_data, overwrite=True)
 
         napari.utils.notifications.show_info(
             f"Loaded {self.model_type}: {os.path.basename(self.model.checkpoint)}"

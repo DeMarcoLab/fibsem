@@ -4,28 +4,40 @@ from pathlib import Path
 
 import napari
 import napari.utils.notifications
-import numpy as np
-import tifffile as tff
 from PyQt5 import QtWidgets
 
-from fibsem.detection import detection
-from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.segmentation import model as fibsem_model
 from fibsem.segmentation.model import load_model
-from fibsem.structures import (
-    BeamType,
-    FibsemImage,
-    Point,
-)
+
 from PyQt5.QtCore import pyqtSignal
 from fibsem.ui.qtdesigner_files import FibsemSegmentationModelWidget
 from fibsem.segmentation.model import SegmentationModel
 import logging
+import torch
 
 CHECKPOINT_PATH = "autolamella-mega-latest.pt"
 SEGMENT_ANYTHING_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "sam_vit_h_4b8939.pth")
-AVAILABLE_MODELS = ["SegmentationModel", "SegmentAnythingModel"]
+MOBILE_SAM_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "weight", "mobile_sam.pt")
+
+SEGMENT_ANYTHING_AVAIABLE = False
+MOBILE_SAM_AVAIABLE = False
+try:
+    from segment_anything import sam_model_registry, SamPredictor
+    SEGMENT_ANYTHING_AVAIABLE = True
+except ImportError:
+    pass
+try:
+    from mobile_sam import sam_model_registry, SamPredictor
+    MOBILE_SAM_AVAIABLE = True
+except ImportError:
+    pass
+
+AVAILABLE_MODELS = ["SegmentationModel"]
+if SEGMENT_ANYTHING_AVAIABLE:
+    AVAILABLE_MODELS.append("SegmentAnythingModel")
+if MOBILE_SAM_AVAIABLE:
+    AVAILABLE_MODELS.append("MobileSAMModel")
 
 class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWidgets.QDialog):
     continue_signal = pyqtSignal(DetectedFeatures)
@@ -74,6 +86,9 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
             self.lineEdit_checkpoint.setText(SEGMENT_ANYTHING_PATH)
             # self.lineEdit_encoder.setText("default")
             # self.lineEdit_encoder.setEnabled(False)
+        elif model_type == "MobileSAMModel":
+            # self.spinBox_num_classes.setValue(7)
+            self.lineEdit_checkpoint.setText(MOBILE_SAM_PATH)
 
 
 
@@ -89,7 +104,10 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
             self.model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
 
         if model_type == "SegmentAnythingModel":
-            self.model = load_sam_model(encoder=encoder, checkpoint=checkpoint)
+            self.model = load_sam_model(encoder="sam", checkpoint=checkpoint)
+
+        if model_type == "MobileSAMModel":
+            self.model = load_sam_model(encoder="mobile_sam", checkpoint=checkpoint)
 
         print(f"Loaded: ", self.model)
 
@@ -105,10 +123,13 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
 # TODO: abstract this so can use same interface as fibsem?
 def load_sam_model(encoder: str, checkpoint: str):
     """Load the SAM predictor model from a checkpoint file."""
-    from segment_anything import sam_model_registry, SamPredictor
-    import torch
 
-    sam = sam_model_registry[encoder](checkpoint=checkpoint)
+    if encoder == "sam":
+        model_type = "default"
+    elif encoder == "mobile_sam":
+        model_type = "vit_t"
+
+    sam = sam_model_registry[model_type](checkpoint=checkpoint)
 
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     sam.to(device=device)
@@ -129,21 +150,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# DONE
-# - convert to use binary masks instead of rgb - DOne
-# - add mask, rgb to detected features + save to file  # DONE
-# - convert mask layer to label not image # DONE
-# - save detected features to file on prev / save image # DONE
-# - add n detections, not just two.. if no features are passed... use all?
-# - add toggles for seg / feature detection / eval
-# - maybe integrate as labelling ui? -> assisted labelling
-# - toggle show info checkbox
-# - abstract segmentation model widget
-
-# TODO:
-# - convert detected features / detection to take in Union[FibsemImage, np.ndarray]
-# - edittable mask -> rerun detection 
-# - need to ensure feature det is only enabled if seg is enabled
-# - need seg to be enabled if feature det is enabled same for eval

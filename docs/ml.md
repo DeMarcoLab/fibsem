@@ -66,7 +66,7 @@ To use, go to the Model tab and load your model, and then tick 'model assisted' 
 
 We have implemented the Segment Anything Model from MetaAI. This model is trained to segment any object. Here we use it as part of the model assisted labelling 
 
-
+#### Segment Anything
 For more detailed about SAM see: https://github.com/facebookresearch/segment-anything
 
 To use SAM:
@@ -78,3 +78,15 @@ pip install opencv-python pycocotools matplotlib onnxruntime onnx
 ```
 
 Download weights: [SAM ViT-H](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth)
+
+
+#### MobileSAM
+The labelling UI also supports using MobileSAM which is a faster version of Segment Anything (+ less gpu memory).
+
+``` bash
+pip install git+https://github.com/ChaoningZhang/MobileSAM.git
+
+```
+
+Download weights: [MobileSAM ViT-T](https://drive.google.com/file/d/1dE-YAG-1mFCBmao2rHDp0n-PP4eH7SjE/view?usp=sharing)
+
