@@ -8,26 +8,47 @@ OpenFIBSEM is a Python package for controlling and automating FIB/SEM microscope
 
 We currently support the [TESCAN Automation SDK](https://www.tescan.com/en/products/automation-sdk/) and [ThermoFisher AutoScript](https://www.tescan.com/en/products/autoscript/). Support for other FIBSEM systems is planned.
 
-
 ## Install
 
 ### Install OpenFIBSEM
 
-Clone this repository, and checkout v0.2-stable: 
+There are several ways to install OpenFIBSEM depending on your application and needs.
 
+#### PyPI (For Users)
+
+```bash
+pip install fibsem 
 ```
-$ git clone https://github.com/DeMarcoLab/fibsem.git
-$ git checkout origin/v0.2-stable
+
+#### Github (For Development)
+
+Clone this repository, and checkout main:
+
+```bash
+git clone https://github.com/DeMarcoLab/fibsem.git
 ```
 
 Install dependencies and package
+
 ```bash
-$ cd fibsem
-$ conda create -n fibsem python=3.9 pip
-$ conda activate fibsem
-$ pip install -e .
+cd fibsem
+conda create -n fibsem python=3.9 pip
+conda activate fibsem
+pip install -e .
 
 ```
+
+#### Napari Plugin
+
+The OpenFIBSEM tools and user interface are also available as a napari plugin:
+
+```bash
+pip install napari-openfibsem
+```
+
+Or use napari plugin manager
+
+#### Additional Installation Information
 
 For detailed instructions on installation, and installing the commercial microscope APIs, see [Installation Guide](INSTALLATION.md).
 
@@ -35,7 +56,7 @@ For detailed instructions on installation, and installing the commercial microsc
 
 To get started, see the example/example.py:
 
-Recommended: You can start an offline demo microscope by speciying manufacturer: "Demo" in the system.yaml file (fibsem/config/system.yaml). This will start a demo microscope that you can use to test the API without connecting to a real microscope. To connect to a real microscope, set the ip_address and manufacturer of your microscope in the system.yaml or alternatively, you can pass these arguments to utils.setup_session() directly. 
+Recommended: You can start an offline demo microscope by speciying manufacturer: "Demo" in the system.yaml file (fibsem/config/system.yaml). This will start a demo microscope that you can use to test the API without connecting to a real microscope. To connect to a real microscope, set the ip_address and manufacturer of your microscope in the system.yaml or alternatively, you can pass these arguments to utils.setup_session() directly.
 
 This example shows you how to connect to the microscope, take an image with both beams, and then plot.
 
