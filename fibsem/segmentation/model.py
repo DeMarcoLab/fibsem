@@ -169,9 +169,23 @@ class SegmentationModel:
         return np.array(output_masks)
 
 
+def get_backend(checkpoint: str) -> str:
+
+    if "nnunet" in checkpoint:
+        return "nnunet"
+    elif "onnx" in checkpoint:
+        return "onnx"
+    else:
+        return "smp"
+
 def load_model(
-    checkpoint: Path, encoder: str = "resnet34", nc: int = 3, _fix_numeric_scaling: bool = True, backend = "smp"
+    checkpoint: Path, encoder: str = "resnet34", nc: int = 3, _fix_numeric_scaling: bool = True, backend = None
 ) -> SegmentationModel:
+    """Load a model checkpoint
+    backend: str, optional The backend to use. If None, will try to infer from the checkpoint name"""
+    
+    if backend is None:
+        backend = get_backend(checkpoint=checkpoint)
 
     # load model
     if backend == "nnunet":

@@ -27,7 +27,7 @@ from typing import Any, Generator, Optional
 # setup a basic logger
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-_DEBUG = True
+_DEBUG = False
 
 # new line char in html
 NL = "<br>"
@@ -138,8 +138,9 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.setup_connections()
 
         if _DEBUG:
-            self.lineEdit_data_path.setText("/home/patrick/github/data/autolamella-paper/model-development/train/serial-liftout/train")
-            self.lineEdit_labels_path.setText("/home/patrick/github/data/autolamella-paper/model-development/train/serial-liftout/train/labels/test")
+            self.lineEdit_data_path.setText("/home/patrick/github/data/spacetomo/seg/new_dataset/images")
+            self.lineEdit_labels_path.setText("/home/patrick/github/data/spacetomo/seg/new_dataset/images/labels2")
+            self.model_widget.lineEdit_checkpoint.setText("/home/patrick/github/data/spacetomo/seg/model/nnunet-spacetomo.pt")
 
     def setup_connections(self):
         self.pushButton_load_data.clicked.connect(self.load_data)
@@ -193,7 +194,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
                 self.lineEdit_labels_path.setText(path)
 
         elif self.sender() == self.model_widget.checkpoint_seg_button:
-            path = _get_file_ui(msg="Select Checkpoint File")
+            path = _get_file_ui(msg="Select Checkpoint File", _filter=None)
             if path is not None and path != "":
                 self.model_widget.lineEdit_checkpoint.setText(path)
 
@@ -378,7 +379,9 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         elif self.model_assist and self.model is not None:
             if self.model_type == "SegmentationModel":
-                label_image = self.model.inference(image, rgb=False)[0]
+                label_image = self.model.inference(image, rgb=False)
+                if label_image.ndim == 3:
+                    label_image = label_image[0]
             if self.model_type == "SegmentAnythingModel":
                 label_image = np.zeros_like(image)
 

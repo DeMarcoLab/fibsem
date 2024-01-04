@@ -65,6 +65,8 @@ class SegmentationModelNNUnet:
             raise ValueError(f"Invalid image shape: {img.shape}")
         
         # TODO: also do dtype conversions
+        if not isinstance(img.dtype, np.float32):
+            img = img.astype(np.float32)
 
         return img
 
