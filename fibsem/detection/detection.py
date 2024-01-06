@@ -728,7 +728,8 @@ def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", sho
             names.remove(f.name)
 
     # if len(det.features) < 5:
-    ax.legend(loc="best")
+    if len(det.features) != 0:
+        ax.legend(loc="best")
     ax.axis("off")
 
     # if len(det.features) == 2:
@@ -1325,3 +1326,36 @@ def load_json(filename):
     with open(filename, "r") as f:
         data = json.load(f)
     return data
+
+
+from tqdm import tqdm 
+
+def generate_segmentation_objects(data_path: str, labels_path: str, dataset_json_path: str, min_pixels: int = 100, save: bool=True):
+    image_filenames = sorted(glob.glob(os.path.join(data_path, "*.tif")))
+    label_filenames = sorted(glob.glob(os.path.join(labels_path, "*.tif")))
+
+    filenames = list(zip(image_filenames, label_filenames)) # TDOO: we dont actually need image files for this, just the labels?
+    dat = []
+
+    progress = tqdm(filenames)
+    for img_fname, label_fname in progress:
+        progress.set_description(f"Processing {os.path.basename(img_fname)}")
+        
+        image = tff.imread(img_fname)
+        mask = tff.imread(label_fname)
+
+        # get objects
+        objects = get_objects(mask, min_pixels=min_pixels)
+
+        # save 
+        dat.append(copy.deepcopy({"filename": os.path.basename(img_fname), 
+                                "path": os.path.dirname(img_fname), 
+                                "mask_filename": os.path.basename(label_fname), 
+                                "mask_path": os.path.dirname(label_fname),
+                                "objects": objects}))
+
+    if save:
+        print(f"Saving data.json to {dataset_json_path}")
+        save_json(dat, dataset_json_path)
+
+    return dat

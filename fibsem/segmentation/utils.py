@@ -241,9 +241,7 @@ def decode_segmap_v2(image, colormap: list[tuple] = None) -> np.ndarray:
     unique_labels = np.unique(image)
 
     for class_idx in unique_labels:
-        idx = image == class_idx
-        rgb = colormap[class_idx]
-        rgb_mask[idx] = rgb
+        rgb_mask[image == class_idx] = colormap[class_idx]
 
     return rgb_mask
 

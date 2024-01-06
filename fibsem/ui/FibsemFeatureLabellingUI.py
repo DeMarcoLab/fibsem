@@ -107,7 +107,7 @@ CONFIGURATION = {
         "IMAGE_LAYER_NAME": "Image",
         "POINT_LAYER_NAME": "Features",
         "SHAPE_LAYER_NAME": "Bounding Boxes",
-        "POINT_SIZE": 20,
+        "POINT_SIZE": 5,
         "TEXT_COLOR": "white",
         "TEXT_TRANSLATION": np.array([-30, 0]),
         "FACE_COLOR": "white",

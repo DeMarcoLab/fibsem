@@ -1,0 +1,29 @@
+data_paths:  [
+              /home/patrick/github/data/autolamella-paper/model-development/train/autolamella-waffle/train,
+              /home/patrick/github/data/autolamella-paper/model-development/train/autoliftout-04/train-relabelled/images, 
+              /home/patrick/github/data/autolamella-paper/model-development/train/autoliftout-04/train-new/train, 
+              /home/patrick/github/data/autolamella-paper/model-development/train/autoliftout-04/train-waffle/train,
+              /home/patrick/github/data/autolamella-paper/model-development/train/serial-liftout/train
+              ]
+label_paths: [
+              /home/patrick/github/data/autolamella-paper/model-development/train/autolamella-waffle/train/labels, 
+              /home/patrick/github/data/autolamella-paper/model-development/train/autoliftout-04/train-relabelled/labels, 
+              /home/patrick/github/data/autolamella-paper/model-development/train/autoliftout-04/train-new/train/labels, 
+              /home/patrick/github/data/autolamella-paper/model-development/train/autoliftout-04/train-waffle/train/labels,
+              /home/patrick/github/data/autolamella-paper/model-development/train/serial-liftout/train/labels
+              ] 
+save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autolamella/mega/base/v5
+checkpoint: null
+encoder: "resnet34" 
+epochs: 50
+split: 0.1
+batch_size: 2 
+num_classes: 6  
+lr: 3.0e-4
+train_log_freq: 32
+val_log_freq: 32
+wandb: true 
+wandb_project: "autolamella-mega" 
+wandb_entity: "openfibsem"
+
+

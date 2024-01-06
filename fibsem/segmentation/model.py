@@ -38,6 +38,7 @@ class SegmentationModel:
         mode: str = "eval",
         num_classes: int = 3,
         _fix_numeric_scaling: bool = True,
+        use_v2: bool = True,
     ) -> None:
         super().__init__()
 
@@ -50,6 +51,8 @@ class SegmentationModel:
             self._fix_numeric_scaling = False
 
         if "latest" in checkpoint:
+            use_v2 = True
+        if use_v2:
             print(f"using latest checkpoint: {checkpoint}")
             self.model = self.load_model_v2(checkpoint=checkpoint)
         else:
@@ -132,7 +135,7 @@ class SegmentationModel:
         # print(img_t.min(), img_t.max(), img_t.dtype)
         if self._fix_numeric_scaling:
             img_t /=  255.0 # scale float to 0 - 1
-        print(img_t.min(), img_t.max(), img_t.dtype)
+        # print(img_t.min(), img_t.max(), img_t.dtype)
         if img_t.ndim == 2:
             img_t = img_t.unsqueeze(0).unsqueeze(0)  # add batch dim and channel dim
         elif img_t.ndim == 3:

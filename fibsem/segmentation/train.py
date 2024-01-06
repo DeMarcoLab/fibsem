@@ -39,12 +39,14 @@ def _convert_checkpoint_format(checkpoint: str, encoder:str, nc: int, output_fil
 
 def _create_wandb_image(img, gt, pred, caption):
     
-    img = img_as_ubyte(gray2rgb(img))  
-    gt = utils.decode_segmap(gt) 
-    pred = utils.decode_segmap(pred)
+    img = img_as_ubyte(gray2rgb(img)) 
+    gt = utils.decode_segmap_v2(gt[0]) 
+    pred = utils.decode_segmap_v2(pred[0])
 
     return wandb.Image(
         np.hstack([img, gt, pred]), caption=caption)
+
+
 # TODO: update save model to new checkpoint format
 def save_model(save_dir, model, epoch):
     """Helper function for saving the model based on current time and epoch"""
@@ -55,8 +57,19 @@ def save_model(save_dir, model, epoch):
 
     print(f"Model saved to {model_save_file}")
 
+def save_model_v2(save_dir, model, epoch, encoder, nc):
+    # save model with all necessary information
 
-def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
+    checkpoint_name = os.path.join(save_dir, f"model{epoch:02d}.pt")
+    checkpoint_state = model.state_dict()
+
+    state_dict = {"checkpoint": checkpoint_state, "encoder": encoder, "nc": nc}
+
+    # save
+    torch.save(state_dict, checkpoint_name)
+    print(f"Checkpoint saved as {checkpoint_name}")
+
+def train(model, device, data_loader, criterion, optimizer, WANDB, log_freq: int = 32):
     data_loader = tqdm(data_loader)
     train_loss = 0
 
@@ -87,7 +100,7 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
         data_loader.set_description(f"Train Loss: {loss.item():.04f}")
 
 
-        if WANDB and i % 16 == 0: 
+        if WANDB and i % log_freq == 0: 
             
             # TODO: this is really inefficient, re-running the model on the same image, just use existing outputs
             idx = random.choice(np.arange(0, images.shape[0]))
@@ -99,15 +112,10 @@ def train(model, device, data_loader, criterion, optimizer, WANDB, ui):
             stack = _create_wandb_image(img_base, gt_base, output_mask, "Train Image (Raw, GT, Pred)")
             wandb.log({"train_loss": loss.item(), "train_image": stack})
 
-
-            if ui:
-                ui.emit({"stage": "train", "train_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
-
-
     return train_loss
 
 
-def validate(model, device, data_loader, criterion, WANDB, ui):
+def validate(model, device, data_loader, criterion, WANDB, log_freq: int = 16):
     val_loader = tqdm(data_loader)
     val_loss = 0
 
@@ -132,9 +140,10 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
         val_loader.set_description(f"Val Loss: {loss.item():.04f}")
 
 
-        if WANDB and i % 32 == 0:
-
-            output = model(images[0][None, :, :, :])
+        if WANDB and i % log_freq == 0:
+            
+            # select random image from batch
+            # output = model(images[0][None, :, :, :])
             output_mask = utils.decode_output(outputs)
 
             img_base = images[0].detach().cpu().squeeze().numpy()
@@ -142,10 +151,6 @@ def validate(model, device, data_loader, criterion, WANDB, ui):
 
             stack = _create_wandb_image(img_base, gt_base, output_mask, "Val Image (Raw, GT, Pred)")
             wandb.log({"val_loss": loss.item(), "val_image": stack})
-
-            if ui:
-                ui.emit({"stage": "val", "val_loss": loss.item(), "image": img_base, "pred": output_mask, "gt": gt_base})
-
 
     return val_loss
 
@@ -163,23 +168,19 @@ def train_model(
     optimizer,
     train_data_loader,
     val_data_loader,
-    epochs,
-    save_dir,
-    WANDB=True,
-    ui = None, # pyqtSignal
+    config: dict, 
 ):
     """Helper function for training the model"""
+
+    epochs=config["epochs"]
+    WANDB=config["wandb"]
+    TRAIN_LOG_FREQ=config.get("train_log_freq", 32)
+    VAL_LOG_FREQ=config.get("val_log_freq", 16)
 
     criterion = multi_loss
 
     total_steps = len(train_data_loader)
     print(f"{epochs} epochs, {total_steps} total_steps per epoch")
-
-    if ui:
-        # emit signal to update ui
-        ui.emit({"stage": "end", 
-                 "epoch": 0, "epochs": epochs, 
-                 "train_loss": 0.0, "val_loss": 0.0})
 
     train_losses = []
     val_losses = []
@@ -188,10 +189,8 @@ def train_model(
     for epoch in range(epochs):
         print(f"------- Epoch {epoch+1} of {epochs}  --------")
 
-        train_loss = train(
-            model, device, train_data_loader, criterion, optimizer, WANDB, ui
-        )
-        val_loss = validate(model, device, val_data_loader, criterion, WANDB, ui)
+        train_loss = train(model, device, train_data_loader, criterion, optimizer, WANDB, TRAIN_LOG_FREQ)
+        val_loss = validate(model, device, val_data_loader, criterion, WANDB, VAL_LOG_FREQ)
 
         train_losses.append(train_loss / len(train_data_loader))
         val_losses.append(val_loss / len(val_data_loader))
@@ -200,12 +199,8 @@ def train_model(
         print(f"MIN TRAIN LOSS at {train_losses.index(min(train_losses))}")
         print(f"MIN VAL LOSS at {val_losses.index(min(val_losses))}")
 
-        save_model(save_dir, model, epoch)
-
-        # TODO: add better ui updates
-        if ui:
-            # emit signal to update ui
-            ui.emit({"stage": "end", "epoch": epoch, "epochs": epochs, "train_loss": train_losses[-1], "val_loss": val_losses[-1]})
+        # save_model(save_dir, model, epoch)
+        save_model_v2(config["save_path"], model, epoch, config["encoder"], config["num_classes"])
 
     return model
 
@@ -254,13 +249,8 @@ def _setup_wandb(config:dict):
         wandb.init(
             project=config["wandb_project"],
             entity=config["wandb_entity"],
+            config=config,
         )
-
-        wandb.config = {
-            "epochs": config["epochs"],
-            "batch_size": config["batch_size"],
-            "num_classes": config["num_classes"],
-        }
 
 def main(config: dict):
 
@@ -284,10 +274,7 @@ def main(config: dict):
         optimizer,
         train_data_loader,
         val_data_loader,
-        epochs=config["epochs"],
-        save_dir=config["save_path"],
-        WANDB=config["wandb"],
-        ui=None
+        config=config,
     )
 
 if __name__ == "__main__":
