@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 class Feature(ABC):
     px: Point 
     feature_m: Point
-    _color_UINT8: tuple = (255,255,255)
     color = "white"
     name: str = None
 
@@ -31,7 +30,6 @@ class Feature(ABC):
 class ImageCentre(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255,255,255)
     color = "white"
     name: str = "ImageCentre"
 
@@ -45,7 +43,6 @@ class ImageCentre(Feature):
 class NeedleTip(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (0,255,0)
     color = "green"
     name: str = "NeedleTip"
 
@@ -57,7 +54,6 @@ class NeedleTip(Feature):
 class NeedleTipBottom(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (0,255,0)
     color = "green"
     name: str = "NeedleTipBottom"
 
@@ -72,7 +68,6 @@ class NeedleTipBottom(Feature):
 class LamellaCentre(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255,0,0)
     color = "red"
     name: str = "LamellaCentre"
 
@@ -85,7 +80,6 @@ class LamellaCentre(Feature):
 class LamellaLeftEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255,0,255)
     color = "magenta"
     name: str = "LamellaLeftEdge"
 
@@ -98,7 +92,6 @@ class LamellaLeftEdge(Feature):
 class LamellaRightEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255,165,0)
     color = "orange"
     name: str = "LamellaRightEdge"
 
@@ -110,7 +103,6 @@ class LamellaRightEdge(Feature):
 class LamellaTopEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255,0,255)
     color = "hotpink"
     name: str = "LamellaTopEdge"
 
@@ -122,7 +114,6 @@ class LamellaTopEdge(Feature):
 class LamellaBottomEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255, 0, 255)
     color = "hotpink"
     name: str = "LamellaBottomEdge"
 
@@ -134,7 +125,6 @@ class LamellaBottomEdge(Feature):
 class LandingPost(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255,255,255)
     color = "cyan"
     name: str = "LandingPost"
 
@@ -148,7 +138,6 @@ class LandingPost(Feature):
 class LandingGridCentre(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255,255,255)
     color = "cyan"
     name: str = "LandingGridCentre"
 
@@ -162,7 +151,6 @@ class LandingGridCentre(Feature):
 class CoreFeature(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (50, 205, 50)
     color = "lime"
     name: str = "CoreFeature"
 
@@ -174,7 +162,6 @@ class CoreFeature(Feature):
 class CopperAdapterCentre(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255, 255, 0)
     color = "gold"
     name: str = "CopperAdapterCentre"
 
@@ -186,7 +173,6 @@ class CopperAdapterCentre(Feature):
 class CopperAdapterTopEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255, 255, 0)
     color = "gold"
     name: str = "CopperAdapterTopEdge"
 
@@ -199,7 +185,6 @@ class CopperAdapterTopEdge(Feature):
 class CopperAdapterBottomEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    _color_UINT8: tuple = (255, 255, 0)
     color = "gold"
     name: str = "CopperAdapterBottomEdge"
 
@@ -208,11 +193,50 @@ class CopperAdapterBottomEdge(Feature):
         return self.px
 
 
-__FEATURES__ = [ImageCentre, NeedleTip, LamellaCentre, LamellaLeftEdge, LamellaRightEdge, 
+@dataclass
+class VolumeBlockCentre(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "magenta"
+    name: str = "VolumeBlockCentre"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'VolumeBlockCentre':
+        self.px = detect_centre_point(mask == 5)
+        return self.px
+
+@dataclass
+class VolumeBlockTopEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "magenta"
+    name: str = "VolumeBlockTopEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'VolumeBlockTopEdge':
+        self.px = detect_median_edge(mask == 5, edge="top")
+        return self.px
+
+
+@dataclass
+class VolumeBlockBottomEdge(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "magenta"
+    name: str = "VolumeBlockBottomEdge"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'VolumeBlockBottomEdge':
+        self.px = detect_median_edge(mask == 5, edge="bottom")
+        return self.px    
+
+
+
+
+__FEATURES__ = [ImageCentre, NeedleTip, 
+                LamellaCentre, LamellaLeftEdge, LamellaRightEdge, 
         LandingPost, LandingGridCentre, 
     CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
     NeedleTipBottom, 
-    CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge]
+    CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge,
+    VolumeBlockCentre, VolumeBlockTopEdge, VolumeBlockBottomEdge]
  
 
 

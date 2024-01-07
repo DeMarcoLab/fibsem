@@ -11,29 +11,33 @@ from tqdm import tqdm
 
 from fibsem.detection import detection
 from fibsem.segmentation.model import load_model
+from fibsem.segmentation.utils import decode_segmap_v2
 from fibsem.structures import FibsemImage, Point
+
+import tifffile as tff
 
 
 def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: bool = False, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"], save: bool = False, save_path: Path = None):
 
     # ground truth 
     df = pd.read_csv(path)
-    image_fnames = df["image"].unique().tolist()
+
+    filename_col = "image" if "image" in df.columns else "filename"
+    image_fnames = df[filename_col].unique().tolist()
 
     # glob each image in the image_path and add to filenames
     filenames = []
     
     for fname in image_fnames:
+        fname = fname.removesuffix(".tif")
         filenames += glob.glob(os.path.join(image_path, f"{fname}*.tif"))
     
     print(f"Found {len(filenames)} images (test)")
 
-    import random
-    random.shuffle(filenames)
-    filenames = filenames[:5]
-
     # setup eval dataframe
-    df_eval = pd.DataFrame(columns=["checkpoint", "fname", "feature", "p.x", "p.y", "pixelsize", "gt.p.x", "gt.p.y", "gt.pixelsize", "distance","_is_corrected"])
+    px_col = "p.x" if "p.x" in df.columns else "px.x"
+    py_col = "p.y" if "p.y" in df.columns else "px.y"
+    df_eval = pd.DataFrame(columns=["checkpoint", "fname", "feature", px_col, py_col, "pixelsize", "gt.p.x", "gt.p.y", "gt.pixelsize", "distance","_is_corrected"])
     df_eval["_is_corrected"] = df_eval["_is_corrected"].astype(bool)
 
     _prog = tqdm(sorted(filenames))
@@ -45,7 +49,7 @@ def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: 
         if image_fname.endswith("_eb") or image_fname.endswith("_ib"):
             image_fname = image_fname[:-3]
 
-        df_filt = df[df["image"] == image_fname]
+        df_filt = df[df[filename_col] == image_fname]
 
         if len(df_filt) == 0:
             print(f"no ground truth for {fname}")
@@ -59,7 +63,7 @@ def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: 
         for _, row in df_filt.iterrows():
 
             feature = detection.get_feature(row["feature"])
-            feature.px = Point(row["p.x"], row["p.y"])
+            feature.px = Point(row[px_col], row[py_col])
             pixelsize= row["pixelsize"]
             
             if feature.name in _FEATURES_TO_IGNORE:
@@ -90,6 +94,143 @@ def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: 
 
             _prog.set_description(f"file ({i+1}/{len(filenames)}) {os.path.basename(fname)} - checkpoint: ({k+1}/{len(checkpoints)}) {os.path.basename(CHECKPOINT)}")
             model = load_model(CHECKPOINT, encoder=ENCODER, nc=NC)
+
+            det  = detection.detect_features(image.data, model, features=deepcopy(gt_features), pixelsize=pixelsize, filter=True)
+            dets.append(det)
+        
+        if plot or save:
+            fig = detection.plot_detections(dets, titles=["Ground Truth"] + [os.path.basename(ckpt["checkpoint"].removesuffix(".pt")) for ckpt in checkpoints])
+            if plot:
+                plt.show()
+
+            if save:
+                os.makedirs(save_path, exist_ok=True)
+                fig.savefig(os.path.join(save_path, f"{image_fname}.png"), dpi=300)
+                plt.close(fig)
+
+        # evaluation against ground truth
+        for ckpt, det in zip(checkpoints, dets[1:]):
+            checkpoint = ckpt["checkpoint"]
+            for feature in det.features:
+                gt_feat = gt_det.get_feature(feature.name)
+                dpx = feature.px - gt_feat.px
+                    
+                df_eval2 = pd.DataFrame([{
+                    "checkpoint": os.path.basename(checkpoint),
+                    "fname": os.path.basename(fname),
+                    "gt_fname": image_fname,
+                    "feature": feature.name,
+                    "p.x": feature.px.x,
+                    "p.y": feature.px.y,
+                    "pixelsize": pixelsize,
+                    "gt.p.x": gt_feat.px.x,
+                    "gt.p.y": gt_feat.px.y,
+                    "gt.pixelsize": pixelsize,
+                    "distance": feature.px.euclidean(gt_feat.px),
+                    "d.p.x": dpx.x,
+                    "d.p.y": dpx.y,
+                    "_is_corrected": bool(_is_corrected), 
+                }])
+
+                # convert to bool type
+                df_eval2["_is_corrected"] = df_eval2["_is_corrected"].astype(bool)
+                df_eval = pd.concat([df_eval, df_eval2], axis=0, ignore_index=True)
+        
+        # print("-"*80, "\n")
+        # if i==3:
+            # break
+
+    df_eval["checkpoint"] = df_eval["checkpoint"].str.replace(".pt", "")
+
+    if save:
+        df_eval.to_csv(os.path.join(save_path, "eval.csv"), index=False)
+
+    return df_eval
+
+
+
+def run_evaluation_v2(path:Path, image_path: Path, checkpoints: list[dict], labels_path: Path = None, 
+                      plot: bool = False, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"], 
+                      save: bool = False, save_path: Path = None):
+
+    # ground truth 
+    df = pd.read_csv(path)
+
+    image_fnames = df["filename"].unique().tolist()
+
+    # glob each image in the image_path and add to filenames
+    filenames = []
+    
+    # TODO: keep track of whether .tif ext was recorded in the csv
+
+    for fname in image_fnames:
+        fname = fname.removesuffix(".tif")
+        filenames += glob.glob(os.path.join(image_path, f"{fname}*.tif"))
+    
+    print(f"Found {len(filenames)} images (test)")
+
+    # setup eval dataframe
+    df_eval = pd.DataFrame(columns=["checkpoint", "fname", "feature", "px.x", "px.y", "pixelsize", "gt.p.x", "gt.p.y", "gt.pixelsize", "distance","_is_corrected"])
+    df_eval["_is_corrected"] = df_eval["_is_corrected"].astype(bool)
+
+    _prog = tqdm(sorted(filenames))
+    for i, fname in enumerate(_prog):
+        
+        image_fname = os.path.basename(fname)#.removesuffix(".tif")
+
+        # if suffix is either _eb or _ib, remove it
+        if image_fname.endswith("_eb") or image_fname.endswith("_ib"):
+            image_fname = image_fname[:-3]
+
+        df_filt = df[df["filename"] == image_fname]
+
+        if len(df_filt) == 0:
+            print(f"no ground truth for {fname}")
+            continue
+
+        _is_corrected = df_filt["corrected"].values[0]
+
+        # extract each row
+        gt_features = []
+        pixelsize = 25e-9
+        for _, row in df_filt.iterrows():
+
+            # if entries in row are null, go to next image
+            if pd.isnull(row["feature"]):
+                continue
+
+            feature = detection.get_feature(row["feature"])
+            feature.px = Point(row["px.x"], row["px.y"])
+            pixelsize= row["pixelsize"]
+            
+            if feature.name in _FEATURES_TO_IGNORE:
+                continue
+
+            gt_features.append(feature)
+        
+
+        image = FibsemImage.load(fname)
+
+        # plot
+        mask, rgb = None, None
+        if labels_path is not None:
+            mask = tff.imread(os.path.join(labels_path, f"{image_fname}"))
+            rgb = decode_segmap_v2(mask)
+        gt_det = detection.DetectedFeatures(
+            features = gt_features,
+            image=image.data,
+            mask=mask,
+            rgb=rgb,
+            pixelsize=pixelsize, 
+            fibsem_image=image)
+
+        dets = [gt_det]
+        for k, CKPT in enumerate(checkpoints):
+
+            CHECKPOINT = CKPT["checkpoint"]           
+
+            _prog.set_description(f"file ({i+1}/{len(filenames)}) {os.path.basename(fname)} - checkpoint: ({k+1}/{len(checkpoints)}) {os.path.basename(CHECKPOINT)}")
+            model = load_model(CHECKPOINT) 
 
             det  = detection.detect_features(image.data, model, features=deepcopy(gt_features), pixelsize=pixelsize, filter=True)
             dets.append(det)

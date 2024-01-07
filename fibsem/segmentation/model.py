@@ -113,8 +113,6 @@ class SegmentationModel:
     def load_weights(self, checkpoint: Optional[str]):
         if checkpoint:
             
-
-            # TODO, STORE CONFIG INFO IN HF (e.g. num_classes, encoder)
             # check if checkpoint is an actual path, otherwise load from HF
             if os.path.exists(checkpoint):
                 checkpoint = checkpoint
