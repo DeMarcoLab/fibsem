@@ -60,7 +60,9 @@ def save_model(save_dir, model, epoch):
 def save_model_v2(save_dir, model, epoch, encoder, nc):
     # save model with all necessary information
 
-    checkpoint_name = os.path.join(save_dir, f"model{epoch:02d}.pt")
+    # datetime as YYYYMMDD
+    dt_string = datetime.now().strftime("%Y%m%d")
+    checkpoint_name = os.path.join(save_dir, f"model-{dt_string}-{epoch:02d}.pt")
     checkpoint_state = model.state_dict()
 
     state_dict = {"checkpoint": checkpoint_state, "encoder": encoder, "nc": nc}

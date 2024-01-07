@@ -107,7 +107,8 @@ CONFIGURATION = {
         "LOAD_MODEL_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
         "CONFIRM_BUTTON_COLOR": _stylesheets._GREEN_PUSHBUTTON_STYLE,
         "CLEAR_BUTTON_COLOR": _stylesheets._RED_PUSHBUTTON_STYLE,
-
+        "IMAGE_OPACITY": 0.7,
+        "MASK_OPACITY": 0.3,
     },
 
 }
@@ -235,14 +236,14 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         # load filenames as single layer
         self.img_layer = self.viewer.open(filenames, name="Image", stack=True)[0]
-        self.img_layer.opacity = 0.7
+        self.img_layer.opacity = CONFIGURATION["UI"]["IMAGE_OPACITY"]
         self.img_layer.blending="additive"
 
         arr = np.zeros_like(np.asarray(self.img_layer.data[0]))
         self.mask_layer = self.viewer.add_labels(
             arr,
             name="Mask",
-            opacity=0.7,
+            opacity=CONFIGURATION["UI"]["MASK_OPACITY"],
             blending="additive",
             color=CONFIGURATION["LABELS"]["COLOR_MAP"],
         )
@@ -444,47 +445,38 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.sam_pts_layer.selected_data = []
         if event.button == 1:
             self.sam_pts_layer.current_face_color = "blue"
+            self.sam_pts_layer.current_properties = {"positive_prompt": True}
         else:
             self.sam_pts_layer.current_face_color = "red"
+            self.sam_pts_layer.current_properties = {"positive_prompt": False}
 
     def _update_sam_mask(self, _: Optional[Any] = None) -> None:
-        points = self.sam_pts_layer.data
-        colors = self.sam_pts_layer.face_color
 
-        logging.info(f"POINTS: {len(points)}")
+        points = None
+        points_labels = None
+        # get the prompt points from sam_pts layer
+        if len(self.sam_pts_layer.data) > 0:
+            points = np.flip(self.sam_pts_layer.data, axis=-1)
+            points_labels = self.sam_pts_layer.properties["positive_prompt"]
 
-        if len(points) > 0:
-            points = np.flip(points, axis=-1)
-            blue = [0, 0, 1, 1]
-            labels = np.all(colors == blue, axis=1)
-        else:
-            points = None
-            labels = None
-
-        # get the points from a click
-        # convert the current mask to a label image
-        # clear the current mask and point
-
-        # this only needs to happen once when the image is loaded
-        # double chcek when the image is saved that it is grayscale
+        # set the image embedding if it hasnt been set
         if not self.model.is_image_set:
-            import cv2
-
-            logging.info("setting image embedding")
             # get the current image
             idx = int(self.viewer.dims.point[0])
             image = np.asarray(self.img_layer.data[idx]) # req for lazy load
             
-            # convert to grayscale
-            gray_img = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            import cv2 # NOTE: importing anywhere else causes issues with napari
+            gray_img = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB) # sam req rgb
             
             # set embedding
+            logging.info("setting image embedding")
             self.model.set_image(gray_img)
             self.logits = None
 
+        # run model
         mask, scores, self.logits = self.model.predict(
             point_coords=points,
-            point_labels=labels,
+            point_labels=points_labels,
             box=None,
             mask_input=self.logits,
             multimask_output=False,
