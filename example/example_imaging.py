@@ -9,7 +9,8 @@ matplotlib.use('TkAgg', force=True) # Activate 'agg' backend for off-screen plot
 
 
 """
-This script will take an image with the electron beam, an image with the ion beam, and an image with both beams.
+This script will take an image with the electron beam, an image with the ion beam, and an image with both beams. 
+The images are then displayed in a matplotlib figure.
 
 The settings for images are stored in the settings.image struct, and can be modified before taking an image.
 
@@ -20,11 +21,10 @@ For more detail on the settings, see the documentation for the ImageSettings cla
 def main():
     
     # connect to the microscope
-    microscope, settings = utils.setup_session()
+    microscope, settings = utils.setup_session(manufacturer="Demo", ip_address="localhost")
 
     # info about ImageSettings
-    logging.info(f"\nAcquiring Images Example: \nImageSettings: {settings.image.__doc__}")
-
+    logging.info(f"\nAcquiring Images Example:")
     logging.info(f"The current image settings are: \n{settings.image}")
 
     # take an image with the electron beam

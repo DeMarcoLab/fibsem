@@ -68,7 +68,7 @@ def take_set_of_reference_images(
     Args:
         microscope (FibsemMicroscope): A FibsemMicroscope object to acquire the images from.
         image_settings (ImageSettings): An ImageSettings object with the desired imaging parameters.
-        hfws (Tuple[float, float]): A tuple of two floats specifying the half-field widths (in microns)
+        hfws (Tuple[float, float]): A tuple of two floats specifying the horizontal field widths (in microns)
             for the low- and high-resolution images, respectively.
         label (str, optional): A label to be included in the image filenames. Defaults to "ref_image".
 

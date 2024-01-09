@@ -17,6 +17,7 @@ lamella:
     depth: 2.e-6
     offset: 5.e-6
     size_ratio: 1.0
+    milling_voltage: 30.0e+3
     milling_current: 2.e-9
     cleaning_cross_section: True
   - lamella_width: 10.e-6
@@ -25,6 +26,7 @@ lamella:
     depth: 2.e-6
     offset: 0.5e-6
     size_ratio: 1.0
+    milling_voltage: 30.0e+3
     milling_current: 0.2e-9
     cleaning_cross_section: True
   - lamella_width: 10.e-6
@@ -34,4 +36,5 @@ lamella:
     offset: 0.e-6
     size_ratio: 1.0
     milling_current: 60.e-12
+    milling_voltage: 30.0e+3
     cleaning_cross_section: True

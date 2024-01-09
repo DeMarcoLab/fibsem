@@ -18,7 +18,7 @@ The script will:
 def main():
 
     # connect to microscope
-    microscope, settings = utils.setup_session()
+    microscope, settings = utils.setup_session(manufacturer="Demo", ip_address="localhost")
 
     # rectangle pattern
     rectangle_pattern = FibsemPatternSettings(
@@ -45,8 +45,7 @@ def main():
     line_pattern_02 = line_pattern_01
     line_pattern_02.end_y = -line_pattern_01.end_y
 
-    logging.info(f"""\nMilling Pattern Example: \nFibsemMillingSettings: {FibsemMillingSettings.__doc__} 
-    \nFibsemPatternSettings: {FibsemPatternSettings.__doc__} \nFibsemPattern: {FibsemPattern.__members__}""")
+    logging.info(f"""\nMilling Pattern Example: """)
 
     logging.info(f"The current milling settings are: \n{settings.milling}")
     logging.info(f"The current rectangle pattern is \n{rectangle_pattern}")
@@ -64,7 +63,7 @@ def main():
         milling.draw_pattern(microscope, pattern)
 
     # run milling
-    milling.run_milling(microscope, settings.milling.milling_current)
+    milling.run_milling(microscope, settings.milling.milling_current, milling_voltage=settings.milling.milling_voltage)
 
     # finish milling
     milling.finish_milling(microscope, settings.system.ion.current)

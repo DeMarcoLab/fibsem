@@ -96,93 +96,16 @@ For examples of core functionality please see:
 - example/example_imaging.py: image acqusition
 - example/example_movement.py: stage movement
 - example/example_milling.py: drawing patterns and beam milling
+- example/autolamella.py: recreation of [AutoLamella V1](https://github.com/DeMarcoLab/autolamella) (automated cryo-lamella preparation) in ~150 lines of code
 
-### Comparison to AutoScript
-
-- Take an Electron Beam image with autocontrast...
-
-AutoScript
-
-```python
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-    from autoscript_sdb_microscope_client.structures import GrabFrameSettings, RunAutoCbSettings
-
-    # connect to microscope
-    microscope = SdbMicroscopeClient()
-    microscope.connect("10.0.0.1")
-
-    # set the active view
-    microscope.imaging.set_active_view(1)
-
-    # set frame settings
-    frame_settings = GrabFrameSettings(
-        resolution="1536x1024",
-        dwell_time=1e-6,
-    )
-
-    # set hfw
-    microscope.beams.electron_beam.horizontal_field_width.value = 150e-6
-
-    # autocontrast
-    cb_settings = RunAutoCbSettings(
-        method="MaxContrast",
-        resolution="768x512",  
-        number_of_frames=5,
-    )
-    microscope.auto_functions.run_auto_cb(cb_settings)
-
-    # grab frame
-    eb_image = microscope.imaging.grab_frame(frame_settings)
-
-```
-
-OpenFIBSEM
-
-```python
-
-from fibsem import utils, acquire
-from fibsem.structures import BeamType, ImageSettings
-
-# connect to microscope
-microscope, settings = utils.setup_session(ip_address="localhost", manufacturer="Thermo")
-
-# set imaging settings
-image_settings = ImageSettings(
-        hfw=150e-6, 
-        resolution=[1536, 1024],
-        dwell_time=1e-6, 
-        autocontrast=True, 
-        beam_type=BeamType.ELECTRON)
-
-# take electron image
-eb_image = acquire.new_image(microscope, image_settings)
-
-```
-
-## Application Demonstrations
-
-The example directory contains the following applications:
-
-**Autolamella (autolamella.py)**
-
-Recreation of [AutoLamella](https://github.com/DeMarcoLab/autolamella) (automated cryo-lamella preparation) in ~150 lines of code.
-
-**Volume Microscopy (slice_and_view.py)**
-
-Recreation of a volume microscopy workflow (slice and view) in ~50 lines of code.
-
-**Lithography (lithography.py)**
-
-Milling of a grayscale lithography profile using a bitmap pattern.
+Additional example scripts and notebooks are available.
 
 ## Projects using OpenFIBSEM
 
 We are currently working on a number of projects using OpenFIBSEM. If you are using OpenFIBSEM in your research, please let us know!
 
 - [AutoLamella v2: Automated cryo-lamella preparation](www.github.com/DeMarcoLab/autolamella)
-- [AutoLiftout: Automated cryo-liftout](www.github.com/DeMarcoLab/autoliftout)
 - [Salami: Volume Electron Microscopy](www.github.com/DeMarcoLab/salami)
-- [Vulcan: Grayscale FIB Lithography](www.github.com/DeMarcoLab/vulcan)
 
 ## Contributing
 
@@ -190,9 +113,11 @@ Contributions are welcome! Please open a pull request or issue.
 
 ## Docs
 
-OpenFIBSEM is a large package with many features. For more detailed documentation, please see the [Documentation Website](https://demarcolab.github.io/fibsem/).
+OpenFIBSEM is a large package with many features. For more detailed documentation, please see the [Documentation Website](https://demarcolab.github.io/openfibsem-docs).
 
 ## Citation
+
+If you find this work useful, please cite:
 
 ```bibtex
 @article{CLEEVE2023107967,

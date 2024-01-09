@@ -96,7 +96,7 @@ def main():
 
             # mill trenches
             milling.draw_trench(microscope, milling_dict)
-            milling.run_milling(microscope, milling_dict["milling_current"])
+            milling.run_milling(microscope, milling_dict["milling_current"], milling_dict["milling_voltage"])
             milling.finish_milling(microscope)
 
             # retake reference image
