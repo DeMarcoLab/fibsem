@@ -57,5 +57,5 @@ fibsem/db/fibsem.db
 fibsem/notebook.ipynb
 scratch/health-monitor/*
 example/notebook.ipynb
-fibsem/segmentation/*config*.yml
+fibsem/segmentation/*config*.y*ml
 
