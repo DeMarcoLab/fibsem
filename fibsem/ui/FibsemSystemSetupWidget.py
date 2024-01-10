@@ -49,13 +49,15 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def setup_connections(self):
 
         # connection
-        self.pushButton_connect_to_microscope.clicked.connect(self.connect_to_microscopev2)
+        self.pushButton_connect_to_microscope.clicked.connect(self.connect_to_microscope)
         
         # configuration   
         self.comboBox_configuration.addItems(cfg.USER_CONFIGURATIONS.keys())
         self.comboBox_configuration.setCurrentText(cfg.DEFAULT_CONFIGURATION_NAME) 
         self.comboBox_configuration.currentTextChanged.connect(lambda: self.load_configuration(None))
         self.toolButton_import_configuration.clicked.connect(self.import_configuration_from_file)
+    
+        self.pushButton_apply_configuration.setToolTip(f"Apply configuration is currently unavailable. It will be enabled in a future release.")
 
     def load_configuration(self, configuration_name: str):
         if configuration_name is None:
@@ -110,10 +112,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.comboBox_configuration.addItem(configuration_name)
         self.comboBox_configuration.setCurrentText(configuration_name)
 
-    def connect_to_microscopev2(self):
-        
-
-        
+    def connect_to_microscope(self):
+                
         _microscope_connected = bool(self.microscope)
 
         if _microscope_connected:
@@ -142,6 +142,15 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.update_ui()
             
 
+    def apply_microscope_configuration(self):
+        """Apply the microscope configuration to the microscope."""
+
+        if self.microscope is None:
+            napari.utils.notifications.show_error(f"Microscope not connected.")
+            return
+        
+        # apply the configuration
+        # self.microscope.apply_configuration(self.settings)
 
 
     # def apply_defaults_settings(self):
@@ -163,7 +172,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def update_ui(self):
 
         _microscope_connected = bool(self.microscope)
-        self.pushButton_apply_configuration.setEnabled(_microscope_connected)
+        self.pushButton_apply_configuration.setEnabled(_microscope_connected and cfg._APPLY_CONFIGURATION_ENABLED)
 
         if _microscope_connected:
             self.pushButton_connect_to_microscope.setText("Microscope Connected")

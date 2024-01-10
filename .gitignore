@@ -59,3 +59,6 @@ scratch/health-monitor/*
 example/notebook.ipynb
 fibsem/segmentation/*config*.y*ml
 
+fibsem/config/*.yaml
+!fibse/config/microscope-configurations.yaml
+!fibsem/config/user-configurations.yaml
