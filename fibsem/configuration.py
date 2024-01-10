@@ -48,11 +48,11 @@ def generate_configuration(user_config: dict) -> dict:
 
     # electron
     config["electron-beam"]["eucentric-height"] = user_config["electron-beam-eucentric-height"]
-    config["electron-beam"]["column-tilt"] = get_column_tilt(config["manufacturer"], "electron-beam")
+    config["electron-beam"]["column-tilt"] = get_column_tilt(config["core"]["manufacturer"], "electron-beam")
 
     # ion
     config["ion-beam"]["eucentric-height"] = user_config["ion-beam-eucentric-height"]
-    config["ion-beam"]["column-tilt"] = get_column_tilt(config["manufacturer"], "ion-beam")
+    config["ion-beam"]["column-tilt"] = get_column_tilt(config["core"]["manufacturer"], "ion-beam")
 
     return config
 
@@ -98,6 +98,15 @@ def get_user_config() -> dict:
     }
     return user_config
 
+def save_configuration(config: dict, path: str):
+    """Save a configuration to a yaml file."""
+    
+    # save yaml
+    filename = os.path.join(path, f"{config['core']['name']}.yaml")
+    with open(filename, "w") as f:
+        yaml.dump(config, f)
+
+    return filename
 
 import argparse
 def gen_config_cli(path: str = None):
@@ -119,14 +128,12 @@ def gen_config_cli(path: str = None):
     user_config = get_user_config()
     
     print(f"\nGenerating configuration: {user_config['name']}")
-
     config = generate_configuration(user_config)
-
     print("Configuration generated successfully.")
 
-    # save yaml
-    with open(os.path.join(path, f"{config['name']}.yaml"), "w") as f:
-        yaml.dump(config, f)
+    filename = save_configuration(config, path)
+    print(f"Configuration saved to: {filename}")
+
 
 if __name__ == "__main__":
     gen_config_cli()
