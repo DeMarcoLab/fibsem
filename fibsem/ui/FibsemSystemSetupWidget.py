@@ -68,8 +68,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.comboBox_manufacturer.setCurrentText(manufacturer)
 
         # buttons
-        # self.microscope_button.clicked.connect(self.connect_to_microscope)
-        self.microscope_button.clicked.connect(self.connect_to_microscopev2)
+        # self.pushButton_connect_to_microscope.clicked.connect(self.connect_to_microscope)
+        self.pushButton_connect_to_microscope.clicked.connect(self.connect_to_microscopev2)
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
         self.pushButton_save_yaml.clicked.connect(lambda: self.save_defaults(path=None))
         self.pushButton_apply_settings.clicked.connect(self.apply_defaults_settings)
@@ -500,15 +500,15 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.pushButton_apply_settings.setEnabled(_microscope_connected)
 
         if _microscope_connected:
-            self.microscope_button.setText("Microscope Connected")
-            self.microscope_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_connect_to_microscope.setText("Microscope Connected")
+            self.pushButton_connect_to_microscope.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.set_stage_settings_to_ui(self.microscope.stage_settings)
             self.set_model_to_ui(self.settings.hardware)
             self.connected_signal.emit()
 
         else:
-            self.microscope_button.setText("Connect To Microscope")
-            self.microscope_button.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
+            self.pushButton_connect_to_microscope.setText("Connect To Microscope")
+            self.pushButton_connect_to_microscope.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
             self.disconnected_signal.emit()
 
 
