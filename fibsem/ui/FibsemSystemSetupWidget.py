@@ -172,6 +172,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def update_ui(self):
 
         _microscope_connected = bool(self.microscope)
+        self.pushButton_apply_configuration.setVisible(_microscope_connected)
         self.pushButton_apply_configuration.setEnabled(_microscope_connected and cfg._APPLY_CONFIGURATION_ENABLED)
 
         if _microscope_connected:
@@ -180,11 +181,14 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.pushButton_apply_configuration.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.connected_signal.emit()
 
+            self.label_connection_information.setText(f"Connected to {self.microscope.system.manufacturer}-{self.microscope.system.model} at {self.settings.system.ip_address}")
+
         else:
             self.pushButton_connect_to_microscope.setText("Connect To Microscope")
             self.pushButton_connect_to_microscope.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
             self.pushButton_apply_configuration.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
             self.disconnected_signal.emit()
+            self.label_connection_information.setText("Not connected to microscope")
 
 
 def main():

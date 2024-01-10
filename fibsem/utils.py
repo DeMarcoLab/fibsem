@@ -185,21 +185,35 @@ def setup_session(
         settings.system.manufacturer = manufacturer
 
     if settings.system.manufacturer == "Thermo":
-        microscope = FibSem.ThermoMicroscope(settings.hardware, settings.system.stage)
+        microscope = FibSem.ThermoMicroscope()
+        # set hardware settings
+        microscope.hardware_settings = settings.hardware
+        microscope.stage_settings = settings.system.stage
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=7520
         )
 
     elif settings.system.manufacturer == "Tescan":
-        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address, hardware_settings=settings.hardware, stage_settings=settings.system.stage)
+        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
+        # set hardware settings
+        microscope.hardware_settings = settings.hardware
+        microscope.stage_settings = settings.system.stage
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=8300
         )
     
     elif settings.system.manufacturer == "Demo":
-        microscope = FibSem.DemoMicroscope(settings.hardware, settings.system.stage)
+        microscope = FibSem.DemoMicroscope()
+        # set hardware settings
+        microscope.hardware_settings = settings.hardware
+        microscope.stage_settings = settings.system.stage
         microscope.connect_to_microscope()
 
+    else:
+        raise NotImplementedError(f"Manufacturer {settings.system.manufacturer} not supported.")
+    
+
+    
     # image_settings
     settings.image.save_path = session_path
 
