@@ -55,7 +55,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 parent=self,
             )
         
-        self.tabWidget.addTab(self.system_widget, "System")
+        self.tabWidget.addTab(self.system_widget, "Connection")
         self.setup_connections()
         self.ref_current = None
         self.update_ui()
@@ -63,21 +63,11 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def setup_connections(self):
         from fibsem import utils
-        self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
-        self.actionCurrent_alignment.triggered.connect(self.align_currents)
-        self.actionImage_Viewer.triggered.connect(self._open_image_viewer)
+        # self.actionCurrent_alignment.triggered.connect(self.align_currents)
         self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
-        if self.system_widget.microscope is not None:
-            self.connect_to_microscope()
-            settings_dict = utils.load_yaml(cfg.SYSTEM_PATH)
-            if bool(settings_dict["apply_settings_on_startup"]):
-                self.system_widget.apply_settings = True
-                self.system_widget.apply_defaults_settings() 
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
-
-        
 
     def minimap_connection(self,positions=None):
 
@@ -85,17 +75,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return
         else:
             self._minimap_signal.emit(positions)
-
-
-    def _open_image_viewer(self):
-        viewer2 = napari.Viewer(ndisplay=2)
-        self.image_viewer = FibsemImageViewer(viewer=viewer2)
-        viewer2.window.add_dock_widget(self.image_viewer, 
-                                        area="right", 
-                                        add_vertical_stretch=True, 
-                                        name=f"OpenFIBSEM Image Viewer")
-
-        napari.run(max_loop_level=2)
 
     def _open_minimap(self):
         if self.microscope is None:
@@ -197,7 +176,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setTabVisible(3, _microscope_connected)
         self.tabWidget.setTabVisible(4, _microscope_connected)
         self.actionOpen_Minimap.setVisible(_microscope_connected)
-        self.actionCurrent_alignment.setVisible(_microscope_connected)
+        # self.actionCurrent_alignment.setVisible(_microscope_connected)
         self.actionManipulator_Positions_Calibration.setVisible(_microscope_connected)
 
 

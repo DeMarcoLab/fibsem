@@ -158,7 +158,7 @@ def setup_session(
     """
 
     # load settings
-    settings = load_settings_from_config(config_path, protocol_path)
+    settings = load_microscope_configuration(config_path, protocol_path)
 
     # create session directories
     session = f'{settings.protocol["name"]}_{current_timestamp()}'
@@ -185,21 +185,35 @@ def setup_session(
         settings.system.manufacturer = manufacturer
 
     if settings.system.manufacturer == "Thermo":
-        microscope = FibSem.ThermoMicroscope(settings.hardware, settings.system.stage)
+        microscope = FibSem.ThermoMicroscope()
+        # set hardware settings
+        microscope.hardware_settings = settings.hardware
+        microscope.stage_settings = settings.system.stage
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=7520
         )
 
     elif settings.system.manufacturer == "Tescan":
-        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address, hardware_settings=settings.hardware, stage_settings=settings.system.stage)
+        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
+        # set hardware settings
+        microscope.hardware_settings = settings.hardware
+        microscope.stage_settings = settings.system.stage
         microscope.connect_to_microscope(
             ip_address=settings.system.ip_address, port=8300
         )
     
     elif settings.system.manufacturer == "Demo":
-        microscope = FibSem.DemoMicroscope(settings.hardware, settings.system.stage)
+        microscope = FibSem.DemoMicroscope()
+        # set hardware settings
+        microscope.hardware_settings = settings.hardware
+        microscope.stage_settings = settings.system.stage
         microscope.connect_to_microscope()
 
+    else:
+        raise NotImplementedError(f"Manufacturer {settings.system.manufacturer} not supported.")
+    
+
+    
     # image_settings
     settings.image.save_path = session_path
 
@@ -240,6 +254,48 @@ def load_settings_from_config(
 
     # hardware settings
     hardware_settings = FibsemHardware.__from_dict__(settings["model"])
+
+    settings = MicroscopeSettings(
+        system=system_settings,
+        image=image_settings,
+        protocol=protocol,
+        milling=milling_settings,
+        hardware=hardware_settings,
+    )
+
+    return settings
+
+
+def load_microscope_configuration(
+    config_path: Path = None, protocol_path: Path = None
+) -> MicroscopeSettings:
+    """Load microscope settings from configuration files
+
+    Args:
+        config_path (Path, optional): path to config directory. Defaults to None.
+        protocol_path (Path, optional): path to protocol file. Defaults to None.
+
+    Returns:
+        MicroscopeSettings: microscope settings
+    """
+    if config_path is None:
+        from fibsem.config import MICROSCOPE_CONFIGURATION_PATH
+        config_path = MICROSCOPE_CONFIGURATION_PATH
+    
+    # system settings
+    config = load_yaml(os.path.join(config_path))
+    system_settings = SystemSettings.__from_dict__(config)
+
+    # user settings
+    image_settings = ImageSettings.__from_dict__(config["imaging"])
+
+    milling_settings = FibsemMillingSettings.__from_dict__(config["milling"])
+
+    # protocol settings
+    protocol = load_protocol(protocol_path)
+
+    # hardware settings
+    hardware_settings = FibsemHardware.__from_dict__(config["subsystems"])
 
     settings = MicroscopeSettings(
         system=system_settings,

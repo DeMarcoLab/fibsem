@@ -446,24 +446,10 @@ class ThermoMicroscope(FibsemMicroscope):
             Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
     """
 
-    def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings =None,):
+    def __init__(self):
         if _THERMO_API_AVAILABLE == False:
             raise Exception("Autoscript (ThermoFisher) not installed. Please see the user guide for installation instructions.")            
         self.connection = SdbMicroscopeClient()
-        import fibsem
-        import fibsem.config as cfg
-        from fibsem.utils import load_protocol
-        if hardware_settings is None:
-            dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-            self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
-        else:
-            self.hardware_settings = hardware_settings
-        if stage_settings is None:
-            dict_stage = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-            self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
-        else:
-            self.stage_settings = stage_settings
-    
         self.user = FibsemUser(
             computer =  str(os.environ.get('COMPUTERNAME', "ComputerName")),
             name = str(os.getlogin()),
@@ -2354,7 +2340,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
         self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
         self.set("detector_mode", beam_settings.detector_mode, beam_settings.beam_type)
-        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas is True:
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma is True:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
     
     def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -2608,7 +2594,7 @@ class ThermoMicroscope(FibsemMicroscope):
             if key == "plasma_gas":
                 _check_beam(beam_type, self.hardware_settings)
                 _check_sputter(self.hardware_settings)
-                if self.hardware_settings.can_select_plasma_gas:
+                if self.hardware_settings.plasma:
                     beam.source.plasma_gas.value = value
                     logging.info(f"Plasma gas set to {value}.")
                 else:
@@ -2808,7 +2794,7 @@ class TescanMicroscope(FibsemMicroscope):
             Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
     """
 
-    def __init__(self, ip_address: str = "localhost", hardware_settings: FibsemHardware = None, stage_settings: StageSettings = None):
+    def __init__(self, ip_address: str = "localhost"):
         if _TESCAN_API_AVAILABLE == False:
             raise ImportError("The TESCAN Automation API is not available. Please see the user guide for installation instructions.")
         self.connection = Automation(ip_address)
@@ -2820,19 +2806,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         self.last_image_eb = None
         self.last_image_ib = None
-
-        import fibsem.config as cfg
-        from fibsem.utils import load_protocol
-        if hardware_settings is None:
-            dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-            self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
-        else:
-            self.hardware_settings = hardware_settings
-        if stage_settings is None:
-            dict_stage = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-            self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
-        else:
-            self.stage_settings = stage_settings
     
         self.user = FibsemUser(
             computer =  str(os.environ.get('COMPUTERNAME', "ComputerName")),
@@ -4790,7 +4763,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
         self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
 
-        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas:
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
 
     def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -5020,7 +4993,7 @@ class TescanMicroscope(FibsemMicroscope):
 ########################
 class DemoMicroscope(FibsemMicroscope):
 
-    def __init__(self, hardware_settings: FibsemHardware = None, stage_settings: StageSettings = None):            
+    def __init__(self):            
         self.connection = None
         self.stage_position = FibsemStagePosition(x=0, y=0, z=0, r=0, t=0)
         self.manipulator_position = FibsemManipulatorPosition()
@@ -5061,19 +5034,6 @@ class DemoMicroscope(FibsemMicroscope):
             brightness=0.5,
             contrast=0.5,
         )
-        import fibsem.config as cfg
-        from fibsem.utils import load_protocol
-        import os
-        if hardware_settings is None:
-            dict_system = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-            self.hardware_settings = FibsemHardware.__from_dict__(dict_system["model"])
-        else:
-            self.hardware_settings = hardware_settings
-        if stage_settings is None:
-            dict_stage = load_protocol(os.path.join(cfg.CONFIG_PATH, "system.yaml"))
-            self.stage_settings = StageSettings.__from_dict__(dict_stage["system"]["stage"])
-        else:
-            self.stage_settings = stage_settings
 
         self.user = FibsemUser(
             computer =  str(os.environ.get('COMPUTERNAME', "ComputerName")),
@@ -5086,8 +5046,8 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Connected to Demo Microscope")
         logging.info(f"Microscope client connected to model Demo with serial number 123456 and software version 0.1")       
         self.system = FibsemSystem(
-            manufacturer="OpenFibsem",
-            model="Demo",
+            manufacturer="OpenFIBSEM",
+            model="DemoMicroscope",
             serial_number="123456",
             software_version="0.1",
             hardware_settings=self.hardware_settings,
