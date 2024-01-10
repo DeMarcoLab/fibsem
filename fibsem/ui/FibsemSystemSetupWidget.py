@@ -56,16 +56,20 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.load_positions_on_startup = True
         self.setup_connections(ip_address=settings_dict["system"]["ip_address"], manufacturer=settings_dict["system"]["manufacturer"])
         self.update_ui()
+
+    
+        self.comboBox_configuration.addItems(cfg.USER_CONFIGURATIONS.keys())      
         
 
     def setup_connections(self, ip_address: str, manufacturer: str):
         #
-        self.lineEdit_ipadress.setText(ip_address)
+        self.lineEdit_ipaddress.setText(ip_address)
         self.comboBox_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
         self.comboBox_manufacturer.setCurrentText(manufacturer)
 
         # buttons
-        self.microscope_button.clicked.connect(self.connect_to_microscope)
+        # self.microscope_button.clicked.connect(self.connect_to_microscope)
+        self.microscope_button.clicked.connect(self.connect_to_microscopev2)
         self.setStage_button.clicked.connect(self.get_stage_settings_from_ui)
         self.pushButton_save_yaml.clicked.connect(lambda: self.save_defaults(path=None))
         self.pushButton_apply_settings.clicked.connect(self.apply_defaults_settings)
@@ -84,6 +88,98 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.checkBox_gis_enabled.stateChanged.connect(self.get_model_from_ui)
         self.checkBox_multichem.stateChanged.connect(self.get_model_from_ui)
 
+            # configuration
+        self.comboBox_configuration.currentTextChanged.connect(lambda: self.load_configuration(None))
+        self.toolButton_import_configuration.clicked.connect(self.import_configuration_from_file)
+
+    def load_configuration(self, configuration_name: str):
+        if configuration_name is None:
+            configuration_name = self.comboBox_configuration.currentText()
+        
+        configuration_path = cfg.USER_CONFIGURATIONS[configuration_name]["path"]
+
+        if configuration_path is None:  
+            napari.utils.notifications.show_error(f"Configuration {configuration_name} not found.")
+            return
+    
+        # load the configuration
+        self.settings = utils.load_microscope_configuration(configuration_path)
+
+        from pprint import pprint 
+
+        pprint(self.settings.__to_dict__()["core"])
+
+        return configuration_path
+    
+    def import_configuration_from_file(self):
+    
+        path = _get_file_ui(msg="Select microscope configuration file", 
+            path=cfg.CONFIG_PATH, _filter="YAML (*.yaml *.yml)")
+
+        if path == "":
+            napari.utils.notifications.show_error(f"No file selected. Configuration not loaded.")
+            return
+        
+        # TODO: validate configuration  
+
+        # ask user to add to user configurations
+        configuration_name = os.path.basename(path).removesuffix(".yaml")
+
+        if configuration_name not in cfg.USER_CONFIGURATIONS: 
+            from fibsem.ui.utils import message_box_ui
+            msg = f"Would you like to add this configuration to the user configurations?"
+            ret = message_box_ui(text=msg, title="Add to user configurations?")
+
+            # add to user configurations
+            if ret:
+                cfg.add_configuration(configuration_name=configuration_name, path=path)
+                
+                # set default configuration
+                msg = f"Would you like to make this the default configuration?"
+                ret = message_box_ui(text=msg, title="Set default configuration?")
+                
+                if ret:
+                    cfg.set_default_configuration(configuration_name=configuration_name)
+
+        # add configuration to combobox
+        self.comboBox_configuration.addItem(configuration_name)
+        self.comboBox_configuration.setCurrentText(configuration_name)
+
+    def connect_to_microscopev2(self):
+        
+
+        
+        _microscope_connected = bool(self.microscope)
+
+        if _microscope_connected:
+            self.microscope.disconnect()
+            self.microscope, self.settings = None, None
+        else:
+
+            napari.utils.notifications.show_info(f"Connecting to microscope...")
+
+            configuration_path = self.load_configuration(None)
+
+            if configuration_path is None:
+                napari.utils.notifications.show_error(f"Configuration not selected.")
+                return
+
+            # connect
+            self.microscope, self.settings = utils.setup_session(
+                config_path=configuration_path,
+            )
+
+            # user notification
+            msg = f"Connected to microscope at {self.settings.system.ip_address}"
+            logging.info(msg)
+            napari.utils.notifications.show_info(msg)
+
+        self.update_ui()
+            
+
+
+        
+    
     def import_yaml(self):
         path = _get_file_ui(msg="Select system file", path=cfg.CONFIG_PATH)
         if path == "":
@@ -96,7 +192,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def get_default_settings_from_ui(self):
         microscope_settings = MicroscopeSettings(
             system=SystemSettings(
-                ip_address=self.lineEdit_ipadress.text(),
+                ip_address=self.lineEdit_ipaddress.text(),
                 manufacturer=self.comboBox_manufacturer.currentText(),
                 stage=StageSettings(
                     rotation_flat_to_electron=self.rotationFlatToElectronSpinBox.value(),
@@ -171,7 +267,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         system_dict["user"]["milling"] = {}
         system_dict["user"]["imaging"] = {}
 
-        system_dict["system"]["ip_address"] = self.lineEdit_ipadress.text()
+        system_dict["system"]["ip_address"] = self.lineEdit_ipaddress.text()
         system_dict["system"]["manufacturer"] = self.comboBox_manufacturer.currentText()
         system_dict["system"]["ion"]["voltage"] = self.spinBox_ion_voltage.value()
         system_dict["system"]["ion"]["current"] = self.doubleSpinBox_ion_current.value() * constants.NANO_TO_SI
@@ -232,7 +328,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         logging.info(f"System configuration saved to {os.path.basename(path)}")
 
     def set_defaults_to_ui(self):
-        self.lineEdit_ipadress.setText(self.settings.system.ip_address)
+        self.lineEdit_ipaddress.setText(self.settings.system.ip_address)
         self.comboBox_manufacturer.setCurrentText( self.settings.system.manufacturer )
         self.spinBox_ion_voltage.setValue( self.settings.system.ion.voltage )
         self.doubleSpinBox_ion_current.setValue( self.settings.system.ion.current * constants.SI_TO_NANO )
@@ -308,7 +404,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def set_model_to_ui(self, hardware_settings: FibsemHardware) -> None:
         self.checkBox_eb.setChecked(hardware_settings.electron_beam)
         self.checkBox_ib.setChecked(hardware_settings.ion_beam)
-        self.checkBox_select_plasma_gas.setChecked(hardware_settings.can_select_plasma_gas)
+        self.checkBox_select_plasma_gas.setChecked(hardware_settings.plasma)
         self.checkBox_stage_enabled.setChecked(hardware_settings.stage_enabled)
         self.checkBox_stage_rotation.setChecked(hardware_settings.stage_rotation)
         self.checkBox_stage_tilt.setChecked(hardware_settings.stage_tilt)
@@ -322,7 +418,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         hardware_settings = FibsemHardware()
         hardware_settings.electron_beam = self.checkBox_eb.isChecked()
         hardware_settings.ion_beam = self.checkBox_ib.isChecked()
-        hardware_settings.can_select_plasma_gas = self.checkBox_select_plasma_gas.isChecked()
+        hardware_settings.plasma = self.checkBox_select_plasma_gas.isChecked()
         hardware_settings.stage_rotation = self.checkBox_stage_rotation.isChecked()
         hardware_settings.stage_tilt = self.checkBox_stage_tilt.isChecked()
         hardware_settings.manipulator_enabled = self.checkBox_needle_enabled.isChecked()
@@ -331,7 +427,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         hardware_settings.gis_enabled = self.checkBox_gis_enabled.isChecked()
         hardware_settings.gis_multichem = self.checkBox_multichem.isChecked()
         if self.settings is not None:
-            hardware_settings.manipulator_positions = self.settings.hardware.manipulator_positions
+            # hardware_settings.manipulator_positions = self.settings.hardware.manipulator_positions
 
             self.settings.hardware = hardware_settings
             self.microscope.hardware_settings = hardware_settings
@@ -344,13 +440,13 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     def connect(self, ip_address: str = None, manufacturer: str = None) -> None:
 
         if not isinstance(ip_address, str):
-            if self.lineEdit_ipadress.text() == "":
+            if self.lineEdit_ipaddress.text() == "":
                 napari.utils.notifications.show_error(
                     f"IP address not set. Please enter an IP address before connecting to microscope."
                 )
                 return
             else:
-                ip_address = self.lineEdit_ipadress.text() 
+                ip_address = self.lineEdit_ipaddress.text() 
 
         try:
             log_status_message("CONNECTING")

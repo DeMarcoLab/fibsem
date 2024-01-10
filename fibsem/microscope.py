@@ -2354,7 +2354,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
         self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
         self.set("detector_mode", beam_settings.detector_mode, beam_settings.beam_type)
-        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas is True:
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma is True:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
     
     def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
@@ -2608,7 +2608,7 @@ class ThermoMicroscope(FibsemMicroscope):
             if key == "plasma_gas":
                 _check_beam(beam_type, self.hardware_settings)
                 _check_sputter(self.hardware_settings)
-                if self.hardware_settings.can_select_plasma_gas:
+                if self.hardware_settings.plasma:
                     beam.source.plasma_gas.value = value
                     logging.info(f"Plasma gas set to {value}.")
                 else:
@@ -4790,7 +4790,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
         self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
 
-        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.can_select_plasma_gas:
+        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma:
             self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
 
     def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:

@@ -9,7 +9,7 @@ model:
         multichem: true
     ion:
         enabled: true
-        can_select_plasma_gas: true 
+        plasma: true 
     manipulator:
         enabled: true
         positions:

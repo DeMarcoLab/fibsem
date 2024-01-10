@@ -73,19 +73,19 @@
        <string>Connect</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_7">
-       <item row="3" column="0" colspan="2">
-        <widget class="QPushButton" name="microscope_button">
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_manufacturer">
          <property name="font">
           <font>
            <pointsize>8</pointsize>
           </font>
          </property>
          <property name="text">
-          <string>Connect to Microscope</string>
+          <string>Manufacturer </string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0" colspan="2">
         <spacer name="verticalSpacer_5">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -98,19 +98,32 @@
          </property>
         </spacer>
        </item>
-       <item row="2" column="1">
-        <widget class="QComboBox" name="comboBox_manufacturer">
+       <item row="0" column="1">
+        <widget class="QComboBox" name="comboBox_configuration"/>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QPushButton" name="microscope_button">
          <property name="font">
           <font>
            <pointsize>8</pointsize>
           </font>
          </property>
+         <property name="text">
+          <string>Connect to Microscope</string>
+         </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEdit_ipadress"/>
-       </item>
        <item row="0" column="0">
+        <widget class="QLabel" name="label_configuration">
+         <property name="text">
+          <string>Configuration</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEdit_ipaddress"/>
+       </item>
+       <item row="1" column="0">
         <widget class="QLabel" name="label_ip_address">
          <property name="font">
           <font>
@@ -122,15 +135,19 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_manufacturer">
+       <item row="3" column="1">
+        <widget class="QComboBox" name="comboBox_manufacturer">
          <property name="font">
           <font>
            <pointsize>8</pointsize>
           </font>
          </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QToolButton" name="toolButton_import_configuration">
          <property name="text">
-          <string>Manufacturer </string>
+          <string>...</string>
          </property>
         </widget>
        </item>
@@ -167,9 +184,9 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-516</y>
-            <width>509</width>
-            <height>1298</height>
+            <y>0</y>
+            <width>514</width>
+            <height>1420</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_8">
@@ -1225,7 +1242,7 @@
  </widget>
  <tabstops>
   <tabstop>tabWidget</tabstop>
-  <tabstop>lineEdit_ipadress</tabstop>
+  <tabstop>lineEdit_ipaddress</tabstop>
   <tabstop>comboBox_manufacturer</tabstop>
   <tabstop>microscope_button</tabstop>
   <tabstop>scrollArea</tabstop>

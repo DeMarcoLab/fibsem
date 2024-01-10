@@ -97,3 +97,49 @@ __DEFAULT_IP_ADDRESS__ = "10.0.0.1"
 _LIVE_IMAGING_ENABLED = False
 _MINIMAP_VISUALISATION = False
 _MINIMAP_MOVE_WITH_TRANSLATION = True
+
+
+__SUPPORTED_PLASMA_GASES__ = ["Argon", "Oxygen", "Nitrogen", "Xenon"]
+
+
+
+# user configurations -> move to fibsem.db eventually
+USER_CONFIGURATIONS_PATH = os.path.join(CONFIG_PATH, "user-configurations.yaml")
+USER_CONFIGURATIONS_YAML = load_yaml(USER_CONFIGURATIONS_PATH)
+USER_CONFIGURATIONS = USER_CONFIGURATIONS_YAML["configurations"]
+DEFAULT_CONFIGURATION_NAME = USER_CONFIGURATIONS_YAML["default"]
+DEFAULT_CONFIGURATION_PATH = USER_CONFIGURATIONS[DEFAULT_CONFIGURATION_NAME]["path"]
+
+if DEFAULT_CONFIGURATION_PATH is None:
+    USER_CONFIGURATIONS[DEFAULT_CONFIGURATION_NAME]["path"] = MICROSCOPE_CONFIGURATION_PATH
+    DEFAULT_CONFIGURATION_PATH = MICROSCOPE_CONFIGURATION_PATH
+
+def add_configuration(configuration_name: str, path: str):
+    """Add a new configuration to the user configurations file."""
+    if configuration_name in USER_CONFIGURATIONS:
+        raise ValueError(f"Configuration name '{configuration_name}' already exists.")
+
+    USER_CONFIGURATIONS[configuration_name] = {"path": path}
+    USER_CONFIGURATIONS_YAML["configurations"] = USER_CONFIGURATIONS
+    with open(USER_CONFIGURATIONS_PATH, "w") as f:
+        yaml.dump(USER_CONFIGURATIONS_YAML, f)
+
+
+def remove_configuration(configuration_name: str):
+    """Remove a configuration from the user configurations file."""
+    if configuration_name not in USER_CONFIGURATIONS:
+        raise ValueError(f"Configuration name '{configuration_name}' does not exist.")
+
+    del USER_CONFIGURATIONS[configuration_name]
+    USER_CONFIGURATIONS_YAML["configurations"] = USER_CONFIGURATIONS
+    with open(USER_CONFIGURATIONS_PATH, "w") as f:
+        yaml.dump(USER_CONFIGURATIONS_YAML, f)
+
+def set_default_configuration(configuration_name: str):
+    """Set the default configuration in the user configurations file."""
+    if configuration_name not in USER_CONFIGURATIONS:
+        raise ValueError(f"Configuration name '{configuration_name}' does not exist.")
+
+    USER_CONFIGURATIONS_YAML["default"] = configuration_name
+    with open(USER_CONFIGURATIONS_PATH, "w") as f:
+        yaml.dump(USER_CONFIGURATIONS_YAML, f)

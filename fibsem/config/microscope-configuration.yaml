@@ -2,7 +2,7 @@
 core:
     name: openfibsem-microscope-configuration               # a descriptive name for your configuration                     [SPECIFIED]
     ip_address: 192.168.0.1                                 # the ip address of the microscope PC                           [SPECIFIED]
-    manufacturer: Thermo                                    # the microscope manufactuer                                    [SPECIFIED]        
+    manufacturer: Demo                                    # the microscope manufactuer                                    [SPECIFIED]        
 stage:
     rotation_reference:         0                           # the reference rotation value                                  [SPECIFIED] 
     rotation_180:               180                         # the reference rotation + 180 degrees                          [DERIVED - rotation-reference]
