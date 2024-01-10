@@ -58,6 +58,7 @@ DATA_CC_PATH:str = os.path.join(BASE_PATH, "fibsem", "log", "data", "crosscorrel
 DATA_TILE_PATH:str = os.path.join(DATA_PATH, "tile")
 POSITION_PATH = os.path.join(CONFIG_PATH, "positions.yaml")   
 MODELS_PATH = os.path.join(BASE_PATH, "fibsem", "segmentation", "models")
+MICROSCOPE_CONFIGURATION_PATH = os.path.join(CONFIG_PATH, "microscope-configuration.yaml")
 
 os.makedirs(LOG_PATH, exist_ok=True)
 os.makedirs(DATA_PATH, exist_ok=True)

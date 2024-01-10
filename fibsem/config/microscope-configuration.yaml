@@ -1,22 +1,22 @@
 # configuration
 core:
-    name: openfibsem-default-configuration                  # a descriptive name for your configuration                     [SPECIFIED]
+    name: openfibsem-microscope-configuration               # a descriptive name for your configuration                     [SPECIFIED]
     ip_address: 192.168.0.1                                 # the ip address of the microscope PC                           [SPECIFIED]
     manufacturer: Thermo                                    # the microscope manufactuer                                    [SPECIFIED]        
 stage:
-    rotation-reference:         0                           # the reference rotation value                                  [SPECIFIED] 
-    rotation-180:               180                         # the reference rotation + 180 degrees                          [DERIVED - rotation-reference]
-    shuttle-pre-tilt:           35.0                        # the pre-tilt of the shuttle                                   [SPECIFIED]
-    manipulator-height-limit:   0.0037                      # the linked height limit for manipulator (Thermo Only)         [DERIVED - manufactuer]
-electron-beam:                                              
-    column-tilt:                0                           # the column tilt of the electron beam                          [DERIVED - manufactuer]
+    rotation_reference:         0                           # the reference rotation value                                  [SPECIFIED] 
+    rotation_180:               180                         # the reference rotation + 180 degrees                          [DERIVED - rotation-reference]
+    shuttle_pre_tilt:           35.0                        # the pre-tilt of the shuttle                                   [SPECIFIED]
+    manipulator_height_limit:   0.0037                      # the linked height limit for manipulator (Thermo Only)         [DERIVED - manufactuer]
+electron_beam:                                              
+    column_tilt:                0                           # the column tilt of the electron beam                          [DERIVED - manufactuer]
     eucentric_height:           7.0e-3                      # the eucentric height of the electron beam                     [SPECIFIED]
     voltage:                    2000                        # the voltage of the electron beam                              [USER]
     current:                    50.0e-12                    # the current of the electron beam                              [USER]
     detector_mode:              SecondaryElectrons          # the detector mode of the electron beam                        [USER]
     detector_type:              ETD                         # the detector type of the electron beam                        [USER]
-ion-beam:
-    column-tilt:                52                          # the column tilt of the electron beam                          [SPECIFIED]
+ion_beam:
+    column_tilt:                52                          # the column tilt of the electron beam                          [SPECIFIED]
     eucentric_height:           16.5e-3                     # the eucentric height of the ion beam                          [SPECIFIED]
     plasma_gas:                 null                        # the plasma gas for the ion beam (plasma fib only)             [USER]
     voltage:                    30000                       # the voltage of the ion beam                                   [USER]

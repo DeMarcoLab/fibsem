@@ -33,7 +33,7 @@ user_config = {
 
 def generate_configuration(user_config: dict) -> dict:
     # load yaml
-    with open(os.path.join(CONFIG_PATH, "default-configuration.yaml"), "r") as f:
+    with open(os.path.join(CONFIG_PATH, "microscope-configuration.yaml"), "r") as f:
         config = yaml.safe_load(f)
 
     # microscope
