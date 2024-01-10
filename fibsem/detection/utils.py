@@ -236,10 +236,10 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
     for i, feature in enumerate(det.features):
 
         dat = {"feature": feature.name, 
-                        "p.x": feature.px.x, 
-                        "p.y": feature.px.y, 
+                        "px.x": feature.px.x, 
+                        "px.y": feature.px.y, 
                     "beam_type": "NULL", 
-                    "image": os.path.basename(fname), 
+                    "filename": os.path.basename(fname), 
                     "pixelsize": det.pixelsize,
                     "corrected": corrected} # TODO: beamtype
         feat_list.append(dat)
@@ -254,3 +254,6 @@ def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None)
     
     # logging.info(f"{df.tail(10)}")
     df.to_csv(DATAFRAME_PATH, index=False)
+
+    # TODO: add experiment, method
+    # TODO: migrate this to fibsem.db
