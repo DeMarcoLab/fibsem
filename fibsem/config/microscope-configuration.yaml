@@ -1,4 +1,5 @@
-# configuration
+# Please don't edit or delet this file, it is the default configuration for the microscope
+# configuration 
 core:
     name: openfibsem-microscope-configuration               # a descriptive name for your configuration                     [SPECIFIED]
     ip_address: 192.168.0.1                                 # the ip address of the microscope PC                           [SPECIFIED]
