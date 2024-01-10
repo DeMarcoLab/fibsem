@@ -1,4 +1,8 @@
 configurations:
+  cool-config:
+    path: /home/patrick/github/fibsem/fibsem/config/cool-config.yaml
+  cool-config2:
+    path: /home/patrick/github/fibsem/fibsem/config/cool-config2.yaml
   default-configuration:
-    path: null
-default: default-configuration
+    path: /home/patrick/github/fibsem/fibsem/config/microscope-configuration.yaml
+default: cool-config2

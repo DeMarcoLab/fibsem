@@ -1,35 +1,21 @@
 
 import yaml
 import os
-from fibsem.config import CONFIG_PATH
+from fibsem.config import CONFIG_PATH, DEFAULT_CONFIGURATION_VALUES
 
 
 
 def get_column_tilt(manufacturer: str, beam: str) -> int:
-    if beam == "electron-beam":
-        return 0
 
-    if manufacturer == "Thermo":
-        return 52
-    elif manufacturer == "Tescan":
-        return 55
-    elif manufacturer == "Demo":
-        return 52
-    else:
-        raise ValueError("Unknown manufacturer")
+    beam = f"{beam}-column-tilt"
+    if manufacturer not in DEFAULT_CONFIGURATION_VALUES:
+        raise ValueError(f"Unknown manufacturer: {manufacturer}")
 
+    if beam not in DEFAULT_CONFIGURATION_VALUES[manufacturer]:
+        raise ValueError(f"Unknown beam: {beam}")
 
-
-user_config = {
-    "name":                           "tfs-aquilos-01",              # a descriptive name for your configuration 
-    "ip_address":                     "192.168.0.1",                 # the ip address of the microscope PC
-    "manufacturer":                   "Thermo",                      # the microscope manufactuer, Thermo, Tescan or Demo                       
-    "rotation-reference":             0,                             # the reference rotation value (rotation when loading)  [degrees]
-    "shuttle-pre-tilt":               35,                            # the pre-tilt of the shuttle                           [degrees]
-    "electron-beam-eucentric-height": 7.0e-3,                        # the eucentric height of the electron beam             [metres]
-    "ion-beam-eucentric-height":      16.5e-3,                       # the eucentric height of the ion beam                  [metres]
-}
-
+    return DEFAULT_CONFIGURATION_VALUES[manufacturer][beam]
+    
 
 def generate_configuration(user_config: dict) -> dict:
     # load yaml
@@ -42,17 +28,17 @@ def generate_configuration(user_config: dict) -> dict:
     config["core"]["manufacturer"] = user_config["manufacturer"]
 
     # stage
-    config["stage"]["rotation-reference"] = user_config["rotation-reference"]
-    config["stage"]["rotation-180"] = user_config["rotation-reference"] + 180
-    config["stage"]["shuttle-pre-tilt"] = user_config["shuttle-pre-tilt"]
+    config["stage"]["rotation_reference"] = user_config["rotation-reference"]
+    config["stage"]["rotation_180"] = user_config["rotation-reference"] + 180
+    config["stage"]["shuttle_pre_tilt"] = user_config["shuttle-pre-tilt"]
 
     # electron
-    config["electron-beam"]["eucentric-height"] = user_config["electron-beam-eucentric-height"]
-    config["electron-beam"]["column-tilt"] = get_column_tilt(config["core"]["manufacturer"], "electron-beam")
+    config["electron_beam"]["eucentric_height"] = user_config["electron-beam-eucentric-height"]
+    config["electron_beam"]["column_tilt"] = get_column_tilt(config["core"]["manufacturer"], "electron")
 
     # ion
-    config["ion-beam"]["eucentric-height"] = user_config["ion-beam-eucentric-height"]
-    config["ion-beam"]["column-tilt"] = get_column_tilt(config["core"]["manufacturer"], "ion-beam")
+    config["ion_beam"]["eucentric_height"] = user_config["ion-beam-eucentric-height"]
+    config["ion_beam"]["column_tilt"] = get_column_tilt(config["core"]["manufacturer"], "ion")
 
     return config
 

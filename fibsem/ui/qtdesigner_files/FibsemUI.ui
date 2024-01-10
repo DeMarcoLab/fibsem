@@ -66,17 +66,15 @@
      <x>0</x>
      <y>0</y>
      <width>378</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTools">
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionCurrent_alignment"/>
     <addaction name="actionManipulator_Positions_Calibration"/>
     <addaction name="actionOpen_Minimap"/>
-    <addaction name="actionImage_Viewer"/>
    </widget>
    <addaction name="menuTools"/>
   </widget>
