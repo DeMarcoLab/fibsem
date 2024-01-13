@@ -162,7 +162,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.tabWidget.setTabEnabled(2, False)
         self.tabWidget.setTabVisible(2, False)        
 
-        self.model_widget.pushButton_load_model.clicked.connect(self.load_model)
+        self.model_widget.model_loaded.connect(self.load_model)
 
         self.checkBox_model_assist.stateChanged.connect(self.toggle_model_assist)
 

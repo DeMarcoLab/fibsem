@@ -6,9 +6,12 @@ from PyQt5 import QtWidgets
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.segmentation.model import load_model
 
+from napari.qt.threading import thread_worker
 from PyQt5.QtCore import pyqtSignal
+from fibsem.ui import _stylesheets
 from fibsem.ui.qtdesigner_files import FibsemSegmentationModelWidget
 from fibsem.segmentation.model import SegmentationModel
+
 
 CHECKPOINT_PATH = "autolamella-mega-latest.pt"
 SEGMENT_ANYTHING_AVAIABLE = False
@@ -27,6 +30,7 @@ RECOMMENDED_SAM_CHECKPOINTS = ["facebook/sam-vit-base", "Zigeng/SlimSAM-uniform-
 
 class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWidgets.QDialog):
     continue_signal = pyqtSignal(DetectedFeatures)
+    model_loaded = pyqtSignal()
 
     def __init__(
         self,
@@ -37,6 +41,7 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
         self.setupUi(self)
 
         self.model = model
+        self.model_type = None
         self.setup_connections()
 
     def setup_connections(self):
@@ -70,19 +75,40 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
         model_type = self.comboBox_model_type.currentText()
         checkpoint = self.lineEdit_checkpoint.text()
 
+        self.pushButton_load_model.setEnabled(False)
+        self.pushButton_load_model.setText("Loading...")
+        self.pushButton_load_model.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+        self.pushButton_load_model.setToolTip("Downloading model... check terminal for progress...")
+
+        worker = self.load_model_worker(model_type=model_type, checkpoint=checkpoint)
+        worker.finished.connect(self.load_model_finished)
+        worker.start()
+
+
+    @thread_worker
+    def load_model_worker(self, model_type: str, checkpoint: str):
+        
         if model_type == "SegmentationModel":
             self.model = load_model(checkpoint=checkpoint)
 
         if model_type == "SegmentAnythingModel":
             self.model = SamModelWrapper(checkpoint=checkpoint)
 
-        print(f"Loaded: {self.model}, {self.model.device}, {self.model.checkpoint}")
-
-        # TODO abstract this properly
         self.model_type = model_type
         self.model.checkpoint = checkpoint
 
         return self.model
+
+    def load_model_finished(self):
+
+        self.pushButton_load_model.setEnabled(True)
+        self.pushButton_load_model.setText("Load Model")
+        self.pushButton_load_model.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_load_model.setToolTip("")
+
+        if self.model is not None:
+            print(f"Loaded: {self.model}, {self.model.device}, {self.model.checkpoint}")
+            self.model_loaded.emit()
 
 def main():
 
