@@ -8,18 +8,15 @@ import napari
 import napari.utils.notifications
 import numpy as np
 import tifffile as tff
-import zarr
 from PIL import Image
 from fibsem.ui.qtdesigner_files import FibsemLabellingUI
 from PyQt5 import QtWidgets
-import dask.array as da
 from fibsem.segmentation.config import CLASS_COLORS, CLASS_LABELS, convert_color_names_to_rgb
 from fibsem.segmentation import utils as seg_utils
 
 from fibsem.ui.FibsemSegmentationModelWidget import FibsemSegmentationModelWidget
 from fibsem.ui import _stylesheets
 from fibsem.ui.utils import _get_directory_ui,_get_file_ui
-# BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
 
 from napari.layers import Points
 from typing import Any, Generator, Optional
@@ -27,7 +24,7 @@ from typing import Any, Generator, Optional
 # setup a basic logger
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-_DEBUG = False
+_DEBUG = True
 
 # new line char in html
 NL = "<br>"
@@ -133,16 +130,20 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         self.img_layer = None
         self.mask_layer = None
+        
+        # sam
         self.sam_mask_layer = None
-        self.sam_pts_layer = None
+        self.sam_pts_layer = None   
+        self.logits = None          # sam logits
+        self.image = None           # sam image
 
         self.setup_connections()
 
         if _DEBUG:
-            self.lineEdit_data_path.setText("/home/patrick/github/data/spacetomo/seg/new_dataset/images")
-            self.lineEdit_labels_path.setText("/home/patrick/github/data/spacetomo/seg/new_dataset/images/labels2")
-            self.model_widget.lineEdit_checkpoint.setText("/home/patrick/github/data/spacetomo/seg/model/nnunet-spacetomo.pt")
-
+            self.lineEdit_data_path.setText("/home/patrick/github/data/autolamella-paper/model-development/train/serial-liftout/train")
+            self.lineEdit_labels_path.setText("/home/patrick/github/fibsem/fibsem/log/labels2")
+            self.model_widget.lineEdit_checkpoint.setText("autolamella-serial-liftout-20240107.pt")
+    
     def setup_connections(self):
         self.pushButton_load_data.clicked.connect(self.load_data)
 
@@ -266,7 +267,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         label_map = [f"{i:02d} - {ldict.get(i, 'Unspecified')} ({cdict.get(i, 'Unspecified')})" for i in range(n_labels)]
         self.comboBox_model_class_index.clear()
         self.comboBox_model_class_index.addItems(label_map)
-        self.model_widget.spinBox_num_classes.setValue(n_labels)
 
     def previous_image(self , _: Optional[Any] = None) -> None:
         idx = int(self.viewer.dims.point[0])
@@ -330,7 +330,9 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         # set active layers
         if self.model is not None:
             if self.model_type == "SegmentAnythingModel":
-                self.model.is_image_set = False
+                self.model.is_image_set = False # TODO: implement this, so we don't have to recompute the image embedding each time
+                self.logits = None
+                self.image = None
         self.set_active_layers()
 
     def set_active_layers(self):
@@ -383,10 +385,11 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
                 label_image = self.model.inference(image, rgb=False)
                 if label_image.ndim == 3:
                     label_image = label_image[0]
+                msg = f"Generated label image using {os.path.basename(self.model.checkpoint)}"
             if self.model_type == "SegmentAnythingModel":
                 label_image = np.zeros_like(image)
 
-            msg = f"Generated label image using {self.model_type}"
+                msg = f"No label image found, using SAM model to generate mask."
 
         else:
             label_image = np.zeros_like(image)
@@ -408,7 +411,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
     def load_model(self):
         self.model = self.model_widget.model
-        self.model_type = "SegmentAnythingModel" if self.model_widget.model_type in ["SegmentAnythingModel","MobileSAMModel"] else "SegmentationModel"
+        self.model_type =  self.model_widget.model_type
         self.label_model_info.setText(f"Model: {os.path.basename(self.model.checkpoint)}")
 
         # specific layers for SAM model
@@ -445,10 +448,10 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.sam_pts_layer.selected_data = []
         if event.button == 1:
             self.sam_pts_layer.current_face_color = "blue"
-            self.sam_pts_layer.current_properties = {"positive_prompt": True}
+            self.sam_pts_layer.current_properties = {"prompt": 1}
         else:
             self.sam_pts_layer.current_face_color = "red"
-            self.sam_pts_layer.current_properties = {"positive_prompt": False}
+            self.sam_pts_layer.current_properties = {"prompt": 0} # 1 = pos, 0 = neg, -1 = background
 
     def _update_sam_mask(self, _: Optional[Any] = None) -> None:
 
@@ -456,38 +459,27 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         points_labels = None
         # get the prompt points from sam_pts layer
         if len(self.sam_pts_layer.data) > 0:
-            points = np.flip(self.sam_pts_layer.data, axis=-1)
-            points_labels = self.sam_pts_layer.properties["positive_prompt"]
+            points = [np.flip(self.sam_pts_layer.data, axis=-1).tolist()]
+            points_labels = [self.sam_pts_layer.properties["prompt"].tolist()]
 
-        # set the image embedding if it hasnt been set
-        if not self.model.is_image_set:
-            # get the current image
+        if self.image is None:
             idx = int(self.viewer.dims.point[0])
             image = np.asarray(self.img_layer.data[idx]) # req for lazy load
-            
-            import cv2 # NOTE: importing anywhere else causes issues with napari
-            gray_img = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB) # sam req rgb
-            
-            # set embedding
-            logging.info("setting image embedding")
-            self.model.set_image(gray_img)
-            self.logits = None
+            self.image = Image.fromarray(image).convert("RGB")
 
-        # run model
-        mask, scores, self.logits = self.model.predict(
-            point_coords=points,
-            point_labels=points_labels,
-            box=None,
-            mask_input=self.logits,
-            multimask_output=False,
-        )
+        # TODO: dont' recompute image embedding each time
+        mask, score, self.logits = self.model.predict(self.image, 
+                                                points, 
+                                                points_labels, 
+                                                input_masks=self.logits,
+                                                multimask_output=False)
 
         # add layer for mask
         try:
-            self.sam_mask_layer.data = mask[0]
+            self.sam_mask_layer.data = mask
         except:
             self.sam_mask_layer = self.viewer.add_labels(
-                mask[0],
+                mask,
                 name="SAM Mask",
                 opacity=0.7,
                 blending="additive",

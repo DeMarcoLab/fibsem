@@ -17,3 +17,4 @@ petname>=2.6
 plotly>=5.14.1
 kaleido==0.2.0
 matplotlib_scalebar>=0.8.1
+transformers>=4.36.2
