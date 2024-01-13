@@ -86,6 +86,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.checkBox_options_move_with_translation.stateChanged.connect(self._update_ui)
         self.checkBox_options_move_with_translation.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
         self.label_options_move_with_translate_info.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
+        self.checkBox_options_acquire_after_movement.setVisible(cfg._MINIMAP_ACQUIRE_AFTER_MOVEMENT)
+        self.label_options_header.setVisible(cfg._MINIMAP_ACQUIRE_AFTER_MOVEMENT and cfg._MINIMAP_MOVE_WITH_TRANSLATION)
 
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
