@@ -14,13 +14,69 @@
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="10" column="0" colspan="2">
+   <item row="4" column="1">
+    <widget class="QComboBox" name="comboBox_model_class_index"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QCheckBox" name="checkBox_model_assist">
+     <property name="text">
+      <string>Model Assisted</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="label_model_info">
+     <property name="text">
+      <string>No Model</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="11" column="0" colspan="2">
     <widget class="QLabel" name="label_instructions">
      <property name="text">
       <string>Instructions</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QPushButton" name="pushButton_model_clear">
+     <property name="text">
+      <string>Clear</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QPushButton" name="pushButton_model_confirm">
+     <property name="text">
+      <string>Confirm</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label_title">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>OpenFIBSEM Labelling</string>
      </property>
     </widget>
    </item>
@@ -40,10 +96,64 @@
        <string>Data</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="lineEdit_data_path"/>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QPushButton" name="pushButton_load_data">
+         <property name="text">
+          <string>Load Data</string>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_labels_path">
          <property name="text">
           <string>Label Path</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="checkBox_save_rgb">
+         <property name="text">
+          <string>Save RGB Masks</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QToolButton" name="pushButton_labels_path">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEdit_labels_path"/>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_data_path">
+         <property name="text">
+          <string>Image Path</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QCheckBox" name="checkBox_autosave">
+         <property name="text">
+          <string>AutoSave</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QToolButton" name="pushButton_data_path">
+         <property name="text">
+          <string>...</string>
          </property>
         </widget>
        </item>
@@ -60,101 +170,11 @@
          </property>
         </spacer>
        </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEdit_data_path"/>
-       </item>
-       <item row="0" column="2">
-        <widget class="QToolButton" name="pushButton_data_path">
-         <property name="text">
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="QPushButton" name="pushButton_load_data">
-         <property name="text">
-          <string>Load Data</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_data_path">
-         <property name="text">
-          <string>Image Path</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QToolButton" name="pushButton_labels_path">
-         <property name="text">
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEdit_labels_path"/>
-       </item>
       </layout>
      </widget>
     </widget>
    </item>
    <item row="4" column="0">
-    <widget class="QPushButton" name="pushButton_model_confirm">
-     <property name="text">
-      <string>Confirm</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QComboBox" name="comboBox_model_class_index"/>
-   </item>
-   <item row="2" column="1">
-    <widget class="QLabel" name="label_model_info">
-     <property name="text">
-      <string>No Model</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QPushButton" name="pushButton_model_clear">
-     <property name="text">
-      <string>Clear</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QCheckBox" name="checkBox_model_assist">
-     <property name="text">
-      <string>Model Assisted</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="label_title">
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
-     </property>
-     <property name="text">
-      <string>OpenFIBSEM Labelling</string>
-     </property>
-    </widget>
-   </item>
-   <item row="12" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="3" column="0">
     <widget class="QLabel" name="label_model_class_index">
      <property name="text">
       <string>Class Map</string>

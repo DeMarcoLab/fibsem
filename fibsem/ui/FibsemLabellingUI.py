@@ -107,6 +107,10 @@ CONFIGURATION = {
         "IMAGE_OPACITY": 0.7,
         "MASK_OPACITY": 0.3,
     },
+    "TOOLTIPS": {
+        "AUTOSAVE": "Automatically save the image when moving to the next image",
+        "SAVE_RGB": "Save the RGB mask when saving the image. This is in additional to the class mask, and is only for visualisation purposes.",
+    }
 
 }
 
@@ -181,6 +185,10 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         self.model_widget.pushButton_load_model.setStyleSheet(CONFIGURATION["UI"]["LOAD_MODEL_BUTTON_COLOR"])
         self.pushButton_model_confirm.setStyleSheet(CONFIGURATION["UI"]["CONFIRM_BUTTON_COLOR"])
         self.pushButton_model_clear.setStyleSheet(CONFIGURATION["UI"]["CLEAR_BUTTON_COLOR"])
+
+        # tooltips
+        self.checkBox_autosave.setToolTip(CONFIGURATION["TOOLTIPS"]["AUTOSAVE"])
+        self.checkBox_save_rgb.setToolTip(CONFIGURATION["TOOLTIPS"]["SAVE_RGB"])
 
         self.update_instructions()
 
@@ -296,7 +304,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         
         logging.info(f"Saving mask to {os.path.basename(fname)}")
 
-        if CONFIGURATION["SAVE"]["SAVE_RGB"]:
+        if CONFIGURATION["SAVE"]["SAVE_RGB"] and self.checkBox_save_rgb.isChecked():
             
             colormap = CONFIGURATION["LABELS"]["COLOR_MAP"]
             colormap_rgb = convert_color_names_to_rgb(colormap)
@@ -321,7 +329,8 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         
         # save previous image
         if self.last_idx != idx:
-            self.save_image()
+            if self.checkBox_autosave.isChecked():
+                self.save_image()
             self.last_idx = idx # update last index
         
         # update mask layer
@@ -555,11 +564,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
         except:
             pass
         event.accept()
-
-    # BUG: no way to save the last image in the dataset? except go back?
-
-    # TODO: go to index
-
 
 
 def main():
