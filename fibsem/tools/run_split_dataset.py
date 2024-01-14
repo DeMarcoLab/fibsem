@@ -24,8 +24,8 @@ def _split_dataset(DATA_PATH: Path, OUTPUT_PATH: Path):
     # True: the model prediction was incorrect -> train set
 
     # split the data into train and test
-    df_train = df[df["corrected"] == True]
-    df_test = df[df["corrected"] == False]
+    df_train = df[df["corrected"] == False]
+    df_test = df[df["corrected"] == True]
 
     print(f"train: {len(df_train)} images")
     print(f"test: {len(df_test)} images")
