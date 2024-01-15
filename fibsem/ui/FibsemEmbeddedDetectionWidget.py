@@ -119,15 +119,6 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             self.pushButton_enable_labelling.setText("Enable Labelling")
             self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
 
-    def save_data(self, fname: str):
-        
-        # get the updated mask
-        self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
-        
-        # save current data
-        det_utils.save_data(det = self.det, corrected=self._USER_CORRECTED, fname=fname)
-    
-
     def confirm_button_clicked(self, reset_camera=False):
     
         # log the difference between initial and final detections
@@ -138,14 +129,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             fname = f"ml-{utils.current_timestamp_v2()}"
             beam_type = "NULL"
         
-
-        # save current data
-        try:
-            self.save_data(fname=fname)
-        except Exception as e:
-            logging.error(f"Error saving data: {e}")
-
-
+        fd = [] # feature detections
         for f0, f1 in zip(self.det.features, self._intial_det.features):
             px_diff = f1.px - f0.px
             msgd = {"msg": "feature_detection",
@@ -159,7 +143,13 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                     "pixelsize": self.det.pixelsize,                            # pixelsize
             }
             logging.debug(msgd)
+            fd.append(deepcopy(msgd))
 
+        # save features data
+        self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
+        det_utils.save_feature_data_to_csv(self.det, features=fd, filename=fname)
+
+            
         # remove det layers
         if self._image_layer is not None:
             if self._image_layer in self.viewer.layers:

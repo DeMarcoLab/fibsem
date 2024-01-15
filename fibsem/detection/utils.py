@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import shutil
+import json
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -12,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from PIL import Image
+from copy import deepcopy
 
 from fibsem import config as cfg
 from fibsem import utils
@@ -104,156 +106,52 @@ def parse_metadata(filename):
 
     return df
 
+# TODO: add experiment, method
+# TODO: migrate this to fibsem.db
+# filename should match the same filename that is used for feature detection logging -> can be associated
+def save_feature_data_to_csv(det: DetectedFeatures, features: list[dict], filename: str):
+    """Save the feature data to a csv file. Includes saving the image and mask to disk. 
+    All data is saved at the cfg.DATA_ML_PATH location. This can be configured in the config.py file."""
 
-def extract_img_for_labelling(path, show=False):
-    """Extract all the images that have been identified for retraining.
-
-    path: path to directory containing logged images
-
-    """
-    import datetime
-    import random
-    import time
-
-    import liftout
-    import matplotlib.pyplot as plt
-    from PIL import Image
-
-    # mkdir for copying images to
-    data_path = os.path.join(os.path.dirname(liftout.__file__), "data", "retrain")
-    os.makedirs(data_path, exist_ok=True)
-    print(f"Searching in {path} for retraining images...")
-
-    # find all files for retraining (with _label postfix
-    filenames = glob.glob(os.path.join(path, "/**/*label*.tif"), recursive=True)
-    print(f"{len(filenames)} images found for relabelling")
-    print(f"Copying images to {data_path}...")
-
-    for i, fname in enumerate(filenames):
-        # tqdm?
-        print(f"Copying {i}/{len(filenames)}")
-        # basename = os.path.basename(fname)
-        datetime_str = datetime.datetime.fromtimestamp(time.time()).strftime(
-            "%Y%m%d.%H%M%S"
-        )
-        basename = f"{datetime_str}.{random.random()}.tif"  # use a random number to prevent duplicates at seconds time resolution
-        # print(fname, basename)
-        if show:
-            img = Image.open(fname)
-            plt.imshow(img, cmap="gray")
-            plt.show()
-
-        source_path = os.path.join(fname)
-        destination_path = os.path.join(data_path, basename)
-        # print(f"Source: {source_path}")
-        # print(f"Destination: {destination_path}")
-        print("-" * 50)
-        shutil.copyfile(source_path, destination_path)
-
-    # zip the image folder
-    # shutil.make_archive(f"{path}/images", 'zip', label_dir)
-
-def write_data_to_csv(path: Path, info: list) -> None:
-
-    dataframe_path = os.path.join(path, "data.csv")
-
-    cols = ["label", "p1.type", "p1.x", "p1.y", "p2.type", "p2.x", "p2.y"]
-    df_tmp = pd.DataFrame([info], columns=cols)
-    if os.path.exists(dataframe_path):
-        df = pd.read_csv(dataframe_path)
-        df = pd.concat([df, df_tmp], axis=0, ignore_index=True)
-    else:
-        df = df_tmp
-    df.to_csv(dataframe_path,index=False)
-
-    logging.info(f"Logged data to {dataframe_path}.")
-
-
-def write_data_to_disk(path: Path, detected_features) -> None:
-    from fibsem import utils
-    from fibsem.detection.detection import DetectedFeatures
-    label = utils.current_timestamp() + "_label"
-
-    # utils.save_image(
-    # image=detected_features.image,
-    # save_path=path,
-    # label=label,
-    # )
-
-    import os
-
-    import tifffile as tf 
-    os.makedirs(path, exist_ok=True)
-    tf.imsave(os.path.join(path, f"{label}.tif"), detected_features.image)
-
-    # get scale invariant coords
-    shape = detected_features.image.shape
-    scaled_p0 = get_scale_invariant_coordinates(detected_features.features[0].px, shape=shape)
-    scaled_p1 = get_scale_invariant_coordinates(detected_features.features[1].px, shape=shape)
-
-    # get info
-    info = [label, 
-        detected_features.features[0].type.name, 
-        scaled_p0.x, 
-        scaled_p0.y, 
-        detected_features.features[1].type.name, 
-        scaled_p1.x, 
-        scaled_p1.y
-        ]
-
-    write_data_to_csv(path, info)
-
-
-def save_data(det: DetectedFeatures, corrected: bool = False, fname: str = None) -> None:
-
-    image = det.fibsem_image if det.fibsem_image is not None else det.image
-    if not isinstance(image, FibsemImage):
-        image = FibsemImage(image, None)
-    
-    if fname is None:
-        fname = f"{utils.current_timestamp_v2()}"
-    fname = os.path.join(cfg.DATA_ML_PATH, f"{fname}")
-
-    idx = 1
-    while os.path.exists(fname):
-        fname = f"{fname}_{idx}"
-        idx += 1
-
-    image.save(fname) # type: ignore 
-    logging.info(f"Saved image to {fname}")
+    # save image
+    image = det.fibsem_image
+    filename = os.path.join(cfg.DATA_ML_PATH, f"{filename}")
+    image.save(filename) # type: ignore 
+    logging.debug(f"Saved detection image to {filename}")
 
     # save mask to disk
     os.makedirs(os.path.join(cfg.DATA_ML_PATH, "mask"), exist_ok=True)
-    mask_fname = os.path.join(cfg.DATA_ML_PATH, "mask", os.path.basename(fname))
+    mask_fname = os.path.join(cfg.DATA_ML_PATH, "mask", os.path.basename(filename))
     mask_fname = Path(mask_fname).with_suffix(".tif")
     im = Image.fromarray(det.mask) 
     im.save(mask_fname)
+    logging.debug(f"Saved detection mask to {mask_fname}")
 
+    # convert to csv format
+    csv_data = []
+    for fd in features:
 
-    # save coordinates for testing    
-    # save the feature_type, px coordinates for each feature into a pandas dataframe
-    feat_list = []
-    for i, feature in enumerate(det.features):
+        dat = deepcopy(fd)
+        dat["px.x"] = fd["px"]["x"]
+        dat["px.y"] = fd["px"]["y"]
+        dat["dpx.x"] = fd["dpx"]["x"]
+        dat["dpx.y"] = fd["dpx"]["y"]
+        dat["dm.x"] = fd["dm"]["x"]
+        dat["dm.y"] = fd["dm"]["y"]
+        
+        del dat["px"]
+        del dat["dpx"]
+        del dat["dm"]
 
-        dat = {"feature": feature.name, 
-                        "px.x": feature.px.x, 
-                        "px.y": feature.px.y, 
-                    "beam_type": "NULL", 
-                    "filename": os.path.basename(fname), 
-                    "pixelsize": det.pixelsize,
-                    "corrected": corrected} # TODO: beamtype
-        feat_list.append(dat)
-
-    df = pd.DataFrame(feat_list)
+        csv_data.append(dat)
+    logging.debug(f"Converted {len(csv_data)} features to csv format")
+    
+    df = pd.DataFrame(csv_data)
     
     # save the dataframe to a csv file, append if the file already exists
     DATAFRAME_PATH = os.path.join(cfg.DATA_ML_PATH, "data.csv")
     if os.path.exists(DATAFRAME_PATH):
         df_tmp = pd.read_csv(DATAFRAME_PATH)
         df = pd.concat([df_tmp, df], axis=0, ignore_index=True)
-    
-    # logging.info(f"{df.tail(10)}")
     df.to_csv(DATAFRAME_PATH, index=False)
-
-    # TODO: add experiment, method
-    # TODO: migrate this to fibsem.db
+    logging.debug(f"Saved feature data to {DATAFRAME_PATH}")
