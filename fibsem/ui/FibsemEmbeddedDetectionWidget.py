@@ -1,21 +1,17 @@
 import os
 from copy import deepcopy
-from pathlib import Path
 
 import napari
 import napari.utils.notifications
 import numpy as np
-import tifffile as tff
 from PyQt5 import QtWidgets
 
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.segmentation import model as fibsem_model
-from fibsem.ui.utils import message_box_ui
 from fibsem.segmentation.model import load_model
 from fibsem.structures import (
-    BeamType,
     FibsemImage,
     Point,
 )
