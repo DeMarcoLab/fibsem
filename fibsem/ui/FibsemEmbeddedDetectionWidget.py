@@ -26,8 +26,6 @@ from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget
 import logging
 
 from fibsem.segmentation.config import CLASS_COLORS
-# CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
-# CLASS_COLORS = {0: "black", 1: "red", 2: "green", 3: "cyan", 4: "yellow", 5: "magenta", 6: "blue"}
 
 class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets.QWidget):
     continue_signal = pyqtSignal(DetectedFeatures)
@@ -305,17 +303,13 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         return self.det
 
 
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings
 from fibsem.detection.detection import Feature, DetectedFeatures
-from fibsem import acquire
+import fibsem
 
 def main():
     # load model
-    checkpoint = "openfibsem-baseline-34.pt"
-    encoder="resnet34"
-    num_classes = 3
-    model = load_model(checkpoint=checkpoint, encoder=encoder, nc=num_classes)
+    checkpoint = "autolamella-mega-20240107.pt"
+    model = load_model(checkpoint=checkpoint)
     
     # load image
     image = FibsemImage.load(os.path.join(os.path.dirname(detection.__file__), "test_image.tif"))
@@ -337,7 +331,9 @@ def main():
     det_widget_ui.set_detected_features(det)
 
     viewer.window.add_dock_widget(
-        det_widget_ui, area="right", add_vertical_stretch=False, name="Fibsem Feature Detection"
+        det_widget_ui, area="right", 
+        add_vertical_stretch=False, 
+        name=f"OpenFIBSEMv{fibsem.__version__} Feature Detection"
     )
     napari.run()
 
