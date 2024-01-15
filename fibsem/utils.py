@@ -410,6 +410,39 @@ def _get_positions(fname: str = None) -> list[str]:
 
     return [d["name"] for d in ddict]
 
+
+import yaml
+
+
+
+def save_positions(positions: list, path: str = None, overwrite: bool = False) -> None:
+    """save the list of positions to file"""
+
+    from fibsem.structures import FibsemStagePosition
+    from fibsem import config as cfg
+
+    # convert single position to list
+    if not isinstance(positions, list):
+        positions = [positions]
+
+    # default path
+    if path is None:
+        path = cfg.POSITION_PATH
+
+    # get existing positions    
+    pdict = []
+    if not overwrite:
+        pdict = load_yaml(fname=path)
+
+    
+    # append new positions
+    for position in positions:
+        pdict.append(position.__to_dict__())
+    
+    # save
+    save_yaml(path, pdict)
+    
+
 def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show: bool = True):
     import pytz
     from matplotlib_scalebar.scalebar import ScaleBar

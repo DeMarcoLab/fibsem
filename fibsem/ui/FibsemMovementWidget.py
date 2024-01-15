@@ -328,22 +328,20 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def export_positions(self):
 
-        protocol_path = _get_save_file_ui(msg="Select or create file")
-        if protocol_path == '':
+        path = _get_save_file_ui(msg="Select or create file", 
+            path=cfg.POSITION_PATH, 
+            _filter="YAML Files (*.yaml)")
+        
+        if path == '':
+            napari.utils.notifications.show_info("No file selected, positions not saved")
             return
+        
         response = message_box_ui(text="Do you want to overwrite the file ? Click no to append the new positions to the existing file.", title="Overwrite ?", buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         
-        dict_position = []
-        if not response:
-            with open(protocol_path, 'r') as yaml_file:
-                dict_position = yaml.safe_load(yaml_file)
+        # save positions
+        utils.save_positions(self.positions, path, overwrite=response)
 
-        for position in self.positions:
-            dict_position.append(position.__to_dict__())
-        with open(os.path.join(Path(protocol_path).with_suffix(".yaml")), "w") as f:
-            yaml.safe_dump(dict_position, f, indent=4, default_flow_style=False)
-
-        logging.info("Positions saved to file")
+        logging.info(f"Positions saved to {path}")
 
 
     def minimap_window_positions(self,positions):

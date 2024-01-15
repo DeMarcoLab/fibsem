@@ -80,7 +80,7 @@ class LamellaCentre(Feature):
 class LamellaLeftEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    color = "magenta"
+    color = "red"
     name: str = "LamellaLeftEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaLeftEdge':
@@ -92,7 +92,7 @@ class LamellaLeftEdge(Feature):
 class LamellaRightEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    color = "orange"
+    color = "red"
     name: str = "LamellaRightEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaRightEdge':
@@ -103,7 +103,7 @@ class LamellaRightEdge(Feature):
 class LamellaTopEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    color = "hotpink"
+    color = "red"
     name: str = "LamellaTopEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaTopEdge':
@@ -114,7 +114,7 @@ class LamellaTopEdge(Feature):
 class LamellaBottomEdge(Feature):
     feature_m: Point = None
     px: Point = None
-    color = "hotpink"
+    color = "red"
     name: str = "LamellaBottomEdge"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LamellaBottomEdge':
@@ -151,7 +151,7 @@ class LandingGridCentre(Feature):
 class CoreFeature(Feature):
     feature_m: Point = None
     px: Point = None
-    color = "lime"
+    color = "white"
     name: str = "CoreFeature"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'CoreFeature':
@@ -228,15 +228,94 @@ class VolumeBlockBottomEdge(Feature):
         return self.px    
 
 
+@dataclass
+class VolumeBlockTopLeftCorner(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "magenta"
+    name: str = "VolumeBlockTopLeftCorner"
+    class_idx: int = 5
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'VolumeBlockTopLeftCorner':
+        try:    
+            objects = get_objects(mask)
+            objects = [obj for obj in objects if obj["class"] == self.class_idx]
+            px = Point.__from_list__(objects[0]["keypoints"]["top_left"])
+        except Exception as e:
+            print(e)
+            px = Point(0,0)
+        self.px = px
+        return self.px  
+
+@dataclass
+class VolumeBlockTopRightCorner(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "magenta"
+    name: str = "VolumeBlockTopRightCorner"
+    class_idx: int = 5
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'VolumeBlockTopRightCorner':
+        try:    
+            objects = get_objects(mask)
+            objects = [obj for obj in objects if obj["class"] == self.class_idx]
+            px = Point.__from_list__(objects[0]["keypoints"]["top_right"])
+        except Exception as e:
+            print(e)
+            px = Point(0,0)
+        self.px = px
+        return self.px 
 
 
+@dataclass
+class VolumeBlockBottomLeftCorner(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "magenta"
+    name: str = "VolumeBlockBottomLeftCorner"
+    class_idx: int = 5
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'VolumeBlockBottomLeftCorner':
+        try:    
+            objects = get_objects(mask)
+            objects = [obj for obj in objects if obj["class"] == self.class_idx]
+            px = Point.__from_list__(objects[0]["keypoints"]["bottom_left"])
+        except Exception as e:
+            print(e)
+            px = Point(0,0)
+        self.px = px
+        return self.px  
+
+@dataclass
+class VolumeBlockBottomRightCorner(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "magenta"
+    name: str = "VolumeBlockBottomRightCorner"
+    class_idx: int = 5
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'VolumeBlockBottomRightCorner':
+        try:    
+            objects = get_objects(mask)
+            objects = [obj for obj in objects if obj["class"] == self.class_idx]
+            px = Point.__from_list__(objects[0]["keypoints"]["bottom_right"])
+        except Exception as e:
+            print(e)
+            px = Point(0,0)
+        self.px = px
+        return self.px  
+
+# TODO: we can probably consolidate this, rather than have so many classes
+# Feature(class_idx, name, keypoint)
+                
 __FEATURES__ = [ImageCentre, NeedleTip, 
                 LamellaCentre, LamellaLeftEdge, LamellaRightEdge, 
         LandingPost, LandingGridCentre, 
     CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
     NeedleTipBottom, 
     CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge,
-    VolumeBlockCentre, VolumeBlockTopEdge, VolumeBlockBottomEdge]
+    VolumeBlockCentre, VolumeBlockTopEdge, VolumeBlockBottomEdge, 
+    VolumeBlockTopLeftCorner, VolumeBlockTopRightCorner, VolumeBlockBottomLeftCorner, VolumeBlockBottomRightCorner ]
  
 
 
