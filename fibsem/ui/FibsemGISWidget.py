@@ -9,7 +9,7 @@ from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicrosco
 from fibsem.structures import (MicroscopeSettings)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemGISWidget
-from fibsem.gis import sputter_platinum
+from fibsem.gis import deposit_platinum
 
 
 class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
@@ -188,7 +188,7 @@ class FibsemGISWidget(FibsemGISWidget.Ui_Form, QtWidgets.QWidget):
     def run_gis(self):
 
         self.gas_protocol["gas"] = self.gis_current_line
-        sputter_platinum(self.microscope, self.gas_protocol)
+        deposit_platinum(self.microscope, self.gas_protocol)
         
         
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'FibsemCryoSputterWidget.ui'
+# Form implementation generated from reading ui file 'FibsemCryoDepositionWidget.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #

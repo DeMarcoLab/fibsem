@@ -14,12 +14,12 @@ gis_protocol = {
     "time": 30.0,
 }
 
-def sputter_platinum(
+def deposit_platinum(
     microscope: FibsemMicroscope,
     protocol: dict = None,
     default_application_file: str = "Si",
 ):
-    """Sputter platinum over the sample.
+    """Deposit platinum over the sample.
 
     Args:
         microscope (SdbMicroscopeClient): autoscript microscope instance
@@ -53,23 +53,23 @@ def sputter_platinum(
     microscope.finish_sputter(application_file=default_application_file)
 
 
-def cryo_sputter(microscope: FibsemMicroscope, protocol: dict = None, name: str = None):
+def cryo_deposition(microscope: FibsemMicroscope, protocol: dict = None, name: str = None):
 
     # get current position
     position = microscope.get_current_microscope_state().absolute_position
 
-    # move to sputter position
+    # move to deposition position
     if name is not None:
         
         # move to position
         from fibsem import utils
-        sputter_position = utils._get_position(name)
+        deposition_position = utils._get_position(name)
         
-        if sputter_position is None:
+        if deposition_position is None:
             raise RuntimeError(f"Position {name} requested but not found")
         
-        logging.info(f"Moving to sputter position: {name}")
-        microscope._safe_absolute_stage_movement(sputter_position)
+        logging.info(f"Moving to depositon position: {name}")
+        microscope._safe_absolute_stage_movement(deposition_position)
 
 
     # move down
@@ -77,7 +77,7 @@ def cryo_sputter(microscope: FibsemMicroscope, protocol: dict = None, name: str 
     microscope.move_stage_relative(FibsemStagePosition(z=-1e-3))
 
     # sputter
-    sputter_platinum(microscope, protocol)
+    deposit_platinum(microscope, protocol)
 
     # return to previous position
     microscope._safe_absolute_stage_movement(position)

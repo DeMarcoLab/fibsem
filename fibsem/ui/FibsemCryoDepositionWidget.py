@@ -7,20 +7,20 @@ from fibsem import config as cfg
 from fibsem import constants, conversions, utils
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import MicroscopeSettings
-from fibsem.ui.qtdesigner_files import FibsemCryoSputterWidget
+from fibsem.ui.qtdesigner_files import FibsemCryoDepositionWidget
 from fibsem import gis
 
 
-class FibsemCryoSputterWidget(FibsemCryoSputterWidget.Ui_Dialog, QtWidgets.QDialog):
+class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
         settings: MicroscopeSettings = None,
         parent=None,
     ):
-        super(FibsemCryoSputterWidget, self).__init__(parent=parent)
+        super(FibsemCryoDepositionWidget, self).__init__(parent=parent)
         self.setupUi(self)
-        self.setWindowTitle("Cryo Sputter")
+        self.setWindowTitle("Cryo Deposition")
 
         self.microscope = microscope
         self.settings = settings
@@ -56,7 +56,7 @@ class FibsemCryoSputterWidget(FibsemCryoSputterWidget.Ui_Dialog, QtWidgets.QDial
         
         protocol = self._get_protocol_from_ui()
 
-        gis.cryo_sputter(self.microscope, protocol, name=protocol["name"])
+        gis.cryo_deposition(self.microscope, protocol, name=protocol["name"])
 
 
 
@@ -65,7 +65,7 @@ def main():
 
     viewer = napari.Viewer(ndisplay=2)
     microscope, settings = utils.setup_session()
-    cryo_sputter_widget = FibsemCryoSputterWidget(microscope, settings)
+    cryo_sputter_widget = FibsemCryoDepositionWidget(microscope, settings)
     viewer.window.add_dock_widget(
         cryo_sputter_widget, area="right", add_vertical_stretch=False
     )
