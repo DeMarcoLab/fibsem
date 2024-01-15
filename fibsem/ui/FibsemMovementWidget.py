@@ -231,12 +231,15 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # move
         self.movement_mode = MovementMode.Eucentric if "Alt" in event.modifiers else MovementMode.Stable
 
-        logging.debug(
-            f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
-        )
-        logging.debug(
-            f"Movement: {self.movement_mode.name} | COORD {coords} | {point.__to_dict__()} | {beam_type}"
-        )
+        msgd = {
+            "msg": "stage_movement",                    # message type
+            "movement_mode": self.movement_mode.name,   # movement mode
+            "beam_type": beam_type.name,                # beam type
+            "dm": point.__to_dict__(),                  # shift in microscope coordinates
+            "coords": {"x": coords[1], "y": coords[0]}, # coords in image coordinates
+        }
+        logging.debug(msgd)
+
         log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
         self.movement_notification_signal.emit("Moving stage ")
         # eucentric is only supported for ION beam

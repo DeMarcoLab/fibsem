@@ -148,9 +148,17 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
 
         for f0, f1 in zip(self.det.features, self._intial_det.features):
             px_diff = f1.px - f0.px
-            # FEATURE_NAME | PIXEL DIFFERENCE | METRE_DIFFERENCE | IS_CORRECT | BEAM_TYPE | FILENAME | PX
-            # logging.info(f"{f0.name} | {px_diff} | {px_diff._to_metres(self.det.pixelsize)}| {not np.any(px_diff)} | {self.det.fibsem_image.metadata.image_settings.beam_type} | {fname}")
-            logging.info(f"{f0.name} | {px_diff.__to_dict__()} | {px_diff._to_metres(self.det.pixelsize).__to_dict__()}| {not np.any(px_diff)} | {beam_type} | {fname} | {f0.px.__to_dict__()}")
+            msgd = {"msg": "feature_detection",
+                    "fname": fname,                                             # filename
+                    "feature": f0.name,                                         # feature name
+                    "px": f0.px.__to_dict__(),                                  # pixel coordinates
+                    "dpx": px_diff.__to_dict__(),                               # pixel difference
+                    "dm": px_diff._to_metres(self.det.pixelsize).__to_dict__(), # metre difference
+                    "is_correct": not np.any(px_diff),                          # is the feature correct    
+                    "beam_type": beam_type.name,                                # beam type         
+                    "pixelsize": self.det.pixelsize,                            # pixelsize
+            }
+            logging.debug(msgd)
 
         # remove det layers
         if self._image_layer is not None:

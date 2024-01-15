@@ -547,7 +547,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.doubleSpinBox_centre_x.setValue(clicked.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(clicked.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
             logging.info(f"Moved patterns to {point} ")
-            logging.info(f"MILL | {self.milling_stages[current_stage_index].pattern.name} | {diff.__to_dict__()} | {BeamType.ION}")
+
+            msgd = {
+                "msg": "move_milling_patterns",                                     # message type
+                "pattern": self.milling_stages[current_stage_index].pattern.name,   # pattern name
+                "dm": diff.__to_dict__(), # x, y                                    # metres difference 
+                "beam_type": BeamType.ION.name,                                     # beam type
+            }
+            
+            logging.debug(msgd)
+            
             self.update_ui(milling_stages=self.milling_stages)
             self.milling_position_changed.emit()
     

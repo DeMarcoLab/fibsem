@@ -742,7 +742,8 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         _check_beam(beam_type = beam_type, hardware_settings = self.hardware_settings)
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
-        logging.debug(f"{beam_type.name} | {dx}|{dy}") 
+        msgd = {"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name}
+        logging.debug(f"{msgd}") 
         if beam_type == BeamType.ELECTRON:
             self.connection.beams.electron_beam.beam_shift.value += (-dx, dy)
         else:
@@ -768,7 +769,9 @@ class ThermoMicroscope(FibsemMicroscope):
             CoordinateSystem.SPECIMEN
         )
         pos = FibsemStagePosition.from_autoscript_position(stage_position)
-        logging.debug(f"CURRENT_POSITION | {pos.__to_dict__()}")
+
+        msgd = {"msg": "get_stage_position", "pos": pos.__to_dict__()}
+        logging.debug(f"{msgd}")
         return pos
     def get_current_microscope_state(self) -> MicroscopeState:
         """
@@ -840,8 +843,9 @@ class ThermoMicroscope(FibsemMicroscope):
             # ion beam detector settings
             ib_detector=ib_detector,
         )
-
-        logging.debug(f"CURRENT_MICROSCOPE_STATE | {current_microscope_state.__to_dict__()}")
+        
+        msgd = {"msg": "get_current_microscope_state", "state": current_microscope_state.__to_dict__()}
+        logging.debug(f"{msgd}")
 
         return current_microscope_state
 
@@ -3244,13 +3248,15 @@ class TescanMicroscope(FibsemMicroscope):
         elif beam_type == BeamType.ELECTRON:
             beam = self.connection.SEM.Optics
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
-        logging.debug(f"{beam_type.name} | {dx}|{dy}") 
         x, y = beam.GetImageShift()
         dx *=  constants.METRE_TO_MILLIMETRE # Convert to mm from m.
         dy *=  constants.METRE_TO_MILLIMETRE
         x += dx 
         y += dy
         beam.SetImageShift(x,y) 
+
+        msgd = {"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name}
+        logging.debug(f"{msgd}") 
         
     def get_stage_position(self):
         """
@@ -3273,6 +3279,8 @@ class TescanMicroscope(FibsemMicroscope):
             t = t * constants.DEGREES_TO_RADIANS,
             coordinate_system= "RAW",
         )
+        msgd = {"msg": "get_stage_position", "pos": pos.__to_dict__()}
+        logging.debug(f"{msgd}")
         return stage_position
 
     def get_current_microscope_state(self) -> MicroscopeState:
@@ -3343,6 +3351,9 @@ class TescanMicroscope(FibsemMicroscope):
             # ion detector settings
             ib_detector=ib_detector,
         )
+
+        msgd = {"msg": "get_current_microscope_state", "state": current_microscope_state.__to_dict__()}
+        logging.debug(f"{msgd}")
 
         return current_microscope_state
 
@@ -5159,7 +5170,8 @@ class DemoMicroscope(FibsemMicroscope):
         beam_type = BeamType.ION # TODO: add beam_type to params for ABC
         _check_beam(beam_type, self.hardware_settings)
         logging.info(f"Beam shift: dx={dx:.2e}, dy={dy:.2e} ({beam_type})")
-        logging.debug(f"{beam_type.name} | {dx}|{dy}") 
+        msgd = {"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name}
+        logging.debug(f"{msgd}")         
         if beam_type == BeamType.ELECTRON:
             self.electron_beam.shift += Point(float(dx), float(dy))
         elif beam_type == BeamType.ION:
@@ -5167,8 +5179,12 @@ class DemoMicroscope(FibsemMicroscope):
 
     def get_stage_position(self) -> FibsemStagePosition:
         _check_stage(self.hardware_settings)
-        logging.info(f"Getting stage position: {self.stage_position}")
-        return self.stage_position
+        pos = self.stage_position
+
+        msgd = {"msg": "get_stage_position", "pos": pos.__to_dict__()}
+        logging.debug(f"{msgd}")
+        
+        return pos
     
     def get_current_microscope_state(self) -> MicroscopeState:
         _check_stage(self.hardware_settings)
@@ -5180,6 +5196,10 @@ class DemoMicroscope(FibsemMicroscope):
             eb_detector=self.electron_detector_settings,
             ib_detector=self.ion_detector_settings
             )
+    
+        msgd = {"msg": "get_current_microscope_state", "state": microscope_state.__to_dict__()}
+        logging.debug(f"{msgd}")
+    
         return microscope_state
 
     def _safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
@@ -5290,10 +5310,12 @@ class DemoMicroscope(FibsemMicroscope):
     def insert_manipulator(self, name: str = "PARK"):
         _check_needle(self.hardware_settings)
         logging.info(f"Inserting manipulator to {name}")
+        self.manipulator_state = True
     
     def retract_manipulator(self):
         _check_needle(self.hardware_settings)
         logging.info(f"Retracting manipulator")
+        self.manipulator_state = False
     
     def move_manipulator_relative(self, position: FibsemManipulatorPosition):
         if not np.isclose(position.r, 0.0):
