@@ -285,3 +285,8 @@ def last_image(microscope: FibsemMicroscope, beam_type: BeamType) -> FibsemImage
         FibsemImage: last image acquired by the microscope
     """
     return microscope.last_image(beam_type=beam_type)
+
+
+def acquire_image(microscope:FibsemMicroscope, settings:ImageSettings) -> FibsemImage:
+    """ passthrough for new_image to match internal api"""
+    return new_image(microscope, settings)

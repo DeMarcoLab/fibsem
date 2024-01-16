@@ -278,26 +278,119 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def get_beam_settings(self, beam_type: BeamType = None) -> BeamSettings:
-        pass
-
-    def set_beam_settings(self, settings: BeamSystemSettings) -> None:
-        pass
-
-    @abstractmethod
-    def get_detector_settings(self, beam_type: BeamType = None) -> FibsemDetectorSettings:
-        pass
-
-    @abstractmethod
-    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
-        pass
-
-    @abstractmethod
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         pass
+        
+    def get_imaging_settings(self, beam_type: BeamType) -> ImageSettings:
+        """Get the current imaging settings for the specified beam type."""
+        # TODO: finish this with the other imaging settings... @patrick
+        logging.info(f"Getting {beam_type.name} imaging settings...")
+        image_settings = ImageSettings(
+            beam_type=beam_type,
+            resolution=self.get("resolution", beam_type),
+            dwell_time=self.get("dwell_time", beam_type),
+            hfw=self.get("hfw", beam_type),
+        )
+        return image_settings
+
+    def set_imaging_settings(self, image_settings: ImageSettings) -> None:
+        """Set the imaging settings for the specified beam type."""
+        logging.info(f"Setting {image_settings.beam_type.name} imaging settings...")
+        self.set("resolution", image_settings.resolution, image_settings.beam_type)
+        self.set("dwell_time", image_settings.dwell_time, image_settings.beam_type)
+        self.set("hfw", image_settings.hfw, image_settings.beam_type)
+        # self.set("frame_integration", image_settings.frame_integration, image_settings.beam_type)
+        # self.set("line_integration", image_settings.line_integration, image_settings.beam_type)
+        # self.set("scan_interlacing", image_settings.scan_interlacing, image_settings.beam_type)
+        # self.set("drift_correction", image_settings.drift_correction, image_settings.beam_type)
+            
+        # TODO: implement the rest of these settings... @patrick
+
+    def get_beam_settings(self, beam_type: BeamType) -> BeamSettings:
+        """Get the current beam settings for the specified beam type.
+        """
+
+        logging.info(f"Getting {beam_type.name} beam settings...")
+        beam_settings = BeamSettings(
+            beam_type=beam_type,
+            working_distance=self.get("working_distance", beam_type),
+            beam_current=self.get("current", beam_type),
+            voltage=self.get("voltage", beam_type),
+            hfw=self.get("hfw", beam_type),
+            resolution=self.get("resolution", beam_type),  
+            dwell_time=self.get("dwell_time" , beam_type),
+            stigmation=self.get("stigmation", beam_type),
+            shift=self.get("shift", beam_type),
+            scan_rotation=self.get("scan_rotation", beam_type),
+        )
+
+        return beam_settings
+        
+    def set_beam_settings(self, beam_settings: BeamSettings) -> None:
+        """Set the beam settings for the specified beam type"""
+        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
+        self.set("working_distance", beam_settings.working_distance, beam_settings.beam_type)
+        self.set("current", beam_settings.beam_current, beam_settings.beam_type)
+        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+        self.set("hfw", beam_settings.hfw, beam_settings.beam_type)
+        self.set("resolution", beam_settings.resolution, beam_settings.beam_type)
+        self.set("dwell_time", beam_settings.dwell_time, beam_settings.beam_type)
+        self.set("stigmation", beam_settings.stigmation, beam_settings.beam_type)
+        self.set("shift", beam_settings.shift, beam_settings.beam_type)
+        self.set("scan_rotation", beam_settings.scan_rotation, beam_settings.beam_type)
+
+    def get_beam_system_settings(self, beam_type: BeamType) -> BeamSystemSettings:
+        """Get the current beam system settings for the specified beam type.
+        """
+        logging.info(f"Getting {beam_type.name} beam system settings...")
+        beam_system_settings = BeamSystemSettings(
+            beam_type=beam_type,
+            voltage=self.get("voltage", beam_type),
+            current=self.get("current", beam_type),
+            eucentric_height=self.get("eucentric_height", beam_type),
+            detector_type=self.get("detector_type", beam_type),
+            detector_mode=self.get("detector_mode", beam_type),
+            column_tilt=self.get("column_tilt", beam_type),
+            plasma_gas=self.get("plasma_gas", beam_type),
+        )      
+        return beam_system_settings
+        
+    def set_beam_system_settings(self, settings: BeamSystemSettings) -> None:
+        """Set the beam system settings for the specified beam type.
+        """
+        beam_type = settings.beam_type
+        logging.info(f"Setting {settings.beam_type.name} beam system settings...")
+        self.set("working_distance", settings.eucentric_height, beam_type)
+        self.set("current", settings.current, beam_type)
+        self.set("voltage", settings.voltage, beam_type)
+        self.set("detector_type", settings.detector_type, beam_type)
+        self.set("detector_mode", settings.detector_mode, beam_type)
+        self.set("plasma_gas", settings.plasma_gas, beam_type)
+
+    def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
+        """Get the current detector settings for the specified beam type.
+        """
+        logging.info(f"Getting {beam_type.name} detector settings...")
+        detector_settings = FibsemDetectorSettings(
+            type=self.get("detector_type", beam_type),
+            mode=self.get("detector_mode", beam_type),
+            brightness=self.get("detector_brightness", beam_type),
+            contrast=self.get("detector_contrast", beam_type),
+        )
+
+        return detector_settings
+    
+    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+        """Set the detector settings for the specified beam type"""
+        logging.info(f"Setting {beam_type.name} detector settings...")
+        self.set("detector_type", detector_settings.type, beam_type)
+        self.set("detector_mode", detector_settings.mode, beam_type)
+        self.set("detector_brightness", detector_settings.brightness, beam_type)
+        self.set("detector_contrast", detector_settings.contrast, beam_type)
+    
+
 
     @abstractmethod
-
     def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
         pass
 
@@ -2294,87 +2387,88 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return values
 
-    def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:
-        """Get the current beam settings for the specified beam type.
+    # def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:
+    #     """Get the current beam settings for the specified beam type.
 
-        Args:
-            beam_type (BeamType, optional): The beam type to get the settings for. Defaults to BeamType.ELECTRON.
+    #     Args:
+    #         beam_type (BeamType, optional): The beam type to get the settings for. Defaults to BeamType.ELECTRON.
 
-        Returns:
-            BeamSettings: A `BeamSettings` object containing the current beam settings.
+    #     Returns:
+    #         BeamSettings: A `BeamSettings` object containing the current beam settings.
 
-        Raises:
-            None.
-        """
+    #     Raises:
+    #         None.
+    #     """
 
-        resolution = self.connection.beams.electron_beam.scanning.resolution.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.resolution.value
-        width, height = int(resolution.split("x")[0]), int(resolution.split("x")[-1])
+    #     # resolution = self.connection.beams.electron_beam.scanning.resolution.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.resolution.value
+    #     # width, height = int(resolution.split("x")[0]), int(resolution.split("x")[-1])
 
-        logging.info(f"Getting {beam_type.value} beam settings...")
-        beam_settings = BeamSettings(
-            beam_type=beam_type,
-            working_distance=self.get("working_distance", beam_type),
-            beam_current=self.get("current", beam_type),
-            voltage=self.get("voltage", beam_type),
-            hfw=self.get("hfw", beam_type),
-            resolution=[width, height],
-            dwell_time=self.connection.beams.electron_beam.scanning.dwell_time.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.dwell_time.value,
-            stigmation=self.get("stigmation", beam_type),
-            beam_shift=self.get("shift", beam_type),
-            scan_rotation=self.get("scan_rotation", beam_type),
-        )
+    #     logging.info(f"Getting {beam_type.value} beam settings...")
+    #     beam_settings = BeamSettings(
+    #         beam_type=beam_type,
+    #         working_distance=self.get("working_distance", beam_type),
+    #         beam_current=self.get("current", beam_type),
+    #         voltage=self.get("voltage", beam_type),
+    #         hfw=self.get("hfw", beam_type),
+    #         resolution=self.get("resolution", beam_type)  #[width, height],
+    #         dwell_time=self.get("dwell_time" , beam_type) # self.connection.beams.electron_beam.scanning.dwell_time.value if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam.scanning.dwell_time.value,
+    #         stigmation=self.get("stigmation", beam_type),
+    #         beam_shift=self.get("shift", beam_type),
+    #         scan_rotation=self.get("scan_rotation", beam_type),
+    #     )
 
-        return beam_settings
+    #     return beam_settings
+               
+        
+    # def set_beam_system_settings(self, settings: BeamSystemSettings) -> None:
+    #     """Set the beam settings for the specified beam type.
+
+    #     Args:
+    #         beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+
+    #     Returns:
+    #         None.
+
+    #     Raises:
+    #         None.
+    #     """
+    #     logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
+    #     self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+    #     self.set("current", beam_settings.current, beam_settings.beam_type)
+    #     self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+    #     self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
+    #     self.set("detector_mode", beam_settings.detector_mode, beam_settings.beam_type)
+    #     if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma is True:
+    #         self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
     
-    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
-        """Set the beam settings for the specified beam type.
-
-        Args:
-            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
-        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
-        self.set("current", beam_settings.current, beam_settings.beam_type)
-        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
-        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
-        self.set("detector_mode", beam_settings.detector_mode, beam_settings.beam_type)
-        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma is True:
-            self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
-    
-    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
-        self.set("detector_type", detector_settings.type, beam_type)
-        self.set("detector_mode", detector_settings.mode, beam_type)
-        self.set("detector_brightness", detector_settings.brightness, beam_type)
-        self.set("detector_contrast", detector_settings.contrast, beam_type)
+    # def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+    #     self.set("detector_type", detector_settings.type, beam_type)
+    #     self.set("detector_mode", detector_settings.mode, beam_type)
+    #     self.set("detector_brightness", detector_settings.brightness, beam_type)
+    #     self.set("detector_contrast", detector_settings.contrast, beam_type)
 
         
-    def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
-        """Get the current detector settings for the specified beam type.
+    # def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
+    #     """Get the current detector settings for the specified beam type.
 
-        Args:
-            beam_type (BeamType, optional): The beam type to get the settings for. Defaults to BeamType.ELECTRON.
+    #     Args:
+    #         beam_type (BeamType, optional): The beam type to get the settings for. Defaults to BeamType.ELECTRON.
 
-        Returns:
-            FibsemDetectorSettings: A `FibsemDetectorSettings` object containing the current detector settings.
+    #     Returns:
+    #         FibsemDetectorSettings: A `FibsemDetectorSettings` object containing the current detector settings.
 
-        Raises:
-            None.
-        """
-        logging.debug(f"Getting {beam_type} detector settings...")
-        detector_settings = FibsemDetectorSettings(
-            type=self.get("detector_type", beam_type),
-            mode=self.get("detector_mode", beam_type),
-            brightness=self.get("detector_brightness", beam_type),
-            contrast=self.get("detector_contrast", beam_type),
-        )
+    #     Raises:
+    #         None.
+    #     """
+    #     logging.debug(f"Getting {beam_type} detector settings...")
+    #     detector_settings = FibsemDetectorSettings(
+    #         type=self.get("detector_type", beam_type),
+    #         mode=self.get("detector_mode", beam_type),
+    #         brightness=self.get("detector_brightness", beam_type),
+    #         contrast=self.get("detector_contrast", beam_type),
+    #     )
 
-        return detector_settings
+    #     return detector_settings
 
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
         
@@ -2422,7 +2516,10 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "stigmation": 
             _check_beam(beam_type, self.hardware_settings)
             return Point(beam.stigmator.value.x, beam.stigmator.value.y)
-
+        if key == "resolution":
+            resolution = beam.scanning.resolution.value
+            width, height = int(resolution.split("x")[0]), int(resolution.split("x")[-1])
+            return [width, height]
 
         # ion beam properties
         if beam_type is BeamType.ELECTRON:
@@ -2477,6 +2574,30 @@ class ThermoMicroscope(FibsemMicroscope):
             _check_needle(self.hardware_settings)
             return self.connection.specimen.manipulator.state
         
+
+        # manufacturer properties
+        if key == "manufacturer":
+            return self.system.manufacturer
+        if key == "model":
+            return self.system.model
+        if key == "serial_number":
+            return self.system.serial_number
+        if key == "software_version":
+            return self.system.software_version
+        if key == "serial_number":
+            return "Unknown"
+        if key == "hardware_version":
+            return self.system.hardware_version
+        
+        if key == "column_tilt":
+            # TODO: check if this is available
+            if beam_type is BeamType.ELECTRON:
+                return 0
+            elif beam_type is BeamType.ION:
+                return 52
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+            
         # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
@@ -2510,7 +2631,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "resolution":
             _check_beam(beam_type, self.hardware_settings)
             beam.scanning.resolution.value = value
-            logging.info(f"{beam_type.name} resolution set to {value} m.")
+            logging.info(f"{beam_type.name} resolution set to {value} px.")
             return
         if key == "dwell_time":
             _check_beam(beam_type, self.hardware_settings)
@@ -2520,7 +2641,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "scan_rotation":
             _check_beam(beam_type, self.hardware_settings)
             beam.scanning.rotation.value = value
-            logging.info(f"{beam_type.name} scan rotation set to {value} degrees.")
+            logging.info(f"{beam_type.name} scan rotation set to {value} radians.")
             return
         if key == "shift":
             _check_beam(beam_type, self.hardware_settings)
@@ -2534,7 +2655,13 @@ class ThermoMicroscope(FibsemMicroscope):
             beam.stigmator.value.y = value.y
             logging.info(f"{beam_type.name} stigmation set to {value}.")
             return
-
+        
+        if key == "resolution":
+            _check_beam(beam_type, self.hardware_settings)
+            resolution = f"{value[0]}x{value[1]}"  # WidthxHeight e.g. 1536x1024
+            beam.scanning.resolution.value = resolution
+            return 
+        
         # beam control
         if key == "on":
             _check_beam(beam_type, self.hardware_settings)
@@ -2597,7 +2724,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
                 _check_beam(beam_type, self.hardware_settings)
-                _check_sputter(self.hardware_settings)
+                # _check_sputter(self.hardware_settings)
                 if self.hardware_settings.plasma:
                     beam.source.plasma_gas.value = value
                     logging.info(f"Plasma gas set to {value}.")
@@ -4737,65 +4864,65 @@ class TescanMicroscope(FibsemMicroscope):
 
         return values
 
-    def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:
-        """Get the current beam settings for the microscope.
+    # def get_beam_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> BeamSettings:
+    #     """Get the current beam settings for the microscope.
 
-        """
-        beam_settings = BeamSettings(
-            beam_type=beam_type,
-            beam_current=self.get("current", beam_type),
-            working_distance=self.get("working_distance", beam_type),
-            hfw=self.get("hfw", beam_type),
-            stigmation=self.get("stigmation", beam_type),
-            shift=self.get("shift", beam_type),
-            resolution=self.last_image(beam_type).metadata.image_settings.resolution,
-            voltage=self.get("voltage", beam_type),
-            dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time,
-            scan_rotation=self.get("scan_rotation", beam_type), 
-        )
+    #     """
+    #     beam_settings = BeamSettings(
+    #         beam_type=beam_type,
+    #         beam_current=self.get("current", beam_type),
+    #         working_distance=self.get("working_distance", beam_type),
+    #         hfw=self.get("hfw", beam_type),
+    #         stigmation=self.get("stigmation", beam_type),
+    #         shift=self.get("shift", beam_type),
+    #         resolution=self.last_image(beam_type).metadata.image_settings.resolution,
+    #         voltage=self.get("voltage", beam_type),
+    #         dwell_time=self.last_image(beam_type).metadata.image_settings.dwell_time,
+    #         scan_rotation=self.get("scan_rotation", beam_type), 
+    #     )
 
-        return beam_settings
+    #     return beam_settings
     
-    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
-        """Set the beam settings for the specified beam type.
+    # def set_beam_system_settings(self, settings: BeamSystemSettings) -> None:
+    #     """Set the beam settings for the specified beam type.
 
-        Args:
-            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
+    #     Args:
+    #         beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
 
-        Returns:
-            None.
+    #     Returns:
+    #         None.
 
-        Raises:
-            None.
-        """
-        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
-        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
-        self.set("current", beam_settings.current, beam_settings.beam_type)
-        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
-        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
+    #     Raises:
+    #         None.
+    #     """
+    #     logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
+    #     self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
+    #     self.set("current", beam_settings.current, beam_settings.beam_type)
+    #     self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
+    #     self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
 
-        if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma:
-            self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
+    #     if beam_settings.beam_type == BeamType.ION and self.hardware_settings.plasma:
+    #         self.set("plasma_gas", beam_settings.plasma_gas, beam_settings.beam_type)
 
-    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
-        self.set("detector_type", detector_settings.type, beam_type)
-        self.set("detector_mode", detector_settings.mode, beam_type)
-        self.set("detector_brightness", detector_settings.brightness, beam_type)
-        self.set("detector_contrast", detector_settings.contrast, beam_type)
+    # def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
+    #     self.set("detector_type", detector_settings.type, beam_type)
+    #     self.set("detector_mode", detector_settings.mode, beam_type)
+    #     self.set("detector_brightness", detector_settings.brightness, beam_type)
+    #     self.set("detector_contrast", detector_settings.contrast, beam_type)
                     
 
-    def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
-        """Get the current detector settings for the microscope.
+    # def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
+    #     """Get the current detector settings for the microscope.
 
-        """
-        detector_settings = FibsemDetectorSettings(
-            type = self.get("detector_type", beam_type),
-            mode = self.get("detector_mode", beam_type),
-            brightness= self.get("detector_brightness", beam_type),
-            contrast= self.get("detector_contrast", beam_type),
-        )
+    #     """
+    #     detector_settings = FibsemDetectorSettings(
+    #         type = self.get("detector_type", beam_type),
+    #         mode = self.get("detector_mode", beam_type),
+    #         brightness= self.get("detector_brightness", beam_type),
+    #         contrast= self.get("detector_contrast", beam_type),
+    #     )
 
-        return detector_settings
+    #     return detector_settings
     
     def get(self, key: str, beam_type: BeamType = BeamType.ELECTRON) -> Union[float, str, None]:
 
@@ -4886,6 +5013,28 @@ class TescanMicroscope(FibsemMicroscope):
         if key == "presets":
             return self._get_presets()
 
+
+        # manufacturer properties
+        if key == "manufacturer":
+            return self.system.manufacturer
+        if key == "model":
+            return self.system.model
+        if key == "software_version":
+            return self.system.software_version
+        if key == "serial_number":
+            return "Unknown"
+        if key == "hardware_version":
+            return self.system.hardware_version
+        
+        if key == "column_tilt":
+            # TODO: check if this is available
+            if beam_type is BeamType.ELECTRON:
+                return 0
+            elif beam_type is BeamType.ION:
+                return 55
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+        
         # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None   
 
@@ -5599,54 +5748,6 @@ class DemoMicroscope(FibsemMicroscope):
 
         return values
 
-    def get_beam_settings(self, beam_type: BeamType) -> BeamSettings:
-        beam_settings = BeamSettings(
-            beam_type=beam_type,
-            voltage=self.get("voltage", beam_type),
-            beam_current=self.get("current", beam_type),
-            working_distance=self.get("working_distance", beam_type),
-            hfw=self.get("hfw", beam_type),
-            stigmation=self.get("stigmation", beam_type),
-            shift=self.get("shift", beam_type),
-            resolution=self.get("resolution", beam_type),
-            dwell_time=self.get("dwell_time", beam_type),
-        )
-        return beam_settings
-    
-    def set_beam_settings(self, beam_settings: BeamSystemSettings) -> None:
-        """Set the beam settings for the specified beam type.
-
-        Args:
-            beam_settings (BeamSettings): A `BeamSettings` object containing the beam settings to set.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
-        logging.info(f"Setting {beam_settings.beam_type.name} beam settings...")
-        self.set("working_distance", beam_settings.eucentric_height, beam_settings.beam_type)
-        self.set("current", beam_settings.current, beam_settings.beam_type)
-        self.set("voltage", beam_settings.voltage, beam_settings.beam_type)
-        self.set("detector_type", beam_settings.detector_type, beam_settings.beam_type)
-
-    def set_detector_settings(self, detector_settings: FibsemDetectorSettings, beam_type: BeamType = BeamType.ELECTRON) -> None:
-        self.set("detector_type", detector_settings.type, beam_type)
-        self.set("detector_mode", detector_settings.mode, beam_type)
-        self.set("detector_brightness", detector_settings.brightness, beam_type)
-        self.set("detector_contrast", detector_settings.contrast, beam_type)
-
-
-    def get_detector_settings(self, beam_type: BeamType) -> FibsemDetectorSettings:
-        detector_settings = FibsemDetectorSettings(
-            dtype=self.get("detector_type", beam_type),
-            mode=self.get("detector_mode", beam_type),
-            brightness=self.get("detector_brightness", beam_type),
-            contrast=self.get("detector_contrast", beam_type),
-        )
-        return detector_settings
-
     def get(self, key, beam_type: BeamType = None) -> float:
         logging.debug(f"Getting {key} ({beam_type})")
 
@@ -5654,31 +5755,36 @@ class DemoMicroscope(FibsemMicroscope):
         if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
             detector = self.electron_detector_settings if beam_type is BeamType.ELECTRON else self.ion_detector_settings
+            _check_beam(beam_type, self.hardware_settings)
+        
         # voltage
         if key == "voltage":
-            _check_beam(beam_type, self.hardware_settings)
             return beam.voltage
             
         # current
-        if key == "current":
-            _check_beam(beam_type, self.hardware_settings)
+        if key == "current" or key == "beam_current":
             return beam.beam_current
 
         # working distance
         if key == "working_distance":
-            _check_beam(beam_type, self.hardware_settings)
             return beam.working_distance
         
+        if key == "hfw":
+            return beam.hfw
+        if key == "resolution":
+            return beam.resolution
+        if key == "dwell_time":
+            return beam.dwell_time
         if key == "stigmation":
-            _check_beam(beam_type, self.hardware_settings)
             return Point(beam.stigmation.x, beam.stigmation.y)
         if key == "shift":
-            _check_beam(beam_type, self.hardware_settings)
             return Point(beam.shift.x, beam.shift.y)
-
         if key == "scan_rotation":
-            _check_beam(beam_type, self.hardware_settings)
             return beam.scan_rotation
+        
+        if beam_type is BeamType.ION:
+            if key == "plasma_gas":
+                return beam.plasma_gas
 
         if key == "detector_type":
             return detector.type
@@ -5689,6 +5795,27 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "detector_contrast":
             return detector.contrast
 
+        # manufacturer properties
+        if key == "manufacturer":
+            return self.system.manufacturer
+        if key == "model":
+            return self.system.model
+        if key == "software_version":
+            return self.system.software_version
+        if key == "serial_number":
+            return "Unknown"
+        if key == "hardware_version":
+            return self.system.hardware_version
+        
+        if key == "column_tilt":
+            # TODO: check if this is available
+            if beam_type is BeamType.ELECTRON:
+                return 0
+            elif beam_type is BeamType.ION:
+                return 52
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+        
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return NotImplemented
 
@@ -5724,7 +5851,20 @@ class DemoMicroscope(FibsemMicroscope):
             _check_beam(beam_type, self.hardware_settings)
             beam.shift = value
             return
+        if key == "scan_rotation":
+            beam.scan_rotation = value
+            return
+        if key == "hfw":
+            beam.hfw = value
+            return
+        if key == "resolution":
+            beam.resolution = value
+            return
+        if key == "dwell_time":
+            beam.dwell_time = value
+            return
 
+        # detector
         if key == "detector_type":
             detector.type = value
             return
@@ -5737,36 +5877,14 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "detector_brightness":
             detector.brightness = value
             return
+        
+        if key == "plasma_gas":
+            beam.plasma_gas = value
+            return
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return NotImplemented
 
-    def get_beam_system_state(self, beam_type: BeamType) -> BeamSystemSettings:
-        _check_beam(beam_type, self.hardware_settings)
-        # get current beam settings
-        voltage = 30000
-        current = 20e-12 
-        detector_type = "ETD"
-        detector_mode = "SecondaryElectrons"
-        shift = Point(0, 0)
-
-        if beam_type is BeamType.ION:
-            eucentric_height = 16.5e-3
-            plasma_gas = "Argon"
-        else:
-            eucentric_height = 4.0e-3
-            plasma_gas = None
-
-        return BeamSystemSettings(
-            beam_type=beam_type,
-            voltage=voltage,
-            current=current,
-            detector_type=detector_type,
-            detector_mode=detector_mode,
-            eucentric_height=eucentric_height,
-            plasma_gas=plasma_gas,
-        )
-    
     def check_available_values(self, key: str, value, beam_type: BeamType = None) -> bool:
         logging.info(f"Checking if {key}={value} is available ({beam_type})")
         return True

@@ -156,8 +156,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     # def apply_defaults_settings(self):
     #     microscope_settings = self.get_default_settings_from_ui()
 
-    #     self.microscope.set_beam_settings(microscope_settings.system.ion)
-    #     self.microscope.set_beam_settings(microscope_settings.system.electron)
+    #     self.microscope.set_beam_system_settings(microscope_settings.system.ion)
+    #     self.microscope.set_beam_system_settings(microscope_settings.system.electron)
         
     #     # TODO: complete this system setting
     #     if self.parent:

@@ -137,6 +137,7 @@ def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
         loop=loop,
     )
 
+VALID_THERMO_FISHER = ["Thermo", "Thermo Fisher Scientific", "Thermo Fisher Scientific"]
 
 def setup_session(
     session_path: Path = None,
@@ -184,7 +185,7 @@ def setup_session(
     if manufacturer:
         settings.system.manufacturer = manufacturer
 
-    if settings.system.manufacturer == "Thermo":
+    if settings.system.manufacturer in VALID_THERMO_FISHER:
         microscope = FibSem.ThermoMicroscope()
         # set hardware settings
         microscope.hardware_settings = settings.hardware
@@ -306,6 +307,15 @@ def load_microscope_configuration(
     )
 
     return settings
+
+def apply_configuration(microscope: FibsemMicroscope, settings: MicroscopeSettings):
+    """Apply microscope settings to microscope"""
+    # beam_system settings
+    microscope.set_beam_system_settings(settings.system.electron)
+    microscope.set_beam_system_settings(settings.system.ion)
+
+    # imaging settings
+    microscope.set_imaging_settings(settings.image)
 
 
 def load_protocol(protocol_path: Path = None) -> dict:

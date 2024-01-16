@@ -1391,13 +1391,12 @@ class BeamSystemSettings:
 
     @staticmethod
     def __from_dict__(settings: dict, beam_type: BeamType) -> "BeamSystemSettings":
-        if "plasma_gas" not in settings:
-            settings["plasma_gas"] = "NULL"
-        if settings["plasma_gas"] is None:
-            settings[
-                "plasma_gas"
-            ] = "NULL"  # TODO: any reason this cant just be null? why string
 
+        # required formatting for plasma
+        plasma_gas = settings.get("plasma_gas", None)
+        if plasma_gas is not None:
+            plasma_gas = plasma_gas.capitalize() # capitalize first letter
+    
         system_settings = BeamSystemSettings(
             beam_type=beam_type,
             voltage=settings["voltage"],
@@ -1406,7 +1405,7 @@ class BeamSystemSettings:
             detector_mode=settings["detector_mode"],
             eucentric_height=settings["eucentric_height"],
             column_tilt=settings["column_tilt"],
-            plasma_gas=settings["plasma_gas"].capitalize(),
+            plasma_gas=plasma_gas,
         )
 
         return system_settings
