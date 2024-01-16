@@ -289,3 +289,76 @@ def _validate_configuration_values(microscope: FibsemMicroscope, dictionary: dic
                     microscope.check_available_values("application_file", values=[item])
 
     return dictionary
+
+
+
+# new validation v2
+
+from fibsem import utils
+from fibsem.structures import BeamType
+from fibsem.microscope import FibsemMicroscope
+import logging
+
+
+def validate_microscope(microscope: FibsemMicroscope):
+    # append exceptions to list
+    warnings = []
+
+    # check beams are on
+    if not microscope.get("on", BeamType.ELECTRON):
+        warnings.append("Electron beam is off")
+
+    if not microscope.get("on", BeamType.ION):
+        warnings.append("Ion beam is off")
+
+    # check chamber is pumped
+    if microscope.get("chamber_state") != "Pumped":
+        warnings.append("Chamber is not pumped")
+
+
+    # ThermoFisher specific validation
+    from fibsem.microscope import ThermoMicroscope, DemoMicroscope
+    if isinstance(microscope, (ThermoMicroscope, DemoMicroscope)):
+        # check stage is homed
+        if not microscope.get("stage_homed"):
+            warnings.append("Stage is not homed")
+
+        # check stage is linked
+        if not microscope.get("stage_linked"):
+            warnings.append("Stage is not linked")
+
+        # check needle is retracted
+        if microscope.get("manipulator_state") != "Retracted":
+            warnings.append("Needle is not retracted")
+
+
+    logging.warning(f"Microscope Validation Warnings: {warnings}")
+
+    return warnings
+
+
+if __name__ == "__main__":
+
+    microscope, settings = utils.setup_session()
+
+    print(microscope.get("on", BeamType.ELECTRON))
+    print(microscope.get("on", BeamType.ION))
+
+    # microscope.set("on", True, BeamType.ELECTRON)
+    # microscope.set("on", True, BeamType.ION)
+
+
+    # get the system is pumped
+    print("Chamber State: ", microscope.get("chamber_state"))
+    print("Chamber Pressure: ", microscope.get("chamber_pressure"))
+
+
+    # set vent
+    microscope.set("vent", True)
+
+    print("Chamber State: ", microscope.get("chamber_state"))
+    print("Chamber Pressure: ", microscope.get("chamber_pressure"))
+
+    warnings = validate_microscope(microscope)
+
+    print(warnings)

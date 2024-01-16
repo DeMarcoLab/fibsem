@@ -5157,6 +5157,31 @@ class DemoMicroscope(FibsemMicroscope):
         self.connection = None
         self.stage_position = FibsemStagePosition(x=0, y=0, z=0, r=0, t=0)
         self.manipulator_position = FibsemManipulatorPosition()
+         
+        # hack, do this properly @patrick
+        from dataclasses import dataclass
+        @dataclass
+        class BeamSystem:
+            on: bool
+            blanked: bool
+
+        @dataclass
+        class ChamberSystem:
+            state: str
+            pressure: float
+
+        self.chamber = ChamberSystem(state="Pumped", pressure=1e-6)
+
+        self.electron_system = BeamSystem(
+            on=False,
+            blanked=True,
+        )
+            
+        self.ion_system = BeamSystem(
+            on=False,
+            blanked=True,
+        )
+
         self.electron_beam = BeamSettings(
             beam_type=BeamType.ELECTRON,
             working_distance=4.0e-3,
@@ -5755,14 +5780,26 @@ class DemoMicroscope(FibsemMicroscope):
         if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
             detector = self.electron_detector_settings if beam_type is BeamType.ELECTRON else self.ion_detector_settings
+            beam_system = self.electron_system if beam_type is BeamType.ELECTRON else self.ion_system
             _check_beam(beam_type, self.hardware_settings)
         
+        # beam properties
+        if key == "on": 
+            return beam_system.on
+        if key == "blanked":
+            return beam_system.blanked
+
+        if key == "chamber_state":
+            return self.chamber.state
+        if key == "chamber_pressure":
+            return self.chamber.pressure
+                
         # voltage
         if key == "voltage":
             return beam.voltage
             
         # current
-        if key == "current" or key == "beam_current":
+        if key == "current":
             return beam.beam_current
 
         # working distance
@@ -5817,7 +5854,7 @@ class DemoMicroscope(FibsemMicroscope):
                 raise ValueError(f"Unknown beam type: {beam_type} for {key}")
         
         logging.warning(f"Unknown key: {key} ({beam_type})")
-        return NotImplemented
+        return None
 
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         logging.info(f"Setting {key} to {value} ({beam_type})")
@@ -5826,6 +5863,25 @@ class DemoMicroscope(FibsemMicroscope):
         if beam_type is not None:
             beam = self.electron_beam if beam_type is BeamType.ELECTRON else self.ion_beam
             detector = self.electron_detector_settings if beam_type is BeamType.ELECTRON else self.ion_detector_settings
+            beam_system = self.electron_system if beam_type is BeamType.ELECTRON else self.ion_system            
+            _check_beam(beam_type, self.hardware_settings)
+
+        if key == "on":
+            beam_system.on = value
+            return
+
+        if key == "blanked":
+            beam_system.blanked = value
+            return
+        
+        if key == "pump":
+            self.chamber.state = "Pumped"
+            self.chamer.pressure = 1e-6 # 1 uTorr
+            return
+        if key == "vent":
+            self.chamber.state = "Vented"
+            self.chamber.pressure =  1e5 # 1 atm
+            return
 
         # voltage
         if key == "voltage":
