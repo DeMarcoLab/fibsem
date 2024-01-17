@@ -1,4 +1,8 @@
 configurations:
   default-configuration:
-    path: null
-default: default-configuration
+    path: c:\users\admin\github\fibsem\fibsem\config\microscope-configuration.yaml
+  monash-tfs-hydra-pfib:
+    path: C:/Users/Admin/Github/fibsem/fibsem/config/monash-tfs-hydra-pfib.yaml
+  sergey-config:
+    path: C:/Users/Admin/Github/fibsem/fibsem/config/sergey-config.yaml
+default: monash-tfs-hydra-pfib

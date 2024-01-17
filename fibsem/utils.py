@@ -280,8 +280,8 @@ def load_microscope_configuration(
         MicroscopeSettings: microscope settings
     """
     if config_path is None:
-        from fibsem.config import MICROSCOPE_CONFIGURATION_PATH
-        config_path = MICROSCOPE_CONFIGURATION_PATH
+        from fibsem.config import DEFAULT_CONFIGURATION_PATH
+        config_path = DEFAULT_CONFIGURATION_PATH
     
     # system settings
     config = load_yaml(os.path.join(config_path))

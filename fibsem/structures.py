@@ -705,6 +705,9 @@ class BeamSettings:
         assert (
             isinstance(self.shift, Point) or self.shift is None
         ), f"shift must be a Point instance, currently is {type(self.shift)}"
+        assert (
+            isinstance(self.plasma_gas, (str, type(None))) 
+        ), f"plasma_gas must be a str, currently is {type(self.plasma_gas)}"
 
     def __to_dict__(self) -> dict:
         state_dict = {

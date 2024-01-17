@@ -13,7 +13,10 @@ _THERMO_API_AVAILABLE = False
 
 # DEVELOPMENT
 _OVERWRITE_AUTOSCRIPT_VERSION = False
-    
+if os.environ.get("COMPUTERNAME", "hostname") == "MU00190108":
+    _OVERWRITE_AUTOSCRIPT_VERSION = True
+    print("Overwriting autoscript version to 4.7, for Monash dev install")
+
 try:
     import re
 
@@ -322,6 +325,7 @@ class FibsemMicroscope(ABC):
             stigmation=self.get("stigmation", beam_type),
             shift=self.get("shift", beam_type),
             scan_rotation=self.get("scan_rotation", beam_type),
+            plasma_gas=self.get("plasma_gas", beam_type),
         )
 
         return beam_settings
@@ -584,7 +588,11 @@ class ThermoMicroscope(FibsemMicroscope):
         self.model = self.connection.service.system.name
         self.software_version = self.connection.service.system.version
         logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
-            
+        
+        # autoscript information
+        logging.info(f"Autoscript Client: {self.connection.service.autoscript.client.version}")
+        logging.info(f"Autoscript Server: {self.connection.service.autoscript.server.version}")
+
         self.system = FibsemSystem(
             manufacturer="Thermo Fisher Scientific",
             model=self.model,
@@ -2495,9 +2503,6 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "hfw":
             _check_beam(beam_type, self.hardware_settings)
             return beam.horizontal_field_width.value
-        if key == "resolution":
-            _check_beam(beam_type, self.hardware_settings)
-            return beam.scanning.resolution.value
         if key == "dwell_time":
             _check_beam(beam_type, self.hardware_settings)
             return beam.scanning.dwell_time.value
@@ -2529,7 +2534,6 @@ class ThermoMicroscope(FibsemMicroscope):
 
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
-                _check_beam(beam_type, self.hardware_settings)
                 return beam.source.plasma_gas.value # might need to check if this is available?
 
         # stage properties
@@ -2601,63 +2605,52 @@ class ThermoMicroscope(FibsemMicroscope):
         # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
-    def set(self, key: str, value, beam_type: BeamType = BeamType.ELECTRON) -> None:
+    def set(self, key: str, value, beam_type: BeamType = None) -> None:
+
+        # required for setting shift, stigmation
+        from autoscript_sdb_microscope_client.structures import Point as ThermoPoint
 
         # get beam
-        beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
-
+        if beam_type is not None:
+            beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
+            _check_beam(beam_type, self.hardware_settings)
+        
         # beam properties
         if key == "working_distance":
-            _check_beam(beam_type, self.hardware_settings)
             beam.working_distance.value = value
             self.connection.specimen.stage.link() # Link the specimen stage
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return 
         if key == "current":
-            _check_beam(beam_type, self.hardware_settings)
             beam.beam_current.value = value
             logging.info(f"{beam_type.name} current set to {value} A.")
             return
         if key == "voltage":
-            _check_beam(beam_type, self.hardware_settings)
             beam.high_voltage.value = value
             logging.info(f"{beam_type.name} voltage set to {value} V.")
             return
         if key == "hfw":
-            _check_beam(beam_type, self.hardware_settings)
             beam.horizontal_field_width.value = value
             logging.info(f"{beam_type.name} HFW set to {value} m.")
             return
-        if key == "resolution":
-            _check_beam(beam_type, self.hardware_settings)
-            beam.scanning.resolution.value = value
-            logging.info(f"{beam_type.name} resolution set to {value} px.")
-            return
         if key == "dwell_time":
-            _check_beam(beam_type, self.hardware_settings)
             beam.scanning.dwell_time.value = value
             logging.info(f"{beam_type.name} dwell time set to {value} s.")
             return
         if key == "scan_rotation":
-            _check_beam(beam_type, self.hardware_settings)
             beam.scanning.rotation.value = value
             logging.info(f"{beam_type.name} scan rotation set to {value} radians.")
             return
         if key == "shift":
-            _check_beam(beam_type, self.hardware_settings)
-            beam.beam_shift.value.x = value.x
-            beam.beam_shift.value.x = value.y
+            beam.beam_shift.value = ThermoPoint(-value.x, value.y)
             logging.info(f"{beam_type.name} shift set to {value}.")
             return
         if key == "stigmation":
-            _check_beam(beam_type, self.hardware_settings)
-            beam.stigmator.value.x = value.x
-            beam.stigmator.value.y = value.y
+            beam.stigmator.value = ThermoPoint(value.x, value.y)
             logging.info(f"{beam_type.name} stigmation set to {value}.")
             return
         
         if key == "resolution":
-            _check_beam(beam_type, self.hardware_settings)
             resolution = f"{value[0]}x{value[1]}"  # WidthxHeight e.g. 1536x1024
             beam.scanning.resolution.value = resolution
             return 
@@ -2712,18 +2705,15 @@ class ThermoMicroscope(FibsemMicroscope):
         # only supported for Electron
         if beam_type is BeamType.ELECTRON:
             if key == "angular_correction_angle":
-                _check_beam(beam_type, self.hardware_settings)
                 beam.angular_correction.angle.value = value
                 logging.info(f"Angular correction angle set to {value} radians.")
                 return
 
             if key == "angular_correction_tilt_correction":
-                _check_beam(beam_type, self.hardware_settings)
                 beam.angular_correction.tilt_correction.turn_on() if value else beam.angular_correction.tilt_correction.turn_off()
                 return
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
-                _check_beam(beam_type, self.hardware_settings)
                 # _check_sputter(self.hardware_settings)
                 if self.hardware_settings.plasma:
                     beam.source.plasma_gas.value = value
