@@ -7,11 +7,11 @@ from fibsem import config as cfg
 from fibsem import constants, conversions, utils
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import MicroscopeSettings
-from fibsem.ui.qtdesigner_files import FibsemCryoDepositionWidget
+from fibsem.ui import FibsemCryoDepositionWidget_qt
 from fibsem import gis
 
 
-class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets.QDialog):
+class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget_qt.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
