@@ -59,7 +59,6 @@ REQUIRED_KEYS = {
         "width",
         "depth",
         "distance",
-        "lamella_width",
     ),
     "SpotWeld": ("height", "width", "depth", "distance", "number", "passes","scan_direction"),
     "WaffleNotch": (
@@ -581,9 +580,7 @@ class MicroExpansionPattern(BasePattern):
             width=width,
             height=height,
             depth=depth,
-            centre_x=point.x
-            - protocol["lamella_width"] / 2  # lamella property
-            - protocol["distance"],
+            centre_x=point.x -  protocol["distance"] ,
             centre_y=point.y,
             cleaning_cross_section=True,
             scan_direction="TopToBottom",
@@ -594,7 +591,7 @@ class MicroExpansionPattern(BasePattern):
             width=width,
             height=height,
             depth=depth,
-            centre_x=point.x + protocol["lamella_width"] / 2 + protocol["distance"],
+            centre_x=point.x + protocol["distance"],
             centre_y=point.y,
             cleaning_cross_section=True,
             scan_direction="TopToBottom",
