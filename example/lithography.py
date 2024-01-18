@@ -5,7 +5,7 @@ import numpy as np
 from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition, StagePosition)
 from fibsem import acquire, milling, movement, utils
-from fibsem.ui import windows
+# from fibsem.ui import windows
 from fibsem.structures import BeamType
 from PIL import Image
 
@@ -39,12 +39,12 @@ def main():
     microscope.move_flat_to_beam(settings, BeamType.ION)
 
     # eucentric, select position
-    windows.ask_user_movement(
-        microscope,
-        settings,
-        msg_type="eucentric",
-        msg="Select a position to mill the pattern.",
-    )
+    # windows.ask_user_movement(
+    #     microscope,
+    #     settings,
+    #     msg_type="eucentric",
+    #     msg="Select a position to mill the pattern.",
+    # )
 
     # lens profile files
     npy_path = os.path.join(BASE_PATH, settings.protocol["profile"])
