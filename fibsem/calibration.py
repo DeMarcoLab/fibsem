@@ -283,6 +283,9 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
         input("Please complete the EasyLift alignment procedure in the xT UI until Step 5. Press Enter to proceed.")
 
 
+    def align_manipulator_to_eucentric(microsscope: FibsemMicroscope, settings:MicroscopeSettings, parent_ui, validate: bool) -> None:
+        return NotImplemented
+
     settings.protocol["ml"]["checkpoint"] = cfg.__DEFAULT_CHECKPOINT__
     model = load_model(settings.protocol["ml"]["checkpoint"])
     settings.image.autocontrast = True
