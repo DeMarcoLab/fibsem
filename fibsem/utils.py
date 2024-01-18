@@ -145,7 +145,8 @@ def setup_session(
     protocol_path: Path = None,
     setup_logging: bool = True,
     ip_address: str = None,
-    manufacturer: str = None
+    manufacturer: str = None,
+    debug: bool = False,
 ) -> tuple[FibsemMicroscope, MicroscopeSettings]:
     """Setup microscope session
 
@@ -173,7 +174,7 @@ def setup_session(
 
     # configure logging
     if setup_logging:
-        configure_logging(session_path)
+        configure_logging(session_path, _DEBUG=debug)
 
     # connect to microscope
     import fibsem.microscope as FibSem

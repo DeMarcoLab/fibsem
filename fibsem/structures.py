@@ -1687,7 +1687,7 @@ class FibsemImageMetadata:
     image_settings: ImageSettings
     pixel_size: Point
     microscope_state: MicroscopeState
-    detector_settings: FibsemDetectorSettings
+    # detector_settings: FibsemDetectorSettings
     version: str = METADATA_VERSION
     user: FibsemUser = FibsemUser()
     experiment: FibsemExperiment = FibsemExperiment()
@@ -1699,10 +1699,11 @@ class FibsemImageMetadata:
         Returns:
             dictionary: self as a dictionary
         """
+        settings_dict = {}
         if self.image_settings is not None:
-            settings_dict = (
-                self.image_settings.__to_dict__()
-            )  # TODO: gracefully depreceate this
+            # settings_dict = (
+            #     self.image_settings.__to_dict__()
+            # )  # TODO: gracefully depreceate this
             settings_dict["image"] = self.image_settings.__to_dict__()
         if self.version is not None:
             settings_dict["version"] = self.version
@@ -1710,8 +1711,8 @@ class FibsemImageMetadata:
             settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
         if self.microscope_state is not None:
             settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
-        if self.detector_settings is not None:
-            settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
+        # if self.detector_settings is not None:
+            # settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
         settings_dict["user"] = self.user.__to_dict__()
         settings_dict["experiment"] = self.experiment.__to_dict__()
         settings_dict["system"] = self.system.__to_dict__()
@@ -1722,7 +1723,7 @@ class FibsemImageMetadata:
     def __from_dict__(settings: dict) -> "ImageSettings":
         """Converts a dictionary to metadata."""
 
-        image_settings = ImageSettings.__from_dict__(settings)
+        image_settings = ImageSettings.__from_dict__(settings["image"])
         version = settings.get("version", METADATA_VERSION)
         if settings["pixel_size"] is not None:
             pixel_size = Point.__from_dict__(settings["pixel_size"])
@@ -1731,18 +1732,18 @@ class FibsemImageMetadata:
                 settings["microscope_state"]
             )
 
-        detector_dict = settings.get(
-            "detector_settings",
-            {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0},
-        )
-        detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
+        # detector_dict = settings.get(
+        #     "detector_settings",
+        #     {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0},
+        # )
+        # detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
 
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
             version=version,
             pixel_size=pixel_size,
             microscope_state=microscope_state,
-            detector_settings=detector_settings,
+            # detector_settings=detector_settings, # TODO: remove this
             user=FibsemUser.__from_dict__(settings.get("user", {})),
             experiment=FibsemExperiment.__from_dict__(settings.get("experiment", {})),
             system=FibsemSystem.__from_dict__(settings.get("system", {})),
@@ -1750,7 +1751,7 @@ class FibsemImageMetadata:
         return metadata
 
     if THERMO:
-
+        # TODO: move to ImageSettings
         def image_settings_from_adorned(
             image=AdornedImage, beam_type: BeamType = BeamType.ELECTRON
         ) -> ImageSettings:
@@ -1945,7 +1946,7 @@ class FibsemImage:
                 image_settings=image_settings,
                 pixel_size=pixel_size,
                 microscope_state=state,
-                detector_settings=detector,
+                # detector_settings=detector,
             )
             return cls(data=adorned.data, metadata=metadata)
 
@@ -1977,7 +1978,7 @@ class FibsemImage:
                 image_settings=image_settings,
                 pixel_size=pixel_size,
                 microscope_state=state,
-                detector_settings=detector,
+                # detector_settings=detector,
             )
 
             return cls(data=np.array(image.Image), metadata=metadata)
@@ -2103,7 +2104,7 @@ class FibsemImage:
                 image_settings=image_settings,
                 pixel_size=pixel_size,
                 microscope_state=microscope_state,
-                detector_settings=detector_settings,
+                # detector_settings=detector_settings,
                 version=METADATA_VERSION,
             )
             return cls(data=data, metadata=metadata)
