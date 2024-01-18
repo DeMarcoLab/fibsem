@@ -5439,22 +5439,26 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_position.z += dy / np.cos(np.deg2rad(90-self.stage_settings.tilt_flat_to_ion))
 
     def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType, _safe:bool = True) -> None:
-        _check_stage(self.hardware_settings, tilt = True)
-                
+        _check_stage(self.hardware_settings, tilt=True)
+        stage_settings = self.stage_settings
+
         if beam_type is BeamType.ELECTRON:
-            r = self.stage_settings.tilt_flat_to_electron
-            t = self.stage_settings.tilt_flat_to_electron
+            rotation = np.deg2rad(stage_settings.rotation_flat_to_electron)
+            tilt = np.deg2rad(stage_settings.pre_tilt)
+
         if beam_type is BeamType.ION:
-            r = self.stage_settings.tilt_flat_to_ion
-            t = self.stage_settings.tilt_flat_to_ion
+            rotation = np.deg2rad(stage_settings.rotation_flat_to_ion)
+            tilt = np.deg2rad(
+                stage_settings.tilt_flat_to_ion - stage_settings.pre_tilt
+            )
 
-        # pre-tilt adjustment
-        t  = t - self.stage_settings.pre_tilt
-        
-        logging.info(f"Moving stage: Flat to {beam_type.name} beam, r={r:.2f}, t={t:.2f})")
-
-        self.stage_position.r = np.deg2rad(r)
-        self.stage_position.t = np.deg2rad(t)
+        # updated safe rotation move
+        logging.info(f"moving flat to {beam_type.name}")
+        stage_position = FibsemStagePosition(r=rotation, t=tilt)
+        if _safe:
+            self._safe_absolute_stage_movement(stage_position)
+        else:
+            self.move_stage_absolute(stage_position)
     
     def get_manipulator_position(self) -> FibsemManipulatorPosition:
         _check_needle(self.hardware_settings)
