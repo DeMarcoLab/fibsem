@@ -283,8 +283,8 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
         input("Please complete the EasyLift alignment procedure in the xT UI until Step 5. Press Enter to proceed.")
 
 
-    model = load_model("autolamella-mega-latest.pt", encoder="resnet34", nc=5)
-    settings.protocol["ml"]["checkpoint"] = "autolamella-mega-latest.pt"
+    settings.protocol["ml"]["checkpoint"] = cfg.__DEFAULT_CHECKPOINT__
+    model = load_model(settings.protocol["ml"]["checkpoint"])
     settings.image.autocontrast = True
 
     hfws = [2000e-6, 900e-6, 400e-6, 150e-6]
