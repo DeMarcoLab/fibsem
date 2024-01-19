@@ -416,7 +416,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             return
 
         _new_position = self.microscope._calculate_new_position( 
-                    settings=self.settings, 
                     dx=point.x, dy=point.y, 
                     beam_type=self.image.metadata.image_settings.beam_type, 
                     base_position=self.image.metadata.microscope_state.absolute_position)            
@@ -449,7 +448,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             return
 
         _new_position = self.microscope._calculate_new_position( 
-            settings=self.settings, 
             dx=point.x, dy=point.y, 
             beam_type=self.image.metadata.image_settings.beam_type, 
             base_position=self.image.metadata.microscope_state.absolute_position)   

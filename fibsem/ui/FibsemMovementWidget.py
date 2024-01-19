@@ -430,7 +430,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
     def move_flat_to_beam_worker(self, beam_type):
         self._toggle_interactions(False)
         self.movement_notification_signal.emit(f"Moving flat to {beam_type.name} beam")
-        self.microscope.move_flat_to_beam(settings=self.settings, beam_type=beam_type)
+        self.microscope.move_flat_to_beam(beam_type=beam_type)
         self.update_ui_after_movement()
 
 

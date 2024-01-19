@@ -62,6 +62,7 @@ try:
         ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
     from autoscript_sdb_microscope_client.structures import (
         GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
+    from autoscript_sdb_microscope_client.structures import AdornedImage
 
     from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition
     _THERMO_API_AVAILABLE = True 
@@ -169,7 +170,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType, _safe: bool = True) -> None:
+    def move_flat_to_beam(self, beam_type: BeamType, _safe: bool = True) -> None:
         pass
 
     @abstractmethod
@@ -557,7 +558,7 @@ class ThermoMicroscope(FibsemMicroscope):
         vertical_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
-        move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
+        move_flat_to_beam(self, beam_type: BeamType = BeamType.ELECTRON):
             Make the sample surface flat to the electron or ion beam.
 
         get_manipulator_position(self) -> FibsemManipulatorPosition:
@@ -636,7 +637,7 @@ class ThermoMicroscope(FibsemMicroscope):
         __init__(self): 
             Initializes a new instance of the class.
 
-        _y_corrected_stage_movement(self, settings: MicroscopeSettings, expected_y: float, beam_type: BeamType = BeamType.ELECTRON) -> FibsemStagePosition:
+        _y_corrected_stage_movement(self, expected_y: float, beam_type: BeamType = BeamType.ELECTRON) -> FibsemStagePosition:
             Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
     """
 
@@ -818,7 +819,6 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_device(beam_type.value)
         image = self.connection.imaging.get_image()
 
-        from autoscript_sdb_microscope_client.structures import AdornedImage
         image = AdornedImage(data=image.data.astype(np.uint8), metadata=image.metadata)
 
         state = self.get_current_microscope_state()
@@ -949,6 +949,10 @@ class ThermoMicroscope(FibsemMicroscope):
         )
         self.connection.beams.ion_beam.beam_shift.value = ThermoPoint(0, 0)
         logging.debug(f"reset beam shifts to zero complete")
+        
+        # self.set("shift", Point(0, 0), BeamType.ELECTRON)
+        # self.set("shift", Point(0, 0), BeamType.ION)
+        
 
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType = BeamType.ION) -> None:
         """
@@ -1149,7 +1153,6 @@ class ThermoMicroscope(FibsemMicroscope):
         Calculate the corrected stage movements based on the beam_type, and then move the stage relatively.
 
         Args:
-            settings (MicroscopeSettings): microscope settings
             dx (float): distance along the x-axis (image coordinates)
             dy (float): distance along the y-axis (image coordinates)
             beam_type (BeamType): beam type to move in
@@ -1166,7 +1169,6 @@ class ThermoMicroscope(FibsemMicroscope):
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx, y=0, z=0)
         yz_move = self._y_corrected_stage_movement(
-            settings=settings,
             expected_y=dy,
             beam_type=beam_type,
         )
@@ -1226,9 +1228,6 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.specimen.stage.relative_move(z_move, move_settings)
         logging.info(f"eucentric movement: {z_move}")
 
-        # x-move
-        # self.move_stage_relative(FibsemStagePosition(x=dx, y=0, z=0))
-
         if static_wd:
             self.connection.beams.electron_beam.working_distance.value = (
                 settings.system.electron.eucentric_height
@@ -1242,7 +1241,6 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def _y_corrected_stage_movement(
         self,
-        settings: MicroscopeSettings,
         expected_y: float,
         beam_type: BeamType = BeamType.ELECTRON,
     ) -> FibsemStagePosition:
@@ -1321,7 +1319,7 @@ class ThermoMicroscope(FibsemMicroscope):
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
     def move_flat_to_beam(
-        self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
+        self, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
     ) -> None:
         """
         Moves the microscope stage to the tilt angle corresponding to the given beam type,
@@ -1397,13 +1395,13 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return
 
-    def _calculate_new_position(self, settings: MicroscopeSettings, 
+    def _calculate_new_position(self, 
         dx:float, dy:float, 
         beam_type:BeamType, 
         base_position:FibsemStagePosition) -> FibsemStagePosition:
 
         # stable-move-projection
-        point_yz = self._y_corrected_stage_movement(settings, dy, beam_type)
+        point_yz = self._y_corrected_stage_movement(dy, beam_type)
         dy, dz = point_yz.y, point_yz.z
 
         # calculate the corrected move to reach that point from base-state?
@@ -2879,7 +2877,7 @@ class TescanMicroscope(FibsemMicroscope):
         vertical_move(self, settings: MicroscopeSettings, dy: float, dx: float = 0.0, static_wd: bool = True) -> None:
             Move the stage vertically to correct eucentric point
         
-        move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON):
+        move_flat_to_beam(self, beam_type: BeamType = BeamType.ELECTRON):
             Make the sample surface flat to the electron or ion beam.
         get_manipulator_position(self) -> FibsemManipulatorPosition:
             Get the current manipulator position.
@@ -2959,7 +2957,7 @@ class TescanMicroscope(FibsemMicroscope):
         _get_ib_image(self, image_settings=ImageSettings):
             Acquires an ion beam (IB) image with the given settings and returns a FibsemImage object.
 
-        _y_corrected_stage_movement(self, settings: MicroscopeSettings, expected_y: float, beam_type: BeamType = BeamType.ELECTRON) -> FibsemStagePosition:
+        _y_corrected_stage_movement(self, expected_y: float, beam_type: BeamType = BeamType.ELECTRON) -> FibsemStagePosition:
             Calculate the y corrected stage movement, corrected for the additional tilt of the sample holder (pre-tilt angle).
     """
 
@@ -3528,7 +3526,7 @@ class TescanMicroscope(FibsemMicroscope):
         # TODO: implement if required.
         self.move_stage_absolute(stage_position)
     
-    def _calculate_new_position(self, settings: MicroscopeSettings, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
+    def _calculate_new_position(self, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
         if beam_type == BeamType.ELECTRON:
             image_rotation = self.connection.SEM.Optics.GetImageRotation()
         else:
@@ -3539,7 +3537,7 @@ class TescanMicroscope(FibsemMicroscope):
 
         dx =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         dy = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
-        point_yz = self._y_corrected_stage_movement(settings, dy, beam_type)
+        point_yz = self._y_corrected_stage_movement(dy, beam_type)
         dy, dz = point_yz.y, point_yz.z
 
         # calculate the corrected move to reach that point from base-state?
@@ -3676,7 +3674,6 @@ class TescanMicroscope(FibsemMicroscope):
         # calculate stage movement
         x_move = FibsemStagePosition(x=dx_move, y=0, z=0) 
         yz_move = self._y_corrected_stage_movement(
-            settings=settings,
             expected_y=dy_move,
             beam_type=beam_type,
         )
@@ -3755,7 +3752,6 @@ class TescanMicroscope(FibsemMicroscope):
 
     def _y_corrected_stage_movement(
         self,
-        settings: MicroscopeSettings,
         expected_y: float,
         beam_type: BeamType = BeamType.ELECTRON,
     ) -> FibsemStagePosition:
@@ -3814,7 +3810,7 @@ class TescanMicroscope(FibsemMicroscope):
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
     def move_flat_to_beam(
-        self, settings=MicroscopeSettings, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
+        self, beam_type: BeamType = BeamType.ELECTRON, _safe: bool = True
     ):
         """
         Moves the microscope stage to the tilt angle corresponding to the given beam type,
@@ -5416,7 +5412,7 @@ class DemoMicroscope(FibsemMicroscope):
 
         self.move_stage_absolute(stage_position)
 
-    def _calculate_new_position(self, settings: MicroscopeSettings, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
+    def _calculate_new_position(self, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
 
         return base_position + FibsemStagePosition(x=dx, y=dy) # TODO: implement
 
@@ -5484,7 +5480,7 @@ class DemoMicroscope(FibsemMicroscope):
         self.stage_system.position.x += dx
         self.stage_system.position.z += dy / np.cos(np.deg2rad(90-self.stage_settings.tilt_flat_to_ion))
 
-    def move_flat_to_beam(self, settings: MicroscopeSettings, beam_type: BeamType, _safe:bool = True) -> None:
+    def move_flat_to_beam(self, beam_type: BeamType, _safe:bool = True) -> None:
         _check_stage(self.hardware_settings, tilt=True)
         stage_settings = self.stage_settings
 

@@ -311,7 +311,6 @@ def _convert_image_coord_to_position(microscope, settings, image, coords) -> Fib
     )
 
     _new_position = microscope._calculate_new_position( 
-            settings=settings, 
             dx=point.x, dy=point.y, 
             beam_type=image.metadata.image_settings.beam_type, 
             base_position=image.metadata.microscope_state.absolute_position)
