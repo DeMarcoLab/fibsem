@@ -2,15 +2,19 @@
 name: autolamella_demo
 stage_rotation: 50
 stage_tilt: 20
-application_file: autolamella
+
 
 fiducial:
   length: 10.e-6
-  width: 10.e-6
+  width: 2.e-6
   depth: 2.e-6
+  milling_voltage: 30.0e+3
+  milling_current: 2.e-9
+  hfw: 150.0e-6
+  application_file: autolamella
   
 lamella:
-  protocol_stages:
+  stages:
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
     trench_height: 10.e-6
@@ -20,15 +24,19 @@ lamella:
     milling_voltage: 30.0e+3
     milling_current: 2.e-9
     cleaning_cross_section: True
+    hfw: 150.0e-6
+    application_file: autolamella
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
     trench_height: 1.e-6
     depth: 2.e-6
     offset: 0.5e-6
     size_ratio: 1.0
+    hfw: 80.0e-6
     milling_voltage: 30.0e+3
     milling_current: 0.2e-9
     cleaning_cross_section: True
+    application_file: autolamella
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
     trench_height: 0.5e-6
@@ -37,4 +45,16 @@ lamella:
     size_ratio: 1.0
     milling_current: 60.e-12
     milling_voltage: 30.0e+3
+    hfw: 80.0e-6
     cleaning_cross_section: True
+    application_file: autolamella
+
+microexpansion:
+  height: 10.0e-6
+  width: 2.0e-6
+  depth: 5.0e-6
+  distance: 10.0e-6
+  hfw: 150.0e-6
+  milling_voltage: 30.0e+3
+  milling_current: 2.e-9
+  application_file: autolamella

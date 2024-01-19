@@ -7,7 +7,7 @@ from pathlib import Path
 from pprint import pprint
 
 import numpy as np
-from fibsem import acquire, alignment, calibration, milling, movement, utils
+from fibsem import acquire, alignment, milling, patterning, utils
 from fibsem.structures import BeamType, MicroscopeState,  FibsemImage, FibsemStagePosition
 
 
@@ -70,13 +70,9 @@ def main():
         logging.info(f"No lamella positions selected. Exiting.")
         return
 
-    # setup milling
-    settings.application_file = settings.protocol.get("application_file", "autolamella")
-    milling.setup_milling(microscope = microscope,
-        mill_settings = settings.milling)
-
-    # mill (fiducial, trench, thin, polish)
-    for stage_no, milling_dict in enumerate(settings.protocol["lamella"]["protocol_stages"], 1):
+    # mill (rough, thin, polish)
+    workflow_stages = ["rough", "thin", "polish"]
+    for stage_no, stage_name in enumerate(workflow_stages):
         
         logging.info(f"Starting milling stage {stage_no}")
 
@@ -92,12 +88,12 @@ def main():
             alignment.beam_shift_alignment(microscope, settings.image, lamella.reference_image)
                        
             if stage_no == 0:
-                logging.info("add microexpansion joints here")
+                microexpansion_stage = patterning._get_milling_stages("microexpansion", settings.protocol)
+                milling.mill_stage(microscope, settings, microexpansion_stage[0])
 
-            # mill trenches
-            milling.draw_trench(microscope, milling_dict)
-            milling.run_milling(microscope, milling_dict["milling_current"], milling_dict["milling_voltage"])
-            milling.finish_milling(microscope)
+            # get trench milling pattern, and mill
+            trench_stage = patterning._get_milling_stages("lamella", settings.protocol)[stage_no]
+            milling.mill_stage(microscope, settings, trench_stage)
 
             # retake reference image
             settings.image.save_path = lamella.path
