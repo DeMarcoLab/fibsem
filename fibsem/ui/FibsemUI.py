@@ -159,14 +159,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if isinstance(self.microscope, TescanMicroscope):
             self.microscope.set("preset", self.ref_current, BeamType.ION)
 
-    def set_stage_parameters(self):
-        if self.microscope is None:
-            return
-        self.settings.system.stage = self.system_widget.settings.system.stage  
-        self.movement_widget.settings = self.settings
-        self.microscope.stage_settings = self.settings.system.stage
-        logging.debug(f"Stage parameters set to {self.settings.system.stage}")
-        logging.info("Stage parameters set")  
 
     def update_ui(self):
 
@@ -220,7 +212,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 image_widget=self.image_widget,
                 parent=self,
             )
-            if self.microscope.hardware_settings.manipulator_enabled:
+            if self.microscope.system.manipulator.enabled:
                 self.manipulator_widget = FibsemManipulatorWidget(
                     microscope=self.microscope,
                     settings=self.settings,
@@ -238,7 +230,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.tabWidget.addTab(self.movement_widget, "Movement")
             self.tabWidget.addTab(self.milling_widget, "Milling")
 
-            if self.microscope.hardware_settings.manipulator_enabled:
+            if self.microscope.system.manipulator.enabled:
                 self.tabWidget.addTab(self.manipulator_widget, "Manipulator")
 
             self.system_widget.image_widget = self.image_widget

@@ -83,7 +83,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
 
 
     def _toggle_labelling(self, event=None):
-
+        """Toggle labelling mode on/off"""
         if self.sender() != self.checkBox_labelling_model_assist:
             self._LABELLING_ENABLED = not self._LABELLING_ENABLED
 
@@ -114,10 +114,11 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
 
     def confirm_button_clicked(self, reset_camera=False):
-    
+        """Confirm the detected features, save the data and and remove the layers from the viewer."""
+        
         # log the difference between initial and final detections
         try:
-            fname = self.det.fibsem_image.metadata.image_settings.label
+            fname = self.det.fibsem_image.metadata.image_settings.filename
             beam_type = self.det.fibsem_image.metadata.image_settings.beam_type
         except:
             fname = f"ml-{utils.current_timestamp_v2()}"
@@ -129,22 +130,21 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             msgd = {"msg": "feature_detection",
                     "fname": fname,                                             # filename
                     "feature": f0.name,                                         # feature name
-                    "px": f0.px.__to_dict__(),                                  # pixel coordinates
-                    "dpx": px_diff.__to_dict__(),                               # pixel difference
-                    "dm": px_diff._to_metres(self.det.pixelsize).__to_dict__(), # metre difference
+                    "px": f0.px.to_dict(),                                      # pixel coordinates
+                    "dpx": px_diff.to_dict(),                                   # pixel difference
+                    "dm": px_diff._to_metres(self.det.pixelsize).to_dict(),     # metre difference
                     "is_correct": not np.any(px_diff),                          # is the feature correct    
                     "beam_type": beam_type.name,                                # beam type         
                     "pixelsize": self.det.pixelsize,                            # pixelsize
             }
             logging.debug(msgd)
-            fd.append(deepcopy(msgd))
+            fd.append(deepcopy(msgd))                                           # to write to disk
 
         # save features data
         self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
         det_utils.save_feature_data_to_csv(self.det, features=fd, filename=fname)
-
             
-        # remove det layers
+        # remove feature detection layers
         if self._image_layer is not None:
             if self._image_layer in self.viewer.layers:
                 self.viewer.layers.remove(self._image_layer)
@@ -162,6 +162,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.viewer.camera.zoom = self.prev_camera.zoom
 
     def set_detected_features(self, det_features: DetectedFeatures):
+        """Set the detected features and update the UI"""
         self.det = det_features
         self._intial_det = deepcopy(det_features)
         self._USER_CORRECTED = False
@@ -169,7 +170,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.update_features_ui()
 
     def update_features_ui(self):
-
+        """Update the UI with the detected features"""
         # hide all other layers?
         for layer in self.viewer.layers:
             layer.visible = False
@@ -228,7 +229,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         napari.utils.notifications.show_info(f"Features ({', '.join([f.name for f in self.det.features])}) Detected")
 
     def update_info(self):
-        
+        """Update the info label with the feature information"""
         if len(self.det.features) > 2:
             self.label_info.setText("Info not available.")
             return
@@ -252,6 +253,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             return
 
     def update_point(self, event):
+        """Update the feature when the point is moved"""
         logging.debug(f"{event.source.name} changed its data!")
 
         layer = self.viewer.layers[f"{event.source.name}"]  # type: ignore
@@ -265,13 +267,16 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         if len(data) != len(self.det.features):
             # loop backwards to remove the features
             for idx in index[::-1]:
-                logging.info(f"point deleted: {self.det.features[idx].name}")
+                logging.debug({"msg": "detection_point_deleted",
+                               "idx": idx, "data": data[idx], 
+                               "feature": self.det.features[idx].name})
                 self.det.features.pop(idx)
 
         else: 
             for idx in index:
-                
-                logging.info(f"point moved: {self.det.features[idx].name} to {data[idx]}") # TODO: fix for logging statistics
+                logging.debug({"msg": "detection_point_moved", 
+                               "idx": idx, "data": data[idx], 
+                               "feature": self.det.features[idx].name})
                 
                 # update the feature
                 self.det.features[idx].px = Point(
@@ -295,6 +300,8 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             feature.feature_m = conversions.image_to_microscope_image_coordinates(
                 feature.px, self.det.image.data, self.det.pixelsize
             )
+
+        logging.debug({"msg": "get_detected_features", "detected_features": self.det.to_dict()})
 
         return self.det
 

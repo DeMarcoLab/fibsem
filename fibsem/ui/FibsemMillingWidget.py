@@ -14,8 +14,8 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                TescanMicroscope, ThermoMicroscope)
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
-                               FibsemPatternSettings, MicroscopeSettings,
-                               Point, FibsemPattern)
+                               FibsemPattern, MicroscopeSettings,
+                               Point, FibsemPatternType)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui, import_milling_stages_yaml, export_milling_stages_yaml, _calculate_fiducial_area_v2
@@ -548,14 +548,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.doubleSpinBox_centre_y.setValue(clicked.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
             logging.info(f"Moved patterns to {point} ")
 
-            msgd = {
+            logging.debug({
                 "msg": "move_milling_patterns",                                     # message type
                 "pattern": self.milling_stages[current_stage_index].pattern.name,   # pattern name
-                "dm": diff.__to_dict__(), # x, y                                    # metres difference 
+                "dm": diff.to_dict(), # x, y                                    # metres difference 
                 "beam_type": BeamType.ION.name,                                     # beam type
-            }
-            
-            logging.debug(msgd)
+            })
             
             self.update_ui(milling_stages=self.milling_stages)
             self.milling_position_changed.emit()
@@ -576,7 +574,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 return True    
         
         for pattern_settings in stage_pattern.patterns:
-            if pattern_settings.pattern is FibsemPattern.Circle:
+            if pattern_settings.pattern is FibsemPatternType.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
             else:
                 shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
@@ -782,7 +780,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     milling.setup_milling(self.microscope, mill_settings=stage.milling)
 
                     microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
-                    estimated_time = milling.milling_time_estimate(self.microscope, microscope_patterns)
+                    estimated_time = milling.estimate_milling_time(self.microscope, microscope_patterns)
                     progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
                     self._progress_bar_start.emit(progress_bar_dict)
 
@@ -793,8 +791,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     logging.error(e)
                 finally:
                     milling.finish_milling(self.microscope, 
-                                           imaging_current=self.settings.system.ion.current, 
-                                           imaging_voltage=self.settings.system.ion.voltage)
+                                           imaging_current=self.microscope.system.ion.beam.beam_current, 
+                                           imaging_voltage=self.microscope.system.ion.beam.voltage)
 
                 log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
                 self._progress_bar_quit.emit()

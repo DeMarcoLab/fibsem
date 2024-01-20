@@ -352,10 +352,6 @@ if __name__ == "__main__":
     print("Chamber State: ", microscope.get("chamber_state"))
     print("Chamber Pressure: ", microscope.get("chamber_pressure"))
 
-
-    # set vent
-    microscope.set("vent", True)
-
     print("Chamber State: ", microscope.get("chamber_state"))
     print("Chamber Pressure: ", microscope.get("chamber_pressure"))
 

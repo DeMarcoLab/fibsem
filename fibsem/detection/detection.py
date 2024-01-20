@@ -26,6 +26,13 @@ class Feature(ABC):
     def detect(self, img: np.ndarray, mask: np.ndarray=None, point:Point=None) -> 'Feature':
         pass
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "px": self.px.to_dict(),
+            "feature_m": self.feature_m.to_dict()
+        }
+
 @dataclass
 class ImageCentre(Feature):
     feature_m: Point = None
@@ -240,7 +247,7 @@ class VolumeBlockTopLeftCorner(Feature):
         try:    
             objects = get_objects(mask)
             objects = [obj for obj in objects if obj["class"] == self.class_idx]
-            px = Point.__from_list__(objects[0]["keypoints"]["top_left"])
+            px = Point.from_list(objects[0]["keypoints"]["top_left"])
         except Exception as e:
             print(e)
             px = Point(0,0)
@@ -259,7 +266,7 @@ class VolumeBlockTopRightCorner(Feature):
         try:    
             objects = get_objects(mask)
             objects = [obj for obj in objects if obj["class"] == self.class_idx]
-            px = Point.__from_list__(objects[0]["keypoints"]["top_right"])
+            px = Point.from_list(objects[0]["keypoints"]["top_right"])
         except Exception as e:
             print(e)
             px = Point(0,0)
@@ -279,7 +286,7 @@ class VolumeBlockBottomLeftCorner(Feature):
         try:    
             objects = get_objects(mask)
             objects = [obj for obj in objects if obj["class"] == self.class_idx]
-            px = Point.__from_list__(objects[0]["keypoints"]["bottom_left"])
+            px = Point.from_list(objects[0]["keypoints"]["bottom_left"])
         except Exception as e:
             print(e)
             px = Point(0,0)
@@ -298,7 +305,7 @@ class VolumeBlockBottomRightCorner(Feature):
         try:    
             objects = get_objects(mask)
             objects = [obj for obj in objects if obj["class"] == self.class_idx]
-            px = Point.__from_list__(objects[0]["keypoints"]["bottom_right"])
+            px = Point.from_list(objects[0]["keypoints"]["bottom_right"])
         except Exception as e:
             print(e)
             px = Point(0,0)
@@ -676,6 +683,13 @@ class DetectedFeatures:
             if feature.name == ftype or isinstance(feature, type(ftype)):
                 return feature
 
+    def to_dict(self):
+        return {
+            "features": [f.to_dict() for f in self.features],
+            "pixelsize": self.pixelsize,
+            "offset": self._offset.to_dict(),
+        }
+        
 def detect_features_v2(
     img: np.ndarray, mask: np.ndarray, features: tuple[Feature], filter: bool = True, point: Point = None
 ) -> list[Feature]:
@@ -762,7 +776,7 @@ def take_image_and_detect_features(
         )
         settings.image.reduced_area = None
     
-    settings.image.label = f"ml-{utils.current_timestamp_v2()}"
+    settings.image.filename = f"ml-{utils.current_timestamp_v2()}"
     settings.image.save = True
 
     # take new image
@@ -935,7 +949,6 @@ def move_based_on_detection(
     if _move_system == "stage":
             # need to reverse the direction to move correctly. investigate if this is to do with scan rotation?
             microscope.stable_move(
-                settings=settings,
                 dx=-dx,
                 dy=dy,
                 beam_type=beam_type,
@@ -955,50 +968,6 @@ import tifffile as tff
 
 from fibsem.segmentation import utils as seg_utils
 from fibsem.structures import FibsemImage, Point, FibsemStagePosition
-
-
-def _det_from_df(df: pd.DataFrame, path: Path, fname: str) -> Optional[DetectedFeatures]:
-        
-    # glob for the image in the path
-    img_fname = glob.glob(os.path.join(path, f"{fname}.*"))
-    mask_fname = glob.glob(os.path.join(path, "mask", f"{fname}.*"))
-
-    if img_fname == [] or mask_fname == []:
-        return None
-
-    img = FibsemImage.load(img_fname[0])
-    mask = tff.imread(mask_fname[0])
-
-    df_filt = df[df["image"] == fname]
-
-    def _from_df(df: pd.DataFrame) -> list[Feature]:
-
-        features = []
-        for feat_name in df["feature"].unique():
-            
-            # create feature from name
-            idx = [i for i, feat in enumerate(__FEATURES__) if feat.__name__ == feat_name][0]
-            feature = __FEATURES__[idx](
-                px=Point(x=df[df["feature"] == feat_name]["p.x"].values[0],
-                        y=df[df["feature"] == feat_name]["p.y"].values[0]),
-            )
-
-            features.append(feature)
-
-
-        return features
-
-    features = _from_df(df_filt)
-    det = DetectedFeatures(features=features, 
-                        image=img.data, 
-                        mask=mask, 
-                        rgb=seg_utils.decode_segmap(mask),
-                        pixelsize=df_filt["pixelsize"].values[0],
-                        )
-    
-    return det
-
-
 
 
 def mask_contours(image):
@@ -1086,7 +1055,8 @@ def get_feature(name: str) -> Feature:
 
 
 # v4 intersection features
-from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
+from fibsem.microscope import FibsemMicroscope 
+from fibsem.structures import MicroscopeSettings
 import numpy as np
 from fibsem.imaging import _tile
 

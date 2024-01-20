@@ -242,8 +242,7 @@ def align_using_reference_images(
 
         # vertical constraint = eucentric movement
         if constrain_vertical:
-            microscope.vertical_move(
-                settings=settings, dx=0, dy=-dy
+            microscope.vertical_move( dx=0, dy=-dy
             )  # FLAG_TEST
         else:
             if use_beam_shift:
@@ -252,7 +251,6 @@ def align_using_reference_images(
             else:
                 # move the stage
                 microscope.stable_move(
-                    settings=settings,
                     dx=dx,
                     dy=-dy,
                     beam_type=new_beam_type,
@@ -477,9 +475,9 @@ def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSet
         initial_current = microscope.get("current", image_settings.beam_type)
         microscope.set("current", alignment_current, image_settings.beam_type)
 
-    base_label = image_settings.label
+    base_label = image_settings.filename
     for i in range(steps):
-        image_settings.label = f"{base_label}_{i:02d}"
+        image_settings.filename = f"{base_label}_{i:02d}"
         image_settings.beam_type = BeamType.ION
         beam_shift_alignment(microscope, image_settings, 
                                         ref_image=ref_image,

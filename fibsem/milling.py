@@ -1,10 +1,10 @@
 import logging
 from fibsem.structures import (
     BeamType,
-    FibsemPattern,
+    FibsemPatternType,
     FibsemImage,
     FibsemRectangle,
-    FibsemPatternSettings,
+    FibsemPattern,
     FibsemMillingSettings,
     Point,
     ImageSettings,
@@ -62,7 +62,7 @@ def run_milling(
     microscope.run_milling(milling_current, milling_voltage, asynch)
 
 
-def milling_time_estimate(microscope: FibsemMicroscope, microscope_patterns) -> float:
+def estimate_milling_time(microscope: FibsemMicroscope, microscope_patterns) -> float:
     """Get the milling status.
 
     Args:
@@ -70,7 +70,7 @@ def milling_time_estimate(microscope: FibsemMicroscope, microscope_patterns) -> 
 
     """
 
-    total_time = microscope._milling_estimate(microscope_patterns)
+    total_time = microscope.estimate_milling_time(microscope_patterns)
         
     return total_time
 
@@ -89,7 +89,7 @@ def finish_milling(
     microscope.finish_milling(imaging_current=imaging_current, imaging_voltage=imaging_voltage)
     logging.info("Finished Ion Beam Milling.")
 
-def draw_patterns(microscope: FibsemMicroscope, patterns: list[FibsemPatternSettings]) -> None:
+def draw_patterns(microscope: FibsemMicroscope, patterns: list[FibsemPattern]) -> None:
     """Draw a milling pattern from settings
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
@@ -100,47 +100,47 @@ def draw_patterns(microscope: FibsemMicroscope, patterns: list[FibsemPatternSett
     return microscope_patterns
 
         
-def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
+def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPattern):
     """Draw a milling pattern from settings
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
-        pattern_settings (FibsemPatternSettings): pattern settings
+        pattern_settings (FibsemPattern): pattern settings
         mill_settings (FibsemMillingSettings): milling settings
     """
-    if pattern.pattern is FibsemPattern.Rectangle:
+    if pattern.pattern is FibsemPatternType.Rectangle:
         microscope_pattern = microscope.draw_rectangle(pattern)
 
-    elif pattern.pattern is FibsemPattern.Line:
+    elif pattern.pattern is FibsemPatternType.Line:
         microscope_pattern = microscope.draw_line(pattern)
 
-    elif pattern.pattern is FibsemPattern.Circle:
+    elif pattern.pattern is FibsemPatternType.Circle:
         microscope_pattern = microscope.draw_circle(pattern)
 
-    elif pattern.pattern is FibsemPattern.Bitmap:
+    elif pattern.pattern is FibsemPatternType.Bitmap:
         microscope_pattern = microscope.draw_bitmap_pattern(pattern, pattern.path)
 
-    elif pattern.pattern is FibsemPattern.Annulus:
+    elif pattern.pattern is FibsemPatternType.Annulus:
         microscope_pattern = microscope.draw_annulus(pattern)
         
     return microscope_pattern
 
 
 def draw_rectangle(
-    microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings
+    microscope: FibsemMicroscope, pattern_settings: FibsemPattern
 ):
     """Draw a rectangular milling pattern from settings
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
-        pattern_settings (FibsemPatternSettings): pattern settings
+        pattern_settings (FibsemPattern): pattern settings
         mill_settings (FibsemMillingSettings): milling settings
     """
     pattern = microscope.draw_rectangle(pattern_settings)
     return pattern
 
 
-def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
+def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPattern):
     """Draw a line milling pattern from settings
 
     Args:
@@ -150,7 +150,7 @@ def draw_line(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSetti
     pattern = microscope.draw_line(pattern_settings)
     return pattern
 
-def draw_circle(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings):
+def draw_circle(microscope: FibsemMicroscope, pattern_settings: FibsemPattern):
     """Draw a circular milling pattern from settings
 
     Args:
@@ -169,7 +169,7 @@ def convert_to_bitmap_format(path):
     a.save(new_path)
     return new_path
 
-def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSettings, path: str):
+def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPattern, path: str):
     """Draw a butmap milling pattern from settings
 
     Args:
@@ -183,7 +183,7 @@ def draw_bitmap(microscope: FibsemMicroscope, pattern_settings: FibsemPatternSet
 def milling_protocol(
     microscope: FibsemMicroscope,
     mill_settings: FibsemMillingSettings,
-    patterns: list = [FibsemPatternSettings],
+    patterns: list = [FibsemPattern],
     drift_correction: bool = False,
     image_settings: ImageSettings = None,
     ref_image: FibsemImage = None,

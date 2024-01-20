@@ -9,9 +9,9 @@ from PyQt5.QtCore import pyqtSignal
 
 import fibsem
 from fibsem import config as cfg
-from fibsem import constants, utils
+from fibsem import utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings, StageSettings, FibsemHardware, BeamSystemSettings, BeamType, ImageSettings, FibsemMillingSettings, SystemSettings
+from fibsem.structures import MicroscopeSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.ui import _stylesheets
@@ -74,7 +74,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         from pprint import pprint 
 
-        pprint(self.settings.__to_dict__()["core"])
+        pprint(self.settings.to_dict()["info"])
 
         return configuration_path
     
@@ -135,7 +135,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             )
 
             # user notification
-            msg = f"Connected to microscope at {self.settings.system.ip_address}"
+            msg = f"Connected to microscope at {self.microscope.system.info.ip_address}"
             logging.info(msg)
             napari.utils.notifications.show_info(msg)
 
@@ -180,8 +180,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.pushButton_connect_to_microscope.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_apply_configuration.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.connected_signal.emit()
-
-            self.label_connection_information.setText(f"Connected to {self.microscope.system.manufacturer}-{self.microscope.system.model} at {self.settings.system.ip_address}")
+            
+            info = self.microscope.system.info
+            self.label_connection_information.setText(f"Connected to {info.manufacturer}-{info.model} at {info.ip_address}")
 
         else:
             self.pushButton_connect_to_microscope.setText("Connect To Microscope")

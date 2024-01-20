@@ -229,29 +229,26 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         )
 
         # move
-        self.movement_mode = MovementMode.Eucentric if "Alt" in event.modifiers else MovementMode.Stable
+        self.movement_mode = MovementMode.Vertical if "Alt" in event.modifiers else MovementMode.Stable
 
-        msgd = {
+        logging.debug({
             "msg": "stage_movement",                    # message type
             "movement_mode": self.movement_mode.name,   # movement mode
             "beam_type": beam_type.name,                # beam type
-            "dm": point.__to_dict__(),                  # shift in microscope coordinates
+            "dm": point.to_dict(),                      # shift in microscope coordinates
             "coords": {"x": coords[1], "y": coords[0]}, # coords in image coordinates
-        }
-        logging.debug(msgd)
-
+        })
+        
         log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
         self.movement_notification_signal.emit("Moving stage ")
         # eucentric is only supported for ION beam
-        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
-            self.microscope.vertical_move(
-                settings=self.settings, dx=point.x, dy=-point.y
+        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Vertical:
+            self.microscope.vertical_move(dx=point.x, dy=-point.y
             )
 
         else:
             # corrected stage movement
             self.microscope.stable_move(
-                settings=self.settings,
                 dx=point.x,
                 dy=point.y,
                 beam_type=beam_type,
@@ -321,7 +318,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             pos = self.positions[self.comboBox_positions.currentIndex()]
         self._toggle_interactions(False)
         self.movement_notification_signal.emit(f"Moving to saved position {pos}")
-        self.microscope._safe_absolute_stage_movement(pos)
+        self.microscope.safe_absolute_stage_movement(pos)
         logging.info(f"Moved to position {pos}")
         self.update_ui_after_movement()
 
@@ -363,7 +360,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         with open(protocol_path, "r") as f:
             dict_positions = yaml.safe_load(f)
         for dict_position in dict_positions:
-            position = FibsemStagePosition.__from_dict__(dict_position)
+            position = FibsemStagePosition.from_dict(dict_position)
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
         self.minimap()

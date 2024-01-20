@@ -102,7 +102,7 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
     def save_configuration(self):
 
         configuration = self.read_configuration_from_ui()
-        configuration_name = configuration["core"]["name"]
+        configuration_name = configuration["info"]["name"]
         path = os.path.join(os.path.dirname(self.path), f"{configuration_name}.yaml")
 
         # select save file 
@@ -156,11 +156,11 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
     def load_configuration_to_ui(self):
         
         # core
-        core_configuration = self.configuration["core"]
-        self.lineEdit_configuration_name.setText(core_configuration["name"])
+        info_configuration = self.configuration["info"]
+        self.lineEdit_configuration_name.setText(info_configuration["name"])
         self.lineEdit_configuration_path.setText(self.path)
-        self.lineEdit_configuration_ip_address.setText(core_configuration["ip_address"])
-        self.comboBox_configuration_manufacturer.setCurrentText(core_configuration["manufacturer"])
+        self.lineEdit_configuration_ip_address.setText(info_configuration["ip_address"])
+        self.comboBox_configuration_manufacturer.setCurrentText(info_configuration["manufacturer"])
 
         # stage
         stage_configuration = self.configuration["stage"]
@@ -170,7 +170,7 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
         self.doubleSpinBox_stage_manipulator_height_limit.setValue(stage_configuration["manipulator_height_limit"] * constants.SI_TO_MILLI) # mm
 
         # electron
-        electron_configuration = self.configuration["electron_beam"]
+        electron_configuration = self.configuration["electron"]
         self.spinBox_electron_column_tilt.setValue(electron_configuration["column_tilt"])                               # deg
         self.doubleSpinBox_electron_eucentric_height.setValue(electron_configuration["eucentric_height"] * constants.SI_TO_MILLI) # mm
         self.doubleSpinBox_electron_voltage.setValue(electron_configuration["voltage"])                                 # V
@@ -179,7 +179,7 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
         self.lineEdit_electron_detector_type.setText(electron_configuration["detector_type"])
 
         # ion
-        ion_configuration = self.configuration["ion_beam"]
+        ion_configuration = self.configuration["ion"]
         self.spinBox_ion_column_tilt.setValue(ion_configuration["column_tilt"])                                         # deg
         self.doubleSpinBox_ion_eucentric_height.setValue(ion_configuration["eucentric_height"] * constants.SI_TO_MILLI) # mm
         self.doubleSpinBox_ion_voltage.setValue(ion_configuration["voltage"])                                           # V
@@ -209,7 +209,7 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
         self.lineEdit_milling_preset.setText(milling_configuration["preset"])
 
         # subsystems
-        subsystem_configuration = self.configuration["subsystems"]
+        subsystem_configuration = self.configuration
         # electron
         self.checkBox_subsystems_electron_enabled.setChecked(subsystem_configuration["electron"]["enabled"])
         # ion
@@ -232,20 +232,24 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
     def read_configuration_from_ui(self) -> dict:
 
         # core
-        core_configuration = self.configuration["core"]
-        core_configuration["name"] = self.lineEdit_configuration_name.text()
-        core_configuration["ip_address"] = self.lineEdit_configuration_ip_address.text()
-        core_configuration["manufacturer"] = self.comboBox_configuration_manufacturer.currentText()
+        info_configuration = self.configuration["info"]
+        info_configuration["name"] = self.lineEdit_configuration_name.text()
+        info_configuration["ip_address"] = self.lineEdit_configuration_ip_address.text()
+        info_configuration["manufacturer"] = self.comboBox_configuration_manufacturer.currentText()
 
         # stage
         stage_configuration = self.configuration["stage"]
+        stage_configuration["enabled"] = self.checkBox_subsystems_stage_enabled.isChecked()
+        stage_configuration["rotation"] = self.checkBox_subsystems_stage_rotation.isChecked()
+        stage_configuration["tilt"] = self.checkBox_subsystems_stage_tilt.isChecked()
         stage_configuration["rotation_reference"] = self.spinBox_stage_rotation_reference.value()
         stage_configuration["rotation_180"] = self.spinBox_stage_rotation_180.value()
         stage_configuration["shuttle_pre_tilt"] = self.spinBox_stage_shuttle_pre_tilt.value()
         stage_configuration["manipulator_height_limit"] = self.doubleSpinBox_stage_manipulator_height_limit.value() * constants.MILLI_TO_SI
 
         # electron
-        electron_configuration = self.configuration["electron_beam"]
+        electron_configuration = self.configuration["electron"]
+        electron_configuration["enabled"] = self.checkBox_subsystems_electron_enabled.isChecked()
         electron_configuration["column_tilt"] = self.spinBox_electron_column_tilt.value()
         electron_configuration["eucentric_height"] = self.doubleSpinBox_electron_eucentric_height.value() * constants.MILLI_TO_SI
         electron_configuration["voltage"] = self.doubleSpinBox_electron_voltage.value()
@@ -254,13 +258,27 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
         electron_configuration["detector_type"] = self.lineEdit_electron_detector_type.text()
 
         # ion
-        ion_configuration = self.configuration["ion_beam"]
+        ion_configuration = self.configuration["ion"]
+        ion_configuration["enabled"] = self.checkBox_subsystems_ion_enabled.isChecked()
+        ion_configuration["plasma"] = self.checkBox_subsystems_ion_plasma.isChecked()
         ion_configuration["column_tilt"] = self.spinBox_ion_column_tilt.value()
         ion_configuration["eucentric_height"] = self.doubleSpinBox_ion_eucentric_height.value() * constants.MILLI_TO_SI
         ion_configuration["voltage"] = self.doubleSpinBox_ion_voltage.value()
         ion_configuration["current"] = self.doubleSpinBox_ion_current.value() * constants.NANO_TO_SI
         ion_configuration["detector_mode"] = self.lineEdit_ion_detector_mode.text()
         ion_configuration["detector_type"] = self.lineEdit_ion_detector_type.text()
+
+        # manipulator
+        manipulator_configuration = self.configuration["manipulator"]
+        manipulator_configuration["enabled"] = self.checkBox_subsystems_manipulator_enabled.isChecked()
+        manipulator_configuration["rotation"] = self.checkBox_subsystems_manipulator_rotation.isChecked()
+        manipulator_configuration["tilt"] = self.checkBox_subsystems_manipulator_tilt.isChecked()
+        
+        # gis
+        gis_configuration = self.configuration["gis"]
+        gis_configuration["enabled"] = self.checkBox_subsystems_gis_enabled.isChecked()
+        gis_configuration["multichem"] = self.checkBox_subsystems_gis_multichem_enabled.isChecked()
+        gis_configuration["sputter_coater"] = self.checkBox_subsystems_gis_sputter_coater_enabled.isChecked()
 
         # imaging
         imaging_configuration =  self.configuration["imaging"]
@@ -282,35 +300,16 @@ class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui
         milling_configuration["spot_size"] = self.doubleSpinBox_milling_spot_size.value() * constants.NANO_TO_SI
         milling_configuration["preset"] = self.lineEdit_milling_preset.text()
 
-        # subsystems
-        subsystem_configuration = self.configuration["subsystems"]
-        # electron
-        subsystem_configuration["electron"]["enabled"] = self.checkBox_subsystems_electron_enabled.isChecked()
-        # ion
-        subsystem_configuration["ion"]["enabled"] = self.checkBox_subsystems_ion_enabled.isChecked()
-        subsystem_configuration["ion"]["plasma"] = self.checkBox_subsystems_ion_plasma.isChecked()
-        # stage
-        subsystem_configuration["stage"]["enabled"] = self.checkBox_subsystems_stage_enabled.isChecked()
-        subsystem_configuration["stage"]["rotation"] = self.checkBox_subsystems_stage_rotation.isChecked()
-        subsystem_configuration["stage"]["tilt"] = self.checkBox_subsystems_stage_tilt.isChecked()
-        # manipulator
-        subsystem_configuration["manipulator"]["enabled"] = self.checkBox_subsystems_manipulator_enabled.isChecked()
-        subsystem_configuration["manipulator"]["rotation"] = self.checkBox_subsystems_manipulator_rotation.isChecked()
-        subsystem_configuration["manipulator"]["tilt"] = self.checkBox_subsystems_manipulator_tilt.isChecked()
-        # gis
-        subsystem_configuration["gis"]["enabled"] = self.checkBox_subsystems_gis_enabled.isChecked()
-        subsystem_configuration["gis"]["multichem"] = self.checkBox_subsystems_gis_multichem_enabled.isChecked()
-        subsystem_configuration["gis"]["sputter_coater"] = self.checkBox_subsystems_gis_sputter_coater_enabled.isChecked()
-
         # configuration
         configuration = {
-            "core": core_configuration,
+            "info": info_configuration,
             "stage": stage_configuration,
-            "electron_beam": electron_configuration,
-            "ion_beam": ion_configuration,
+            "electron": electron_configuration,
+            "ion": ion_configuration,
+            "manipulator": manipulator_configuration,
+            "gis": gis_configuration,         
             "imaging": imaging_configuration,
             "milling": milling_configuration,
-            "subsystems": subsystem_configuration
         }
 
         return configuration

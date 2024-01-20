@@ -53,7 +53,7 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
 
         self.lineEdit_data_path.setText(config["data_path"])
         self.lineEdit_label_path.setText(config["label_path"])
-        self.lineEdit_save_path.setText(config["save_path"])
+        self.lineEdit_save_path.setText(config["path"])
         self.comboBox_encoder.setCurrentText(config["encoder"])
         self.lineEdit_checkpoint.setText(checkpoint)
         self.spinBox_num_classes.setValue(config["num_classes"])
@@ -71,7 +71,7 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
         config = {
             "data_path": self.lineEdit_data_path.text(),
             "label_path": self.lineEdit_label_path.text(),
-            "save_path": self.lineEdit_save_path.text(),
+            "path": self.lineEdit_save_path.text(),
             "encoder": self.comboBox_encoder.currentText(),
             "checkpoint": checkpoint,
             "num_classes": int(self.spinBox_num_classes.value()),

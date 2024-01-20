@@ -14,22 +14,6 @@ fibsem/segmentation/wandb/*
 fibsem/segmentation/models/*.pt*
 wandb/*
 
-fibsem/segmentation/data/*
-fibsem/segmentation/results/*
-fibsem/segmentation/results*/*
-
-
-site/*
-fibsem\test.tif
-fibsem/000000001.tiff
-
-fibsem/test2.tif/label
-fibsem/tests/label
-tests/tests_images
-fibsem/tests/label.tif
-fibsem/tests/None.tif
-fibsem/test_images/*.tif
-
 build/*
 fibsem/segmentation/training/*
 scratch/training/*
@@ -60,5 +44,5 @@ example/notebook.ipynb
 fibsem/segmentation/*config*.y*ml
 
 fibsem/config/*.yaml
-!fibse/config/microscope-configurations.yaml
+!fibsem/config/microscope-configuration.yaml
 !fibsem/config/user-configurations.yaml

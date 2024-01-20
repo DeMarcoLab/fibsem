@@ -56,7 +56,7 @@ def deposit_platinum(
 def cryo_deposition(microscope: FibsemMicroscope, protocol: dict = None, name: str = None):
 
     # get current position
-    position = microscope.get_current_microscope_state().absolute_position
+    position = microscope.get_microscope_state().stage_position
 
     # move to deposition position
     if name is not None:
@@ -69,7 +69,7 @@ def cryo_deposition(microscope: FibsemMicroscope, protocol: dict = None, name: s
             raise RuntimeError(f"Position {name} requested but not found")
         
         logging.info(f"Moving to depositon position: {name}")
-        microscope._safe_absolute_stage_movement(deposition_position)
+        microscope.safe_absolute_stage_movement(deposition_position)
 
 
     # move down
@@ -80,4 +80,4 @@ def cryo_deposition(microscope: FibsemMicroscope, protocol: dict = None, name: s
     deposit_platinum(microscope, protocol)
 
     # return to previous position
-    microscope._safe_absolute_stage_movement(position)
+    microscope.safe_absolute_stage_movement(position)

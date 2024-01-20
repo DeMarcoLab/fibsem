@@ -23,10 +23,6 @@ def _scale_value(key, value, scale):
         return value * scale    
     return value
 
-def log_status_message(stage: FibsemMillingStage, step: str):
-    logging.debug(
-        f"STATUS | Milling Widget | {stage.name} | {step}"
-    )
 
 class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.QWidget):
     # milling_param_changed = QtCore.pyqtSignal()
