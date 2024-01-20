@@ -24,37 +24,37 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
 
     # fixed image settings
     settings.image.dwell_time = 1e-6
-    settings.image.gamma_enabled = False
+    settings.image.autogamma = False
 
-    logging.info(f"TILE COLLECTION: {settings.image.label}")
+    logging.info(f"TILE COLLECTION: {settings.image.filename}")
     logging.info(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
     logging.info(f"dx: {dx*1e6} um, dy: {dy*1e6} um")
 
     # start in the middle of the grid
 
-    start_state = microscope.get_current_microscope_state()
+    start_state = microscope.get_microscope_state()
     
-    # we save all intermediates into a folder with the same name as the label, then save the stitched image into the parent folder
-    prev_path = settings.image.save_path
-    settings.image.save_path = os.path.join(settings.image.save_path, settings.image.label)
-    os.makedirs(settings.image.save_path, exist_ok=True)
-    prev_label = settings.image.label
+    # we save all intermediates into a folder with the same name as the filename, then save the stitched image into the parent folder
+    prev_path = settings.image.path
+    settings.image.path = os.path.join(settings.image.path, settings.image.filename)
+    os.makedirs(settings.image.path, exist_ok=True)
+    prev_label = settings.image.filename
     
     # BIG_IMAGE FOR DEBUGGING ONLY
     settings.image.hfw = grid_size
-    settings.image.label = "big_image"
+    settings.image.filename = "big_image"
     big_image = acquire.new_image(microscope, settings.image)
     
     # TOP LEFT CORNER START
     settings.image.hfw = tile_size
-    settings.image.label = prev_label
+    settings.image.filename = prev_label
     settings.image.autocontrast = False # required for cryo
     start_move = grid_size / 2 - tile_size / 2
     dxg, dyg = start_move, start_move
     dyg *= -1
 
-    microscope.stable_move(settings=settings, dx=-dxg, dy=-dyg, beam_type=settings.image.beam_type, _fixed=True)
-    state = microscope.get_current_microscope_state()
+    microscope.stable_move(dx=-dxg, dy=-dyg, beam_type=settings.image.beam_type, static_wd=True)
+    state = microscope.get_microscope_state()
     images = []
 
     # stitched image
@@ -64,20 +64,19 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
     _total = n_rows*n_cols
     for i in range(n_rows):
 
-        microscope._safe_absolute_stage_movement(state.absolute_position)
+        microscope.safe_absolute_stage_movement(state.stage_position)
         
         img_row = []
         microscope.stable_move(
-            settings=settings,
             dx=0,
             dy=i*dy, 
             beam_type=settings.image.beam_type, 
-            _fixed=True)
+            static_wd=True)
 
 
         for j in range(n_cols):
-            settings.image.label = f"tile_{i}_{j}"
-            microscope.stable_move(settings=settings, dx=dx*(j!=0),  dy=0, beam_type=settings.image.beam_type) # dont move on the first tile?
+            settings.image.filename = f"tile_{i}_{j}"
+            microscope.stable_move(dx=dx*(j!=0),  dy=0, beam_type=settings.image.beam_type) # dont move on the first tile?
 
             logging.info(f"ACQUIRING IMAGE {i}, {j}")
             image = acquire.new_image(microscope, settings.image)
@@ -96,12 +95,12 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
 
     # restore initial state
     microscope.set_microscope_state(start_state)
-    settings.image.save_path = prev_path
+    settings.image.path = prev_path
 
     ddict = {"grid_size": grid_size, "tile_size": tile_size, "n_rows": n_rows, "n_cols": n_cols, 
             "image_settings": settings.image, 
             "dx": dx, "dy": dy, "cryo": cryo,
-            "start_state": start_state, "prev-label": prev_label, "start_move": start_move, "dxg": dxg, "dyg": dyg,
+            "start_state": start_state, "prev-filename": prev_label, "start_move": start_move, "dxg": dxg, "dyg": dyg,
             "images": images, "big_image": big_image, "stitched_image": arr}
 
     return ddict
@@ -133,23 +132,23 @@ def _stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemIm
     image.metadata.image_settings.hfw = deepcopy(float(ddict["grid_size"]))
     image.metadata.image_settings.resolution = deepcopy([arr.shape[0], arr.shape[1]])
 
-    filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}')
+    filename = os.path.join(image.metadata.image_settings.path, f'{ddict["prev-filename"]}')
     image.save(filename)
 
     # for cryo need to histogram equalise
     if ddict.get("cryo", False):
         image = acquire.auto_gamma(image, method="autogamma")
 
-    filename = os.path.join(image.metadata.image_settings.save_path, f'{ddict["prev-label"]}-autogamma')
+    filename = os.path.join(image.metadata.image_settings.path, f'{ddict["prev-filename"]}-autogamma')
     image.save(filename)
 
     # save ddict as yaml
     del ddict["images"]
     del ddict["big_image"]
 
-    ddict["image_settings"] = ddict["image_settings"].__to_dict__()
-    ddict["start_state"] = ddict["start_state"].__to_dict__()
-    filename = os.path.join(filename, f'{ddict["prev-label"]}') # subdir
+    ddict["image_settings"] = ddict["image_settings"].to_dict()
+    ddict["start_state"] = ddict["start_state"].to_dict()
+    filename = os.path.join(filename, f'{ddict["prev-filename"]}') # subdir
     utils.save_yaml(filename, ddict) 
 
     return image
@@ -201,7 +200,7 @@ def _create_tiles(image: np.ndarray, n_rows, n_cols, tile_size, overlap=0):
 def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
 
     # difference between current position and image position
-    delta = pos - image.metadata.microscope_state.absolute_position
+    delta = pos - image.metadata.microscope_state.stage_position
 
     # projection of the positions onto the image
     dx = delta.x
@@ -227,22 +226,22 @@ def _reproject_positions(image:FibsemImage, positions: list[FibsemStagePosition]
 
 
         # hotfix (pat): demo returns None positions #240
-        if image.metadata.microscope_state.absolute_position.x is None:
-            image.metadata.microscope_state.absolute_position.x = 0
-        if image.metadata.microscope_state.absolute_position.y is None:
-            image.metadata.microscope_state.absolute_position.y = 0
-        if image.metadata.microscope_state.absolute_position.z is None:
-            image.metadata.microscope_state.absolute_position.z = 0
-        if image.metadata.microscope_state.absolute_position.r is None:
-            image.metadata.microscope_state.absolute_position.r = 0
-        if image.metadata.microscope_state.absolute_position.t is None:
-            image.metadata.microscope_state.absolute_position.t = 0      
+        if image.metadata.microscope_state.stage_position.x is None:
+            image.metadata.microscope_state.stage_position.x = 0
+        if image.metadata.microscope_state.stage_position.y is None:
+            image.metadata.microscope_state.stage_position.y = 0
+        if image.metadata.microscope_state.stage_position.z is None:
+            image.metadata.microscope_state.stage_position.z = 0
+        if image.metadata.microscope_state.stage_position.r is None:
+            image.metadata.microscope_state.stage_position.r = 0
+        if image.metadata.microscope_state.stage_position.t is None:
+            image.metadata.microscope_state.stage_position.t = 0      
                 
         # automate logic for transforming positions
         # assume only two valid positions are when stage is flat to either beam...  
         # r needs to be 180 degrees different
         # currently only one way: Flat to Ion -> Flat to Electron
-        dr = abs(np.rad2deg(image.metadata.microscope_state.absolute_position.r - pos.r))
+        dr = abs(np.rad2deg(image.metadata.microscope_state.stage_position.r - pos.r))
         # print("dr: ", dr)
         if np.isclose(dr, 180, atol=2):     
             # print("transforming position")
@@ -287,12 +286,12 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
 
 
         c =COLOURS[i%len(COLOURS)]
-        plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
+        plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, filename=f"{pos.name}")
         if minimap:
             fontsize = 30
         else:
             fontsize = 14
-        # draw label next to point
+        # draw filename next to point
         plt.text(pt.x-225, pt.y-50, pos.name, fontsize=fontsize, color=c, alpha=0.75)
 
     plt.axis("off")
@@ -310,10 +309,10 @@ def _convert_image_coord_to_position(microscope, settings, image, coords) -> Fib
         Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
     )
 
-    _new_position = microscope._calculate_new_position( 
+    _new_position = microscope.project_stable_move( 
             dx=point.x, dy=point.y, 
             beam_type=image.metadata.image_settings.beam_type, 
-            base_position=image.metadata.microscope_state.absolute_position)
+            base_position=image.metadata.microscope_state.stage_position)
 
     return _new_position
 

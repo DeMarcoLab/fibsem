@@ -23,9 +23,9 @@ def generate_configuration(user_config: dict) -> dict:
         config = yaml.safe_load(f)
 
     # microscope
-    config["core"]["name"] = user_config["name"]
-    config["core"]["ip_address"] = user_config["ip_address"]
-    config["core"]["manufacturer"] = user_config["manufacturer"]
+    config["info"]["name"] = user_config["name"]
+    config["info"]["ip_address"] = user_config["ip_address"]
+    config["info"]["manufacturer"] = user_config["manufacturer"]
 
     # stage
     config["stage"]["rotation_reference"] = user_config["rotation-reference"]
@@ -33,12 +33,12 @@ def generate_configuration(user_config: dict) -> dict:
     config["stage"]["shuttle_pre_tilt"] = user_config["shuttle-pre-tilt"]
 
     # electron
-    config["electron_beam"]["eucentric_height"] = user_config["electron-beam-eucentric-height"]
-    config["electron_beam"]["column_tilt"] = get_column_tilt(config["core"]["manufacturer"], "electron")
+    config["electron"]["eucentric_height"] = user_config["electron-beam-eucentric-height"]
+    config["electron"]["column_tilt"] = get_column_tilt(config["info"]["manufacturer"], "electron")
 
     # ion
-    config["ion_beam"]["eucentric_height"] = user_config["ion-beam-eucentric-height"]
-    config["ion_beam"]["column_tilt"] = get_column_tilt(config["core"]["manufacturer"], "ion")
+    config["ion"]["eucentric_height"] = user_config["ion-beam-eucentric-height"]
+    config["ion"]["column_tilt"] = get_column_tilt(config["info"]["manufacturer"], "ion")
 
     return config
 
@@ -65,11 +65,11 @@ def get_user_config() -> dict:
     shuttle_pre_tilt = float(shuttle_pre_tilt)
 
     # enter electron beam eucentric height
-    electron_beam_eucentric_height = input("Enter electron beam eucentric height (degrees): ")
+    electron_beam_eucentric_height = input("Enter electron beam eucentric height (metres): ")
     electron_beam_eucentric_height = float(electron_beam_eucentric_height)
 
     # enter ion beam eucentric height
-    ion_beam_eucentric_height = input("Enter ion beam eucentric height (degrees): ")
+    ion_beam_eucentric_height = input("Enter ion beam eucentric height (metres): ")
     ion_beam_eucentric_height = float(ion_beam_eucentric_height)
     
     # generate configuration
@@ -88,7 +88,7 @@ def save_configuration(config: dict, path: str):
     """Save a configuration to a yaml file."""
     
     # save yaml
-    filename = os.path.join(path, f"{config['core']['name']}.yaml")
+    filename = os.path.join(path, f"{config['info']['name']}.yaml")
     with open(filename, "w") as f:
         yaml.dump(config, f)
 
@@ -97,7 +97,7 @@ def save_configuration(config: dict, path: str):
 import argparse
 def gen_config_cli(path: str = None):
     """Generate a configuration from the command line."""
-
+    
     parser = argparse.ArgumentParser(description="Generate a configuration from the command line.")
     parser.add_argument("--path", type=str, help="The path to save the configuration to.")
     args = parser.parse_args()

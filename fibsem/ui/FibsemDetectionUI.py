@@ -31,7 +31,7 @@ class FibsemDetectionUI(detection_gui.Ui_Dialog, QtWidgets.QDialog):
         # microscope settings
         self.microscope = microscope
         self.settings = settings
-        self.log_path = os.path.dirname(settings.image.save_path)
+        self.log_path = os.path.dirname(settings.image.path)
 
         # detection data
         self.detected_features = detected_features

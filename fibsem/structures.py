@@ -12,8 +12,8 @@ from typing import Optional
 import numpy as np
 import tifffile as tff
 import fibsem
-
-from fibsem.config import load_yaml
+from fibsem.config import METADATA_VERSION
+from abc import ABC, abstractmethod, abstractstaticmethod
 
 try:
     from tescanautomation.Common import Document
@@ -40,9 +40,7 @@ try:
 except:
     THERMO = False
 
-import yaml
 
-from fibsem.config import METADATA_VERSION
 
 # @patrickcleeve: dataclasses.asdict -> :(
 
@@ -54,20 +52,20 @@ class Point:
     y: float = 0.0
     name: Optional[str] = None
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         return {"x": self.x, "y": self.y}
 
     @staticmethod
-    def __from_dict__(d: dict) -> "Point":
+    def from_dict(d: dict) -> "Point":
         x = float(d["x"])
         y = float(d["y"])
         return Point(x, y)
 
-    def __to_list__(self) -> list:
+    def to_list(self) -> list:
         return [self.x, self.y]
 
     @staticmethod
-    def __from_list__(l: list) -> "Point":
+    def from_list(l: list) -> "Point":
         x = float(l[0])
         y = float(l[1])
         return Point(x, y)
@@ -101,7 +99,7 @@ class Point:
 
     def euclidean(self, other: "Point") -> float:
         """Calculate the euclidean distance between two points."""
-        return np.linalg.norm(self.distance(other).__to_list__())
+        return np.linalg.norm(self.distance(other).to_list())
 
 
 # TODO: convert these to match autoscript...
@@ -120,7 +118,7 @@ class BeamType(Enum):
 
 class MovementMode(Enum):
     Stable = 1
-    Eucentric = 2
+    Vertical = 2
     # Needle = 3
 
 
@@ -137,8 +135,8 @@ class FibsemStagePosition:
         coordinate_system (str): The coordinate system used for the stage position.
 
     Methods:
-        __to_dict__(): Convert the stage position object to a dictionary.
-        __from_dict__(data: dict): Create a new stage position object from a dictionary.
+        to_dict(): Convert the stage position object to a dictionary.
+        from_dict(data: dict): Create a new stage position object from a dictionary.
         to_autoscript_position(stage_tilt: float = 0.0) -> StagePosition: Convert the stage position to a StagePosition object that is compatible with Autoscript.
         from_autoscript_position(position: StagePosition, stage_tilt: float = 0.0) -> None: Create a new FibsemStagePosition object from a StagePosition object that is compatible with Autoscript.
         to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
@@ -153,16 +151,7 @@ class FibsemStagePosition:
     t: float = None
     coordinate_system: str = None
 
-    # def __post_init__(self):
-
-    #     coordinates = ["x","y","z","r","t"]
-    #     for coordinate in coordinates:
-    #         attribute = getattr(self,coordinate)
-    #         assert isinstance(attribute,float) or isinstance(attribute,int)
-
-    #     assert isinstance(self.coordinate_system,str) or self.coordinate_system is None
-
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         position_dict = {}
 
         position_dict["name"] = self.name if self.name is not None else None
@@ -176,7 +165,7 @@ class FibsemStagePosition:
         return position_dict
 
     @classmethod
-    def __from_dict__(cls, data: dict) -> "FibsemStagePosition":
+    def from_dict(cls, data: dict) -> "FibsemStagePosition":
         items = ["x", "y", "z", "r", "t"]
 
         for item in items:
@@ -252,73 +241,6 @@ class FibsemStagePosition:
         return f"x:{self.x*scale:.{precision}f}, y:{self.y*scale:.{precision}f}, z:{self.z*scale:.{precision}f}"
 
 
-@dataclass
-class FibsemHardware:
-    """Data class for storing hardware information.
-    Attributes:
-
-    """
-
-    electron_beam: bool = True
-    ion_beam: bool = True
-    plasma: bool = True
-    stage_enabled: bool = True
-    stage_rotation: bool = True
-    stage_tilt: bool = True
-    manipulator_enabled: bool = True
-    manipulator_rotation: bool = True
-    manipulator_tilt: bool = True
-    gis_enabled: bool = True
-    gis_multichem: bool = True
-    gis_sputter_coater: bool = False
-
-    @classmethod
-    def __from_dict__(cls, hardware_dict: dict) -> "FibsemHardware":
-        return cls(
-            electron_beam=bool(hardware_dict["electron"]["enabled"]),
-            ion_beam=bool(hardware_dict["ion"]["enabled"]),
-            plasma=bool(hardware_dict["ion"]["plasma"]),
-            stage_enabled=bool(hardware_dict["stage"]["enabled"]),
-            stage_rotation=bool(hardware_dict["stage"]["rotation"]),
-            stage_tilt=bool(hardware_dict["stage"]["tilt"]),
-            manipulator_enabled=bool(hardware_dict["manipulator"]["enabled"]),
-            manipulator_rotation=bool(hardware_dict["manipulator"]["rotation"]),
-            manipulator_tilt=bool(hardware_dict["manipulator"]["tilt"]),
-            gis_enabled=bool(hardware_dict["gis"]["enabled"]),
-            gis_multichem=bool(hardware_dict["gis"]["multichem"]),
-            gis_sputter_coater=bool(hardware_dict["gis"]["sputter_coater"])
-        )
-
-    def __to_dict__(self) -> dict:
-        subsystems_dict = {}
-
-        subsystems_dict["electron"] = {}
-        subsystems_dict["electron"]["enabled"] = self.electron_beam
-
-        subsystems_dict["ion"] = {
-            "enabled": self.ion_beam,
-            "plasma": self.plasma,
-        }
-    
-        subsystems_dict["stage"] = {
-            "enabled": self.stage_enabled,
-            "rotation": self.stage_rotation,
-            "tilt": self.stage_tilt,
-        }
-
-        subsystems_dict["manipulator"] = {
-            "enabled": self.manipulator_enabled,
-            "rotation": self.manipulator_rotation,
-            "tilt": self.manipulator_tilt,
-        }
-    
-        subsystems_dict["gis"] = {
-            "enabled": self.gis_enabled,
-            "multichem": self.gis_multichem,
-            "sputter_coater": self.gis_sputter_coater,
-        }
-        return subsystems_dict
-
 
 @dataclass
 class FibsemManipulatorPosition:
@@ -333,8 +255,8 @@ class FibsemManipulatorPosition:
         coordinate_system (str): The coordinate system used for the manipulator position.
 
     Methods:
-        __to_dict__(): Convert the manipulator position object to a dictionary.
-        __from_dict__(data: dict): Create a new manipulator position object from a dictionary.
+        to_dict(): Convert the manipulator position object to a dictionary.
+        from_dict(data: dict): Create a new manipulator position object from a dictionary.
         to_autoscript_position() -> ManipulatorPosition: Convert the manipulator position to a ManipulatorPosition object that is compatible with Autoscript.
         from_autoscript_position(position: ManipulatorPosition) -> None: Create a new FibsemManipulatorPosition object from a ManipulatorPosition object that is compatible with Autoscript.
         to_tescan_position(): Convert the manipulator position to a format that is compatible with Tescan.
@@ -349,10 +271,6 @@ class FibsemManipulatorPosition:
     coordinate_system: str = "RAW"
 
     def __post_init__(self):
-        # attributes = ["x","y","z","r","t"]
-        # for attribute in attributes:
-        # output = getattr(self,attribute)
-        # assert isinstance(output,float) or isinstance(output,int), f"Unsupported type {type(output)} for coordinate {attribute}"
         assert (
             isinstance(self.coordinate_system, str) or self.coordinate_system is None
         ), f"unsupported type {type(self.coordinate_system)} for coorindate system"
@@ -361,7 +279,7 @@ class FibsemManipulatorPosition:
             or self.coordinate_system is None
         ), f"coordinate system value {self.coordinate_system} is unsupported or invalid syntax. Must be RAW or SPECIMEN"
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         position_dict = {}
         position_dict["x"] = self.x
         position_dict["y"] = self.y
@@ -373,7 +291,7 @@ class FibsemManipulatorPosition:
         return position_dict
 
     @classmethod
-    def __from_dict__(cls, data: dict) -> "FibsemManipulatorPosition":
+    def from_dict(cls, data: dict) -> "FibsemManipulatorPosition":
         items = ["x", "y", "z", "r", "t"]
 
         for item in items:
@@ -460,7 +378,7 @@ class FibsemRectangle:
             self.height, int
         ), f"type {type(self.height)} is unsupported for height, must be int or floar"
 
-    def __from_dict__(settings: dict) -> "FibsemRectangle":
+    def from_dict(settings: dict) -> "FibsemRectangle":
         if settings is None:
             return None
         points = ["left", "top", "width", "height"]
@@ -477,7 +395,7 @@ class FibsemRectangle:
             height=settings["height"],
         )
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             "left": float(self.left),
             "top": float(self.top),
@@ -506,15 +424,15 @@ class ImageSettings:
         autocontrast (bool): Whether or not to apply automatic contrast enhancement to the acquired image.
         beam_type (BeamType): The type of beam to use for image acquisition.
         save (bool): Whether or not to save the acquired image to disk.
-        label (str): The label to use when saving the acquired image.
-        gamma_enabled (bool): Whether or not to apply gamma correction to the acquired image.
-        save_path (Path): The path to the directory where the acquired image should be saved.
+        filename (str): The filename to use when saving the acquired image.
+        autogamma (bool): Whether or not to apply gamma correction to the acquired image.
+        path (Path): The path to the directory where the acquired image should be saved.
         reduced_area (FibsemRectangle): The rectangular region of interest within the acquired image, if any.
 
     Methods:
-        __from_dict__(settings: dict) -> ImageSettings:
+        from_dict(settings: dict) -> ImageSettings:
             Converts a dictionary of image settings to an ImageSettings object.
-        __to_dict__() -> dict:
+        to_dict() -> dict:
             Converts the ImageSettings object to a dictionary of image settings.
     """
 
@@ -524,9 +442,9 @@ class ImageSettings:
     autocontrast: bool = None
     beam_type: BeamType = None
     save: bool = None
-    label: str = None
-    gamma_enabled: bool = None
-    save_path: Path = None
+    filename: str = None
+    autogamma: bool = None
+    path: Path = None
     reduced_area: FibsemRectangle = None
     line_integration: int = None  # (int32) 2 - 255
     scan_interlacing: int = None  # (int32) 2 - 8
@@ -553,22 +471,22 @@ class ImageSettings:
             isinstance(self.save, bool) or self.save is None
         ), f"save option must be a bool, currently is {type(self.save)}"
         assert (
-            isinstance(self.label, str) or self.label is None
-        ), f"label must b str, currently is {type(self.label)}"
+            isinstance(self.filename, str) or self.filename is None
+        ), f"filename must b str, currently is {type(self.filename)}"
         assert (
-            isinstance(self.gamma_enabled, bool) or self.gamma_enabled is None
-        ), f"gamma enabled setting must be bool, currently is {type(self.gamma_enabled)}"
+            isinstance(self.autogamma, bool) or self.autogamma is None
+        ), f"gamma enabled setting must be bool, currently is {type(self.autogamma)}"
         assert (
-            isinstance(self.save_path, (Path, str)) or self.save_path is None
-        ), f"save path must be Path or str, currently is {type(self.save_path)}"
+            isinstance(self.path, (Path, str)) or self.path is None
+        ), f"save path must be Path or str, currently is {type(self.path)}"
         assert (
             isinstance(self.reduced_area, FibsemRectangle) or self.reduced_area is None
         ), f"reduced area must be a fibsemRectangle object, currently is {type(self.reduced_area)}"
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "ImageSettings":
+    def from_dict(settings: dict) -> "ImageSettings":
         if "reduced_area" in settings and settings["reduced_area"] is not None:
-            reduced_area = FibsemRectangle.__from_dict__(settings["reduced_area"])
+            reduced_area = FibsemRectangle.from_dict(settings["reduced_area"])
         else:
             reduced_area = None
 
@@ -578,10 +496,10 @@ class ImageSettings:
             hfw=settings.get("hfw", 150e-6),
             autocontrast=settings.get("autocontrast", False),
             beam_type=BeamType[settings.get("beam_type", "Electron").upper()],
-            gamma_enabled=settings.get("autogamma", False),
+            autogamma=settings.get("autogamma", False),
             save=settings.get("save", False),
-            save_path=settings.get("save_path", os.getcwd()),
-            label=settings.get("label", "default_image"),
+            path=settings.get("path", os.getcwd()),
+            filename=settings.get("filename", "default_image"),
             reduced_area=reduced_area,
             line_integration=settings.get("line_integration", None),
             scan_interlacing=settings.get("scan_interlacing", None),
@@ -591,7 +509,7 @@ class ImageSettings:
 
         return image_settings
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         settings_dict = {
             "beam_type": self.beam_type.name if self.beam_type is not None else None,
             "resolution": self.resolution if self.resolution is not None else None,
@@ -600,12 +518,12 @@ class ImageSettings:
             "autocontrast": self.autocontrast
             if self.autocontrast is not None
             else None,
-            "gamma_enabled": self.gamma_enabled
-            if self.gamma_enabled is not None
+            "autogamma": self.autogamma
+            if self.autogamma is not None
             else None,
             "save": self.save if self.save is not None else None,
-            "save_path": str(self.save_path) if self.save_path is not None else None,
-            "label": self.label if self.label is not None else None,
+            "path": str(self.path) if self.path is not None else None,
+            "filename": self.filename if self.filename is not None else None,
             "reduced_area": {
                 "left": self.reduced_area.left,
                 "top": self.reduced_area.top,
@@ -636,7 +554,7 @@ class ImageSettings:
         from copy import deepcopy
 
         image_settings = deepcopy(image.metadata.image_settings)
-        image_settings.label = utils.current_timestamp()
+        image_settings.filename = utils.current_timestamp()
         image_settings.save = True
 
         return image_settings
@@ -658,8 +576,8 @@ class BeamSettings:
         shift (Point): The point for shift correction.
 
     Methods:
-        __to_dict__(): Returns a dictionary representation of the object.
-        __from_dict__(state_dict: dict) -> BeamSettings: Returns a new BeamSettings object created from a dictionary.
+        to_dict(): Returns a dictionary representation of the object.
+        from_dict(state_dict: dict) -> BeamSettings: Returns a new BeamSettings object created from a dictionary.
 
     """
 
@@ -673,7 +591,6 @@ class BeamSettings:
     stigmation: Point = None
     shift: Point = None
     scan_rotation: float = None
-    plasma_gas: str = None
 
     def __post_init__(self):
         assert (
@@ -705,11 +622,9 @@ class BeamSettings:
         assert (
             isinstance(self.shift, Point) or self.shift is None
         ), f"shift must be a Point instance, currently is {type(self.shift)}"
-        assert (
-            isinstance(self.plasma_gas, (str, type(None))) 
-        ), f"plasma_gas must be a str, currently is {type(self.plasma_gas)}"
 
-    def __to_dict__(self) -> dict:
+
+    def to_dict(self) -> dict:
         state_dict = {
             "beam_type": self.beam_type.name,
             "working_distance": self.working_distance,
@@ -718,31 +633,33 @@ class BeamSettings:
             "hfw": self.hfw,
             "resolution": self.resolution,
             "dwell_time": self.dwell_time,
-            "stigmation": self.stigmation.__to_dict__()
+            "stigmation": self.stigmation.to_dict()
             if self.stigmation is not None
             else None,
-            "shift": self.shift.__to_dict__() if self.shift is not None else None,
+            "shift": self.shift.to_dict() if self.shift is not None else None,
             "scan_rotation": self.scan_rotation,
-            "plasma_gas": self.plasma_gas,
         }
 
         return state_dict
 
     @staticmethod
-    def __from_dict__(state_dict: dict) -> "BeamSettings":
+    def from_dict(state_dict: dict) -> "BeamSettings":
         if "stigmation" in state_dict and state_dict["stigmation"] is not None:
-            stigmation = Point.__from_dict__(state_dict["stigmation"])
+            stigmation = Point.from_dict(state_dict["stigmation"])
         else:
             stigmation = Point()
         if "shift" in state_dict and state_dict["shift"] is not None:
-            shift = Point.__from_dict__(state_dict["shift"])
+            shift = Point.from_dict(state_dict["shift"])
         else:
             shift = Point()
+        
+        wd = state_dict.get("working_distance", state_dict.get("eucentric_height", None))
+        current = state_dict.get("beam_current", state_dict.get("current", None))
 
         beam_settings = BeamSettings(
             beam_type=BeamType[state_dict["beam_type"].upper()],
-            working_distance=state_dict["working_distance"],
-            beam_current=state_dict["beam_current"],
+            working_distance=wd,
+            beam_current=current,
             voltage=state_dict["voltage"],
             hfw=state_dict["hfw"],
             resolution=state_dict["resolution"],
@@ -750,7 +667,6 @@ class BeamSettings:
             stigmation=stigmation,
             shift=shift,
             scan_rotation=state_dict.get("scan_rotation", 0.0),
-            plasma_gas=state_dict.get("plasma_gas", None),
         )
 
         return beam_settings
@@ -785,7 +701,7 @@ class FibsemDetectorSettings:
             tescan_contrast = self.contrast * 100
             return tescan_brightness, tescan_contrast
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         """Converts to a dictionary."""
         return {
             "type": self.type,
@@ -795,7 +711,7 @@ class FibsemDetectorSettings:
         }
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "FibsemDetectorSettings":
+    def from_dict(settings: dict) -> "FibsemDetectorSettings":
         """Converts from a dictionary."""
         return FibsemDetectorSettings(
             type=settings.get("type", "Unknown"),
@@ -813,9 +729,9 @@ class MicroscopeState:
     Attributes:
 
         timestamp (float): A float representing the timestamp at which the state of the microscope was recorded. Defaults to the timestamp of the current datetime.
-        absolute_position (FibsemStagePosition): An instance of FibsemStagePosition representing the current absolute position of the stage. Defaults to an empty instance of FibsemStagePosition.
-        eb_settings (BeamSettings): An instance of BeamSettings representing the electron beam settings. Defaults to an instance of BeamSettings with beam_type set to BeamType.ELECTRON.
-        ib_settings (BeamSettings): An instance of BeamSettings representing the ion beam settings. Defaults to an instance of BeamSettings with beam_type set to BeamType.ION.
+        stage_position (FibsemStagePosition): An instance of FibsemStagePosition representing the current absolute position of the stage. Defaults to an empty instance of FibsemStagePosition.
+        electron_beam (BeamSettings): An instance of BeamSettings representing the electron beam settings. Defaults to an instance of BeamSettings with beam_type set to BeamType.ELECTRON.
+        ion_beam (BeamSettings): An instance of BeamSettings representing the ion beam settings. Defaults to an instance of BeamSettings with beam_type set to BeamType.ION.
 
     Methods:
 
@@ -824,90 +740,89 @@ class MicroscopeState:
     """
 
     timestamp: float = datetime.timestamp(datetime.now())
-    absolute_position: FibsemStagePosition = FibsemStagePosition()
-    eb_settings: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
-    ib_settings: BeamSettings = BeamSettings(beam_type=BeamType.ION)
-    eb_detector: FibsemDetectorSettings = FibsemDetectorSettings()
-    ib_detector: FibsemDetectorSettings = FibsemDetectorSettings()
+    stage_position: FibsemStagePosition = FibsemStagePosition()
+    electron_beam: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
+    ion_beam: BeamSettings = BeamSettings(beam_type=BeamType.ION)
+    electron_detector: FibsemDetectorSettings = FibsemDetectorSettings()
+    ion_detector: FibsemDetectorSettings = FibsemDetectorSettings()
 
     def __post_init__(self):
         assert (
-            isinstance(self.absolute_position, FibsemStagePosition)
-            or self.absolute_position is None
-        ), f"absolute position must be of type FibsemStagePosition, currently is {type(self.absolute_position)}"
+            isinstance(self.stage_position, FibsemStagePosition)
+            or self.stage_position is None
+        ), f"absolute position must be of type FibsemStagePosition, currently is {type(self.stage_position)}"
         assert (
-            isinstance(self.eb_settings, BeamSettings) or self.eb_settings is None
-        ), f"eb_settings must be of type BeamSettings, currently is {type(self.eb_settings)}"
+            isinstance(self.electron_beam, BeamSettings) or self.electron_beam is None
+        ), f"electron_beam must be of type BeamSettings, currently is {type(self.electron_beam)}"
         assert (
-            isinstance(self.ib_settings, BeamSettings) or self.ib_settings is None
-        ), f"ib_settings must be of type BeamSettings, currently us {type(self.ib_settings)}"
+            isinstance(self.ion_beam, BeamSettings) or self.ion_beam is None
+        ), f"ion_beam must be of type BeamSettings, currently us {type(self.ion_beam)}"
         assert (
-            isinstance(self.eb_detector, FibsemDetectorSettings)
-            or self.eb_detector is None
-        ), f"eb_detector must be of type FibsemDetectorSettings, currently is {type(self.eb_detector)}"
+            isinstance(self.electron_detector, FibsemDetectorSettings)
+            or self.electron_detector is None
+        ), f"electron_detector must be of type FibsemDetectorSettings, currently is {type(self.electron_detector)}"
         assert (
-            isinstance(self.ib_detector, FibsemDetectorSettings)
-            or self.ib_detector is None
-        ), f"ib_detector must be of type FibsemDetectorSettings, currently is {type(self.ib_detector)}"
+            isinstance(self.ion_detector, FibsemDetectorSettings)
+            or self.ion_detector is None
+        ), f"ion_detector must be of type FibsemDetectorSettings, currently is {type(self.ion_detector)}"
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         state_dict = {
             "timestamp": self.timestamp,
-            "absolute_position": self.absolute_position.__to_dict__()
-            if self.absolute_position is not None
+            "stage_position": self.stage_position.to_dict()
+            if self.stage_position is not None
             else "Not defined",
-            "eb_settings": self.eb_settings.__to_dict__()
-            if self.eb_settings is not None
+            "electron_beam": self.electron_beam.to_dict()
+            if self.electron_beam is not None
             else "Not defined",
-            "ib_settings": self.ib_settings.__to_dict__()
-            if self.ib_settings is not None
+            "ion_beam": self.ion_beam.to_dict()
+            if self.ion_beam is not None
             else "Not defined",
-            "eb_detector": self.eb_detector.__to_dict__()
-            if self.eb_detector is not None
+            "electron_detector": self.electron_detector.to_dict()
+            if self.electron_detector is not None
             else "Not defined",
-            "ib_detector": self.ib_detector.__to_dict__()
-            if self.ib_detector is not None
+            "ion_detector": self.ion_detector.to_dict()
+            if self.ion_detector is not None
             else "Not defined",
         }
 
         return state_dict
 
     @staticmethod
-    def __from_dict__(state_dict: dict) -> "MicroscopeState":
+    def from_dict(state_dict: dict) -> "MicroscopeState":
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
-            absolute_position=FibsemStagePosition.__from_dict__(
-                state_dict["absolute_position"]
+            stage_position=FibsemStagePosition.from_dict(
+                state_dict["stage_position"]
             ),
-            eb_settings=BeamSettings.__from_dict__(state_dict["eb_settings"]),
-            ib_settings=BeamSettings.__from_dict__(state_dict["ib_settings"]),
-            eb_detector=FibsemDetectorSettings.__from_dict__(
-                state_dict.get("eb_detector", {})
+            electron_beam=BeamSettings.from_dict(state_dict["electron_beam"]),
+            ion_beam=BeamSettings.from_dict(state_dict["ion_beam"]),
+            electron_detector=FibsemDetectorSettings.from_dict(
+                state_dict.get("electron_detector", {})
             ),
-            ib_detector=FibsemDetectorSettings.__from_dict__(
-                state_dict.get("ib_detector", {})
+            ion_detector=FibsemDetectorSettings.from_dict(
+                state_dict.get("ion_detector", {})
             ),
         )
 
         return microscope_state
 
 
-class FibsemPattern(Enum):  # TODO: reanme to FibsemPatternType
+class FibsemPatternType(Enum):
     Rectangle = 1
     Line = 2
     Circle = 3
     Bitmap = 4
     Annulus = 5
 
-
-# TODO: convert this to a dataclass, rename to FibsemPattern
-class FibsemPatternSettings:  # FibsemBasePattern
+# TODO: convert this to abc?
+class FibsemPattern:  # FibsemBasePattern
     """
-    FibsemPatternSettings is used to store all of the possible settings related to each pattern that may be drawn.
+    FibsemPattern is used to store all of the possible settings related to each pattern that may be drawn.
 
     Args:
-        pattern (FibsemPattern): Used to indicate which pattern is utilised. Currently either Rectangle or Line.
-        **kwargs: If FibsemPattern.Rectangle
+        pattern (FibsemPatternType): Used to indicate which pattern is utilised. Currently either Rectangle or Line.
+        **kwargs: If FibsemPatternType.Rectangle
                     width: float (m),
                     height: float (m),
                     depth: float (m),
@@ -916,14 +831,14 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     centre_y: float = 0.0 (m),
                     passes: float = 1.0,
 
-                If FibsemPattern.Line
+                If FibsemPatternType.Line
                     start_x: float (m),
                     start_y: float (m),
                     end_x: float (m),
                     end_y: float (m),
                     depth: float (m),
 
-                If FibsemPattern.Circle
+                If FibsemPatternType.Circle
                     centre_x: float (m),
                     centre_y: float (m),
                     radius: float (m),
@@ -931,7 +846,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     start_angle: float = 0.0 (degrees),
                     end_angle: float = 360.0 (degrees),
 
-                if FibsemPattern.Bitmap
+                if FibsemPatternType.Bitmap
                     centre_x: float (m),
                     centre_y: float (m),
                     width: float (m),
@@ -941,9 +856,9 @@ class FibsemPatternSettings:  # FibsemBasePattern
                     path: str = path to image,
     """
 
-    def __init__(self, pattern: FibsemPattern = FibsemPattern.Rectangle, **kwargs):
+    def __init__(self, pattern: FibsemPatternType = FibsemPatternType.Rectangle, **kwargs):
         self.pattern = pattern
-        if pattern == FibsemPattern.Rectangle:
+        if pattern == FibsemPatternType.Rectangle:
             self.width = kwargs["width"]
             self.height = kwargs["height"]
             self.depth = kwargs["depth"]
@@ -961,7 +876,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 else False
             )
             self.passes = kwargs["passes"] if "passes" in kwargs else None
-        elif pattern == FibsemPattern.Line:
+        elif pattern == FibsemPatternType.Line:
             self.start_x = kwargs["start_x"]
             self.start_y = kwargs["start_y"]
             self.end_x = kwargs["end_x"]
@@ -978,7 +893,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 if "cleaning_cross_section" in kwargs
                 else False
             )
-        elif pattern == FibsemPattern.Circle:
+        elif pattern == FibsemPatternType.Circle:
             self.centre_x = kwargs["centre_x"]
             self.centre_y = kwargs["centre_y"]
             self.radius = kwargs["radius"]
@@ -996,7 +911,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 if "cleaning_cross_section" in kwargs
                 else False
             )
-        elif pattern == FibsemPattern.Bitmap:
+        elif pattern == FibsemPatternType.Bitmap:
             self.centre_x = kwargs["centre_x"]
             self.centre_y = kwargs["centre_y"]
             self.width = kwargs["width"]
@@ -1014,7 +929,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 else False
             )
             self.path = kwargs["path"]
-        elif pattern == FibsemPattern.Annulus:
+        elif pattern == FibsemPatternType.Annulus:
             self.centre_x = kwargs["centre_x"]
             self.centre_y = kwargs["centre_y"]
             self.radius = kwargs["radius"]
@@ -1034,24 +949,24 @@ class FibsemPatternSettings:  # FibsemBasePattern
             )
 
     def __repr__(self) -> str:
-        if self.pattern == FibsemPattern.Rectangle:
-            return f"FibsemPatternSettings(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section}, passes={self.passes})"
-        if self.pattern == FibsemPattern.Line:
-            return f"FibsemPatternSettings(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-        if self.pattern is FibsemPattern.Circle:
-            return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-        if self.pattern is FibsemPattern.Bitmap:
-            return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, width={self.width}, height={self.height}, depth={self.depth}, path={self.path})"
-        if self.pattern is FibsemPattern.Annulus:
-            return f"FibsemPatternSettings(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, thickness={self.thickness}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+        if self.pattern == FibsemPatternType.Rectangle:
+            return f"FibsemPattern(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section}, passes={self.passes})"
+        if self.pattern == FibsemPatternType.Line:
+            return f"FibsemPattern(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+        if self.pattern is FibsemPatternType.Circle:
+            return f"FibsemPattern(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
+        if self.pattern is FibsemPatternType.Bitmap:
+            return f"FibsemPattern(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, width={self.width}, height={self.height}, depth={self.depth}, path={self.path})"
+        if self.pattern is FibsemPatternType.Annulus:
+            return f"FibsemPattern(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, thickness={self.thickness}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
 
     @staticmethod
-    def __from_dict__(state_dict: dict) -> "FibsemPatternSettings":
+    def from_dict(state_dict: dict) -> "FibsemPattern":
         if state_dict["pattern"] == "Rectangle":
             passes = state_dict.get("passes", 0)
             passes = passes if passes is not None else 0
-            return FibsemPatternSettings(
-                pattern=FibsemPattern.Rectangle,
+            return FibsemPattern(
+                pattern=FibsemPatternType.Rectangle,
                 width=state_dict["width"],
                 height=state_dict["height"],
                 depth=state_dict["depth"],
@@ -1063,8 +978,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 passes=int(passes),
             )
         elif state_dict["pattern"] == "Line":
-            return FibsemPatternSettings(
-                pattern=FibsemPattern.Line,
+            return FibsemPattern(
+                pattern=FibsemPatternType.Line,
                 start_x=state_dict["start_x"],
                 start_y=state_dict["start_y"],
                 end_x=state_dict["end_x"],
@@ -1075,8 +990,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
         elif state_dict["pattern"] == "Circle":
-            return FibsemPatternSettings(
-                pattern=FibsemPattern.Circle,
+            return FibsemPattern(
+                pattern=FibsemPatternType.Circle,
                 centre_x=state_dict["centre_x"],
                 centre_y=state_dict["centre_y"],
                 radius=state_dict["radius"],
@@ -1088,8 +1003,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
         elif state_dict["pattern"] == "BitmapPattern":
-            return FibsemPatternSettings(
-                pattern=FibsemPattern.Bitmap,
+            return FibsemPattern(
+                pattern=FibsemPatternType.Bitmap,
                 centre_x=state_dict["centre_x"],
                 centre_y=state_dict["centre_y"],
                 width=state_dict["width"],
@@ -1099,8 +1014,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 path=state_dict["path"],
             )
         elif state_dict["pattern"] == "Annulus":
-            return FibsemPatternSettings(
-                pattern=FibsemPattern.Annulus,
+            return FibsemPattern(
+                pattern=FibsemPatternType.Annulus,
                 centre_x=state_dict["centre_x"],
                 centre_y=state_dict["centre_y"],
                 radius=state_dict["radius"],
@@ -1112,8 +1027,8 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 cleaning_cross_section=state_dict["cleaning_cross_section"],
             )
 
-    def __to_dict__(self) -> dict:
-        if self.pattern == FibsemPattern.Rectangle:
+    def to_dict(self) -> dict:
+        if self.pattern == FibsemPatternType.Rectangle:
             return {
                 "pattern": "Rectangle",
                 "width": self.width,
@@ -1126,7 +1041,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "cleaning_cross_section": self.cleaning_cross_section,
                 "passes": self.passes,
             }
-        elif self.pattern == FibsemPattern.Line:
+        elif self.pattern == FibsemPatternType.Line:
             return {
                 "pattern": "Line",
                 "start_x": self.start_x,
@@ -1138,7 +1053,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "scan_direction": self.scan_direction,
                 "cleaning_cross_section": self.cleaning_cross_section,
             }
-        elif self.pattern == FibsemPattern.Circle:
+        elif self.pattern == FibsemPatternType.Circle:
             return {
                 "pattern": "Circle",
                 "centre_x": self.centre_x,
@@ -1151,7 +1066,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "scan_direction": self.scan_direction,
                 "cleaning_cross_section": self.cleaning_cross_section,
             }
-        elif self.pattern == FibsemPattern.Bitmap:
+        elif self.pattern == FibsemPatternType.Bitmap:
             return {
                 "pattern": "BitmapPattern",
                 "centre_x": self.centre_x,
@@ -1164,7 +1079,7 @@ class FibsemPatternSettings:  # FibsemBasePattern
                 "cleaning_cross_section": self.cleaning_cross_section,
                 "path": self.path,
             }
-        elif self.pattern == FibsemPattern.Annulus:
+        elif self.pattern == FibsemPatternType.Annulus:
             return {
                 "pattern": "Annulus",
                 "centre_x": self.centre_x,
@@ -1234,7 +1149,7 @@ class FibsemMillingSettings:
         ), f"invalid type for value for spacing, must be int or float, currently {type(self.spacing)}"
         # assert isinstance(self.preset,(str)), f"invalid type for value for preset, must be str, currently {type(self.preset)}"
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         settings_dict = {
             "milling_current": self.milling_current,
             "spot_size": self.spot_size,
@@ -1251,7 +1166,7 @@ class FibsemMillingSettings:
         return settings_dict
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "FibsemMillingSettings":
+    def from_dict(settings: dict) -> "FibsemMillingSettings":
         milling_settings = FibsemMillingSettings(
             milling_current=settings.get("milling_current", 20.0e-12),
             spot_size=settings.get("spot_size", 5.0e-8),
@@ -1260,273 +1175,224 @@ class FibsemMillingSettings:
             hfw=settings.get("hfw", 150e-6),
             patterning_mode=settings.get("patterning_mode", "Serial"),
             application_file=settings.get("application_file", "Si"),
-            preset=settings.get("preset", "30 keV; UHR imaging"),
+            preset=settings.get("preset", "30 keV; 1nA"),
             spacing=settings.get("spacing", 1.0),
             milling_voltage=settings.get("milling_voltage", 30e3),
         )
 
         return milling_settings
 
+# migrate to this
+# v3
 
-if THERMO:
+# TODO: start here
+@dataclass
+class StageSystemSettings:
+    rotation_reference: float
+    rotation_180: float
+    shuttle_pre_tilt: float
+    manipulator_height_limit: float
+    enabled: bool = True
+    rotation: bool = True
+    tilt: bool  = True
 
-    def save_needle_yaml(path: Path, position: ManipulatorPosition) -> None:
-        """Save the manipulator position from disk"""
-        from fibsem.structures import manipulator_position_to_dict
-
-        with open(os.path.join(path, "needle.yaml"), "w") as f:
-            yaml.dump(manipulator_position_to_dict(position), f, indent=4)
-
-    def load_needle_yaml(path: Path) -> ManipulatorPosition:
-        """Load the manipulator position from disk"""
-        from fibsem.structures import manipulator_position_from_dict
-
-        position_dict = load_yaml(os.path.join(path, "needle.yaml"))
-        position = manipulator_position_from_dict(position_dict)
-
-        return position
-
-
-def stage_position_to_dict(stage_position: FibsemStagePosition) -> dict:
-    """Converts the FibsemStagePosition Object into a dictionary"""
-
-    # attributes = ["x","y","z","r","t"]
-    # for attribute in attributes:
-    #     assert isinstance(getattr(stage_position,attribute),float) or isinstance(getattr(stage_position,attribute),int)
-
-    # assert stage_position.coordinate_system in SUPPORTED_COORDINATE_SYSTEMS or stage_position.coordinate_system is None
-
-    stage_position_dict = {
-        "x": stage_position.x,
-        "y": stage_position.y,
-        "z": stage_position.z,
-        "r": stage_position.r,
-        "t": stage_position.t,
-        "coordinate_system": stage_position.coordinate_system,
-    }
-
-    return stage_position_dict
-
-
-def stage_position_from_dict(state_dict: dict) -> FibsemStagePosition:
-    """Converts a dictionary object to a fibsem stage position,
-    dictionary must have correct keys"""
-
-    stage_position = FibsemStagePosition(
-        x=state_dict["x"],
-        y=state_dict["y"],
-        z=state_dict["z"],
-        r=state_dict["r"],
-        t=state_dict["t"],
-        coordinate_system=state_dict["coordinate_system"],
-    )
-
-    return stage_position
-
-
-if THERMO:
-
-    def manipulator_position_to_dict(position: ManipulatorPosition) -> dict:
-        position_dict = {
-            "x": position.x,
-            "y": position.y,
-            "z": position.z,
-            "r": None,
-            "coordinate_system": position.coordinate_system,
+    def to_dict(self):
+        return {
+            "rotation_reference": self.rotation_reference,
+            "rotation_180": self.rotation_180,
+            "shuttle_pre_tilt": self.shuttle_pre_tilt,
+            "manipulator_height_limit": self.manipulator_height_limit,
+            "enabled": self.enabled,
+            "rotation": self.rotation,
+            "tilt": self.tilt,
         }
-
-        return position_dict
-
-    def manipulator_position_from_dict(position_dict: dict) -> ManipulatorPosition:
-        position = ManipulatorPosition(
-            x=position_dict["x"],
-            y=position_dict["y"],
-            z=position_dict["z"],
-            r=position_dict["r"],
-            coordinate_system=position_dict["coordinate_system"],
+    
+    @staticmethod
+    def from_dict(settings: dict):
+        return StageSystemSettings(
+            rotation_reference=settings["rotation_reference"],
+            rotation_180=settings["rotation_180"],
+            shuttle_pre_tilt=settings["shuttle_pre_tilt"],
+            manipulator_height_limit=settings["manipulator_height_limit"],
+            enabled=settings.get("enabled", True),
+            rotation=settings.get("rotation", True),
+            tilt=settings.get("tilt", True),
         )
-
-        return position
 
 
 @dataclass
 class BeamSystemSettings:
-    """
-    A data class that represents the settings of a beam system.
-
-    Attributes:
-        beam_type (BeamType): The type of beam used in the system (Electron or Ion).
-        voltage (float): The voltage used in the system.
-        current (float): The current used in the system.
-        detector_type (str): The type of detector used in the system.
-        detector_mode (str): The mode of the detector used in the system.
-        eucentric_height (float): The eucentric height of the system.
-        plasma_gas (str, optional): The type of plasma gas used in the system.
-
-    Methods:
-        __to_dict__(self) -> dict:
-            Converts the instance variables to a dictionary.
-        __from_dict__(settings: dict, beam_type: BeamType) -> BeamSystemSettings:
-            Creates an instance of the class from a dictionary and a beam type.
-    """
-
     beam_type: BeamType
-    voltage: float
-    current: float
-    detector_type: str
-    detector_mode: str
+    enabled: bool
+    beam: BeamSettings
+    detector: FibsemDetectorSettings
     eucentric_height: float
     column_tilt: float
+    plasma: bool = False
     plasma_gas: str = None
 
-    def __to_dict__(self) -> dict:
-        settings_dict = {
-            "voltage": self.voltage,
-            "current": self.current,
-            "detector_type": self.detector_type,
-            "detector_mode": self.detector_mode,
+    def to_dict(self):
+        ddict = {
+            "beam_type": self.beam_type.value,
+            "enabled": self.enabled,
             "eucentric_height": self.eucentric_height,
             "column_tilt": self.column_tilt,
+            "plasma": self.plasma,
             "plasma_gas": self.plasma_gas,
         }
+        ddict.update(self.beam.to_dict())
+        ddict.update(self.detector.to_dict())
+        
+        # rename keys to match config
+        ddict["detector_mode"] = ddict.pop("mode")
+        ddict["detector_type"] = ddict.pop("type")
+        ddict["detector_brightness"] = ddict.pop("brightness")
+        ddict["detector_contrast"] = ddict.pop("contrast")
+        ddict["current"] = ddict.pop("beam_current")
 
-        return settings_dict
-
-    @staticmethod
-    def __from_dict__(settings: dict, beam_type: BeamType) -> "BeamSystemSettings":
-
-        # required formatting for plasma
-        plasma_gas = settings.get("plasma_gas", None)
-        if plasma_gas is not None:
-            plasma_gas = plasma_gas.capitalize() # capitalize first letter
+        return ddict
     
-        system_settings = BeamSystemSettings(
-            beam_type=beam_type,
-            voltage=settings["voltage"],
-            current=settings["current"],
-            detector_type=settings["detector_type"],
-            detector_mode=settings["detector_mode"],
+    @staticmethod
+    def from_dict(settings: dict) -> 'BeamSystemSettings':
+        return BeamSystemSettings(
+            beam_type=BeamType[settings["beam_type"]],
+            enabled=settings["enabled"],
+            beam=BeamSettings.from_dict(settings),
+            detector=FibsemDetectorSettings.from_dict(settings),
             eucentric_height=settings["eucentric_height"],
             column_tilt=settings["column_tilt"],
-            plasma_gas=plasma_gas,
+            plasma=settings.get("plasma", False),
+            plasma_gas=settings.get("plasma_gas", None),
         )
 
-        return system_settings
-
-
-# TODO: change this to use pretilt_angle, flat_to_electron, and flat_to_ion tilts, for better separation
 @dataclass
-class StageSettings:
-    """
-    A data class representing the settings for the stage.
+class ManipulatorSystemSettings:
+    enabled: bool
+    rotation: bool
+    tilt: bool
+    inserted: bool = False
 
-    Attributes:
-    rotation_flat_to_electron (float): The rotation from flat to electron in degrees.
-    rotation_flat_to_ion (float): The rotation from flat to ion in degrees.
-    tilt_flat_to_electron (float): The tilt from flat to electron in degrees.
-    tilt_flat_to_ion (float): The tilt from flat to ion in degrees.
-    pre_tilt (float): The pre-tilt in degrees.
-    needle_stage_height_limit (float): The height limit of the needle stage in meters.
-
-    Methods:
-    __to_dict__() -> dict: Returns the settings as a dictionary.
-    __from_dict__(settings: dict) -> "StageSettings": Returns an instance of StageSettings from a dictionary of its settings.
-    """
-
-    rotation_flat_to_electron: float = 50  # degrees
-    rotation_flat_to_ion: float = 230  # degrees
-    tilt_flat_to_electron: float = 27  # degrees (pre_tilt)
-    tilt_flat_to_ion: float = 52  # degrees
-    pre_tilt: float = 35  # degrees
-    needle_stage_height_limit: float = 3.7e-3
-
-    def __to_dict__(self) -> dict:
-        settings = {}
-        settings["stage"] = {
-            "rotation_reference": self.rotation_flat_to_electron,
-            "rotation_180": self.rotation_flat_to_ion,
-            "shuttle_pre_tilt": self.pre_tilt,
-            "manipulator_height_limit": self.needle_stage_height_limit,
+    def to_dict(self):
+        return {
+            "enabled": self.enabled,
+            "inserted": self.inserted,
+            "rotation": self.rotation,
+            "tilt": self.tilt,
         }
-        settings["electron_beam"] = {"column_tilt": self.tilt_flat_to_electron}
-        settings["ion_beam"] = {"column_tilt": self.tilt_flat_to_ion}
-        return settings
-
+    
     @staticmethod
-    def __from_dict__(settings: dict) -> "StageSettings":
-        stage_settings = StageSettings(
-            rotation_flat_to_electron=settings["stage"]["rotation_reference"],
-            rotation_flat_to_ion=settings["stage"]["rotation_180"],
-            tilt_flat_to_electron=settings["electron_beam"]["column_tilt"],
-            tilt_flat_to_ion=settings["ion_beam"]["column_tilt"],
-            pre_tilt=settings["stage"]["shuttle_pre_tilt"],
-            needle_stage_height_limit=settings["stage"]["manipulator_height_limit"],
+    def from_dict(settings: dict):
+        return ManipulatorSystemSettings(
+            enabled=settings["enabled"],
+            rotation=settings["rotation"],
+            tilt=settings["tilt"],
+            inserted=settings.get("inserted", False),
         )
 
-        return stage_settings
 
+
+@dataclass
+class GISSystemSettings:
+    enabled: bool
+    multichem: bool
+    sputter_coater: bool
+    inserted: bool = False
+
+    def to_dict(self):
+        return {
+            "enabled": self.enabled,
+            "inserted": self.inserted,
+            "multichem": self.multichem,
+            "sputter_coater": self.sputter_coater,
+        }
+    
+    @staticmethod
+    def from_dict(settings: dict):
+        return GISSystemSettings(
+            enabled=settings["enabled"],
+            multichem=settings["multichem"],
+            sputter_coater=settings["sputter_coater"],
+            inserted=settings.get("inserted", False),
+        )
+
+import fibsem
+
+@dataclass
+class SystemInfo:
+    name: str
+    ip_address: str
+    manufacturer: str
+    model: str
+    serial_number: str
+    hardware_version: str
+    software_version: str
+    fibsem_version: str = fibsem.__version__
+    application: str = None
+    application_version: str = None
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "ip_address": self.ip_address,
+            "manufacturer": self.manufacturer,
+            "model": self.model,
+            "serial_number": self.serial_number,
+            "hardware_version": self.hardware_version,
+            "software_version": self.software_version,
+            "fibsem_version": self.fibsem_version,
+            "application": self.application,
+            "application_version": self.application_version,
+        }
+    
+    @staticmethod
+    def from_dict(settings: dict):
+        return SystemInfo(
+            name=settings.get("name", "Unknown"),
+            ip_address=settings.get("ip_address", "Unknown"),
+            manufacturer=settings.get("manufacturer", "Unknown"),
+            model=settings.get("model", "Unknown"),
+            serial_number=settings.get("serial_number", "Unknown"),
+            hardware_version=settings.get("hardware_version", "Unknown"),
+            software_version=settings.get("software_version", "Unknown"),
+            fibsem_version=settings.get("fibsem_version", fibsem.__version__),
+            application=settings.get("application", None),
+            application_version=settings.get("application_version", None),  
+        )
 
 @dataclass
 class SystemSettings:
+    stage: StageSystemSettings
+    electron: BeamSystemSettings
+    ion: BeamSystemSettings
+    manipulator: ManipulatorSystemSettings
+    gis: GISSystemSettings
+    info: SystemInfo    
 
-    """
-    Dataclass representing the system settings for the FIB-SEM instrument.
-
-    :param ip_address: IP address of the instrument.
-    :param stage: settings for the stage.
-    :param ion: settings for the ion beam.
-    :param electron: settings for the electron beam.
-    :param manufacturer: name of the instrument manufacturer.
-
-    :return: a new instance of `SystemSettings`.
-    """
-
-    ip_address: str = "10.0.0.1"
-    stage: StageSettings = None
-    ion: BeamSystemSettings = None
-    electron: BeamSystemSettings = None
-    manufacturer: str = None
-    system_info: dict = None
-
-    def __to_dict__(self) -> dict:
-        settings_dict = {
-            "core": {},
-            "stage": {},
-            "ion_beam": {},
-            "electron_beam": {},
+    def to_dict(self):
+        return {
+            "stage": self.stage.to_dict(),
+            "electron": self.electron.to_dict(),
+            "ion": self.ion.to_dict(),
+            "manipulator": self.manipulator.to_dict(),
+            "gis": self.gis.to_dict(),
+            "info": self.info.to_dict(),
         }
-        settings_dict["core"] = {
-            "ip_address": self.ip_address,
-            "name": self.system_info["name"],
-            "manufacturer": self.manufacturer,
-        }
-        settings_dict.update(self.stage.__to_dict__())
-        settings_dict["ion_beam"] = self.ion.__to_dict__()
-        settings_dict["electron_beam"] = self.electron.__to_dict__()
-
-        return settings_dict
-
+    
     @staticmethod
-    def __from_dict__(settings: dict) -> "SystemSettings":
-        system_settings = SystemSettings(
-            ip_address=settings["core"]["ip_address"],
-            stage=StageSettings.__from_dict__(settings),
-            ion=BeamSystemSettings.__from_dict__(settings["ion_beam"], BeamType.ION),
-            electron=BeamSystemSettings.__from_dict__(
-                settings["electron_beam"], BeamType.ELECTRON
-            ),
-            manufacturer=settings["core"]["manufacturer"],
-            system_info={
-                "name": settings["core"]["name"],
-                "manufacturer": settings["core"]["manufacturer"],
-                "description": "null",
-                "version": "null",
-                "id": "null",
-            },
+    def from_dict(settings: dict):
+
+        # TODO: remove this once the settings are updated
+        settings["electron"]["beam_type"] = BeamType.ELECTRON.name
+        settings["ion"]["beam_type"] = BeamType.ION.name
+            
+        return SystemSettings(
+            stage=StageSystemSettings.from_dict(settings["stage"]),
+            electron=BeamSystemSettings.from_dict(settings["electron"]),
+            ion=BeamSystemSettings.from_dict(settings["ion"]),
+            manipulator=ManipulatorSystemSettings.from_dict(settings["manipulator"]),
+            gis=GISSystemSettings.from_dict(settings["gis"]),
+            info=SystemInfo.from_dict(settings["info"]),
         )
-
-        return system_settings
-
 
 @dataclass
 class MicroscopeSettings:
@@ -1537,50 +1403,46 @@ class MicroscopeSettings:
     Attributes:
         system (SystemSettings): An instance of the `SystemSettings` class that holds the system settings.
         image (ImageSettings): An instance of the `ImageSettings` class that holds the image settings.
+        milling (FibsemMillingSettings): An instance of the `FibsemMillingSettings` class that holds the fibsem milling settings..
         protocol (dict, optional): A dictionary representing the protocol settings. Defaults to None.
-        milling (FibsemMillingSettings, optional): An instance of the `FibsemMillingSettings` class that holds the fibsem milling settings. Defaults to None.
 
     Methods:
-        __to_dict__(): Returns a dictionary representation of the `MicroscopeSettings` object.
-        __from_dict__(settings: dict, protocol: dict = None) -> "MicroscopeSettings": Returns an instance of the `MicroscopeSettings` class from a dictionary.
+        to_dict(): Returns a dictionary representation of the `MicroscopeSettings` object.
+        from_dict(settings: dict, protocol: dict = None) -> "MicroscopeSettings": Returns an instance of the `MicroscopeSettings` class from a dictionary.
     """
 
     system: SystemSettings
     image: ImageSettings
+    milling: FibsemMillingSettings
     protocol: dict = None
-    milling: FibsemMillingSettings = None
-    hardware: FibsemHardware = None
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         settings_dict = {
-            "imaging": self.image.__to_dict__(),
+            "imaging": self.image.to_dict(),
             "protocol": self.protocol,
-            "milling": self.milling.__to_dict__(),
-            "subsystems": self.hardware.__to_dict__(),
+            "milling": self.milling.to_dict(),
         }
-        settings_dict.update(self.system.__to_dict__())
+        settings_dict.update(self.system.to_dict())
 
         return settings_dict
 
     @staticmethod
-    def __from_dict__(
+    def from_dict(
         settings: dict, protocol: dict = None
     ) -> "MicroscopeSettings":
         
         if protocol is None:
             protocol = settings.get("protocol", {"name": "demo"})
-            
+     
         return MicroscopeSettings(
-            system=SystemSettings.__from_dict__(settings),
-            image=ImageSettings.__from_dict__(settings["imaging"]),
+            system=SystemSettings.from_dict(settings),
+            image=ImageSettings.from_dict(settings["imaging"]),
             protocol=protocol,
-            milling=FibsemMillingSettings.__from_dict__(settings["milling"]),
-            hardware=FibsemHardware.__from_dict__(settings["subsystems"])
+            milling=FibsemMillingSettings.from_dict(settings["milling"]),
         )
 
 
-# state
-from abc import ABC, abstractmethod, abstractstaticmethod
+
 
 
 @dataclass
@@ -1592,7 +1454,7 @@ class FibsemExperiment:
     fibsem_version: str = fibsem.__version__
     application_version: str = None
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         """Converts to a dictionary."""
         return {
             "id": self.id,
@@ -1604,7 +1466,7 @@ class FibsemExperiment:
         }
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "FibsemExperiment":
+    def from_dict(settings: dict) -> "FibsemExperiment":
         """Converts from a dictionary."""
         return FibsemExperiment(
             id=settings.get("id", "Unknown"),
@@ -1621,63 +1483,44 @@ class FibsemUser:
     name: str = None
     email: str = None
     organization: str = None
-    computer: str = None
+    hostname: str = None
+    # TODO: add host_ip_address
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         """Converts to a dictionary."""
         return {
             "name": self.name,
             "email": self.email,
             "organization": self.organization,
-            "computer": self.computer,
+            "hostname": self.hostname,
         }
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "FibsemUser":
+    def from_dict(settings: dict) -> "FibsemUser":
         """Converts from a dictionary."""
         return FibsemUser(
             name=settings.get("name", "Unknown"),
             email=settings.get("email", "Unknown"),
             organization=settings.get("organization", "Unknown"),
-            computer=settings.get("computer", "Unknown"),
+            hostname=settings.get("hostname", "Unknown"),
         )
-
-
-@dataclass
-class FibsemSystem:
-    manufacturer: str = None
-    model: str = None
-    serial_number: str = None
-    software_version: str = None
-    hardware_settings: FibsemHardware = None
-
-    def __to_dict__(self) -> dict:
-        """Converts to a dictionary."""
-        return {
-            "manufacturer": self.manufacturer,
-            "model": self.model,
-            "serial_number": self.serial_number,
-            "software_version": self.software_version,
-            "hardware_settings": self.hardware_settings.__to_dict__()
-            if self.hardware_settings is not None
-            else None,
-        }
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "FibsemSystem":
-        """Converts from a dictionary."""
-        if "hardware_settings" not in settings:
-            hardware = None
-        else:
-            hardware = FibsemHardware.__from_dict__(settings["hardware_settings"])
+    def from_environment() -> "FibsemUser":
+        import platform
+        import socket
+        username = os.environ.get("USERNAME", "username")
 
-        return FibsemSystem(
-            manufacturer=settings.get("manufacturer", "Unknown"),
-            model=settings.get("model", "Unknown"),
-            serial_number=settings.get("serial_number", "Unknown"),
-            software_version=settings.get("software_version", "Unknown"),
-            hardware_settings=hardware,
-        )
+        if platform.system() == "Windows":
+            hostname = os.environ.get("COMPUTERNAME", "hostname")
+        elif platform.system() in ["Linux", "Darwin"]:
+            hostname = socket.gethostname()
+        else:
+            hostname = "hostname"
+            
+        user = FibsemUser(name=username, email="null", organization="null", hostname=hostname)
+        
+        return user
 
 
 @dataclass
@@ -1687,13 +1530,12 @@ class FibsemImageMetadata:
     image_settings: ImageSettings
     pixel_size: Point
     microscope_state: MicroscopeState
-    # detector_settings: FibsemDetectorSettings
+    system: SystemSettings = None
     version: str = METADATA_VERSION
     user: FibsemUser = FibsemUser()
     experiment: FibsemExperiment = FibsemExperiment()
-    system: FibsemSystem = FibsemSystem()
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
         """Converts metadata to a dictionary.
 
         Returns:
@@ -1701,42 +1543,31 @@ class FibsemImageMetadata:
         """
         settings_dict = {}
         if self.image_settings is not None:
-            # settings_dict = (
-            #     self.image_settings.__to_dict__()
-            # )  # TODO: gracefully depreceate this
-            settings_dict["image"] = self.image_settings.__to_dict__()
+            settings_dict["image"] = self.image_settings.to_dict()
         if self.version is not None:
             settings_dict["version"] = self.version
         if self.pixel_size is not None:
-            settings_dict["pixel_size"] = self.pixel_size.__to_dict__()
+            settings_dict["pixel_size"] = self.pixel_size.to_dict()
         if self.microscope_state is not None:
-            settings_dict["microscope_state"] = self.microscope_state.__to_dict__()
-        # if self.detector_settings is not None:
-            # settings_dict["detector_settings"] = self.detector_settings.__to_dict__()
-        settings_dict["user"] = self.user.__to_dict__()
-        settings_dict["experiment"] = self.experiment.__to_dict__()
-        settings_dict["system"] = self.system.__to_dict__()
+            settings_dict["microscope_state"] = self.microscope_state.to_dict()
+            settings_dict["user"] = self.user.to_dict()
+        settings_dict["experiment"] = self.experiment.to_dict()
+        settings_dict["system"] = self.system.to_dict() if self.system is not None else {}
 
         return settings_dict
 
     @staticmethod
-    def __from_dict__(settings: dict) -> "ImageSettings":
+    def from_dict(settings: dict) -> "ImageSettings":
         """Converts a dictionary to metadata."""
 
-        image_settings = ImageSettings.__from_dict__(settings["image"])
+        image_settings = ImageSettings.from_dict(settings["image"])
         version = settings.get("version", METADATA_VERSION)
         if settings["pixel_size"] is not None:
-            pixel_size = Point.__from_dict__(settings["pixel_size"])
+            pixel_size = Point.from_dict(settings["pixel_size"])
         if settings["microscope_state"] is not None:
-            microscope_state = MicroscopeState.__from_dict__(
+            microscope_state = MicroscopeState.from_dict(
                 settings["microscope_state"]
             )
-
-        # detector_dict = settings.get(
-        #     "detector_settings",
-        #     {"type": "Unknown", "mode": "Unknown", "brightness": 0.0, "contrast": 0.0},
-        # )
-        # detector_settings = FibsemDetectorSettings.__from_dict__(detector_dict)
 
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
@@ -1744,9 +1575,9 @@ class FibsemImageMetadata:
             pixel_size=pixel_size,
             microscope_state=microscope_state,
             # detector_settings=detector_settings, # TODO: remove this
-            user=FibsemUser.__from_dict__(settings.get("user", {})),
-            experiment=FibsemExperiment.__from_dict__(settings.get("experiment", {})),
-            system=FibsemSystem.__from_dict__(settings.get("system", {})),
+            user=FibsemUser.from_dict(settings.get("user", {})),
+            experiment=FibsemExperiment.from_dict(settings.get("experiment", {})),
+            system=SystemSettings.from_dict(settings.get("system", {})),
         )
         return metadata
 
@@ -1763,10 +1594,10 @@ class FibsemImageMetadata:
                 hfw=image.width * image.metadata.binary_result.pixel_size.x,
                 autocontrast=True,
                 beam_type=beam_type,
-                gamma_enabled=True,
+                autogamma=True,
                 save=False,
-                save_path="path",
-                label=current_timestamp(),
+                path="path",
+                filename=current_timestamp(),
                 reduced_area=None,
             )
             return image_settings
@@ -1797,17 +1628,17 @@ class FibsemImageMetadata:
             self.image_settings.beam_type.value == image_settings.beam_type.value
         ), f"beam_type: {self.image_settings.beam_type.value} != {image_settings.beam_type.value}"
         assert (
-            self.image_settings.gamma_enabled == image_settings.gamma_enabled
-        ), f"gamma: {self.image_settings.gamma_enabled} != {image_settings.gamma_enabled}"
+            self.image_settings.autogamma == image_settings.autogamma
+        ), f"gamma: {self.image_settings.autogamma} != {image_settings.autogamma}"
         assert (
             self.image_settings.save == image_settings.save
         ), f"save: {self.image_settings.save} != {image_settings.save}"
         assert (
-            self.image_settings.save_path == image_settings.save_path
-        ), f"save_path: {self.image_settings.save_path} != {image_settings.save_path}"
+            self.image_settings.path == image_settings.path
+        ), f"path: {self.image_settings.path} != {image_settings.path}"
         assert (
-            self.image_settings.label == image_settings.label
-        ), f"label: {self.image_settings.label} != {image_settings.label}"
+            self.image_settings.filename == image_settings.filename
+        ), f"filename: {self.image_settings.filename} != {image_settings.filename}"
         assert (
             self.image_settings.reduced_area == image_settings.reduced_area
         ), f"reduced_area: {self.image_settings.reduced_area} != {image_settings.reduced_area}"
@@ -1835,11 +1666,11 @@ class FibsemImage:
             Returns:
                 FibsemImage: instance of FibsemImage
 
-        save(self, save_path: Path) -> None:
+        save(self, path: Path) -> None:
             Saves a FibsemImage to a tiff file.
 
             Inputs:
-                save_path (path): path to save directory and filename
+                path (path): path to save directory and filename
     """
 
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
@@ -1870,7 +1701,7 @@ class FibsemImage:
                 metadata = json.loads(
                     tiff_image.pages[0].tags["ImageDescription"].value
                 )
-                metadata = FibsemImageMetadata.__from_dict__(metadata)
+                metadata = FibsemImageMetadata.from_dict(metadata)
             except Exception as e:
                 metadata = None
                 # print(f"Error: {e}")
@@ -1878,26 +1709,26 @@ class FibsemImage:
                 # traceback.print_exc()
         return cls(data=data, metadata=metadata)
 
-    def save(self, save_path: Path = None) -> None:
+    def save(self, path: Path = None) -> None:
         """Saves a FibsemImage to a tiff file.
 
         Inputs:
-            save_path (path): path to save directory and filename
+            path (path): path to save directory and filename
         """
-        if save_path is None:
-            save_path = os.path.join(
-                self.metadata.image_settings.save_path,
-                self.metadata.image_settings.label,
+        if path is None:
+            path = os.path.join(
+                self.metadata.image_settings.path,
+                self.metadata.image_settings.filename,
             )
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        save_path = Path(save_path).with_suffix(".tif")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        path = Path(path).with_suffix(".tif")
 
         if self.metadata is not None:
-            metadata_dict = self.metadata.__to_dict__()
+            metadata_dict = self.metadata.to_dict()
         else:
             metadata_dict = None
         tff.imwrite(
-            save_path,
+            path,
             self.data,
             metadata=metadata_dict,
         )
@@ -1910,7 +1741,6 @@ class FibsemImage:
             adorned: AdornedImage,
             image_settings: ImageSettings,
             state: MicroscopeState = None,
-            detector: FibsemDetectorSettings = None,
         ) -> "FibsemImage":
             """Creates FibsemImage from an AdornedImage (microscope output format).
 
@@ -1924,15 +1754,15 @@ class FibsemImage:
             if state is None:
                 state = MicroscopeState(
                     timestamp=adorned.metadata.acquisition.acquisition_datetime,
-                    absolute_position=FibsemStagePosition(
+                    stage_position=FibsemStagePosition(
                         adorned.metadata.stage_settings.stage_position.x,
                         adorned.metadata.stage_settings.stage_position.y,
                         adorned.metadata.stage_settings.stage_position.z,
                         adorned.metadata.stage_settings.stage_position.r,
                         adorned.metadata.stage_settings.stage_position.t,
                     ),
-                    eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
-                    ib_settings=BeamSettings(beam_type=BeamType.ION),
+                    electron_beam=BeamSettings(beam_type=BeamType.ELECTRON),
+                    ion_beam=BeamSettings(beam_type=BeamType.ION),
                 )
             else:
                 state.timestamp = adorned.metadata.acquisition.acquisition_datetime
@@ -1946,7 +1776,6 @@ class FibsemImage:
                 image_settings=image_settings,
                 pixel_size=pixel_size,
                 microscope_state=state,
-                # detector_settings=detector,
             )
             return cls(data=adorned.data, metadata=metadata)
 
@@ -2021,8 +1850,8 @@ class FibsemImage:
                     dwell_time=float(dictionary["SEM"]["DwellTime"]),
                     hfw=data.shape[0] * float(dictionary["MAIN"]["PixelSizeX"]),
                     beam_type=BeamType.ELECTRON,
-                    label=Path(image_path).stem,
-                    save_path=Path(image_path).parent,
+                    filename=Path(image_path).stem,
+                    path=Path(image_path).parent,
                 )
                 pixel_size = Point(
                     float(dictionary["MAIN"]["PixelSizeX"]),
@@ -2033,7 +1862,7 @@ class FibsemImage:
                         dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"],
                         "%Y-%m-%d %H:%M:%S",
                     ),
-                    eb_settings=BeamSettings(
+                    electron_beam=BeamSettings(
                         beam_type=BeamType.ELECTRON,
                         working_distance=float(dictionary["SEM"]["WD"]),
                         beam_current=float(dictionary["SEM"]["PredictedBeamCurrent"]),
@@ -2050,7 +1879,7 @@ class FibsemImage:
                             float(dictionary["SEM"]["StigmatorY"]),
                         ),
                     ),
-                    ib_settings=BeamSettings(beam_type=BeamType.ION),
+                    ion_beam=BeamSettings(beam_type=BeamType.ION),
                 )
                 detector_settings = FibsemDetectorSettings(
                     type=dictionary["SEM"]["Detector"],
@@ -2064,8 +1893,8 @@ class FibsemImage:
                     dwell_time=float(dictionary["FIB"]["DwellTime"]),
                     hfw=data.shape[0] * float(dictionary["MAIN"]["PixelSizeX"]),
                     beam_type=BeamType.ELECTRON,
-                    label=Path(image_path).stem,
-                    save_path=Path(image_path).parent,
+                    filename=Path(image_path).stem,
+                    path=Path(image_path).parent,
                 )
                 pixel_size = Point(
                     float(dictionary["MAIN"]["PixelSizeX"]),
@@ -2076,8 +1905,8 @@ class FibsemImage:
                         dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"],
                         "%Y-%m-%d %H:%M:%S",
                     ),
-                    eb_settings=BeamSettings(beam_type=BeamType.ELECTRON),
-                    ib_settings=BeamSettings(
+                    electron_beam=BeamSettings(beam_type=BeamType.ELECTRON),
+                    ion_beam=BeamSettings(
                         beam_type=BeamType.ION,
                         working_distance=float(dictionary["FIB"]["WD"]),
                         beam_current=float(dictionary["FIB"]["PredictedBeamCurrent"]),

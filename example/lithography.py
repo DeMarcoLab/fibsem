@@ -27,7 +27,7 @@ def main():
     microscope, settings = utils.setup_session(protocol_path=PROTOCOL_PATH)
 
     # lens plane
-    settings.system.stage.tilt_flat_to_electron = 0
+    microscope.system.electron.column_tilt = 0
 
     # move to the milling angle
     # stage_position = StagePosition(

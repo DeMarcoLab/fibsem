@@ -1,5 +1,5 @@
 from fibsem import utils
-from fibsem.structures import FibsemPatternSettings, FibsemPattern, FibsemMillingSettings
+from fibsem.structures import FibsemPattern, FibsemPatternType, FibsemMillingSettings
 from fibsem import milling
 import logging
 
@@ -21,8 +21,8 @@ def main():
     microscope, settings = utils.setup_session(manufacturer="Demo", ip_address="localhost")
 
     # rectangle pattern
-    rectangle_pattern = FibsemPatternSettings(
-        pattern = FibsemPattern.Rectangle,
+    rectangle_pattern = FibsemPattern(
+        pattern = FibsemPatternType.Rectangle,
         width = 10.0e-6,
         height = 10.0e-6,
         depth = 2.0e-6,
@@ -32,8 +32,8 @@ def main():
     )
 
     # line pattern one
-    line_pattern_01 = FibsemPatternSettings(
-        pattern = FibsemPattern.Line,
+    line_pattern_01 = FibsemPattern(
+        pattern = FibsemPatternType.Line,
         start_x = 0.0,
         start_y = 0.0,
         end_x = 10.0e-6,
@@ -66,7 +66,7 @@ def main():
     milling.run_milling(microscope, settings.milling.milling_current, milling_voltage=settings.milling.milling_voltage)
 
     # finish milling
-    milling.finish_milling(microscope, settings.system.ion.current)
+    milling.finish_milling(microscope, microscope.system.ion.beam.beam_current)
 
 
 if __name__ == "__main__":

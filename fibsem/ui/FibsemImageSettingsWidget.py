@@ -33,12 +33,6 @@ from queue import Queue
 import numpy as np
 from fibsem import config as cfg
         
-    
-
-def log_status_message(step: str):
-    logging.debug(
-        f"STATUS | Image Widget | {step}"
-    )
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
@@ -80,7 +74,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             # self.beam_settings = self.get_beam_settings()
             self.image_settings = image_settings
             self.set_ui_from_settings(image_settings = image_settings, beam_type = BeamType.ELECTRON)
-        self.update_detector_ui()
+        self.update_detector_ui() # TODO: can this be removed?
 
         # register initial images
         self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
@@ -90,30 +84,45 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def setup_connections(self):
 
         # set ui elements
-
         self.selected_beam.addItems([beam.name for beam in BeamType])
 
+        # buttons
         self.pushButton_take_image.clicked.connect(lambda: self.take_image(None))
-        self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_take_all_images.clicked.connect(self.take_reference_images)
-        self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_live_imaging.clicked.connect(self.live_imaging)
-        self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+                
+        # feature flags
         self.pushButton_live_imaging.setVisible(cfg._LIVE_IMAGING_ENABLED)
-        self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
-        self.set_detector_button.clicked.connect(self.apply_detector_settings)
-        self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        
+        # image / beam settings
         self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
+        self.checkBox_image_save_image.toggled.connect(self.update_ui_saving_settings)
         self.button_set_beam_settings.clicked.connect(self.apply_beam_settings)
-        self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        
+        # detector
+        self.set_detector_button.clicked.connect(self.apply_detector_settings)
         self.detector_contrast_slider.valueChanged.connect(self.update_labels)
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
+        
+        # util
         self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
+        
+        # signals
         self.image_notification_signal.connect(self.update_imaging_ui)
+        
+        # advanced settings
         self.checkBox_advanced_settings.stateChanged.connect(self.toggle_mode)
         self.toggle_mode()
+
+
+        # set ui stylesheets
+        self.pushButton_take_image.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_take_all_images.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_live_imaging.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.set_detector_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.button_set_beam_settings.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
         if self._TESCAN:
 
@@ -254,46 +263,35 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.detector_brightness_label.setText(f"{self.detector_brightness_slider.value()}%")
 
     def apply_detector_settings(self):
+        
+        # read settings from ui
         beam =  BeamType[self.selected_beam.currentText()]
         self.get_settings_from_ui()
-        self.microscope.set("detector_type", self.detector_settings.type, beam_type=beam)
-        self.microscope.set("detector_mode", self.detector_settings.mode, beam_type=beam)
-        self.microscope.set("detector_brightness", self.detector_settings.brightness, beam_type=beam)
-        self.microscope.set("detector_contrast", self.detector_settings.contrast, beam_type=beam)
-        log_status_message("SET_DETECTOR_PARAMETERS")
-        log_status_message(f"Detector Type: {self.detector_settings.type}, Mode: {self.detector_settings.mode}, Brightness: {self.detector_settings.brightness}, Contrast: {self.detector_settings.contrast}")
+
+        # set detector settings
+        self.microscope.set_detector_settings(self.detector_settings, beam_type=beam)
+        
+        # logging
+        logging.debug({"msg": "apply_detector_settings", "detector_settings": self.detector_settings.to_dict()})
+
+        # notifications
         napari.utils.notifications.show_info("Detector Settings Updated")
 
     def apply_beam_settings(self):
         beam = BeamType[self.selected_beam.currentText()]
         self.get_settings_from_ui()
-        self.microscope.set("working_distance", self.beam_settings.working_distance, beam_type=beam)
-        self.microscope.set("current", self.beam_settings.beam_current, beam_type=beam)
-        self.microscope.set("voltage", self.beam_settings.voltage, beam_type=beam)
-        self.microscope.set("stigmation", self.beam_settings.stigmation, beam_type=beam)
-        self.microscope.set("shift", self.beam_settings.shift, beam_type=beam)
-        log_status_message("SET_BEAM_PARAMETERS")
-        log_status_message(f"Working Distance: {self.beam_settings.working_distance}, Current: {self.beam_settings.beam_current}, Voltage: {self.beam_settings.voltage}, Stigmation: {self.beam_settings.stigmation}, Shift: {self.beam_settings.shift}")
-        self.set_ui_from_settings(self.image_settings,beam)
-        napari.utils.notifications.show_info("Beam Settings Updated")
 
-    def get_detector_settings(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemDetectorSettings:
-        contrast = self.microscope.get("detector_contrast", beam_type=beam_type)
-        brightness = self.microscope.get("detector_brightness", beam_type=beam_type)
-        type = self.microscope.get("detector_type", beam_type=beam_type)
-        mode = self.microscope.get("detector_mode", beam_type=beam_type)
-        return FibsemDetectorSettings(type, mode, brightness, contrast)
-    
-    def get_beam_settings(self, beam_type: BeamType= BeamType.ELECTRON) -> BeamSettings:
-        beam_settings = BeamSettings(
-            beam_type = beam_type,
-            working_distance=self.microscope.get("working_distance", beam_type=beam_type),
-            beam_current = self.microscope.get("current", beam_type=beam_type),
-            voltage = self.microscope.get("voltage", beam_type=beam_type),
-            shift=self.microscope.get("shift", beam_type=beam_type),
-            stigmation=self.microscope.get("stigmation", beam_type=beam_type),
-        )
-        return beam_settings
+        # set beam settings
+        self.microscope.set_beam_settings(self.beam_settings)
+
+        # logging 
+        logging.debug({"msg": "apply_beam_settings", "beam_settings": self.beam_settings.to_dict()})
+
+        # QUERY: why is this here?
+        self.set_ui_from_settings(self.image_settings,beam)
+        
+        # notifications
+        napari.utils.notifications.show_info("Beam Settings Updated")
 
     def get_settings_from_ui(self):
 
@@ -303,10 +301,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             hfw=self.doubleSpinBox_image_hfw.value() * constants.MICRO_TO_SI,
             beam_type=BeamType[self.selected_beam.currentText()],
             autocontrast=self.checkBox_image_use_autocontrast.isChecked(),
-            gamma_enabled=self.checkBox_image_use_autogamma.isChecked(),
+            autogamma=self.checkBox_image_use_autogamma.isChecked(),
             save=self.checkBox_image_save_image.isChecked(),
-            save_path=Path(self.lineEdit_image_path.text()),
-            label=self.lineEdit_image_label.text()
+            path=Path(self.lineEdit_image_path.text()),
+            filename=self.lineEdit_image_label.text()
             
         )
 
@@ -327,10 +325,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
             stigmation = Point(self.stigmation_x.value(), self.stigmation_y.value()),
             shift = Point(self.shift_x.value() * constants.MICRO_TO_SI, self.shift_y.value()*constants.MICRO_TO_SI),
+            scan_rotation = 0 # TODO: add this to the ui
         )
         return self.image_settings, self.detector_settings, self.beam_settings
 
-    def set_ui_from_settings(self, image_settings: ImageSettings, beam_type: BeamType, beam_settings: BeamSettings=None, detector_settings: FibsemDetectorSettings=None ):
+    def set_ui_from_settings(self, image_settings: ImageSettings, 
+                             beam_type: BeamType, 
+                             beam_settings: BeamSettings=None, 
+                             detector_settings: FibsemDetectorSettings=None ):
+        """Update the ui from the image, beam and detector settings"""
 
         # disconnect beam type combobox
         self.selected_beam.currentIndexChanged.disconnect()
@@ -338,10 +341,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
         
         if beam_settings is None:
-            beam_settings = self.get_beam_settings(beam_type)
+            beam_settings = self.microscope.get_beam_settings(beam_type)
         if detector_settings is None:
-            detector_settings = self.get_detector_settings(beam_type)
+            detector_settings = self.microscope.get_detector_settings(beam_type)
 
+        # imaging settings
         self.spinBox_resolution_x.setValue(image_settings.resolution[0])
         self.spinBox_resolution_y.setValue(image_settings.resolution[1])
 
@@ -349,17 +353,21 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_image_hfw.setValue(image_settings.hfw * constants.SI_TO_MICRO)
 
         self.checkBox_image_use_autocontrast.setChecked(image_settings.autocontrast)
-        self.checkBox_image_use_autogamma.setChecked(image_settings.gamma_enabled)
+        self.checkBox_image_use_autogamma.setChecked(image_settings.autogamma)
         self.checkBox_image_save_image.setChecked(image_settings.save)
-        self.lineEdit_image_path.setText(str(image_settings.save_path))
-        self.lineEdit_image_label.setText(image_settings.label)
+        self.lineEdit_image_path.setText(str(image_settings.path))
+        self.lineEdit_image_label.setText(image_settings.filename)
 
+        # detector settings
         self.detector_type_combobox.setCurrentText(detector_settings.type)
         self.detector_mode_combobox.setCurrentText(detector_settings.mode)
         self.detector_contrast_slider.setValue(int(detector_settings.contrast*100))
         self.detector_brightness_slider.setValue(int(detector_settings.brightness*100))
+        
+        # beam settings
         self.beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
         self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
+        
         if beam_settings.working_distance is not None:
             self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
         if beam_settings.shift is not None:
@@ -372,7 +380,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui_saving_settings()
 
     def update_ui_saving_settings(self):
-
+        """Toggle the visibility of the imaging saving settings"""
         self.label_image_save_path.setVisible(self.checkBox_image_save_image.isChecked())
         self.lineEdit_image_path.setVisible(self.checkBox_image_save_image.isChecked())
         self.label_image_label.setVisible(self.checkBox_image_save_image.isChecked())
@@ -380,13 +388,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         
   
     def update_detector_ui(self):
+        """Update the detector ui based on currently selected beam"""
         beam_type = BeamType[self.selected_beam.currentText()]
-        # if beam_type is BeamType.ELECTRON:
-        #     self.comboBox_presets.hide()
-        #     self.label_presets.hide()
-        # else:
-        #     self.comboBox_presets.show()
-        #     self.label_presets.show()
 
         _is_ion = bool(beam_type is BeamType.ION)
         _is_tescan = isinstance(self.microscope, TescanMicroscope)
@@ -395,14 +398,16 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.label_presets.setVisible(_is_ion and _is_tescan)
 
 
-        self.detector_type = self.microscope.get_available_values("detector_type", beam_type=beam_type)
+        available_detector_types = self.microscope.get_available_values("detector_type", beam_type=beam_type)
         self.detector_type_combobox.clear()
-        self.detector_type_combobox.addItems(self.detector_type)
+        self.detector_type_combobox.addItems(available_detector_types)
         self.detector_type_combobox.setCurrentText(self.microscope.get("detector_type", beam_type=beam_type))
         
-        self.detector_mode = self.microscope.get_available_values("detector_mode", beam_type=beam_type)
+        available_detector_modes = self.microscope.get_available_values("detector_mode", beam_type=beam_type)
+        if available_detector_modes is None: 
+            available_detector_modes = ["N/A"]
         self.detector_mode_combobox.clear()
-        self.detector_mode_combobox.addItems(self.detector_mode if self.detector_mode is not None else ["N/A"])# if self.detector_mode is not None  else self.mode.addItem("N/A")
+        self.detector_mode_combobox.addItems(available_detector_modes)
         self.detector_mode_combobox.setCurrentText(self.microscope.get("detector_mode", beam_type=beam_type))
 
         self.set_ui_from_settings(self.image_settings, beam_type)
@@ -542,8 +547,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.ib_image = arr
         
         self.picture_signal.emit()
-        log_status_message("IMAGE_TAKEN_{beam_type}".format(beam_type=self.image_settings.beam_type.name))
-        log_status_message("Settings used: {}".format(self.image_settings))
+
+        logging.debug({"msg": "take_image_worker", "image_settings": self.image_settings.to_dict()})
+
 
     def take_reference_images(self):
         self.TAKING_IMAGES = True
@@ -559,18 +565,16 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.eb_image, self.ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
         self.picture_signal.emit()
-        log_status_message("REFERENCE_IMAGES_TAKEN")
-        log_status_message("Settings used: {}".format(self.image_settings))
+
+        logging.debug({"msg": "take_reference_images_worker", "image_settings": self.image_settings.to_dict()})
 
     def update_ui_tools(self):
-
+        """Redraw the ui tools (scalebar, crosshair)"""
         self.update_viewer(self.eb_last, BeamType.ELECTRON.name)
         self.update_viewer(self.ib_last, BeamType.ION.name)
 
-
-
     def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
-
+        """Update the viewer with the given image array"""
 
         if name == BeamType.ELECTRON.name:
             self.eb_last = arr
@@ -643,13 +647,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if _set_ui:
             if name == BeamType.ELECTRON.name:
                 self.image_settings = self.eb_image.metadata.image_settings
-                beam_settings = self.eb_image.metadata.microscope_state.eb_settings
-                detector_settings = self.eb_image.metadata.microscope_state.eb_detector
+                beam_settings = self.eb_image.metadata.microscope_state.electron_beam
+                detector_settings = self.eb_image.metadata.microscope_state.electron_detector
                 beam_type = BeamType.ELECTRON
             if name == BeamType.ION.name:
                 self.image_settings = self.ib_image.metadata.image_settings
-                beam_settings = self.ib_image.metadata.microscope_state.ib_settings
-                detector_settings = self.ib_image.metadata.microscope_state.ib_detector
+                beam_settings = self.ib_image.metadata.microscope_state.ion_beam
+                detector_settings = self.ib_image.metadata.microscope_state.ion_detector
                 beam_type = BeamType.ION            
         else:
             beam_type = BeamType[self.selected_beam.currentText()]
@@ -683,7 +687,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             beam_type = BeamType.ION
         else:
             beam_type, image = None, None
-        log_status_message(f"COORDS: {coords}, BEAM_TYPE: {beam_type}")
+
+        # logging
+        logging.debug( {"msg": "get_data_from_coord", "coords": coords, "beam_type": beam_type})
+
         return coords, beam_type, image
     
     def closeEvent(self, event):
@@ -703,8 +710,8 @@ def main():
 
     image_settings = ImageSettings(resolution=[1536, 1024], dwell_time=1e-6, hfw=150e-6, 
     autocontrast=True, beam_type=BeamType.ION, 
-    save=True, label="my_label", save_path="path/to/save", 
-    gamma_enabled=True)
+    save=True, filename="my_label", path="path/to/save", 
+    autogamma=True)
 
     viewer = napari.Viewer(ndisplay=2)
     image_settings_ui = FibsemImageSettingsWidget(image_settings=image_settings)

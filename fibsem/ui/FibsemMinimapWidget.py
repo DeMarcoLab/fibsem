@@ -118,7 +118,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.doubleSpinBox_correlation_scale_y.setKeyboardTracking(False)
         self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
 
-        self.lineEdit_tile_path.setText(self.settings.image.save_path)
+        self.lineEdit_tile_path.setText(self.settings.image.path)
 
         # gridbar
 
@@ -165,10 +165,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.settings.image.resolution = [resolution, resolution]
         self.settings.image.autocontrast = self.checkBox_tile_autocontrast.isChecked()
         self.settings.image.save = True
-        self.settings.image.save_path = self.lineEdit_tile_path.text()
-        self.settings.image.label = self.lineEdit_tile_label.text() 
+        self.settings.image.path = self.lineEdit_tile_path.text()
+        self.settings.image.filename = self.lineEdit_tile_label.text() 
 
-        if self.settings.image.label == "":
+        if self.settings.image.filename == "":
             napari.utils.notifications.show_error(f"Please enter a filename for the image")
             return
         
@@ -415,10 +415,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         if point is False: # clicked outside image
             return
 
-        _new_position = self.microscope._calculate_new_position( 
+        _new_position = self.microscope.project_stable_move( 
                     dx=point.x, dy=point.y, 
                     beam_type=self.image.metadata.image_settings.beam_type, 
-                    base_position=self.image.metadata.microscope_state.absolute_position)            
+                    base_position=self.image.metadata.microscope_state.stage_position)            
        
         if 'Shift' in event.modifiers:
             idx = self.comboBox_tile_position.currentIndex()
@@ -447,10 +447,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         if point is False: # clicked outside image
             return
 
-        _new_position = self.microscope._calculate_new_position( 
+        _new_position = self.microscope.project_stable_move( 
             dx=point.x, dy=point.y, 
             beam_type=self.image.metadata.image_settings.beam_type, 
-            base_position=self.image.metadata.microscope_state.absolute_position)   
+            base_position=self.image.metadata.microscope_state.stage_position)   
 
 
         _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
@@ -527,7 +527,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._move_to_position(_position)
 
     def _move_to_position(self, _position:FibsemStagePosition)->None:
-        self.microscope._safe_absolute_stage_movement(_position)
+        self.microscope.safe_absolute_stage_movement(_position)
         self._stage_position_moved.emit(_position)
         if self.checkBox_options_acquire_after_movement.isChecked():
             self._update_region(_position)
@@ -538,7 +538,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         logging.info(f"Loading Positions...")
         path = ui_utils._get_file_ui( msg="Select a position file to load", 
-            path=self.settings.image.save_path, 
+            path=self.settings.image.path, 
             _filter= "*yaml", 
             parent=self)
 
@@ -548,7 +548,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         pdict = utils.load_yaml(path)
         
-        positions = [FibsemStagePosition.__from_dict__(p) for p in pdict]
+        positions = [FibsemStagePosition.from_dict(p) for p in pdict]
         # self.positions = self.positions + positions # append? or overwrite
         # overwrite 
         self.positions = positions
@@ -562,7 +562,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         logging.info(f"Saving Positions...")
         
         path = ui_utils._get_save_file_ui(msg = "Select a file to save the positions to",
-            path = self.settings.image.save_path,
+            path = self.settings.image.path,
             _filter= "*yaml",
             parent=self,
         )
@@ -572,7 +572,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             return
 
         # save the positions
-        pdict = [p.__to_dict__() for p in self.positions]
+        pdict = [p.to_dict() for p in self.positions]
         utils.save_yaml(path, pdict)
 
         napari.utils.notifications.show_info(f"Saved positions to {path}")
@@ -637,7 +637,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 # protocol = utils.load_yaml(r"/home/patrick/github/autolamella/autolamella/protocol/protocol.yaml")
                 pattern = self.comboBox_pattern_overlay.currentText() 
                 
-                milling_stages = [patterning._get_milling_stages(pattern, self.settings.protocol, Point(point.x, point.y))[0] for point in points]
+                milling_stages = [patterning.get_milling_stages(pattern, self.settings.protocol, Point(point.x, point.y))[0] for point in points]
                 
                 for stage, pos in zip(milling_stages, drawn_positions[:-1]):
                     stage.name = pos.name

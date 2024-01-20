@@ -12,6 +12,7 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                ImageSettings, MicroscopeSettings, FibsemImage,
                                MicroscopeState)
 from fibsem.detection.detection import NeedleTip, ImageCentre
+from fibsem import config as cfg
 def auto_focus_beam(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -44,10 +45,10 @@ def auto_focus_beam(
             hfw=100e-6,
             beam_type=beam_type,
             save=True,
-            save_path=settings.image.save_path,
+            path=settings.image.path,
             autocontrast=True,
-            gamma_enabled=False,
-            label=f"{utils.current_timestamp()}_",
+            autogamma=False,
+            filename=f"{utils.current_timestamp()}_",
             reduced_area=FibsemRectangle(0.3, 0.3, 0.4, 0.4),
         )
 
@@ -72,7 +73,7 @@ def auto_focus_beam(
         logging.info(f"image {i}: {wd:.2e}")
         microscope.set("working_distance", wd, beam_type)
 
-        focus_image_settings.label = f"{utils.current_timestamp()}_sharpness_{i}"
+        focus_image_settings.filename = f"{utils.current_timestamp()}_sharpness_{i}"
         img = acquire.new_image(microscope, focus_image_settings)
 
         # calculate focus metric 
@@ -146,8 +147,8 @@ def auto_charge_neutralisation(
             beam_type=BeamType.ELECTRON,
             save=False,
             autocontrast=False,
-            gamma_enabled=False,
-            label=None,
+            autogamma=False,
+            filename=None,
         )
 
     for i in range(n_iterations):
@@ -257,10 +258,10 @@ def auto_home_and_link_v2(
 
     # home the stage and return the linked state
     if state is None:
-        state = microscope.get_current_microscope_state()
+        state = microscope.get_microscope_state()
 
     # home the stage
-    microscope.home()
+    microscope.home_stage()
 
     # move to saved linked state
     microscope.set_microscope_state(state)
@@ -271,7 +272,7 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
     from fibsem.segmentation.model import load_model
     import matplotlib.pyplot as plt
 
-    from autolamella.workflows.ui import _validate_det_ui_v2, ask_user
+    from autolamella.workflows.ui import update_detection_ui, ask_user
 
     if parent_ui:
         ret = ask_user(parent_ui, 
@@ -294,7 +295,7 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
 
     # set working distance
     wd = microscope.get("working_distance", BeamType.ELECTRON)
-    microscope.set("working_distance", settings.system.electron.eucentric_height, BeamType.ELECTRON)
+    microscope.set("working_distance", microscope.system.electron.eucentric_height, BeamType.ELECTRON)
 
     for hfw in hfws:
         for beam_type in [BeamType.ELECTRON, BeamType.ION]:
@@ -304,7 +305,7 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
             features = [detection.NeedleTip(), detection.ImageCentre()] if np.isclose(microscope.get("scan_rotation", beam_type), 0) else [detection.NeedleTipBottom(), detection.ImageCentre()]
             
             if parent_ui:
-                det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate = True, msg = f"Confirm Feature Detection. Press Continue to proceed.")
+                det = update_detection_ui(microscope, settings, features, parent_ui, validate = True, msg = f"Confirm Feature Detection. Press Continue to proceed.")
             else:
                 image = acquire.new_image(microscope, settings.image)
                 det = detection.detect_features(image, model, features=features, pixelsize=image.metadata.pixel_size.x)

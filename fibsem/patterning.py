@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import yaml
 import numpy as np
-from fibsem.structures import FibsemPattern, FibsemPatternSettings, Point
+from fibsem.structures import FibsemPatternType, FibsemPattern, Point
 from fibsem import constants 
 
 
@@ -86,26 +86,26 @@ class BasePattern(ABC):
     @abstractmethod
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         pass
 
-    def __to_dict__(self):
+    def to_dict(self):
         return {
             "name": self.name,
             "required_keys": self.required_keys,
             "protocol": self.protocol,
-            "point": self.point.__to_dict__() if self.point is not None else None,
+            "point": self.point.to_dict() if self.point is not None else None,
         }
 
     @classmethod
-    def __from_dict__(cls, data):
+    def from_dict(cls, data):
         pattern = cls(
             name=data["name"],
             required_keys=REQUIRED_KEYS[data["name"]],
         )
         pattern.protocol = data["protocol"]
         pattern.point = (
-            Point.__from_dict__(data["point"]) if data["point"] is not None else Point()
+            Point.from_dict(data["point"]) if data["point"] is not None else Point()
         )
         return pattern
 
@@ -119,7 +119,7 @@ class BitmapPattern(BasePattern):
 
     def define(
             self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "BitmapPattern"  
@@ -127,7 +127,7 @@ class BitmapPattern(BasePattern):
         protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         protocol["path"] = protocol.get("path", 'bmp_path')
-        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.patterns = [FibsemPattern.from_dict(protocol)]
         self.protocol = protocol
         return self.patterns
 
@@ -141,7 +141,7 @@ class BitmapPattern(BasePattern):
 
     def define(
             self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "BitmapPattern"  
@@ -149,7 +149,7 @@ class BitmapPattern(BasePattern):
         protocol["cleaning_cross_section"] = protocol.get("cleaning_cross_section", False)
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         protocol["path"] = protocol.get("path", 'bmp_path')
-        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.patterns = [FibsemPattern.from_dict(protocol)]
         self.protocol = protocol
         return self.patterns
 
@@ -164,7 +164,7 @@ class RectanglePattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Rectangle"  # redundant now
@@ -174,7 +174,7 @@ class RectanglePattern(BasePattern):
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         protocol["passes"] = protocol.get("passes", None)
-        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.patterns = [FibsemPattern.from_dict(protocol)]
         self.protocol = protocol
         self.point = point
         return self.patterns
@@ -190,7 +190,7 @@ class LinePattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         protocol["pattern"] = "Line"  # redundant now
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
@@ -198,7 +198,7 @@ class LinePattern(BasePattern):
             "cleaning_cross_section", False
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
-        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.patterns = [FibsemPattern.from_dict(protocol)]
         self.protocol = protocol
         self.point = point
         self.protocol = protocol
@@ -216,7 +216,7 @@ class CirclePattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
         protocol["pattern"] = "Circle"  # redundant now
@@ -227,7 +227,7 @@ class CirclePattern(BasePattern):
             "cleaning_cross_section", False
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
-        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.patterns = [FibsemPattern.from_dict(protocol)]
         self.protocol = protocol
         self.point = point
         return self.patterns
@@ -241,7 +241,7 @@ class AnnulusPattern(BasePattern):
     point = None
     def define(
             self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         
         protocol["centre_x"] = point.x
         protocol["centre_y"] = point.y
@@ -253,7 +253,7 @@ class AnnulusPattern(BasePattern):
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
 
-        self.patterns = [FibsemPatternSettings.__from_dict__(protocol)]
+        self.patterns = [FibsemPattern.from_dict(protocol)]
         self.protocol = protocol
         self.point = point
         return self.patterns
@@ -269,7 +269,7 @@ class TrenchPattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
 
         lamella_width = protocol["lamella_width"]
@@ -287,8 +287,8 @@ class TrenchPattern(BasePattern):
         centre_lower_y = point.y - (lamella_height / 2 + lower_trench_height / 2 + offset)
 
         # mill settings
-        lower_pattern_settings = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        lower_pattern_settings = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=lamella_width,
             height=lower_trench_height,
             depth=depth,
@@ -298,8 +298,8 @@ class TrenchPattern(BasePattern):
             scan_direction="BottomToTop",
         )
 
-        upper_pattern_settings = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        upper_pattern_settings = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=lamella_width,
             height=upper_trench_height,
             depth=depth,
@@ -326,7 +326,7 @@ class HorseshoePattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         """Calculate the trench milling patterns"""
 
         check_keys(protocol, self.required_keys)
@@ -343,8 +343,8 @@ class HorseshoePattern(BasePattern):
         )
         centre_lower_y = point.y - (lamella_height / 2 + trench_height / 2 + offset)
 
-        lower_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        lower_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=lamella_width,
             height=trench_height,
             depth=depth,
@@ -354,8 +354,8 @@ class HorseshoePattern(BasePattern):
             scan_direction="BottomToTop",
         )
 
-        upper_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        upper_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=lamella_width,
             height=upper_trench_height,
             depth=depth,
@@ -365,8 +365,8 @@ class HorseshoePattern(BasePattern):
             scan_direction="TopToBottom",
         )
 
-        side_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        side_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=protocol["side_width"],
             height=lamella_height + offset,
             depth=depth,
@@ -396,7 +396,7 @@ class HorseshoePatternVertical(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         """Calculate the horseshoe vertical milling patterns"""
 
         check_keys(protocol, self.required_keys)
@@ -408,8 +408,8 @@ class HorseshoePatternVertical(BasePattern):
         depth = protocol["depth"]
         scan_direction = protocol.get("scan_direction", "TopToBottom")
 
-        left_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        left_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=trench_width,
             height=height,
             depth=depth,
@@ -419,8 +419,8 @@ class HorseshoePatternVertical(BasePattern):
             scan_direction=scan_direction,
         )
 
-        right_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        right_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=trench_width,
             height=height,
             depth=depth,
@@ -430,8 +430,8 @@ class HorseshoePatternVertical(BasePattern):
             scan_direction=scan_direction,
         )
 
-        upper_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        upper_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=width + (2 * trench_width),
             height=upper_trench_height,
             depth=depth,
@@ -457,7 +457,7 @@ class FiducialPattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         import numpy as np
 
         # ?
@@ -469,10 +469,10 @@ class FiducialPattern(BasePattern):
         )
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
-        left_pattern = FibsemPatternSettings.__from_dict__(protocol)
+        left_pattern = FibsemPattern.from_dict(protocol)
         from fibsem import constants 
         left_pattern.rotation = protocol["rotation"] * constants.DEGREES_TO_RADIANS
-        right_pattern = FibsemPatternSettings.__from_dict__(protocol)
+        right_pattern = FibsemPattern.from_dict(protocol)
         right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
 
         self.patterns = [left_pattern, right_pattern]
@@ -491,7 +491,7 @@ class UndercutPattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
 
         jcut_rhs_height = protocol["rhs_height"]
@@ -510,8 +510,8 @@ class UndercutPattern(BasePattern):
         jcut_top_height = jcut_trench_thickness
         jcut_top_depth = jcut_depth
 
-        top_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        top_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=jcut_top_width,
             height=jcut_top_height,
             depth=jcut_top_depth,
@@ -527,8 +527,8 @@ class UndercutPattern(BasePattern):
         jcut_rhs_height = jcut_rhs_height
         jcut_rhs_depth = jcut_depth
 
-        rhs_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        rhs_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=jcut_rhs_width,
             height=jcut_rhs_height,
             depth=jcut_rhs_depth,
@@ -557,7 +557,7 @@ class MicroExpansionPattern(BasePattern):
     # ref: https://www.nature.com/articles/s41467-022-29501-3
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         """
         Draw the microexpansion joints for stress relief of lamella.
 
@@ -567,7 +567,7 @@ class MicroExpansionPattern(BasePattern):
             protocol (dict): Lamella protocol
 
         Returns:
-            patterns: list[FibsemPatternSettings]
+            patterns: list[FibsemPattern]
         """
         check_keys(protocol, self.required_keys)
 
@@ -575,8 +575,8 @@ class MicroExpansionPattern(BasePattern):
         height = protocol["height"]
         depth = protocol["depth"]  # lamella milling depth
 
-        left_pattern_settings = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        left_pattern_settings = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=width,
             height=height,
             depth=depth,
@@ -586,8 +586,8 @@ class MicroExpansionPattern(BasePattern):
             scan_direction="TopToBottom",
         )
 
-        right_pattern_settings = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        right_pattern_settings = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=width,
             height=height,
             depth=depth,
@@ -614,7 +614,7 @@ class SpotWeldPattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
         width = protocol["width"]
         height = protocol["height"]
@@ -629,8 +629,8 @@ class SpotWeldPattern(BasePattern):
 
         patterns = []
         for i in range(n_patterns):
-            pattern_settings = FibsemPatternSettings(
-                pattern=FibsemPattern.Rectangle,
+            pattern_settings = FibsemPattern(
+                pattern=FibsemPatternType.Rectangle,
                 width=width,
                 height=height,
                 depth=depth,
@@ -663,7 +663,7 @@ class SpotWeldPatternVertical(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
         width = protocol["width"]
         height = protocol["height"]
@@ -678,8 +678,8 @@ class SpotWeldPatternVertical(BasePattern):
 
         patterns = []
         for i in range(n_patterns):
-            pattern_settings = FibsemPatternSettings(
-                pattern=FibsemPattern.Rectangle,
+            pattern_settings = FibsemPattern(
+                pattern=FibsemPatternType.Rectangle,
                 width=width,
                 height=height,
                 depth=depth,
@@ -713,7 +713,7 @@ class WaffleNotchPattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
 
         vwidth = protocol["vwidth"]
@@ -724,8 +724,8 @@ class WaffleNotchPattern(BasePattern):
         distance = protocol["distance"]
 
         # five patterns
-        top_vertical_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        top_vertical_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=vwidth,
             height=vheight,
             depth=depth,
@@ -735,8 +735,8 @@ class WaffleNotchPattern(BasePattern):
             scan_direction="TopToBottom",
         )
 
-        bottom_vertical_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        bottom_vertical_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=vwidth,
             height=vheight,
             depth=depth,
@@ -746,8 +746,8 @@ class WaffleNotchPattern(BasePattern):
             scan_direction="BottomToTop",
         )
 
-        top_horizontal_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        top_horizontal_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=hwidth,
             height=hheight,
             depth=depth,
@@ -757,8 +757,8 @@ class WaffleNotchPattern(BasePattern):
             scan_direction="TopToBottom",
         )
 
-        bottom_horizontal_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        bottom_horizontal_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=hwidth,
             height=hheight,
             depth=depth,
@@ -768,8 +768,8 @@ class WaffleNotchPattern(BasePattern):
             scan_direction="BottomToTop",
         )
 
-        centre_vertical_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        centre_vertical_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=vwidth,
             height=distance + hheight,
             depth=depth,
@@ -801,7 +801,7 @@ class CloverPattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
 
         radius = protocol["radius"]
@@ -809,8 +809,8 @@ class CloverPattern(BasePattern):
 
         # three leaf clover pattern
 
-        top_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Circle,
+        top_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Circle,
             radius=radius,
             depth=depth,
             centre_x=point.x,
@@ -819,8 +819,8 @@ class CloverPattern(BasePattern):
             scan_direction="TopToBottom",
         )
 
-        right_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Circle,
+        right_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Circle,
             radius=radius,
             depth=depth,
             centre_x=point.x + radius,
@@ -829,8 +829,8 @@ class CloverPattern(BasePattern):
             scan_direction="BottomToTop",
         )
 
-        left_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Circle,
+        left_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Circle,
             radius=radius,
             depth=depth,
             centre_x=point.x - radius,
@@ -839,8 +839,8 @@ class CloverPattern(BasePattern):
             scan_direction="LeftToRight",
         )
 
-        stem_pattern = FibsemPatternSettings(
-            pattern=FibsemPattern.Rectangle,
+        stem_pattern = FibsemPattern(
+            pattern=FibsemPatternType.Rectangle,
             width=radius / 4,
             height=radius * 2,
             depth=depth,
@@ -868,7 +868,7 @@ class TriForcePattern(BasePattern):
 
     def define(
         self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPatternSettings]:
+    ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
 
         height = protocol["height"]
@@ -909,7 +909,7 @@ class TrapezoidPattern(BasePattern):
     protocol = None
     point = None
 
-    def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPatternSettings]:
+    def define(self, protocol: dict, point: Point = Point()) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
         self.patterns = []
         width_increments = (protocol["outer_width"] - protocol["inner_width"]) / (protocol["n_rectangles"]-1)
@@ -922,8 +922,8 @@ class TrapezoidPattern(BasePattern):
             pattern = RectanglePattern()
             y = point.y + (i * dict["trench_height"] * (1-protocol["overlap"])) - protocol["distance"] - protocol["trench_height"]
             centre = Point(point.x, y)
-            pattern = FibsemPatternSettings(
-                pattern=FibsemPattern.Rectangle,
+            pattern = FibsemPattern(
+                pattern=FibsemPatternType.Rectangle,
                 width=dict["width"],
                 height=dict["trench_height"],
                 depth=dict["depth"],
@@ -939,8 +939,8 @@ class TrapezoidPattern(BasePattern):
             pattern = RectanglePattern()
             y = point.y - (i * dict["trench_height"] * (1-protocol["overlap"])) + protocol["distance"] + protocol["trench_height"]
             centre = Point(point.x, y)
-            pattern = FibsemPatternSettings(
-                pattern=FibsemPattern.Rectangle,
+            pattern = FibsemPattern(
+                pattern=FibsemPatternType.Rectangle,
                 width=dict["width"],
                 height=dict["trench_height"],
                 depth=dict["depth"],
@@ -1009,11 +1009,11 @@ def get_pattern_required_keys_yaml() -> str:
 
 def create_triangle_patterns(
     width: float, height: float, depth: float, angle: float = 30, point: Point = Point()
-) -> list[FibsemPatternSettings]:
+) -> list[FibsemPattern]:
     h_offset = height / 2 * np.sin(np.deg2rad(angle))
 
-    left_pattern = FibsemPatternSettings(
-        pattern=FibsemPattern.Rectangle,
+    left_pattern = FibsemPattern(
+        pattern=FibsemPatternType.Rectangle,
         width=width,
         height=height,
         depth=depth,
@@ -1024,8 +1024,8 @@ def create_triangle_patterns(
         scan_direction="LeftToRight",
     )
 
-    right_pattern = FibsemPatternSettings(
-        pattern=FibsemPattern.Rectangle,
+    right_pattern = FibsemPattern(
+        pattern=FibsemPatternType.Rectangle,
         width=width,
         height=height,
         depth=depth,
@@ -1036,8 +1036,8 @@ def create_triangle_patterns(
         scan_direction="RightToLeft",
     )
 
-    bottom_pattern = FibsemPatternSettings(
-        pattern=FibsemPattern.Rectangle,
+    bottom_pattern = FibsemPattern(
+        pattern=FibsemPatternType.Rectangle,
         width=width,
         height=height,
         depth=depth,
@@ -1061,21 +1061,21 @@ class FibsemMillingStage:
     milling: FibsemMillingSettings = FibsemMillingSettings()
     pattern: BasePattern = get_pattern("Rectangle")
 
-    def __to_dict__(self):
+    def to_dict(self):
         return {
             "name": self.name,
             "num": self.num,
-            "milling": self.milling.__to_dict__(),
-            "pattern": self.pattern.__to_dict__(),
+            "milling": self.milling.to_dict(),
+            "pattern": self.pattern.to_dict(),
         }
 
     @classmethod
-    def __from_dict__(cls, data: dict):
+    def from_dict(cls, data: dict):
         return cls(
             name=data["name"],
             num=data["num"],
-            milling=FibsemMillingSettings.__from_dict__(data["milling"]),
-            pattern=get_pattern(data["pattern"]["name"]).__from_dict__(data["pattern"]),
+            milling=FibsemMillingSettings.from_dict(data["milling"]),
+            pattern=get_pattern(data["pattern"]["name"]).from_dict(data["pattern"]),
         )
 
 
@@ -1139,7 +1139,7 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
 
 from typing import Optional, Union
 
-def _get_milling_stages(key, protocol, point: Union[Point, list[Point]] = Point()):
+def get_milling_stages(key, protocol, point: Union[Point, list[Point]] = Point()):
     
     # TODO: maybe add support for defining point per stages?
 
@@ -1170,9 +1170,9 @@ def _get_protocol_from_stages(stages: list):
 
     for stage in stages:
         # join two dicts union
-        ddict = {**stage.__to_dict__()["milling"], 
-            **stage.__to_dict__()["pattern"]["protocol"], 
-            "type": stage.__to_dict__()["pattern"]["name"]}
+        ddict = {**stage.to_dict()["milling"], 
+            **stage.to_dict()["pattern"]["protocol"], 
+            "type": stage.to_dict()["pattern"]["name"]}
         protocol["stages"].append(deepcopy(ddict))
 
     return protocol

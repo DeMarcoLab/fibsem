@@ -6,7 +6,7 @@ from pprint import pprint
 
 import fibsem
 from fibsem import acquire, milling, utils, alignment
-from fibsem.structures import BeamType, ImageSettings, FibsemPattern, FibsemPatternSettings
+from fibsem.structures import BeamType, ImageSettings, FibsemPatternType, FibsemPattern
 import numpy as np
 
 def main():
@@ -19,8 +19,8 @@ def main():
         patterning_mode  = "Serial",
         mill_settings = settings.milling)
     
-    pattern_settings = FibsemPatternSettings(
-        pattern = FibsemPattern.Rectangle,
+    pattern_settings = FibsemPattern(
+        pattern = FibsemPatternType.Rectangle,
         width = settings.protocol["milling"]["width"],
         height = settings.protocol["milling"]["height"],
         depth = settings.protocol["milling"]["depth"],
@@ -33,7 +33,7 @@ def main():
     microscope.set("angular_correction_angle", np.deg2rad(-38))
 
     # update image settings
-    settings.image.label = "reference"
+    settings.image.filename = "reference"
     settings.image.save = True
     settings.image.beam_type = BeamType.ELECTRON
 
@@ -54,7 +54,7 @@ def main():
 
         # view
         logging.info("------------------------ VIEW ------------------------")
-        settings.image.label = f"slice_{slice_idx:04d}"
+        settings.image.filename = f"slice_{slice_idx:04d}"
         eb_image = acquire.new_image(microscope, settings.image)
 
 

@@ -53,7 +53,6 @@ class SegmentationModel:
         if "latest" in checkpoint:
             use_v2 = True
         if use_v2:
-            print(f"using latest checkpoint: {checkpoint}")
             self.model = self.load_model_v2(checkpoint=checkpoint)
         else:
             self.load_model(checkpoint=checkpoint, encoder=encoder)

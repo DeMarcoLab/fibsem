@@ -381,13 +381,13 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         index: list[int] = list(self.pts_layer.selected_data)
 
         def napari_pt_to_point(pt: np.ndarray, dtype=int) -> Point:
-            return Point.__from_list__(np.flip(pt, axis=-1).astype(dtype))
+            return Point.from_list(np.flip(pt, axis=-1).astype(dtype))
 
         # add new feature
         if len(points) > len(self.features):
             # get latest feature
             feature = copy.deepcopy(self.feature)
-            feature.update(napari_pt_to_point(points[-1]).__to_dict__())
+            feature.update(napari_pt_to_point(points[-1]).to_dict())
             feature["color"] = get_feature_color(feature["name"])
             self.features.append(copy.deepcopy(feature))
 
@@ -404,7 +404,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
             # moved
             for idx in index:
                 self.features[idx].update(
-                    copy.deepcopy(napari_pt_to_point(points[idx])).__to_dict__()
+                    copy.deepcopy(napari_pt_to_point(points[idx])).to_dict()
                 )
 
         #

@@ -4,22 +4,15 @@ import yaml
 from pathlib import Path
 import napari
 import napari.utils.notifications
-import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QPixmap, QImage
 from copy import deepcopy
-from fibsem import constants, conversions
+from fibsem import constants
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (BeamType, FibsemStagePosition,
-                               MicroscopeSettings, MovementMode, Point)
+from fibsem.structures import FibsemStagePosition
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemPositionsWidget, FibsemMovementWidget
 from fibsem.ui.utils import _get_save_file_ui, _get_file_ui
-
-def log_status_message(step: str):
-    logging.debug(
-        f"STATUS | Movement Widget | {step}"
-    )
 
 
 class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
@@ -86,7 +79,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
             return
         dict_position = []
         for position in self.positions:
-            dict_position.append(position.__to_dict__())
+            dict_position.append(position.to_dict())
         with open(os.path.join(Path(protocol_path).with_suffix(".yaml")), "w") as f:
             yaml.safe_dump(dict_position, f, indent=4, default_flow_style=False)
 
@@ -101,7 +94,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         with open(protocol_path, "r") as f:
             dict_positions = yaml.safe_load(f)
         for dict_position in dict_positions:
-            position = FibsemStagePosition.__from_dict__(dict_position)
+            position = FibsemStagePosition.from_dict(dict_position)
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
 

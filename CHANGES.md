@@ -9,7 +9,7 @@
 
 ### Features
 
-- Added a _safe_absolute_stage_movement. This function will tilt flat before performing large movements to prevent collions.
+- Added a safe_absolute_stage_movement. This function will tilt flat before performing large movements to prevent collions.
 - Added cleaning_cross_section and scan_direction to the milling widget user interface.
 - Rectangle Patterns now sputter a 'passes' parameter. This allows you to explicitly set the number of passes the beam will scan.
 - Adjusted the milling widget to allow for the selection of multiple milling stages. This allows you to move multiple stages together.

@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 from fibsem import constants, conversions
-from fibsem.structures import Point, FibsemImage, FibsemPatternSettings, FibsemPattern, FibsemRectangle
+from fibsem.structures import Point, FibsemImage, FibsemPattern, FibsemPatternType, FibsemRectangle
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
@@ -182,7 +182,7 @@ def set_arr_as_qlabel(
 
 
 def convert_pattern_to_napari_circle(
-    pattern_settings: FibsemPatternSettings, image: FibsemImage
+    pattern_settings: FibsemPattern, image: FibsemImage
 ):
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
@@ -204,16 +204,16 @@ def convert_pattern_to_napari_circle(
 
 
 def convert_pattern_to_napari_rect(
-    pattern_settings: FibsemPatternSettings, image: FibsemImage
+    pattern_settings: FibsemPattern, image: FibsemImage
 ) -> np.ndarray:
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
     # extract pattern information from settings
-    from fibsem.structures import FibsemPattern
+    from fibsem.structures import FibsemPatternType
 
-    if pattern_settings.pattern is FibsemPattern.Line:
+    if pattern_settings.pattern is FibsemPatternType.Line:
         pattern_width = pattern_settings.end_x - pattern_settings.start_x
         pattern_height = max(pattern_settings.end_y - pattern_settings.start_y, 0.5e-6)
         pattern_rotation = np.arctan2(
@@ -223,7 +223,7 @@ def convert_pattern_to_napari_rect(
         pattern_centre_y = (pattern_settings.end_y + pattern_settings.start_y) / 2
 
     
-    elif pattern_settings.pattern is FibsemPattern.Annulus: #only used for out of bounds check
+    elif pattern_settings.pattern is FibsemPatternType.Annulus: #only used for out of bounds check
         pattern_width = 2*pattern_settings.radius
         pattern_height = 2*pattern_settings.radius
         pattern_centre_x = pattern_settings.centre_x
@@ -299,7 +299,7 @@ def create_crosshair_shape(centre_point: Point, image: FibsemImage,eb_image: Fib
 
 
 def convert_bitmap_pattern_to_napari_image(
-        pattern_settings: FibsemPatternSettings, image: FibsemImage
+        pattern_settings: FibsemPattern, image: FibsemImage
 ) -> np.ndarray:
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
@@ -326,7 +326,7 @@ def convert_bitmap_pattern_to_napari_image(
     
     return img_array, translate_position
 
-def convert_pattern_to_napari_image(pattern_settings: FibsemPatternSettings, image: FibsemImage) -> np.ndarray:
+def convert_pattern_to_napari_image(pattern_settings: FibsemPattern, image: FibsemImage) -> np.ndarray:
 
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
@@ -387,7 +387,7 @@ def _draw_patterns_in_napari(
 
     # colour wheel
     COLOURS = ["yellow", "cyan", "magenta", "lime", "orange", "hotpink", "green", "blue", "red", "purple"]
-    from fibsem.structures import FibsemPattern
+    from fibsem.structures import FibsemPatternType
 
     # convert fibsem patterns to napari shapes
     import time
@@ -404,7 +404,7 @@ def _draw_patterns_in_napari(
         name = stage.name
 
         for pattern_settings in patterns:
-            if pattern_settings.pattern is FibsemPattern.Bitmap:
+            if pattern_settings.pattern is FibsemPatternType.Bitmap:
                 if pattern_settings.path == None or pattern_settings.path == '':
                     continue
 
@@ -415,7 +415,7 @@ def _draw_patterns_in_napari(
                 shape_patterns = []
                 _ignore.append("bmp_Image")
                 continue
-            elif pattern_settings.pattern is FibsemPattern.Annulus:
+            elif pattern_settings.pattern is FibsemPatternType.Annulus:
                 annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
                 if "annulus_Image" in viewer.layers:
                     viewer.layers.remove(viewer.layers["annulus_Image"])
@@ -424,7 +424,7 @@ def _draw_patterns_in_napari(
                 _ignore.append("annulus_Image")
                 continue
 
-            elif pattern_settings.pattern is FibsemPattern.Circle:
+            elif pattern_settings.pattern is FibsemPatternType.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
 
                 shape_types.append("ellipse")
@@ -650,7 +650,7 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
 
 def validate_pattern_placement(
-    patterns: list[FibsemPatternSettings], resolution: list, shape: list[list[float]]
+    patterns: list[FibsemPattern], resolution: list, shape: list[list[float]]
 ):
     x_lim = resolution[0]
     y_lim = resolution[1]
@@ -732,7 +732,7 @@ def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
     milling_stages = []
 
     for stage in stages:
-        milling_stage = FibsemMillingStage.__from_dict__(stages[stage])
+        milling_stage = FibsemMillingStage.from_dict(stages[stage])
         pattern = patterning.get_pattern(milling_stage.pattern.name)
         pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
         milling_stage.pattern = pattern
@@ -798,7 +798,7 @@ def export_milling_stages_yaml(milling_stages: list[FibsemMillingStage]) -> None
     stages = {}
 
     for stage in milling_stages:
-        stages[stage.name] = stage.__to_dict__()
+        stages[stage.name] = stage.to_dict()
 
         if "required_keys" in stages[stage.name]["pattern"].keys():
             del stages[stage.name]["pattern"]["required_keys"]
@@ -820,7 +820,7 @@ def import_milling_stages_yaml() -> list[FibsemMillingStage]:
     milling_stages = []
 
     for stage in stages:
-        milling_stage = FibsemMillingStage.__from_dict__(stages[stage])
+        milling_stage = FibsemMillingStage.from_dict(stages[stage])
         pattern = patterning.get_pattern(milling_stage.pattern.name)
         pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
         milling_stage.pattern = pattern

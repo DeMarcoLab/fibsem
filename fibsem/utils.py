@@ -18,8 +18,7 @@ from fibsem.structures import (
     SystemSettings,
     FibsemImage,
     FibsemMillingSettings,
-    FibsemHardware,
-    FibsemPatternSettings,
+    FibsemPattern,
 )
 from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope
@@ -138,6 +137,7 @@ def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
     )
 
 VALID_THERMO_FISHER = ["Thermo", "Thermo Fisher Scientific", "Thermo Fisher Scientific"]
+VALID_TESCAN = ["Tescan", "TESCAN" ]
 
 def setup_session(
     session_path: Path = None,
@@ -177,95 +177,43 @@ def setup_session(
         configure_logging(session_path, _DEBUG=debug)
 
     # connect to microscope
-    import fibsem.microscope as FibSem
+    import fibsem.microscope as fibsem_microscope
 
     # cheap overloading
     if ip_address:
-        settings.system.ip_address = ip_address
+        settings.system.info.ip_address = ip_address
     
     if manufacturer:
-        settings.system.manufacturer = manufacturer
+        settings.system.info.manufacturer = manufacturer
 
-    if settings.system.manufacturer in VALID_THERMO_FISHER:
-        microscope = FibSem.ThermoMicroscope()
-        # set hardware settings
-        microscope.hardware_settings = settings.hardware
-        microscope.stage_settings = settings.system.stage
+    manufacturer = settings.system.info.manufacturer
+    ip_address = settings.system.info.ip_address
+
+    if manufacturer in VALID_THERMO_FISHER:
+        microscope = fibsem_microscope.ThermoMicroscope(settings.system)
         microscope.connect_to_microscope(
-            ip_address=settings.system.ip_address, port=7520
+            ip_address=ip_address, port=7520
         )
 
-    elif settings.system.manufacturer == "Tescan":
-        microscope = FibSem.TescanMicroscope(ip_address=settings.system.ip_address)
-        # set hardware settings
-        microscope.hardware_settings = settings.hardware
-        microscope.stage_settings = settings.system.stage
+    elif manufacturer in VALID_TESCAN:
+        microscope = fibsem_microscope.TescanMicroscope(settings.system)
         microscope.connect_to_microscope(
-            ip_address=settings.system.ip_address, port=8300
+            ip_address=ip_address, port=8300
         )
     
-    elif settings.system.manufacturer == "Demo":
-        microscope = FibSem.DemoMicroscope()
-        # set hardware settings
-        microscope.hardware_settings = settings.hardware
-        microscope.stage_settings = settings.system.stage
-        microscope.connect_to_microscope()
+    elif manufacturer == "Demo":
+        microscope = fibsem_microscope.DemoMicroscope(settings.system)
+        microscope.connect_to_microscope(ip_address, port=7520)
 
     else:
-        raise NotImplementedError(f"Manufacturer {settings.system.manufacturer} not supported.")
+        raise NotImplementedError(f"Manufacturer {manufacturer} not supported.")
     
-
-    
-    # image_settings
-    settings.image.save_path = session_path
+    # set default image_settings path
+    settings.image.path = session_path
 
     logging.info(f"Finished setup for session: {session}")
 
     return microscope, settings
-
-
-def load_settings_from_config(
-    config_path: Path = None, protocol_path: Path = None
-) -> MicroscopeSettings:
-    """Load microscope settings from configuration files
-
-    Args:
-        config_path (Path, optional): path to config directory. Defaults to None.
-        protocol_path (Path, optional): path to protocol file. Defaults to None.
-
-    Returns:
-        MicroscopeSettings: microscope settings
-    """
-    # TODO: this should just be system.yaml path, not directory
-    if config_path is None:
-        from fibsem.config import CONFIG_PATH
-
-        config_path = os.path.join(CONFIG_PATH, "system.yaml")
-    
-    # system settings
-    settings = load_yaml(os.path.join(config_path))
-    system_settings = SystemSettings.__from_dict__(settings["system"])
-
-    # user settings
-    image_settings = ImageSettings.__from_dict__(settings["user"]["imaging"])
-
-    milling_settings = FibsemMillingSettings.__from_dict__(settings["user"]["milling"])
-
-    # protocol settings
-    protocol = load_protocol(protocol_path)
-
-    # hardware settings
-    hardware_settings = FibsemHardware.__from_dict__(settings["model"])
-
-    settings = MicroscopeSettings(
-        system=system_settings,
-        image=image_settings,
-        protocol=protocol,
-        milling=milling_settings,
-        hardware=hardware_settings,
-    )
-
-    return settings
 
 
 def load_microscope_configuration(
@@ -284,28 +232,14 @@ def load_microscope_configuration(
         from fibsem.config import DEFAULT_CONFIGURATION_PATH
         config_path = DEFAULT_CONFIGURATION_PATH
     
-    # system settings
+    # load config
     config = load_yaml(os.path.join(config_path))
-    system_settings = SystemSettings.__from_dict__(config)
 
-    # user settings
-    image_settings = ImageSettings.__from_dict__(config["imaging"])
-
-    milling_settings = FibsemMillingSettings.__from_dict__(config["milling"])
-
-    # protocol settings
+    # load protocol
     protocol = load_protocol(protocol_path)
 
-    # hardware settings
-    hardware_settings = FibsemHardware.__from_dict__(config["subsystems"])
-
-    settings = MicroscopeSettings(
-        system=system_settings,
-        image=image_settings,
-        protocol=protocol,
-        milling=milling_settings,
-        hardware=hardware_settings,
-    )
+    # create settings
+    settings = MicroscopeSettings.from_dict(config, protocol=protocol)
 
     return settings
 
@@ -314,9 +248,6 @@ def apply_configuration(microscope: FibsemMicroscope, settings: MicroscopeSettin
     # beam_system settings
     microscope.set_beam_system_settings(settings.system.electron)
     microscope.set_beam_system_settings(settings.system.ion)
-
-    # imaging settings
-    microscope.set_imaging_settings(settings.image)
 
 
 def load_protocol(protocol_path: Path = None) -> dict:
@@ -405,7 +336,7 @@ def _get_position(name: str):
     # get position from save positions?
     for d in ddict:
         if d["name"] == name:
-            return FibsemStagePosition.__from_dict__(d)
+            return FibsemStagePosition.from_dict(d)
     return None
 
 def _get_positions(fname: str = None) -> list[str]:    
@@ -448,7 +379,7 @@ def save_positions(positions: list, path: str = None, overwrite: bool = False) -
     
     # append new positions
     for position in positions:
-        pdict.append(position.__to_dict__())
+        pdict.append(position.to_dict())
     
     # save
     save_yaml(path, pdict)
@@ -475,10 +406,10 @@ def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show
         metadata_lines = "Ion Beam \n"
 
     # add metadata lines
-    if img.metadata.image_settings.beam_type == BeamType.ELECTRON and img.metadata.microscope_state.eb_settings.voltage is not None:
-        metadata_lines += f'{img.metadata.microscope_state.eb_settings.voltage * constants.SI_TO_KILO} kV  |  '
-    elif img.metadata.image_settings.beam_type == BeamType.ION and img.metadata.microscope_state.ib_settings.voltage is not None:
-        metadata_lines += f'{img.metadata.microscope_state.ib_settings.voltage * constants.SI_TO_KILO} kV  |  '
+    if img.metadata.image_settings.beam_type == BeamType.ELECTRON and img.metadata.microscope_state.electron_beam.voltage is not None:
+        metadata_lines += f'{img.metadata.microscope_state.electron_beam.voltage * constants.SI_TO_KILO} kV  |  '
+    elif img.metadata.image_settings.beam_type == BeamType.ION and img.metadata.microscope_state.ion_beam.voltage is not None:
+        metadata_lines += f'{img.metadata.microscope_state.ion_beam.voltage * constants.SI_TO_KILO} kV  |  '
     else:
         metadata_lines += 'Voltage: Unknown  |  '
     metadata_lines += (f'HFW: {img.metadata.image_settings.hfw * constants.SI_TO_MICRO} μm  | ')
@@ -531,20 +462,8 @@ def _register_metadata(microscope: FibsemMicroscope, application_software: str, 
     from fibsem.structures import FibsemUser, FibsemExperiment
     import fibsem
 
-    import platform
-    username = os.environ.get("USERNAME", "username")
+    user = FibsemUser.from_environment()
 
-    if platform.system() == "Windows":
-        hostname = os.environ.get("COMPUTERNAME", "hostname")
-    elif platform.system() == "Linux":
-        hostname = os.environ.get("HOSTNAME", "hostname")
-    elif platform.system() == "Darwin":
-        hostname = os.environ.get("HOSTNAME", "hostname")
-    else:
-        hostname = "hostname"
-        
-    user = FibsemUser(name=username, email="null", organization="null", computer=hostname)
-        
     experiment = FibsemExperiment(
         id = experiment_name,
         method=experiment_method,

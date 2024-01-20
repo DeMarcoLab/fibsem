@@ -78,7 +78,7 @@ class FibsemImageViewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
             beam_type = image_settings.beam_type.name
             resolution = f'{image_settings.resolution[0]} x {image_settings.resolution[1]}'
             hfw = image_settings.hfw * constants.SI_TO_MICRO
-            name = image_settings.label
+            name = image_settings.filename
 
             self.label_beamType.setText(beam_type)
             self.label_resolution.setText(resolution)
@@ -99,7 +99,7 @@ class FibsemImageViewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
 
         try:
 
-            position = self.image.metadata.microscope_state.absolute_position
+            position = self.image.metadata.microscope_state.stage_position
 
             self.label_position.setText(f'x: {position.x:.2f} y: {position.y:.2f} z: {position.z:.2f} r: {position.r:.2f} t: {position.t:.2f}')
         except:
@@ -108,13 +108,13 @@ class FibsemImageViewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
         try:
             if beam_type == "ION":
 
-                detector_data = self.image.metadata.microscope_state.ib_detector
-                beam_data = self.image.metadata.microscope_state.ib_settings
+                detector_data = self.image.metadata.microscope_state.ion_detector
+                beam_data = self.image.metadata.microscope_state.ion_beam
             
             else:
 
-                detector_data = self.image.metadata.microscope_state.eb_detector
-                beam_data = self.image.metadata.microscope_state.eb_settings
+                detector_data = self.image.metadata.microscope_state.electron_detector
+                beam_data = self.image.metadata.microscope_state.electron_beam
 
             self._load_detector_info(detector_data)
         except:
