@@ -1535,6 +1535,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         self.set("current", mill_settings.milling_current, BeamType.ION)
         self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
+    
+        logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
     def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False):
         """
@@ -1549,9 +1551,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if not self.is_available("ion_beam"):
             raise ValueError("Ion beam not available.")
         
-        # change to milling current
-
-        # use set api
+        # change to milling current, voltage
         if self.get("voltage", BeamType.ION) != milling_voltage:
             self.set("voltage", milling_voltage, BeamType.ION)
         if self.get("current", BeamType.ION) != milling_current:
@@ -1566,6 +1566,8 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.patterning.run()
             self.connection.patterning.clear_patterns()
         # NOTE: Make tescan logs the same??
+                                    
+        logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
 
     def run_milling_drift_corrected(self, milling_current: float, 
                                     milling_voltage: float,  
@@ -1632,6 +1634,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.set("current", imaging_current, BeamType.ION)
         self.set("voltage", imaging_voltage, BeamType.ION)
         self.connection.patterning.mode = "Serial"
+
+        logging.debug({"msg": "finish_milling", "imaging_current": imaging_current, "imaging_voltage": imaging_voltage})
 
     def estimate_milling_time(self, patterns: list ) -> float:
         """Calculates the estimated milling time for a list of patterns."""
@@ -5429,22 +5433,23 @@ class DemoMicroscope(FibsemMicroscope):
             return FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0)
 
     def setup_milling(self, mill_settings: FibsemMillingSettings):
+        """Setup the milling parameters."""
         _check_beam(BeamType.ION, self.system)
-        logging.info(f"Setting up milling: {mill_settings.patterning_mode}, {mill_settings}")
         self.set("current", mill_settings.milling_current, BeamType.ION)
         self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
     def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
+        """Run milling with the specified current and voltage."""
         _check_beam(BeamType.ION, self.system)
-        logging.info(f"Running milling: {milling_current:.2e}, {milling_voltage:.2e}, {asynch}")
-        import random
+        # import random
         # time.sleep(random.randint(1, 5))
         time.sleep(5)
         logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
+        """Finish milling by restoring the imaging current and voltage."""
         _check_beam(BeamType.ION, self.system)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
         self.set("current", imaging_current, BeamType.ION)
@@ -5452,7 +5457,7 @@ class DemoMicroscope(FibsemMicroscope):
 
 
     def estimate_milling_time(self, patterns: list) -> float:
-
+        """Estimate the milling time for the specified patterns."""
         total_time = 0
         for pattern in patterns:
             total_time += 5
@@ -5482,11 +5487,11 @@ class DemoMicroscope(FibsemMicroscope):
         Raises:
             None
         """
-        list = ["BottomToTop", 
+        values = ["BottomToTop", 
                 "LeftToRight", 	
                 "RightToLeft", 	
                 "TopToBottom"]
-        return list 
+        return values 
 
     def draw_bitmap_pattern(self, pattern_settings: FibsemPattern,
         path: str):
