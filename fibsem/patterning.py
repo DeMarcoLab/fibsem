@@ -1161,7 +1161,7 @@ def get_milling_stages(key, protocol, point: Union[Point, list[Point]] = Point()
 
 
 from copy import deepcopy
-def _get_protocol_from_stages(stages: list):
+def get_protocol_from_stages(stages: list):
     protocol = {}  
     protocol["stages"] = []
 
