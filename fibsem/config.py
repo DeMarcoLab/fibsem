@@ -98,7 +98,6 @@ __DEFAULT_MANUFACTURER__ = "Thermo"
 __DEFAULT_IP_ADDRESS__ = "192.168.0.1"
 __SUPPORTED_PLASMA_GASES__ = ["Argon", "Oxygen", "Nitrogen", "Xenon"]
 
-__DEFAULT_CHECKPOINT__ = "autolamella-mega-20240107.pt"
 
 def get_default_user_config() -> dict:
     """Return the default configuration."""
@@ -188,6 +187,7 @@ DEFAULT_CONFIGURATION_VALUES = {
 
 # machine learning
 HUGGINFACE_REPO = "patrickcleeve/autolamella"
+__DEFAULT_CHECKPOINT__ = "autolamella-mega-20240107.pt"
 
 
 

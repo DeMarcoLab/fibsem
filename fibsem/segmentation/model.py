@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 
 import numpy as np
 import torch
@@ -126,7 +127,8 @@ class SegmentationModel:
                 img_t = img_t.unsqueeze(0)  # add batch dim
 
         assert img_t.ndim == 4, f"Expected 4 dims, got {img_t.ndim}"
-        assert min(img_t) >= 0.0 and max(img_t) <= 1.0, f"Expected 0-1, got {min(img_t)}-{max(img_t)}"
+
+        logging.debug({"msg": "pre_process", "shape": img_t.shape, "dtype": img_t.dtype, "min": img_t.min(), "max": img_t.max()})
 
         return img_t
 

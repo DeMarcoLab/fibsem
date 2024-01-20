@@ -769,6 +769,7 @@ def take_image_and_detect_features(
     
     from fibsem import acquire, utils
     from fibsem.segmentation.model import load_model
+    from fibsem import config as cfg
 
     if settings.image.reduced_area is not None:
         logging.info(
@@ -783,16 +784,15 @@ def take_image_and_detect_features(
     image = acquire.new_image(microscope, settings.image)
 
     # load model
-    from fibsem import config as cfg
-    ml_protocol = settings.protocol.get("ml", {})
-    checkpoint = ml_protocol.get("checkpoint", cfg.__DEFAULT_CHECKPOINT__)
+
+    checkpoint = settings.protocol["options"].get("checkpoint", cfg.__DEFAULT_CHECKPOINT__)
     model = load_model(checkpoint=checkpoint)
 
     if isinstance(point, FibsemStagePosition):
-        logging.info(f"Reprojecting point {point} to image coordinates...")
+        logging.debug(f"Reprojecting point {point} to image coordinates...")
         points = _tile._reproject_positions(image, [point], _bound=True)
         point = points[0] if len(points) == 1 else None
-        logging.info(f"Reprojected point: {point}")
+        logging.debug(f"Reprojected point: {point}")
 
     # detect features
     det = detect_features(

@@ -96,7 +96,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
 
         # pattern overlay
-        milling_patterns = [k for k in self.settings.protocol if "stages" in self.settings.protocol[k] or "type" in self.settings.protocol[k]]
+        milling_protocol = self.settings.protocol["milling"]
+        milling_patterns = [k for k in self.settings.protocol if "stages" in milling_protocol[k] or "type" in milling_protocol[k]]
         self.comboBox_pattern_overlay.addItems(milling_patterns)
         if "trench" in milling_patterns:
             self.comboBox_pattern_overlay.setCurrentText("trench")
