@@ -501,6 +501,34 @@ def _display_logo(path, label, shape=[50, 50]):
     label.setPixmap(QtGui.QPixmap(path))
 
 
+def create_combobox_message_box(text: str, title: str, options: list, parent = None):
+    # create a q message box with combobox
+    msg = QtWidgets.QMessageBox(parent=parent)
+    msg.setIcon(QtWidgets.QMessageBox.Information)
+    msg.setText(text)
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+    # create a combobox
+    combobox = QtWidgets.QComboBox(msg)
+    combobox.addItems(options)
+
+    # add combobox to message box
+    msg.layout().addWidget(combobox, 1, 1)
+
+    # show message box
+    msg.exec_()
+
+    # get the selected milling pattern
+
+    if msg.result() == QtWidgets.QMessageBox.Ok:
+        selected = combobox.currentText()
+
+        return selected
+    
+    return None
+
+
         
 def _draw_crosshair(viewer: napari.Viewer, eb_image, ib_image,is_checked=False, width: float = 0.15) -> None:
 

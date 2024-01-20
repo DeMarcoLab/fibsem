@@ -163,7 +163,7 @@ def setup_session(
     settings = load_microscope_configuration(config_path, protocol_path)
 
     # create session directories
-    session = f'{settings.protocol["name"]}_{current_timestamp()}'
+    session = f'{settings.protocol.get("name", "openfibsem")}_{current_timestamp()}'
     if protocol_path is None:
         protocol_path = os.getcwd()
 

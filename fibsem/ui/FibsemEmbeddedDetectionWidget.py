@@ -227,6 +227,9 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         ]
         self.viewer.camera.zoom = 0.7
 
+        if self.det.checkpoint:
+            self.label_model.setText(f"Checkpont: {os.path.basename(self.det.checkpoint)}")
+        
         napari.utils.notifications.show_info(f"Features ({', '.join([f.name for f in self.det.features])}) Detected")
 
     def update_info(self):
@@ -238,17 +241,17 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         if len(self.det.features) == 1:
             self.label_info.setText(
             f"""{self.det.features[0].name}: {self.det.features[0].px}
-            \nUser Corrected: {self._USER_CORRECTED}
+            User Corrected: {self._USER_CORRECTED}
             """)
             return
         if len(self.det.features) == 2:
             self.label_info.setText(
                 f"""Moving 
-                \n{self.det.features[0].name}: {self.det.features[0].px}
-                \nto 
-                \n{self.det.features[1].name}: {self.det.features[1].px}
-                \ndx={self.det.distance.x*1e6:.2f}um, dy={self.det.distance.y*1e6:.2f}um
-                \nUser Corrected: {self._USER_CORRECTED}
+                {self.det.features[0].name}: {self.det.features[0].px}
+                to 
+                {self.det.features[1].name}: {self.det.features[1].px}
+                dx={self.det.distance.x*1e6:.2f}um, dy={self.det.distance.y*1e6:.2f}um
+                User Corrected: {self._USER_CORRECTED}
                 """
                 )
             return
