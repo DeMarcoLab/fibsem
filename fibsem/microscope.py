@@ -310,14 +310,16 @@ class FibsemMicroscope(ABC):
         """Get wrapper for logging."""
         logging.debug(f"Getting {key} ({beam_type})")
         value = self._get(key, beam_type)
-        logging.debug({"msg": "get", "key": key, "beam_type": beam_type.name, "value": value})
+        beam_name = "None" if beam_type is None else beam_type.name
+        logging.debug({"msg": "get", "key": key, "beam_type": beam_name, "value": value})
         return value
 
     def set(self, key: str, value, beam_type: BeamType = None) -> None:
         """Set wrapper for logging"""
         logging.debug(f"Setting {key} to {value} ({beam_type})")
         self._set(key, value, beam_type)
-        logging.debug({"msg": "set", "key": key, "beam_type": beam_type.name, "value": value})
+        beam_name = "None" if beam_type is None else beam_type.name
+        logging.debug({"msg": "set", "key": key, "beam_type": beam_name, "value": value})
     
     @abstractmethod
     def _get(self, key: str, beam_type: BeamType = None) -> Union[float, int, bool, str, list]:
@@ -2588,7 +2590,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
                 if not self.system.ion.plasma:
-                    logging.warning(f"Plasma gas cannot be set on this microscope.")
+                    logging.debug(f"Plasma gas cannot be set on this microscope.")
                     return
                 if not self.check_available_values("plasma_gas", [value], beam_type):
                     logging.warning(f"Plasma gas {value} not available. Available values: {self.get_available_values('plasma_gas', beam_type)}")
@@ -5763,7 +5765,7 @@ class DemoMicroscope(FibsemMicroscope):
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
                 if not self.system.ion.plasma:
-                    logging.warning(f"Plasma gas cannot be set on this microscope.")
+                    logging.debug(f"Plasma gas cannot be set on this microscope.")
                     return
                 if not self.check_available_values("plasma_gas", value, beam_type):
                     logging.warning(f"Plasma gas {value} not available. Available values: {self.get_available_values('plasma_gas', beam_type)}")
