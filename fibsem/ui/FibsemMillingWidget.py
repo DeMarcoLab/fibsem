@@ -84,7 +84,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # milling
         self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
-        self.comboBox_milling_current.addItems([str(current) for current in self.AVAILABLE_MILLING_CURRENTS])
+        self.comboBox_milling_current.addItems([f"{(current * constants.SI_TO_NANO):.2f}"
+                                                        for current in self.AVAILABLE_MILLING_CURRENTS])
 
         _THERMO = isinstance(self.microscope, ThermoMicroscope)
         _TESCAN = isinstance(self.microscope, TescanMicroscope)
@@ -136,10 +137,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
         self.image_widget.ib_layer.mouse_drag_callbacks.append(self._single_click)
 
-        #import/export milling stages
-        self.pushButton_exportMilling.clicked.connect(self.export_milling_stages)
-        self.pushButton_importMilling.clicked.connect(self.import_milling_stages)
-
+        #import/export milling stages # TODO: reimplement as protocol export
+        # self.pushButton_exportMilling.clicked.connect(self.export_milling_stages)
+        # self.pushButton_importMilling.clicked.connect(self.import_milling_stages)
 
         # new patterns
         self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
@@ -524,7 +524,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             pattern_is_valid = self.valid_pattern_location(pattern_renew)
 
             if not pattern_is_valid:
-                logging.info(f"Could not move Patterns, out of bounds at at {point}")
+                logging.warning(f"Could not move Patterns, out of bounds at at {point}")
                 napari.utils.notifications.show_warning(f"Patterns is not within the image.")
                 _patterns_valid = False
                 break
@@ -601,7 +601,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def get_milling_settings_from_ui(self):
 
         milling_settings = FibsemMillingSettings(
-            milling_current=float(self.comboBox_milling_current.currentText()),
+            milling_current=float(self.comboBox_milling_current.currentText()) * constants.NANO_TO_SI,
             application_file=self.comboBox_application_file.currentText(),
             rate=self.doubleSpinBox_rate.value()*1e-9,
             dwell_time = self.doubleSpinBox_dwell_time.value() * constants.MICRO_TO_SI,
