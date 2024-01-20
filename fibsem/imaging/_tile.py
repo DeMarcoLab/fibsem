@@ -23,7 +23,6 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
     dy *= -1 # need to invert y-axis
 
     # fixed image settings
-    settings.image.dwell_time = 1e-6
     settings.image.autogamma = False
 
     logging.info(f"TILE COLLECTION: {settings.image.filename}")
@@ -137,7 +136,8 @@ def _stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemIm
 
     # for cryo need to histogram equalise
     if ddict.get("cryo", False):
-        image = acquire.auto_gamma(image, method="autogamma")
+        from fibsem.imaging.autogamma import auto_gamma
+        image = auto_gamma(image, method="autogamma")
 
     filename = os.path.join(image.metadata.image_settings.path, f'{ddict["prev-filename"]}-autogamma')
     image.save(filename)

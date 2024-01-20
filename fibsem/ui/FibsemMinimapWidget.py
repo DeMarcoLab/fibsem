@@ -96,7 +96,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
 
         # pattern overlay
-        self.comboBox_pattern_overlay.addItems([k for k in self.settings.protocol if "stages" in self.settings.protocol[k] or "type" in self.settings.protocol[k]])
+        milling_patterns = [k for k in self.settings.protocol if "stages" in self.settings.protocol[k] or "type" in self.settings.protocol[k]]
+        self.comboBox_pattern_overlay.addItems(milling_patterns)
+        if "trench" in milling_patterns:
+            self.comboBox_pattern_overlay.setCurrentText("trench")
+        elif "lamella" in milling_patterns:
+            self.comboBox_pattern_overlay.setCurrentText("lamella")
         self.comboBox_pattern_overlay.currentIndexChanged.connect(self._update_pattern_overlay)
         self.checkBox_pattern_overlay.stateChanged.connect(self._update_pattern_overlay)
 
@@ -145,28 +150,31 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
     def run_tile_collection(self):
 
-        print("run_tile_collection")
-
-
+        logging.info("running tile collection")
 
         beam_type = BeamType[self.comboBox_tile_beam_type.currentText()]
         grid_size = self.doubleSpinBox_tile_grid_size.value() * constants.MICRO_TO_SI
         tile_size = self.doubleSpinBox_tile_tile_size.value() * constants.MICRO_TO_SI
         resolution = int(self.spinBox_tile_resolution.value())
+        dwell_time = self.doubleSpinBox_tile_dwell_time.value() * constants.MILLI_TO_SI
         cryo = self.checkBox_tile_autogamma.isChecked()
+        autocontrast = self.checkBox_tile_autogamma.isChecked()
+        path = self.lineEdit_tile_path.text()
+        filename = self.lineEdit_tile_filename.text()
 
         self._tile_info["grid_size"] = grid_size
         self._tile_info["tile_size"] = tile_size
         self._tile_info["resolution"] = resolution
         self._tile_info["beam_type"] = beam_type
-        
+                
+        self.settings.image.dwell_time = dwell_time 
         self.settings.image.hfw = tile_size
         self.settings.image.beam_type = beam_type
         self.settings.image.resolution = [resolution, resolution]
-        self.settings.image.autocontrast = self.checkBox_tile_autocontrast.isChecked()
+        self.settings.image.autocontrast = autocontrast
         self.settings.image.save = True
-        self.settings.image.path = self.lineEdit_tile_path.text()
-        self.settings.image.filename = self.lineEdit_tile_label.text() 
+        self.settings.image.path = path
+        self.settings.image.filename = filename
 
         if self.settings.image.filename == "":
             napari.utils.notifications.show_error(f"Please enter a filename for the image")
@@ -631,10 +639,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self._reprojection_layer.face_color= colors_rgba
 
 
-            _SHOW_PATTERNS:bool = self.checkBox_pattern_overlay.isChecked()
+            _SHOW_PATTERNS: bool = self.checkBox_pattern_overlay.isChecked()
             if _SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
-                # protocol = utils.load_yaml(r"/home/patrick/github/autolamella/autolamella/protocol/protocol.yaml")
                 pattern = self.comboBox_pattern_overlay.currentText() 
                 
                 milling_stages = [patterning.get_milling_stages(pattern, self.settings.protocol, Point(point.x, point.y))[0] for point in points]
