@@ -139,6 +139,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.label_presets.hide()
   
     def toggle_mode(self):
+        """Toggle the visibility of the advanced settings"""
         advanced_mode = self.checkBox_advanced_settings.isChecked()
 
         self.label_detector_type.setVisible(advanced_mode)
@@ -153,6 +154,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.label_shift.setVisible(advanced_mode)
         self.beam_voltage.setVisible(advanced_mode)
         self.label_beam_voltage.setVisible(advanced_mode)
+        self.label_beam_scan_rotation.setVisible(advanced_mode)
+        self.spinBox_beam_scan_rotation.setVisible(advanced_mode)
         self.checkBox_image_use_autocontrast.setVisible(advanced_mode)
         self.checkBox_image_use_autogamma.setVisible(advanced_mode)
             
@@ -325,7 +328,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
             stigmation = Point(self.stigmation_x.value(), self.stigmation_y.value()),
             shift = Point(self.shift_x.value() * constants.MICRO_TO_SI, self.shift_y.value()*constants.MICRO_TO_SI),
-            scan_rotation = 0 # TODO: add this to the ui
+            scan_rotation = np.deg2rad(self.spinBox_beam_scan_rotation.value())
         )
         return self.image_settings, self.detector_settings, self.beam_settings
 
@@ -367,15 +370,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # beam settings
         self.beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
         self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
+        self.spinBox_beam_scan_rotation.setValue(np.rad2deg(beam_settings.scan_rotation))
         
-        if beam_settings.working_distance is not None:
-            self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
-        if beam_settings.shift is not None:
-            self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
-            self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
-        if beam_settings.stigmation is not None:
-            self.stigmation_x.setValue(beam_settings.stigmation.x)
-            self.stigmation_y.setValue(beam_settings.stigmation.y)
+        self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
+        self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
+        self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
+        self.stigmation_x.setValue(beam_settings.stigmation.x)
+        self.stigmation_y.setValue(beam_settings.stigmation.y)
         
         self.update_ui_saving_settings()
 

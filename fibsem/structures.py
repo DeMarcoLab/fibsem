@@ -1270,12 +1270,10 @@ class ManipulatorSystemSettings:
     enabled: bool
     rotation: bool
     tilt: bool
-    inserted: bool = False
 
     def to_dict(self):
         return {
             "enabled": self.enabled,
-            "inserted": self.inserted,
             "rotation": self.rotation,
             "tilt": self.tilt,
         }
@@ -1286,7 +1284,6 @@ class ManipulatorSystemSettings:
             enabled=settings["enabled"],
             rotation=settings["rotation"],
             tilt=settings["tilt"],
-            inserted=settings.get("inserted", False),
         )
 
 
@@ -1301,7 +1298,6 @@ class GISSystemSettings:
     def to_dict(self):
         return {
             "enabled": self.enabled,
-            "inserted": self.inserted,
             "multichem": self.multichem,
             "sputter_coater": self.sputter_coater,
         }
@@ -1312,7 +1308,6 @@ class GISSystemSettings:
             enabled=settings["enabled"],
             multichem=settings["multichem"],
             sputter_coater=settings["sputter_coater"],
-            inserted=settings.get("inserted", False),
         )
 
 import fibsem

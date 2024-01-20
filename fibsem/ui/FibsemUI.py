@@ -4,10 +4,9 @@ import logging
 
 import fibsem
 from fibsem import config as cfg
-from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
-                               MicroscopeSettings, TescanMicroscope,
+from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,TescanMicroscope,
                                ThermoMicroscope)
-from fibsem.structures import BeamType
+from fibsem.structures import BeamType, MicroscopeSettings
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
 from fibsem.ui.FibsemImageViewer import FibsemImageViewer
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget

@@ -243,13 +243,6 @@ def load_microscope_configuration(
 
     return settings
 
-def apply_configuration(microscope: FibsemMicroscope, settings: MicroscopeSettings):
-    """Apply microscope settings to microscope"""
-    # beam_system settings
-    microscope.set_beam_system_settings(settings.system.electron)
-    microscope.set_beam_system_settings(settings.system.ion)
-
-
 def load_protocol(protocol_path: Path = None) -> dict:
     """Load the protocol file from yaml
 

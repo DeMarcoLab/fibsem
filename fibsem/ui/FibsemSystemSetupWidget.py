@@ -11,7 +11,7 @@ import fibsem
 from fibsem import config as cfg
 from fibsem import utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings
+from fibsem.structures import MicroscopeSettings, SystemSettings
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.ui import _stylesheets
@@ -57,6 +57,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.comboBox_configuration.currentTextChanged.connect(lambda: self.load_configuration(None))
         self.toolButton_import_configuration.clicked.connect(self.import_configuration_from_file)
     
+        self.pushButton_apply_configuration.clicked.connect(lambda: self.apply_microscope_configuration(None))
         self.pushButton_apply_configuration.setToolTip(f"Apply configuration is currently unavailable. It will be enabled in a future release.")
 
     def load_configuration(self, configuration_name: str):
@@ -142,7 +143,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.update_ui()
             
 
-    def apply_microscope_configuration(self):
+    def apply_microscope_configuration(self, system_settings: SystemSettings = None):
         """Apply the microscope configuration to the microscope."""
 
         if self.microscope is None:
@@ -150,7 +151,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             return
         
         # apply the configuration
-        # self.microscope.apply_configuration(self.settings)
+        self.microscope.apply_configuration(system_settings=system_settings)
+    
+
 
 
     # def apply_defaults_settings(self):

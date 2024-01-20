@@ -305,13 +305,28 @@ class FibsemMicroscope(ABC):
     def get_available_values(self, key:str, beam_type: BeamType = None) -> list:
         pass
 
-    @abstractmethod
-    def get(self, key:str, beam_type: BeamType = None):
-        pass
+    # TODO: use a decorator instead?
+    def get(self, key: str, beam_type: BeamType = None) -> Union[float, int, bool, str, list]:
+        """Get wrapper for logging."""
+        logging.debug(f"Getting {key} ({beam_type})")
+        value = self._get(key, beam_type)
+        logging.debug({"msg": "get", "key": key, "beam_type": beam_type.name, "value": value})
+        return value
+
+    def set(self, key: str, value, beam_type: BeamType = None) -> None:
+        """Set wrapper for logging"""
+        logging.debug(f"Setting {key} to {value} ({beam_type})")
+        self._set(key, value, beam_type)
+        logging.debug({"msg": "set", "key": key, "beam_type": beam_type.name, "value": value})
     
     @abstractmethod
-    def set(self, key: str, value, beam_type: BeamType = None) -> None:
+    def _get(self, key: str, beam_type: BeamType = None) -> Union[float, int, bool, str, list]:
         pass
+        
+    @abstractmethod
+    def _set(self, key: str, value, beam_type: BeamType = None) -> None:
+        pass
+        
     
     # TODO: i dont think this is needed, you set the beam settings and detector settings separately
     # you can't set image settings, only when acquiring an image
@@ -409,8 +424,10 @@ class FibsemMicroscope(ABC):
         self.set_detector_settings(settings.detector, beam_type)
         self.set("eucentric_height", settings.eucentric_height, beam_type)
         self.set("column_tilt", settings.column_tilt, beam_type)
-        self.set("plasma", settings.plasma, beam_type)
-        self.set("plasma_gas", settings.plasma_gas, beam_type)
+        
+        if beam_type is BeamType.ION:
+            self.set("plasma_gas", settings.plasma_gas, beam_type)
+            self.set("plasma", settings.plasma, beam_type)
 
         logging.debug( {"msg": "set_beam_system_settings", "settings": settings.to_dict(), "beam_type": beam_type.name})
     
@@ -518,6 +535,59 @@ class FibsemMicroscope(ABC):
         elif system == "gis_sputter_coater":
             return self.system.gis.sputter_coater
     
+    def set_available(self, system: str, value: bool) -> None:
+
+        if system == "electron_beam":
+            self.system.electron.enabled = value
+        elif system == "ion_beam":
+            self.system.ion.enabled = value
+        elif system == "ion_plasma":
+            self.system.ion.plasma = value
+        elif system == "stage":
+            self.system.stage.enabled = value
+        elif system == "stage_rotation":
+            self.system.stage.rotation = value
+        elif system == "stage_tilt":
+            self.system.stage.tilt = value
+        elif system == "manipulator":
+            self.system.manipulator.enabled = value
+        elif system == "manipulator_rotation":
+            self.system.manipulator.rotation = value
+        elif system == "manipulator_tilt":
+            self.system.manipulator.tilt = value
+        elif system == "gis":
+            self.system.gis.enabled = value
+        elif system == "gis_multichem":
+            self.system.gis.multichem = value
+        elif system == "gis_sputter_coater":
+            self.system.gis.sputter_coater = value
+
+    
+    def apply_configuration(self, system_settings: SystemSettings = None) -> None:
+        """Apply the system settings to the microscope."""
+
+        if system_settings is None:
+            system_settings = self.system
+        
+        # apply the system settings
+        if self.is_available("electron_beam"):
+            self.set_beam_system_settings(system_settings.electron)
+        if self.is_available("ion_beam"):
+            self.set_beam_system_settings(system_settings.ion)
+
+        if self.is_available("stage"):
+            self.system.stage = system_settings.stage
+
+        if self.is_available("manipulator"):
+            self.system.manipulator = system_settings.manipulator
+
+        if self.is_available("gis"):
+            self.system.gis = system_settings.gis
+        
+        # dont update info -> read only
+        
+        logging.debug({"msg": "apply_configuration", "system_settings": system_settings.to_dict()})
+
     @abstractmethod
     def check_available_values(self, key:str, values, beam_type: BeamType = None) -> bool:
         pass
@@ -2222,8 +2292,8 @@ class ThermoMicroscope(FibsemMicroscope):
         return values
 
 
-    def get(self, key: str, beam_type: BeamType = None) -> Union[float, str, list, None]:
-        
+    def _get(self, key: str, beam_type: BeamType = None) -> Union[float, str, list, None]:
+        """Get a property of the microscope."""
         # TODO: make the list of get and set keys available to the user
         if beam_type is not None:
             beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
@@ -2259,15 +2329,40 @@ class ThermoMicroscope(FibsemMicroscope):
             width, height = int(resolution.split("x")[0]), int(resolution.split("x")[-1])
             return [width, height]
 
+        # system properties
+        if key == "eucentric_height":
+            if beam_type is BeamType.ELECTRON:
+                return self.system.electron.eucentric_height
+            elif beam_type is BeamType.ION:
+                return self.system.ion.eucentric_height
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
+        if key == "column_tilt":
+            if beam_type is BeamType.ELECTRON:
+                return self.system.electron.column_tilt
+            elif beam_type is BeamType.ION:
+                return self.system.ion.column_tilt
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
         # electron beam properties
         if beam_type is BeamType.ELECTRON:
             if key == "angular_correction_angle":
                 return beam.angular_correction.angle.value
 
         # ion beam properties
-        if beam_type is BeamType.ION:
-            if key == "plasma_gas" and self.system.ion.plasma:
+        if key == "plasma":
+            if beam_type is BeamType.ION:
+                return self.system.ion.plasma
+            else:
+                return False
+
+        if key == "plasma_gas":
+            if beam_type is BeamType.ION and self.system.ion.plasma:
                 return beam.source.plasma_gas.value # might need to check if this is available?
+            else:
+                return None
 
         # stage properties
         if key == "stage_position":
@@ -2336,20 +2431,13 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "hardware_version":
             return self.system.info.hardware_version
         
-        if key == "column_tilt":
-            # TODO: check if this is available
-            if beam_type is BeamType.ELECTRON:
-                return self.system.electron.beam.column_tilt
-            elif beam_type is BeamType.ION:
-                return self.system.ion.beam.column_tilt
-            else:
-                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
             
         # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
-    def set(self, key: str, value, beam_type: BeamType = None) -> None:
-
+    def _set(self, key: str, value, beam_type: BeamType = None) -> None:
+        """Set a property of the microscope."""
         # required for setting shift, stigmation
         from autoscript_sdb_microscope_client.structures import Point as ThermoPoint
 
@@ -2447,6 +2535,44 @@ class ThermoMicroscope(FibsemMicroscope):
                     logging.warning(f"Detector contrast {value} not available, mut be between 0 and 1.")
                 return
 
+        # system properties
+        if key == "beam_enabled":
+            if beam_type is BeamType.ELECTRON:
+                self.system.electron.beam.enabled = value
+                return 
+            elif beam_type is BeamType.ION:
+                self.system.ion.beam.enabled = value
+                return
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+            return
+
+        if key == "eucentric_height":
+            if beam_type is BeamType.ELECTRON:
+                self.system.electron.eucentric_height = value
+                return
+            elif beam_type is BeamType.ION:
+                self.system.ion.eucentric_height = value
+                return 
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
+        if key =="column_tilt":
+            if beam_type is BeamType.ELECTRON:
+                self.system.electron.column_tilt = value
+                return
+            elif beam_type is BeamType.ION:
+                self.system.ion.column_tilt = value
+                return 
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
+        # ion beam properties
+        if key == "plasma":
+            if beam_type is BeamType.ION:
+                self.system.ion.plasma = value
+                return
+            
         # electron beam properties
         if beam_type is BeamType.ELECTRON:
             if key == "angular_correction_angle":
@@ -2563,17 +2689,8 @@ class TescanMicroscope(FibsemMicroscope):
         auto_focus(self, beam_type: BeamType) -> None:
             Automatically adjust the microscope focus for the specified beam type.
 
-        reset_beam_shifts(self) -> None:
-            Set the beam shift to zero for the electron and ion beams.
-        
         beam_shift(self, dx: float, dy: float,  beam_type: BeamType) -> None:
             Adjusts the beam shift of given beam based on relative values that are provided.
-
-        get_stage_position(self) -> FibsemStagePosition:
-            Get the current stage position.
-
-        get_microscope_state(self) -> MicroscopeState:
-            Get the current microscope state
 
         move_stage_absolute(self, position: FibsemStagePosition):
             Move the stage to the specified coordinates.
@@ -4580,8 +4697,8 @@ class TescanMicroscope(FibsemMicroscope):
         return values
 
    
-    def get(self, key: str, beam_type: BeamType = None) -> Union[float, str, None]:
-
+    def _get(self, key: str, beam_type: BeamType = None) -> Union[float, str, None]:
+        """Get a property of the microscope."""
         if beam_type is None:
             beam = self.connection.SEM if beam_type == BeamType.ELECTRON else self.connection.FIB
             _check_beam(beam_type, self.system)
@@ -4617,6 +4734,32 @@ class TescanMicroscope(FibsemMicroscope):
             shift = Point(values[0]*constants.MILLIMETRE_TO_METRE, values[1]*constants.MILLIMETRE_TO_METRE)
             return shift
         
+
+
+        # system properties
+        if key == "eucentric_height":
+            if beam_type is BeamType.ELECTRON:
+                return self.system.electron.eucentric_height
+            elif beam_type is BeamType.ION:
+                return self.system.ion.eucentric_height
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
+        if key == "column_tilt":
+            if beam_type is BeamType.ELECTRON:
+                return self.system.electron.column_tilt
+            elif beam_type is BeamType.ION:
+                return self.system.ion.column_tilt
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
+        # ion beam properties
+        if key == "plasma":
+            if beam_type is BeamType.ION:
+                return self.system.ion.plasma
+            else:
+                return False
+
         # stage properties
         if key == "stage_position":
             _check_stage(self.system)
@@ -4690,8 +4833,8 @@ class TescanMicroscope(FibsemMicroscope):
         # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None   
 
-    def set(self, key: str, value, beam_type: BeamType = None) -> None:
-
+    def _set(self, key: str, value, beam_type: BeamType = None) -> None:
+        """Set a property of the microscope."""
         if beam_type is None:
             beam = self.connection.SEM if beam_type == BeamType.ELECTRON else self.connection.FIB
             _check_beam(beam_type, self.system)
@@ -5393,36 +5536,29 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "plasma_gas":
             values = ["Oxygen", "Argon", "Nitrogen", "Xenon"]
          
-
         return values
 
-    def get(self, key, beam_type: BeamType = None) -> float:
-        logging.debug(f"Getting {key} ({beam_type})")
-
+    def _get(self, key, beam_type: BeamType = None) -> Union[float, int, bool, str, list]:
+        """Get a value from the microscope."""
         # get beam
         if beam_type is not None:
             beam_system = self.electron_system if beam_type is BeamType.ELECTRON else self.ion_system
             beam, detector = beam_system.beam, beam_system.detector
             _check_beam(beam_type, self.system)
         
+        # TODO: change this so value is returned, so we can log the return value
+            
         # beam properties
         if key == "on": 
             return beam_system.on
         if key == "blanked":
             return beam_system.blanked
-                
-        # voltage
         if key == "voltage":
             return beam.voltage
-            
-        # current
         if key == "current":
             return beam.beam_current
-
-        # working distance
         if key == "working_distance":
             return beam.working_distance
-        
         if key == "hfw":
             return beam.hfw
         if key == "resolution":
@@ -5436,18 +5572,45 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "scan_rotation":
             return beam.scan_rotation
         
+        # system properties
+            
+        if key == "beam_enabled":
+            if beam_type is BeamType.ELECTRON:
+                return self.system.electron.enabled
+            elif beam_type is BeamType.ION:
+                return self.system.ion.enabled
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+            
+        if key == "eucentric_height":
+            if beam_type is BeamType.ELECTRON:
+                return self.system.electron.eucentric_height
+            elif beam_type is BeamType.ION:
+                return self.system.ion.eucentric_height
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
 
-        # beam properties
-        
         if key == "column_tilt":
-            # TODO: check if this is available
             if beam_type is BeamType.ELECTRON:
                 return self.system.electron.column_tilt
             elif beam_type is BeamType.ION:
                 return self.system.ion.column_tilt
             else:
-                raise ValueError(f"Unknown beam type: {beam_type} for {key}")    
-        
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
+        # ion beam properties
+        if key == "plasma":
+            if beam_type is BeamType.ION:
+                return self.system.ion.plasma
+            else:
+                return False
+
+        if key == "plasma_gas":
+            if beam_type is BeamType.ION and self.system.ion.plasma:
+                return self.system.ion.plasma_gas # might need to check if this is available?
+            else:
+                return None     
+    
         # stage 
         if key == "stage_position":
             return self.stage_system.position
@@ -5455,11 +5618,7 @@ class DemoMicroscope(FibsemMicroscope):
             return self.stage_system.is_homed
         if key == "stage_linked":
             return self.stage_system.is_linked
-            
-        if beam_type is BeamType.ION:
-            if key == "plasma_gas":
-                return beam.plasma_gas
-
+        
         # detector properties
         if key == "detector_type":
             return detector.type
@@ -5487,7 +5646,6 @@ class DemoMicroscope(FibsemMicroscope):
             return "Unknown"
         if key == "hardware_version":
             return self.system.info.hardware_version
-        
 
         # chamber properties
         if key == "chamber_state":
@@ -5498,8 +5656,8 @@ class DemoMicroscope(FibsemMicroscope):
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return None
 
-    def set(self, key: str, value, beam_type: BeamType = None) -> None:
-        logging.info(f"Setting {key} to {value} ({beam_type})")
+    def _set(self, key: str, value, beam_type: BeamType = None) -> None:
+        """Set a property of the microscope."""
         
         # get beam
         if beam_type is not None:
@@ -5564,17 +5722,54 @@ class DemoMicroscope(FibsemMicroscope):
             detector.brightness = value
             return
         
+        # system properties
+        if key == "beam_enabled":
+            if beam_type is BeamType.ELECTRON:
+                self.system.electron.beam.enabled = value
+                return 
+            elif beam_type is BeamType.ION:
+                self.system.ion.beam.enabled = value
+                return
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+            return
+
+        if key == "eucentric_height":
+            if beam_type is BeamType.ELECTRON:
+                self.system.electron.eucentric_height = value
+                return
+            elif beam_type is BeamType.ION:
+                self.system.ion.eucentric_height = value
+                return 
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
+        if key =="column_tilt":
+            if beam_type is BeamType.ELECTRON:
+                self.system.electron.column_tilt = value
+                return
+            elif beam_type is BeamType.ION:
+                self.system.ion.column_tilt = value
+                return 
+            else:
+                raise ValueError(f"Unknown beam type: {beam_type} for {key}")
+
         # ion beam properties
+        if key == "plasma":
+            if beam_type is BeamType.ION:
+                self.system.ion.plasma = value
+                return
+
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
                 if not self.system.ion.plasma:
                     logging.warning(f"Plasma gas cannot be set on this microscope.")
                     return
-                if not self.check_available_values("plasma_gas", [value], beam_type):
+                if not self.check_available_values("plasma_gas", value, beam_type):
                     logging.warning(f"Plasma gas {value} not available. Available values: {self.get_available_values('plasma_gas', beam_type)}")
-                
+                    return 
                 logging.info(f"Setting plasma gas to {value}... this may take some time...")
-                beam.plasma_gas = value
+                self.system.ion.plasma_gas = value
                 logging.info(f"Plasma gas set to {value}.")
 
                 return
