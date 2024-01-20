@@ -668,6 +668,7 @@ class DetectedFeatures:
     _distance: Point = None
     _offset: Point = Point(0, 0)
     fibsem_image: FibsemImage = None
+    checkpoint: str = None
 
     @property
     def distance(self):
@@ -748,7 +749,8 @@ def detect_features(
         mask=mask,
         rgb=rgb,
         pixelsize=pixelsize,
-        fibsem_image=fibsem_image
+        fibsem_image=fibsem_image,
+        checkpoint=model.checkpoint
     )
 
     # distance in metres (from centre)

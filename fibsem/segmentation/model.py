@@ -9,7 +9,7 @@ import segmentation_models_pytorch as smp
 from fibsem.segmentation.utils import decode_segmap, download_checkpoint
 
 from pathlib import Path
-
+import os
 
 
 
@@ -42,6 +42,7 @@ class SegmentationModel:
     ) -> None:
         super().__init__()
 
+        self.checkpoint: str = checkpoint
         self.mode = mode
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
@@ -105,7 +106,7 @@ class SegmentationModel:
             self.model.train()
 
         # metadata
-        self.checkpoint = checkpoint
+        self.checkpoint = os.path.basename(checkpoint)
         self.num_classes = checkpoint_dict["nc"]
         self.encoder = checkpoint_dict["encoder"]
 

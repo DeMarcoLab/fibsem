@@ -136,6 +136,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                     "is_correct": not np.any(px_diff),                          # is the feature correct    
                     "beam_type": beam_type.name,                                # beam type         
                     "pixelsize": self.det.pixelsize,                            # pixelsize
+                    "checkpoint": self.det.checkpoint,                          # checkpoint
             }
             logging.debug(msgd)
             fd.append(deepcopy(msgd))                                           # to write to disk
