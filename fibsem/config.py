@@ -186,7 +186,8 @@ DEFAULT_CONFIGURATION_VALUES = {
 }
 
 
-
+# machine learning
+HUGGINFACE_REPO = "patrickcleeve/autolamella"
 
 
 

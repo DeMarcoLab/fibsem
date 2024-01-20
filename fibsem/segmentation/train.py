@@ -26,7 +26,7 @@ def _convert_checkpoint_format(checkpoint: str, encoder:str, nc: int, output_fil
     import torch
     from huggingface_hub import hf_hub_download
 
-    REPO_ID = "patrickcleeve/openfibsem-baseline"
+    REPO_ID = "patrickcleeve/autolamella"
     checkpoint = hf_hub_download(repo_id=REPO_ID, filename=checkpoint)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

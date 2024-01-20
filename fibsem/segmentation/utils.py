@@ -1,11 +1,15 @@
-from PIL import Image
-import glob
+
+
+
 import os
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
+
+from huggingface_hub import HfApi, hf_hub_download
+from fibsem import config as cfg
 
 # helper functions
 def decode_output(output):
@@ -107,8 +111,6 @@ def show_values(ten):
     unq = np.unique(ten.detach().cpu().numpy())
     print(ten.shape, ten.min(), ten.max(), ten.mean(), ten.std(), unq)
 
-
-import os
 
 def validate_config(config:dict):
     if "data_paths" not in config:
@@ -235,3 +237,26 @@ unet_encoders = [
     "xception"
 ]
         
+
+
+
+
+
+## Huggingface Utils
+
+def list_available_checkpoints():
+    api = HfApi()
+    files = api.list_repo_files(cfg.HUGGINFACE_REPO)
+    checkpoints = []
+    for file in files:
+        if file.endswith(".pt") and "archive" not in file:
+            checkpoints.append(file)
+
+    return checkpoints
+
+def download_checkpoint(checkpoint: str):
+    if os.path.exists(checkpoint):
+        checkpoint = checkpoint
+    else:
+        checkpoint = hf_hub_download(repo_id=cfg.HUGGINFACE_REPO, filename=checkpoint)
+    return checkpoint

@@ -5,18 +5,11 @@ import numpy as np
 import onnx
 import onnxruntime
 
-from huggingface_hub import hf_hub_download
-from fibsem.segmentation.utils import decode_segmap_v2
+from fibsem.segmentation.utils import decode_segmap_v2, download_checkpoint
 
 
 ### ONNX
-def download_checkpoint(checkpoint: str):
-    if os.path.exists(checkpoint):
-        checkpoint = checkpoint
-    else:
-        REPO_ID = "patrickcleeve/openfibsem-baseline"
-        checkpoint = hf_hub_download(repo_id=REPO_ID, filename=checkpoint)
-    return checkpoint
+
 
 class SegmentationModelONNX:
 
