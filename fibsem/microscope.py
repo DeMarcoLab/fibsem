@@ -116,6 +116,10 @@ class FibsemMicroscope(ABC):
     @abstractmethod
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
         pass
+    
+    @abstractmethod
+    def acquire_chamber_image(self) -> FibsemImage:
+        pass
 
     @abstractmethod
     @thread_worker
@@ -567,9 +571,12 @@ class FibsemMicroscope(ABC):
     
     def apply_configuration(self, system_settings: SystemSettings = None) -> None:
         """Apply the system settings to the microscope."""
-
+        
+        logging.info(f"Applying Microscope Configuration...")
+        
         if system_settings is None:
             system_settings = self.system
+            logging.info(f"Using current system settings.")
         
         # apply the system settings
         if self.is_available("electron_beam"):
@@ -587,7 +594,7 @@ class FibsemMicroscope(ABC):
             self.system.gis = system_settings.gis
         
         # dont update info -> read only
-        
+        logging.info(f"Micrscope configuration applied.")
         logging.debug({"msg": "apply_configuration", "system_settings": system_settings.to_dict()})
 
     @abstractmethod
@@ -928,6 +935,14 @@ class ThermoMicroscope(FibsemMicroscope):
     
         return fibsem_image
 
+    def acquire_chamber_image(self) -> FibsemImage:
+        """Acquire an image of the chamber inside."""
+        self.connection.imaging.set_active_view(4)
+        self.connection.imaging.set_active_device(3)
+        image = self.connection.imaging.get_image()
+        logging.debug({"msg": "acquire_chamber_image"})
+        return FibsemImage(data=image.data, metadata=None)   
+    
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
             self.image_queue = image_queue
             self.stop_event = stop_event
@@ -3143,6 +3158,12 @@ class TescanMicroscope(FibsemMicroscope):
         presets = self.connection.FIB.Preset.Enum()	
         return presets
 
+    def acquire_chamber_image(self) -> FibsemImage:
+        """Acquire an image of the chamber inside."""
+        image = self.connection.Camera.AcquireImage()
+        logging.debug({"msg": "acquire_chamber_image"})
+        return FibsemImage(data=np.array(image.Image), metadata=None)   
+
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
         self.image_queue = image_queue
         self.stop_event = stop_event
@@ -5128,6 +5149,16 @@ class DemoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "last_image", "beam_type": beam_type.name, "metadata": image.metadata.to_dict()})
         return image
     
+    def acquire_chamber_image(self) -> FibsemImage:
+        """Acquire an image of the chamber inside."""
+        image = FibsemImage(
+            data=np.random.randint(low=0, high=256, 
+                size=(1024,1536), 
+                dtype=np.uint8),
+                metadata=None)
+        logging.debug({"msg": "acquire_chamber_image"})
+        return image
+
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
         self.image_queue = image_queue
         self.stop_event = stop_event
@@ -5799,7 +5830,7 @@ class DemoMicroscope(FibsemMicroscope):
             if value:
                 logging.info(f"Pumping chamber...")
                 self.chamber.state = "Pumped"
-                self.chamer.pressure = 1e-6 # 1 uTorr
+                self.chamber.pressure = 1e-6 # 1 uTorr
                 logging.info(f"Chamber pumped.")
             else:
                 logging.info(f"Invalid value for pump_chamber: {value}")
@@ -5808,7 +5839,7 @@ class DemoMicroscope(FibsemMicroscope):
             if value:
                 logging.info(f"Venting chamber...")
                 self.chamber.state = "Vented"
-                self.chamer.pressure = 1e5
+                self.chamber.pressure = 1e5
                 logging.info(f"Chamber vented.")
             else:
                 logging.info(f"Invalid value for vent_chamber: {value}")
@@ -5830,6 +5861,8 @@ class DemoMicroscope(FibsemMicroscope):
     def home(self):
         _check_stage(self.system)
         logging.info("Homing Stage")
+        self.stage_system.is_homed = True
+        logging.info(f"Stage homed.")
         return
 
 

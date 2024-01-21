@@ -52,9 +52,11 @@ class NeedleTip(Feature):
     px: Point = None
     color = "green"
     name: str = "NeedleTip"
+    class_id: int = 2
+    class_name: str = "manipulator"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-        self.px = detect_needle_v5(mask)
+        self.px = detect_needle_v5(mask, idx=self.class_id, edge="right")
         return self.px
 
 @dataclass
@@ -63,12 +65,12 @@ class NeedleTipBottom(Feature):
     px: Point = None
     color = "green"
     name: str = "NeedleTipBottom"
+    class_id: int = 2
+    class_name: str = "manipulator"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'NeedleTip':
-        self.px = detect_needle_v5(mask, edge="bottom")
+        self.px = detect_needle_v5(mask, idx=self.class_id, edge="bottom")
         return self.px
-
-
 
 
 @dataclass
@@ -134,10 +136,12 @@ class LandingPost(Feature):
     px: Point = None
     color = "cyan"
     name: str = "LandingPost"
+    class_id: int = 3
+    class_name: str = "landing_post"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingPost':
-        # self.px = detect_landing_post_v4(mask, point)
-        self.px = detect_landing_post_v3(img, landing_pt=None)
+        self.px = detect_landing_post_v4(mask, idx=self.class_id, point=point)
+        # self.px = detect_landing_post_v3(img, landing_pt=None)
         return self.px
 
 
@@ -147,9 +151,11 @@ class LandingGridCentre(Feature):
     px: Point = None
     color = "cyan"
     name: str = "LandingGridCentre"
+    class_id: int = 3
+    class_name: str = "landing_post"
 
     def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingGridCentre':
-        mask = mask == 3  
+        mask = mask == self.class_id  
         self.px = detect_centre_point(mask, threshold=500)
         return self.px
 
@@ -356,11 +362,12 @@ def detect_landing_post_v3(img: np.ndarray, landing_pt: Point = None, sigma=3) -
     px = detect_closest_edge_v2(edge, landing_pt)
     return px
 
+    
 # TODO: generalise this to detect any edge
-def detect_landing_post_v4(mask: np.ndarray, point: Point = None) -> Point:
+def detect_landing_post_v4(mask: np.ndarray, idx: int = 3, point: Point = None) -> Point:
     if point is None:
         point = Point(x=mask.shape[1] // 2, y=mask.shape[0] // 2)
-    idx = 3
+
     landing_mask = mask == idx
 
     # mask out outside 1/3
@@ -369,9 +376,9 @@ def detect_landing_post_v4(mask: np.ndarray, point: Point = None) -> Point:
     landing_mask[:, -idxs:] = False
 
     # get median edge to
-    px = detect_median_edge(landing_mask, edge="top")
+    # px = detect_median_edge(landing_mask, edge="top")
 
-    # px = detect_closest_edge_v2(landing_mask, point)
+    px = detect_closest_edge_v2(landing_mask, point)
     return px
 
 def detect_centre_point(mask: np.ndarray, threshold: int = 500) -> Point:
@@ -721,7 +728,7 @@ def detect_features(
     image: Union[np.ndarray, FibsemImage],
     model: SegmentationModel,
     features: tuple[Feature],
-    pixelsize: float,
+    pixelsize: float = None,
     filter: bool = True,
     point: Point = None
 ) -> DetectedFeatures:
@@ -732,6 +739,12 @@ def detect_features(
     else:
         fibsem_image = None
 
+    if pixelsize is None:
+        try:
+            pixelsize = image.metadata.pixel_size.x
+        except: # default (wrong value)
+            pixelsize = 25e-9
+        
     # model inference
     mask = model.inference(image, rgb=False)
     rgb = model.postprocess(mask, model.num_classes)

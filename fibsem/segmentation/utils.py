@@ -11,6 +11,11 @@ import torch.nn.functional as F
 from huggingface_hub import HfApi, hf_hub_download
 from fibsem import config as cfg
 
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+from fibsem.segmentation.config import CLASS_COLORS, CLASS_COLORS_RGB, CLASS_LABELS
+
+
 # helper functions
 def decode_output(output):
     """decodes the output of segmentation model to RGB mask"""
@@ -238,9 +243,53 @@ unet_encoders = [
 ]
         
 
+def plot_segmentations(images: list[np.ndarray], masks: list[np.ndarray], 
+    alpha=0.5, legend: bool = True, show: bool = True) -> plt.Figure:
+    """Plot the image and mask overlaid with a class legend."""
+    
+    if not isinstance(images, list):
+        images = [images]
+    if not isinstance(masks, list):
+        masks = [masks]
 
+    if len(images) != len(masks):
+        raise ValueError("images and masks must be the same length")
+    
+    n_cols = len(images)
+    fig, ax = plt.subplots(1, len(images), figsize=(10*n_cols/2, 10*n_cols/2))
+    for i, (image, mask) in enumerate(zip(images, masks)):
 
+        # convert to rgb mask        
+        rgb = decode_segmap_v2(mask)
 
+        if len(images) == 1:
+            axes = ax
+        else:
+            axes = ax[i]
+        # plot
+        axes.imshow(image.data, cmap='gray')
+        axes.imshow(rgb, alpha=0.4)
+
+        # filter legend to only include classes present in mask
+        class_ids = np.unique(mask)
+        
+        colors, labels = [], []
+        for idx in class_ids:
+            colors.append(CLASS_COLORS[idx])
+            labels.append(CLASS_LABELS[idx])
+
+        # Create a patch for each class color
+        patches = [mpatches.Patch(color=color, label=label) 
+                for color, label in zip(colors, labels)]
+
+        # Add the patches to the legend
+        if legend:
+            axes.legend(handles=patches, loc="best", prop={'size': 6})
+    
+    if show:
+        plt.show()
+
+    return fig
 
 ## Huggingface Utils
 
