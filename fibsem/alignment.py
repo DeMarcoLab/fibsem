@@ -78,15 +78,20 @@ def beam_shift_alignment(
 
     import time
     time.sleep(3) # threading is too fast?
-    image_settings = ImageSettings.fromFibsemImage(ref_image)
-    image_settings.beam_type = BeamType.ION
-    image_settings.reduced_area = reduced_area
+    ref_image_settings = ImageSettings.fromFibsemImage(ref_image)
+    ref_image_settings.beam_type = BeamType.ION
+    ref_image_settings.reduced_area = reduced_area
+    ref_image_settings.autocontrast = False
+    ref_image_settings.save = True
+    ref_image_settings.filename = image_settings.filename
     new_image = acquire.new_image(
-        microscope, settings=image_settings
+        microscope, settings=ref_image_settings
     )
     dx, dy, _ = shift_from_crosscorrelation(
         ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
     )
+    image_settings.autocontrast = True
+    
 
     # adjust beamshift 
     microscope.beam_shift(dx, dy, image_settings.beam_type)
@@ -474,6 +479,8 @@ def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSet
     if alignment_current is not None:
         initial_current = microscope.get("current", image_settings.beam_type)
         microscope.set("current", alignment_current, image_settings.beam_type)
+        autocontrast = image_settings.autocontrast
+        image_settings.autocontrast = False
 
     base_label = image_settings.filename
     for i in range(steps):
@@ -485,3 +492,4 @@ def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSet
     # reset beam current
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
+        image_settings.autocontrast = autocontrast

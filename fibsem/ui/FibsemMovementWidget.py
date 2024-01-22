@@ -60,8 +60,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.picture_signal.connect(self.update_ui)
         self.positions = []
         self.minimap_image = None
-        settings_dict = utils.load_yaml(cfg.SYSTEM_PATH)
-        if bool(settings_dict["load_positions_on_startup"]):
+        autoload_positions: bool = False # TODO: enable this
+        if autoload_positions:
             self.import_positions(cfg.POSITION_PATH)
         self.update_ui()
 
