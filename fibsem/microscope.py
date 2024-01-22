@@ -812,8 +812,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.system.info.serial_number = self.connection.service.system.serial_number
         self.system.info.hardware_version = self.connection.service.system.version
         self.system.info.software_version = self.connection.service.autoscript.client.version
-        
-        logging.info(f"Microscope client connected to model {self.model} with serial number {self.serial_number} and software version {self.software_version}.")
+        info = self.system.info
+        logging.info(f"Microscope client connected to model {info.model} with serial number {info.serial_number} and software version {info.software_version}.")
         
         # autoscript information
         logging.info(f"Autoscript Client: {self.connection.service.autoscript.client.version}")
@@ -836,9 +836,9 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_beam(image_settings.beam_type, self.system)
         
         # get the beam api
-        beam = (self.connections.beams.electron_beam 
+        beam = (self.connection.beams.electron_beam 
                 if image_settings.beam_type == BeamType.ELECTRON 
-                else self.connections.beams.ion_beam)
+                else self.connection.beams.ion_beam)
             
         # set reduced area settings
         if image_settings.reduced_area is not None:
@@ -1355,7 +1355,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if VERSION < 4.7:
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
 
-        if not self.is_available("maniuplator"):
+        if not self.is_available("manipulator"):
             raise NotImplementedError("Manipulator not available.")
 
         # Retract the needle, preserving the correct parking postiion
@@ -2287,11 +2287,11 @@ class ThermoMicroscope(FibsemMicroscope):
                 values = self.connection.beams.ion_beam.source.plasma_gas.available_values
 
         if key == "current":
-            if beam_type is BeamType.ION and self.system.ion_beam is True:
+            if beam_type is BeamType.ION and self.is_available("ion_beam"):
                 values = self.connection.beams.ion_beam.beam_current.available_values
-            elif beam_type is BeamType.ELECTRON and self.system.electron_beam is True:
+            elif beam_type is BeamType.ELECTRON and self.is_available("electron_beam"):
                 values = self.connection.beams.electron_beam.beam_current.available_values
-
+        
         if key == "detector_type":
             values = self.connection.detector.type.available_values
         
@@ -2470,7 +2470,8 @@ class ThermoMicroscope(FibsemMicroscope):
         # beam properties
         if key == "working_distance":
             beam.working_distance.value = value
-            self.set("stage_link", True)  # link the specimen stage
+            if beam_type is BeamType.ELECTRON:
+                self.set("stage_link", True)  # link the specimen stage for electron
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return 
         if key == "current":
@@ -3309,7 +3310,7 @@ class TescanMicroscope(FibsemMicroscope):
             MicroscopeState: current microscope state
         """
 
-        if self.system.electron_beam is True:
+        if self.system.electron is True:
             image_eb = self.last_image(BeamType.ELECTRON)
             if image_eb is not None:
                 electron_beam = BeamSettings(
@@ -3329,7 +3330,7 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             electron_beam = BeamSettings(BeamType.ELECTRON)
         
-        if self.system.ion_beam is True:
+        if self.system.ion is True:
             image_ib = self.last_image(BeamType.ION)
             if image_ib is not None:
                 ion_beam = BeamSettings(
@@ -5929,7 +5930,7 @@ def _check_stage_movement(settings: SystemSettings, position: FibsemStagePositio
     _check_stage(settings, rotation=req_rotation, tilt=req_tilt)    
 
 def _check_manipulator_movement(settings: SystemSettings, position: FibsemManipulatorPosition):
-    req_rotation = not np.isclose(position.r, 0.0)
-    req_tilt = not np.isclose(position.t, 0.0)
+    req_rotation = position.r is not None
+    req_tilt = position.t is not None
 
     _check_manipulator(settings, rotation=req_rotation, tilt=req_tilt)

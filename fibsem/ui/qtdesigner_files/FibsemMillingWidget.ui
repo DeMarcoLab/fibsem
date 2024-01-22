@@ -124,9 +124,6 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
-       <widget class="QComboBox" name="comboBox_milling_current"/>
-      </item>
       <item row="11" column="1">
        <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time">
         <property name="decimals">
@@ -358,6 +355,9 @@
         </property>
        </widget>
       </item>
+      <item row="7" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
+      </item>
      </layout>
     </widget>
    </item>
@@ -408,7 +408,6 @@
   <tabstop>checkBox_live_update</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_run_milling</tabstop>
-  <tabstop>comboBox_milling_current</tabstop>
   <tabstop>doubleSpinBox_hfw</tabstop>
   <tabstop>comboBox_application_file</tabstop>
   <tabstop>doubleSpinBox_rate</tabstop>

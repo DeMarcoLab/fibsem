@@ -97,7 +97,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         # pattern overlay
         milling_protocol = self.settings.protocol["milling"]
-        milling_patterns = [k for k in self.settings.protocol if "stages" in milling_protocol[k] or "type" in milling_protocol[k]]
+        milling_patterns = [k for k in milling_protocol if "stages" in milling_protocol[k] or "type" in milling_protocol[k]]
         self.comboBox_pattern_overlay.addItems(milling_patterns)
         if "trench" in milling_patterns:
             self.comboBox_pattern_overlay.setCurrentText("trench")
@@ -157,7 +157,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         grid_size = self.doubleSpinBox_tile_grid_size.value() * constants.MICRO_TO_SI
         tile_size = self.doubleSpinBox_tile_tile_size.value() * constants.MICRO_TO_SI
         resolution = int(self.spinBox_tile_resolution.value())
-        dwell_time = self.doubleSpinBox_tile_dwell_time.value() * constants.MILLI_TO_SI
+        dwell_time = self.doubleSpinBox_tile_dwell_time.value() * constants.MICRO_TO_SI
         cryo = self.checkBox_tile_autogamma.isChecked()
         autocontrast = self.checkBox_tile_autogamma.isChecked()
         path = self.lineEdit_tile_path.text()
@@ -645,7 +645,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
                 pattern = self.comboBox_pattern_overlay.currentText() 
                 
-                milling_stages = [patterning.get_milling_stages(pattern, self.settings.protocol, Point(point.x, point.y))[0] for point in points]
+                milling_stages = [patterning.get_milling_stages(pattern, self.settings.protocol["milling"], Point(point.x, point.y))[0] for point in points]
                 
                 for stage, pos in zip(milling_stages, drawn_positions[:-1]):
                     stage.name = pos.name

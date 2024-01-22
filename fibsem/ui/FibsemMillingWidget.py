@@ -84,8 +84,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # milling
         self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
-        self.comboBox_milling_current.addItems([f"{(current * constants.SI_TO_NANO):.2f}"
-                                                        for current in self.AVAILABLE_MILLING_CURRENTS])
+        # self.comboBox_milling_current.addItems([f"{(current * constants.SI_TO_NANO):.2f}"
+        #                                                 for current in self.AVAILABLE_MILLING_CURRENTS])
+        # TODO: set limits on milling current
+        min_current = self.AVAILABLE_MILLING_CURRENTS[0] * constants.SI_TO_NANO
+        max_current = self.AVAILABLE_MILLING_CURRENTS[-1] * constants.SI_TO_NANO
+        self.doubleSpinBox_milling_current.setRange(min_current, max_current)
+        self.doubleSpinBox_milling_current.setDecimals(4)
+
 
         _THERMO = isinstance(self.microscope, ThermoMicroscope)
         _TESCAN = isinstance(self.microscope, TescanMicroscope)
@@ -100,12 +106,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_application_file.addItems(available_application_files)
         self.comboBox_preset.setVisible(_THERMO)
         self.label_preset.setVisible(_THERMO)
-        self.comboBox_milling_current.setVisible(_THERMO)
+        self.doubleSpinBox_milling_current.setVisible(_THERMO)
         self.label_milling_current.setVisible(_THERMO)
         self.label_voltage.setVisible(_THERMO)
         self.spinBox_voltage.setVisible(_THERMO) # TODO: set this to the available voltages
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
-        self.comboBox_milling_current.currentIndexChanged.connect(self.update_settings)
+        self.doubleSpinBox_milling_current.valueChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
         if self.comboBox_application_file.findText(self.protocol["milling"]["application_file"]) == -1:
                 napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
@@ -588,8 +594,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def set_milling_settings_ui(self, milling: FibsemMillingSettings) -> None:
 
         # match to closest available milling current
-        idx = np.argmin(np.abs(np.array(self.AVAILABLE_MILLING_CURRENTS) - milling.milling_current))
-        self.comboBox_milling_current.setCurrentIndex(idx)
+        # idx = np.argmin(np.abs(np.array(self.AVAILABLE_MILLING_CURRENTS) - milling.milling_current))
+        # print("milling current: ", milling.milling_current) # NB: this is not set at init TODO:
+        self.doubleSpinBox_milling_current.setValue(milling.milling_current * constants.SI_TO_NANO)
         self.comboBox_application_file.setCurrentText(milling.application_file)
         self.doubleSpinBox_rate.setValue(milling.rate*constants.SI_TO_NANO)
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)
@@ -600,8 +607,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def get_milling_settings_from_ui(self):
 
+        current_amps = float(self.doubleSpinBox_milling_current.value()) * constants.NANO_TO_SI
+
         milling_settings = FibsemMillingSettings(
-            milling_current=float(self.comboBox_milling_current.currentText()) * constants.NANO_TO_SI,
+            milling_current=current_amps,
             application_file=self.comboBox_application_file.currentText(),
             rate=self.doubleSpinBox_rate.value()*1e-9,
             dwell_time = self.doubleSpinBox_dwell_time.value() * constants.MICRO_TO_SI,
