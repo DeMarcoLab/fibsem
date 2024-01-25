@@ -22,7 +22,7 @@ from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, conver
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
-_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes", "n_rectangles", "overlap"]
+_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes", "n_rectangles", "overlap", "inverted"]
 _ANGLE_KEYS = ["rotation"]
 
 _MILLING_WIDGET_INSTRUCTIONS = """Controls:\nShift + Left Click to Move Selected Pattern\nCtrl + Shift + Left Click to Move All Patterns\nPress Run Milling to Start Milling"""
@@ -409,6 +409,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.checkbox_cleaning_cross_section.stateChanged.connect(self.update_ui_pattern)
                 continue
 
+            if key == "inverted":
+                label = QtWidgets.QLabel(key)
+                self.checkbox_inverted = QtWidgets.QCheckBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.checkbox_inverted, i, 1)
+                self.checkbox_inverted.setChecked(pattern_protocol[key])
+                self.checkbox_inverted.stateChanged.connect(self.update_ui_pattern)
+                continue
+
   
             label = QtWidgets.QLabel(key)
             spinbox = QtWidgets.QDoubleSpinBox()
@@ -453,7 +462,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     continue
                 pattern_dict[key] = self.checkbox_cleaning_cross_section.isChecked()
                 continue
-
+            if key == "inverted":
+                pattern_dict[key] = self.checkbox_inverted.isChecked()
+                continue
+                
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
             value = _scale_value(key, spinbox.value(), constants.MICRO_TO_SI)
             # value = value * constants.DEGREES_TO_RADIANS if key in _ANGLE_KEYS else value

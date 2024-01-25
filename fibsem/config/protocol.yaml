@@ -58,6 +58,7 @@ patterns:
     scan_direction: TopToBottom
     side_trench_width: 5.0e-06
     top_trench_height: 10.0e-6
+    inverted: False
   Undercut: 
     height: 10.0e-6
     width: 10.0e-6

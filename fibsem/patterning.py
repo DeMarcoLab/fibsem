@@ -43,6 +43,7 @@ REQUIRED_KEYS = {
         "top_trench_height",
         "depth",
         "scan_direction",
+        "inverted",
     ),
     "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
     "Undercut": (
@@ -407,6 +408,7 @@ class HorseshoePatternVertical(BasePattern):
         upper_trench_height = protocol["top_trench_height"]
         depth = protocol["depth"]
         scan_direction = protocol.get("scan_direction", "TopToBottom")
+        inverted = protocol.get("inverted", False)
 
         left_pattern = FibsemPattern(
             pattern=FibsemPatternType.Rectangle,
@@ -429,14 +431,16 @@ class HorseshoePatternVertical(BasePattern):
             cleaning_cross_section=False,
             scan_direction=scan_direction,
         )
-
+        y_offset = (height / 2) + (upper_trench_height / 2)
+        if inverted:
+            y_offset = -y_offset
         upper_pattern = FibsemPattern(
             pattern=FibsemPatternType.Rectangle,
             width=width + (2 * trench_width),
             height=upper_trench_height,
             depth=depth,
             centre_x=point.x,
-            centre_y=point.y + (height / 2) + (upper_trench_height / 2),
+            centre_y=point.y + y_offset,
             cleaning_cross_section=False,
             scan_direction=scan_direction,
         )
