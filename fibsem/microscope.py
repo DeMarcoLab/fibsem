@@ -56,7 +56,7 @@ try:
     from autoscript_sdb_microscope_client.structures import (
     BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-        CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern )
+        CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern, RegularCrossSectionPattern )
     from autoscript_sdb_microscope_client.enumerations import (
         CoordinateSystem, ManipulatorCoordinateSystem,ManipulatorState,
         ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
@@ -1682,6 +1682,20 @@ class ThermoMicroscope(FibsemMicroscope):
         patterning_api = self.connection.patterning
         create_pattern_function = patterning_api.create_cleaning_cross_section if pattern_settings.cleaning_cross_section else patterning_api.create_rectangle
 
+        # patterning_api = self.connection.patterning
+        # from fibsem.structures import CrossSectionPattern
+        # if isinstance(pattern_settings.cross_section, CrossSectionPattern.RegularCrossSection):
+        #     create_pattern_function = patterning_api.create_regular_cross_section
+        # elif isinstance(pattern_settings.cross_section, CrossSectionPattern.CleaningCrossSection):
+        #     create_pattern_function = patterning_api.create_cleaning_cross_section
+        # else:
+        #     patterning_api.create_rectangle
+        
+        # if pattern_settings.cleaning_cross_section:    
+        #     create_pattern_function = patterning_api.create_cleaning_cross_section
+
+        
+            
         # create pattern
         pattern = create_pattern_function(
             center_x=pattern_settings.centre_x,
@@ -1711,6 +1725,16 @@ class ThermoMicroscope(FibsemMicroscope):
             # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
             # NB: the current must be set before doing this, otherwise it will be out of range
         
+        # if pattern_settings.passes: # not zero
+        #     if isinstance(pattern, RegularCrossSectionPattern):
+        #         pattern.multi_scan_pass_count = 1
+        #     else:
+        #         pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
+                
+        #         # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
+        #         # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
+        #         # NB: the current must be set before doing this, otherwise it will be out of range
+
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
 
         return pattern

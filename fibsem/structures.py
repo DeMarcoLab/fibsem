@@ -1094,6 +1094,11 @@ class FibsemPattern:  # FibsemBasePattern
             }
 
 
+# class CrossSectionPattern(Enum):
+#     Rectangle  = auto()
+#     RegularCrossSection = auto()
+#     CleaningCrossSection = auto()
+
 @dataclass
 class FibsemMillingSettings:
     """
