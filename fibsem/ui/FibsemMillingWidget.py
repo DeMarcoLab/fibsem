@@ -24,6 +24,7 @@ from fibsem.ui import _stylesheets
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", "number", "passes", "n_rectangles", "overlap", "inverted"]
 _ANGLE_KEYS = ["rotation"]
+_LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
 _MILLING_WIDGET_INSTRUCTIONS = """Controls:\nShift + Left Click to Move Selected Pattern\nCtrl + Shift + Left Click to Move All Patterns\nPress Run Milling to Start Milling"""
 
@@ -418,12 +419,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.checkbox_inverted.stateChanged.connect(self.update_ui_pattern)
                 continue
 
-  
+            # limits
+            min_val = -1000 if key in _LINE_KEYS else 0
+
             label = QtWidgets.QLabel(key)
             spinbox = QtWidgets.QDoubleSpinBox()
             spinbox.setDecimals(3)
             spinbox.setSingleStep(0.001)
-            spinbox.setRange(0, 1000)
+            spinbox.setRange(min_val, 1000)
             spinbox.setValue(0)
             self.gridLayout_patterns.addWidget(label, i, 0)
             self.gridLayout_patterns.addWidget(spinbox, i, 1)
@@ -528,18 +531,26 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             if 'Control' not in event.modifiers:
                 if idx != current_stage_index: 
                     continue
-            pattern_dict_existing = milling_stage.pattern.protocol
+            pattern_dict_existing = deepcopy(milling_stage.pattern.protocol)
             pattern_name = milling_stage.pattern.name
             pattern_renew = patterning.get_pattern(pattern_name)
 
             if self.checkBox_relative_move.isChecked():
                 point = Point(x=milling_stage.pattern.point.x + diff.x, y=milling_stage.pattern.point.y + diff.y)
             
+            # if the pattern is a line, we also need to update start_x, start_y, end_x, end_y to move with the click
+            if pattern_name == "Line":
+                pattern_dict_existing["start_x"] += diff.x
+                pattern_dict_existing["start_y"] += diff.y
+                pattern_dict_existing["end_x"] += diff.x
+                pattern_dict_existing["end_y"] += diff.y
+                # TODO: this doesnt work if the line is rotated at all
+                
             pattern_renew.define(protocol=pattern_dict_existing, point=point)
             pattern_renew.point = point
 
-
             pattern_is_valid = self.valid_pattern_location(pattern_renew)
+            # TODO: if the line goes out of bounds it is not reset correcectly, need to fix this
 
             if not pattern_is_valid:
                 logging.warning(f"Could not move Patterns, out of bounds at at {point}")
@@ -566,10 +577,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.doubleSpinBox_centre_y.setValue(clicked.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
             logging.info(f"Moved patterns to {point} ")
 
+            # if current pattern is Line, we need to update the ui elements
+            if self.milling_stages[current_stage_index].pattern.name == "Line":
+                self.update_pattern_ui(milling_stage=self.milling_stages[current_stage_index])
+
             logging.debug({
                 "msg": "move_milling_patterns",                                     # message type
                 "pattern": self.milling_stages[current_stage_index].pattern.name,   # pattern name
-                "dm": diff.to_dict(), # x, y                                    # metres difference 
+                "dm": diff.to_dict(), # x, y                                        # metres difference 
                 "beam_type": BeamType.ION.name,                                     # beam type
             })
             
@@ -677,6 +692,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 ib_image=self.image_widget.ib_image, 
                 eb_image=self.image_widget.eb_image, 
                 milling_stages = milling_stages) # TODO: add names and legend for this
+                                                 # TODO: disable milling crosshairs (optional)
         
         except Exception as e:
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
@@ -713,12 +729,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.parent.image_widget._toggle_interactions(enabled, caller="milling")
             self.parent.movement_widget._toggle_interactions(enabled, caller="milling")
 
-        # change run milling to Running... and turn orange
-        # if enabled:
-        #     self.pushButton_run_milling.setText("Run Milling")
-        # else:
-        #     self.pushButton_run_milling.setText("Running...")
-        #     self.pushButton_run_milling.setStyleSheet("background-color: orange")
 
     def run_milling(self):
         
@@ -729,7 +739,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     
     def start_progress_thread(self,info):
 
-        est_time = info['estimated_time']
+        est_time = info['estimated_time']  # TODO: add some extra time to this to account for changing currents etc
         idx = info['idx']
         total = info['total']
 
@@ -794,7 +804,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for idx,stage in enumerate(milling_stages):
             self.milling_notification.emit(f"Preparing: {stage.name}")
             if stage.pattern is not None:
-                log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")
+                log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}") # TODO: refactor to json
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 try:

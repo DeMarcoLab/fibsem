@@ -203,6 +203,35 @@ def convert_pattern_to_napari_circle(
     return shape
 
 
+def convert_pattern_to_napari_line(
+    pattern_settings: FibsemPattern, image: FibsemImage
+) -> np.ndarray:
+    # image centre
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
+    # pixel size
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+    
+    # extract pattern information from settings
+    from fibsem.structures import FibsemPatternType
+
+    if not pattern_settings.pattern is FibsemPatternType.Line:
+        raise ValueError("Pattern is not a line")
+
+    start_x = pattern_settings.start_x
+    start_y = pattern_settings.start_y
+    end_x = pattern_settings.end_x
+    end_y = pattern_settings.end_y
+
+    # pattern to pixel coords
+    px0 = int(icx + (start_x / pixelsize_x))
+    py0 = int(icy - (start_y / pixelsize_y))
+    px1 = int(icx + (end_x / pixelsize_x))
+    py1 = int(icy - (end_y / pixelsize_y))
+
+    # napari shape format [[y_start, x_start], [y_end, x_end]])
+    shape = [[py0, px0], [py1, px1]]
+    return shape
+
 def convert_pattern_to_napari_rect(
     pattern_settings: FibsemPattern, image: FibsemImage
 ) -> np.ndarray:
@@ -270,7 +299,7 @@ def create_crosshair_shape(centre_point: Point, image: FibsemImage,eb_image: Fib
 
     r_angles = [0,np.deg2rad(90)] #
     w = 40
-    h = 3
+    h = 1
     crosshair_shapes = []
 
     for r in r_angles:
@@ -383,6 +412,7 @@ def _draw_patterns_in_napari(
     ib_image: FibsemImage,
     eb_image: FibsemImage,
     milling_stages: list[FibsemMillingStage],
+    use_crosshair: bool = True,
 ):
 
     # colour wheel
@@ -402,6 +432,7 @@ def _draw_patterns_in_napari(
         patterns = stage.pattern.patterns
         point = stage.pattern.point
         name = stage.name
+        is_line_pattern = False
 
         for pattern_settings in patterns:
             if pattern_settings.pattern is FibsemPatternType.Bitmap:
@@ -426,9 +457,15 @@ def _draw_patterns_in_napari(
 
             elif pattern_settings.pattern is FibsemPatternType.Circle:
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
-
                 shape_types.append("ellipse")
                 _ignore.append(name)
+
+            elif pattern_settings.pattern is FibsemPatternType.Line:
+                shape = convert_pattern_to_napari_line(pattern_settings=pattern_settings, image=ib_image)
+                shape_types.append("line")
+                _ignore.append(name)
+                is_line_pattern = True
+            
             else:
                 shape = convert_pattern_to_napari_rect(
                     pattern_settings=pattern_settings, image=ib_image
@@ -446,14 +483,15 @@ def _draw_patterns_in_napari(
 
         if len(shape_patterns) > 0:
             
-            crosshair_shapes = create_crosshair_shape(centre_point=point, image=ib_image, eb_image=eb_image)
-            crosshair_shape_types = ["rectangle","rectangle"]
-            shape_patterns += crosshair_shapes
-            shape_types += crosshair_shape_types
-
+            if use_crosshair:
+                crosshair_shapes = create_crosshair_shape(centre_point=point, image=ib_image, eb_image=eb_image)
+                crosshair_shape_types = ["rectangle","rectangle"]
+                shape_patterns += crosshair_shapes
+                shape_types += crosshair_shape_types
 
             # _name = f"Stage {i+1:02d}"
             if name in viewer.layers:
+                viewer.layers[name].data = []
                 viewer.layers[name].data = shape_patterns
                 viewer.layers[name].shape_type = shape_types
                 viewer.layers[name].edge_color = COLOURS[i % len(COLOURS)]
@@ -469,6 +507,9 @@ def _draw_patterns_in_napari(
                     opacity=0.5,
                     blending="translucent",
                 )
+
+            if is_line_pattern:
+                viewer.layers[name].edge_width = 3
 
         t2 = time.time()
         # remove all un-updated layers (assume they have been deleted)        

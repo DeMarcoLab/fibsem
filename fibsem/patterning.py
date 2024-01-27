@@ -202,8 +202,6 @@ class LinePattern(BasePattern):
         self.patterns = [FibsemPattern.from_dict(protocol)]
         self.protocol = protocol
         self.point = point
-        self.protocol = protocol
-        self.point = point
         return self.patterns
 
 
@@ -857,8 +855,6 @@ class CloverPattern(BasePattern):
         self.patterns = [top_pattern, right_pattern, left_pattern, stem_pattern]
         self.protocol = protocol
         self.point = point
-        self.protocol = protocol
-        self.point = point
         return self.patterns
 
 
@@ -898,8 +894,6 @@ class TriForcePattern(BasePattern):
             self.patterns.append(left_pattern)
             self.patterns.append(right_pattern)
             self.patterns.append(bottom_pattern)
-        self.protocol = protocol
-        self.point = point
         self.protocol = protocol
         self.point = point
         return self.patterns
@@ -954,8 +948,6 @@ class TrapezoidPattern(BasePattern):
                 scan_direction="TopToBottom",
             )
             self.patterns.append(deepcopy(pattern))
-        self.protocol = protocol
-        self.point = point
         self.protocol = protocol
         self.point = point
         return self.patterns
