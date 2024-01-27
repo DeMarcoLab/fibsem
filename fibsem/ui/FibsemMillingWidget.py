@@ -14,8 +14,8 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                TescanMicroscope, ThermoMicroscope)
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
-                               FibsemPattern, MicroscopeSettings,
-                               Point, FibsemPatternType)
+                               MicroscopeSettings,
+                               Point)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import _draw_patterns_in_napari, _remove_all_layers, convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, validate_pattern_placement,_get_directory_ui,_get_file_ui, import_milling_stages_yaml, export_milling_stages_yaml, _calculate_fiducial_area_v2
@@ -598,7 +598,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
         self._UPDATING_PATTERN = False
 
-    def valid_pattern_location(self,stage_pattern):
+    def valid_pattern_location(self, stage_pattern: FibsemMillingStage) -> bool:
 
         if stage_pattern.name == "Fiducial":
             _,flag = _calculate_fiducial_area_v2(image=self.image_widget.ib_image, fiducial_centre = deepcopy(stage_pattern.point), fiducial_length = stage_pattern.patterns[0].height)
@@ -610,7 +610,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 return True    
         
         for pattern_settings in stage_pattern.patterns:
-            if pattern_settings.pattern is FibsemPatternType.Circle:
+            if isinstance(pattern_settings, patterning.CirclePattern):
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
             else:
                 shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=self.image_widget.ib_image)

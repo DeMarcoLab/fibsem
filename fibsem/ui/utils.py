@@ -8,12 +8,15 @@ import numpy as np
 from PIL import Image
 
 from fibsem import constants, conversions
-from fibsem.structures import Point, FibsemImage, FibsemPattern, FibsemPatternType, FibsemRectangle
+from fibsem.structures import Point, FibsemImage, FibsemRectangle
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 from fibsem.patterning import FibsemMillingStage
+from fibsem.structures import (FibsemPatternSettings, 
+                               FibsemRectangleSettings,  FibsemLineSettings, 
+                               FibsemCircleSettings, FibsemBitmapSettings)
 import napari
 from fibsem.utils import load_yaml, save_yaml
 import fibsem.patterning as patterning
@@ -182,12 +185,17 @@ def set_arr_as_qlabel(
 
 
 def convert_pattern_to_napari_circle(
-    pattern_settings: FibsemPattern, image: FibsemImage
+    pattern_settings: FibsemCircleSettings, image: FibsemImage
 ):
+    
+    if not isinstance(pattern_settings, FibsemCircleSettings):
+        raise ValueError("Pattern is not a circle")
+    
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
 
     # pattern to pixel coords
     r = int(pattern_settings.radius / pixelsize_x)
@@ -204,7 +212,7 @@ def convert_pattern_to_napari_circle(
 
 
 def convert_pattern_to_napari_line(
-    pattern_settings: FibsemPattern, image: FibsemImage
+    pattern_settings: FibsemLineSettings, image: FibsemImage
 ) -> np.ndarray:
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
@@ -212,9 +220,7 @@ def convert_pattern_to_napari_line(
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
     
     # extract pattern information from settings
-    from fibsem.structures import FibsemPatternType
-
-    if not pattern_settings.pattern is FibsemPatternType.Line:
+    if not isinstance(pattern_settings, FibsemLineSettings):
         raise ValueError("Pattern is not a line")
 
     start_x = pattern_settings.start_x
@@ -233,16 +239,14 @@ def convert_pattern_to_napari_line(
     return shape
 
 def convert_pattern_to_napari_rect(
-    pattern_settings: FibsemPattern, image: FibsemImage
+    pattern_settings: FibsemRectangleSettings, image: FibsemImage
 ) -> np.ndarray:
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
     # extract pattern information from settings
-    from fibsem.structures import FibsemPatternType
-
-    if pattern_settings.pattern is FibsemPatternType.Line:
+    if isinstance(pattern_settings, FibsemLineSettings):
         pattern_width = pattern_settings.end_x - pattern_settings.start_x
         pattern_height = max(pattern_settings.end_y - pattern_settings.start_y, 0.5e-6)
         pattern_rotation = np.arctan2(
@@ -252,7 +256,7 @@ def convert_pattern_to_napari_rect(
         pattern_centre_y = (pattern_settings.end_y + pattern_settings.start_y) / 2
 
     
-    elif pattern_settings.pattern is FibsemPatternType.Annulus: #only used for out of bounds check
+    elif isinstance(pattern_settings, FibsemCircleSettings): #only used for out of bounds check
         pattern_width = 2*pattern_settings.radius
         pattern_height = 2*pattern_settings.radius
         pattern_centre_x = pattern_settings.centre_x
@@ -328,7 +332,7 @@ def create_crosshair_shape(centre_point: Point, image: FibsemImage,eb_image: Fib
 
 
 def convert_bitmap_pattern_to_napari_image(
-        pattern_settings: FibsemPattern, image: FibsemImage
+        pattern_settings: FibsemBitmapSettings, image: FibsemImage
 ) -> np.ndarray:
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
@@ -355,8 +359,8 @@ def convert_bitmap_pattern_to_napari_image(
     
     return img_array, translate_position
 
-def convert_pattern_to_napari_image(pattern_settings: FibsemPattern, image: FibsemImage) -> np.ndarray:
-
+def convert_pattern_to_napari_image(pattern_settings: FibsemCircleSettings, image: FibsemImage) -> np.ndarray:
+    """Convert a circle pattern to a napari image. Note: annulus can only be plotted as image"""
     # image centre
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
     # pixel size
@@ -417,7 +421,6 @@ def _draw_patterns_in_napari(
 
     # colour wheel
     COLOURS = ["yellow", "cyan", "magenta", "lime", "orange", "hotpink", "green", "blue", "red", "purple"]
-    from fibsem.structures import FibsemPatternType
 
     # convert fibsem patterns to napari shapes
     import time
@@ -435,7 +438,7 @@ def _draw_patterns_in_napari(
         is_line_pattern = False
 
         for pattern_settings in patterns:
-            if pattern_settings.pattern is FibsemPatternType.Bitmap:
+            if isinstance(pattern_settings, FibsemBitmapSettings):
                 if pattern_settings.path == None or pattern_settings.path == '':
                     continue
 
@@ -446,21 +449,22 @@ def _draw_patterns_in_napari(
                 shape_patterns = []
                 _ignore.append("bmp_Image")
                 continue
-            elif pattern_settings.pattern is FibsemPatternType.Annulus:
-                annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
-                if "annulus_Image" in viewer.layers:
-                    viewer.layers.remove(viewer.layers["annulus_Image"])
-                viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=COLOURS[i % len(COLOURS)],opacity=0.4)
-                shape_patterns = []
-                _ignore.append("annulus_Image")
-                continue
 
-            elif pattern_settings.pattern is FibsemPatternType.Circle:
-                shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
-                shape_types.append("ellipse")
-                _ignore.append(name)
+            elif isinstance(pattern_settings, FibsemCircleSettings):
+                if pattern_settings.thickness != 0:
+                    annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
+                    if "annulus_Image" in viewer.layers:
+                        viewer.layers.remove(viewer.layers["annulus_Image"])
+                    viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=COLOURS[i % len(COLOURS)],opacity=0.4)
+                    shape_patterns = []
+                    _ignore.append("annulus_Image")
+                    continue
+                else:
+                    shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
+                    shape_types.append("ellipse")
+                    _ignore.append(name)
 
-            elif pattern_settings.pattern is FibsemPatternType.Line:
+            elif isinstance(pattern_settings, FibsemLineSettings):
                 shape = convert_pattern_to_napari_line(pattern_settings=pattern_settings, image=ib_image)
                 shape_types.append("line")
                 _ignore.append(name)
@@ -719,7 +723,7 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
 
 def validate_pattern_placement(
-    patterns: list[FibsemPattern], resolution: list, shape: list[list[float]]
+    patterns: list[FibsemPatternSettings], resolution: list, shape: list[list[float]]
 ):
     x_lim = resolution[0]
     y_lim = resolution[1]

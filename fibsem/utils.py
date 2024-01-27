@@ -18,7 +18,6 @@ from fibsem.structures import (
     SystemSettings,
     FibsemImage,
     FibsemMillingSettings,
-    FibsemPattern,
 )
 from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope

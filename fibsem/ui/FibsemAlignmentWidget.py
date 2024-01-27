@@ -8,7 +8,6 @@ from PyQt5 import QtWidgets
 import numpy as np
 from fibsem import alignment
 from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope, TescanMicroscope
-from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, MicroscopeSettings)
 from fibsem.ui.qtdesigner_files import CurrentAlignmentWidget
 from fibsem.ui import utils as ui_utils 

@@ -77,12 +77,14 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemImage, FibsemImageMetadata,
                                FibsemManipulatorPosition,
                                FibsemMillingSettings, FibsemRectangle,
-                               FibsemPattern, FibsemStagePosition,
+                               FibsemStagePosition,
                                ImageSettings, SystemSettings, 
                                SystemInfo,
                                MicroscopeState, Point, FibsemDetectorSettings,
                                ThermoGISLine,ThermoMultiChemLine,
-                            FibsemUser, FibsemExperiment)
+                            FibsemUser, FibsemExperiment, 
+                            FibsemPatternSettings, FibsemRectangleSettings, 
+                            FibsemCircleSettings, FibsemLineSettings, FibsemBitmapSettings)
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -266,21 +268,21 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def draw_rectangle(self, pattern_settings: FibsemPattern):
+    def draw_rectangle(self, pattern_settings: FibsemRectangleSettings):
         pass
 
     @abstractmethod
-    def draw_line(self, pattern_settings: FibsemPattern):
+    def draw_line(self, pattern_settings: FibsemLineSettings):
         pass
 
     @abstractmethod
-    def draw_circle(self, pattern_settings: FibsemPattern):
+    def draw_circle(self, pattern_settings: FibsemCircleSettings):
         pass
 
     @abstractmethod
     def draw_bitmap_pattern(
         self,
-        pattern_settings: FibsemPattern,
+        pattern_settings: FibsemBitmapSettings,
         path: str,
     ):
         pass
@@ -712,18 +714,6 @@ class ThermoMicroscope(FibsemMicroscope):
         
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
-
-        draw_rectangle(self, pattern_settings: FibsemPattern):
-            Draws a rectangle pattern using the current ion beam.
-
-        draw_line(self, pattern_settings: FibsemPattern):
-            Draws a line pattern on the current imaging view of the microscope.
-
-        draw_circle(self, pattern_settings: FibsemPattern):
-            Draws a circular pattern on the current imaging view of the microscope.
-        
-        draw_bitmap_pattern(self, pattern_settings: FibsemPattern, path: str):
-            Draws a bitmap pattern using the provided image file. 
 
         get_scan_directions(self) -> list:
             Get the available scan directions for milling.
@@ -1663,13 +1653,13 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def draw_rectangle(
         self,
-        pattern_settings: FibsemPattern,
+        pattern_settings: FibsemRectangleSettings,
     ):
         """
         Draws a rectangle pattern using the current ion beam.
 
         Args:
-            pattern_settings (FibsemPattern): the settings for the pattern to draw.
+            pattern_settings (FibsemRectangleSettings): the settings for the pattern to draw.
 
         Returns:
             Pattern: the created pattern.
@@ -1739,12 +1729,12 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return pattern
 
-    def draw_line(self, pattern_settings: FibsemPattern):
+    def draw_line(self, pattern_settings: FibsemLineSettings):
         """
         Draws a line pattern on the current imaging view of the microscope.
 
         Args:
-            pattern_settings (FibsemPattern): A data class object specifying the pattern parameters,
+            pattern_settings (FibsemLineSettings): A data class object specifying the pattern parameters,
                 including the start and end points, and the depth of the pattern.
 
         Returns:
@@ -1764,12 +1754,12 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
         return pattern
     
-    def draw_circle(self, pattern_settings: FibsemPattern):
+    def draw_circle(self, pattern_settings: FibsemCircleSettings):
         """
         Draws a circle pattern on the current imaging view of the microscope.
 
         Args:
-            pattern_settings (FibsemPattern): A data class object specifying the pattern parameters,
+            pattern_settings (FibsemCircleSettings): A data class object specifying the pattern parameters,
                 including the centre point, radius and depth of the pattern.
 
         Returns:
@@ -1791,7 +1781,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return pattern
 
-    def draw_annulus(self, pattern_settings: FibsemPattern):
+    def draw_annulus(self, pattern_settings: FibsemCircleSettings):
 
         outer_diameter = 2*pattern_settings.radius
         inner_diameter = outer_diameter - 2*pattern_settings.thickness
@@ -1811,7 +1801,7 @@ class ThermoMicroscope(FibsemMicroscope):
     
     def draw_bitmap_pattern(
         self,
-        pattern_settings: FibsemPattern,
+        pattern_settings: FibsemBitmapSettings,
         path: str,
     ):
 
@@ -2781,15 +2771,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
-
-        draw_rectangle(self, pattern_settings: FibsemPattern):
-            Draws a rectangle pattern using the current ion beam.
-
-        draw_line(self, pattern_settings: FibsemPattern):
-            Draws a line pattern on the current imaging view of the microscope.
-        
-        draw_circle(self, pattern_settings: FibsemPattern):
-            Draws a circular pattern on the current imaging view of the microscope.
 
         get_scan_directions(self) -> list:
             Get the available scan directions for milling.    
@@ -4147,13 +4128,13 @@ class TescanMicroscope(FibsemMicroscope):
 
     def draw_rectangle(
         self,
-        pattern_settings: FibsemPattern,
+        pattern_settings: FibsemRectangleSettings,
     ):
         """
         Draws a rectangle pattern using the current ion beam.
 
         Args:
-            pattern_settings (FibsemPattern): the settings for the pattern to draw.
+            pattern_settings (FibsemRectangleSettings): the settings for the pattern to draw.
 
         Returns:
             Pattern: the created pattern.
@@ -4217,12 +4198,12 @@ class TescanMicroscope(FibsemMicroscope):
         
         return pattern
 
-    def draw_line(self, pattern_settings: FibsemPattern):
+    def draw_line(self, pattern_settings: FibsemLineSettings):
         """
         Draws a line pattern on the current imaging view of the microscope.
 
         Args:
-            pattern_settings (FibsemPattern): A data class object specifying the pattern parameters,
+            pattern_settings (FibsemLineSettings): A data class object specifying the pattern parameters,
                 including the start and end points, and the depth of the pattern.
 
         Returns:
@@ -4242,12 +4223,12 @@ class TescanMicroscope(FibsemMicroscope):
         pattern = self.layer
         return pattern
 
-    def draw_circle(self, pattern_settings: FibsemPattern):
+    def draw_circle(self, pattern_settings: FibsemCircleSettings):
         """
         Draws a circle pattern on the current imaging view of the microscope.
 
         Args:
-            pattern_settings (FibsemPattern): A data class object specifying the pattern parameters,
+            pattern_settings (FibsemCircleSettings): A data class object specifying the pattern parameters,
                 including the centre point, radius and depth of the pattern.
 
         Returns:
@@ -4277,12 +4258,12 @@ class TescanMicroscope(FibsemMicroscope):
 
         return pattern
     
-    def draw_annulus(self,pattern_settings: FibsemPattern):
+    def draw_annulus(self,pattern_settings: FibsemCircleSettings):
 
         """Draws an annulus (donut) pattern on the current imaging view of the microscope.
 
         Args: 
-            pattern_settings (FibsemPattern): A data class object specifying the pattern parameters,
+            pattern_settings (FibsemCircleSettings): A data class object specifying the pattern parameters,
             including the centre point, outer radius and thickness of the annulus, and the depth of the pattern.
 
         Returns:
@@ -4305,7 +4286,7 @@ class TescanMicroscope(FibsemMicroscope):
     
     def draw_bitmap_pattern(
         self,
-        pattern_settings: FibsemPattern,
+        pattern_settings: FibsemBitmapSettings,
         path: str,
     ):
         return NotImplemented
@@ -5521,16 +5502,16 @@ class DemoMicroscope(FibsemMicroscope):
         return total_time
         
 
-    def draw_rectangle(self, pattern_settings: FibsemPattern) -> None:
+    def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
 
-    def draw_line(self, pattern_settings: FibsemPattern) -> None:
+    def draw_line(self, pattern_settings: FibsemLineSettings) -> None:
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
 
-    def draw_circle(self, pattern_settings: FibsemPattern) -> None:
+    def draw_circle(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
     
-    def draw_annulus(self, pattern_settings: FibsemPattern) -> None:
+    def draw_annulus(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
 
     def get_scan_directions(self) -> list:
@@ -5549,8 +5530,9 @@ class DemoMicroscope(FibsemMicroscope):
                 "TopToBottom"]
         return values 
 
-    def draw_bitmap_pattern(self, pattern_settings: FibsemPattern,
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings,
         path: str):
+        logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
         return 
     def run_milling_drift_corrected(self):
         _check_beam(BeamType.ION, self.system)

@@ -5,7 +5,7 @@ import os
 import sys
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
 from typing import Optional
@@ -808,296 +808,164 @@ class MicroscopeState:
         return microscope_state
 
 
-class FibsemPatternType(Enum):
-    Rectangle = 1
-    Line = 2
-    Circle = 3
-    Bitmap = 4
-    Annulus = 5
 
-# TODO: convert this to abc?
-class FibsemPattern:  # FibsemBasePattern
-    """
-    FibsemPattern is used to store all of the possible settings related to each pattern that may be drawn.
+########### Base Pattern Settings
+@dataclass
+class FibsemPatternSettings(ABC):
 
-    Args:
-        pattern (FibsemPatternType): Used to indicate which pattern is utilised. Currently either Rectangle or Line.
-        **kwargs: If FibsemPatternType.Rectangle
-                    width: float (m),
-                    height: float (m),
-                    depth: float (m),
-                    rotation: float = 0.0 (m),
-                    centre_x: float = 0.0 (m),
-                    centre_y: float = 0.0 (m),
-                    passes: float = 1.0,
-
-                If FibsemPatternType.Line
-                    start_x: float (m),
-                    start_y: float (m),
-                    end_x: float (m),
-                    end_y: float (m),
-                    depth: float (m),
-
-                If FibsemPatternType.Circle
-                    centre_x: float (m),
-                    centre_y: float (m),
-                    radius: float (m),
-                    depth: float (m),
-                    start_angle: float = 0.0 (degrees),
-                    end_angle: float = 360.0 (degrees),
-
-                if FibsemPatternType.Bitmap
-                    centre_x: float (m),
-                    centre_y: float (m),
-                    width: float (m),
-                    height: float (m),
-                    rotation: float = 0.0 (degrees),
-                    depth: float (m),
-                    path: str = path to image,
-    """
-
-    def __init__(self, pattern: FibsemPatternType = FibsemPatternType.Rectangle, **kwargs):
-        self.pattern = pattern
-        if pattern == FibsemPatternType.Rectangle:
-            self.width = kwargs["width"]
-            self.height = kwargs["height"]
-            self.depth = kwargs["depth"]
-            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
-            self.centre_x = kwargs["centre_x"] if "centre_x" in kwargs else 0.0
-            self.centre_y = kwargs["centre_y"] if "centre_y" in kwargs else 0.0
-            self.scan_direction = (
-                kwargs["scan_direction"]
-                if "scan_direction" in kwargs
-                else "TopToBottom"
-            )
-            self.cleaning_cross_section = (
-                kwargs["cleaning_cross_section"]
-                if "cleaning_cross_section" in kwargs
-                else False
-            )
-            self.passes = kwargs["passes"] if "passes" in kwargs else None
-        elif pattern == FibsemPatternType.Line:
-            self.start_x = kwargs["start_x"]
-            self.start_y = kwargs["start_y"]
-            self.end_x = kwargs["end_x"]
-            self.end_y = kwargs["end_y"]
-            self.depth = kwargs["depth"]
-            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
-            self.scan_direction = (
-                kwargs["scan_direction"]
-                if "scan_direction" in kwargs
-                else "TopToBottom"
-            )
-            self.cleaning_cross_section = (
-                kwargs["cleaning_cross_section"]
-                if "cleaning_cross_section" in kwargs
-                else False
-            )
-        elif pattern == FibsemPatternType.Circle:
-            self.centre_x = kwargs["centre_x"]
-            self.centre_y = kwargs["centre_y"]
-            self.radius = kwargs["radius"]
-            self.depth = kwargs["depth"]
-            self.start_angle = kwargs["start_angle"] if "start_angle" in kwargs else 0.0
-            self.end_angle = kwargs["end_angle"] if "end_angle" in kwargs else 360.0
-            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
-            self.scan_direction = (
-                kwargs["scan_direction"]
-                if "scan_direction" in kwargs
-                else "TopToBottom"
-            )
-            self.cleaning_cross_section = (
-                kwargs["cleaning_cross_section"]
-                if "cleaning_cross_section" in kwargs
-                else False
-            )
-        elif pattern == FibsemPatternType.Bitmap:
-            self.centre_x = kwargs["centre_x"]
-            self.centre_y = kwargs["centre_y"]
-            self.width = kwargs["width"]
-            self.height = kwargs["height"]
-            self.rotation = kwargs["rotation"] if "rotation" in kwargs else 0.0
-            self.depth = kwargs["depth"]
-            self.scan_direction = (
-                kwargs["scan_direction"]
-                if "scan_direction" in kwargs
-                else "TopToBottom"
-            )
-            self.cleaning_cross_section = (
-                kwargs["cleaning_cross_section"]
-                if "cleaning_cross_section" in kwargs
-                else False
-            )
-            self.path = kwargs["path"]
-        elif pattern == FibsemPatternType.Annulus:
-            self.centre_x = kwargs["centre_x"]
-            self.centre_y = kwargs["centre_y"]
-            self.radius = kwargs["radius"]
-            self.thickness = kwargs["thickness"]
-            self.depth = kwargs["depth"]
-            self.start_angle = kwargs["start_angle"] if "start_angle" in kwargs else 0.0
-            self.end_angle = kwargs["end_angle"] if "end_angle" in kwargs else 360.0
-            self.scan_direction = (
-                kwargs["scan_direction"]
-                if "scan_direction" in kwargs
-                else "TopToBottom"
-            )
-            self.cleaning_cross_section = (
-                kwargs["cleaning_cross_section"]
-                if "cleaning_cross_section" in kwargs
-                else False
-            )
-
-    def __repr__(self) -> str:
-        if self.pattern == FibsemPatternType.Rectangle:
-            return f"FibsemPattern(pattern={self.pattern}, width={self.width}, height={self.height}, depth={self.depth}, rotation={self.rotation}, centre_x={self.centre_x}, centre_y={self.centre_y}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section}, passes={self.passes})"
-        if self.pattern == FibsemPatternType.Line:
-            return f"FibsemPattern(pattern={self.pattern}, start_x={self.start_x}, start_y={self.start_y}, end_x={self.end_x}, end_y={self.end_y}, depth={self.depth}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-        if self.pattern is FibsemPatternType.Circle:
-            return f"FibsemPattern(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, rotation={self.rotation}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-        if self.pattern is FibsemPatternType.Bitmap:
-            return f"FibsemPattern(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, width={self.width}, height={self.height}, depth={self.depth}, path={self.path})"
-        if self.pattern is FibsemPatternType.Annulus:
-            return f"FibsemPattern(pattern={self.pattern}, centre_x={self.centre_x}, centre_y={self.centre_y}, radius={self.radius}, thickness={self.thickness}, depth={self.depth}, start_angle={self.start_angle}, end_angle={self.end_angle}, scan_direction={self.scan_direction}, cleaning_cross_section={self.cleaning_cross_section})"
-
+    @abstractmethod
+    def to_dict(self) -> dict:
+        pass
+    
     @staticmethod
-    def from_dict(state_dict: dict) -> "FibsemPattern":
-        if state_dict["pattern"] == "Rectangle":
-            passes = state_dict.get("passes", 0)
-            passes = passes if passes is not None else 0
-            return FibsemPattern(
-                pattern=FibsemPatternType.Rectangle,
-                width=state_dict["width"],
-                height=state_dict["height"],
-                depth=state_dict["depth"],
-                rotation=state_dict["rotation"],
-                centre_x=state_dict["centre_x"],
-                centre_y=state_dict["centre_y"],
-                scan_direction=state_dict["scan_direction"],
-                cleaning_cross_section=state_dict["cleaning_cross_section"],
-                passes=int(passes),
-            )
-        elif state_dict["pattern"] == "Line":
-            return FibsemPattern(
-                pattern=FibsemPatternType.Line,
-                start_x=state_dict["start_x"],
-                start_y=state_dict["start_y"],
-                end_x=state_dict["end_x"],
-                end_y=state_dict["end_y"],
-                depth=state_dict["depth"],
-                rotation=state_dict.get("rotation", 0.0),
-                scan_direction=state_dict["scan_direction"],
-                cleaning_cross_section=state_dict["cleaning_cross_section"],
-            )
-        elif state_dict["pattern"] == "Circle":
-            return FibsemPattern(
-                pattern=FibsemPatternType.Circle,
-                centre_x=state_dict["centre_x"],
-                centre_y=state_dict["centre_y"],
-                radius=state_dict["radius"],
-                depth=state_dict["depth"],
-                start_angle=state_dict["start_angle"],
-                end_angle=state_dict["end_angle"],
-                rotation=state_dict["rotation"],
-                scan_direction=state_dict["scan_direction"],
-                cleaning_cross_section=state_dict["cleaning_cross_section"],
-            )
-        elif state_dict["pattern"] == "BitmapPattern":
-            return FibsemPattern(
-                pattern=FibsemPatternType.Bitmap,
-                centre_x=state_dict["centre_x"],
-                centre_y=state_dict["centre_y"],
-                width=state_dict["width"],
-                height=state_dict["height"],
-                depth=state_dict["depth"],
-                rotation=state_dict["rotation"],
-                path=state_dict["path"],
-            )
-        elif state_dict["pattern"] == "Annulus":
-            return FibsemPattern(
-                pattern=FibsemPatternType.Annulus,
-                centre_x=state_dict["centre_x"],
-                centre_y=state_dict["centre_y"],
-                radius=state_dict["radius"],
-                thickness=state_dict["thickness"],
-                depth=state_dict["depth"],
-                start_angle=state_dict["start_angle"],
-                end_angle=state_dict["end_angle"],
-                scan_direction=state_dict["scan_direction"],
-                cleaning_cross_section=state_dict["cleaning_cross_section"],
-            )
+    def from_dict(self, data: dict) -> "FibsemPatternSettings":
+        pass
+
+
+class CrossSectionPattern(Enum):
+    Rectangle  = auto()
+    RegularCrossSection = auto()
+    CleaningCrossSection = auto()
+
+@dataclass
+class FibsemRectangleSettings(FibsemPatternSettings):
+    width: float
+    height: float
+    depth: float
+    centre_x: float
+    centre_y: float
+    rotation: float = 0
+    cleaning_cross_section: bool = False
+    scan_direction: str = "TopToBottom"
+    cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
+    passes: int = 0
 
     def to_dict(self) -> dict:
-        if self.pattern == FibsemPatternType.Rectangle:
-            return {
-                "pattern": "Rectangle",
-                "width": self.width,
-                "height": self.height,
-                "depth": self.depth,
-                "rotation": self.rotation,
-                "centre_x": self.centre_x,
-                "centre_y": self.centre_y,
-                "scan_direction": self.scan_direction,
-                "cleaning_cross_section": self.cleaning_cross_section,
-                "passes": self.passes,
-            }
-        elif self.pattern == FibsemPatternType.Line:
-            return {
-                "pattern": "Line",
-                "start_x": self.start_x,
-                "start_y": self.start_y,
-                "end_x": self.end_x,
-                "end_y": self.end_y,
-                "depth": self.depth,
-                "rotation": self.rotation,
-                "scan_direction": self.scan_direction,
-                "cleaning_cross_section": self.cleaning_cross_section,
-            }
-        elif self.pattern == FibsemPatternType.Circle:
-            return {
-                "pattern": "Circle",
-                "centre_x": self.centre_x,
-                "centre_y": self.centre_y,
-                "radius": self.radius,
-                "depth": self.depth,
-                "start_angle": self.start_angle,
-                "end_angle": self.end_angle,
-                "rotation": self.rotation,
-                "scan_direction": self.scan_direction,
-                "cleaning_cross_section": self.cleaning_cross_section,
-            }
-        elif self.pattern == FibsemPatternType.Bitmap:
-            return {
-                "pattern": "BitmapPattern",
-                "centre_x": self.centre_x,
-                "centre_y": self.centre_y,
-                "width": self.width,
-                "height": self.height,
-                "depth": self.depth,
-                "rotation": self.rotation,
-                "scan_direction": self.scan_direction,
-                "cleaning_cross_section": self.cleaning_cross_section,
-                "path": self.path,
-            }
-        elif self.pattern == FibsemPatternType.Annulus:
-            return {
-                "pattern": "Annulus",
-                "centre_x": self.centre_x,
-                "centre_y": self.centre_y,
-                "radius": self.radius,
-                "thickness": self.thickness,
-                "depth": self.depth,
-                "start_angle": self.start_angle,
-                "end_angle": self.end_angle,
-                "scan_direction": self.scan_direction,
-                "cleaning_cross_section": self.cleaning_cross_section,
-            }
+        return {
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "rotation": self.rotation,
+            "centre_x": self.centre_x,
+            "centre_y": self.centre_y,
+            "cleaning_cross_section": self.cleaning_cross_section,
+            "scan_direction": self.scan_direction,
+            "cross_section": self.cross_section,
+            "passes": self.passes,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "FibsemRectangleSettings":
+        return FibsemRectangleSettings(
+            width=data["width"],
+            height=data["height"],
+            depth=data["depth"],
+            centre_x=data["centre_x"],
+            centre_y=data["centre_y"],
+            cleaning_cross_section=data.get("cleaning_cross_section", False),
+            rotation=data.get("rotation", 0),
+            scan_direction=data.get("scan_direction", "TopToBottom"),
+            cross_section=data.get("cross_section", CrossSectionPattern.Rectangle),
+            passes=data.get("passes", 0),
+        )
+
+@dataclass
+class FibsemLineSettings(FibsemPatternSettings):
+    start_x: float
+    end_x: float
+    start_y: float
+    end_y: float
+    depth: float
+
+    def to_dict(self) -> dict:
+        return {
+            "start_x": self.start_x,
+            "end_x": self.end_x,
+            "start_y": self.start_y,
+            "end_y": self.end_y,
+            "depth": self.depth,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "FibsemLineSettings":
+        return FibsemLineSettings(
+            start_x=data["start_x"],
+            end_x=data["end_x"],
+            start_y=data["start_y"],
+            end_y=data["end_y"],
+            depth=data["depth"],
+        )
+
+@dataclass
+class FibsemCircleSettings(FibsemPatternSettings):
+    radius: float
+    depth: float
+    centre_x: float
+    centre_y: float
+    thickness: float = 0
+    start_angle: float = 0.0
+    end_angle: float = 360.0
+    rotation: float = 0.0           # annulus -> thickness !=0
+
+    def to_dict(self) -> dict:
+        return {
+            "radius": self.radius,
+            "depth": self.depth,
+            "centre_x": self.centre_x,
+            "centre_y": self.centre_y,
+            "start_angle": self.start_angle,
+            "end_angle": self.end_angle,
+            "rotation": self.rotation,
+            "thickness": self.thickness,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "FibsemCircleSettings":
+        return FibsemCircleSettings(
+            radius=data["radius"],
+            depth=data["depth"],
+            centre_x=data["centre_x"],
+            centre_y=data["centre_y"],
+            start_angle=data.get("start_angle", 0),
+            end_angle=data.get("end_angle", 360),
+            rotation=data.get("rotation", 0),
+            thickness=data.get("thickness", 0),
+        )
 
 
-# class CrossSectionPattern(Enum):
-#     Rectangle  = auto()
-#     RegularCrossSection = auto()
-#     CleaningCrossSection = auto()
+@dataclass
+class FibsemBitmapSettings(FibsemPatternSettings):
+    width: float
+    height: float
+    depth: float
+    rotation: float
+    centre_x: float
+    centre_y: float
+    path: str = None
+
+    def to_dict(self) -> dict:
+        return {
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "rotation": self.rotation,
+            "centre_x": self.centre_x,
+            "centre_y": self.centre_y,
+            "path": self.path,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "FibsemBitmapSettings":
+        return FibsemBitmapSettings(
+            width=data["width"],
+            height=data["height"],
+            depth=data["depth"],
+            rotation=data["rotation"],
+            centre_x=data["centre_x"],
+            centre_y=data["centre_y"],
+            path=data["path"],
+        )
+
 
 @dataclass
 class FibsemMillingSettings:

@@ -6,7 +6,7 @@ from pprint import pprint
 
 import fibsem
 from fibsem import acquire, milling, utils, alignment
-from fibsem.structures import BeamType, ImageSettings, FibsemPatternType, FibsemPattern
+from fibsem.structures import BeamType, ImageSettings, FibsemRectangleSettings
 import numpy as np
 
 def main():
@@ -19,8 +19,7 @@ def main():
         patterning_mode  = "Serial",
         mill_settings = settings.milling)
     
-    pattern_settings = FibsemPattern(
-        pattern = FibsemPatternType.Rectangle,
+    pattern_settings = FibsemRectangleSettings(
         width = settings.protocol["milling"]["width"],
         height = settings.protocol["milling"]["height"],
         depth = settings.protocol["milling"]["depth"],
@@ -46,7 +45,7 @@ def main():
         logging.info("------------------------ SLICE ------------------------")
         milling_settings = settings.milling  
 
-        patterns = milling.draw_rectangle(microscope, pattern_settings)
+        patterns = milling.draw_pattern(microscope, pattern_settings)
         # estimated_milling_time = milling.estimate_milling_time_in_seconds([patterns])
         # logging.info(f"Estimated milling time: {estimated_milling_time}")
         milling.run_milling(microscope, milling_current=milling_settings.milling_current)
