@@ -60,7 +60,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.picture_signal.connect(self.update_ui)
         self.positions = []
         self.minimap_image = None
-        autoload_positions: bool = False # TODO: enable this
+        autoload_positions: bool = True # TODO: enable this
         if autoload_positions:
             self.import_positions(cfg.POSITION_PATH)
         self.update_ui()
@@ -351,16 +351,15 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def import_positions(self, path: str = None):
         if not isinstance(path, str):
-            protocol_path = _get_file_ui(msg="Select or create file")
-        else: 
-            protocol_path = path
-        if protocol_path == '':
+            path = _get_file_ui(msg="Select or create file")
+        if path == '':
             napari.utils.notifications.show_info("No file selected, positions not loaded")
             return
-        with open(protocol_path, "r") as f:
-            dict_positions = yaml.safe_load(f)
-        for dict_position in dict_positions:
-            position = FibsemStagePosition.from_dict(dict_position)
+        with open(path, "r") as f:
+            ddict = yaml.safe_load(f)
+        
+        for pdict in ddict:
+            position = FibsemStagePosition.from_dict(pdict)
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
         self.minimap()
