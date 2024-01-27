@@ -67,7 +67,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
         # self.actionCurrent_alignment.triggered.connect(self.align_currents)
-        self.actionManipulator_Positions_Calibration.triggered.connect(self.calibrate_manipulator_positions)
+        if self.manipulator_widget is not None:
+            self.actionManipulator_Positions_Calibration.triggered.connect(self.manipulator_widget.calibrate_manipulator_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
 
     def minimap_connection(self,positions=None):
@@ -103,50 +104,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         napari.run(max_loop_level=2)
 
 
-    def calibrate_manipulator_positions(self):
-
-        if not isinstance(self.microscope,TescanMicroscope):
-            message_box_ui(title="Not Available", text="Manipulator Position Calibration is only available for Tescan Microscopes", buttons=QMessageBox.Ok)
-            return
-
-        response = self.manipulator_widget._check_manipulator_positions_setup()
-
-        if not response:
-            
-            ok_to_cal =message_box_ui(title="Manipulator Position calibration",text="This tool calibrates the positions of the manipulator, it will switch between the parking, standby and working positions rapidly, please ensure it is safe to do so. If not please click no, otherwise press yes to continue")
-                                      
-            if ok_to_cal:
-
-                positions = self.settings.hardware.manipulator_positions
-
-                for position in positions:
-                    if position == "calibrated":
-                        continue
-                    logging.info(f"Calibrating Manipulator {position} position")
-                    self.microscope.insert_manipulator(position)
-                    manipulator_loc = self.microscope.get_manipulator_position()
-                    positions[position]["x"] = manipulator_loc.x
-                    positions[position]["y"] = manipulator_loc.y
-                    positions[position]["z"] = manipulator_loc.z
-                
-                positions["calibrated"] = True
-                self.settings.hardware.manipulator_positions = positions
-                self.system_widget.settings = self.settings
-                self.system_widget.save_defaults(path = cfg.SYSTEM_PATH)
-
-                message_box_ui(title="Manipulator Position calibration",text="Manipulator Positions calibrated successfully", buttons=QMessageBox.Ok)
-
-                
-                self.manipulator_widget.insertManipulator_button.setEnabled(True)
-                self.manipulator_widget.moveRelative_button.setEnabled(True)
-                self.manipulator_widget.addSavedPosition_button.setEnabled(True)
-                self.manipulator_widget.goToPosition_button.setEnabled(True)
-                self.manipulator_widget.manipulator_inserted = self.manipulator_widget.microscope.get_manipulator_state(settings=self.manipulator_widget.settings)
-                self.manipulator_widget._hide_show_buttons(show=self.manipulator_widget.manipulator_inserted)
-                self.manipulator_widget.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_widget.manipulator_inserted else "Manipulator Status: Retracted")
-                self.manipulator_widget.insertManipulator_button.setText("Insert" if not self.manipulator_widget.manipulator_inserted else "Retract")
-                self.manipulator_widget.calibrated_status_label.setText("Calibrated")
-                self.manipulator_widget.settings = self.settings
 
     def align_currents(self):
         second_viewer = napari.Viewer()

@@ -62,6 +62,8 @@ MICROSCOPE_CONFIGURATION_PATH = os.path.join(
     CONFIG_PATH, "microscope-configuration.yaml"
 )
 
+
+
 os.makedirs(LOG_PATH, exist_ok=True)
 os.makedirs(DATA_PATH, exist_ok=True)
 os.makedirs(DATA_ML_PATH, exist_ok=True)
@@ -199,3 +201,19 @@ _MINIMAP_VISUALISATION = False
 _MINIMAP_MOVE_WITH_TRANSLATION = False
 _MINIMAP_ACQUIRE_AFTER_MOVEMENT = False
 _APPLY_CONFIGURATION_ENABLED = True
+
+
+
+# tescan manipulator
+
+TESCAN_MANIPULATOR_CALIBRATION_PATH = os.path.join(CONFIG_PATH, "tescan_manipulator.yaml")
+
+def load_tescan_manipulator_calibration() -> dict:
+    """Load the tescan manipulator calibration"""
+    config = utils.load_yaml(cfg.TESCAN_MANIPULATOR_CALIBRATION_PATH)
+    return config
+
+def save_tescan_manipulator_calibration(config: dict) -> None:
+    """Save the tescan manipulator calibration"""
+    utils.save_yaml(cfg.TESCAN_MANIPULATOR_CALIBRATION_PATH, config)
+    return None

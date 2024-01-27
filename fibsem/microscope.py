@@ -3689,9 +3689,8 @@ class TescanMicroscope(FibsemMicroscope):
         Returns:
             _type_: True if Inserted, False if retracted
         """
-        # TODO: re-implement this
-        raise NotImplementedError(f"get_manipulator_state is not implemented")
-        manipulator_positions = settings.hardware.manipulator_positions
+
+        manipulator_positions = cfg.load_tescan_manipulator_calibration()
 
         if not manipulator_positions["calibrated"]:
             logging.warning("Manipulator positions not calibrated, cannot get state")
