@@ -49,6 +49,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self._image_layer = None
         self._mask_layer = None
         self._features_layer = None
+        self._cross_hair_layer = None
 
         self.setup_connections()
 
@@ -153,6 +154,8 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                 self.viewer.layers.remove(self._mask_layer)
             if self._features_layer in self.viewer.layers:
                 self.viewer.layers.remove(self._features_layer)
+            if self._cross_hair_layer in self.viewer.layers:
+                self.viewer.layers.remove(self._cross_hair_layer)
 
         # reshow all other layers
         for layer in self.viewer.layers:
@@ -193,7 +196,6 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             x, y = feature.px
             data.append([y, x])
 
-
         text = {
             "string": [feature.name for feature in self.det.features],
             "color": "white",
@@ -211,13 +213,19 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             face_color=[feature.color for feature in self.det.features],
             blending="translucent",
         )
+
+        # draw cross hairs
+        self._cross_hair_layer = None
+        self._draw_crosshairs()
+
         # set points layer to select mode and active
+        self.viewer.layers.selection.active = self._features_layer
         self._features_layer.mode = "select"
         
         # when the point is moved update the feature
         self._features_layer.events.data.connect(self.update_point)
         self.update_info()
-        
+            
         # set camera
         self.prev_camera = deepcopy(self.viewer.camera)
         self.viewer.camera.center = [
@@ -287,10 +295,40 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                     x=data[idx][1], y=data[idx][0]
                 )
 
+        self._draw_crosshairs()
         self._USER_CORRECTED = True
         self.update_info()
 
 
+    def _draw_crosshairs(self):
+        """Draw crosshairs on the image"""
+
+        data = self._features_layer.data
+
+        # for each data point draw two lines from the edge of the image to the point
+        line_data, line_colors = [], []
+        for idx, point in enumerate(data):
+            y, x = point # already flipped
+            vline = [[y, 0], [y, self.det.image.data.shape[1]]]
+            hline = [[0, x], [self.det.image.data.shape[0], x]]
+            
+            line_data += [hline, vline]
+            color = self.det.features[idx].color
+            line_colors += [color, color]
+        try:
+            self._cross_hair_layer.data = line_data
+            self._cross_hair_layer.edge_color = line_colors
+        except:
+            self._cross_hair_layer = self.viewer.add_shapes(
+                data=line_data,
+                shape_type="line",
+                edge_width=3,
+                edge_color=line_colors,
+                name="feature_cross_hair",
+                opacity=0.7,
+                blending="additive",
+            )    
+    
     def _set_model(self, model: fibsem_model.SegmentationModel):
         self.model = model
         # update model info
