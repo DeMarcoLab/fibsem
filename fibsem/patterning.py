@@ -61,7 +61,7 @@ REQUIRED_KEYS = {
         "depth",
         "distance",
     ),
-    "SpotWeld": ("height", "width", "depth", "distance", "number", "passes","scan_direction"),
+    "ArrayPattern": ("height", "width", "depth", "n_columns", "n_rows", "pitch_vertical", "pitch_horizontal", "passes", "scan_direction"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -604,11 +604,10 @@ class MicroExpansionPattern(BasePattern):
         self.point = point
         return self.patterns
 
-
 @dataclass
-class SpotWeldPattern(BasePattern):
-    name: str = "SpotWeld"
-    required_keys: tuple[str] = REQUIRED_KEYS["SpotWeld"]
+class ArrayPattern(BasePattern):
+    name: str = "ArrayPattern"
+    required_keys: tuple[str] = REQUIRED_KEYS["ArrayPattern"]
     patterns = None
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
     protocol = None
@@ -618,74 +617,38 @@ class SpotWeldPattern(BasePattern):
         self, protocol: dict, point: Point = Point()
     ) -> list[FibsemPattern]:
         check_keys(protocol, self.required_keys)
+
         width = protocol["width"]
         height = protocol["height"]
         depth = protocol["depth"]
-        distance = protocol["distance"]
-        n_patterns = int(protocol["number"])
+        n_columns = int(protocol["n_columns"])
+        n_rows = int(protocol["n_rows"])
+        pitch_vertical = protocol["pitch_vertical"]
+        pitch_horizontal = protocol["pitch_horizontal"]
         rotation = protocol.get("rotation", 0)
         passes = protocol.get("passes", 1)
-        scan_direction = protocol.get("scan_direction", "LeftToRight")
+        scan_direction = protocol.get("scan_direction", "TopToBottom")
         passes = int(passes) if passes is not None else None
 
-
+        # create a 2D array of points
+        points = []
+        for i in range(n_columns):
+            for j in range(n_rows):
+                points.append(
+                    Point(
+                        point.x + (i - (n_columns - 1) / 2) * pitch_horizontal,
+                        point.y + (j - (n_rows - 1) / 2) * pitch_vertical,
+                    )
+                )
+        # create patterns
         patterns = []
-        for i in range(n_patterns):
+        for point in points:
             pattern_settings = FibsemPattern(
                 pattern=FibsemPatternType.Rectangle,
                 width=width,
                 height=height,
                 depth=depth,
                 centre_x=point.x,
-                centre_y=point.y + (i - (n_patterns - 1) / 2) * distance,
-                cleaning_cross_section=False,
-                scan_direction=scan_direction,
-
-                rotation=rotation,
-                passes=passes,
-            )
-            patterns.append(pattern_settings)
-
-        self.patterns = patterns
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
-
-
-
-
-@dataclass
-class SpotWeldPatternVertical(BasePattern):
-    name: str = "SpotWeldVertical"
-    required_keys: tuple[str] = REQUIRED_KEYS["SpotWeld"]
-    patterns = None
-    # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
-    protocol = None
-    point = None
-
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemPattern]:
-        check_keys(protocol, self.required_keys)
-        width = protocol["width"]
-        height = protocol["height"]
-        depth = protocol["depth"]
-        distance = protocol["distance"]
-        n_patterns = int(protocol["number"])
-        rotation = protocol.get("rotation", 0)
-        passes = protocol.get("passes", 1)
-        scan_direction = protocol.get("scan_direction", "TopToBottom")
-        passes = int(passes) if passes is not None else None
-
-
-        patterns = []
-        for i in range(n_patterns):
-            pattern_settings = FibsemPattern(
-                pattern=FibsemPatternType.Rectangle,
-                width=width,
-                height=height,
-                depth=depth,
-                centre_x=point.x + (i - (n_patterns - 1) / 2) * distance,
                 centre_y=point.y,  
                 cleaning_cross_section=False,
                 scan_direction=scan_direction,
@@ -699,7 +662,6 @@ class SpotWeldPatternVertical(BasePattern):
         self.protocol = protocol
         self.point = point
         return self.patterns
-
 
 
 
@@ -962,8 +924,7 @@ __PATTERNS__ = [
     HorseshoePatternVertical,
     UndercutPattern,
     FiducialPattern,
-    SpotWeldPattern,
-    SpotWeldPatternVertical,
+    ArrayPattern,
     MicroExpansionPattern,
     WaffleNotchPattern,
     CloverPattern,
@@ -1084,17 +1045,13 @@ PROTOCOL_MILL_MAP = {
     "lamella": TrenchPattern,
     "polish_lamella": TrenchPattern,
     "thin_lamella": TrenchPattern,
-    "weld": SpotWeldPattern,
     "sever": RectanglePattern,
     "sharpen": RectanglePattern,
     "needle": RectanglePattern,
-    "copper_weld": SpotWeldPattern,
     "copper_release": HorseshoePattern,
     "serial_trench": HorseshoePattern,
     "serial_undercut": RectanglePattern,
-    "serial_weld": SpotWeldPattern,
     "serial_sever": RectanglePattern,
-    "lamella_weld": SpotWeldPattern,
     "lamella_sever": RectanglePattern,
     "lamella_polish": TrenchPattern,
     "trench": TrenchPattern,

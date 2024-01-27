@@ -73,21 +73,14 @@ patterns:
     depth: 5.0e-6
     rotation: 45.0
     cleaning_cross_section: false
-  SpotWeld:
-    height: 1.0e-6
-    width: 5.0e-6
+  ArrayPattern:
+    height: 2.0e-6
+    width: 2.0e-6
     depth: 5.0e-6
-    distance: 2.0e-6
-    number: 3
-    rotation: 0.0
-    passes: 1
-    scan_direction: "LeftToRight"
-  SpotWeldVertical:
-    height: 5.0e-6
-    width: 0.5e-6
-    depth: 5.0e-6
-    distance: 2.0e-6
-    number: 3
+    n_columns: 5
+    n_rows: 5
+    pitch_vertical: 5.0e-6
+    pitch_horizontal: 5.0e-6
     rotation: 0.0
     passes: 1
     scan_direction: "ToptoBottom"
