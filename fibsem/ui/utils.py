@@ -17,6 +17,7 @@ from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (FibsemPatternSettings, 
                                FibsemRectangleSettings,  FibsemLineSettings, 
                                FibsemCircleSettings, FibsemBitmapSettings)
+from fibsem.microscope import FibsemMicroscope
 import napari
 from fibsem.utils import load_yaml, save_yaml
 import fibsem.patterning as patterning
@@ -797,22 +798,6 @@ def _get_text_ui(
 
     return text, okPressed
 
-
-def import_milling_stages_yaml_file(path) -> list[FibsemMillingStage]:
-
-    stages = load_yaml(path)
-
-    milling_stages = []
-
-    for stage in stages:
-        milling_stage = FibsemMillingStage.from_dict(stages[stage])
-        pattern = patterning.get_pattern(milling_stage.pattern.name)
-        pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
-        milling_stage.pattern = pattern
-        milling_stages.append(milling_stage)
-
-    return milling_stages
-
 def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[FibsemMillingStage], show: bool = True):
 
     viewer = napari.Viewer()
@@ -865,38 +850,40 @@ def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fidu
 
     return fiducial_area, flag
 
-
-def export_milling_stages_yaml(milling_stages: list[FibsemMillingStage]) -> None:
-
-    stages = {}
-
-    for stage in milling_stages:
-        stages[stage.name] = stage.to_dict()
-
-        if "required_keys" in stages[stage.name]["pattern"].keys():
-            del stages[stage.name]["pattern"]["required_keys"]
     
-    path = _get_save_file_ui(msg="Select a file", path=cfg.LOG_PATH, _filter="*.yaml")
+def show_information_dialog(microscope: FibsemMicroscope, parent=None):
+    import fibsem
+    
+    fibsem_version = fibsem.__version__
+    autolamella_version = "Not Installed"
+    try:
+        import autolamella
+        autolamella_version = autolamella.__version__
+    except:
+        pass
+    
+    info = microscope.system.info
 
-    if path == '':
-        napari.utils.notifications.show_info("No file selected, exiting")
-        return
+    text = f"""
+    OpenFIBSEM Information:
+    OpenFIBSEM: {fibsem_version}
+    AutoLamella: {autolamella_version}
 
-    save_yaml(path=path,data=stages)
-    napari.utils.notifications.show_info(f"Exported Milling stages to yaml file.")
+    Microscope Information:
+    Name: {info.name}
+    Manufacturer: {info.manufacturer}
+    Model: {info.model}
+    Serial Number: {info.serial_number}
+    Firmware Version: {info.hardware_version}
+    Software Version: {info.software_version}
+    """
 
+    # create a qdialog box with information
+    msg = QtWidgets.QMessageBox(parent=parent)
+    msg.setIcon(QtWidgets.QMessageBox.Information)
+    msg.setWindowTitle("Information")
+    msg.setText(text)
+    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
 
-def import_milling_stages_yaml() -> list[FibsemMillingStage]:
-
-    stages = load_yaml(_get_file_ui(msg="Select a file", path=cfg.LOG_PATH, _filter="*.yaml"))
-
-    milling_stages = []
-
-    for stage in stages:
-        milling_stage = FibsemMillingStage.from_dict(stages[stage])
-        pattern = patterning.get_pattern(milling_stage.pattern.name)
-        pattern.define(protocol=milling_stage.pattern.protocol,point=milling_stage.pattern.point)
-        milling_stage.pattern = pattern
-        milling_stages.append(milling_stage)
-
-    return milling_stages
+    # exec
+    msg.exec_()

@@ -596,7 +596,7 @@ class FibsemMicroscope(ABC):
             self.system.gis = system_settings.gis
         
         # dont update info -> read only
-        logging.info(f"Micrscope configuration applied.")
+        logging.info(f"Microscope configuration applied.")
         logging.debug({"msg": "apply_configuration", "system_settings": system_settings.to_dict()})
 
     @abstractmethod
@@ -5096,7 +5096,7 @@ class DemoMicroscope(FibsemMicroscope):
         # system information
         self.system.info.model="DemoMicroscope"
         self.system.info.serial_number="123456"
-        self.system.info.software_version="0.1",
+        self.system.info.software_version="0.1"
         self.system.info.hardware_version="v0.23"
         self.system.info.ip_address=ip_address
         

@@ -333,7 +333,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             napari.utils.notifications.show_info("No file selected, positions not saved")
             return
         
-        response = message_box_ui(text="Do you want to overwrite the file ? Click no to append the new positions to the existing file.", title="Overwrite ?", buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        response = message_box_ui(text="Do you want to overwrite the file ? Click no to append the new positions to the existing file.", 
+            title="Overwrite ?", buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         
         # save positions
         utils.save_positions(self.positions, path, overwrite=response)
