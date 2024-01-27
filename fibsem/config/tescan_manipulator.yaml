@@ -1,0 +1,17 @@
+  positions:
+      calibrated: false
+      parking:
+          x: -0.008918395
+          y: 0.0006548000000000001
+          z: -0.004848865
+      standby:
+          x: 0.0
+          y: 0.0
+          z: 0.00545
+      working:
+          x: 0.0
+          y: 0.0
+          z: 0.00585
+  # nb: these were for the AMBER simulator, real numbers might be different
+
+  # TODO: refactor this to match Retract, Park, Eucentric terminology

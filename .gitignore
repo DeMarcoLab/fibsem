@@ -42,7 +42,9 @@ fibsem/notebook.ipynb
 scratch/health-monitor/*
 example/notebook.ipynb
 fibsem/segmentation/*config*.y*ml
+!fibsem/segmentation/segementation_config.yaml
 
 fibsem/config/*.yaml
 !fibsem/config/microscope-configuration.yaml
 !fibsem/config/user-configurations.yaml
+!fibsem/config/tescan_manipulator.yaml

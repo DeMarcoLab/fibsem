@@ -23,6 +23,8 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import pyqtSignal
 
 
+# TODO: add calibrate manipulator procedure for thermo here
+
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     _minimap_signal = pyqtSignal(object)
 
