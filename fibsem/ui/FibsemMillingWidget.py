@@ -188,6 +188,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_y.setKeyboardTracking(False)
         self.doubleSpinBox_centre_x.valueChanged.connect(self.update_ui_pattern)
         self.doubleSpinBox_centre_y.valueChanged.connect(self.update_ui_pattern)
+        self.checkBox_show_milling_crosshair.stateChanged.connect(self.update_ui_pattern)
         self.checkBox_live_update.setChecked(True)
 
 
@@ -683,7 +684,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         t2 = time.time()
         try:
-            
+            draw_crosshair = self.checkBox_show_milling_crosshair.isChecked()
             from fibsem.structures import FibsemImage
             if not isinstance(self.image_widget.ib_image, FibsemImage):
                 raise Exception(f"No Ion Image, cannot draw patterns. Please take an image.")
@@ -693,8 +694,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
                 eb_image=self.image_widget.eb_image, 
-                milling_stages = milling_stages) # TODO: add names and legend for this
-                                                 # TODO: disable milling crosshairs (optional)
+                milling_stages = milling_stages,
+                draw_crosshair=draw_crosshair)  # TODO: add names and legend for this
         
         except Exception as e:
             napari.utils.notifications.show_error(f"Error drawing patterns: {e}")

@@ -412,7 +412,7 @@ def _draw_patterns_in_napari(
     ib_image: FibsemImage,
     eb_image: FibsemImage,
     milling_stages: list[FibsemMillingStage],
-    use_crosshair: bool = True,
+    draw_crosshair: bool = True,
 ):
 
     # colour wheel
@@ -483,7 +483,7 @@ def _draw_patterns_in_napari(
 
         if len(shape_patterns) > 0:
             
-            if use_crosshair:
+            if draw_crosshair:
                 crosshair_shapes = create_crosshair_shape(centre_point=point, image=ib_image, eb_image=eb_image)
                 crosshair_shape_types = ["rectangle","rectangle"]
                 shape_patterns += crosshair_shapes
