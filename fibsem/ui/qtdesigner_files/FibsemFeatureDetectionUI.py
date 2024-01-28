@@ -77,7 +77,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.label_header_features.setText(_translate("MainWindow", "Feature Detection"))
+        self.label_header_features.setText(_translate("MainWindow", "OpenFIBSEM Keypoint Labelling"))
         self.pushButton_edit_feature.setText(_translate("MainWindow", "Edit"))
         self.label_features_header.setText(_translate("MainWindow", "Features"))
         self.pushButton_add_feature.setText(_translate("MainWindow", "Add"))
