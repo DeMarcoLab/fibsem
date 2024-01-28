@@ -1,0 +1,25 @@
+data_path: "/home/patrick/github/data/autolamella-paper/model-development/train/waffle/test/keypoints.csv"    # test data csv
+images_path: "/home/patrick/github/data/autolamella-paper/model-development/train/waffle/test"           # test data image directory
+save_path: "/home/patrick/github/data/autolamella-paper/model-development/eval/waffle-v1/keypoint-eval"        # save path for evaluation results
+
+checkpoints: # list of checkpoints to evaluate
+  - checkpoint: autolamella-waffle-20240107.pt
+  - checkpoint: autolamella-mega-20240107.pt
+
+
+# plot 
+thresholds:
+- 250
+- 100
+- 50
+- 25
+- 10
+
+# options
+run_eval: True
+plot_eval: True
+
+show_det_plot: False
+save_det_plot: True
+show_eval_plot: False
+save_eval_plot: True

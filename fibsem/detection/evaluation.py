@@ -150,7 +150,7 @@ def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: 
 
 
 def run_evaluation_v2(path:Path, image_path: Path, checkpoints: list[dict], labels_path: Path = None, 
-                      plot: bool = False, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"], 
+                      plot: bool = False, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre"], 
                       save: bool = False, save_path: Path = None):
 
     # ground truth 
@@ -168,6 +168,9 @@ def run_evaluation_v2(path:Path, image_path: Path, checkpoints: list[dict], labe
         filenames += glob.glob(os.path.join(image_path, f"{fname}*.tif"))
     
     print(f"Found {len(filenames)} images (test)")
+
+    if labels_path is None:
+        labels_path = os.path.join(image_path, "labels")
 
     # setup eval dataframe
     df_eval = pd.DataFrame(columns=["checkpoint", "fname", "feature", "px.x", "px.y", "pixelsize", "gt.p.x", "gt.p.y", "gt.pixelsize", "distance","_is_corrected"])
@@ -213,7 +216,8 @@ def run_evaluation_v2(path:Path, image_path: Path, checkpoints: list[dict], labe
 
         # plot
         mask, rgb = None, None
-        if labels_path is not None:
+        label_fname = os.path.join(labels_path, f"{image_fname}")
+        if os.path.exists(label_fname):
             mask = tff.imread(os.path.join(labels_path, f"{image_fname}"))
             rgb = decode_segmap_v2(mask)
         gt_det = detection.DetectedFeatures(
@@ -288,7 +292,7 @@ def run_evaluation_v2(path:Path, image_path: Path, checkpoints: list[dict], labe
 import plotly.express as px
 
 
-def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = True, 
+def plot_evaluation_data(df: pd.DataFrame, category_orders: dict, show: bool = True, 
                             thresholds: list[int] =  [50, 25, 10], save: bool=False, save_path: Path = None):
     # scatter plot
     fig = px.scatter(df, x="d.p.x", y="d.p.y", color="feature", facet_col="checkpoint", 
@@ -406,5 +410,13 @@ def _plot_evalution_data(df: pd.DataFrame, category_orders: dict, show: bool = T
     
 
     # display(df_ret)
+        
+    # calculate the accuracy at each threshold, save to csv
+    df_ret["accuracy"] = df_ret["under_threshold"] * 100
+    df_ret["accuracy"] = df_ret["accuracy"]
+    df_ret["threshold"] = df_ret["threshold"].astype(int)
+
+    df_ret.to_csv(os.path.join(save_path, "eval_accuracy.csv"), index=False)
+
 
     # return 

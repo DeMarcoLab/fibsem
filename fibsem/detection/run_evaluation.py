@@ -11,7 +11,7 @@ def main(config: dict):
     os.makedirs(config["save_path"], exist_ok=True)
 
     if config["run_eval"]:
-        df_eval = evaluation._run_evaluation(path=config["data_path"],
+        df_eval = evaluation.run_evaluation_v2(path=config["data_path"],
                                              image_path = config["images_path"], 
                                                 checkpoints=config["checkpoints"], 
                                                 plot=config["show_det_plot"],
@@ -23,7 +23,7 @@ def main(config: dict):
     if config["plot_eval"]:
         category_orders = {"checkpoint": df_eval["checkpoint"].unique().tolist(), 
                     "feature": sorted(df_eval["feature"].unique().tolist())}
-        evaluation._plot_evalution_data(df=df_eval, 
+        evaluation.plot_evaluation_data(df=df_eval, 
                                         category_orders=category_orders,
                                         thresholds=config["thresholds"], 
                                         show=config["show_eval_plot"], 

@@ -3,8 +3,8 @@ images_path: "/home/patrick/github/data/autolamella-paper/model-development/trai
 save_path: "/home/patrick/github/data/autolamella-paper/model-development/eval/serial-liftout-v1/keypoint-eval"        # save path for evaluation results
 
 checkpoints: # list of checkpoints to evaluate
-  - checkpoint: "/home/patrick/github/fibsem/fibsem/segmentation/models/autolamella-serial-liftout-20240107.pt"
-  - checkpoint: "/home/patrick/github/fibsem/fibsem/segmentation/models/autolamella-mega-20240107.pt"
+  - checkpoint: autolamella-serial-liftout-20240107.pt
+  - checkpoint: autolamella-mega-20240107.pt
 
 
 # plot 
