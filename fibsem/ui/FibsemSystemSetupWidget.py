@@ -58,7 +58,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.toolButton_import_configuration.clicked.connect(self.import_configuration_from_file)
     
         self.pushButton_apply_configuration.clicked.connect(lambda: self.apply_microscope_configuration(None))
-        self.pushButton_apply_configuration.setToolTip(f"Apply configuration is currently unavailable. It will be enabled in a future release.")
+        self.pushButton_apply_configuration.setToolTip(f"Apply configuration can take some time. Please make sure the microscope beams are both on.")
 
     def load_configuration(self, configuration_name: str):
         if configuration_name is None:
