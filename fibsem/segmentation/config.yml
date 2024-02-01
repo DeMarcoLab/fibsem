@@ -1,12 +1,26 @@
-data_path:  /home/patrick/github/data/liftout/training/train/images 
-label_path: /home/patrick/github/data/liftout/training/train/labels 
-save_path: /home/patrick/github/fibsem/fibsem/segmentation/models/autoliftout/xl/base/nc3/earlystop
-checkpoint: null 
-encoder: "resnet50" 
-epochs: 5
-batch_size: 4 
-num_classes: 3 
-lr: 3.0e-4
-wandb: true 
-wandb_project: "autoliftout"
-wandb_entity: "demarcolab"
+# data
+data_paths:  [/path/to/data, /path/to/second/data]                  # paths to image data (multiple supported)
+label_paths: [/path/to/data/labels, /path/to/second/data/labels]    # paths to label data (multiple supported)
+save_path: /path/to/save/checkpoints                                # path to save checkpoints (checkpointed each epoch)
+checkpoint: null                                                    # checkpoint to resume from
+
+# model
+encoder: "resnet34"                             # segmentation model encoder (imagenet)
+num_classes: 6                                  # number of classes
+
+# training
+epochs: 50                                      # number of epochs
+split: 0.1                                      # train / val split
+batch_size: 4                                   # batch size
+lr: 3.0e-4                                      # initial learning rate
+
+# logging
+train_log_freq: 32                              # frequency to log training images
+val_log_freq: 32                                # frequency to log validation images
+
+# wandb
+wandb: true                                     # enable wandb logging
+wandb_project: "autolamella-mega"               # wandb project
+wandb_entity: "openfibsem"                      # wandb user / org
+model_type: "mega-model"                        # model type note (descriptive only)
+note: "notes about this specific training run"  # additional trianing note (descriptive only)

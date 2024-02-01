@@ -24,7 +24,7 @@ from typing import Any, Generator, Optional
 # setup a basic logger
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-_DEBUG = True
+_DEBUG = False
 
 # new line char in html
 NL = "<br>"

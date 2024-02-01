@@ -48,3 +48,5 @@ fibsem/config/*.yaml
 !fibsem/config/microscope-configuration.yaml
 !fibsem/config/user-configurations.yaml
 !fibsem/config/tescan_manipulator.yaml
+
+**/wandb/*

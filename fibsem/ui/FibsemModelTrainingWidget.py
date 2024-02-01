@@ -51,9 +51,9 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
 
         checkpoint = config["checkpoint"] if config["checkpoint"] is not None else ""
 
-        self.lineEdit_data_path.setText(config["data_path"])
-        self.lineEdit_label_path.setText(config["label_path"])
-        self.lineEdit_save_path.setText(config["path"])
+        self.lineEdit_data_path.setText(config["data_paths"][0])
+        self.lineEdit_label_path.setText(config["label_paths"][0])
+        self.lineEdit_save_path.setText(config["save_path"])
         self.comboBox_encoder.setCurrentText(config["encoder"])
         self.lineEdit_checkpoint.setText(checkpoint)
         self.spinBox_num_classes.setValue(config["num_classes"])
@@ -69,9 +69,9 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
         checkpoint = None if checkpoint == "" else checkpoint
 
         config = {
-            "data_path": self.lineEdit_data_path.text(),
-            "label_path": self.lineEdit_label_path.text(),
-            "path": self.lineEdit_save_path.text(),
+            "data_paths": [self.lineEdit_data_path.text()],
+            "label_paths": [self.lineEdit_label_path.text()],
+            "save_path": self.lineEdit_save_path.text(),
             "encoder": self.comboBox_encoder.currentText(),
             "checkpoint": checkpoint,
             "num_classes": int(self.spinBox_num_classes.value()),
@@ -113,10 +113,7 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
             optimizer,
             train_data_loader,
             val_data_loader,
-            epochs=config["epochs"],
-            save_dir=config["save_path"],
-            WANDB=config["wandb"],
-            ui=self.ui_signal,
+            config=config,
         )
 
     def train_model_yielded(self, info: dict):
