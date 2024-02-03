@@ -357,12 +357,12 @@ def main():
     model = load_model(checkpoint=checkpoint)
     
     # load image
-    image = FibsemImage.load(os.path.join(os.path.dirname(detection.__file__), "test_image.tif"))
+    image = FibsemImage.load(os.path.join(os.path.dirname(detection.__file__), "test_image_2.tif"))
 
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 
     # detect features
-    features = [detection.NeedleTip(), detection.LamellaCentre()]
+    features = [detection.LamellaRightEdge(), detection.LandingPost()]
     det = detection.detect_features(
         deepcopy(image.data), model, features=features, pixelsize=pixelsize
     )

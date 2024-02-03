@@ -215,3 +215,6 @@ def _create_database():
     create_table(conn, SQL_CREATE_STEPS_TABLE)
     create_table(conn, SQL_CREATE_DETECTIONS_TABLE)
     create_table(conn, SQL_CREATE_INTERACTIONS_TABLE)
+    print("Database created successfully")
+    conn.commit()
+    conn.close()
