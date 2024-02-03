@@ -778,6 +778,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         milling_stages = self.get_milling_stages()
         self._toggle_interactions(enabled=False,milling=True)
+        
+        # TODO: enable new milling after testing
+        USE_MILL_STAGES_UI_V2 = False
+        if USE_MILL_STAGES_UI_V2:
+            milling.mill_stages_ui(microscope=self.microscope, 
+                                stages=milling_stages, 
+                                parent_ui=self)
+            return
             
         for idx,stage in enumerate(milling_stages):
             self.milling_notification.emit(f"Preparing: {stage.name}")

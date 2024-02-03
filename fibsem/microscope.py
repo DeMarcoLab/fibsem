@@ -864,6 +864,7 @@ class ThermoMicroscope(FibsemMicroscope):
             beam.scanning.mode.set_full_frame() 
 
         # get the microscope state (for metadata)
+        # TODO: convert to using fromAdornedImage, we dont need to full state
         state = self.get_microscope_state()
 
         fibsem_image = FibsemImage.fromAdornedImage(

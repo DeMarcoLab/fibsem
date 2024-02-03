@@ -160,6 +160,59 @@ def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: 
 
 
 
+def mill_stages_ui(microscope: FibsemMicroscope, stages: list[FibsemMillingStage], asynch: bool=False, parent_ui = None):
+    """Run a list of milling stages, with a progress bar and notifications."""
+    import napari.utils.notifications
+
+    if isinstance(stages, FibsemMillingStage):
+        stages = [stages]
+
+  
+    for idx, stage in enumerate(stages):
+    
+        if parent_ui:
+            parent_ui.milling_notification.emit(f"Preparing: {stage.name}")
+    
+        try:
+            mill_stage_ui(microscope, stage, parent_ui, idx, len(stages))
+            # TODO implement a special case for overtilt milling
+
+            # drift correction
+
+        except Exception as e:
+            napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
+            logging.error(e)
+        finally:
+            finish_milling(microscope, 
+                                        imaging_current=microscope.system.ion.beam.beam_current, 
+                                        imaging_voltage=microscope.system.ion.beam.voltage)
+        if parent_ui:
+            parent_ui._progress_bar_quit.emit()
+            parent_ui.milling_notification.emit(f"Milling stage complete: {stage.name}")
+    
+    if parent_ui:
+        parent_ui.milling_notification.emit(f"Milling complete. {len(stages)} stages completed.")
+
+
+def mill_stage_ui(microscope: FibsemMicroscope, stage: FibsemMillingStage, parent_ui = None, idx: int = 0, n_stages: int = 1):
+
+    setup_milling(microscope, mill_settings=stage.milling)
+
+    patterns = draw_patterns(microscope, stage.pattern.patterns)
+    estimated_time = estimate_milling_time(microscope, patterns)
+    logging.info(f"Estimated time for {stage.name}: {estimated_time:.2f} seconds")
+
+    if parent_ui:
+        progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": n_stages}
+        parent_ui._progress_bar_start.emit(progress_bar_dict)
+        parent_ui.milling_notification.emit(f"Running {stage.name}...")
+
+    run_milling(microscope, stage.milling.milling_current, stage.milling.milling_voltage)
+
+    return 
+
+
+
 def mill_stage_with_overtilt(microscope: FibsemMicroscope, stage: FibsemMillingStage, ref_image: FibsemImage, asynch=False ):
     """Mill a trench pattern with overtilt, 
     based on https://www.sciencedirect.com/science/article/abs/pii/S1047847716301514 and autolamella v1"""
@@ -178,8 +231,10 @@ def mill_stage_with_overtilt(microscope: FibsemMicroscope, stage: FibsemMillingS
 
     for i, pattern in enumerate(stage.pattern.patterns):
         
+        # save initial position
+        initial_position = microscope.get_stage_position()
+        
         # overtilt
-
         if i == 0:
             t = -np.deg2rad(overtilt_in_degrees)
         else:
@@ -196,11 +251,17 @@ def mill_stage_with_overtilt(microscope: FibsemMicroscope, stage: FibsemMillingS
                                         alignment_current=None,
                                         steps=3)
 
+        # setup again to ensure we are milling at the correct current, cleared patterns
+        setup_milling(microscope, stage.milling)
+
         # draw pattern
         draw_pattern(microscope, pattern)
 
         # run milling
         run_milling(microscope, stage.milling.milling_current, asynch)
+
+        # return to initial position
+        microscope.move_stage_absolute(initial_position)
 
     # finish milling
     finish_milling(microscope)
