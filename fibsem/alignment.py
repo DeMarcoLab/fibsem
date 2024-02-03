@@ -76,6 +76,8 @@ def beam_shift_alignment(
         initial_current = microscope.get("current", image_settings.beam_type)
         microscope.set("current", alignment_current, image_settings.beam_type)
 
+    # TODO: we should just use the same settings as the reference image, no need to pass in image_settings?
+    
     import time
     time.sleep(3) # threading is too fast?
     ref_image_settings = ImageSettings.fromFibsemImage(ref_image)
@@ -100,6 +102,55 @@ def beam_shift_alignment(
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
 
+
+def beam_shift_alignment_v2(
+    microscope: FibsemMicroscope,
+    ref_image: FibsemImage,
+    alignment_current: Optional[float] = None,
+):
+    """Aligns the images by adjusting the beam shift instead of moving the stage.
+
+    This method uses cross-correlation between the reference image and a new image to calculate the
+    optimal beam shift for alignment. This approach offers increased precision, but a lower range
+    compared to stage movement.
+
+    NOTE: Only shift the ion beam, never the electron beam.
+
+    Args:
+        microscope (FibsemMicroscope): An OpenFIBSEM microscope client.
+        ref_image (FibsemImage): The reference image to align to.
+
+    Raises:
+        ValueError: If `image_settings.beam_type` is not set to `BeamType.ION`.
+
+    """
+
+    import time
+    time.sleep(3) # threading is too fast?
+    image_settings = ImageSettings.fromFibsemImage(ref_image)
+    image_settings.autocontrast = False
+    image_settings.save = True
+    image_settings.filename = f"beam_shift_alignment_{utils.current_timestamp_v2()}"
+
+    # set alignment current
+    if alignment_current is not None:
+        initial_current = microscope.get("current", image_settings.beam_type)
+        microscope.set("current", alignment_current, image_settings.beam_type)
+
+    new_image = acquire.new_image(
+        microscope, settings=image_settings
+    )
+    dx, dy, _ = shift_from_crosscorrelation(
+        ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
+    )    
+
+    # adjust beamshift (reverse direction)
+    microscope.beam_shift(-dx, -dy, image_settings.beam_type)
+
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, image_settings.beam_type)
+    
 
 def correct_stage_drift(
     microscope: FibsemMicroscope,
@@ -473,7 +524,7 @@ def _save_alignment_data(
 
 from fibsem.structures import ImageSettings
 def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSettings, 
-    ref_image: FibsemImage, reduced_area: FibsemRectangle, alignment_current: float, steps:int = 3) -> None:
+    ref_image: FibsemImage, reduced_area: FibsemRectangle, alignment_current: float = None, steps:int = 3) -> None:
     
     # set alignment current
     if alignment_current is not None:
@@ -493,3 +544,20 @@ def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSet
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
         image_settings.autocontrast = autocontrast
+
+
+def multi_step_alignment_v2(microscope: FibsemMicroscope, 
+    ref_image: FibsemImage, beam_type: BeamType, 
+    alignment_current: float = None, steps:int = 3) -> None:
+    
+    # set alignment current
+    if alignment_current is not None:
+        initial_current = microscope.get("current", beam_type)
+        microscope.set("current", alignment_current, beam_type)
+
+    for i in range(steps):
+        beam_shift_alignment_v2(microscope, ref_image=ref_image)
+    
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, beam_type)

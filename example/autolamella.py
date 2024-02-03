@@ -89,11 +89,11 @@ def main():
                        
             if stage_no == 0:
                 microexpansion_stage = patterning.get_milling_stages("microexpansion", settings.protocol)
-                milling.mill_stage(microscope, settings, microexpansion_stage[0])
+                milling.mill_stage(microscope, microexpansion_stage[0])
 
             # get trench milling pattern, and mill
             trench_stage = patterning.get_milling_stages("lamella", settings.protocol)[stage_no]
-            milling.mill_stage(microscope, settings, trench_stage)
+            milling.mill_stage(microscope, trench_stage)
 
             # retake reference image
             settings.image.path = lamella.path

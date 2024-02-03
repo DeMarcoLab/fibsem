@@ -138,11 +138,13 @@ def convert_to_bitmap_format(path):
     return new_path
 
 
-def mill_stages(microscope: FibsemMicroscope, settings: MicroscopeSettings, stages: list[FibsemMillingStage], asynch: bool=False):
+def mill_stages(microscope: FibsemMicroscope, stages: list[FibsemMillingStage], asynch: bool=False):
     for stage in stages:
-        mill_stage(microscope=microscope, settings=settings, stage=stage, asynch=asynch)
+        mill_stage(microscope=microscope, stage=stage, asynch=asynch)
 
-def mill_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings, stage: FibsemMillingStage, asynch: bool=False):
+        # TODO: add special case for overtilt milling
+
+def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: bool=False):
 
     # set up milling
     setup_milling(microscope, stage.milling)
@@ -155,6 +157,54 @@ def mill_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings, stage
 
     # finish milling
     finish_milling(microscope)
+
+
+
+def mill_stage_with_overtilt(microscope: FibsemMicroscope, stage: FibsemMillingStage, ref_image: FibsemImage, asynch=False ):
+    """Mill a trench pattern with overtilt, 
+    based on https://www.sciencedirect.com/science/article/abs/pii/S1047847716301514 and autolamella v1"""
+    # set up milling
+    setup_milling(microscope, stage.milling)
+
+    from fibsem.structures import FibsemStagePosition
+    from fibsem import alignment, patterning
+    import numpy as np
+
+    overtilt_in_degrees = stage.pattern.protocol.get("overtilt", 1)
+
+    # assert pattern is TrenchPattern
+    if not isinstance(stage.pattern, patterning.TrenchPattern):
+        raise ValueError("Pattern must be TrenchPattern for overtilt milling")
+
+    for i, pattern in enumerate(stage.pattern.patterns):
+        
+        # overtilt
+
+        if i == 0:
+            t = -np.deg2rad(overtilt_in_degrees)
+        else:
+            t = +np.deg2rad(overtilt_in_degrees)
+        microscope.move_stage_relative(FibsemStagePosition(t=t))
+
+        # beam alignment
+        image_settings = ImageSettings.fromFibsemImage(ref_image)
+        image_settings.filename = f"alignment_target_{stage.name}"
+        
+        alignment.multi_step_alignment_v2(microscope=microscope, 
+                                        ref_image=ref_image, 
+                                        beam_type=BeamType.ION, 
+                                        alignment_current=None,
+                                        steps=3)
+
+        # draw pattern
+        draw_pattern(microscope, pattern)
+
+        # run milling
+        run_milling(microscope, stage.milling.milling_current, asynch)
+
+    # finish milling
+    finish_milling(microscope)
+
 
 
 ############################# UTILS #############################

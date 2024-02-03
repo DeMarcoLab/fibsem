@@ -795,6 +795,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                     self.milling_notification.emit(f"Running {stage.name}...")
                     milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
+
+                    # TODO implement a special case for overtilt milling
+
                 except Exception as e:
                     napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
                     logging.error(e)
