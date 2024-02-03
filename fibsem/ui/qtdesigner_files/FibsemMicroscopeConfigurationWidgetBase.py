@@ -679,12 +679,6 @@ class Ui_Form(object):
         self.gridLayout_2.addWidget(self.checkBox_show_advanced_settings, 0, 1, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.gridLayout.addWidget(self.scrollArea, 2, 0, 1, 2)
-        self.pushButton_save_configuration = QtWidgets.QPushButton(Form)
-        self.pushButton_save_configuration.setObjectName("pushButton_save_configuration")
-        self.gridLayout.addWidget(self.pushButton_save_configuration, 3, 0, 1, 1)
-        self.pushButton_apply_configuration = QtWidgets.QPushButton(Form)
-        self.pushButton_apply_configuration.setObjectName("pushButton_apply_configuration")
-        self.gridLayout.addWidget(self.pushButton_apply_configuration, 3, 1, 1, 1)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -752,5 +746,3 @@ class Ui_Form(object):
         self.checkBox_subsystems_manipulator_tilt.setText(_translate("Form", "Manipulator Tilt"))
         self.label_ion_dwell_time.setText(_translate("Form", "Dwell Time (us)"))
         self.checkBox_show_advanced_settings.setText(_translate("Form", "Show Advanced Settings"))
-        self.pushButton_save_configuration.setText(_translate("Form", "Save Configuration"))
-        self.pushButton_apply_configuration.setText(_translate("Form", "Apply Configuration"))
