@@ -50,3 +50,4 @@ fibsem/config/*.yaml
 !fibsem/config/tescan_manipulator.yaml
 
 **/wandb/*
+tests/notebook.ipynb
