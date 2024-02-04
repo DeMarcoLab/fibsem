@@ -287,9 +287,6 @@ class FibsemMicroscope(ABC):
     ):
         pass
 
-    @abstractmethod
-    def get_scan_directions(self) -> list:
-        pass
 
     @abstractmethod
     def setup_sputter(self, *args, **kwargs):
@@ -465,21 +462,23 @@ class FibsemMicroscope(ABC):
     
         return
 
-    def get_microscope_state(self) -> MicroscopeState:
+    def get_microscope_state(self, beam_type: BeamType = None) -> MicroscopeState:
         """Get the current microscope state."""
 
         # default values
         electron_beam, electron_detector = None, None
         ion_beam, ion_detector = None, None
         stage_position = None
+        get_electron_state = beam_type in [BeamType.ELECTRON, None]
+        get_ion_state = beam_type in [BeamType.ION, None]
 
         # get the state of the electron beam
-        if self.is_available("electron_beam"):
+        if self.is_available("electron_beam") and get_electron_state:
             electron_beam = self.get_beam_settings(beam_type=BeamType.ELECTRON)
             electron_detector = self.get_detector_settings(beam_type=BeamType.ELECTRON)
  
         # get the state of the ion beam        
-        if self.is_available("ion_beam"):
+        if self.is_available("ion_beam") and get_ion_state:
             ion_beam = self.get_beam_settings(beam_type=BeamType.ION)
             ion_detector = self.get_detector_settings(beam_type=BeamType.ION)
 
@@ -504,11 +503,15 @@ class FibsemMicroscope(ABC):
         """Reset the microscope state to the provided state."""
             
         if self.is_available("electron_beam"):
-            self.set_beam_settings(microscope_state.electron_beam)
-            self.set_detector_settings(microscope_state.electron_detector, BeamType.ELECTRON)
+            if microscope_state.electron_beam is not None:
+                self.set_beam_settings(microscope_state.electron_beam)
+            if microscope_state.electron_detector is not None:
+                self.set_detector_settings(microscope_state.electron_detector, BeamType.ELECTRON)
         if self.is_available("ion_beam"):
-            self.set_beam_settings(microscope_state.ion_beam)
-            self.set_detector_settings(microscope_state.ion_detector, BeamType.ION)
+            if microscope_state.ion_beam is not None:
+                self.set_beam_settings(microscope_state.ion_beam)
+            if microscope_state.ion_detector is not None:
+                self.set_detector_settings(microscope_state.ion_detector, BeamType.ION)
         if self.is_available("stage"):
             self.safe_absolute_stage_movement(microscope_state.stage_position)
             
@@ -709,14 +712,11 @@ class ThermoMicroscope(FibsemMicroscope):
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
 
-        def run_milling_drift_corrected(self, milling_current: float, image_settings: ImageSettings, ref_image: FibsemImage, reduced_area: FibsemRectangle = None, asynch: bool = False):
+        run_milling_drift_corrected(self, milling_current: float, milling_voltage: float, ref_image: FibsemImage):
             Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
         
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
-
-        get_scan_directions(self) -> list:
-            Get the available scan directions for milling.
 
         setup_sputter(self, protocol: dict):
             Set up the sputter coating process on the microscope.
@@ -865,7 +865,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # get the microscope state (for metadata)
         # TODO: convert to using fromAdornedImage, we dont need to full state
-        state = self.get_microscope_state()
+        # we should just get the 'state' of the image beam, e.g. stage, beam, detector for electron
+        # therefore we don't trigger the view to switch
+        state = self.get_microscope_state(beam_type=image_settings.beam_type)
 
         fibsem_image = FibsemImage.fromAdornedImage(
             copy.deepcopy(image), 
@@ -907,7 +909,7 @@ class ThermoMicroscope(FibsemMicroscope):
         image = AdornedImage(data=image.data.astype(np.uint8), metadata=image.metadata)
 
         # get the microscope state (for metadata)
-        state = self.get_microscope_state()
+        state = self.get_microscope_state(beam_type=beam_type)
 
         # get the image settings from the image
         image_settings = FibsemImageMetadata.image_settings_from_adorned(
@@ -1507,7 +1509,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
         autoscript_position = self.connection.specimen.manipulator.get_saved_position(
-                named_position, ManipulatorCoordinateSystem.STAGE
+                named_position, ManipulatorCoordinateSystem.STAGE # TODO: why is this STAGE not RAW?
             )
 
         # convert to FibsemManipulatorPosition
@@ -1530,14 +1532,13 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_beam(BeamType.ION, self.system)
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         self.connection.imaging.set_active_device(BeamType.ION.value)
-        self.connection.patterning.set_default_beam_type(
-            BeamType.ION.value
-        )  # ion beam default
+        self.connection.patterning.set_default_beam_type(BeamType.ION.value)
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
         self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
 
+        # self.set("hfw", mill_settings.hfw, BeamType.ION) # TODO: replace
         self.set("current", mill_settings.milling_current, BeamType.ION)
         self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
     
@@ -1615,16 +1616,13 @@ class ThermoMicroscope(FibsemMicroscope):
 
             self.connection.patterning.pause()
             logging.info("Drift correction")
-            if reduced_area is not None:
-                reduced_area = reduced_area.__to_FEI__()
-            image_settings.beam_type = BeamType.ION
-            alignment.beam_shift_alignment(microscope = self, image_settings= image_settings, ref_image=ref_image, reduced_area=reduced_area)
+            alignment.beam_shift_alignment_v2(microscope = self, ref_image=ref_image)
             time.sleep(1) # need delay to switch back to patterning mode 
             self.connection.imaging.set_active_view(BeamType.ION.value)
             if self.connection.patterning.state == PatterningState.PAUSED: # check if finished 
                 self.connection.patterning.resume()
                 time.sleep(5)
-            print(self.connection.patterning.state)
+            logging.info(f"Patterning State: {self.connection.patterning.state}")
 
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float):
@@ -1679,7 +1677,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # elif isinstance(pattern_settings.cross_section, CrossSectionPattern.CleaningCrossSection):
         #     create_pattern_function = patterning_api.create_cleaning_cross_section
         # else:
-        #     patterning_api.create_rectangle
+        #     create_pattern_function = patterning_api.create_rectangle
         
         # if pattern_settings.cleaning_cross_section:    
         #     create_pattern_function = patterning_api.create_cleaning_cross_section
@@ -1699,7 +1697,8 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.rotation = pattern_settings.rotation
 
         # set scan direction
-        available_scan_directions = self.get_scan_directions()
+        available_scan_directions = self.get_available_values("scan_direction")        
+    
         if pattern_settings.scan_direction in available_scan_directions:
             pattern.scan_direction = pattern_settings.scan_direction
         else:
@@ -2323,6 +2322,8 @@ class ThermoMicroscope(FibsemMicroscope):
                 "OuterToInner", 
                 "RightToLeft", 	
                 "TopToBottom"]
+        
+        logging.debug({"msg": "get_available_values", "key": key, "values": values})
 
         return values
 
@@ -2404,7 +2405,7 @@ class ThermoMicroscope(FibsemMicroscope):
             _check_stage(self.system)
 
             # get stage position in raw coordinates
-            self.connection.specimen.stage.set_default_coordinate_system(
+            self.connection.specimen.stage.set_default_coordinate_system( # TODO: we should set this at the start
             CoordinateSystem.RAW
             )
             stage_position = self.connection.specimen.stage.current_position  
@@ -2771,9 +2772,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
-
-        get_scan_directions(self) -> list:
-            Get the available scan directions for milling.    
 
         setup_sputter(self, protocol: dict):
             Set up the sputter coating process on the microscope.
@@ -4289,11 +4287,6 @@ class TescanMicroscope(FibsemMicroscope):
         path: str,
     ):
         return NotImplemented
-    
-    def get_scan_directions(self):
-        
-        list = ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]
-        return list
 
     def setup_sputter(self, protocol: dict):
         """
@@ -5129,7 +5122,7 @@ class DemoMicroscope(FibsemMicroscope):
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, 
                                         pixel_size=pixelsize,
-                                        microscope_state=self.get_microscope_state(),
+                                        microscope_state=self.get_microscope_state(beam_type=image_settings.beam_type),
                                         system=self.system
                                         )
         )
@@ -5513,21 +5506,6 @@ class DemoMicroscope(FibsemMicroscope):
     def draw_annulus(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
 
-    def get_scan_directions(self) -> list:
-        """
-        Returns the available scan directions of the microscope.
-
-        Returns:
-            list: The scan direction of the microscope.
-
-        Raises:
-            None
-        """
-        values = ["BottomToTop", 
-                "LeftToRight", 	
-                "RightToLeft", 	
-                "TopToBottom"]
-        return values 
 
     def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings,
         path: str):

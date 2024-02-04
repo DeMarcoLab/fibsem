@@ -335,26 +335,3 @@ def validate_microscope(microscope: FibsemMicroscope):
     logging.warning(f"Microscope Validation Warnings: {warnings}")
 
     return warnings
-
-
-if __name__ == "__main__":
-
-    microscope, settings = utils.setup_session()
-
-    print(microscope.get("on", BeamType.ELECTRON))
-    print(microscope.get("on", BeamType.ION))
-
-    # microscope.set("on", True, BeamType.ELECTRON)
-    # microscope.set("on", True, BeamType.ION)
-
-
-    # get the system is pumped
-    print("Chamber State: ", microscope.get("chamber_state"))
-    print("Chamber Pressure: ", microscope.get("chamber_pressure"))
-
-    print("Chamber State: ", microscope.get("chamber_state"))
-    print("Chamber Pressure: ", microscope.get("chamber_pressure"))
-
-    warnings = validate_microscope(microscope)
-
-    print(warnings)

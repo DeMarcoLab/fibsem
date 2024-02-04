@@ -122,6 +122,26 @@ class MovementMode(Enum):
     # Needle = 3
 
 
+class ImagingState:
+    IDLE = 0
+    ACQUIRING = 1
+    STOPPING = 2
+    PAUSED = 3
+    ERROR = 4
+
+class PatterningState:
+    IDLE = 0
+    PATTERNING = 1
+    STOPPING = 2
+    PAUSED = 3
+    ERROR = 4
+
+class ManipulatorState(Enum):
+    RETRACTED = 0
+    INSERTED = 1
+    MOVING = 2
+
+
 @dataclass
 class FibsemStagePosition:
     """Data class for storing stage position data.

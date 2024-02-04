@@ -199,7 +199,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.checkBox_live_update.setChecked(True)
 
 
-        self._AVAILABLE_SCAN_DIRECTIONS = self.microscope.get_available_values(key="scan_direction")
+        self._available_scan_directions = self.microscope.get_available_values(key="scan_direction")
             
     
         self.label_milling_instructions.setText(_MILLING_WIDGET_INSTRUCTIONS)
@@ -370,9 +370,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.comboBox_scan_direction = QtWidgets.QComboBox()
                 self.gridLayout_patterns.addWidget(label, i, 0)
                 self.gridLayout_patterns.addWidget(self.comboBox_scan_direction, i, 1)
-                self.comboBox_scan_direction.addItems(self._AVAILABLE_SCAN_DIRECTIONS)
-                scan_direction_to_use = pattern_protocol[key] if pattern_protocol[key] in self._AVAILABLE_SCAN_DIRECTIONS else self._AVAILABLE_SCAN_DIRECTIONS[0]
-                # logging.info(f'Scan direction to use: {scan_direction_to_use}, available: {self._AVAILABLE_SCAN_DIRECTIONS}')
+                self.comboBox_scan_direction.addItems(self._available_scan_directions)
+                scan_direction_to_use = pattern_protocol[key] if pattern_protocol[key] in self._available_scan_directions else self._available_scan_directions[0]
+                # logging.info(f'Scan direction to use: {scan_direction_to_use}, available: {self._available_scan_directions}')
                 self.comboBox_scan_direction.setCurrentText(scan_direction_to_use)
                 self.comboBox_scan_direction.currentIndexChanged.connect(self.update_ui_pattern)
                 continue
