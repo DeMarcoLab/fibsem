@@ -791,38 +791,48 @@ class MicroscopeState:
             "timestamp": self.timestamp,
             "stage_position": self.stage_position.to_dict()
             if self.stage_position is not None
-            else "Not defined",
+            else None,
             "electron_beam": self.electron_beam.to_dict()
             if self.electron_beam is not None
-            else "Not defined",
+            else None,
             "ion_beam": self.ion_beam.to_dict()
             if self.ion_beam is not None
-            else "Not defined",
+            else None,
             "electron_detector": self.electron_detector.to_dict()
             if self.electron_detector is not None
-            else "Not defined",
+            else None,
             "ion_detector": self.ion_detector.to_dict()
             if self.ion_detector is not None
-            else "Not defined",
+            else None,
         }
 
         return state_dict
 
     @staticmethod
     def from_dict(state_dict: dict) -> "MicroscopeState":
+        
+        # beam, and detector settings are now optional
+        electron_beam, electron_detector = None, None
+        ion_beam, ion_detector = None, None
+
+        if state_dict.get("electron_beam", None) is not None:
+            electron_beam = BeamSettings.from_dict(state_dict["electron_beam"])
+        if state_dict.get("ion_beam", None) is not None:
+            ion_beam = BeamSettings.from_dict(state_dict["ion_beam"])
+        if state_dict.get("electron_detector", None) is not None:
+            electron_detector = FibsemDetectorSettings.from_dict(state_dict["electron_detector"])
+        if state_dict.get("ion_detector", None) is not None:
+            ion_detector = FibsemDetectorSettings.from_dict(state_dict["ion_detector"])
+
         microscope_state = MicroscopeState(
             timestamp=state_dict["timestamp"],
             stage_position=FibsemStagePosition.from_dict(
                 state_dict["stage_position"]
             ),
-            electron_beam=BeamSettings.from_dict(state_dict["electron_beam"]),
-            ion_beam=BeamSettings.from_dict(state_dict["ion_beam"]),
-            electron_detector=FibsemDetectorSettings.from_dict(
-                state_dict.get("electron_detector", {})
-            ),
-            ion_detector=FibsemDetectorSettings.from_dict(
-                state_dict.get("ion_detector", {})
-            ),
+            electron_beam=electron_beam,
+            ion_beam=ion_beam,
+            electron_detector=electron_detector,
+            ion_detector=ion_detector,
         )
 
         return microscope_state
