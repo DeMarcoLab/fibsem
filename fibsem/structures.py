@@ -1024,6 +1024,9 @@ class FibsemMillingSettings:
     preset: str = "30 keV; UHR imaging"
     spacing: float = 1.0
     milling_voltage: float = 30e3
+    drift_correction: bool = False
+    drift_correction_area: FibsemRectangle = None
+    drift_correction_interval: int = 30
 
     def __post_init__(self):
         assert isinstance(
@@ -1064,6 +1067,11 @@ class FibsemMillingSettings:
             "preset": self.preset,
             "spacing": self.spacing,
             "milling_voltage": self.milling_voltage,
+            "drift_correction": self.drift_correction,
+            "drift_correction_area": self.drift_correction_area.to_dict()
+            if self.drift_correction_area is not None
+            else None,
+            "drift_correction_interval": self.drift_correction_interval,
         }
 
         return settings_dict
@@ -1081,6 +1089,11 @@ class FibsemMillingSettings:
             preset=settings.get("preset", "30 keV; 1nA"),
             spacing=settings.get("spacing", 1.0),
             milling_voltage=settings.get("milling_voltage", 30e3),
+            drift_correction=settings.get("drift_correction", False),
+            drift_correction_area=FibsemRectangle.from_dict(
+                settings.get("drift_correction_area", None)
+            ),
+            drift_correction_interval=settings.get("drift_correction_interval", 30),
         )
 
         return milling_settings

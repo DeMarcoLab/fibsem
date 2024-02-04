@@ -15,7 +15,7 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                MicroscopeSettings,
-                               Point)
+                               Point, FibsemRectangle)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import (_draw_patterns_in_napari, _remove_all_layers, 
@@ -79,12 +79,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
         self.milling_stages = milling_stages
 
+        self.reduced_area = None # tmp holder for reduced area
+
         self.setup_connections()
 
         self.update_pattern_ui()
 
         self.good_copy_pattern = None
+        self.alignment_layer = None
 
+        self.updating_alignment_area: bool = False
         self._UPDATING_PATTERN:bool = False
         self._PATTERN_IS_MOVEABLE: bool = True
 
@@ -203,6 +207,150 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             
     
         self.label_milling_instructions.setText(_MILLING_WIDGET_INSTRUCTIONS)
+    
+        self.pushButton_edit_drift_correction_area.clicked.connect(self.edit_drift_correction_area)
+
+
+        self.spinBox_milling_drift_correction_interval.valueChanged.connect(self.update_settings)
+        self.checkBox_milling_drift_correction.stateChanged.connect(self.update_settings)
+        self.checkBox_milling_drift_correction.stateChanged.connect(self.toggle_drift_correction)
+        self.toggle_drift_correction()
+
+    def toggle_drift_correction(self):
+
+        enabled = self.checkBox_milling_drift_correction.isChecked()
+        
+        self.label_milling_drift_correction_interval.setVisible(enabled)
+        self.spinBox_milling_drift_correction_interval.setVisible(enabled)
+        self.pushButton_edit_drift_correction_area.setVisible(enabled)
+        
+
+    def edit_drift_correction_area(self):
+        print("edit alignment")
+
+        # toggle the alignment widget
+        if self.updating_alignment_area:
+            self.updating_alignment_area = False
+            self.pushButton_edit_drift_correction_area.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_edit_drift_correction_area.setText("Edit Alignment Area")
+        else:
+            self.updating_alignment_area = True
+            self.pushButton_edit_drift_correction_area.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_edit_drift_correction_area.setText("Editing Alignment Area")
+        
+        if self.updating_alignment_area:
+            
+            if self.alignment_layer is None:
+                
+                def create_default_alignment_area(ion_shape, electron_shape, w: int = 150, h: int = 150) -> np.ndarray:
+                    """Create the default alignment area, based on the shape of the ion and electron images."""
+                    icx = electron_shape[1] + ion_shape[1] // 2
+                    icy = ion_shape[0] // 2
+                    x0, y0 = icx - w, icy - h
+                    x1, y1 = icx + w, icy + h
+                    data = [[y0, x0], [y0, x1], [y1, x1], [y1, x0]]
+                    return data 
+                
+                def convert_reduced_area_to_napari_shape(reduced_area: FibsemRectangle, image_shape: tuple, offset_shape: tuple = None) -> np.ndarray:
+                    """Convert a reduced area to a napari shape."""
+                    x0 = reduced_area.left * image_shape[1]
+                    y0 = reduced_area.top * image_shape[0]
+                    if offset_shape:
+                        x0 += offset_shape[1]
+                    x1 = x0 + reduced_area.width * image_shape[1]
+                    y1 = y0 + reduced_area.height * image_shape[0]
+                    data = [[y0, x0], [y0, x1], [y1, x1], [y1, x0]]
+                    return data
+                
+
+                data = convert_reduced_area_to_napari_shape(FibsemRectangle(0.375, 0.375, 0.25, 0.25), self.image_widget.ib_image.data.shape, self.image_widget.eb_image.data.shape)
+                # TODO: create as FibsemRectangle -> Convert to shape
+                # data = create_default_alignment_area(self.image_widget.ib_image.data.shape, self.image_widget.eb_image.data.shape)
+                                                              
+                self.alignment_layer = self.viewer.add_shapes(data=data, name="alignment_area", 
+                            shape_type="rectangle", edge_color="red", 
+                            face_color="red", opacity=0.5)
+                self.alignment_layer.metadata = {"type": "alignment"}
+                self.alignment_layer.events.data.connect(self.update_alignment)
+
+            
+            self.viewer.layers.selection.active = self.alignment_layer
+            self.alignment_layer.mode = "select"
+
+                
+        else:
+            self.viewer.layers.selection.active = self.image_widget.eb_layer
+    
+    # TODO: save alignment rectangle to milling stage
+    # TODO: error check to make sure the alignment rectangle is within the image
+    # TODO: convert to FibsemRectangle format
+            
+
+    def update_alignment(self):
+
+        if self.alignment_layer is not None:
+            data = self.alignment_layer.data
+
+            # convert to FibsemRectangle format where rectangle is defined by the top left corner, 
+            # and the width and height expressed as percentage of the image            
+
+            rect = data[0]
+
+            def convert_shape_to_image_area(shape: list[list[int]], image_shape: tuple, offset_shape: tuple = None) -> FibsemRectangle:
+                """Convert a napari shape (rectangle) to  a FibsemRectangle expressed as a percentage of the image (reduced area)
+                shape: the coordinates of the shape
+                image_shape: the shape of the image (usually the ion beam image)
+                offset_shape: the shape of the offset image (usually the electron beam image, as it translates to the ion beam image)
+                
+                """
+                # get limits of rectangle
+                y0, x0 = rect[0]
+                y1, x1 = rect[2]
+
+                # subtract shape of eb image
+                if offset_shape:
+                    x0 -= offset_shape[1]
+                    x1 -= offset_shape[1]
+
+                # convert to percentage of image
+                x0 = x0 / image_shape[1]
+                x1 = x1 / image_shape[1]
+                y0 = y0 / image_shape[0]
+                y1 = y1 / image_shape[0]
+                w = x1 - x0
+                h = y1 - y0
+
+                reduced_area = FibsemRectangle(left=x0, top=y0, width=w, height=h)
+                print("Reduced Area: ", reduced_area)
+    
+                return reduced_area
+
+            def is_valid_reduced_area(reduced_area: FibsemRectangle) -> bool:
+                """Check whether the reduced area is valid. 
+                Left and top must be between 0 and 1, and width and height must be between 0 and 1.
+                Must not exceed the boundaries of the image 0 - 1
+                """
+                # if left or top is less than 0, or width or height is greater than 1, return False
+                if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width > 1 or reduced_area.height > 1:
+                    return False
+                if reduced_area.left + reduced_area.width > 1 or reduced_area.top + reduced_area.height > 1:
+                    return False
+                # no negative values
+                if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width < 0 or reduced_area.height < 0:
+                    return False
+                return True
+
+            reduced_area = convert_shape_to_image_area(rect, self.image_widget.eb_image.data.shape, self.image_widget.ib_image.data.shape)
+            
+            print("Reduced Area: ", reduced_area)
+            is_valid = is_valid_reduced_area(reduced_area)
+            print(f"Valid Reduced Area: {is_valid}")
+            
+            if not is_valid:
+                napari.utils.notifications.show_warning("Invalid Alignment Area, please adjust the alignment area to be within the image.")
+                return
+            self.reduced_area = reduced_area
+            self.update_settings() 
 
     def update_settings(self):
         settings = self.get_milling_settings_from_ui()
@@ -228,6 +376,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.info("Removing milling stage")
 
         current_index = self.comboBox_milling_stage.currentIndex()
+        if current_index == -1:
+            return
         log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
@@ -486,7 +636,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
         if beam_type is not BeamType.ION:
             napari.utils.notifications.show_info(
-                f"Please right click on the {BeamType.ION.name} image to move pattern."
+                f"Please click on the {BeamType.ION.name} image to move pattern."
             )
             return
         
@@ -609,6 +759,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
         self.comboBox_preset.setCurrentText(str(milling.preset))
         self.spinBox_voltage.setValue(milling.milling_voltage)
+        self.doubleSpinBox_spacing.setValue(milling.spacing)
+        self.checkBox_milling_drift_correction.setChecked(milling.drift_correction)
+        self.spinBox_milling_drift_correction_interval.setValue(milling.drift_correction_interval)
 
     def get_milling_settings_from_ui(self):
 
@@ -624,6 +777,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             preset= self.comboBox_preset.currentText(),
             spacing=self.doubleSpinBox_spacing.value(),
             milling_voltage=self.spinBox_voltage.value(),
+            drift_correction=self.checkBox_milling_drift_correction.isChecked(),
+            drift_correction_interval=self.spinBox_milling_drift_correction_interval.value(),
+            drift_correction_area=self.reduced_area,
         )
 
         return milling_settings

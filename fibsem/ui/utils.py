@@ -401,7 +401,7 @@ def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.
 
     # remove all shapes layers
     layers_to_remove = []
-    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value", "label"] + _ignore
+    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value", "label", "alignment_area"] + _ignore
     for layer in viewer.layers:
 
         if layer.name in layers_to_ignore:
@@ -722,7 +722,7 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
     return Point(cx, cy)
 
-
+# TODO: redo this function
 def validate_pattern_placement(
     patterns: list[FibsemPatternSettings], resolution: list, shape: list[list[float]]
 ):

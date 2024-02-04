@@ -1625,6 +1625,24 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info(f"Patterning State: {self.connection.patterning.state}")
 
 
+    
+        # if ref_image -> do drift correction
+        # get reduced_area from ref_image
+        # user defined interval?
+        # run milling (always async?)
+            # pause milling
+            # drift correction
+            # resume milling
+        # clear patterns?
+        # make the milling states universal, then we can write one function? 
+    
+        # mill settings:
+        # reduced_area: FibsemRectangle = None,
+        # drift_correction: bool = False,
+        # drift_interval: float = 60.0,
+        
+
+
     def finish_milling(self, imaging_current: float, imaging_voltage: float):
         """
         Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
@@ -5513,6 +5531,8 @@ class DemoMicroscope(FibsemMicroscope):
         return 
     def run_milling_drift_corrected(self):
         _check_beam(BeamType.ION, self.system)
+        time.sleep(5)
+        logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
         return
 
     def setup_sputter(self, protocol: dict) -> None:
