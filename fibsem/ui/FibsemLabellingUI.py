@@ -400,11 +400,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
 
         if os.path.basename(fname) in os.listdir(os.path.join(self.labels_path)):
             label_fname = os.path.join(self.labels_path, os.path.basename(fname))
-            if ".tif" in label_fname:
-                label_image = tff.imread(label_fname)
-            else:
-                label_image = Image.open(label_fname).convert("L")
-                label_image = np.array(label_image, dtype=np.uint8)
+            label_image = Image.open(label_fname).convert("L")
             label_image = np.array(label_image, dtype=np.uint8)
 
             msg = f"Loaded label image from {os.path.basename(label_fname)}"
