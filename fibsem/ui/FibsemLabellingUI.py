@@ -3,11 +3,11 @@ import os
 import sys
 import glob
 
+import yaml
 import fibsem
 import napari
 import napari.utils.notifications
 import numpy as np
-import tifffile as tff
 from PIL import Image
 from fibsem.ui.qtdesigner_files import FibsemLabellingUI
 from PyQt5 import QtWidgets
@@ -215,7 +215,6 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             if path is not None and path != "":
                 self.lineEdit_data_config.setText(path)
 
-                import yaml
                 with open(path) as f:
                     CLASS_CONFIG = yaml.load(f, Loader=yaml.FullLoader) 
 
