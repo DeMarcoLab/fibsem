@@ -13,7 +13,7 @@ from fibsem.ui.qtdesigner_files import FibsemSegmentationModelWidget
 from fibsem.segmentation.model import SegmentationModel
 
 
-CHECKPOINT_PATH = "autolamella-mega-latest.pt"
+CHECKPOINT_PATH = "autolamella-mega-20240107.pt"
 SEGMENT_ANYTHING_AVAIABLE = False
 try:
     SEGMENT_ANYTHING_AVAIABLE = True
