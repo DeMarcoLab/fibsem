@@ -47,7 +47,7 @@ class SegmentationModelNNUnet:
     def load_model(self, checkpoint: str) -> None:
         """Load the model, and optionally load a checkpoint"""
         
-        self.model = nnunet.load_model(path=checkpoint)
+        self.model = nnunet.load_model(path=checkpoint, device=self.device)
 
         return self.model
 

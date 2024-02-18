@@ -17,12 +17,12 @@ import shutil
 import json
 
 
-def load_model(path: str) -> nnUNetPredictor:
+def load_model(path: str, device) -> nnUNetPredictor:
     # instantiate the nnUNetPredictor
     model = nnUNetPredictor(
         tile_step_size=0.5,
-        perform_everything_on_gpu=True,
-        device=torch.device("cuda", 0),
+        perform_everything_on_gpu=bool(device.type == "cuda"),
+        device=device,
         verbose=False,
         verbose_preprocessing=False,
         allow_tqdm=False,
