@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import glob
+import copy
 
 import yaml
 import fibsem
@@ -77,8 +78,13 @@ CONFIGURATION = {
         "CONFIRM_BUTTON_COLOR": _stylesheets._GREEN_PUSHBUTTON_STYLE,
         "CLEAR_BUTTON_COLOR": _stylesheets._RED_PUSHBUTTON_STYLE,
         "IMAGE_OPACITY": 0.7,
-        "BBOX_OPACITY": 0.3,
+        "BBOX_OPACITY": 0.7,
         "BBOX_EDGE_WIDTH": 5,
+        "TEXT_COLOR": "white",
+        "TEXT_TRANSLATION": np.array([-15, 0]),
+        "FACE_COLOR": "white",
+        "ADD_BUTTON_COLOR": _stylesheets._GREEN_PUSHBUTTON_STYLE,
+        "EDIT_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
     },
     "TOOLTIPS": {
         "AUTOSAVE": "Automatically save the image when moving to the next image",
@@ -103,6 +109,7 @@ class FibsemBBoxLabellingUI(FibsemBBoxLabellingWidget.Ui_Form, QtWidgets.QDialog
         self.shapes_layer = None
 
         self.bboxes = []
+        self.previous_data = []
 
         self.setup_connections()
 
@@ -120,11 +127,11 @@ class FibsemBBoxLabellingUI(FibsemBBoxLabellingWidget.Ui_Form, QtWidgets.QDialog
         self.lineEdit_data_config.setText(CLASS_CONFIG_PATH)
         self.comboBox_data_file_ext.addItems(CONFIGURATION["IMAGES"]["SUPPORTED_FILE_EXT"])
 
-        self.viewer.bind_key("R", self.next_image)
-        self.viewer.bind_key("E", self.previous_image)
-        self.viewer.bind_key("S", self.save_image)
-        self.viewer.bind_key("D", self.decrement_class_index)
-        self.viewer.bind_key("F", self.increment_class_index)
+        self.viewer.bind_key("R", self.next_image, overwrite=True)
+        self.viewer.bind_key("E", self.previous_image, overwrite=True)
+        self.viewer.bind_key("S", self.save_image, overwrite=True)
+        self.viewer.bind_key("D", self.decrement_class_index, overwrite=True)
+        self.viewer.bind_key("F", self.increment_class_index, overwrite=True)
 
         self.comboBox_class_map.currentIndexChanged.connect(self._change_class_index)
         self.pushButton_add_mode.clicked.connect(self._add_shape_mode)
@@ -132,6 +139,8 @@ class FibsemBBoxLabellingUI(FibsemBBoxLabellingWidget.Ui_Form, QtWidgets.QDialog
 
         # style
         self.pushButton_load_data.setStyleSheet(CONFIGURATION["UI"]["LOAD_DATA_BUTTON_COLOR"])
+        self.pushButton_add_mode.setStyleSheet(CONFIGURATION["UI"]["ADD_BUTTON_COLOR"])
+        self.pushButton_edit_mode.setStyleSheet(CONFIGURATION["UI"]["EDIT_BUTTON_COLOR"])
 
         # tooltips
         self.checkBox_autosave.setToolTip(CONFIGURATION["TOOLTIPS"]["AUTOSAVE"])
@@ -190,7 +199,7 @@ class FibsemBBoxLabellingUI(FibsemBBoxLabellingWidget.Ui_Form, QtWidgets.QDialog
         # set the label index for the mask layer
         if self.shapes_layer is not None:
             self.shapes_layer.current_edge_color = CONFIGURATION["LABELS"]["COLOR_MAP"][cidx]
-            self.shapes_layer.current_face_color = "white"
+            self.shapes_layer.current_face_color = (0, 0, 0, 0)
 
     def load_data(self):
         # read raw data
@@ -299,7 +308,7 @@ class FibsemBBoxLabellingUI(FibsemBBoxLabellingWidget.Ui_Form, QtWidgets.QDialog
             self.last_idx = idx # update last index
         
         # update mask layer
-        # self.shapes_layer.data = self.get_label_image()
+        self.update_shapes_layer()
 
         # set active layers
         self.set_active_layers()
@@ -321,8 +330,78 @@ class FibsemBBoxLabellingUI(FibsemBBoxLabellingWidget.Ui_Form, QtWidgets.QDialog
 
         self.label_instructions.setText(msg)
 
-    def get_label_image(self) -> np.ndarray:
-        pass
+    def update_shapes_layer(self) -> None:
+        
+        # clear previous data       
+        self.shapes_layer.data = []
+        self.shapes_layer.properties = {}
+        self.shapes_layer.text = {}
+
+        self.bboxes = []
+
+
+
+        idx = self.last_idx
+        fname = self.filenames[idx]
+        current_image = self.img_layer.data[idx]
+        FILE_EXT = CONFIGURATION["IMAGES"]["FILE_EXT"]
+        bname = os.path.basename(fname).removesuffix(FILE_EXT)
+
+        csv_path = os.path.join(self.labels_path, f"{bname}.csv")
+        if os.path.exists(csv_path):
+            df = pd.read_csv(csv_path)
+
+            print(df.head())
+
+            
+
+            self.df = df
+            shapes = []
+            for _, row in df.iterrows():
+                shape = convert_reduced_area_to_napari_shape(FibsemRectangle.from_dict(row), 
+                                                             image_shape=current_image.shape
+                                                             )
+                print(shape)
+
+                
+                shapes.append(shape)
+
+            class_ids = df["class_id"].values
+            class_names = df["class_name"].values
+            colors = df["color"].values
+
+            # disconnec the shapes updated event
+            self.shapes_layer.events.data.disconnect(self._shapes_updated)
+            self.shapes_layer.data = shapes
+            self.bboxes = shapes
+            self.shapes_layer.properties = {"class_id": class_ids, 
+                                            "class_name": class_names, 
+                                            "color": colors}
+            
+            # display properties as text on bboxes
+            text = {
+                "string": [name for name in class_names],
+                "color": [color for color in colors],
+                "translation": CONFIGURATION["UI"]["TEXT_TRANSLATION"],
+            }
+
+            self.shapes_layer.text = text
+            self.shapes_layer.face_color = [(0, 0, 0, 0) for color in colors]
+            self.shapes_layer.edge_color = [color for color in colors]
+
+            # re-connect the shapes updated event
+            self.shapes_layer.events.data.connect(self._shapes_updated)
+
+        # df = pd.read_csv()
+
+
+        # save to csv
+        # df = pd.DataFrame(bboxes, columns=["filename", "class_id", "class_name", "color", "left", "top", "width", "height"])
+        # df.to_csv(os.path.join(self.labels_path, f"{bname}.csv"), index=False)
+
+        # print(f"Saved Bounding Boxes to {os.path.join(self.labels_path, f'{bname}.csv')}")
+        # print(df.head())
+
 
 
     def closeEvent(self, event):
@@ -346,124 +425,128 @@ class FibsemBBoxLabellingUI(FibsemBBoxLabellingWidget.Ui_Form, QtWidgets.QDialog
         self.shapes_layer.mode = "select"
 
     def _shapes_updated(self, event: Optional[Any] = None) -> None:
-        # if self.feature is None:
-        #     self._get_feature()
+        """Callback for when the shapes are updated. This is called when a shape is added, deleted or moved. """
 
-        # if self.feature is None:
-        #     napari.utils.notifications.show_warning(f"No feature selected. Exiting.")
-        #     return
 
+        # TODO: enable checks for invalid bboxes
+
+        
+
+        from pprint import pprint
+        print(f"shapes updated: {event.type}")
+        
         # get latest shapes
         shapes = self.shapes_layer.data
 
+        # check data is not empty
+        if len(shapes) == 0:
+            return
+
         # get which point was moved
         index: list[int] = list(self.shapes_layer.selected_data)
+        print(f"Selected Data: {index}")
 
-        # def napari_pt_to_point(pt: np.ndarray, dtype=int) -> Point:
-        #     return Point.from_list(np.flip(pt, axis=-1).astype(dtype))
+        idx = int(self.viewer.dims.point[0])
+        current_image = self.img_layer.data[idx]
 
+        print("-"*80)    
+        # add new bounding box
+        if len(shapes) > len(self.bboxes):
+            # shape = shapes[-1]
+            # reduced_area = convert_shape_to_image_area(shape, current_image.shape)
+            
+            class_id = self.comboBox_class_map.currentIndex()
+            class_name = CONFIGURATION["LABELS"]["LABEL_MAP"][class_id]
+            color = CONFIGURATION["LABELS"]["COLOR_MAP"][class_id]
 
-        for shape in shapes:
-            print("--------")
-            print("shape: ", shape)
-            reduced_area = convert_shape_to_image_area(shape, self.img_layer.data.shape)
-            print(reduced_area, is_valid_reduced_area(reduced_area))
+            # if not is_valid_reduced_area(reduced_area):
+            #     print("Invalid Bounding Box")
+            #     napari.utils.notifications.show_error(f"Invalid Bounding Box for {class_name}. Please adjust the bounding box to fit within the image.")
+            #     return
+            
+            # check if properties are already set
+            if "class_id" in self.shapes_layer.properties:
+                self.shapes_layer.properties["class_id"][-1] = class_id
+                self.shapes_layer.properties["class_name"][-1] = class_name
+                self.shapes_layer.properties["color"][-1] = color
+            else:
+                self.shapes_layer.properties = {"class_id": [class_id], 
+                                                "class_name": [class_name], 
+                                                "color": [color]}
 
-        print("-"*80)
+        # bbox was deleted
+        elif len(shapes) < len(self.bboxes):
+            # deleted
+            print("data was deleted")
 
-        # TODO: map -> classes
-
-        # add new feature
-        # if len(points) > len(self.features):
-        #     # get latest feature
-        #     feature = copy.deepcopy(self.feature)
-        #     feature.update(napari_pt_to_point(points[-1]).to_dict())
-        #     feature["color"] = get_feature_color(feature["name"])
-        #     self.features.append(copy.deepcopy(feature))
-
-        # # feature was deleted
-        # elif len(points) < len(self.features):
-        #     # deleted
-
-        #     for idx in index[::-1]:
-        #         logging.info(f"point deleted: {self.features[idx]['name']}")
-        #         self.features.pop(idx)
-
-        # # feature was moved
-        # else:
+        # bbox was moved
+        else:
         #     # moved
+            print("data was moved")
         #     for idx in index:
         #         self.features[idx].update(
         #             copy.deepcopy(napari_pt_to_point(points[idx])).to_dict()
         #         )
 
-        #
-        # text = {
-        #     "string": [f["name"] for f in self.features],
-        #     "color": CONFIGURATION["UI"]["TEXT_COLOR"],
-        #     "translation": CONFIGURATION["UI"]["TEXT_TRANSLATION"],
-        # }
+        from pprint import pprint
+        self.bboxes = shapes
 
-        # self.pts_layer.text = text
-        # self.pts_layer.face_color = [f["color"] for f in self.features]
+        pprint(f"Properties:  {self.shapes_layer.properties}")
+        # display properties as text on bboxes
+        text = {
+            "string": [name for name in self.shapes_layer.properties["class_name"]],
+            "color": [color for color in self.shapes_layer.properties["color"]],
+            "translation": CONFIGURATION["UI"]["TEXT_TRANSLATION"],
+        }
+
+        self.shapes_layer.text = text
+        self.shapes_layer.face_color = [(0, 0, 0, 0) for color in self.shapes_layer.properties["color"]]
+        self.shapes_layer.edge_color = [color for color in self.shapes_layer.properties["color"]]
 
         # update dataframe, write to csv
         # self.update_dataframe()
 
+        idx = self.last_idx
+        fname = self.filenames[idx]
+        FILE_EXT = CONFIGURATION["IMAGES"]["FILE_EXT"]
+        bname = os.path.basename(fname).removesuffix(FILE_EXT)
 
-    # def _features_updated(self, event: Optional[Any] = None) -> None:
-    #     if self.feature is None:
-    #         self._get_feature()
+        # save bounding box data
+        shapes = self.shapes_layer.data
+        class_ids = self.shapes_layer.properties["class_id"]
+        class_names = self.shapes_layer.properties["class_name"]
+        colors = self.shapes_layer.properties["color"]
 
-    #     if self.feature is None:
-    #         napari.utils.notifications.show_warning(f"No feature selected. Exiting.")
-    #         return
+        bboxes = []
+        for shape, class_id, class_name, color in zip(shapes, class_ids, class_names, colors):
+            bbox = convert_shape_to_image_area(shape, current_image.shape)
+            
+            if not is_valid_reduced_area(bbox):
+                print("Invalid Bounding Box")
+                napari.utils.notifications.show_error(f"Invalid Bounding Box for {class_name}. Please adjust the bounding box to fit within the image.")
+                return            
+            
+            bbox = bbox.to_dict()
 
-    #     # get latest points
-    #     points = self.pts_layer.data
+            bbox["class_id"] = class_id
+            bbox["class_name"] = class_name
+            bbox["color"] = color
+            bbox["filename"] = bname            
+            bboxes.append(bbox)
 
-    #     # get which point was moved
-    #     index: list[int] = list(self.pts_layer.selected_data)
+        # save to csv
+        df = pd.DataFrame(bboxes, columns=["filename", "class_id", "class_name", "color", "left", "top", "width", "height"])
+        df.to_csv(os.path.join(self.labels_path, f"{bname}.csv"), index=False)
 
-    #     def napari_pt_to_point(pt: np.ndarray, dtype=int) -> Point:
-    #         return Point.from_list(np.flip(pt, axis=-1).astype(dtype))
+        print(f"Saved Bounding Boxes to {os.path.join(self.labels_path, f'{bname}.csv')}")
+        print(df.head())
 
-    #     # add new feature
-    #     if len(points) > len(self.features):
-    #         # get latest feature
-    #         feature = copy.deepcopy(self.feature)
-    #         feature.update(napari_pt_to_point(points[-1]).to_dict())
-    #         feature["color"] = get_feature_color(feature["name"])
-    #         self.features.append(copy.deepcopy(feature))
 
-    #     # feature was deleted
-    #     elif len(points) < len(self.features):
-    #         # deleted
+    # TODO: save into a single csv
+    # TODO: load bboxes from csv
+    # TODO: util to convert to yolo8 format
 
-    #         for idx in index[::-1]:
-    #             logging.info(f"point deleted: {self.features[idx]['name']}")
-    #             self.features.pop(idx)
 
-    #     # feature was moved
-    #     else:
-    #         # moved
-    #         for idx in index:
-    #             self.features[idx].update(
-    #                 copy.deepcopy(napari_pt_to_point(points[idx])).to_dict()
-    #             )
-
-    #     #
-    #     text = {
-    #         "string": [f["name"] for f in self.features],
-    #         "color": CONFIGURATION["UI"]["TEXT_COLOR"],
-    #         "translation": CONFIGURATION["UI"]["TEXT_TRANSLATION"],
-    #     }
-
-    #     self.pts_layer.text = text
-    #     self.pts_layer.face_color = [f["color"] for f in self.features]
-
-    #     # update dataframe, write to csv
-    #     self.update_dataframe()
 
     def update_dataframe(self):
         """Update the dataframe with the latest features"""
@@ -621,6 +704,25 @@ def is_valid_reduced_area(reduced_area: FibsemRectangle) -> bool:
         return False
     return True
 
+
+# get the index of the bbox that was moved
+def get_bbox_index(shapes: list[np.ndarray], shape: np.ndarray) -> int:
+    """Check if the shape is in the list of shapes, and return the index. If not, return None."""
+    
+    for i, s in enumerate(shapes):
+        print(s.shape, shape.shape)
+        if np.all(s == shape):
+            print(f"Found shape: {i}")
+            return i
+    return None
+    
+    
+    ret = np.where([np.all(shape == a) for a in shapes])[0]
+
+    if len(ret) > 0:
+        return ret[0]
+    else: 
+        return None
 
 
 def main():
