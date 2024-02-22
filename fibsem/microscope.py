@@ -765,6 +765,12 @@ class ThermoMicroscope(FibsemMicroscope):
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
 
+    def reconnect(self):
+        if not hasattr(self, "system"):
+            raise Exception("Please connect to the microscope first")
+        
+        self.disconnect()
+        self.connect_to_microscope(self.system.info.ip_address)
 
     def disconnect(self):
         self.connection.disconnect()
@@ -792,6 +798,9 @@ class ThermoMicroscope(FibsemMicroscope):
             >>> microscope.connect_to_microscope("192.168.0.10", 7520)
 
         """
+        if self.connection is None:
+            self.connection = SdbMicroscopeClient()
+
         # TODO: get the port
         logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
         self.connection.connect(host=ip_address, port=port)
