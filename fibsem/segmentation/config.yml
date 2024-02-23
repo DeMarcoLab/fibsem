@@ -13,6 +13,7 @@ epochs: 50                                      # number of epochs
 split: 0.1                                      # train / val split
 batch_size: 4                                   # batch size
 lr: 3.0e-4                                      # initial learning rate
+apply_transforms: true                           # apply data augmentation
 
 # logging
 train_log_freq: 32                              # frequency to log training images

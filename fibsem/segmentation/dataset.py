@@ -66,10 +66,14 @@ class SegmentationDataset(Dataset):
         # need to to transformation manually
         # mask = torch.tensor(mask).unsqueeze(0)
 
-        image = torch.tensor(image, dtype=torch.uint8).unsqueeze(0) # TODO: validate this behaviour
+        image = torch.tensor(image).unsqueeze(0) # TODO: validate this behaviour
         mask = torch.tensor(mask).unsqueeze(0)
-
         
+    
+        image_max_val = torch.iinfo(image.dtype).max
+        if image.dtype not in [torch.uint8, torch.int16]:
+            raise ValueError(f"Image dtype {image.dtype} not supported")
+
         if self.transforms_input:
             seed = random.randint(0, 1000)
             self._set_seed(seed)
@@ -77,8 +81,8 @@ class SegmentationDataset(Dataset):
             self._set_seed(seed)
             mask = self.transforms_target(mask)
 
-            # convert image to float32 scaled between 0-1
-            image = image.float() / 255.0
+        # convert image to float32 scaled between 0-1
+        image = image.float() / image_max_val
                         
         return image, mask
 
@@ -109,7 +113,7 @@ def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
 
 def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes: int = 3, 
                     batch_size: int = 1, val_split: float = 0.15, 
-                    _validate_dataset:bool = True):
+                    _validate_dataset:bool = True, apply_transforms: bool = False):
     
     # if _validate_dataset:
         # validate_dataset(data_path, label_path)
@@ -125,6 +129,9 @@ def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes
     print(f"Loading dataset from {len(data_paths)} paths: {images.shape[0]}")
     for path in data_paths:
         print(f"Loaded from {path}")
+
+    if apply_transforms is False:
+        transformations_input, transformations_target = None, None
 
     # load dataset
     seg_dataset = SegmentationDataset(
