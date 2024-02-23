@@ -65,8 +65,8 @@ class SegmentationDataset(Dataset):
         # - the problem was ToTensor was destroying the class index for the labels (rounding them to 0-1)
         # need to to transformation manually
         # mask = torch.tensor(mask).unsqueeze(0)
-        
-        image = torch.tensor(image).unsqueeze(0)
+
+        image = torch.tensor(image, dtype=torch.uint8).unsqueeze(0) # TODO: validate this behaviour
         mask = torch.tensor(mask).unsqueeze(0)
 
         
