@@ -317,7 +317,7 @@
        </widget>
       </item>
       <item row="30" column="0" colspan="2">
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="pushButton_update_pattern">
         <property name="text">
          <string>Update Pattern</string>
         </property>
@@ -416,7 +416,7 @@
   <tabstop>pushButton_add_milling_stage</tabstop>
   <tabstop>pushButton_remove_milling_stage</tabstop>
   <tabstop>checkBox_live_update</tabstop>
-  <tabstop>pushButton</tabstop>
+  <tabstop>pushButton_update_pattern</tabstop>
   <tabstop>pushButton_run_milling</tabstop>
   <tabstop>doubleSpinBox_hfw</tabstop>
   <tabstop>comboBox_application_file</tabstop>
