@@ -149,6 +149,22 @@ class SegmentationModel:
         # TODO: return masks, scores, logits
         return masks
 
+    def inference_v2(self, img: np.ndarray, rgb: bool = True) -> np.ndarray:
+        """Run model inference on the input image"""
+        with torch.no_grad():
+            img_t = self.pre_process(img)
+
+            outputs = self.model(img_t)
+            outputs = F.softmax(outputs, dim=1)
+            masks = torch.argmax(outputs, dim=1).detach().cpu().numpy()
+        
+        # decode to rgb
+        if rgb:
+            masks = self.postprocess(masks, nc=self.num_classes)
+
+        # TODO: return masks, scores, logits
+        return masks, outputs
+        
     def postprocess(self, masks, nc):
         # TODO: vectorise this properly
         # TODO: use decode_segmap_v2
