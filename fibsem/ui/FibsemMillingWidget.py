@@ -15,7 +15,7 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                MicroscopeSettings,
-                               Point)
+                               Point, CrossSectionPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import (_draw_patterns_in_napari, _remove_all_layers, 
@@ -28,7 +28,7 @@ from fibsem.ui import _stylesheets
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
                      "number", "passes", "n_rectangles", "overlap", "inverted",
-                     "n_columns", "n_rows" ]
+                     "n_columns", "n_rows", "cross_section" ]
 _ANGLE_KEYS = ["rotation"]
 _LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
@@ -403,6 +403,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.checkbox_inverted.stateChanged.connect(self.update_ui_pattern)
                 continue
 
+            if key == "cross_section":
+                label = QtWidgets.QLabel(key)
+                self.comboBox_cross_section = QtWidgets.QComboBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.comboBox_cross_section, i, 1)               
+                self.comboBox_cross_section.addItems([section.name for section in CrossSectionPattern])
+                self.comboBox_cross_section.setCurrentText(pattern_protocol.get(key, "Rectangle"))
+                self.comboBox_cross_section.currentIndexChanged.connect(self.update_ui_pattern)
+                continue
+
             # limits
             min_val = -1000 if key in _LINE_KEYS else 0
 
@@ -451,6 +461,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 continue
             if key == "inverted":
                 pattern_dict[key] = self.checkbox_inverted.isChecked()
+                continue
+            if key == "cross_section":
+                pattern_dict[key] = self.comboBox_cross_section.currentText()
                 continue
                 
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
