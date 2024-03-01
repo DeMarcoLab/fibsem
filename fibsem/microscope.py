@@ -1681,9 +1681,9 @@ class ThermoMicroscope(FibsemMicroscope):
         # create_pattern_function = patterning_api.create_cleaning_cross_section if pattern_settings.cleaning_cross_section else patterning_api.create_rectangle
 
         patterning_api = self.connection.patterning
-        if isinstance(pattern_settings.cross_section, CrossSectionPattern.RegularCrossSection):
+        if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
             create_pattern_function = patterning_api.create_regular_cross_section
-        elif isinstance(pattern_settings.cross_section, CrossSectionPattern.CleaningCrossSection):
+        elif pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
             create_pattern_function = patterning_api.create_cleaning_cross_section
         else:
             create_pattern_function = patterning_api.create_rectangle
