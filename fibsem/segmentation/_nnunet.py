@@ -356,7 +356,7 @@ def convert_to_nnunet_dataset(
     print(f"Currently, the environment variables are set to:")
     print(f"nnUNet_raw: {os.environ.get('nnUNet_raw')}")
     print(f"nnUNet_preprocessed: {os.environ.get('nnUNet_preprocessed')}")
-    print(f"nnUNet_preprocessed: {os.environ.get('nnUNet_preprocessed')}")
+    print(f"nnUNet_results: {os.environ.get('nnUNet_results')}")
 
     # pre-process the dataset
     print(f"\n2. Pre-Process the Dataset: ")
@@ -364,7 +364,7 @@ def convert_to_nnunet_dataset(
 
     # train the dataset
     print(f"\n3. Train the Model on the Dataset {DATASET_ID}: ")
-    print(f"nnUNet_train {DATASET_ID} 2d all")
+    print(f"nnUNetv2_train {DATASET_ID} 2d all")
 
     print(f"Post Training: ")
     print(f"\nOnce training is complete, you can run inference on the dataset:")
