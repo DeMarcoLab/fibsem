@@ -1073,8 +1073,11 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
         application_file=protocol.get("application_file", "Si"),
         preset=protocol.get("preset", "30 keV; 20 nA"))
 
+    # milling stage name
+    name = protocol.get("name", f"{key.title()} {i+1:02d}")
+
     stage = FibsemMillingStage(
-        name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
+        name=name, num=i, milling=mill_settings, pattern=pattern
     )
     return stage
 
