@@ -54,7 +54,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
-                config_path = cfg.SYSTEM_PATH,
                 parent=self,
             )
         

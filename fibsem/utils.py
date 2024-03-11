@@ -151,7 +151,7 @@ def setup_session(
 
     Args:
         session_path (Path): path to logging directory
-        config_path (Path): path to config directory (system.yaml)
+        config_path (Path): path to config directory 
         protocol_path (Path): path to protocol file
 
     Returns:

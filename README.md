@@ -56,7 +56,7 @@ For detailed instructions on installation, and installing the commercial microsc
 
 To get started, see the example/example.py:
 
-Recommended: You can start an offline demo microscope by speciying manufacturer: "Demo" in the system.yaml file (fibsem/config/system.yaml). This will start a demo microscope that you can use to test the API without connecting to a real microscope. To connect to a real microscope, set the ip_address and manufacturer of your microscope in the system.yaml or alternatively, you can pass these arguments to utils.setup_session() directly.
+Recommended: You can start an offline demo microscope by speciying manufacturer: "Demo" in the configuration yaml file (fibsem/config/microscope-configuration.yaml). This will start a demo microscope that you can use to test the API without connecting to a real microscope. To connect to a real microscope, set the ip_address and manufacturer of your microscope in the configuration file or alternatively, you can pass these arguments to utils.setup_session() directly.
 
 This example shows you how to connect to the microscope, take an image with both beams, and then plot.
 
