@@ -32,7 +32,6 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         settings: MicroscopeSettings = None,
         viewer: napari.Viewer = None,
         parent=None,
-        config_path: str = None,
     ):
         super(FibsemSystemSetupWidget, self).__init__(parent=parent)
         self.setupUi(self)
