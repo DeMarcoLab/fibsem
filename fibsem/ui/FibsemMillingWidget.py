@@ -402,7 +402,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.checkbox_inverted = QtWidgets.QCheckBox()
                 self.gridLayout_patterns.addWidget(label, i, 0)
                 self.gridLayout_patterns.addWidget(self.checkbox_inverted, i, 1)
-                self.checkbox_inverted.setChecked(pattern_protocol[key])
+                self.checkbox_inverted.setChecked(pattern_protocol.get(key, False))
                 self.checkbox_inverted.stateChanged.connect(self.update_ui_pattern)
                 continue
 

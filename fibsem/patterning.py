@@ -83,6 +83,7 @@ REQUIRED_KEYS = {
         "hwidth",
         "depth",
         "distance",
+        "inverted",
         "cross_section",
     ),
     "Clover": ("radius", "depth"),
@@ -689,6 +690,7 @@ class WaffleNotchPattern(BasePattern):
         depth = protocol["depth"]
         distance = protocol["distance"]
         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+        inverted = -1  if protocol.get("inverted", False) else 1
 
         # five patterns
         top_vertical_pattern = FibsemRectangleSettings(
@@ -717,7 +719,7 @@ class WaffleNotchPattern(BasePattern):
             width=hwidth,
             height=hheight,
             depth=depth,
-            centre_x=point.x + hwidth / 2 + vwidth / 2,
+            centre_x=point.x + (hwidth / 2 + vwidth / 2) * inverted,
             centre_y=point.y - distance / 2,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
@@ -728,7 +730,7 @@ class WaffleNotchPattern(BasePattern):
             width=hwidth,
             height=hheight,
             depth=depth,
-            centre_x=point.x + hwidth / 2 + vwidth / 2,
+            centre_x=point.x + (hwidth / 2 + vwidth / 2) * inverted,
             centre_y=point.y + distance / 2,
             cleaning_cross_section=False,
             scan_direction="BottomToTop",
@@ -739,7 +741,7 @@ class WaffleNotchPattern(BasePattern):
             width=vwidth,
             height=distance + hheight,
             depth=depth,
-            centre_x=point.x + hwidth + vwidth,
+            centre_x=point.x + (hwidth + vwidth) * inverted,
             centre_y=point.y,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
