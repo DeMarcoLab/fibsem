@@ -24,7 +24,7 @@ def main():
         height = settings.protocol["milling"]["height"],
         depth = settings.protocol["milling"]["depth"],
         scan_direction= settings.protocol["milling"]["scan_direction"],
-        cleaning_cross_section= settings.protocol["milling"]["cleaning_cross_section"]
+        cross_section= settings.protocol["milling"]["cross_section"]
     )
 
     # angle correction

@@ -1677,9 +1677,6 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         
         # get patterning api
-        # patterning_api = self.connection.patterning
-        # create_pattern_function = patterning_api.create_cleaning_cross_section if pattern_settings.cleaning_cross_section else patterning_api.create_rectangle
-
         patterning_api = self.connection.patterning
         if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
             create_pattern_function = patterning_api.create_regular_cross_section
@@ -1716,14 +1713,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.warning(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.warning(f"Supported scan directions are: {available_scan_directions}")        
         
-        # set passes
-        # if pattern_settings.passes: # not zero
-        #     pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
-            
-            # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
-            # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
-            # NB: the current must be set before doing this, otherwise it will be out of range
-        
+        # set passes       
         if pattern_settings.passes: # not zero
             if isinstance(pattern, RegularCrossSectionPattern):
                 pattern.multi_scan_pass_count = pattern_settings.passes
@@ -4176,6 +4166,7 @@ class TescanMicroscope(FibsemMicroscope):
             logging.info(f"Supported scan directions are: Flyback, RLE, SpiralInsideOut, SpiralOutsideIn, ZigZag")
         self.connection.DrawBeam.ScanningPath = pattern_settings.scan_direction
 
+        # TODO: replace with cross_section parameter
         if pattern_settings.cleaning_cross_section:
             self.layer.addRectanglePolish(
                 CenterX=centre_x,
@@ -4245,7 +4236,7 @@ class TescanMicroscope(FibsemMicroscope):
             
         """
         if pattern_settings.cleaning_cross_section:
-            self.layer.addAnnulusPolish(
+            pattern = self.layer.addAnnulusPolish(
                 CenterX=pattern_settings.centre_x,
                 CenterY=pattern_settings.centre_y,
                 RadiusA=pattern_settings.radius,
@@ -4253,15 +4244,15 @@ class TescanMicroscope(FibsemMicroscope):
                 Depth=pattern_settings.depth,
                 DepthUnit='m',
             )
-
-        pattern = self.layer.addAnnulusFilled(
-            CenterX=pattern_settings.centre_x,
-            CenterY=pattern_settings.centre_y,
-            RadiusA=pattern_settings.radius,
-            RadiusB=0,
-            Depth=pattern_settings.depth,
-            DepthUnit='m',
-        )
+        else:
+            pattern = self.layer.addAnnulusFilled(
+                CenterX=pattern_settings.centre_x,
+                CenterY=pattern_settings.centre_y,
+                RadiusA=pattern_settings.radius,
+                RadiusB=0,
+                Depth=pattern_settings.depth,
+                DepthUnit='m',
+            )
 
         return pattern
     

@@ -21,9 +21,9 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 
     
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation","passes", "cleaning_cross_section","scan_direction", "cross_section"),
+    "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-    "Circle": ("radius", "depth","cleaning_cross_section"),
+    "Circle": ("radius", "depth"),
     "Trench": (
         "lamella_width",
         "lamella_height",
@@ -31,7 +31,6 @@ REQUIRED_KEYS = {
         "size_ratio",
         "offset",
         "depth",
-        "cleaning_cross_section",
         "cross_section",
     ),
     "Horseshoe": (
@@ -56,7 +55,7 @@ REQUIRED_KEYS = {
         "inverted",
         "cross_section", 
     ),
-    "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section", "cross_section"),
+    "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
     "Undercut": (
         "height",
         "width",
@@ -64,7 +63,6 @@ REQUIRED_KEYS = {
         "trench_width",
         "rhs_height",
         "h_offset",
-        "cleaning_cross_section",
         "cross_section",
     ),
     "MicroExpansion": (
