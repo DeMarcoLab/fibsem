@@ -120,6 +120,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.label_milling_current.setVisible(_THERMO)
         self.label_voltage.setVisible(_THERMO)
         self.spinBox_voltage.setVisible(_THERMO) # TODO: set this to the available voltages
+        self.label_patterning_mode.setVisible(_THERMO)
+        self.comboBox_patterning_mode.setVisible(_THERMO)
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_milling_current.valueChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
@@ -127,6 +129,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
                 self.protocol["milling"]["application_file"] = "Si"
         self.comboBox_application_file.setCurrentText(self.protocol["milling"]["application_file"])
+        self.comboBox_patterning_mode.addItems(["Serial", "Parallel"])
         
         # TESCAN
         self.label_rate.setVisible(_TESCAN)
@@ -628,6 +631,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
         self.comboBox_preset.setCurrentText(str(milling.preset))
         self.spinBox_voltage.setValue(milling.milling_voltage)
+        self.comboBox_patterning_mode.setCurrentText(milling.patterning_mode)
 
     def get_milling_settings_from_ui(self):
 
@@ -643,6 +647,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             preset= self.comboBox_preset.currentText(),
             spacing=self.doubleSpinBox_spacing.value(),
             milling_voltage=self.spinBox_voltage.value(),
+            patterning_mode=self.comboBox_patterning_mode.currentText()
         )
 
         return milling_settings

@@ -30,36 +30,6 @@
       </size>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="2" column="1">
-       <widget class="QComboBox" name="comboBox_milling_stage"/>
-      </item>
-      <item row="22" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_y">
-        <property name="minimum">
-         <double>-10000000000000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>99999999999999991611392.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QPushButton" name="pushButton_remove_milling_stage">
-        <property name="text">
-         <string>Remove</string>
-        </property>
-       </widget>
-      </item>
-      <item row="21" column="0">
-       <widget class="QLabel" name="label_centre_x">
-        <property name="text">
-         <string>Centre X (um)</string>
-        </property>
-       </widget>
-      </item>
       <item row="8" column="0">
        <widget class="QLabel" name="label_hfw">
         <property name="text">
@@ -67,62 +37,93 @@
         </property>
        </widget>
       </item>
-      <item row="27" column="1">
-       <widget class="QCheckBox" name="checkBox_relative_move">
-        <property name="text">
-         <string>Keep Relative Orientation</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time">
-        <property name="decimals">
-         <number>4</number>
-        </property>
-        <property name="minimum">
-         <double>0.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>4000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="27" column="0">
+      <item row="28" column="0">
        <widget class="QCheckBox" name="checkBox_live_update">
         <property name="text">
          <string>Live Update</string>
         </property>
        </widget>
       </item>
-      <item row="12" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_spot_size">
-        <property name="decimals">
-         <number>4</number>
-        </property>
-        <property name="minimum">
-         <double>0.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>100000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
+      <item row="14" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_spacing">
         <property name="value">
-         <double>0.000000000000000</double>
+         <double>1.000000000000000</double>
         </property>
        </widget>
       </item>
-      <item row="10" column="1">
+      <item row="5" column="0" colspan="2">
+       <widget class="QLabel" name="label_milling_header">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Milling</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
+      </item>
+      <item row="22" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_x">
+        <property name="minimum">
+         <double>-9999999999999999583119736832.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000000000000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_milling_stage">
+        <property name="text">
+         <string>Milling Stage</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="0">
+       <widget class="QLabel" name="label_dwell_time">
+        <property name="text">
+         <string>Dwell Time (us)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="20" column="0">
+       <widget class="QLabel" name="label_pattern_set">
+        <property name="text">
+         <string>Pattern</string>
+        </property>
+       </widget>
+      </item>
+      <item row="18" column="0" colspan="2">
+       <widget class="QLabel" name="label_patterns_header">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Patterns</string>
+        </property>
+       </widget>
+      </item>
+      <item row="15" column="0">
+       <widget class="QLabel" name="label_preset">
+        <property name="text">
+         <string>Preset</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="1">
        <widget class="QDoubleSpinBox" name="doubleSpinBox_rate">
         <property name="decimals">
          <number>4</number>
@@ -141,139 +142,33 @@
         </property>
        </widget>
       </item>
-      <item row="19" column="1">
+      <item row="3" column="0">
+       <widget class="QPushButton" name="pushButton_add_milling_stage">
+        <property name="text">
+         <string>Add</string>
+        </property>
+       </widget>
+      </item>
+      <item row="20" column="1">
        <widget class="QComboBox" name="comboBox_patterns"/>
       </item>
-      <item row="22" column="0">
-       <widget class="QLabel" name="label_centre_y">
-        <property name="text">
-         <string>Centre Y (um)</string>
-        </property>
-       </widget>
+      <item row="15" column="1">
+       <widget class="QComboBox" name="comboBox_preset"/>
       </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_voltage">
-        <property name="text">
-         <string>Voltage (V)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_spacing">
-        <property name="value">
-         <double>1.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="24" column="0" rowspan="2" colspan="2">
-       <layout class="QGridLayout" name="gridLayout_patterns"/>
-      </item>
-      <item row="4" column="0" colspan="2">
-       <widget class="Line" name="line_3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="0" colspan="2">
-       <spacer name="verticalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="19" column="0">
-       <widget class="QLabel" name="label_pattern_set">
-        <property name="text">
-         <string>Pattern</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="1">
-       <widget class="QComboBox" name="comboBox_application_file"/>
-      </item>
-      <item row="5" column="0" colspan="2">
-       <widget class="QLabel" name="label_milling_header">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Milling</string>
-        </property>
-       </widget>
-      </item>
-      <item row="29" column="0" colspan="2">
+      <item row="30" column="0" colspan="2">
        <widget class="QLabel" name="label_milling_instructions">
         <property name="text">
          <string>Controls:</string>
         </property>
        </widget>
       </item>
-      <item row="21" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_x">
-        <property name="minimum">
-         <double>-9999999999999999583119736832.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000000000000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="0">
-       <widget class="QLabel" name="label_spot_size">
+      <item row="28" column="1">
+       <widget class="QCheckBox" name="checkBox_relative_move">
         <property name="text">
-         <string>Spot Size (um)</string>
+         <string>Keep Relative Orientation</string>
         </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QSpinBox" name="spinBox_voltage">
-        <property name="maximum">
-         <number>1000000</number>
-        </property>
-        <property name="value">
-         <number>30000</number>
-        </property>
-       </widget>
-      </item>
-      <item row="14" column="0">
-       <widget class="QLabel" name="label_preset">
-        <property name="text">
-         <string>Preset</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="0">
-       <widget class="QLabel" name="label_application_file">
-        <property name="text">
-         <string>Application File</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="0">
-       <widget class="QLabel" name="label_dwell_time">
-        <property name="text">
-         <string>Dwell Time (us)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_milling_stage">
-        <property name="text">
-         <string>Milling Stage</string>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -296,30 +191,104 @@
         </property>
        </widget>
       </item>
-      <item row="16" column="0" colspan="2">
+      <item row="22" column="0">
+       <widget class="QLabel" name="label_centre_x">
+        <property name="text">
+         <string>Centre X (um)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="17" column="0" colspan="2">
        <widget class="Line" name="line_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
-      </item>
-      <item row="14" column="1">
-       <widget class="QComboBox" name="comboBox_preset"/>
-      </item>
-      <item row="10" column="0">
-       <widget class="QLabel" name="label_rate">
-        <property name="text">
-         <string>Rate (mm3/A/s)</string>
+      <item row="23" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_y">
+        <property name="minimum">
+         <double>-10000000000000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>99999999999999991611392.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
         </property>
        </widget>
       </item>
-      <item row="30" column="0" colspan="2">
-       <widget class="QPushButton" name="pushButton_update_pattern">
+      <item row="12" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time">
+        <property name="decimals">
+         <number>4</number>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>4000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="14" column="0">
+       <widget class="QLabel" name="label_spacing">
         <property name="text">
-         <string>Update Pattern</string>
+         <string>Spacing</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="pushButton_remove_milling_stage">
+        <property name="text">
+         <string>Remove</string>
+        </property>
+       </widget>
+      </item>
+      <item row="29" column="1">
+       <widget class="QCheckBox" name="checkBox_show_milling_crosshair">
+        <property name="text">
+         <string>Show Milling Crosshair</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="QLabel" name="label_application_file">
+        <property name="text">
+         <string>Application File</string>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="0">
+       <widget class="QLabel" name="label_spot_size">
+        <property name="text">
+         <string>Spot Size (um)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="23" column="0">
+       <widget class="QLabel" name="label_centre_y">
+        <property name="text">
+         <string>Centre Y (um)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="25" column="0" rowspan="2" colspan="2">
+       <layout class="QGridLayout" name="gridLayout_patterns"/>
+      </item>
+      <item row="11" column="0">
+       <widget class="QLabel" name="label_rate">
+        <property name="text">
+         <string>Rate (mm3/A/s)</string>
         </property>
        </widget>
       </item>
@@ -330,43 +299,84 @@
         </property>
        </widget>
       </item>
-      <item row="17" column="0" colspan="2">
-       <widget class="QLabel" name="label_patterns_header">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
+      <item row="6" column="1">
+       <widget class="QSpinBox" name="spinBox_voltage">
+        <property name="maximum">
+         <number>1000000</number>
         </property>
-        <property name="text">
-         <string>Patterns</string>
+        <property name="value">
+         <number>30000</number>
         </property>
        </widget>
       </item>
-      <item row="13" column="0">
-       <widget class="QLabel" name="label_spacing">
+      <item row="31" column="0" colspan="2">
+       <widget class="QPushButton" name="pushButton_update_pattern">
         <property name="text">
-         <string>Spacing</string>
+         <string>Update Pattern</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="pushButton_add_milling_stage">
-        <property name="text">
-         <string>Add</string>
+      <item row="4" column="0" colspan="2">
+       <widget class="Line" name="line_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
-      <item row="28" column="1">
-       <widget class="QCheckBox" name="checkBox_show_milling_crosshair">
-        <property name="text">
-         <string>Show Milling Crosshair</string>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="comboBox_milling_stage"/>
+      </item>
+      <item row="13" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_spot_size">
+        <property name="decimals">
+         <number>4</number>
         </property>
-        <property name="checked">
-         <bool>true</bool>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.000000000000000</double>
         </property>
        </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_voltage">
+        <property name="text">
+         <string>Voltage (V)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1">
+       <widget class="QComboBox" name="comboBox_application_file"/>
+      </item>
+      <item row="27" column="0" colspan="2">
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="10" column="0">
+       <widget class="QLabel" name="label_patterning_mode">
+        <property name="text">
+         <string>Patterning Mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <widget class="QComboBox" name="comboBox_patterning_mode"/>
       </item>
      </layout>
     </widget>
