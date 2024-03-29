@@ -3,6 +3,100 @@ import yaml
 import os
 from fibsem.config import CONFIG_PATH, DEFAULT_CONFIGURATION_VALUES
 
+# TODO: 
+# eucentric heights -> requires taking an image?
+# reference rotation -> how to get this without having the user move to position?
+
+def system_fingerprint(ip_address: str = "192.168.0.1", manufactuer: str = "Thermo") -> dict:
+    """Automatically configure system based on microscope fingerprinting."""
+
+    # load default configuration
+    with open(os.path.join(CONFIG_PATH, "microscope-configuration.yaml"), "r") as f:
+        config = yaml.safe_load(f)
+
+    if manufactuer != "Thermo":
+        raise ValueError("Only Thermo Fisher microscopes are currently supported for fingerprinting.")
+
+    # ip,  manufacturer
+    config["info"]["ip"] = ip_address               # default ip (support pc -> microscope pc)
+    config["info"]["manufacturer"] = manufactuer    # default manufacturer
+
+    from fibsem.microscope import ThermoMicroscope
+
+    microscope = ThermoMicroscope()
+    microscope.connect_to_microscope(config["info"]["ip"])
+
+    # get name of system
+    system_name = microscope.connection.service.system.name
+    serial_number = microscope.connection.service.system.serial_number
+    config["info"]["name"] = f"{system_name}-{serial_number}-configuration" 
+
+    # stage
+    # enabled, compustage, rotation, tilt
+    stage_enabled = microscope.connection.specimen.stage.is_installed
+    compustage_enabled = microscope.connection.specimen.stage.compustage.is_installed
+    config["stage"]["enabled"] = stage_enabled or compustage_enabled
+    config["stage"]["rotation"] = stage_enabled
+    config["stage"]["tilt"] = stage_enabled or compustage_enabled
+
+    # rotation reference, rotation_180
+    if compustage_enabled: # TODO: check if this is accurate
+        config["stage"]["rotation_reference"] = 0
+        config["stage"]["rotation_180"] = 0
+
+    # otherwise? I think need to get this manually?
+    # TODO: get the user to move the stage to this position?
+    # tilt = 0, rotation = same as when loading?
+
+    # eucentric height map, [electron, ion] (otherwise we need to take an image to get this?)
+    eucentric_height_map = {
+        "Aquilios": [7e-3, 16.5e-3],
+        "Helios": [4e-3, 16.5e-3],
+        "Artcis": [4e-3, 16.5e-3],
+        "Scios": [4e-3, 10.0e-3]
+    }
+
+    # electron beam
+    config["electron"]["enabled"] = microscope.connection.beams.electron_beam.is_installed
+    config["electron"]["column_tilt"] = get_column_tilt(config["info"]["manufacturer"], "electron")
+    config["electron"]["eucentric_height"] = eucentric_height_map[system_name][0]
+
+    # ion beam
+    # is_installed, column tilt, eucentric_height (req taking image), plasma, plasma gas
+    config["ion"]["enabled"] = microscope.connection.beams.ion_beam.is_installed
+    config["ion"]["column_tilt"] = get_column_tilt(config["info"]["manufacturer"], "ion")
+    config["ion"]["eucentric_height"] = eucentric_height_map[system_name][1]
+
+    # plasma enabled
+    ion_plasma_enabled = False
+    ion_plasma_gas = "None"
+    if config["ion"]["enabled"]:
+
+        # check if plasma enabled
+        ion_plasma_enabled = hasattr(microscope.connection.beams.ion_beam.source, "plasma_gas")
+
+        if ion_plasma_enabled:
+            ion_plasma_gas = microscope.connection.beams.ion_beam.source.plasma_gas.value
+
+    config["ion"]["plasma"] = ion_plasma_enabled
+    config["ion"]["plasma_gas"] = ion_plasma_gas
+
+    # manipulator
+    config["manipulator"]["enabled"] = microscope.connection.specimen.manipulator.is_installed
+    config["manipulator"]["rotation"] = False   # always?
+    config["maniuplator"]["tilt"] = False       # always?
+
+    # gis
+    gis_enabled = len(microscope.connection.list_all_gis_ports())
+    multichem_enabled = len(microscope.connection.list_all_multichem_ports())
+    sputter_coater_enabled = microscope.connection.specimen.sputter_coater.is_installed
+
+    config["gis"]["enabled"] = gis_enabled
+    config["gis"]["multichem"] = multichem_enabled
+    config["gis"]["sputter_coater"] = sputter_coater_enabled
+
+
+    return config
 
 
 def get_column_tilt(manufacturer: str, beam: str) -> int:
