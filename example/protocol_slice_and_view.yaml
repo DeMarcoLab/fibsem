@@ -8,4 +8,4 @@ milling:
   depth: 5.e-6
   milling_current: 2.e-9
   scan_direction: BottomToTop
-  cleaning_cross_section: True
+  cross_section: Rectangle

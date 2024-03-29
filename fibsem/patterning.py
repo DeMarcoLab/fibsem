@@ -8,17 +8,22 @@ from fibsem import constants
 from fibsem.structures import (Point, 
     FibsemPatternSettings, FibsemRectangleSettings, 
     FibsemCircleSettings, FibsemBitmapSettings,
-    FibsemLineSettings)
+    FibsemLineSettings, CrossSectionPattern)
 
 
 def check_keys(protocol: dict, required_keys: list[str]) -> bool:
     return all([k in protocol.keys() for k in required_keys])
 
+# TODO: define the configuration for each key,
+# e.g. 
+# "width": {"type": "float", "min": 0, "max": 1000, "default": 100, "description": "Width of the rectangle"}
+# "cross_section": {"type": "str", "options": [cs.name for cs in CrossSectionPattern], "default": "Rectangle", "description": "Cross section of the milling pattern"}
 
+    
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation","passes", "cleaning_cross_section","scan_direction"),
+    "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-    "Circle": ("radius", "depth","cleaning_cross_section"),
+    "Circle": ("radius", "depth"),
     "Trench": (
         "lamella_width",
         "lamella_height",
@@ -26,7 +31,7 @@ REQUIRED_KEYS = {
         "size_ratio",
         "offset",
         "depth",
-        "cleaning_cross_section",
+        "cross_section",
     ),
     "Horseshoe": (
         "lamella_width",
@@ -38,6 +43,7 @@ REQUIRED_KEYS = {
         "side_width",
         "depth",
         "scan_direction",
+        "cross_section",
     ),
     "HorseshoeVertical": (
         "width",
@@ -47,8 +53,9 @@ REQUIRED_KEYS = {
         "depth",
         "scan_direction",
         "inverted",
+        "cross_section", 
     ),
-    "Fiducial": ("height", "width", "depth", "rotation","cleaning_cross_section"),
+    "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
     "Undercut": (
         "height",
         "width",
@@ -56,7 +63,7 @@ REQUIRED_KEYS = {
         "trench_width",
         "rhs_height",
         "h_offset",
-        "cleaning_cross_section",
+        "cross_section",
     ),
     "MicroExpansion": (
         "height",
@@ -64,7 +71,9 @@ REQUIRED_KEYS = {
         "depth",
         "distance",
     ),
-    "ArrayPattern": ("height", "width", "depth", "n_columns", "n_rows", "pitch_vertical", "pitch_horizontal", "passes", "scan_direction"),
+    "ArrayPattern": ("height", "width", "depth", "n_columns", "n_rows", 
+                    "pitch_vertical", "pitch_horizontal", 
+                    "passes", "scan_direction", "cross_section"),
     "WaffleNotch": (
         "vheight",
         "vwidth",
@@ -72,6 +81,8 @@ REQUIRED_KEYS = {
         "hwidth",
         "depth",
         "distance",
+        "inverted",
+        "cross_section",
     ),
     "Clover": ("radius", "depth"),
     "TriForce": ("height", "width", "depth"),
@@ -156,6 +167,7 @@ class RectanglePattern(BasePattern):
         protocol["cleaning_cross_section"] = protocol.get(
             "cleaning_cross_section", False
         )
+        protocol["cross_section"] = protocol.get("cross_section", "Rectangle")
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
         protocol["passes"] = protocol.get("passes", None)
         self.patterns = [FibsemRectangleSettings.from_dict(protocol)]
@@ -262,6 +274,7 @@ class TrenchPattern(BasePattern):
         offset = protocol["offset"]
         depth = protocol["depth"]
         use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
+        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
@@ -277,6 +290,8 @@ class TrenchPattern(BasePattern):
             centre_y=centre_lower_y,
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="BottomToTop",
+            cross_section = cross_section
+
         )
 
         upper_pattern_settings = FibsemRectangleSettings(
@@ -287,6 +302,7 @@ class TrenchPattern(BasePattern):
             centre_y=centre_upper_y,
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
+            cross_section = cross_section
         )
 
         self.patterns = [lower_pattern_settings, upper_pattern_settings]
@@ -317,6 +333,8 @@ class HorseshoePattern(BasePattern):
         upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
+        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
@@ -331,6 +349,7 @@ class HorseshoePattern(BasePattern):
             centre_y=centre_lower_y,
             cleaning_cross_section=False,
             scan_direction="BottomToTop",
+            cross_section = cross_section
         )
 
         upper_pattern = FibsemRectangleSettings(
@@ -341,6 +360,7 @@ class HorseshoePattern(BasePattern):
             centre_y=centre_upper_y,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
+            cross_section = cross_section
         )
 
         side_pattern = FibsemRectangleSettings(
@@ -353,6 +373,7 @@ class HorseshoePattern(BasePattern):
             centre_y=point.y,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
+            cross_section=cross_section
         )
 
         self.patterns = [lower_pattern, upper_pattern, side_pattern]
@@ -385,6 +406,7 @@ class HorseshoePatternVertical(BasePattern):
         depth = protocol["depth"]
         scan_direction = protocol.get("scan_direction", "TopToBottom")
         inverted = protocol.get("inverted", False)
+        cross_section=CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
 
         left_pattern = FibsemRectangleSettings(
             width=trench_width,
@@ -394,6 +416,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_y=point.y,
             cleaning_cross_section=False,
             scan_direction=scan_direction,
+            cross_section=cross_section
         )
 
         right_pattern = FibsemRectangleSettings(
@@ -404,6 +427,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_y=point.y,
             cleaning_cross_section=False,
             scan_direction=scan_direction,
+            cross_section=cross_section
         )
         y_offset = (height / 2) + (upper_trench_height / 2)
         if inverted:
@@ -416,6 +440,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_y=point.y + y_offset,
             cleaning_cross_section=False,
             scan_direction=scan_direction,
+            cross_section=cross_section
         )
         
         self.patterns = [left_pattern,right_pattern, upper_pattern]
@@ -444,6 +469,7 @@ class FiducialPattern(BasePattern):
         protocol["cleaning_cross_section"] = protocol.get(
             "cleaning_cross_section", False
         )
+        protocol["cross_section"] = protocol.get("cross_section", "Rectangle")
         protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
 
         left_pattern = FibsemRectangleSettings.from_dict(protocol)
@@ -477,7 +503,7 @@ class UndercutPattern(BasePattern):
         jcut_trench_thickness = protocol["trench_width"]
         jcut_depth = protocol["depth"]
         jcut_h_offset = protocol["h_offset"]
-
+        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
         use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
 
         # top_jcut
@@ -495,6 +521,7 @@ class UndercutPattern(BasePattern):
             centre_y=point.y,
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
+            cross_section=cross_section
         )
         # rhs jcut
         jcut_rhs_centre_x = point.x + (jcut_width / 2) - jcut_trench_thickness / 2
@@ -511,6 +538,7 @@ class UndercutPattern(BasePattern):
             centre_y=jcut_rhs_centre_y,
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
+            cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
         )
 
 
@@ -581,6 +609,7 @@ class ArrayPattern(BasePattern):
     required_keys: tuple[str] = REQUIRED_KEYS["ArrayPattern"]
     patterns = None
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
+    # ref: weld cross-section/ passes: https://www.nature.com/articles/s41592-023-02113-5
     protocol = None
     point = None
 
@@ -600,6 +629,7 @@ class ArrayPattern(BasePattern):
         passes = protocol.get("passes", 1)
         scan_direction = protocol.get("scan_direction", "TopToBottom")
         passes = int(passes) if passes is not None else None
+        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
 
         # create a 2D array of points
         points = []
@@ -625,6 +655,7 @@ class ArrayPattern(BasePattern):
 
                 rotation=rotation,
                 passes=passes,
+                cross_section=cross_section,
             )
             patterns.append(pattern_settings)
 
@@ -656,6 +687,8 @@ class WaffleNotchPattern(BasePattern):
         hheight = protocol["hheight"]
         depth = protocol["depth"]
         distance = protocol["distance"]
+        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+        inverted = -1  if protocol.get("inverted", False) else 1
 
         # five patterns
         top_vertical_pattern = FibsemRectangleSettings(
@@ -666,6 +699,7 @@ class WaffleNotchPattern(BasePattern):
             centre_y=point.y - distance / 2 - vheight / 2 + hheight / 2,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
+            cross_section=cross_section
         )
 
         bottom_vertical_pattern = FibsemRectangleSettings(
@@ -676,36 +710,40 @@ class WaffleNotchPattern(BasePattern):
             centre_y=point.y + distance / 2 + vheight / 2 - hheight / 2,
             cleaning_cross_section=False,
             scan_direction="BottomToTop",
+            cross_section=cross_section
         )
 
         top_horizontal_pattern = FibsemRectangleSettings(
             width=hwidth,
             height=hheight,
             depth=depth,
-            centre_x=point.x + hwidth / 2 + vwidth / 2,
+            centre_x=point.x + (hwidth / 2 + vwidth / 2) * inverted,
             centre_y=point.y - distance / 2,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
+            cross_section=cross_section
         )
 
         bottom_horizontal_pattern = FibsemRectangleSettings(
             width=hwidth,
             height=hheight,
             depth=depth,
-            centre_x=point.x + hwidth / 2 + vwidth / 2,
+            centre_x=point.x + (hwidth / 2 + vwidth / 2) * inverted,
             centre_y=point.y + distance / 2,
             cleaning_cross_section=False,
             scan_direction="BottomToTop",
+            cross_section=cross_section
         )
 
         centre_vertical_pattern = FibsemRectangleSettings(
             width=vwidth,
             height=distance + hheight,
             depth=depth,
-            centre_x=point.x + hwidth + vwidth,
+            centre_x=point.x + (hwidth + vwidth) * inverted,
             centre_y=point.y,
             cleaning_cross_section=False,
             scan_direction="TopToBottom",
+            cross_section=cross_section
         )
 
         self.patterns = [
@@ -1035,8 +1073,11 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
         application_file=protocol.get("application_file", "Si"),
         preset=protocol.get("preset", "30 keV; 20 nA"))
 
+    # milling stage name
+    name = protocol.get("name", f"{key.title()} {i+1:02d}")
+
     stage = FibsemMillingStage(
-        name=f"{key.title()} {i+1:02d}", num=i, milling=mill_settings, pattern=pattern
+        name=name, num=i, milling=mill_settings, pattern=pattern
     )
     return stage
 

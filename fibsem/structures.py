@@ -880,7 +880,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             "centre_y": self.centre_y,
             "cleaning_cross_section": self.cleaning_cross_section,
             "scan_direction": self.scan_direction,
-            "cross_section": self.cross_section,
+            "cross_section": self.cross_section.name,
             "passes": self.passes,
         }
 
@@ -895,7 +895,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             cleaning_cross_section=data.get("cleaning_cross_section", False),
             rotation=data.get("rotation", 0),
             scan_direction=data.get("scan_direction", "TopToBottom"),
-            cross_section=data.get("cross_section", CrossSectionPattern.Rectangle),
+            cross_section=CrossSectionPattern[data.get("cross_section", "Rectangle")],
             passes=data.get("passes", 0),
         )
 

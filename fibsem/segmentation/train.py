@@ -238,6 +238,7 @@ def _setup_dataset(config:dict):
         batch_size=config["batch_size"],
         val_split=config.get("split", 0.15),
         _validate_dataset=config.get("validate_dataset", True),
+        apply_transforms=config.get("apply_transforms", False),
     )
 
     return train_data_loader, val_data_loader

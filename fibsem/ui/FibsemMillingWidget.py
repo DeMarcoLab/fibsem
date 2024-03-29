@@ -15,7 +15,7 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                MicroscopeSettings,
-                               Point)
+                               Point, CrossSectionPattern)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import (_draw_patterns_in_napari, _remove_all_layers, 
@@ -28,7 +28,7 @@ from fibsem.ui import _stylesheets
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
                      "number", "passes", "n_rectangles", "overlap", "inverted",
-                     "n_columns", "n_rows" ]
+                     "n_columns", "n_rows", "cross_section" ]
 _ANGLE_KEYS = ["rotation"]
 _LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
@@ -120,6 +120,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.label_milling_current.setVisible(_THERMO)
         self.label_voltage.setVisible(_THERMO)
         self.spinBox_voltage.setVisible(_THERMO) # TODO: set this to the available voltages
+        self.label_patterning_mode.setVisible(_THERMO)
+        self.comboBox_patterning_mode.setVisible(_THERMO)
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_milling_current.valueChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
@@ -127,6 +129,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
                 self.protocol["milling"]["application_file"] = "Si"
         self.comboBox_application_file.setCurrentText(self.protocol["milling"]["application_file"])
+        self.comboBox_patterning_mode.addItems(["Serial", "Parallel"])
         
         # TESCAN
         self.label_rate.setVisible(_TESCAN)
@@ -171,8 +174,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
         
         # update ui
-        self.pushButton.clicked.connect(lambda: self.update_ui())
-        self.pushButton.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_update_pattern.clicked.connect(lambda: self.update_ui())
+        self.pushButton_update_pattern.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.milling_notification.connect(self.update_milling_ui)
 
         # run milling
@@ -197,6 +200,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_y.valueChanged.connect(self.update_ui_pattern)
         self.checkBox_show_milling_crosshair.stateChanged.connect(self.update_ui_pattern)
         self.checkBox_live_update.setChecked(True)
+        self.checkBox_live_update.stateChanged.connect(self.toggle_live_update)
+        self.toggle_live_update()
 
 
         self._available_scan_directions = self.microscope.get_available_values(key="scan_direction")
@@ -288,6 +293,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # set the pattern protcol
         self.update_pattern_ui(milling_stage)
 
+    def toggle_live_update(self):
+
+        live_update = self.checkBox_live_update.isChecked()
+        self.pushButton_update_pattern.setVisible(not live_update)
 
     def update_ui_pattern(self):
 
@@ -393,8 +402,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.checkbox_inverted = QtWidgets.QCheckBox()
                 self.gridLayout_patterns.addWidget(label, i, 0)
                 self.gridLayout_patterns.addWidget(self.checkbox_inverted, i, 1)
-                self.checkbox_inverted.setChecked(pattern_protocol[key])
+                self.checkbox_inverted.setChecked(pattern_protocol.get(key, False))
                 self.checkbox_inverted.stateChanged.connect(self.update_ui_pattern)
+                continue
+
+            if key == "cross_section":
+                label = QtWidgets.QLabel(key)
+                self.comboBox_cross_section = QtWidgets.QComboBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.comboBox_cross_section, i, 1)               
+                self.comboBox_cross_section.addItems([section.name for section in CrossSectionPattern])
+                self.comboBox_cross_section.setCurrentText(pattern_protocol.get(key, "Rectangle"))
+                self.comboBox_cross_section.currentIndexChanged.connect(self.update_ui_pattern)
                 continue
 
             # limits
@@ -445,6 +464,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 continue
             if key == "inverted":
                 pattern_dict[key] = self.checkbox_inverted.isChecked()
+                continue
+            if key == "cross_section":
+                pattern_dict[key] = self.comboBox_cross_section.currentText()
                 continue
                 
             spinbox = self.gridLayout_patterns.itemAtPosition(i, 1).widget()
@@ -609,6 +631,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
         self.comboBox_preset.setCurrentText(str(milling.preset))
         self.spinBox_voltage.setValue(milling.milling_voltage)
+        self.comboBox_patterning_mode.setCurrentText(milling.patterning_mode)
 
     def get_milling_settings_from_ui(self):
 
@@ -624,6 +647,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             preset= self.comboBox_preset.currentText(),
             spacing=self.doubleSpinBox_spacing.value(),
             milling_voltage=self.spinBox_voltage.value(),
+            patterning_mode=self.comboBox_patterning_mode.currentText()
         )
 
         return milling_settings
@@ -683,7 +707,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
 
         """Toggle microscope and pattern interactions."""
-        self.pushButton.setEnabled(enabled)
+        self.pushButton_update_pattern.setEnabled(enabled)
         self.pushButton_add_milling_stage.setEnabled(enabled)
         self.pushButton_remove_milling_stage.setEnabled(enabled)
         # self.pushButton_save_milling_stage.setEnabled(enabled)
@@ -691,7 +715,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if enabled:
             self.pushButton_run_milling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Run Milling")
-            self.pushButton.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_update_pattern.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
         elif milling:
@@ -699,7 +723,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_run_milling.setText("Running...")
         else:
             self.pushButton_run_milling.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_update_pattern.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
 

@@ -84,7 +84,8 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                ThermoGISLine,ThermoMultiChemLine,
                             FibsemUser, FibsemExperiment, 
                             FibsemPatternSettings, FibsemRectangleSettings, 
-                            FibsemCircleSettings, FibsemLineSettings, FibsemBitmapSettings)
+                            FibsemCircleSettings, FibsemLineSettings, FibsemBitmapSettings, 
+                            CrossSectionPattern)
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -765,6 +766,12 @@ class ThermoMicroscope(FibsemMicroscope):
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
 
+    def reconnect(self):
+        if not hasattr(self, "system"):
+            raise Exception("Please connect to the microscope first")
+        
+        self.disconnect()
+        self.connect_to_microscope(self.system.info.ip_address)
 
     def disconnect(self):
         self.connection.disconnect()
@@ -792,6 +799,9 @@ class ThermoMicroscope(FibsemMicroscope):
             >>> microscope.connect_to_microscope("192.168.0.10", 7520)
 
         """
+        if self.connection is None:
+            self.connection = SdbMicroscopeClient()
+
         # TODO: get the port
         logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
         self.connection.connect(host=ip_address, port=port)
@@ -1668,19 +1678,16 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # get patterning api
         patterning_api = self.connection.patterning
-        create_pattern_function = patterning_api.create_cleaning_cross_section if pattern_settings.cleaning_cross_section else patterning_api.create_rectangle
-
-        # patterning_api = self.connection.patterning
-        # from fibsem.structures import CrossSectionPattern
-        # if isinstance(pattern_settings.cross_section, CrossSectionPattern.RegularCrossSection):
-        #     create_pattern_function = patterning_api.create_regular_cross_section
-        # elif isinstance(pattern_settings.cross_section, CrossSectionPattern.CleaningCrossSection):
-        #     create_pattern_function = patterning_api.create_cleaning_cross_section
-        # else:
-        #     create_pattern_function = patterning_api.create_rectangle
+        if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
+            create_pattern_function = patterning_api.create_regular_cross_section
+        elif pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
+            create_pattern_function = patterning_api.create_cleaning_cross_section
+        else:
+            create_pattern_function = patterning_api.create_rectangle
         
-        # if pattern_settings.cleaning_cross_section:    
-        #     create_pattern_function = patterning_api.create_cleaning_cross_section
+        if pattern_settings.cleaning_cross_section:
+            logging.warning(f"Deprecated: cleaning_cross_section is deprecated. Use cross_section instead. This will be removed in a future release.")    
+            create_pattern_function = patterning_api.create_cleaning_cross_section
 
         
             
@@ -1706,23 +1713,16 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.warning(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
             logging.warning(f"Supported scan directions are: {available_scan_directions}")        
         
-        # set passes
+        # set passes       
         if pattern_settings.passes: # not zero
-            pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
-            
-            # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
-            # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
-            # NB: the current must be set before doing this, otherwise it will be out of range
-        
-        # if pattern_settings.passes: # not zero
-        #     if isinstance(pattern, RegularCrossSectionPattern):
-        #         pattern.multi_scan_pass_count = 1
-        #     else:
-        #         pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
+            if isinstance(pattern, RegularCrossSectionPattern):
+                pattern.multi_scan_pass_count = pattern_settings.passes
+            else:
+                pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
                 
-        #         # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
-        #         # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
-        #         # NB: the current must be set before doing this, otherwise it will be out of range
+                # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
+                # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
+                # NB: the current must be set before doing this, otherwise it will be out of range
 
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
 
@@ -4166,6 +4166,7 @@ class TescanMicroscope(FibsemMicroscope):
             logging.info(f"Supported scan directions are: Flyback, RLE, SpiralInsideOut, SpiralOutsideIn, ZigZag")
         self.connection.DrawBeam.ScanningPath = pattern_settings.scan_direction
 
+        # TODO: replace with cross_section parameter
         if pattern_settings.cleaning_cross_section:
             self.layer.addRectanglePolish(
                 CenterX=centre_x,
@@ -4235,7 +4236,7 @@ class TescanMicroscope(FibsemMicroscope):
             
         """
         if pattern_settings.cleaning_cross_section:
-            self.layer.addAnnulusPolish(
+            pattern = self.layer.addAnnulusPolish(
                 CenterX=pattern_settings.centre_x,
                 CenterY=pattern_settings.centre_y,
                 RadiusA=pattern_settings.radius,
@@ -4243,15 +4244,15 @@ class TescanMicroscope(FibsemMicroscope):
                 Depth=pattern_settings.depth,
                 DepthUnit='m',
             )
-
-        pattern = self.layer.addAnnulusFilled(
-            CenterX=pattern_settings.centre_x,
-            CenterY=pattern_settings.centre_y,
-            RadiusA=pattern_settings.radius,
-            RadiusB=0,
-            Depth=pattern_settings.depth,
-            DepthUnit='m',
-        )
+        else:
+            pattern = self.layer.addAnnulusFilled(
+                CenterX=pattern_settings.centre_x,
+                CenterY=pattern_settings.centre_y,
+                RadiusA=pattern_settings.radius,
+                RadiusB=0,
+                Depth=pattern_settings.depth,
+                DepthUnit='m',
+            )
 
         return pattern
     

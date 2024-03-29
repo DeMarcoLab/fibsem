@@ -95,8 +95,8 @@ def beam_shift_alignment(
     image_settings.autocontrast = True
     
 
-    # adjust beamshift (reverse direction)
-    microscope.beam_shift(-dx, -dy, image_settings.beam_type)
+    # adjust beamshift (reverse direction for x)
+    microscope.beam_shift(-dx, dy, image_settings.beam_type)
 
     # reset beam current
     if alignment_current is not None:
