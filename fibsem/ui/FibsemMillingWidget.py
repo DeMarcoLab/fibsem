@@ -233,6 +233,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.info("Removing milling stage")
 
         current_index = self.comboBox_milling_stage.currentIndex()
+        if current_index == -1:
+            return
         log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
