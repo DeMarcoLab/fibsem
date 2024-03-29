@@ -1,0 +1,147 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration Form</title>
+    <script>
+        // Function to handle form submission
+        async function submitForm(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Collect form data
+            const formData = new FormData(event.target);
+            const jsonData = {
+                username: formData.get('username'),
+                name: formData.get('name'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                role: formData.get('role'),
+                // Assuming additional_info is entered as a JSON string in the form, parse it
+                // You can also dynamically construct this object in JavaScript based on your needs
+                additional_info: JSON.parse(formData.get('additional_info') || '{}'), 
+                default: false // This can be dynamically set based on your application logic
+            };
+
+            // Send the request to your FastAPI backend
+            try {
+                const response = await fetch('http://localhost:8000/users/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Success:', data);
+                // Handle success - for example, showing a success message or redirecting
+                swal("Success!", "User created successfully", "success");
+            } catch (error) {
+                console.error('Error:', error);
+                // Handle error - for example, showing an error message\
+                swal("Error!", "An error occurred while submitting the form", "error");
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>Create User</h2>
+    <form id="userForm">
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username" required><br>
+
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name" required><br>
+
+        <label for="email">Email:</label><br>
+        <input type="email" id="email" name="email" required><br>
+
+        <label for="password">Password:</label><br>
+        <input type="password" id="password" name="password" required><br>
+
+        <label for="role">Role:</label><br>
+        <input type="text" id="role" name="role" required><br>
+
+        <label for="additional_info">Additional Info (JSON):</label><br>
+        <textarea id="additional_info" name="additional_info"></textarea><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        // Attach the submit event listener to the form
+        document.getElementById('userForm').addEventListener('submit', submitForm);
+    </script>
+</body>
+</html> -->
+
+<!-- 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Click Coordinates</title>
+    <style>
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Creates a 2x2 grid */
+            grid-gap: 10px; /* Space between images */
+            max-width: 600px; /* Constrain grid width */
+        }
+        .image-grid img {
+            width: 100%; /* Make images fill their cell */
+            cursor: pointer; /* Change cursor on hover over the images */
+        }
+    </style>
+</head>
+<body>
+
+<h2>Click or double-click on the images to see which image you interacted with and the coordinates:</h2>
+<div class="image-grid">
+    <img class="clickable-image" src="test-image.png" alt="Clickable Image 1">
+    <img class="clickable-image" src="test-image.png" alt="Clickable Image 2">
+    <img class="clickable-image" src="test-image.png" alt="Clickable Image 3">
+    <img class="clickable-image" src="test-image.png" alt="Clickable Image 4">
+</div>
+
+<script>
+    let clickTimeout = null;
+
+    document.querySelectorAll('.clickable-image').forEach(function(img) {
+        img.addEventListener('click', function(event) {
+            if(clickTimeout !== null) {
+                // Clear the timeout if it's set, ignoring single clicks that lead to a double click
+                clearTimeout(clickTimeout);
+                clickTimeout = null;
+                return;
+            }
+
+            clickTimeout = setTimeout(() => {
+                clickTimeout = null; // Reset timeout ID
+                // Handle single click
+                const rect = event.target.getBoundingClientRect();
+                const x = event.clientX - rect.left; // X coordinate relative to the image
+                const y = event.clientY - rect.top; // Y coordinate relative to the image
+                console.log('Single clicked ' + event.target.alt + ' at coordinates: X=' + x + ', Y=' + y);
+            }, 300); // Set timeout for 300ms to differentiate between single and double clicks
+        });
+
+        img.addEventListener('dblclick', function(event) {
+            // Handle double click
+            const rect = event.target.getBoundingClientRect();
+            const x = event.clientX - rect.left; // X coordinate relative to the image
+            const y = event.clientY - rect.top; // Y coordinate relative to the image
+            console.log('Double clicked ' + event.target.alt + ' at coordinates: X=' + x + ', Y=' + y);
+        });
+    });
+</script>
+
+</body>
+</html> -->
+
+
+
