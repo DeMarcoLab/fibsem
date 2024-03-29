@@ -820,6 +820,23 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"Autoscript Server: {self.connection.service.autoscript.server.version}")
 
         self.reset_beam_shifts()
+
+        # assign stage
+        if self.connection.specimen.compustage.is_installed:
+            self.stage = self.connection.specimen.compustage
+            self.stage_is_compustage = True
+        elif self.connection.specimen.stage.is_installed:          
+            self.stage = self.connection.specimen.stage
+            self.stage_is_compustage = False
+        else:
+            self.stage = None
+            self.stage_is_compustage = False
+            logging.warning(f"No stage is installed on the microscope.")
+
+        # set default coordinate system
+        self.stage.set_default_coordinate_system(CoordinateSystem.RAW)
+        # TODO: set default move settings, is this dependent on the stage type?
+
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
@@ -1053,11 +1070,11 @@ class ThermoMicroscope(FibsemMicroscope):
         wd = self.get("working_distance", BeamType.ELECTRON)
         
         # convert to autoscript position
-        autoscript_position = position.to_autoscript_position()
-        autoscript_position.coordinate_system = CoordinateSystem.RAW
+        autoscript_position = position.to_autoscript_position(compustage=self.stage_is_compustage)
+        autoscript_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
         
         logging.info(f"Moving stage to {position}.")
-        self.connection.specimen.stage.absolute_move(autoscript_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
+        self.stage.absolute_move(autoscript_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
                    
         # restore working distance to adjust for microscope compenstation
         self.set("working_distance", wd, BeamType.ELECTRON)
@@ -1082,11 +1099,11 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"Moving stage by {position}.")
         
         # convert to autoscript position
-        thermo_position = position.to_autoscript_position()
-        thermo_position.coordinate_system = CoordinateSystem.RAW
+        thermo_position = position.to_autoscript_position(self.stage_is_compustage)
+        thermo_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
 
         # move stage
-        self.connection.specimen.stage.relative_move(thermo_position)
+        self.stage.relative_move(thermo_position)
 
         logging.debug({"msg": "move_stage_relative", "position": position.to_dict()})
 
@@ -1177,8 +1194,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # move stage
         move_settings = MoveSettings(link_z_y=True)
-        autoscript_position = stage_position.to_autoscript_position() 
-        self.connection.specimen.stage.relative_move(autoscript_position, move_settings)
+        autoscript_position = stage_position.to_autoscript_position(self.stage_is_compustage) 
+        self.stage.relative_move(autoscript_position, move_settings)
 
         # restore working distance to adjust for microscope compenstation
         if static_wd:
@@ -1231,6 +1248,16 @@ class ThermoMicroscope(FibsemMicroscope):
         current_stage_position = self.get_stage_position()
         stage_rotation = current_stage_position.r % (2 * np.pi)
         stage_tilt = current_stage_position.t
+
+        # TODO: @patrick investigate if these calculations need to be adjusted for compustage...
+        # the compustage does not have pre-tilt, cannot rotate, but tilts 180 deg. 
+        # Therefore, the rotation will always be 0, pre-tilt will always be 0
+        # therefore, I think it should always be treated as a flat stage, that is oriented towards the ion beam (in rotation)?
+        # need hardware to confirm this
+        # QUESTION: is the compustage always flat to the ion beam? or is it flat to the electron beam?
+        # QUESTION: what is the tilt coordinate system (where is 0 degrees, where is 90 degrees, where is 180 degrees)?
+        # QUESTION: what does flip do? Is it 180 degrees rotation or tilt? This will affect move_flat_to_beam        
+        # ASSUMPTION: (naive) tilt=0 -> flat to electron beam, tilt=52 -> flat to ion
 
         PRETILT_SIGN = 1.0
         # pretilt angle depends on rotation
@@ -2404,23 +2431,17 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "stage_position":
             _check_stage(self.system)
 
-            # get stage position in raw coordinates
-            self.connection.specimen.stage.set_default_coordinate_system( # TODO: we should set this at the start
-            CoordinateSystem.RAW
-            )
-            stage_position = self.connection.specimen.stage.current_position  
-            self.connection.specimen.stage.set_default_coordinate_system(
-                CoordinateSystem.SPECIMEN
-            )
-            stage_position = FibsemStagePosition.from_autoscript_position(stage_position)
+            # get stage position in raw coordinates 
+            self.stage.set_default_coordinate_system(CoordinateSystem.RAW) # TODO: remove this once testing is done
+            stage_position = FibsemStagePosition.from_autoscript_position(self.stage.current_position)
             return stage_position
         
         if key == "stage_homed":
             _check_stage(self.system)
-            return self.connection.specimen.stage.is_homed
+            return self.stage.is_homed
         if key == "stage_linked":
             _check_stage(self.system)
-            return self.connection.specimen.stage.is_linked
+            return self.stage.is_linked
 
         # chamber properties
         if key == "chamber_state":
@@ -2640,14 +2661,14 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "stage_home":
             _check_stage(self.system)
             logging.info(f"Homing stage...")
-            self.connection.specimen.stage.home()
+            self.stage.home()
             logging.info(f"Stage homed.")
             return
         
         if key == "stage_link":
             _check_stage(self.system)
             logging.info(f"Linking stage...")
-            self.connection.specimen.stage.link() if value else self.connection.specimen.stage.unlink()
+            self.stage.link() if value else self.stage.unlink()
             logging.info(f"Stage {'linked' if value else 'unlinked'}.")    
             return
         
