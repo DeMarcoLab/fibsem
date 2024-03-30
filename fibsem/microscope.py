@@ -5073,6 +5073,37 @@ class DemoMicroscope(FibsemMicroscope):
             inserted: bool
             position: FibsemManipulatorPosition
 
+        @dataclass
+        class GasInjectionSystem:
+            gas: str
+            inserted: bool = False
+            heated: bool = False
+            opened: bool = False
+            position: str = None
+        
+            def insert(self):
+                self.inserted = True
+                logging.debug(f"GIS inserted")
+
+            def retract(self):
+                self.inserted = False
+                logging.debug(f"GIS retracted")
+
+            def turn_heater_on(self):
+                self.heated = True
+                logging.debug(f"GIS heater on")
+            
+            def turn_heater_off(self):
+                self.heated = False
+                logging.debug(f"GIS heater off")
+
+            def open(self):
+                self.opened = True
+                logging.debug(f"GIS opened")
+
+            def close(self):
+                self.opened = False
+                logging.debug(f"GIS closed")
 
         # initialise system
         self.connection = DemoMicroscopeClient()
@@ -5088,6 +5119,8 @@ class DemoMicroscope(FibsemMicroscope):
                             inserted= False,
                             position = FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0, coordinate_system="RAW")
             )
+                
+        self.gis_system = GasInjectionSystem(gas="Pt dep")
 
         self.electron_system = BeamSystem(
             on=False,
@@ -5599,24 +5632,15 @@ class DemoMicroscope(FibsemMicroscope):
 
         logging.info({"msg": "inserting gis", "settings": gis_settings.to_dict()})
         
-        # if use_multichem:
-        #     gis = self.connection.gas.get_multichem()
-        # else:
-        #     gis = self.connection.gas.get_gis_port(gas)
+        gis = self.gis_system
 
         # insert gis / multichem
         logging.info(f"Inserting Gas Injection System at {insert_position}")
-        # if use_multichem:
-        #     gis.insert(insert_position)
-        # else:
-        #     gis.insert()
-
+        gis.insert()
+    
         logging.info(f"Turning on heater for {gas}")
         # turn on heater
-        # if use_multichem:
-        #     gis.turn_heater_on(gas)
-        # else:
-        #     gis.turn_heater_on()
+        gis.turn_heater_on()
         time.sleep(3) # wait for the heat
         # TODO: get state feedback, wait for heater to be at temp
 
@@ -5624,17 +5648,15 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Running deposition for {duration} seconds")
         # gis.open()
         time.sleep(duration) 
-        # gis.close()
+        gis.close()
 
         # turn off heater
         logging.info(f"Turning off heater for {gas}")
-        # gis.turn_heater_off()
+        gis.turn_heater_off()
 
         # retract gis / multichem
         logging.info(f"Retracting Gas Injection System")
-        # gis.retract()
-            
-        # TODO: Dummy GIS System 
+        gis.retract()
             
         return
             

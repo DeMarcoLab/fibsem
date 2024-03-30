@@ -55,7 +55,7 @@ class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets
 
         return protocol
 
-    # TODO: thread this
+    # TODO: thread this, add progress bar, feedback
     def run_sputter(self):
         
         gdict = self._get_protocol_from_ui()

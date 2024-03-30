@@ -1,7 +1,8 @@
 from fibsem.microscope import FibsemMicroscope
 import logging
 import time
-from fibsem.structures import BeamType
+from fibsem.structures import BeamType, FibsemGasInjectionSettings
+
 
 
 gis_protocol = {
@@ -82,7 +83,6 @@ def cryo_deposition(microscope: FibsemMicroscope, protocol: dict = None, name: s
     # return to previous position
     microscope.safe_absolute_stage_movement(position)
 
-from fibsem.structures import FibsemGasInjectionSettings
 def cryo_deposition_v2(microscope: FibsemMicroscope, gis_settings: FibsemGasInjectionSettings, name: str = None):
 
     # get current position
