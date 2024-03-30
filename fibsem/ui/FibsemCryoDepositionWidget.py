@@ -1,12 +1,12 @@
 import logging
 import napari
 import napari.utils.notifications
-import numpy as np
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
-from fibsem.structures import MicroscopeSettings
+from fibsem.structures import MicroscopeSettings, FibsemGasInjectionSettings
+
 from fibsem.ui.qtdesigner_files import FibsemCryoDepositionWidget
 from fibsem import gis
 
@@ -38,7 +38,6 @@ class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets
 
 
         # TODO: show / hide based on gis / multichem available
-        
         multichem_available = self.microscope.is_available("gis_multichem")
         self.lineEdit_insert_position.setVisible(multichem_available)
         self.label_insert_position.setVisible(multichem_available)
@@ -59,7 +58,6 @@ class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets
     # TODO: thread this
     def run_sputter(self):
         
-        from fibsem.structures import FibsemGasInjectionSettings
         gdict = self._get_protocol_from_ui()
         gis_settings = FibsemGasInjectionSettings.from_dict(gdict)
         gis.cryo_deposition_v2(self.microscope, gis_settings, name=gdict["name"])
