@@ -1844,6 +1844,57 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return list 
 
+    def cryo_deposition_v2(self, gis_settings: FibsemGasInjectionSettings) -> None:
+        """Run non-specific cryo deposition protocol.
+
+        # TODO: universalise this for demo, tescan
+        """
+
+        use_multichem = self.is_available("multichem")
+        port = gis_settings.port
+        gas = gis_settings.gas
+        duration = gis_settings.duration
+        insert_position = gis_settings.insert_position
+
+        logging.info({"msg": "inserting gis", "settings": gis_settings.to_dict()})
+        
+        if use_multichem:
+            gis = self.connection.gas.get_multichem()
+        else:
+            gis = self.connection.gas.get_gis_port(gas)
+
+        # insert gis / multichem
+        logging.info(f"Inserting Gas Injection System at {insert_position}")
+        if use_multichem:
+            gis.insert(insert_position)
+        else:
+            gis.insert()
+
+        logging.info(f"Turning on heater for {gas}")
+        # turn on heater
+        if use_multichem:
+            gis.turn_heater_on(gas)
+        else:
+            gis.turn_heater_on()
+        time.sleep(3) # wait for the heat
+        # TODO: get state feedback, wait for heater to be at temp
+
+        # run deposition
+        logging.info(f"Running deposition for {duration} seconds")
+        gis.open()
+        time.sleep(duration) 
+        gis.close()
+
+        # turn off heater
+        logging.info(f"Turning off heater for {gas}")
+        gis.turn_heater_off()
+
+        # retract gis / multichem
+        logging.info(f"Retracting Gas Injection System")
+        gis.retract()
+            
+        return
+        
 
     def setup_sputter(self, protocol: dict):
         """

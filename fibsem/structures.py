@@ -1898,3 +1898,28 @@ def check_data_format(data: np.ndarray) -> bool:
     if data.ndim == 3 and data.shape[2] == 1:
         data = data[:, :, 0]
     return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]
+
+
+@dataclass
+class FibsemGasInjectionSettings:
+    port: str
+    gas: str
+    duration: float
+    insert_position: str = None # multichem only
+
+    @staticmethod
+    def from_dict(d: dict):
+        return FibsemGasInjectionSettings(
+            port=d["port"],
+            gas=d["gas"],
+            duration=d["duration"],
+            insert_position=d.get("insert_position", None),
+        )
+    
+    def to_dict(self):
+        return {
+            "port": self.port,
+            "gas": self.gas,
+            "duration": self.duration,
+            "insert_position": self.insert_position,
+        }
