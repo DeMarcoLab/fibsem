@@ -747,8 +747,11 @@ def detect_features(
         
     # model inference
     mask = model.inference(image, rgb=False)
-    rgb = model.postprocess(mask, model.num_classes)
-    mask = mask[0] # remove channel dim
+    if mask.ndim == 3:
+        rgb = model.postprocess(mask, model.num_classes)
+        mask = mask[0] # remove channel dim
+    else:
+        rgb = decode_segmap_v2(mask)
 
     # detect features
     features = detect_features_v2(img=image, 
