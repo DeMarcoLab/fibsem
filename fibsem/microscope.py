@@ -192,6 +192,11 @@ class FibsemMicroscope(ABC):
             rotation = np.deg2rad(stage_settings.rotation_180)
             tilt = np.deg2rad(self.system.ion.column_tilt - shuttle_pre_tilt)
 
+        # compustage is tilted by 180 degrees for flat to beam, because we image the backside fo the grid,
+        # therefore, we need to offset the tilt by 180 degrees
+        if self.stage_is_compustage:
+            tilt = -np.pi + tilt
+            
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
         stage_position = FibsemStagePosition(r=rotation, t=tilt)
@@ -1181,6 +1186,10 @@ class ThermoMicroscope(FibsemMicroscope):
             dx *= -1.0
             dy *= -1.0
 
+        # TODO: ARCTIS Do we need to reverse the direction of the movement because of the inverted stage tilt?
+        # if self.stage_is_compustage:
+            # dy *= -1.0
+
         # TODO: implement perspective correction
         PERSPECTIVE_CORRECTION = 0.9
         z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
@@ -1258,6 +1267,16 @@ class ThermoMicroscope(FibsemMicroscope):
         # QUESTION: what is the tilt coordinate system (where is 0 degrees, where is 90 degrees, where is 180 degrees)?
         # QUESTION: what does flip do? Is it 180 degrees rotation or tilt? This will affect move_flat_to_beam        
         # ASSUMPTION: (naive) tilt=0 -> flat to electron beam, tilt=52 -> flat to ion
+
+        # new info:
+        # rotation always will be zero -> PRETILT_SIGN = 1
+        # because we want to image the back of the grid, we need to flip the stage by 180 degrees
+        # flat to electron, tilt = -180
+        # flat to ion, tilt = -128
+        # we may also need to flip the PRETILT_SIGN?
+
+        if self.stage_is_compustage:
+            stage_tilt += np.pi
 
         PRETILT_SIGN = 1.0
         # pretilt angle depends on rotation
@@ -5093,6 +5112,7 @@ class DemoMicroscope(FibsemMicroscope):
                 contrast=0.5,
             )
         )
+        self.stage_is_compustage: bool = True
             
         # user, experiment metadata
         # TODO: remove once db integrated
