@@ -764,7 +764,10 @@ class ThermoMicroscope(FibsemMicroscope):
         self.experiment = FibsemExperiment()
 
         # logging
-        logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
+        if system_settings is not None:
+            system_settings = system_settings.to_dict()
+        logging.debug({"msg": "create_microscope_client", "system_settings": system_settings})
+        
 
     def reconnect(self):
         if not hasattr(self, "system"):
@@ -820,7 +823,8 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"Autoscript Client: {self.connection.service.autoscript.client.version}")
         logging.info(f"Autoscript Server: {self.connection.service.autoscript.server.version}")
 
-        self.reset_beam_shifts()
+        if self.system is not None: # tmp
+            self.reset_beam_shifts()
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """

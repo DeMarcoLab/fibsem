@@ -22,6 +22,7 @@ def system_fingerprint(ip_address: str = "192.168.0.1", manufactuer: str = "Ther
     config["info"]["manufacturer"] = manufactuer    # default manufacturer
 
     from fibsem.microscope import ThermoMicroscope
+    from fibsem.structures import SystemSettings, BeamSystemSettings, StageSystemSettings, FibsemDetectorSettings
 
     microscope = ThermoMicroscope()
     microscope.connect_to_microscope(config["info"]["ip"])
@@ -34,9 +35,9 @@ def system_fingerprint(ip_address: str = "192.168.0.1", manufactuer: str = "Ther
     # stage
     # enabled, compustage, rotation, tilt
     stage_enabled = microscope.connection.specimen.stage.is_installed
-    compustage_enabled = microscope.connection.specimen.stage.compustage.is_installed
+    compustage_enabled = microscope.connection.specimen.compustage.is_installed
     config["stage"]["enabled"] = stage_enabled or compustage_enabled
-    config["stage"]["rotation"] = stage_enabled
+    config["stage"]["rotation"] = stage_enabled and not compustage_enabled
     config["stage"]["tilt"] = stage_enabled or compustage_enabled
 
     # rotation reference, rotation_180
@@ -56,27 +57,36 @@ def system_fingerprint(ip_address: str = "192.168.0.1", manufactuer: str = "Ther
         "Scios": [4e-3, 10.0e-3]
     }
 
+    # check if any key in system_name
+    for model in eucentric_height_map:
+        if model in system_name:
+            system_model = model
+    
     # electron beam
     config["electron"]["enabled"] = microscope.connection.beams.electron_beam.is_installed
     config["electron"]["column_tilt"] = get_column_tilt(config["info"]["manufacturer"], "electron")
-    config["electron"]["eucentric_height"] = eucentric_height_map[system_name][0]
+    config["electron"]["eucentric_height"] = eucentric_height_map[system_model][0]
 
     # ion beam
     # is_installed, column tilt, eucentric_height (req taking image), plasma, plasma gas
     config["ion"]["enabled"] = microscope.connection.beams.ion_beam.is_installed
     config["ion"]["column_tilt"] = get_column_tilt(config["info"]["manufacturer"], "ion")
-    config["ion"]["eucentric_height"] = eucentric_height_map[system_name][1]
+    config["ion"]["eucentric_height"] = eucentric_height_map[system_model][1]
 
     # plasma enabled
     ion_plasma_enabled = False
-    ion_plasma_gas = "None"
+ 
     if config["ion"]["enabled"]:
-
-        # check if plasma enabled
-        ion_plasma_enabled = hasattr(microscope.connection.beams.ion_beam.source, "plasma_gas")
-
-        if ion_plasma_enabled:
+        
+        try:
+            # throws an 
             ion_plasma_gas = microscope.connection.beams.ion_beam.source.plasma_gas.value
+            ion_plasma_enabled = True
+            print(f"Ion Plasma Available, Plasma Gas: {ion_plasma_gas}")
+        except Exception as e:
+            print(f"Exception: {e}")
+            ion_plasma_gas = "None"
+            ion_plasma_enabled = False
 
     config["ion"]["plasma"] = ion_plasma_enabled
     config["ion"]["plasma_gas"] = ion_plasma_gas
@@ -84,17 +94,39 @@ def system_fingerprint(ip_address: str = "192.168.0.1", manufactuer: str = "Ther
     # manipulator
     config["manipulator"]["enabled"] = microscope.connection.specimen.manipulator.is_installed
     config["manipulator"]["rotation"] = False   # always?
-    config["maniuplator"]["tilt"] = False       # always?
+    config["manipulator"]["tilt"] = False       # always?
 
     # gis
-    gis_enabled = len(microscope.connection.list_all_gis_ports())
-    multichem_enabled = len(microscope.connection.list_all_multichem_ports())
+    gis_enabled = len(microscope.connection.gas.list_all_gis_ports())
+    multichem_enabled = len(microscope.connection.gas.list_all_multichem_ports())
     sputter_coater_enabled = microscope.connection.specimen.sputter_coater.is_installed
 
-    config["gis"]["enabled"] = gis_enabled
-    config["gis"]["multichem"] = multichem_enabled
+    config["gis"]["enabled"] = bool(gis_enabled)
+    config["gis"]["multichem"] = bool(multichem_enabled)
     config["gis"]["sputter_coater"] = sputter_coater_enabled
 
+    print(f"""System Fingerprint:
+    Electron Beam: 
+        Enabled: {config["electron"]["enabled"]}
+        Column Tilt: {config["electron"]["column_tilt"]}
+    Ion Beam:
+        Enabled: {config["ion"]["enabled"]}
+        Column Tilt: {config["ion"]["column_tilt"]}
+        Plasma: {config["ion"]["plasma"]}
+        Plasma Gas: {config["ion"]["plasma_gas"]}
+    Stage: 
+        Enabled: {config["stage"]["enabled"]}
+        Rotation: {config["stage"]["rotation"]}
+        Tilt: {config["stage"]["tilt"]}
+        Rotation Reference: {config["stage"]["rotation_reference"]}
+        Rotation 180: {config["stage"]["rotation_180"]}
+    Manipulator:
+        Enabled: {config["manipulator"]["enabled"]}
+    GIS: 
+        Enabled: {config["gis"]["enabled"]}
+        Multichem: {config["gis"]["multichem"]}
+        Sputter Coater: {config["gis"]["sputter_coater"]}
+    """)
 
     return config
 
