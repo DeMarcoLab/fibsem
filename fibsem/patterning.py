@@ -273,7 +273,7 @@ class TrenchPattern(BasePattern):
         lower_trench_height = trench_height * min(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
-        use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
+        use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
 
         centre_upper_y = point.y + (

@@ -286,7 +286,7 @@ def _plot_positions(image: FibsemImage, positions: list[FibsemStagePosition], sh
 
 
         c =COLOURS[i%len(COLOURS)]
-        plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, filename=f"{pos.name}")
+        plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
         if minimap:
             fontsize = 30
         else:

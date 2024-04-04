@@ -1567,12 +1567,15 @@ class ThermoMicroscope(FibsemMicroscope):
         if not self.is_available("ion_beam"):
             raise ValueError("Ion beam not available.")
         
-        # change to milling current, voltage
-        if self.get("voltage", BeamType.ION) != milling_voltage:
-            self.set("voltage", milling_voltage, BeamType.ION)
-        if self.get("current", BeamType.ION) != milling_current:
-            self.set("current", milling_current, BeamType.ION)
-
+        try:
+            # change to milling current, voltage
+            if self.get("voltage", BeamType.ION) != milling_voltage:
+                self.set("voltage", milling_voltage, BeamType.ION)
+            if self.get("current", BeamType.ION) != milling_current:
+                self.set("current", milling_current, BeamType.ION)
+        except Exception as e:
+            logging.warning(f"Failed to set voltage or current: {e}, voltage={milling_voltage}, current={milling_current}")
+            
         # run milling (asynchronously)
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
@@ -1687,7 +1690,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if pattern_settings.cleaning_cross_section:
             logging.warning(f"Deprecated: cleaning_cross_section is deprecated. Use cross_section instead. This will be removed in a future release.")    
-            create_pattern_function = patterning_api.create_cleaning_cross_section
+            create_pattern_function = patterning_api.create_rectangle
 
         
             
