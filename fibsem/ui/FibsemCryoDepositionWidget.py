@@ -32,15 +32,19 @@ class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets
         self.pushButton_run_sputter.clicked.connect(self.run_sputter)
 
         positions = utils.load_yaml(cfg.POSITION_PATH)
-        self.comboBox_stage_position.addItems([p["name"] for p in positions])
+        self.comboBox_stage_position.addItems(["Current Position"] + [p["name"] for p in positions])
         available_ports = self.microscope.get_available_values("gis_ports")
         self.comboBox_port.addItems([str(p) for p in available_ports])
 
 
         # TODO: show / hide based on gis / multichem available
         multichem_available = self.microscope.is_available("gis_multichem")
+        self.lineEdit_gas.setVisible(multichem_available)
+        self.label_gas.setVisible(multichem_available)
         self.lineEdit_insert_position.setVisible(multichem_available)
         self.label_insert_position.setVisible(multichem_available)
+        self.comboBox_port.setVisible(not multichem_available)  # gis only
+        self.label_port.setVisible(not multichem_available)     # gis only
 
     def _get_protocol_from_ui(self):
         
@@ -60,6 +64,10 @@ class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets
         
         gdict = self._get_protocol_from_ui()
         gis_settings = FibsemGasInjectionSettings.from_dict(gdict)
+
+        if gdict["name"] == "Current Position":
+            gdict["name"] = None
+
         gis.cryo_deposition_v2(self.microscope, gis_settings, name=gdict["name"])
 
 

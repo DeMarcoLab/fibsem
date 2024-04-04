@@ -1847,6 +1847,67 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return list 
 
+    def get_gis(self, port: str = None):
+        use_multichem = self.is_available("gis_multichem")
+        
+        if use_multichem:
+            gis = self.connection.gas.get_multichem()
+        else:
+            gis = self.connection.gas.get_gis_port(port)
+        logging.debug({"msg": "get_gis", "use_multichem": use_multichem, "port": port})
+        self.gis = gis
+        return self.gis
+
+    def insert_gis(self, insert_position: str = None) -> None:
+
+        if insert_position:
+            logging.info(f"Inserting Multichem GIS to {insert_position}")
+            self.gis.insert(insert_position)
+        else:
+            logging.info(f"Inserting Gas Injection System")
+            self.gis.insert()
+
+        logging.debug({"msg": "insert_gis", "insert_position": insert_position})
+
+
+    def retract_gis(self):
+        """Retract the gis"""
+        self.gis.retract()
+        logging.debug({"msg": "retract_gis", "use_multichem": self.is_available("gis_multichem")})
+
+    def gis_turn_heater_on(self, gas: str = None) -> None:
+        """Turn the heater on and wait for it to get to temperature"""
+        logging.info(f"Turning on heater for {gas}")
+        if gas is not None:
+            self.gis.turn_heater_on(gas)
+        else:
+            self.gis.turn_heater_on()
+        
+        logging.info(f"Waiting for heater to get to temperature...")
+        time.sleep(3) # we need to wait a bit
+
+        wait_time = 0
+        max_wait_time = 15
+        target_temp = 310 # validate this somehow?
+        while True:
+            temp = self.gis.get_temperature()
+            logging.info(f"Waiting for heater: {temp}K, target={target_temp}, wait_time={wait_time}/{max_wait_time} sec")
+
+            if temp >= target_temp:
+                break
+
+            time.sleep(1) # wait for the heat
+
+            wait_time += 1
+            if wait_time > max_wait_time:
+                raise TimeoutError(f"Gas Injection Failed to heat within time...")
+        
+        logging.debug({"msg": "gis_turn_heater_on", "temp": temp, "target_temp": target_temp, 
+                                "wait_time": wait_time, "max_wait_time": max_wait_time})
+
+        return 
+
+
     def cryo_deposition_v2(self, gis_settings: FibsemGasInjectionSettings) -> None:
         """Run non-specific cryo deposition protocol.
 
@@ -1859,42 +1920,35 @@ class ThermoMicroscope(FibsemMicroscope):
         duration = gis_settings.duration
         insert_position = gis_settings.insert_position
 
-        logging.info({"msg": "inserting gis", "settings": gis_settings.to_dict()})
+        logging.debug({"msg": "cryo_depositon_v2", "settings": gis_settings.to_dict()})
         
-        if use_multichem:
-            gis = self.connection.gas.get_multichem()
-        else:
-            gis = self.connection.gas.get_gis_port(gas)
+        # get gis subsystem
+        self.get_gis(port)
 
         # insert gis / multichem
         logging.info(f"Inserting Gas Injection System at {insert_position}")
-        if use_multichem:
-            gis.insert(insert_position)
-        else:
-            gis.insert()
+        if use_multichem is False:
+            insert_position = None
+        self.insert_gis(insert_position)
 
-        logging.info(f"Turning on heater for {gas}")
-        # turn on heater
-        if use_multichem:
-            gis.turn_heater_on(gas)
-        else:
-            gis.turn_heater_on()
-        time.sleep(3) # wait for the heat
-        # TODO: get state feedback, wait for heater to be at temp
-
+        # turn heater on
+        gas = gas if use_multichem else None
+        self.gis_turn_heater_on(gas)
+        
         # run deposition
         logging.info(f"Running deposition for {duration} seconds")
-        gis.open()
+        self.gis.open()
         time.sleep(duration) 
-        gis.close()
+        # TODO: provide more feedback to user
+        self.gis.close()
 
         # turn off heater
         logging.info(f"Turning off heater for {gas}")
-        gis.turn_heater_off()
+        self.gis.turn_heater_off()
 
         # retract gis / multichem
         logging.info(f"Retracting Gas Injection System")
-        gis.retract()
+        self.retract_gis()
             
         return
         

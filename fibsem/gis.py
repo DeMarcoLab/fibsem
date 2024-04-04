@@ -83,7 +83,7 @@ def cryo_deposition(microscope: FibsemMicroscope, protocol: dict = None, name: s
     # return to previous position
     microscope.safe_absolute_stage_movement(position)
 
-def cryo_deposition_v2(microscope: FibsemMicroscope, gis_settings: FibsemGasInjectionSettings, name: str = None):
+def cryo_deposition_v2(microscope: FibsemMicroscope, gis_settings: FibsemGasInjectionSettings, name: str = None, move_down: bool = True):
 
     # get current position
     position = microscope.get_microscope_state().stage_position
@@ -101,10 +101,10 @@ def cryo_deposition_v2(microscope: FibsemMicroscope, gis_settings: FibsemGasInje
         logging.info(f"Moving to depositon position: {name}")
         microscope.safe_absolute_stage_movement(deposition_position)
 
-
-    # move down
-    from fibsem.structures import FibsemStagePosition
-    microscope.move_stage_relative(FibsemStagePosition(z=-1e-3))
+    # move down 
+    if move_down:
+        from fibsem.structures import FibsemStagePosition
+        microscope.move_stage_relative(FibsemStagePosition(z=-1e-3))
 
     # cryo deposition
     microscope.cryo_deposition_v2(gis_settings)
