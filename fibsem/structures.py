@@ -260,6 +260,14 @@ class FibsemStagePosition:
     def _scale_repr(self, scale: float, precision: int = 2):
         return f"x:{self.x*scale:.{precision}f}, y:{self.y*scale:.{precision}f}, z:{self.z*scale:.{precision}f}"
 
+    def is_close(self, pos2: 'FibsemStagePosition', tol: float = 1e-6) -> bool:
+        """Check if two positions are close to each other."""
+        return ((abs(self.x - pos2.x) < tol) and 
+                (abs(self.y - pos2.y) < tol) and 
+                (abs(self.z - pos2.z) < tol) and 
+                (abs(self.t - pos2.t) < tol) and 
+                (abs(self.r - pos2.r) < tol))
+
 
 
 @dataclass
