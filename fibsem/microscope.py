@@ -1338,12 +1338,14 @@ class ThermoMicroscope(FibsemMicroscope):
         Supports movements in the stage_position coordinate system
 
         """
+        # safe movements are not required on the compustage, because it doesn't rotate
+        if not self.stage_is_compustage:
 
-        # tilt flat for large rotations to prevent collisions
-        self._safe_rotation_movement(stage_position)
+            # tilt flat for large rotations to prevent collisions
+            self._safe_rotation_movement(stage_position)
 
-        # move to compucentric rotation
-        self.move_stage_absolute(FibsemStagePosition(r=stage_position.r))
+            # move to compucentric rotation
+            self.move_stage_absolute(FibsemStagePosition(r=stage_position.r, coordinate_system="RAW"))
 
         logging.debug(f"safe moving to {stage_position}")
         self.move_stage_absolute(stage_position)
@@ -2686,6 +2688,11 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if key == "stage_link":
             _check_stage(self.system)
+            
+            if self.stage_is_compustage:
+                logging.debug(f"Compustage does not support linking.")
+                return
+            
             logging.info(f"Linking stage...")
             self.stage.link() if value else self.stage.unlink()
             logging.info(f"Stage {'linked' if value else 'unlinked'}.")    
@@ -5846,6 +5853,9 @@ class DemoMicroscope(FibsemMicroscope):
             return
         
         if key == "stage_link":
+            if self.stage_is_compustage:
+                logging.debug(f"Compustage does not support linking.")
+                return
             logging.info(f"Linking stage...")
             self.stage_system.is_linked = True
             logging.info(f"Stage linked.")
