@@ -108,6 +108,24 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         self.movement_notification_signal.connect(self.update_moving_ui)
 
+        # set custom tilt limits for the compustage
+        if self.microscope is not None:
+            if self.microscope.stage_is_compustage:
+                self.doubleSpinBox_movement_stage_tilt.setMinimum(-180.0)
+                self.doubleSpinBox_movement_stage_tilt.setMaximum(180)
+
+                # NOTE: these values are expressed in mm in the UI, hence the conversion
+                # set x, y, z step sizes to be 1 um
+                self.doubleSpinBox_movement_stage_x.setSingleStep(1e-6 * constants.SI_TO_MILLI)
+                self.doubleSpinBox_movement_stage_y.setSingleStep(1e-6 * constants.SI_TO_MILLI)
+                self.doubleSpinBox_movement_stage_z.setSingleStep(1e-6 * constants.SI_TO_MILLI)
+
+                # TODO: get the true limits from the microscope
+                self.doubleSpinBox_movement_stage_x.setMinimum(-999.9e-6 * constants.SI_TO_MILLI)
+                self.doubleSpinBox_movement_stage_x.setMaximum(999.9e-6 * constants.SI_TO_MILLI)
+                self.doubleSpinBox_movement_stage_y.setMinimum(-377.8e-6 * constants.SI_TO_MILLI)
+                self.doubleSpinBox_movement_stage_y.setMaximum(377.8e-6 * constants.SI_TO_MILLI)
+
     def _toggle_interactions(self, enable: bool, caller: str = None):
         
         self.pushButton_move.setEnabled(enable)
