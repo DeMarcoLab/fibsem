@@ -415,7 +415,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_x=point.x - (width / 2) - (trench_width / 2),
             centre_y=point.y,
             cleaning_cross_section=False,
-            scan_direction=scan_direction,
+            scan_direction="LeftToRight",
             cross_section=cross_section
         )
 
@@ -426,7 +426,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_x=point.x + (width / 2) + (trench_width / 2),
             centre_y=point.y,
             cleaning_cross_section=False,
-            scan_direction=scan_direction,
+            scan_direction="RightToLeft",
             cross_section=cross_section
         )
         y_offset = (height / 2) + (upper_trench_height / 2)

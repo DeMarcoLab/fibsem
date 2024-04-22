@@ -210,6 +210,16 @@ def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
     pt_delta = Point(dx, dy)
     px_delta = pt_delta._to_pixels(image.metadata.pixel_size.x)
 
+    beam_type = image.metadata.image_settings.beam_type
+    if beam_type is BeamType.ELECTRON:
+        scan_rotation = image.metadata.microscope_state.electron_beam.scan_rotation
+    if beam_type is BeamType.ION:
+        scan_rotation = image.metadata.microscope_state.ion_beam.scan_rotation
+    
+    if np.isclose(scan_rotation, np.pi):
+        px_delta.x *= -1.0
+        px_delta.y *= -1.0
+
     image_centre = Point(x=image.data.shape[1]/2, y=image.data.shape[0]/2)
     point = image_centre + px_delta
 
