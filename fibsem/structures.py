@@ -303,6 +303,7 @@ class FibsemStagePosition:
                 (abs(self.r - pos2.r) < tol))
 
 
+
 @dataclass
 class FibsemManipulatorPosition:
     """Data class for storing manipulator position data.

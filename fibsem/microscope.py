@@ -65,6 +65,7 @@ try:
     from autoscript_sdb_microscope_client.structures import AdornedImage
 
     from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition
+    from autoscript_sdb_microscope_client.enumerations import RegularCrossSectionScanMethod
     _THERMO_API_AVAILABLE = True 
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
@@ -1368,7 +1369,12 @@ class ThermoMicroscope(FibsemMicroscope):
         dx:float, dy:float, 
         beam_type:BeamType, 
         base_position:FibsemStagePosition) -> FibsemStagePosition:
-
+        
+        scan_rotation = self.get("scan_rotation", beam_type)
+        if np.isclose(scan_rotation, np.pi):
+            dx *= -1.0
+            dy *= -1.0
+        
         # stable-move-projection
         point_yz = self._y_corrected_stage_movement(dy, beam_type)
         dy, dz = point_yz.y, point_yz.z
@@ -1625,12 +1631,15 @@ class ThermoMicroscope(FibsemMicroscope):
         if not self.is_available("ion_beam"):
             raise ValueError("Ion beam not available.")
         
-        # change to milling current, voltage
-        if self.get("voltage", BeamType.ION) != milling_voltage:
-            self.set("voltage", milling_voltage, BeamType.ION)
-        if self.get("current", BeamType.ION) != milling_current:
-            self.set("current", milling_current, BeamType.ION)
-
+        try:
+            # change to milling current, voltage
+            if self.get("voltage", BeamType.ION) != milling_voltage:
+                self.set("voltage", milling_voltage, BeamType.ION)
+            if self.get("current", BeamType.ION) != milling_current:
+                self.set("current", milling_current, BeamType.ION)
+        except Exception as e:
+            logging.warning(f"Failed to set voltage or current: {e}, voltage={milling_voltage}, current={milling_current}")
+            
         # run milling (asynchronously)
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
@@ -1775,6 +1784,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if pattern_settings.passes: # not zero
             if isinstance(pattern, RegularCrossSectionPattern):
                 pattern.multi_scan_pass_count = pattern_settings.passes
+                pattern.scan_method = 1 # multi scan
             else:
                 pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
                 

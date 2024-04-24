@@ -233,6 +233,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.info("Removing milling stage")
 
         current_index = self.comboBox_milling_stage.currentIndex()
+        if current_index == -1:
+            return
         log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
@@ -785,10 +787,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         idx = info['idx']
         total = info['total']
         est_time = info['est_time']
+        t_m = int(est_time // 60)
+        t_s = int(est_time % 60)
 
         self.progressBar_milling.setVisible(True)
         self.progressBar_milling.setValue(value*100)
-        self.progressBar_milling.setFormat(f"Milling Stage {idx+1}/{total}: {est_time:.1f}s remaining...")
+        self.progressBar_milling.setFormat(f"Milling Stage {idx+1}/{total}: {t_m:02d}:{t_s:02d} remaining...")
 
     def finish_progress_bar(self):
         self.progressBar_milling.setVisible(False)
