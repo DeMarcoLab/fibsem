@@ -36,6 +36,7 @@ try:
         StagePosition,
         CompustagePosition,
     )
+    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 
     THERMO = True
 except:
@@ -222,7 +223,7 @@ class FibsemStagePosition:
                     y=self.y,
                     z=self.z,
                     a=self.t,
-                    coordinate_system=self.coordinate_system.upper(),
+                    coordinate_system=CoordinateSystem.SPECIMEN,
                 )               
                 
             else:
@@ -248,7 +249,7 @@ class FibsemStagePosition:
                     z=position.z,
                     r=0.0,
                     t=position.a,
-                    coordinate_system=position.coordinate_system.upper(),
+                    coordinate_system=CoordinateSystem.SPECIMEN,
                 )
 
 
@@ -300,7 +301,6 @@ class FibsemStagePosition:
                 (abs(self.z - pos2.z) < tol) and 
                 (abs(self.t - pos2.t) < tol) and 
                 (abs(self.r - pos2.r) < tol))
-
 
 
 @dataclass

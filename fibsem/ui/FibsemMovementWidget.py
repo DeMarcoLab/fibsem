@@ -111,8 +111,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # set custom tilt limits for the compustage
         if self.microscope is not None:
             if self.microscope.stage_is_compustage:
-                self.doubleSpinBox_movement_stage_tilt.setMinimum(-180.0)
-                self.doubleSpinBox_movement_stage_tilt.setMaximum(180)
+                self.doubleSpinBox_movement_stage_tilt.setMinimum(-195.0)
+                self.doubleSpinBox_movement_stage_tilt.setMaximum(15)
 
                 # NOTE: these values are expressed in mm in the UI, hence the conversion
                 # set x, y, z step sizes to be 1 um
