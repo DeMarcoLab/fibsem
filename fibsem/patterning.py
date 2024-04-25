@@ -273,7 +273,7 @@ class TrenchPattern(BasePattern):
         lower_trench_height = trench_height * min(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
-        use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
+        use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
 
         centre_upper_y = point.y + (
@@ -415,7 +415,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_x=point.x - (width / 2) - (trench_width / 2),
             centre_y=point.y,
             cleaning_cross_section=False,
-            scan_direction=scan_direction,
+            scan_direction="LeftToRight",
             cross_section=cross_section
         )
 
@@ -426,7 +426,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_x=point.x + (width / 2) + (trench_width / 2),
             centre_y=point.y,
             cleaning_cross_section=False,
-            scan_direction=scan_direction,
+            scan_direction="RightToLeft",
             cross_section=cross_section
         )
         y_offset = (height / 2) + (upper_trench_height / 2)

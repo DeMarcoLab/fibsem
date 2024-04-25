@@ -65,6 +65,7 @@ try:
     from autoscript_sdb_microscope_client.structures import AdornedImage
 
     from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition
+    from autoscript_sdb_microscope_client.enumerations import RegularCrossSectionScanMethod
     _THERMO_API_AVAILABLE = True 
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
@@ -194,7 +195,7 @@ class FibsemMicroscope(ABC):
 
         # compustage is tilted by 180 degrees for flat to beam, because we image the backside fo the grid,
         # therefore, we need to offset the tilt by 180 degrees
-        if self.stage_is_compustage:
+        if self.stage_is_compustage and beam_type is BeamType.ION:
             tilt = -np.pi + tilt
             
         # updated safe rotation move
@@ -830,16 +831,18 @@ class ThermoMicroscope(FibsemMicroscope):
         if self.connection.specimen.compustage.is_installed:
             self.stage = self.connection.specimen.compustage
             self.stage_is_compustage = True
+            self._default_stage_coordinate_system = CoordinateSystem.SPECIMEN
         elif self.connection.specimen.stage.is_installed:          
             self.stage = self.connection.specimen.stage
             self.stage_is_compustage = False
+            self._default_stage_coordinate_system = CoordinateSystem.RAW
         else:
             self.stage = None
             self.stage_is_compustage = False
             logging.warning(f"No stage is installed on the microscope.")
 
         # set default coordinate system
-        self.stage.set_default_coordinate_system(CoordinateSystem.RAW)
+        self.stage.set_default_coordinate_system(self._default_stage_coordinate_system)
         # TODO: set default move settings, is this dependent on the stage type?
 
         
@@ -1076,7 +1079,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # convert to autoscript position
         autoscript_position = position.to_autoscript_position(compustage=self.stage_is_compustage)
-        autoscript_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
+        if not self.stage_is_compustage:
+            autoscript_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
         
         logging.info(f"Moving stage to {position}.")
         self.stage.absolute_move(autoscript_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
@@ -1105,7 +1109,8 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # convert to autoscript position
         thermo_position = position.to_autoscript_position(self.stage_is_compustage)
-        thermo_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
+        if not self.stage_is_compustage:
+            thermo_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
 
         # move stage
         self.stage.relative_move(thermo_position)
@@ -1187,8 +1192,10 @@ class ThermoMicroscope(FibsemMicroscope):
             dy *= -1.0
 
         # TODO: ARCTIS Do we need to reverse the direction of the movement because of the inverted stage tilt?
-        # if self.stage_is_compustage:
-            # dy *= -1.0
+        if self.stage_is_compustage:
+            stage_tilt = self.get_stage_position().t
+            if stage_tilt >= np.deg2rad(-90):
+                dy *= -1.0
 
         # TODO: implement perspective correction
         PERSPECTIVE_CORRECTION = 0.9
@@ -1207,7 +1214,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.stage.relative_move(autoscript_position, move_settings)
 
         # restore working distance to adjust for microscope compenstation
-        if static_wd:
+        if static_wd and not self.stage_is_compustage:
             self.set("working_distance", self.system.electron.eucentric_height, BeamType.ELECTRON)
             self.set("working_distance", self.system.ion.eucentric_height, BeamType.ION)
         else:
@@ -1276,6 +1283,10 @@ class ThermoMicroscope(FibsemMicroscope):
         # we may also need to flip the PRETILT_SIGN?
 
         if self.stage_is_compustage:
+
+            if stage_tilt < 0:
+                expected_y *= -1.0
+
             stage_tilt += np.pi
 
         PRETILT_SIGN = 1.0
@@ -1358,7 +1369,12 @@ class ThermoMicroscope(FibsemMicroscope):
         dx:float, dy:float, 
         beam_type:BeamType, 
         base_position:FibsemStagePosition) -> FibsemStagePosition:
-
+        
+        scan_rotation = self.get("scan_rotation", beam_type)
+        if np.isclose(scan_rotation, np.pi):
+            dx *= -1.0
+            dy *= -1.0
+        
         # stable-move-projection
         point_yz = self._y_corrected_stage_movement(dy, beam_type)
         dy, dz = point_yz.y, point_yz.z
@@ -1615,12 +1631,15 @@ class ThermoMicroscope(FibsemMicroscope):
         if not self.is_available("ion_beam"):
             raise ValueError("Ion beam not available.")
         
-        # change to milling current, voltage
-        if self.get("voltage", BeamType.ION) != milling_voltage:
-            self.set("voltage", milling_voltage, BeamType.ION)
-        if self.get("current", BeamType.ION) != milling_current:
-            self.set("current", milling_current, BeamType.ION)
-
+        try:
+            # change to milling current, voltage
+            if self.get("voltage", BeamType.ION) != milling_voltage:
+                self.set("voltage", milling_voltage, BeamType.ION)
+            if self.get("current", BeamType.ION) != milling_current:
+                self.set("current", milling_current, BeamType.ION)
+        except Exception as e:
+            logging.warning(f"Failed to set voltage or current: {e}, voltage={milling_voltage}, current={milling_current}")
+            
         # run milling (asynchronously)
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
@@ -1733,9 +1752,9 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             create_pattern_function = patterning_api.create_rectangle
         
-        if pattern_settings.cleaning_cross_section:
-            logging.warning(f"Deprecated: cleaning_cross_section is deprecated. Use cross_section instead. This will be removed in a future release.")    
-            create_pattern_function = patterning_api.create_cleaning_cross_section
+        # if pattern_settings.cleaning_cross_section:
+        #     logging.warning(f"Deprecated: cleaning_cross_section is deprecated. Use cross_section instead. This will be removed in a future release.")    
+        #     create_pattern_function = patterning_api.create_cleaning_cross_section
 
         
             
@@ -1765,6 +1784,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if pattern_settings.passes: # not zero
             if isinstance(pattern, RegularCrossSectionPattern):
                 pattern.multi_scan_pass_count = pattern_settings.passes
+                pattern.scan_method = 1 # multi scan
             else:
                 pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
                 
@@ -2453,7 +2473,7 @@ class ThermoMicroscope(FibsemMicroscope):
             _check_stage(self.system)
 
             # get stage position in raw coordinates 
-            self.stage.set_default_coordinate_system(CoordinateSystem.RAW) # TODO: remove this once testing is done
+            self.stage.set_default_coordinate_system(self._default_stage_coordinate_system) # TODO: remove this once testing is done
             stage_position = FibsemStagePosition.from_autoscript_position(self.stage.current_position)
             return stage_position
         

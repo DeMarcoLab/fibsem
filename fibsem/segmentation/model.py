@@ -183,6 +183,8 @@ def get_backend(checkpoint: str) -> str:
         return "nnunet"
     elif "onnx" in checkpoint:
         return "onnx"
+    elif "hf" in checkpoint or "transformers" in checkpoint or "segformer" in checkpoint:
+        return "huggingface"
     else:
         return "smp"
 
@@ -202,6 +204,9 @@ def load_model(
     elif backend == "onnx":
         from fibsem.segmentation.onnx_model import SegmentationModelONNX
         model = SegmentationModelONNX(checkpoint=checkpoint)
+    elif backend == "huggingface":
+        from fibsem.segmentation.hf_segmentation_model import SegmentationModelHuggingFace
+        model = SegmentationModelHuggingFace(checkpoint=checkpoint)
     else:
         model = SegmentationModel(checkpoint=checkpoint, encoder=encoder, num_classes=nc, _fix_numeric_scaling=_fix_numeric_scaling)
 
