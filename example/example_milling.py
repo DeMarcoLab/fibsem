@@ -26,8 +26,8 @@ def main():
         height = 10.0e-6,
         depth = 2.0e-6,
         rotation = 0.0,
-        center_x = 0.0,
-        center_y = 0.0,
+        centre_x = 0.0,
+        centre_y = 0.0,
     )
 
     # line pattern one
