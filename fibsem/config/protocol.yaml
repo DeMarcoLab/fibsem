@@ -59,6 +59,14 @@ patterns:
     side_trench_width: 5.0e-06
     top_trench_height: 10.0e-6
     inverted: False
+  SerialSection:
+    section_thickness: 4.0e-6
+    section_width: 50.0e-6
+    section_depth: 20.0e-6
+    side_width: 10.0e-6
+    side_depth: 40.0e-6
+    side_height: 10.0e-6
+    inverted: false
   Undercut: 
     height: 10.0e-6
     width: 10.0e-6
