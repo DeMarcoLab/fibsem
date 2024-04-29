@@ -135,7 +135,7 @@ def create_gif(path: Path, search: str, gif_fname: str, loop: int = 0) -> None:
         loop=loop,
     )
 
-VALID_THERMO_FISHER = ["Thermo", "Thermo Fisher Scientific", "Thermo Fisher Scientific"]
+VALID_THERMO_FISHER = ["Thermo", "Thermo Fisher Scientific", "Thermo Fisher Scientific"] # needed repetition?
 VALID_TESCAN = ["Tescan", "TESCAN" ]
 
 def setup_session(
@@ -232,7 +232,7 @@ def load_microscope_configuration(
         config_path = DEFAULT_CONFIGURATION_PATH
     
     # load config
-    config = load_yaml(os.path.join(config_path))
+    config = load_yaml(os.path.join(config_path)) #not sure what is joining here
 
     # load protocol
     protocol = load_protocol(protocol_path)
