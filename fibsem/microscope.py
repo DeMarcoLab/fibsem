@@ -1639,7 +1639,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 self.set("current", milling_current, BeamType.ION)
         except Exception as e:
             logging.warning(f"Failed to set voltage or current: {e}, voltage={milling_voltage}, current={milling_current}")
-            
+
         # run milling (asynchronously)
         self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
