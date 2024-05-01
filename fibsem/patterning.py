@@ -55,6 +55,15 @@ REQUIRED_KEYS = {
         "inverted",
         "cross_section", 
     ),
+    "SerialSection": (
+        "section_thickness",
+        "section_width",
+        "section_depth",
+        "side_width",
+        "side_height",
+        "side_depth",
+        "inverted",
+    ),
     "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
     "Undercut": (
         "height",
@@ -273,7 +282,7 @@ class TrenchPattern(BasePattern):
         lower_trench_height = trench_height * min(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
-        use_cleaning_cross_section = protocol.get("cleaning_cross_section", True)
+        use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
 
         centre_upper_y = point.y + (
@@ -415,7 +424,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_x=point.x - (width / 2) - (trench_width / 2),
             centre_y=point.y,
             cleaning_cross_section=False,
-            scan_direction=scan_direction,
+            scan_direction="LeftToRight",
             cross_section=cross_section
         )
 
@@ -426,7 +435,7 @@ class HorseshoePatternVertical(BasePattern):
             centre_x=point.x + (width / 2) + (trench_width / 2),
             centre_y=point.y,
             cleaning_cross_section=False,
-            scan_direction=scan_direction,
+            scan_direction="RightToLeft",
             cross_section=cross_section
         )
         y_offset = (height / 2) + (upper_trench_height / 2)
@@ -448,6 +457,86 @@ class HorseshoePatternVertical(BasePattern):
         self.point = point
         return self.patterns
 
+@dataclass
+class SerialSectionPattern(BasePattern):
+    name: str = "SerialSection"
+    required_keys: tuple[str] = REQUIRED_KEYS["SerialSection"]
+    patterns = None
+    protocol = None
+    point = None
+    # ref: "serial-liftout section" https://www.nature.com/articles/s41592-023-02113-5
+
+    def define(
+        self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemRectangleSettings]:
+        """Calculate the serial liftout sectioning milling patterns"""
+
+        check_keys(protocol, self.required_keys)
+
+        # TODO: make side patterns optional
+
+        section_thickness = protocol["section_thickness"]
+        section_width = protocol["section_width"]
+        section_depth = protocol["section_depth"]
+        side_width = protocol["side_width"]
+        side_height = protocol["side_height"]
+        side_depth = protocol["side_depth"]
+        inverted = protocol.get("inverted", False)
+
+        # draw a line of section width
+        section_y = section_thickness
+        if inverted:
+            section_y *= -1.0
+            side_height *= -1.0
+
+        # main section pattern
+        section_pattern = FibsemLineSettings(start_x=point.x - section_width / 2, 
+                                             end_x=point.x + section_width / 2, 
+                                             start_y=point.y + section_y, 
+                                             end_y=point.y + section_y, 
+                                             depth=section_depth)
+        
+        # side cleaning patterns
+        left_side_pattern = FibsemLineSettings(
+            start_x=point.x - section_width / 2 - side_width / 2,
+            end_x=point.x - section_width / 2 + side_width / 2,
+            start_y=point.y + section_y,
+            end_y=point.y + section_y,
+            depth=side_depth,
+        )
+        right_side_pattern = FibsemLineSettings(
+            start_x=point.x + section_width / 2 - side_width / 2,
+            end_x=point.x + section_width / 2 + side_width / 2,
+            start_y=point.y + section_y,
+            end_y=point.y + section_y,
+            depth=side_depth,
+        )
+
+        # side vertical patterns
+        left_side_pattern_vertical = FibsemLineSettings(
+            start_x=point.x - section_width / 2,
+            end_x=point.x - section_width / 2,
+            start_y=point.y + section_y,
+            end_y=point.y + section_y + side_height,
+            depth=side_depth,
+        )
+
+        right_side_pattern_vertical = FibsemLineSettings(
+            start_x=point.x + section_width / 2,
+            end_x=point.x + section_width / 2,
+            start_y=point.y + section_y,
+            end_y=point.y + section_y + side_height,
+            depth=side_depth,
+        )
+
+
+        self.patterns = [section_pattern, 
+                         left_side_pattern, right_side_pattern, 
+                         left_side_pattern_vertical, right_side_pattern_vertical]
+        self.protocol = protocol
+        self.point = point
+
+        return self.patterns
 
 @dataclass
 class FiducialPattern(BasePattern):
@@ -913,6 +1002,7 @@ __PATTERNS__ = [
     TrenchPattern,
     HorseshoePattern,
     HorseshoePatternVertical,
+    SerialSectionPattern,
     UndercutPattern,
     FiducialPattern,
     ArrayPattern,

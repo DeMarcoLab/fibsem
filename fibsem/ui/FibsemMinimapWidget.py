@@ -455,10 +455,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         if point is False: # clicked outside image
             return
-
+        
+        beam_type = self.image.metadata.image_settings.beam_type
         _new_position = self.microscope.project_stable_move( 
             dx=point.x, dy=point.y, 
-            beam_type=self.image.metadata.image_settings.beam_type, 
+            beam_type=beam_type, 
             base_position=self.image.metadata.microscope_state.stage_position)   
 
 

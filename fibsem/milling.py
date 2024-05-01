@@ -153,7 +153,10 @@ def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: 
     for pattern in stage.pattern.patterns:
         draw_pattern(microscope, pattern)
 
-    run_milling(microscope, stage.milling.milling_current, asynch)
+    run_milling(microscope=microscope, 
+        milling_current=stage.milling.milling_current, 
+        milling_voltage=stage.milling.milling_voltage, 
+        asynch=asynch)
 
     # finish milling
     finish_milling(microscope)

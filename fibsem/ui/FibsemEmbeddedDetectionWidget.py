@@ -186,7 +186,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         # add mask to viewer
         self._mask_layer = self.viewer.add_labels(self.det.mask, 
                                                     name="mask", 
-                                                    opacity=0.7,
+                                                    opacity=0.3,
                                                     blending="additive", 
                                                     color=CLASS_COLORS)
 
