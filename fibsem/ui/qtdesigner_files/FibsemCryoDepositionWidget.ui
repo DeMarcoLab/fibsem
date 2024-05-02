@@ -6,154 +6,99 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>416</width>
+    <height>221</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_duration">
+     <property name="text">
+      <string>Duration (s)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="comboBox_stage_position"/>
+   </item>
    <item row="0" column="0" colspan="2">
     <widget class="QLabel" name="label_title">
      <property name="font">
       <font>
-       <pointsize>10</pointsize>
+       <pointsize>12</pointsize>
        <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
      <property name="text">
-      <string>Cryo Sputter</string>
+      <string>Cryo Deposition</string>
      </property>
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="label_sputter_stage_position">
+    <widget class="QLabel" name="label_stage_position">
      <property name="text">
       <string>Stage Position</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="comboBox_sputter_stage_position"/>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_sputter_application_file">
-     <property name="text">
-      <string>Application File</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QLineEdit" name="lineEdit_sputter_application_file">
-     <property name="text">
-      <string>cryo_Pt_dep</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_sputter_gis_position">
-     <property name="text">
-      <string>GIS Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QLineEdit" name="lineEdit_sputter_gis_position">
-     <property name="text">
-      <string>cryo</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_sputter_gas">
-     <property name="text">
-      <string>Gas</string>
-     </property>
-    </widget>
-   </item>
    <item row="4" column="1">
-    <widget class="QLineEdit" name="lineEdit_sputter_gas">
+    <widget class="QLineEdit" name="lineEdit_gas">
      <property name="text">
       <string>Pt cryo</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_sputter_hfw">
-     <property name="text">
-      <string>HFW (um)</string>
-     </property>
-    </widget>
-   </item>
    <item row="5" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_sputter_hfw">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_duration">
      <property name="maximum">
       <double>1000.000000000000000</double>
      </property>
      <property name="value">
       <double>30.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_port">
+     <property name="text">
+      <string>Port</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_run_sputter">
+     <property name="text">
+      <string>Run Cryo Deposition</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_gas">
+     <property name="text">
+      <string>Gas</string>
      </property>
     </widget>
    </item>
    <item row="6" column="0">
-    <widget class="QLabel" name="label_sputter_length">
+    <widget class="QLabel" name="label_insert_position">
      <property name="text">
-      <string>Length (um)</string>
+      <string>Insert Position</string>
      </property>
     </widget>
    </item>
    <item row="6" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_sputter_length">
-     <property name="maximum">
-      <double>1000.000000000000000</double>
-     </property>
-     <property name="value">
-      <double>7.500000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="label">
+    <widget class="QLineEdit" name="lineEdit_insert_position">
      <property name="text">
-      <string>Current (nA)</string>
+      <string>cryo</string>
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_sputter_beam_current">
-     <property name="maximum">
-      <double>1000.000000000000000</double>
-     </property>
-     <property name="value">
-      <double>10.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="label_sputter_time">
-     <property name="text">
-      <string>Time (s)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_sputter_time">
-     <property name="maximum">
-      <double>1000.000000000000000</double>
-     </property>
-     <property name="value">
-      <double>30.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_run_sputter">
-     <property name="text">
-      <string>Run Sputtering</string>
-     </property>
-    </widget>
+   <item row="3" column="1">
+    <widget class="QComboBox" name="comboBox_port"/>
    </item>
   </layout>
  </widget>

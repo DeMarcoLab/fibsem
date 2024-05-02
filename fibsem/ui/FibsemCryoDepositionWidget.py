@@ -1,17 +1,17 @@
 import logging
 import napari
 import napari.utils.notifications
-import numpy as np
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
-from fibsem.structures import MicroscopeSettings
-from fibsem.ui import FibsemCryoDepositionWidget_qt
+from fibsem.structures import MicroscopeSettings, FibsemGasInjectionSettings
+
+from fibsem.ui.qtdesigner_files import FibsemCryoDepositionWidget
 from fibsem import gis
 
 
-class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget_qt.Ui_Dialog, QtWidgets.QDialog):
+class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget.Ui_Dialog, QtWidgets.QDialog):
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -32,33 +32,43 @@ class FibsemCryoDepositionWidget(FibsemCryoDepositionWidget_qt.Ui_Dialog, QtWidg
         self.pushButton_run_sputter.clicked.connect(self.run_sputter)
 
         positions = utils.load_yaml(cfg.POSITION_PATH)
-        self.comboBox_sputter_stage_position.addItems([p["name"] for p in positions])
+        self.comboBox_stage_position.addItems(["Current Position"] + [p["name"] for p in positions])
+        available_ports = self.microscope.get_available_values("gis_ports")
+        self.comboBox_port.addItems([str(p) for p in available_ports])
 
+
+        # TODO: show / hide based on gis / multichem available
+        multichem_available = self.microscope.is_available("gis_multichem")
+        self.lineEdit_gas.setVisible(multichem_available)
+        self.label_gas.setVisible(multichem_available)
+        self.lineEdit_insert_position.setVisible(multichem_available)
+        self.label_insert_position.setVisible(multichem_available)
+        self.comboBox_port.setVisible(not multichem_available)  # gis only
+        self.label_port.setVisible(not multichem_available)     # gis only
 
     def _get_protocol_from_ui(self):
         
         protocol = {
-            "application_file": self.lineEdit_sputter_application_file.text(),
-            "gas": self.lineEdit_sputter_gas.text(),
-            "position": self.lineEdit_sputter_gis_position.text(),
-            "name": self.comboBox_sputter_stage_position.currentText(),
-            "time": self.doubleSpinBox_sputter_time.value(),
-            "hfw": self.doubleSpinBox_sputter_hfw.value() * constants.MICRO_TO_SI,
-            "beam_current": self.doubleSpinBox_sputter_beam_current.value() * constants.NANO_TO_SI,
-            "length": self.doubleSpinBox_sputter_length.value() * constants.MICRO_TO_SI,
+            "port": self.comboBox_port.currentText(),
+            "gas": self.lineEdit_gas.text(),
+            "insert_position": self.lineEdit_insert_position.text(),
+            "duration": self.doubleSpinBox_duration.value(),
+            "name": self.comboBox_stage_position.currentText(),
 
         }
 
         return protocol
 
-    # TODO: thread this
+    # TODO: thread this, add progress bar, feedback
     def run_sputter(self):
         
-        protocol = self._get_protocol_from_ui()
+        gdict = self._get_protocol_from_ui()
+        gis_settings = FibsemGasInjectionSettings.from_dict(gdict)
 
-        gis.cryo_deposition(self.microscope, protocol, name=protocol["name"])
+        if gdict["name"] == "Current Position":
+            gdict["name"] = None
 
-
+        gis.cryo_deposition_v2(self.microscope, gis_settings, name=gdict["name"])
 
 
 def main():
