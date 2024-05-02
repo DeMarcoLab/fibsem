@@ -1898,9 +1898,12 @@ class ThermoMicroscope(FibsemMicroscope):
 
         wait_time = 0
         max_wait_time = 15
-        target_temp = 310 # validate this somehow?
+        target_temp = 300 # validate this somehow?
         while True:
-            temp = self.gis.get_temperature()
+            if gas is not None:
+                temp = self.gis.get_temperature(gas) # multi-chem requires gas name
+            else:
+                temp = self.gis.get_temperature()
             logging.info(f"Waiting for heater: {temp}K, target={target_temp}, wait_time={wait_time}/{max_wait_time} sec")
 
             if temp >= target_temp:
