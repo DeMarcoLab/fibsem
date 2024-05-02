@@ -211,7 +211,7 @@ class Ui_Form(object):
         self.gridLayout.addItem(spacerItem1, 30, 0, 1, 2)
         self.pushButton_stop_milling = QtWidgets.QPushButton(Form)
         self.pushButton_stop_milling.setObjectName("pushButton_stop_milling")
-        self.gridLayout.addWidget(self.pushButton_stop_milling, 27, 0, 1, 1)
+        self.gridLayout.addWidget(self.pushButton_stop_milling, 27, 0, 1, 2)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)

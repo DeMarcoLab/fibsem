@@ -418,7 +418,7 @@
      </property>
     </spacer>
    </item>
-   <item row="27" column="0">
+   <item row="27" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_stop_milling">
      <property name="text">
       <string>Stop Milling</string>

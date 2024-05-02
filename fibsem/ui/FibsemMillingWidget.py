@@ -754,6 +754,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         """Request milling stop."""
         self._STOP_MILLING = True
         self.microscope.stop_milling()
+        self._quit_progress_bar()
+        self.finish_progress_bar()
     
     def start_progress_thread(self,info):
 

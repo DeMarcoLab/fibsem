@@ -1655,7 +1655,12 @@ class ThermoMicroscope(FibsemMicroscope):
         if asynch:
             self.connection.patterning.start()
         else:
-            self.connection.patterning.run()
+            self.connection.patterning.start()
+            while self.connection.patterning.state == PatterningState.IDLE: # giving time to start 
+                time.sleep(0.5)
+            while self.connection.patterning.state == PatterningState.RUNNING:
+                # logging.info(f"Patterning State: {self.connection.patterning.state}")
+                time.sleep(1)      
             self.connection.patterning.clear_patterns()
         # NOTE: Make tescan logs the same??
                                     
