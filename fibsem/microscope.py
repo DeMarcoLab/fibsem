@@ -270,6 +270,11 @@ class FibsemMicroscope(ABC):
     @abstractmethod
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         pass
+
+    @abstractmethod
+    def stop_milling(self) -> None:
+        return 
+    
     @abstractmethod
     def estimate_milling_time(self,patterns) -> float:
         pass
@@ -1650,7 +1655,12 @@ class ThermoMicroscope(FibsemMicroscope):
         if asynch:
             self.connection.patterning.start()
         else:
-            self.connection.patterning.run()
+            self.connection.patterning.start()
+            while self.connection.patterning.state == PatterningState.IDLE: # giving time to start 
+                time.sleep(0.5)
+            while self.connection.patterning.state == PatterningState.RUNNING:
+                # logging.info(f"Patterning State: {self.connection.patterning.state}")
+                time.sleep(1)      
             self.connection.patterning.clear_patterns()
         # NOTE: Make tescan logs the same??
                                     
@@ -1721,6 +1731,14 @@ class ThermoMicroscope(FibsemMicroscope):
 
         logging.debug({"msg": "finish_milling", "imaging_current": imaging_current, "imaging_voltage": imaging_voltage})
 
+    def stop_milling(self) -> None:
+        """Stop the milling process."""
+        if self.connection.patterning.state == PatterningState.RUNNING:
+            logging.info(f"Stopping milling...")
+            self.connection.patterning.stop()
+            logging.info(f"Milling stopped.")
+        
+        
     def estimate_milling_time(self, patterns: list ) -> float:
         """Calculates the estimated milling time for a list of patterns."""
 
@@ -5706,6 +5724,8 @@ class DemoMicroscope(FibsemMicroscope):
         self.set("current", imaging_current, BeamType.ION)
         self.set("voltage", imaging_voltage, BeamType.ION)
 
+    def stop_milling(self) -> None:
+        return
 
     def estimate_milling_time(self, patterns: list) -> float:
         """Estimate the milling time for the specified patterns."""
