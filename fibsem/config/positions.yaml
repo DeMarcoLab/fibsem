@@ -68,3 +68,17 @@
     x: 0.0029505833333333333
     y: 0.004088416666666666
     z: 0.03178491512345679
+-   coordinate_system: RAW
+    name: arctis-grid-01-electron
+    r: 0
+    t: -3.141592653589793
+    x: 0
+    y: 0
+    z: 0
+-   coordinate_system: RAW
+    name: arctis-grid-01-ion
+    r: 0
+    t: -2.234021442552742
+    x: 0
+    y: 0
+    z: 0

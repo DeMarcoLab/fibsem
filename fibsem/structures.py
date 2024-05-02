@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
-from typing import Optional
+from typing import Optional, Union
 import numpy as np
 import tifffile as tff
 import fibsem
@@ -34,7 +34,9 @@ try:
         ManipulatorPosition,
         Rectangle,
         StagePosition,
+        CompustagePosition,
     )
+    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 
     THERMO = True
 except:
@@ -157,8 +159,8 @@ class FibsemStagePosition:
     Methods:
         to_dict(): Convert the stage position object to a dictionary.
         from_dict(data: dict): Create a new stage position object from a dictionary.
-        to_autoscript_position(stage_tilt: float = 0.0) -> StagePosition: Convert the stage position to a StagePosition object that is compatible with Autoscript.
-        from_autoscript_position(position: StagePosition, stage_tilt: float = 0.0) -> None: Create a new FibsemStagePosition object from a StagePosition object that is compatible with Autoscript.
+        to_autoscript_position(compustage: bool) -> StagePosition: Convert the stage position to a StagePosition object that is compatible with Autoscript.
+        from_autoscript_position(position: StagePosition) -> None: Create a new FibsemStagePosition object from a StagePosition object that is compatible with Autoscript.
         to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
         from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
     """
@@ -205,24 +207,56 @@ class FibsemStagePosition:
 
     if THERMO:
 
-        def to_autoscript_position(self, stage_tilt: float = 0.0) -> StagePosition:
-            return StagePosition(
-                x=self.x,
-                y=self.y,  # / np.cos(stage_tilt),
-                z=self.z,  # / np.cos(stage_tilt),
-                r=self.r,
-                t=self.t,
-                coordinate_system=self.coordinate_system,
-            )
+        def to_autoscript_position(self, compustage: bool = False) -> Union[StagePosition, CompustagePosition]:
+            """Converts the stage position to a StagePosition object that is compatible with Autoscript.
+            Args:
+                compustage: bool = False: Whether or not the stage is a compustage.
+            Returns:
+                StagePosition / CompuStagePosition compatible with Autoscript.        
+            """
 
-        @classmethod
-        def from_autoscript_position(
-            cls, position: StagePosition, stage_tilt: float = 0.0
-        ) -> None:
+            # reference: SerialFIB Arctis Driver
+            # https://github.com/sklumpe/SerialFIB/blob/main/src/Arctis/ArctisDriver.py
+            if compustage:
+                stage_position = CompustagePosition(
+                    x=self.x,
+                    y=self.y,
+                    z=self.z,
+                    a=self.t,
+                    coordinate_system=CoordinateSystem.SPECIMEN,
+                )               
+                
+            else:
+                stage_position = StagePosition(
+                    x=self.x,
+                    y=self.y, 
+                    z=self.z,  
+                    r=self.r,
+                    t=self.t,
+                    coordinate_system=CoordinateSystem.RAW,
+                )
+        
+            return stage_position
+
+        @classmethod # TODO: convert this to staticmethod?
+        def from_autoscript_position(cls, position: Union[StagePosition, CompustagePosition]) -> 'FibsemStagePosition':
+            
+            # compustage position
+            if isinstance(position, CompustagePosition):
+                return cls(
+                    x=position.x,
+                    y=position.y,
+                    z=position.z,
+                    r=0.0,
+                    t=position.a,
+                    coordinate_system=CoordinateSystem.SPECIMEN,
+                )
+
+
             return cls(
                 x=position.x,
-                y=position.y,  # * np.cos(stage_tilt),
-                z=position.z,  # * np.cos(stage_tilt),
+                y=position.y,  
+                z=position.z,
                 r=position.r,
                 t=position.t,
                 coordinate_system=position.coordinate_system.upper(),
@@ -267,7 +301,6 @@ class FibsemStagePosition:
                 (abs(self.z - pos2.z) < tol) and 
                 (abs(self.t - pos2.t) < tol) and 
                 (abs(self.r - pos2.r) < tol))
-
 
 
 @dataclass
@@ -1907,7 +1940,6 @@ def check_data_format(data: np.ndarray) -> bool:
         data = data[:, :, 0]
     return data.ndim == 2 and data.dtype in [np.uint8, np.uint16]
 
-
 @dataclass
 class FibsemGasInjectionSettings:
     port: str
@@ -1931,3 +1963,4 @@ class FibsemGasInjectionSettings:
             "duration": self.duration,
             "insert_position": self.insert_position,
         }
+
