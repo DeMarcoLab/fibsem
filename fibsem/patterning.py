@@ -63,6 +63,7 @@ REQUIRED_KEYS = {
         "side_height",
         "side_depth",
         "inverted",
+        "use_side_patterns",
     ),
     "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
     "Undercut": (
@@ -479,9 +480,10 @@ class SerialSectionPattern(BasePattern):
         section_width = protocol["section_width"]
         section_depth = protocol["section_depth"]
         side_width = protocol["side_width"]
-        side_height = protocol["side_height"]
+        side_height = protocol.get("side_height",  0)
         side_depth = protocol["side_depth"]
         inverted = protocol.get("inverted", False)
+        use_side_patterns = protocol.get("use_side_patterns", True)
 
         # draw a line of section width
         section_y = section_thickness
@@ -496,43 +498,46 @@ class SerialSectionPattern(BasePattern):
                                              end_y=point.y + section_y, 
                                              depth=section_depth)
         
-        # side cleaning patterns
-        left_side_pattern = FibsemLineSettings(
-            start_x=point.x - section_width / 2 - side_width / 2,
-            end_x=point.x - section_width / 2 + side_width / 2,
-            start_y=point.y + section_y,
-            end_y=point.y + section_y,
-            depth=side_depth,
-        )
-        right_side_pattern = FibsemLineSettings(
-            start_x=point.x + section_width / 2 - side_width / 2,
-            end_x=point.x + section_width / 2 + side_width / 2,
-            start_y=point.y + section_y,
-            end_y=point.y + section_y,
-            depth=side_depth,
-        )
+        self.patterns = [section_pattern]
 
-        # side vertical patterns
-        left_side_pattern_vertical = FibsemLineSettings(
-            start_x=point.x - section_width / 2,
-            end_x=point.x - section_width / 2,
-            start_y=point.y + section_y,
-            end_y=point.y + section_y + side_height,
-            depth=side_depth,
-        )
+        if use_side_patterns:
+            # side cleaning patterns
+            left_side_pattern = FibsemLineSettings(
+                start_x=point.x - section_width / 2 - side_width / 2,
+                end_x=point.x - section_width / 2 + side_width / 2,
+                start_y=point.y + section_y,
+                end_y=point.y + section_y,
+                depth=side_depth,
+            )
+            right_side_pattern = FibsemLineSettings(
+                start_x=point.x + section_width / 2 - side_width / 2,
+                end_x=point.x + section_width / 2 + side_width / 2,
+                start_y=point.y + section_y,
+                end_y=point.y + section_y,
+                depth=side_depth,
+            )
 
-        right_side_pattern_vertical = FibsemLineSettings(
-            start_x=point.x + section_width / 2,
-            end_x=point.x + section_width / 2,
-            start_y=point.y + section_y,
-            end_y=point.y + section_y + side_height,
-            depth=side_depth,
-        )
+            # side vertical patterns
+            left_side_pattern_vertical = FibsemLineSettings(
+                start_x=point.x - section_width / 2,
+                end_x=point.x - section_width / 2,
+                start_y=point.y + section_y,
+                end_y=point.y + section_y + side_height,
+                depth=side_depth,
+            )
 
+            right_side_pattern_vertical = FibsemLineSettings(
+                start_x=point.x + section_width / 2,
+                end_x=point.x + section_width / 2,
+                start_y=point.y + section_y,
+                end_y=point.y + section_y + side_height,
+                depth=side_depth,
+            )
 
-        self.patterns = [section_pattern, 
-                         left_side_pattern, right_side_pattern, 
-                         left_side_pattern_vertical, right_side_pattern_vertical]
+            self.patterns += [left_side_pattern, right_side_pattern, 
+                            left_side_pattern_vertical, 
+                            right_side_pattern_vertical]
+            
         self.protocol = protocol
         self.point = point
 

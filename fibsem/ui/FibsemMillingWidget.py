@@ -27,7 +27,7 @@ from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
-                     "number", "passes", "n_rectangles", "overlap", "inverted",
+                     "number", "passes", "n_rectangles", "overlap", "inverted", "use_side_patterns",
                      "n_columns", "n_rows", "cross_section" ]
 _ANGLE_KEYS = ["rotation"]
 _LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
@@ -414,6 +414,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.checkbox_inverted.stateChanged.connect(self.update_ui_pattern)
                 continue
 
+            if key == "use_side_patterns":
+                label = QtWidgets.QLabel(key)
+                self.checkbox_use_side_patterns = QtWidgets.QCheckBox()
+                self.gridLayout_patterns.addWidget(label, i, 0)
+                self.gridLayout_patterns.addWidget(self.checkbox_use_side_patterns, i, 1)
+                self.checkbox_use_side_patterns.setChecked(pattern_protocol.get(key, False))
+                self.checkbox_use_side_patterns.stateChanged.connect(self.update_ui_pattern)
+                continue
+                
             if key == "cross_section":
                 label = QtWidgets.QLabel(key)
                 self.comboBox_cross_section = QtWidgets.QComboBox()
@@ -472,6 +481,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 continue
             if key == "inverted":
                 pattern_dict[key] = self.checkbox_inverted.isChecked()
+                continue
+            if key == "use_side_patterns":
+                pattern_dict[key] = self.checkbox_use_side_patterns.isChecked()
                 continue
             if key == "cross_section":
                 pattern_dict[key] = self.comboBox_cross_section.currentText()
@@ -843,7 +855,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 try:
                     milling.setup_milling(self.microscope, mill_settings=stage.milling)
-
+                    
+                    if self._STOP_MILLING:
+                        return
+                    
                     microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
                     estimated_time = milling.estimate_milling_time(self.microscope, microscope_patterns)
                     progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
