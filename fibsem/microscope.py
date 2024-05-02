@@ -200,7 +200,7 @@ class FibsemMicroscope(ABC):
             
         # updated safe rotation move
         logging.info(f"moving flat to {beam_type.name}")
-        stage_position = FibsemStagePosition(r=rotation, t=tilt)
+        stage_position = FibsemStagePosition(r=rotation, t=tilt, coordinate_system="Raw")
 
         logging.debug({"msg": "move_flat_to_beam", "stage_position": stage_position.to_dict(), "beam_type": beam_type.name})
             
@@ -1210,7 +1210,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # move stage
         move_settings = MoveSettings(link_z_y=True)
-        autoscript_position = stage_position.to_autoscript_position(self.stage_is_compustage) 
+        autoscript_position = stage_position.to_autoscript_position(self.stage_is_compustage)
+        autoscript_position.coordinate_system = CoordinateSystem.SPECIMEN 
         self.stage.relative_move(autoscript_position, move_settings)
 
         # restore working distance to adjust for microscope compenstation

@@ -233,7 +233,7 @@ class FibsemStagePosition:
                     z=self.z,  
                     r=self.r,
                     t=self.t,
-                    coordinate_system=self.coordinate_system.upper(),
+                    coordinate_system=CoordinateSystem.RAW,
                 )
         
             return stage_position
