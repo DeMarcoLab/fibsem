@@ -270,6 +270,11 @@ class FibsemMicroscope(ABC):
     @abstractmethod
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         pass
+
+    @abstractmethod
+    def stop_milling(self) -> None:
+        return 
+    
     @abstractmethod
     def estimate_milling_time(self,patterns) -> float:
         pass
@@ -1721,6 +1726,14 @@ class ThermoMicroscope(FibsemMicroscope):
 
         logging.debug({"msg": "finish_milling", "imaging_current": imaging_current, "imaging_voltage": imaging_voltage})
 
+    def stop_milling(self) -> None:
+        """Stop the milling process."""
+        if self.connection.patterning.state == PatterningState.RUNNING:
+            logging.info(f"Stopping milling...")
+            self.connection.patterning.stop()
+            logging.info(f"Milling stopped.")
+        
+        
     def estimate_milling_time(self, patterns: list ) -> float:
         """Calculates the estimated milling time for a list of patterns."""
 
@@ -5706,6 +5719,8 @@ class DemoMicroscope(FibsemMicroscope):
         self.set("current", imaging_current, BeamType.ION)
         self.set("voltage", imaging_voltage, BeamType.ION)
 
+    def stop_milling(self) -> None:
+        return
 
     def estimate_milling_time(self, patterns: list) -> float:
         """Estimate the milling time for the specified patterns."""

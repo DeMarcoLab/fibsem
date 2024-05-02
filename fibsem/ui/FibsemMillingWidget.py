@@ -87,6 +87,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self._UPDATING_PATTERN:bool = False
         self._PATTERN_IS_MOVEABLE: bool = True
+        self._STOP_MILLING: bool = False
 
     def setup_connections(self):
 
@@ -181,6 +182,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # run milling
         self.pushButton_run_milling.clicked.connect(self.run_milling)
         self.pushButton_run_milling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        
+        # stop milling
+        self.pushButton_stop_milling.clicked.connect(self.stop_milling)
+        self.pushButton_stop_milling.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_stop_milling.setVisible(False)
 
         if self.milling_stages:
             self.comboBox_milling_stage.addItems([stage.name for stage in self.milling_stages])
@@ -720,14 +726,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_update_pattern.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
             self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+            self.pushButton_stop_milling.setVisible(False)
         elif milling:
             self.pushButton_run_milling.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Running...")
+            self.pushButton_stop_milling.setVisible(True)
         else:
             self.pushButton_run_milling.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_update_pattern.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_stop_milling.setVisible(False)
+
 
         if caller is None:
             self.parent.image_widget._toggle_interactions(enabled, caller="milling")
@@ -739,7 +749,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
         worker.start()
-        
+    
+    def stop_milling(self):
+        """Request milling stop."""
+        self._STOP_MILLING = True
+        self.microscope.stop_milling()
     
     def start_progress_thread(self,info):
 
@@ -817,6 +831,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             
         for idx,stage in enumerate(milling_stages):
             self.milling_notification.emit(f"Preparing: {stage.name}")
+
+            if self._STOP_MILLING:
+                return
+                
             if stage.pattern is not None:
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}") # TODO: refactor to json
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
@@ -863,6 +881,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._milling_finished.emit()
         self._quit_progress_bar()
         self.finish_progress_bar()
+        self._STOP_MILLING = False
 
 
 
