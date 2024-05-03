@@ -1,7 +1,8 @@
 from fibsem.microscope import FibsemMicroscope
 import logging
 import time
-from fibsem.structures import BeamType
+from fibsem.structures import BeamType, FibsemGasInjectionSettings
+
 
 
 gis_protocol = {
@@ -78,6 +79,35 @@ def cryo_deposition(microscope: FibsemMicroscope, protocol: dict = None, name: s
 
     # sputter
     deposit_platinum(microscope, protocol)
+
+    # return to previous position
+    microscope.safe_absolute_stage_movement(position)
+
+def cryo_deposition_v2(microscope: FibsemMicroscope, gis_settings: FibsemGasInjectionSettings, name: str = None, move_down: bool = True):
+
+    # get current position
+    position = microscope.get_microscope_state().stage_position
+
+    # move to deposition position
+    if name is not None:
+        
+        # move to position
+        from fibsem import utils
+        deposition_position = utils._get_position(name)
+        
+        if deposition_position is None:
+            raise RuntimeError(f"Position {name} requested but not found")
+        
+        logging.info(f"Moving to depositon position: {name}")
+        microscope.safe_absolute_stage_movement(deposition_position)
+
+    # move down 
+    if move_down:
+        from fibsem.structures import FibsemStagePosition
+        microscope.move_stage_relative(FibsemStagePosition(z=-1e-3))
+
+    # cryo deposition
+    microscope.cryo_deposition_v2(gis_settings)
 
     # return to previous position
     microscope.safe_absolute_stage_movement(position)
