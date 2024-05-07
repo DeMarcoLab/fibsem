@@ -2,9 +2,10 @@ import numpy as np
 import logging
 import skimage
 import tifffile
-from types import SimpleNamespace
+#from types import SimpleNamespace
 from datetime import datetime
 
+from argparse import Namespace
 
 class SpoofAdornedImageMetadata:
 
@@ -12,18 +13,23 @@ class SpoofAdornedImageMetadata:
         self._PixelSizeX_m = 1.8e-6
         self._PixelSizeY_m = 1.8e-6
 
-        binary_result_dict = { "pixel_size": {"x": self._PixelSizeX_m, "y": self._PixelSizeY_m} }
-        self.binary_result = SimpleNamespace(**binary_result_dict)
+        # binary_result_dict = { "pixel_size": {"x": self._PixelSizeX_m, "y": self._PixelSizeY_m} }
+        # self.binary_result = Namespace(**binary_result_dict)
+        self.binary_result = Namespace( pixel_size = Namespace(x=self._PixelSizeX_m, y=self._PixelSizeY_m))
         
-        stage_settings_dict = { "stage_position": {
-            "x":0 , "y":0, "z":0,
-            "r":0, "t":0
-        }}
-        self.stage_settings = SimpleNamespace(**stage_settings_dict)
+        # stage_settings_dict = { "stage_position": {
+        #     "x":0 , "y":0, "z":0,
+        #     "r":0, "t":0
+        # }}
+        # self.stage_settings = Namespace(**stage_settings_dict)
+        self.stage_settings = Namespace( stage_position = Namespace (
+            x=0 , y=0, z=0, r=0, t=0
+        ))
 
         # acquisition.acquisition_datetime
-        acquisition_dict = { "acquisition_datetime": datetime.now()}
-        self.acquisition = SimpleNamespace(**acquisition_dict)
+        # acquisition_dict = { "acquisition_datetime": datetime.now()}
+        # self.acquisition = Namespace(**acquisition_dict)
+        self.acquisition = Namespace ( acquisition_datetime = datetime.now() )
 
     @property
     def PixelSizeX_m(self):

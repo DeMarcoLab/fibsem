@@ -5,7 +5,7 @@ from fibsem import acquire, utils
 from fibsem.structures import BeamType
 import logging
 
-#matplotlib.use('TkAgg', force=True) # Activate 'agg' backend for off-screen plotting.
+matplotlib.use('TkAgg', force=True) # Activate 'agg' backend for off-screen plotting.
 
 
 """
