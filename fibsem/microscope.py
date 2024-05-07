@@ -4,6 +4,8 @@ import logging
 import sys
 from napari.qt.threading import thread_worker
 import os
+from pathlib import Path
+import tifffile
 
 # for easier usage
 import fibsem.constants as constants
@@ -70,7 +72,14 @@ try:
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
     if isinstance(e, NameError):
-        raise e 
+        raise e
+
+try:
+    AdornedImage
+except NameError:
+    logging.info("AdornedImage  not defined. Defining it here")
+    import fibsem.spoof_adorned_image
+    AdornedImage=fibsem.spoof_adorned_image.SpoofAdornedImage
 
 import sys
 
@@ -6207,3 +6216,113 @@ def _check_manipulator_movement(settings: SystemSettings, position: FibsemManipu
     req_tilt = position.t is not None
 
     _check_manipulator(settings, rotation=req_rotation, tilt=req_tilt)
+
+
+class Demo2Microscope(DemoMicroscope):
+    """
+    Overrides existing Demo but replacing only the acquire image function
+
+    One potential problem is if user wants a specific image resolution and pixel size,
+    and what this can provide is different.
+
+    """
+    def __init__(self, system_settings: SystemSettings):
+        super().__init__(system_settings)
+
+        # TODO: Modify this default implementation with our implementation
+        SEM_folder_path_str = eval(system_settings.demo2["SEM_folder_path_str"]) # TODO: check this works
+        FIB_folder_path_str = eval(system_settings.demo2["FIB_folder_path_str"])
+
+        folder_p_SEM = Path(SEM_folder_path_str)
+        folder_p_FIB = Path(FIB_folder_path_str)
+
+        #This below is giving error, not sure why
+        # if not folder_p_SEM.exists():
+        #     raise ValueError(f"{SEM_folder_path_str} is not a valid folder")
+        # if not folder_p_FIB.exists():
+        #     raise ValueError(f"{FIB_folder_path_str} is not a valid folder")
+
+        self.cycle_example_images_SEM = folder_p_SEM.glob("*.tif")
+        self.cycle_example_images_FIB = folder_p_FIB.glob("*.tif")
+
+        # print(len(list(self.cycle_example_images_SEM)))
+        # print(len(list(self.cycle_example_images_FIB)))
+    
+    def acquire_image(self, image_settings: ImageSettings) -> FibsemImage:
+
+        # _check_beam(image_settings.beam_type, self.system)
+        # vfw = image_settings.hfw * image_settings.resolution[1] / image_settings.resolution[0]
+        # pixelsize = Point(image_settings.hfw / image_settings.resolution[0], 
+        #                   vfw / image_settings.resolution[1])
+        
+        # logging.info(f"acquiring new {image_settings.beam_type.name} image.")
+        # image = FibsemImage(
+        #     data=np.random.randint(low=0, high=256, 
+        #         size=(image_settings.resolution[1],image_settings.resolution[0]), 
+        #         dtype=np.uint8),
+        #     metadata=FibsemImageMetadata(image_settings=image_settings, 
+        #                                 pixel_size=pixelsize,
+        #                                 microscope_state=self.get_microscope_state(beam_type=image_settings.beam_type),
+        #                                 system=self.system
+        #                                 )
+        # )
+
+        # image.metadata.user = self.user
+        # image.metadata.experiment = self.experiment
+        # image.metadata.system = self.system
+
+        # if image_settings.beam_type is BeamType.ELECTRON:
+        #     self._eb_image = image
+        # else:
+        #     self._ib_image = image
+
+        _check_beam(image_settings.beam_type, self.system)
+        vfw = image_settings.hfw * image_settings.resolution[1] / image_settings.resolution[0]
+        pixelsize = Point(image_settings.hfw / image_settings.resolution[0], 
+                          vfw / image_settings.resolution[1])
+        
+        logging.info(f"acquiring new {image_settings.beam_type.name} image.")
+        
+        new_image_fn=None #default
+
+        if image_settings.beam_type is BeamType.ELECTRON:
+
+            new_image_fn = next(self.cycle_example_images_SEM)
+            logging.info("SEM")
+            
+        elif image_settings.beam_type is BeamType.ION:
+            #cycle_example_images = self.cycle_example_images_FIB
+            new_image_fn = next(self.cycle_example_images_FIB)
+            logging.info("FIB")
+
+        if  new_image_fn is None:
+            raise ValueError("new_image_fn is None. Probably run out of images in folder.")
+        
+        ad_img = AdornedImage.load(new_image_fn)
+
+        # Problem, FibsemImage function fromAdornedImage() only works if THERMO
+        fibsem_image = FibsemImage.fromAdornedImage(
+            copy.deepcopy(ad_img), 
+            copy.deepcopy(image_settings), 
+            # copy.deepcopy(self.get_microscope_state(beam_type=image_settings.beam_type))
+            None
+        )
+
+        # set additional metadata
+        fibsem_image.metadata.user = self.user
+        fibsem_image.metadata.experiment = self.experiment
+        fibsem_image.metadata.system = self.system
+
+        if image_settings.beam_type is BeamType.ELECTRON:
+            self._eb_image = fibsem_image # must be FibsemImage object
+        elif image_settings.beam_type is BeamType.ION:
+            self._ib_image = fibsem_image # must be FibsemImage object
+        
+
+        fibsem_image.metadata.user = self.user
+        fibsem_image.metadata.experiment = self.experiment
+        fibsem_image.metadata.system = self.system
+
+        logging.debug({"msg": "acquire_image", "metadata": fibsem_image.metadata.to_dict()})
+
+        return fibsem_image

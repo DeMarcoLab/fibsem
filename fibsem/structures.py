@@ -14,6 +14,7 @@ import tifffile as tff
 import fibsem
 from fibsem.config import METADATA_VERSION
 from abc import ABC, abstractmethod, abstractstaticmethod
+import logging
 
 try:
     from tescanautomation.Common import Document
@@ -42,7 +43,12 @@ try:
 except:
     THERMO = False
 
-
+try:
+    AdornedImage
+except NameError:
+    logging.info("AdornedImage  not defined. Defining it here")
+    import fibsem.spoof_adorned_image
+    AdornedImage=fibsem.spoof_adorned_image.SpoofAdornedImage
 
 # @patrickcleeve: dataclasses.asdict -> :(
 
@@ -1305,7 +1311,8 @@ class SystemSettings:
     ion: BeamSystemSettings
     manipulator: ManipulatorSystemSettings
     gis: GISSystemSettings
-    info: SystemInfo    
+    info: SystemInfo
+    demo2:dict
 
     def to_dict(self):
         return {
@@ -1315,6 +1322,7 @@ class SystemSettings:
             "manipulator": self.manipulator.to_dict(),
             "gis": self.gis.to_dict(),
             "info": self.info.to_dict(),
+            "demo2": self.demo2
         }
     
     @staticmethod
@@ -1331,6 +1339,7 @@ class SystemSettings:
             manipulator=ManipulatorSystemSettings.from_dict(settings["manipulator"]),
             gis=GISSystemSettings.from_dict(settings["gis"]),
             info=SystemInfo.from_dict(settings["info"]),
+            demo2=settings["demo2"]
         )
 
 @dataclass
@@ -1672,51 +1681,51 @@ class FibsemImage:
             metadata=metadata_dict,
         )
 
-    if THERMO:
+    @classmethod
+    def fromAdornedImage(
+        cls,
+        adorned: AdornedImage,
+        image_settings: ImageSettings,
+        state: MicroscopeState = None,
+    ) -> "FibsemImage":
+        """Creates FibsemImage from an AdornedImage (microscope output format).
 
-        @classmethod
-        def fromAdornedImage(
-            cls,
-            adorned: AdornedImage,
-            image_settings: ImageSettings,
-            state: MicroscopeState = None,
-        ) -> "FibsemImage":
-            """Creates FibsemImage from an AdornedImage (microscope output format).
+        Args:
+            adorned (AdornedImage): Adorned Image from microscope
+            metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
 
-            Args:
-                adorned (AdornedImage): Adorned Image from microscope
-                metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
-
-            Returns:
-                FibsemImage: instance of FibsemImage from AdornedImage
-            """
-            if state is None:
-                state = MicroscopeState(
-                    timestamp=adorned.metadata.acquisition.acquisition_datetime,
-                    stage_position=FibsemStagePosition(
-                        adorned.metadata.stage_settings.stage_position.x,
-                        adorned.metadata.stage_settings.stage_position.y,
-                        adorned.metadata.stage_settings.stage_position.z,
-                        adorned.metadata.stage_settings.stage_position.r,
-                        adorned.metadata.stage_settings.stage_position.t,
-                    ),
-                    electron_beam=BeamSettings(beam_type=BeamType.ELECTRON),
-                    ion_beam=BeamSettings(beam_type=BeamType.ION),
-                )
-            else:
-                state.timestamp = adorned.metadata.acquisition.acquisition_datetime
-
-            pixel_size = Point(
-                adorned.metadata.binary_result.pixel_size.x,
-                adorned.metadata.binary_result.pixel_size.y,
+        Returns:
+            FibsemImage: instance of FibsemImage from AdornedImage
+        """
+        if state is None:
+            state = MicroscopeState(
+                timestamp=adorned.metadata.acquisition.acquisition_datetime,
+                stage_position=FibsemStagePosition(
+                    adorned.metadata.stage_settings.stage_position.x,
+                    adorned.metadata.stage_settings.stage_position.y,
+                    adorned.metadata.stage_settings.stage_position.z,
+                    adorned.metadata.stage_settings.stage_position.r,
+                    adorned.metadata.stage_settings.stage_position.t,
+                ),
+                electron_beam=BeamSettings(beam_type=BeamType.ELECTRON),
+                ion_beam=BeamSettings(beam_type=BeamType.ION),
             )
+        else:
+            # error here if using Demo2
+            state.timestamp = adorned.metadata.acquisition.acquisition_datetime
 
-            metadata = FibsemImageMetadata(
-                image_settings=image_settings,
-                pixel_size=pixel_size,
-                microscope_state=state,
-            )
-            return cls(data=adorned.data, metadata=metadata)
+        pixel_size = Point(
+            adorned.metadata.binary_result.pixel_size.x,
+            adorned.metadata.binary_result.pixel_size.y,
+        )
+
+
+        metadata = FibsemImageMetadata(
+            image_settings=image_settings,
+            pixel_size=pixel_size,
+            microscope_state=state,
+        )
+        return cls(data=adorned.data, metadata=metadata)
 
     if TESCAN:
 

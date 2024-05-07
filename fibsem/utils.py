@@ -204,6 +204,10 @@ def setup_session(
         microscope = fibsem_microscope.DemoMicroscope(settings.system)
         microscope.connect_to_microscope(ip_address, port=7520)
 
+    elif manufacturer == "Demo2":
+        microscope = fibsem_microscope.Demo2Microscope(settings.system)
+        microscope.connect_to_microscope(ip_address, port=7520)
+
     else:
         raise NotImplementedError(f"Manufacturer {manufacturer} not supported.")
     
