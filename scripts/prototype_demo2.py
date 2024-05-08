@@ -21,7 +21,7 @@ For more detail on the settings, see the documentation for the ImageSettings cla
 def main():
     
     # connect to the microscope
-    microscope, settings = utils.setup_session(manufacturer="Demo2", ip_address="localhost")
+    microscope, settings = utils.setup_session(manufacturer="Demo2", ip_address="localhost", config_path=r".\fibsem\config\microscope-configuration-demo2.yaml")
 
     # info about ImageSettings
     logging.info(f"\nAcquiring Images Example:")
@@ -52,6 +52,25 @@ def main():
     ax[1][1].set_title("Ion Image 02 (Reference)")
     plt.show()
 
+
+    #More images
+
+    while True:
+        # take an image with the electron beam
+        settings.image.beam_type = BeamType.ELECTRON
+        eb_image = acquire.new_image(microscope, settings.image)
+
+        # take an image with the ion beam
+        settings.image.beam_type = BeamType.ION
+        ib_image = acquire.new_image(microscope, settings.image)
+
+        # show images
+        fig, ax = plt.subplots(1, 2, figsize=(10, 7))
+        ax[0].imshow(eb_image.data, cmap="gray")
+        ax[0].set_title("Electron Image 01")
+        ax[1].imshow(ib_image.data, cmap="gray")
+        ax[1].set_title("Ion Image 01")
+        plt.show()
 
 if __name__ == "__main__":
     main()

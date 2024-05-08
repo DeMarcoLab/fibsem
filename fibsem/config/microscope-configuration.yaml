@@ -3,7 +3,7 @@
 info:
     name: openfibsem-microscope-configuration               # a descriptive name for your configuration                     [SPECIFIED]
     ip_address: 192.168.0.1                                 # the ip address of the microscope PC                           [SPECIFIED]
-    manufacturer: Demo2                                      # the microscope manufactuer                                    [SPECIFIED]        
+    manufacturer: Demo                                      # the microscope manufactuer                                    [SPECIFIED]        
 stage:
     enabled:                    true                        # the stage is enabled                                          [USER]
     rotation:                   true                        # the stage is able to rotate                                   [USER]
@@ -60,6 +60,3 @@ milling:
     rate:                       3.4e-09                     # the default milling spuuter rate  (TESCAN)            [um3/s] [USER]
     spot_size:                  5.4e-08                     # the default milling spot size     (TESCAN)            [metres][USER]
     preset:                     "30 keV; 20 nA"             # the default milling preset        (TESCAN)                    [USER]
-demo2:
-    SEM_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\20240128\lam_013\SEM_8_fi_1"                                   # Folder where demo2 spoof SEM images are located
-    FIB_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\20240128\lam_013\FIB"

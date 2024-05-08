@@ -6285,18 +6285,18 @@ class Demo2Microscope(DemoMicroscope):
         
         new_image_fn=None #default
 
-        if image_settings.beam_type is BeamType.ELECTRON:
-
-            new_image_fn = next(self.cycle_example_images_SEM)
-            logging.info("SEM")
-            
-        elif image_settings.beam_type is BeamType.ION:
-            #cycle_example_images = self.cycle_example_images_FIB
-            new_image_fn = next(self.cycle_example_images_FIB)
-            logging.info("FIB")
-
-        if  new_image_fn is None:
-            raise ValueError("new_image_fn is None. Probably run out of images in folder.")
+        try:
+            if image_settings.beam_type is BeamType.ELECTRON:
+                new_image_fn = next(self.cycle_example_images_SEM)
+                logging.info("SEM")
+                
+            elif image_settings.beam_type is BeamType.ION:
+                #cycle_example_images = self.cycle_example_images_FIB
+                new_image_fn = next(self.cycle_example_images_FIB)
+                logging.info("FIB")
+        except:
+            logging.warning("new_image_fn is None. Probably run out of images in folder.")
+            return None
         
         ad_img = AdornedImage.load(new_image_fn)
 
