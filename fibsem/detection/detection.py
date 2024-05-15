@@ -159,34 +159,6 @@ class LandingGridCentre(Feature):
         self.px = detect_centre_point(mask, threshold=500)
         return self.px
 
-@dataclass
-class LandingGridLeftEdge(Feature):
-    feature_m: Point = None
-    px: Point = None
-    color = "cyan"
-    name: str = "LandingGridLeftEdge"
-    class_id: int = 3
-    class_name: str = "landing_post"
-
-    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingGridLeftEdge':
-        mask = mask == self.class_id  
-        self.px = detect_grid_edge(mask, edge="left")
-        return self.px
-
-@dataclass
-class LandingGridRightEdge(Feature):
-    feature_m: Point = None
-    px: Point = None
-    color = "cyan"
-    name: str = "LandingGridRightEdge"
-    class_id: int = 3
-    class_name: str = "landing_post"
-
-    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'LandingGridRightEdge':
-        mask = mask == self.class_id  
-        self.px = detect_grid_edge(mask, edge="right")
-        return self.px
-
 
 @dataclass
 class CoreFeature(Feature):
@@ -351,7 +323,7 @@ class VolumeBlockBottomRightCorner(Feature):
                 
 __FEATURES__ = [ImageCentre, NeedleTip, 
                 LamellaCentre, LamellaLeftEdge, LamellaRightEdge, 
-        LandingPost, LandingGridCentre, LandingGridLeftEdge, LandingGridRightEdge,
+        LandingPost, LandingGridCentre, 
     CoreFeature, LamellaTopEdge, LamellaBottomEdge, 
     NeedleTipBottom, 
     CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge,
@@ -478,19 +450,19 @@ def detect_median_edge(mask: np.ndarray, edge: str, threshold: int = 250) -> Poi
             # get the min and max x and y coordinates at these median points
             x_min = np.min(edge_mask[1][edge_mask[0] == py])
             x_max = np.max(edge_mask[1][edge_mask[0] == py])
+            y_min = np.min(edge_mask[0][edge_mask[1] == px])
+            y_max = np.max(edge_mask[0][edge_mask[1] == px])
+
 
             if edge == "left":
                 edge_px = Point(x=x_min, y=py)
             if edge == "right":
                 edge_px = Point(x=x_max, y=py)
-
-            y_min = np.min(edge_mask[0][edge_mask[1] == px])
-            y_max = np.max(edge_mask[0][edge_mask[1] == px])
             if edge == "top":
                 edge_px = Point(x=px, y=y_min)
             if edge == "bottom":
                 edge_px = Point(x=px, y=y_max)
-        except Exception as e:
+        except:
             logging.warning(f"Error detecting edge: {e}")
     return Point(x=int(edge_px.x), y=int(edge_px.y))
 
@@ -590,31 +562,6 @@ def detect_lamella(
     if isinstance(feature, LamellaBottomEdge):
         px = detect_median_edge(lamella_mask, edge="bottom")
     
-    return px
-
-
-def detect_grid_edge(mask: np.ndarray, edge: str, null_top: int = 3) -> Point:
-    """Detect the central internal edge of the grid bar"""
-
-    if edge not in ["left", "right"]:
-        raise ValueError("side must be either 'left' or 'right'")
-
-    # null mask values in top / bottom 1/null_top
-    h, w = mask.shape
-    mask[:h//null_top] = 0
-    mask[(null_top-1)*h//null_top:] = 0
-
-    # split the grid in half vertically
-    if edge == "left":
-        mask[:, w//2:] = 0
-        detect_edge = "right"
-    if edge ==  "right":
-        mask[:, :w//2] = 0
-        detect_edge = "left"
-
-    # detect the edge of the grid (opposite edge as we want the internal edge)
-    px = detect_median_edge(mask, edge=detect_edge)
-
     return px
 
 
@@ -1416,8 +1363,8 @@ def get_keypoints(mask: np.ndarray) -> dict:
         # get edges
         imask = np.argwhere(mask==1) # probably inefficient to recompute this
 
-        ymin = np.min(imask[:, 0])
-        ymax = np.max(imask[:, 0])
+        ymin = np.max(imask[:, 0])
+        ymax = np.min(imask[:, 0])
         xmin = np.min(imask[:, 1])
         xmax = np.max(imask[:, 1])
 

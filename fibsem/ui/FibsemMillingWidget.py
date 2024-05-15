@@ -182,6 +182,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # run milling
         self.pushButton_run_milling.clicked.connect(self.run_milling)
         self.pushButton_run_milling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+
+        # run adaptive polish
+        # self.pushButton_run_adaptive_polish.clicked.connect(self.run_adaptive_polish)
+        # self.pushButton_run_adaptive_polish.setStyleSheet(_stylesheets._YELLOW_PUSHBUTTON_STYLE)
         
         # stop milling
         self.pushButton_stop_milling.clicked.connect(self.stop_milling)
@@ -730,6 +734,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_update_pattern.setEnabled(enabled)
         self.pushButton_add_milling_stage.setEnabled(enabled)
         self.pushButton_remove_milling_stage.setEnabled(enabled)
+        # self.pushButton_run_adaptive_polish.setEnabled(enabled)
         # self.pushButton_save_milling_stage.setEnabled(enabled)
         self.pushButton_run_milling.setEnabled(enabled)
         if enabled:
@@ -739,6 +744,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_add_milling_stage.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_remove_milling_stage.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
             self.pushButton_stop_milling.setVisible(False)
+            # self.pushButton_run_adaptive_polish.setStyleSheet(_stylesheets._YELLOW_PUSHBUTTON_STYLE)
+            # self.pushButton_run_adaptive_polish.setText("Run Adaptive Polish")
+            # self.pushButton_run_adaptive_polish.setVisible(True)
         elif milling:
             self.pushButton_run_milling.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Running...")
@@ -761,6 +769,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
         worker.start()
+    
+    # def run_adaptive_polish(self):
+    #     worker = self.run_adaptive_polish_step()
+    #     worker.finished.connect(self.run_milling_finished)
+    #     worker.start()
     
     def stop_milling(self):
         """Request milling stop."""
@@ -848,40 +861,73 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
             if self._STOP_MILLING:
                 return
-                
-            if stage.pattern is not None:
-                log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}") # TODO: refactor to json
+
+            if "adaptive" in stage.name.lower():
+                from adaptive_polish import franklin_adaptive_milling_dl_fibsem
+                stage.milling.patterning_mode = "Parallel"
+                img_settings_sem = self.microscope.get_imaging_settings(BeamType.ELECTRON)
+                img_settings_sem.hfw = 40e-6
+                img_settings_sem.frame_integration = 8
+                img_settings_sem.dwell_time = 200e-9 #300e-9
+                # stage.milling.depth = 40e-9
+                milling.setup_milling(self.microscope, mill_settings=stage.milling)
+                log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")  # TODO: refactor to json
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
+                log_status_message(stage, f"Patterning mode: {stage.milling.patterning_mode}")
+
                 try:
-                    milling.setup_milling(self.microscope, mill_settings=stage.milling)
-                    
-                    if self._STOP_MILLING:
-                        return
-                    
-                    microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
-                    estimated_time = milling.estimate_milling_time(self.microscope, microscope_patterns)
-                    progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
-                    self._progress_bar_start.emit(progress_bar_dict)
-
-                    self.milling_notification.emit(f"Running {stage.name}...")
-                    milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
-
-                    # TODO implement a special case for overtilt milling
-
+                    franklin_adaptive_milling_dl_fibsem.adaptive_polish_run(self.microscope, self.settings, stage.pattern.patterns, img_settings_sem)
                 except Exception as e:
                     napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
                     logging.error(e)
                 finally:
-                    milling.finish_milling(self.microscope, 
-                                           imaging_current=self.microscope.system.ion.beam.beam_current, 
+                    milling.finish_milling(self.microscope,
+                                           # imaging_current=self.microscope.system.ion.beam.beam_current,
                                            imaging_voltage=self.microscope.system.ion.beam.voltage)
 
-                log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
-                self._progress_bar_quit.emit()
+            else:
+                
+                if stage.pattern is not None:
+                    log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}") # TODO: refactor to json
+                    log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
+                    log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
+                    try:
+                        milling.setup_milling(self.microscope, mill_settings=stage.milling)
+
+                        if self._STOP_MILLING:
+                            return
+
+                        microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
+                        estimated_time = milling.estimate_milling_time(self.microscope, microscope_patterns)
+                        progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
+                        self._progress_bar_start.emit(progress_bar_dict)
+
+                        self.milling_notification.emit(f"Running {stage.name}...")
+                        milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
+
+                        # TODO implement a special case for overtilt milling
+
+                    except Exception as e:
+                        napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
+                        logging.error(e)
+                    finally:
+                        milling.finish_milling(self.microscope,
+                                               # imaging_current=self.microscope.system.ion.beam.beam_current,
+                                               imaging_voltage=self.microscope.system.ion.beam.voltage)
+
+
+                    log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
+                    self._progress_bar_quit.emit()
 
             self.milling_notification.emit(f"Milling stage complete: {stage.name}")
         self.milling_notification.emit(f"Milling complete. {len(self.milling_stages)} stages completed.")
+
+
+    # @thread_worker
+    # def run_adaptive_polish_step(self):
+    #     from adaptive_polish import franklin_adaptive_milling_dl_fibsem
+    #     franklin_adaptive_milling_dl_fibsem.adaptive_polish_run(self.microscope, self.settings)
 
 
     def update_milling_ui(self, msg: str):
