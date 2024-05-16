@@ -6220,7 +6220,7 @@ def _check_manipulator_movement(settings: SystemSettings, position: FibsemManipu
 
 class Demo2Microscope(DemoMicroscope):
     """
-    Overrides existing Demo but replacing only the acquire image function
+    Subclasses existing Demo but replacing only the acquire image function
 
     One potential problem is if user wants a specific image resolution and pixel size,
     and what this can provide is different.

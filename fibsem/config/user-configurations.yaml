@@ -1,4 +1,6 @@
 configurations:
   default-configuration:
-    path: null
-default: default-configuration
+    path: c:\users\luis-work\desktop\others\openfibsem\git-rfi-fibsem\fibsem\config\microscope-configuration.yaml
+  microscope-configuration-demo2:
+    path: C:/Users/Luis-work/Desktop/Others/openfibsem/git-rfi-fibsem/fibsem/config/microscope-configuration-demo2.yaml
+default: microscope-configuration-demo2

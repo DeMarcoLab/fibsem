@@ -577,6 +577,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
         """Update the viewer with the given image array"""
 
+        #Backup last images data
         if name == BeamType.ELECTRON.name:
             self.eb_last = arr
         if name == BeamType.ION.name:
@@ -585,19 +586,30 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # median filter for display
         arr = median_filter(arr, size=3)
        
-        try:
-            self.viewer.layers[name].data = arr
-        except:    
-            layer = self.viewer.add_image(arr, name = name)
-        
+        # try:
+        #     self.viewer.layers[name].data = arr
+        # except:   
+        #     layer = self.viewer.add_image(arr, name = name)
 
-        layer = self.viewer.layers[name]
-        if self.eb_layer is None and name == BeamType.ELECTRON.name:
+        layer=None
+        if name in self.viewer.layers:
+            #delete layer
+            self.viewer.layers.remove(name)
+            
+        layer = self.viewer.add_image(arr, name = name)
+        
+        # layer = self.viewer.layers[name]
+
+        # if self.eb_layer is None and name == BeamType.ELECTRON.name:
+        #     self.eb_layer = layer
+        # if self.ib_layer is None and name == BeamType.ION.name:
+        #     self.ib_layer = layer
+
+        if name == BeamType.ELECTRON.name:
             self.eb_layer = layer
-        if self.ib_layer is None and name == BeamType.ION.name:
+        if name == BeamType.ION.name:
             self.ib_layer = layer
         
-
         # centre the camera
         if self.eb_layer:
             self.viewer.camera.center = [
