@@ -29,7 +29,7 @@ class SpoofAdornedImageMetadata:
         # acquisition.acquisition_datetime
         # acquisition_dict = { "acquisition_datetime": datetime.now()}
         # self.acquisition = Namespace(**acquisition_dict)
-        self.acquisition = Namespace ( acquisition_datetime = datetime.now() )
+        self.acquisition = Namespace ( acquisition_datetime = str(datetime.now()) )
 
     @property
     def PixelSizeX_m(self):
