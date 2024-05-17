@@ -1179,7 +1179,9 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
 from typing import Optional, Union
 
 def get_milling_stages(key, protocol, point: Union[Point, list[Point]] = Point()):
-    
+    """
+    Returns a list of "stages" inside protocol dictionary and with given key
+    """
     # TODO: maybe add support for defining point per stages?
 
     # convert point to list of points, same length as stages
