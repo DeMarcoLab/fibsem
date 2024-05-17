@@ -56,6 +56,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self.positions = []
         self._correlation = {}
+        self._correlation_mode: bool = False
 
         self._tile_info = {}
 
@@ -81,6 +82,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
+        self.pushButton_enable_correlation.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
 
         # checkbox
         self.checkBox_options_move_with_translation.stateChanged.connect(self._update_ui)
@@ -92,7 +94,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         # signals
         # self._stage_position_added.connect(self._position_added_callback)
         self._update_tile_collection.connect(self._update_tile_collection_callback)
-        self.parent._minimap_signal.connect(self.update_positions_from_parent)
+        if self.parent:
+            self.parent._minimap_signal.connect(self.update_positions_from_parent)
 
 
         # pattern overlay
@@ -108,8 +111,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         # correlation
         self.actionLoad_Correlation_Image.triggered.connect(self._load_correlation_image)
-        self.pushButton_update_correlation_image.clicked.connect(lambda: self._update_correlation_image(None))
         self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
+        self.pushButton_enable_correlation.clicked.connect(self._toggle_correlation_mode)
+        self.pushButton_enable_correlation.setEnabled(False) # disabled until correlation images added
 
         # auto update correlation image
         self.doubleSpinBox_correlation_translation_x.valueChanged.connect(self._update_correlation_data)
@@ -240,14 +244,14 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.comboBox_correlation_selected_layer.clear()
             self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name ])
             self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
+            # if no correlation layers left, disable enable correlation
+            if len(self.comboBox_correlation_selected_layer) == 0:
+                self.pushButton_enable_correlation.setEnabled(False)
 
 
     def _update_gridbar(self):
 
         pixel_size = self.image.metadata.pixel_size.x
-
-        print(f'pixel size: {pixel_size}')
-
 
         BAR_THICKNESS_PX = int(self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI / pixel_size)
         BAR_SPACING_PX = int(self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI / pixel_size)
@@ -711,12 +715,14 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
             
             self.viewer.layers.selection.active = self._image_layer
-    
+            self.pushButton_enable_correlation.setEnabled(True)
+
     # do this when image selected is changed
     def _update_correlation_ui(self):
 
         # set ui
         layer_name = self.comboBox_correlation_selected_layer.currentText()
+        self.pushButton_enable_correlation.setEnabled(layer_name != "")
         if layer_name == "":
             napari.utils.notifications.show_info(f"Please select a layer to correlate with  update data...")
             return
@@ -773,6 +779,38 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.viewer.layers[layer_name].translate = [corrected_ty, corrected_tx]
         self.viewer.layers[layer_name].scale = [sy, sx]
         self.viewer.layers[layer_name].rotate = r
+
+    def _toggle_correlation_mode(self):
+        
+        # toggle correlation mode
+        self._correlation_mode = not self._correlation_mode
+
+        if self._correlation_mode:
+            self.pushButton_enable_correlation.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_enable_correlation.setText("Disable Correlation Mode")
+            self.comboBox_correlation_selected_layer.setEnabled(False)
+        else:
+            self.pushButton_enable_correlation.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_enable_correlation.setText("Enable Correlation Mode")
+            self.comboBox_correlation_selected_layer.setEnabled(True)
+
+        # if no correlation layer selected, disable the button
+        if self.comboBox_correlation_selected_layer.currentText() == "":
+            self.pushButton_enable_correlation.setEnabled(False)
+            return
+
+        # get current correlation layer
+        layer_name = self.comboBox_correlation_selected_layer.currentText()
+        correlation_layer = self.viewer.layers[layer_name]
+        
+        # set transformation mode on
+        if self._correlation_mode:
+            correlation_layer.mode = 'transform'
+            self.viewer.layers.selection.active = correlation_layer
+        else:
+            correlation_layer.mode = 'pan_zoom'
+            self.viewer.layers.selection.active = self._image_layer
+
 
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 

@@ -399,43 +399,19 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_correlation_scale_x">
-          <property name="text">
-           <string>Scale x, y (%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QCheckBox" name="checkBox_gridbar">
-          <property name="text">
-           <string>Overlay Gridbar</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="0" colspan="2">
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>483</width>
-            <height>261</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="2" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_x">
+        <item row="3" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_scale_x">
           <property name="decimals">
-           <number>0</number>
+           <number>3</number>
           </property>
           <property name="minimum">
            <double>-100000000.000000000000000</double>
           </property>
           <property name="maximum">
            <double>1000000000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -453,8 +429,89 @@
           </property>
          </widget>
         </item>
+        <item row="6" column="0">
+         <widget class="QCheckBox" name="checkBox_gridbar">
+          <property name="text">
+           <string>Overlay Gridbar</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_gb_spacing">
+          <property name="maximum">
+           <double>10000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_gb_width">
+          <property name="text">
+           <string>Gridbar Width (um)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1" colspan="2">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_rotation">
+          <property name="decimals">
+           <number>2</number>
+          </property>
+          <property name="minimum">
+           <double>-360.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>360.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0" colspan="3">
+         <widget class="QPushButton" name="pushButton_enable_correlation">
+          <property name="text">
+           <string>Enable Correlation Mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_correlation_scale_x">
+          <property name="text">
+           <string>Scale x, y (%)</string>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="1" colspan="2">
          <widget class="QComboBox" name="comboBox_correlation_selected_layer"/>
+        </item>
+        <item row="2" column="2">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_y">
+          <property name="decimals">
+           <number>0</number>
+          </property>
+          <property name="minimum">
+           <double>-100000000.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_gb_spacing">
+          <property name="text">
+           <string>Gridbar Spacing (um)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_x">
+          <property name="decimals">
+           <number>0</number>
+          </property>
+          <property name="minimum">
+           <double>-100000000.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000000.000000000000000</double>
+          </property>
+         </widget>
         </item>
         <item row="3" column="2">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_scale_y">
@@ -472,82 +529,25 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="label_gb_width">
-          <property name="text">
-           <string>Gridbar Width (um)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_translation_y">
-          <property name="decimals">
-           <number>0</number>
-          </property>
-          <property name="minimum">
-           <double>-100000000.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>1000000000.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_scale_x">
-          <property name="decimals">
-           <number>3</number>
-          </property>
-          <property name="minimum">
-           <double>-100000000.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>1000000000.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>1.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="1" colspan="2">
-         <widget class="QPushButton" name="pushButton_update_correlation_image">
-          <property name="text">
-           <string>Update Correlation Image</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1" colspan="2">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_correlation_rotation">
-          <property name="decimals">
-           <number>2</number>
-          </property>
-          <property name="minimum">
-           <double>-360.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>360.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="0">
-         <widget class="QLabel" name="label_gb_spacing">
-          <property name="text">
-           <string>Gridbar Spacing (um)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
+        <item row="7" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_gb_width">
           <property name="maximum">
            <double>10000.000000000000000</double>
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_gb_spacing">
-          <property name="maximum">
-           <double>10000.000000000000000</double>
+        <item row="10" column="0" colspan="3">
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
-         </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>483</width>
+            <height>261</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>
