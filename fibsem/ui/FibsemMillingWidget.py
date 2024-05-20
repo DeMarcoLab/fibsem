@@ -513,6 +513,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def _single_click(self, layer, event):
         """Callback for single click on image layer."""
+
+        logging.info("_single_click")
+        
         if event.button != 1 or 'Shift' not in event.modifiers or self.milling_stages == []:
             return
 

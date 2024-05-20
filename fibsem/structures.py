@@ -1339,7 +1339,7 @@ class SystemSettings:
             manipulator=ManipulatorSystemSettings.from_dict(settings["manipulator"]),
             gis=GISSystemSettings.from_dict(settings["gis"]),
             info=SystemInfo.from_dict(settings["info"]),
-            demo2=settings["demo2"]
+            demo2=settings.get("demo2",None)
         )
 
 @dataclass

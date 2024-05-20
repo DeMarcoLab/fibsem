@@ -110,8 +110,7 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         self.settings.image.beam_type = BeamType.ION
         self.ref_image = self.microscope.acquire_image(self.settings.image)
 
-        #self.update_viewer(self.ref_image.data, "Reference")
-        self.set_image_in_nap_viewer(self.ref_image.data, "Reference")
+        self.update_viewer(self.ref_image.data, "Reference")
 
         if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
             self.microscope.set("current", float(self.comboBox_aligned_current.currentText()), beam_type=BeamType.ION)
@@ -120,8 +119,7 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         self.settings.image.beam_type = BeamType.ION
         self.aligned_image = self.microscope.acquire_image(self.settings.image)
 
-        #self.update_viewer(self.aligned_image.data, "Aligned")
-        self.set_image_in_nap_viewer(self.aligned_image.data, "Aligned")
+        self.update_viewer(self.aligned_image.data, "Aligned")
 
         self.pushButton_align_beam.setEnabled(True)
         self.pushButton_align_beam.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
