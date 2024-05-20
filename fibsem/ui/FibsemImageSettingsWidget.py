@@ -774,7 +774,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if self.eb_image is not None and self.ib_image is not None:
             ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
-            
+        
+        if self.eb_layer:
+            self.viewer.layers.selection.active = self.eb_layer
+
+        self.viewer_update_signal.emit()
+
     def update_image_ui_elements(self, name: str):
         # set ui from image metadata
 
