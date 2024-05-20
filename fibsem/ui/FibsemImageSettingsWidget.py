@@ -586,7 +586,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
         """Update the viewer with the given image array"""
 
-        #Backup last images data
         if name == BeamType.ELECTRON.name:
             self.eb_last = arr
         if name == BeamType.ION.name:
@@ -595,30 +594,19 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # median filter for display
         arr = median_filter(arr, size=3)
        
-        # try:
-        #     self.viewer.layers[name].data = arr
-        # except:   
-        #     layer = self.viewer.add_image(arr, name = name)
-
-        layer=None
-        if name in self.viewer.layers:
-            #delete layer
-            self.viewer.layers.remove(name)
-            
-        layer = self.viewer.add_image(arr, name = name)
+        try:
+            self.viewer.layers[name].data = arr
+        except:    
+            layer = self.viewer.add_image(arr, name = name)
         
-        # layer = self.viewer.layers[name]
 
-        # if self.eb_layer is None and name == BeamType.ELECTRON.name:
-        #     self.eb_layer = layer
-        # if self.ib_layer is None and name == BeamType.ION.name:
-        #     self.ib_layer = layer
-
-        if name == BeamType.ELECTRON.name:
+        layer = self.viewer.layers[name]
+        if self.eb_layer is None and name == BeamType.ELECTRON.name:
             self.eb_layer = layer
-        if name == BeamType.ION.name:
+        if self.ib_layer is None and name == BeamType.ION.name:
             self.ib_layer = layer
         
+
         # centre the camera
         if self.eb_layer:
             self.viewer.camera.center = [
@@ -680,8 +668,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         else:
             beam_type = BeamType[self.selected_beam.currentText()]
             beam_settings, detector_settings = None, None    
-
-        #Revise detectorsettings, metadata from images could be None when using Demos
+    
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type, 
             beam_settings=beam_settings, detector_settings=detector_settings)  
             

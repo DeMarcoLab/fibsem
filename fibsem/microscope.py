@@ -6319,15 +6319,37 @@ class Demo2Microscope(DemoMicroscope):
         logging.info(f"img_data.type:{type(img_data)}")
         logging.info(f"img_data.dtype:{img_data.dtype}, img_data.shape:{img_data.shape}")
 
-        if ad_img.data.shape !=  image_settings.resolution:
-            logging.info(f"demo image has shape:{ad_img.data.shape}. Resizing to {image_settings.resolution}")
+        newshape = tuple(np.array(image_settings.resolution)[::-1]) #inverts shape, resloution is in X,Y, so converts to Y,X format 
+        if ad_img.data.shape !=  newshape:
+            logging.info(f"demo image has shape:{ad_img.data.shape}. Resizing to {newshape}")
             from skimage.transform import resize
-            img_data = resize(img_data, image_settings.resolution, anti_aliasing=True, preserve_range=True).astype(img_data.dtype)
-            logging.info(f"Resized, img_data.type:{type(img_data)}")
+            dt = img_data.dtype
+            img_data = resize(img_data, newshape, anti_aliasing=True, preserve_range=True).astype(dt)
             logging.info(f"Resized, img_data.dtype:{img_data.dtype}, img_data.shape:{img_data.shape}")
+        
+        data_uint8 = img_data
+        #Turn new_image_fn to uint8
+        if img_data.dtype in [np.uint16, np.int16]:
+            logging.info(f"img_data is int16 or uint16, converting to uint8")
+            data_uint8 = (img_data/256).astype(np.uint8)
+        elif img_data.dtype in [np.uint32, np.int32]:
+            logging.info(f"img_data is int32 or uint32, converting to uint8")
+            data_uint8 = (img_data/65536).astype(np.uint8)                    
+        elif np.issubdtype(img_data.dtype, np.floating):
+            logging.info(f"img_data is float, converting to uint8")
+            data_uint8 = (img_data/img_data.max()*255).astype(np.uint8)
+
+        logging.info(f"data_uint8.dtype:{data_uint8.dtype}")
+
+        if data_uint8.dtype != np.uint8:
+            logging.warning("img_data could not be converted to uint8. Forcing...")
+            #force
+            data_uint8 =  img_data.astype(np.uint8)
+
+        # logging.info(f"data_uint8.dtype:{data_uint8.dtype}")
 
         fibsem_image = FibsemImage(
-            data=img_data,
+            data=data_uint8,
             metadata=FibsemImageMetadata(image_settings=image_settings, 
                                         pixel_size=pixelsize,
                                         microscope_state=self.get_microscope_state(beam_type=image_settings.beam_type),

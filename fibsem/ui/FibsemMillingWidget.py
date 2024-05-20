@@ -156,6 +156,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._single_click)
         self.image_widget.ib_layer.mouse_drag_callbacks.append(self._single_click)
+        # Note that because mouse interaction is attached to the layer itself
+        # it means that if we replace either the eb_layer or the ib_layer it means that
+        # we loose the mouse callback, unless callback is reset.
 
         #import/export milling stages # TODO: reimplement as protocol export
         # self.pushButton_exportMilling.clicked.connect(self.export_milling_stages)
