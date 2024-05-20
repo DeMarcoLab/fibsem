@@ -6282,6 +6282,7 @@ class Demo2Microscope(DemoMicroscope):
                           vfw / image_settings.resolution[1])
         
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
+        logging.info(f"resolution:{image_settings.resolution}, hfw:{image_settings.hfw}")
         
         new_image_fn=None #default
 
@@ -6301,12 +6302,39 @@ class Demo2Microscope(DemoMicroscope):
         ad_img = AdornedImage.load(new_image_fn)
 
         # Problem, FibsemImage function fromAdornedImage() only works if THERMO
-        fibsem_image = FibsemImage.fromAdornedImage(
-            copy.deepcopy(ad_img), 
-            copy.deepcopy(image_settings), 
-            # copy.deepcopy(self.get_microscope_state(beam_type=image_settings.beam_type))
-            None
+        # Using this method can cause problem because a specific image size is requested
+        # and a new size and pixel size is returned.
+        # fibsem_image = FibsemImage.fromAdornedImage(
+        #     copy.deepcopy(ad_img), 
+        #     copy.deepcopy(image_settings), 
+        #     # copy.deepcopy(self.get_microscope_state(beam_type=image_settings.beam_type))
+        #     None
+        # )
+
+        # Try to create a new image from loaded one
+        # by resizing using skimage
+
+        img_data = ad_img.data
+        #img_data = ad_img.raw_data
+        logging.info(f"img_data.type:{type(img_data)}")
+        logging.info(f"img_data.dtype:{img_data.dtype}, img_data.shape:{img_data.shape}")
+
+        if ad_img.data.shape !=  image_settings.resolution:
+            logging.info(f"demo image has shape:{ad_img.data.shape}. Resizing to {image_settings.resolution}")
+            from skimage.transform import resize
+            img_data = resize(img_data, image_settings.resolution, anti_aliasing=True, preserve_range=True).astype(img_data.dtype)
+            logging.info(f"Resized, img_data.type:{type(img_data)}")
+            logging.info(f"Resized, img_data.dtype:{img_data.dtype}, img_data.shape:{img_data.shape}")
+
+        fibsem_image = FibsemImage(
+            data=img_data,
+            metadata=FibsemImageMetadata(image_settings=image_settings, 
+                                        pixel_size=pixelsize,
+                                        microscope_state=self.get_microscope_state(beam_type=image_settings.beam_type),
+                                        system=self.system
+                                        )
         )
+
 
         # set additional metadata
         fibsem_image.metadata.user = self.user
@@ -6318,10 +6346,6 @@ class Demo2Microscope(DemoMicroscope):
         elif image_settings.beam_type is BeamType.ION:
             self._ib_image = fibsem_image # must be FibsemImage object
         
-
-        fibsem_image.metadata.user = self.user
-        fibsem_image.metadata.experiment = self.experiment
-        fibsem_image.metadata.system = self.system
 
         logging.debug({"msg": "acquire_image", "metadata": fibsem_image.metadata.to_dict()})
 

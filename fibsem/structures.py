@@ -1622,16 +1622,22 @@ class FibsemImage:
     """
 
     def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
-        if check_data_format(data):
-            if data.ndim == 3 and data.shape[2] == 1:
-                data = data[:, :, 0]
-            self.data = data
-        else:
+        # if check_data_format(data):
+        #     if data.ndim == 3 and data.shape[2] == 1:
+        #         data = data[:, :, 0]
+        #     self.data = data
+
+        logging.info(f"data.dtype:{data.dtype}, data.shape:{data.shape}, data.ndim:{data.ndim}")
+        self.data = data
+        if data.ndim == 3 and data.shape[2] == 1:
+            self.data = data[:, :, 0]
+
+        if self.data.ndim!=2 or not self.data.dtype in [np.uint8, np.uint16] :
             raise Exception("Invalid Data format for Fibsem Image")
+        
+        self.metadata = None
         if metadata is not None:
             self.metadata = metadata
-        else:
-            self.metadata = None
 
     @classmethod
     def load(cls, tiff_path: str) -> "FibsemImage":

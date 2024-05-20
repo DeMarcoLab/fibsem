@@ -77,8 +77,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.update_detector_ui() # TODO: can this be removed?
 
         # register initial images
-        self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
-        self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ELECTRON.name)
+        #self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
+        self.set_image_in_nap_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ION.name)
+        #self.update_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ELECTRON.name)
+        self.set_image_in_nap_viewer(np.zeros(shape=(1024, 1536), dtype=np.uint8), BeamType.ELECTRON.name)
         self.live_imaging_signal.connect(self.live_update)
     
     def setup_connections(self):
@@ -335,7 +337,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def set_ui_from_settings(self, image_settings: ImageSettings, 
                              beam_type: BeamType, 
                              beam_settings: BeamSettings=None, 
-                             detector_settings: FibsemDetectorSettings=None ):
+                             detector_settings: FibsemDetectorSettings=None):
         """Update the ui from the image, beam and detector settings"""
 
         # disconnect beam type combobox
@@ -343,10 +345,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.selected_beam.setCurrentText(beam_type.name)
         self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
         
-        if beam_settings is None:
-            beam_settings = self.microscope.get_beam_settings(beam_type)
-        if detector_settings is None:
-            detector_settings = self.microscope.get_detector_settings(beam_type)
+        #not sure if this makes sense here.
+        # The function is supposed to set from settings, but here it gets settings from microscope
+        # if beam_settings is None:
+        #     beam_settings = self.microscope.get_beam_settings(beam_type)
+        # if detector_settings is None:
+        #     detector_settings = self.microscope.get_detector_settings(beam_type)
 
         # imaging settings
         self.spinBox_resolution_x.setValue(image_settings.resolution[0])
@@ -362,21 +366,23 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.lineEdit_image_label.setText(image_settings.filename)
 
         # detector settings
-        self.detector_type_combobox.setCurrentText(detector_settings.type)
-        self.detector_mode_combobox.setCurrentText(detector_settings.mode)
-        self.detector_contrast_slider.setValue(int(detector_settings.contrast*100))
-        self.detector_brightness_slider.setValue(int(detector_settings.brightness*100))
+        if not detector_settings is None:   #support for Demo2
+            self.detector_type_combobox.setCurrentText(detector_settings.type)
+            self.detector_mode_combobox.setCurrentText(detector_settings.mode)
+            self.detector_contrast_slider.setValue(int(detector_settings.contrast*100))
+            self.detector_brightness_slider.setValue(int(detector_settings.brightness*100))
         
         # beam settings
-        self.beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
-        self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
-        self.spinBox_beam_scan_rotation.setValue(np.rad2deg(beam_settings.scan_rotation))
-        
-        self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
-        self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
-        self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
-        self.stigmation_x.setValue(beam_settings.stigmation.x)
-        self.stigmation_y.setValue(beam_settings.stigmation.y)
+        if not beam_settings is None: #support for Demo2
+            self.beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
+            self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
+            self.spinBox_beam_scan_rotation.setValue(np.rad2deg(beam_settings.scan_rotation))
+            
+            self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
+            self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
+            self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
+            self.stigmation_x.setValue(beam_settings.stigmation.x)
+            self.stigmation_y.setValue(beam_settings.stigmation.y)
         
         self.update_ui_saving_settings()
 
@@ -490,9 +496,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def imaging_finished(self):
         if self.ib_image is not None:
-            self.update_viewer(self.ib_image.data, BeamType.ION.name)
+            # self.update_viewer(self.ib_image.data, BeamType.ION.name)
+            self.set_image_in_nap_viewer(self.ib_image.data, BeamType.ION.name)
         if self.eb_image is not None:
-            self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
+            #self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
+            self.set_image_in_nap_viewer(self.eb_image.data, BeamType.ELECTRON.name)
         self._toggle_interactions(True)
         self.TAKING_IMAGES = False
 
@@ -571,11 +579,123 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def update_ui_tools(self):
         """Redraw the ui tools (scalebar, crosshair)"""
-        self.update_viewer(self.eb_last, BeamType.ELECTRON.name)
-        self.update_viewer(self.ib_last, BeamType.ION.name)
+        # self.update_viewer(self.eb_last, BeamType.ELECTRON.name)
+        # self.update_viewer(self.ib_last, BeamType.ION.name)
+        self.set_image_in_nap_viewer(self.eb_last, BeamType.ELECTRON.name)
+        self.set_image_in_nap_viewer(self.ib_last, BeamType.ION.name)
 
-    def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
-        """Update the viewer with the given image array"""
+    # def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
+    #     """Update the viewer with the given image array"""
+
+    #     #Backup last images data
+    #     if name == BeamType.ELECTRON.name:
+    #         self.eb_last = arr
+    #     if name == BeamType.ION.name:
+    #         self.ib_last = arr
+
+    #     # median filter for display
+    #     arr = median_filter(arr, size=3)
+       
+    #     # try:
+    #     #     self.viewer.layers[name].data = arr
+    #     # except:   
+    #     #     layer = self.viewer.add_image(arr, name = name)
+
+    #     layer=None
+    #     if name in self.viewer.layers:
+    #         #delete layer
+    #         self.viewer.layers.remove(name)
+            
+    #     layer = self.viewer.add_image(arr, name = name)
+        
+    #     # layer = self.viewer.layers[name]
+
+    #     # if self.eb_layer is None and name == BeamType.ELECTRON.name:
+    #     #     self.eb_layer = layer
+    #     # if self.ib_layer is None and name == BeamType.ION.name:
+    #     #     self.ib_layer = layer
+
+    #     if name == BeamType.ELECTRON.name:
+    #         self.eb_layer = layer
+    #     if name == BeamType.ION.name:
+    #         self.ib_layer = layer
+        
+    #     # centre the camera
+    #     if self.eb_layer:
+    #         self.viewer.camera.center = [
+    #             0.0,
+    #             self.eb_layer.data.shape[0] / 2,
+    #             self.eb_layer.data.shape[1],
+    #         ]
+    #         self.viewer.camera.zoom = 0.45
+
+    #     if self.ib_layer:
+    #         translation = (
+    #             self.viewer.layers["ELECTRON"].data.shape[1]
+    #             if self.eb_layer
+    #             else arr.shape[1]
+    #         )
+    #         self.ib_layer.translate = [0.0, translation]       
+
+    #     if self.eb_layer:
+    #         points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150]])
+    #         string = ["ELECTRON BEAM", "ION BEAM"]
+    #         text = {
+    #             "string": string,
+    #             "color": "white"
+    #         }
+
+    #         try:
+    #             self.viewer.layers['label'].data = points
+    #         except:    
+    #             self.viewer.add_points(
+    #             points,
+    #             name="label",
+    #             text=text,
+    #             size=20,
+    #             edge_width=7,
+    #             edge_width_is_relative=False,
+    #             edge_color='transparent',
+    #             face_color='transparent',
+    #             )   
+
+
+    #     # draw scalebar and crosshair
+    #     if self.eb_image is not None and self.ib_image is not None:
+    #         ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
+    #         ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
+            
+        
+    #     # set ui from image metadata
+    #     if _set_ui:
+    #         if name == BeamType.ELECTRON.name:
+    #             self.image_settings = self.eb_image.metadata.image_settings
+    #             beam_settings = self.eb_image.metadata.microscope_state.electron_beam
+    #             detector_settings = self.eb_image.metadata.microscope_state.electron_detector
+    #             beam_type = BeamType.ELECTRON
+    #         if name == BeamType.ION.name:
+    #             self.image_settings = self.ib_image.metadata.image_settings
+    #             beam_settings = self.ib_image.metadata.microscope_state.ion_beam
+    #             detector_settings = self.ib_image.metadata.microscope_state.ion_detector
+    #             beam_type = BeamType.ION            
+    #     else:
+    #         beam_type = BeamType[self.selected_beam.currentText()]
+    #         beam_settings, detector_settings = None, None    
+
+    #     #Revise detectorsettings, metadata from images could be None when using Demos
+    #     self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type, 
+    #         beam_settings=beam_settings, detector_settings=detector_settings)  
+            
+    #     # set the active layer to the electron beam (for movement)
+    #     if self.eb_layer:
+    #         self.viewer.layers.selection.active = self.eb_layer
+
+    #     self.viewer_update_signal.emit()
+
+    def set_image_in_nap_viewer(self, arr: np.ndarray, name: str):
+        """Update the viewer with the given image array
+        Based from update_viewer but split the set_ui stuff to another function
+        """
 
         #Backup last images data
         if name == BeamType.ELECTRON.name:
@@ -655,23 +775,39 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             ui_utils._draw_scalebar(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.scalebar_checkbox.isChecked())
             ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.eb_image,ib_image= self.ib_image,is_checked=self.crosshair_checkbox.isChecked()) 
             
-        
+    def update_image_ui_elements(self, name: str):
         # set ui from image metadata
-        if _set_ui:
-            if name == BeamType.ELECTRON.name:
-                self.image_settings = self.eb_image.metadata.image_settings
-                beam_settings = self.eb_image.metadata.microscope_state.electron_beam
-                detector_settings = self.eb_image.metadata.microscope_state.electron_detector
-                beam_type = BeamType.ELECTRON
-            if name == BeamType.ION.name:
-                self.image_settings = self.ib_image.metadata.image_settings
-                beam_settings = self.ib_image.metadata.microscope_state.ion_beam
-                detector_settings = self.ib_image.metadata.microscope_state.ion_detector
-                beam_type = BeamType.ION            
-        else:
-            beam_type = BeamType[self.selected_beam.currentText()]
-            beam_settings, detector_settings = None, None    
-    
+
+        beam_settings, detector_settings = None, None
+                
+        # if name == BeamType.ELECTRON.name:
+        #     self.image_settings = self.eb_image.metadata.image_settings
+        #     beam_settings = self.eb_image.metadata.microscope_state.electron_beam
+        #     detector_settings = self.eb_image.metadata.microscope_state.electron_detector
+        #     beam_type = BeamType.ELECTRON
+        # if name == BeamType.ION.name:
+        #     self.image_settings = self.ib_image.metadata.image_settings
+        #     beam_settings = self.ib_image.metadata.microscope_state.ion_beam
+        #     detector_settings = self.ib_image.metadata.microscope_state.ion_detector
+        #     beam_type = BeamType.ION  
+        
+        # else:
+        #     beam_type = BeamType[self.selected_beam.currentText()]
+        #     beam_settings, detector_settings = None, None    
+
+        beam_type = None
+        if name == BeamType.ELECTRON.name:
+            self.image_settings = self.eb_image.metadata.image_settings
+            beam_type=BeamType.ELECTRON
+        if name == BeamType.ION.name:
+            self.image_settings = self.ib_image.metadata.image_settings
+            beam_type=BeamType.ION
+                                  
+        microscope_state = self.microscope.get_microscope_state(beam_type)
+        beam_settings=microscope_state.ion_beam
+        detector_settings=microscope_state.ion_detector
+                                  
+        #Revise detectorsettings, metadata from images could be None when using Demos
         self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type, 
             beam_settings=beam_settings, detector_settings=detector_settings)  
             
@@ -680,7 +816,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.layers.selection.active = self.eb_layer
 
         self.viewer_update_signal.emit()
-
+        
     def get_data_from_coord(self, coords: tuple) -> tuple:
         # check inside image dimensions, (y, x)
         eb_shape = self.eb_image.data.shape[0], self.eb_image.data.shape[1]
