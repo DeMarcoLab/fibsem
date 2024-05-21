@@ -26,6 +26,8 @@ from fibsem.ui.utils import (_draw_patterns_in_napari, _remove_all_layers,
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
+import debugpy
+
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
                      "number", "passes", "n_rectangles", "overlap", "inverted", "use_side_patterns",
                      "n_columns", "n_rows", "cross_section" ]
@@ -850,6 +852,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     @thread_worker
     def run_milling_step(self):
+        logging.info("run_milling_step()")
+        # Allow debugging
+        debugpy.debug_this_thread()
 
         milling_stages = self.get_milling_stages()
         self._toggle_interactions(enabled=False,milling=True)
@@ -881,7 +886,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 log_status_message(stage, f"Patterning mode: {stage.milling.patterning_mode}")
-
+                
+                estimated_time = franklin_adaptive_milling_dl_fibsem.config['milling_interval_s'] # TODO LMAP: TEST
+                progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
+                self._progress_bar_start.emit(progress_bar_dict)
+                    
                 try:
                     franklin_adaptive_milling_dl_fibsem.adaptive_polish_run(self.microscope, self.settings, stage.pattern.patterns, img_settings_sem)
                 except Exception as e:
@@ -948,8 +957,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.take_reference_images()
         self.update_ui()
         self._milling_finished.emit()
-        self._quit_progress_bar()
-        self.finish_progress_bar()
+
+        # progress bar may not be setup, specially during adaptive milling
+        try:
+            self._quit_progress_bar()
+            self.finish_progress_bar()
+        except:
+            pass
+
         self._STOP_MILLING = False
 
 

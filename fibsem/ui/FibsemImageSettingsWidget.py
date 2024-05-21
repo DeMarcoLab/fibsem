@@ -598,7 +598,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.layers[name].data = arr
         except:    
             layer = self.viewer.add_image(arr, name = name)
-        
+            # Note that if adding image, it will not register the mouse click callback
+            # which is needed for moving lamella around
 
         layer = self.viewer.layers[name]
         if self.eb_layer is None and name == BeamType.ELECTRON.name:

@@ -94,6 +94,8 @@ def beam_shift_alignment(
     )
     image_settings.autocontrast = True
     
+    # TODO: beam_shift depending in the scan/beam rotation
+    #logging.info(f"LMAP DEBUG: ion beam rotation: {microscope.get_beam_settings(BeamType.ION).scan_rotation}")
 
     # adjust beamshift (reverse direction for x)
     microscope.beam_shift(-dx, dy, image_settings.beam_type)
