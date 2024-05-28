@@ -63,5 +63,7 @@ milling:
 demo2:
     #SEM_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\20240128\lam_013\SEM_8_fi_1"                                   # Folder where demo2 spoof SEM images are located
     #FIB_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\20240128\lam_013\FIB"
-    SEM_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\example_SEM_images\temp"                                   # Folder where demo2 spoof SEM images are located
-    FIB_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\example_SEM_images\temp"
+    #SEM_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\example_SEM_images\temp"                                   # Folder where demo2 spoof SEM images are located
+    #FIB_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\example_SEM_images\temp"
+    SEM_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\20230830\lam_003\SEM_8"
+    FIB_folder_path_str: r"C:\Users\Luis-work\OneDrive - The Rosalind Franklin Institute\RFI-Programming\automated_milling\example_images\20230830\lam_003\FIB"

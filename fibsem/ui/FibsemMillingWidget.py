@@ -853,7 +853,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     @thread_worker
     def run_milling_step(self):
         logging.info("run_milling_step()")
-        # Allow debugging
+        # Allow debugging. Pycharm may not like this line
         debugpy.debug_this_thread()
 
         milling_stages = self.get_milling_stages()
@@ -874,20 +874,27 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 return
 
             if "adaptive" in stage.name.lower():
-                from adaptive_polish import franklin_adaptive_milling_dl_fibsem
+                if not "adaptive_polish" in self.protocol:
+                    ValueError("adaptive_polish key not available in protocol.")
+                
+                from adaptive_polish import franklin_adaptive_milling_dl_fibsem2
+                franklin_adaptive_milling_dl_fibsem2.set_config(self.protocol["adaptive_polish"])
+                
                 stage.milling.patterning_mode = "Parallel"
-                img_settings_sem = self.microscope.get_imaging_settings(BeamType.ELECTRON)
-                img_settings_sem.hfw = 40e-6
-                img_settings_sem.frame_integration = 8
-                img_settings_sem.dwell_time = 200e-9 #300e-9
-                # stage.milling.depth = 40e-9
+                stage.milling.depth = 40e-9
+
+                # img_settings_sem = self.microscope.get_imaging_settings(BeamType.ELECTRON)
+                # img_settings_sem.hfw = 40e-6
+                # img_settings_sem.frame_integration = 8
+                # img_settings_sem.dwell_time = 200e-9 #300e-9
+
                 milling.setup_milling(self.microscope, mill_settings=stage.milling)
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")  # TODO: refactor to json
                 log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 log_status_message(stage, f"Patterning mode: {stage.milling.patterning_mode}")
                 
-                estimated_time = franklin_adaptive_milling_dl_fibsem.config['milling_interval_s'] # TODO LMAP: TEST
+                estimated_time = franklin_adaptive_milling_dl_fibsem2._ap_config['milling_interval_s'] # TODO LMAP: TEST
                 progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
                 self._progress_bar_start.emit(progress_bar_dict)
                     
