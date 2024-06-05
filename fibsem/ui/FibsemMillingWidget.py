@@ -77,7 +77,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         if protocol is None:
             protocol = utils.load_yaml(cfg.PROTOCOL_PATH)
-        self.protocol = protocol
+        self.patterns_and_mill_settings = protocol
         
         self.milling_stages = milling_stages
 
@@ -90,6 +90,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._UPDATING_PATTERN:bool = False
         self._PATTERN_IS_MOVEABLE: bool = True
         self._STOP_MILLING: bool = False
+
+        self.adaptive_polish_settings = None
 
     def setup_connections(self):
 
@@ -128,10 +130,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
         self.doubleSpinBox_milling_current.valueChanged.connect(self.update_settings)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
-        if self.comboBox_application_file.findText(self.protocol["milling"]["application_file"]) == -1:
+        if self.comboBox_application_file.findText(self.patterns_and_mill_settings["milling"]["application_file"]) == -1:
                 napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
-                self.protocol["milling"]["application_file"] = "Si"
-        self.comboBox_application_file.setCurrentText(self.protocol["milling"]["application_file"])
+                self.patterns_and_mill_settings["milling"]["application_file"] = "Si"
+        self.comboBox_application_file.setCurrentText(self.patterns_and_mill_settings["milling"]["application_file"])
         self.comboBox_patterning_mode.addItems(["Serial", "Parallel"])
         
         # TESCAN
@@ -236,7 +238,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         num = len(self.milling_stages) + 1
         name = f"Milling Stage {num}"
         pattern = patterning.RectanglePattern()
-        pattern.define(self.protocol["patterns"]["Rectangle"], Point(0,0))
+        pattern.define(self.patterns_and_mill_settings["patterns"]["Rectangle"], Point(0,0))
         milling_stage = FibsemMillingStage(name=name, num=num, pattern=pattern)
         self.milling_stages.append(milling_stage)
         self.comboBox_milling_stage.addItem(name)
@@ -361,7 +363,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             patterns_available = [pattern.name for pattern in patterning.__PATTERNS__]
             pattern_available_index = patterns_available.index(current_pattern_text)
             pattern = patterning.__PATTERNS__[pattern_available_index]
-            pattern_protocol = self.protocol["patterns"][pattern.name]
+            pattern_protocol = self.patterns_and_mill_settings["patterns"][pattern.name]
             point = None
         else:
             pattern = milling_stage.pattern
@@ -455,7 +457,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.gridLayout_patterns.addWidget(spinbox, i, 1)
             spinbox.setKeyboardTracking(False)
 
-            # get default values from self.protocol and set values
+            # get default values from self.patterns_and_mill_settings and set values
             if key in pattern_protocol:
                 value = _scale_value(key, pattern_protocol[key], constants.SI_TO_MICRO)
                 spinbox.setValue(value if value is not None else 0)
@@ -874,19 +876,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 return
 
             if "adaptive" in stage.name.lower():
-                if not "adaptive_polish" in self.protocol:
-                    ValueError("adaptive_polish key not available in protocol.")
-                
+
                 from adaptive_polish import franklin_adaptive_milling_dl_fibsem2
-                franklin_adaptive_milling_dl_fibsem2.set_config(self.protocol["adaptive_polish"])
+                ap2 = franklin_adaptive_milling_dl_fibsem2.AdaptiveMilling(self.adaptive_polish_settings)
                 
                 stage.milling.patterning_mode = "Parallel"
                 stage.milling.depth = 40e-9
-
-                # img_settings_sem = self.microscope.get_imaging_settings(BeamType.ELECTRON)
-                # img_settings_sem.hfw = 40e-6
-                # img_settings_sem.frame_integration = 8
-                # img_settings_sem.dwell_time = 200e-9 #300e-9
 
                 milling.setup_milling(self.microscope, mill_settings=stage.milling)
                 log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}")  # TODO: refactor to json
@@ -894,12 +889,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 log_status_message(stage, f"Patterning mode: {stage.milling.patterning_mode}")
                 
-                estimated_time = franklin_adaptive_milling_dl_fibsem2._ap_config['milling_interval_s'] # TODO LMAP: TEST
+                estimated_time = ap2.config_dict['milling_interval_s'] # TODO LMAP: TEST
                 progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
                 self._progress_bar_start.emit(progress_bar_dict)
-                    
+
+                #Note that the adaptive milling imaging settings were passed through the protocol dictionary
                 try:
-                    franklin_adaptive_milling_dl_fibsem.adaptive_polish_run(self.microscope, self.settings, stage.pattern.patterns, img_settings_sem)
+                    ap2.adaptive_polish_run(self.microscope, self.settings, stage.pattern.patterns)
+                
                 except Exception as e:
                     napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
                     logging.error(e)
