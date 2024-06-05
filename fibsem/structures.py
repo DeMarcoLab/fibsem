@@ -1663,6 +1663,14 @@ class FibsemImage:
                 # traceback.print_exc()
         return cls(data=data, metadata=metadata)
 
+    def get_save_folder(self):
+        return self.metadata.image_settings.path
+    def get_save_path(self):
+        return os.path.join(
+                self.metadata.image_settings.path,
+                self.metadata.image_settings.filename
+            )
+
     def save(self, path: Path = None) -> None:
         """Saves a FibsemImage to a tiff file.
 
@@ -1670,10 +1678,8 @@ class FibsemImage:
             path (path): path to save directory and filename
         """
         if path is None:
-            path = os.path.join(
-                self.metadata.image_settings.path,
-                self.metadata.image_settings.filename,
-            )
+            path = self.get_save_path()
+        
         os.makedirs(os.path.dirname(path), exist_ok=True)
         path = Path(path).with_suffix(".tif")
 

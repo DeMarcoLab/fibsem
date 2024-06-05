@@ -893,6 +893,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
                 self._progress_bar_start.emit(progress_bar_dict)
 
+                 # set pattern
+                milling.draw_patterns(self.microscope, stage.pattern.patterns)
+
                 #Note that the adaptive milling imaging settings were passed through the protocol dictionary
                 try:
                     ap2.adaptive_polish_run(self.microscope, self.settings, stage.pattern.patterns)
@@ -906,7 +909,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                                            imaging_voltage=self.microscope.system.ion.beam.voltage)
 
             else:
-                
                 if stage.pattern is not None:
                     log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}") # TODO: refactor to json
                     log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
