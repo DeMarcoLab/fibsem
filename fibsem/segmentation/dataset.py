@@ -132,6 +132,31 @@ def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes
 
     if apply_transforms is False:
         transformations_input, transformations_target = None, None
+    # transformations
+    ROT_ANGLE = 15
+    PROB = 0.1
+
+    transformations_input = transforms.Compose(
+        [
+
+            transforms.RandomRotation(ROT_ANGLE),
+            transforms.RandomHorizontalFlip(p=PROB),
+            transforms.RandomVerticalFlip(p=PROB),
+            transforms.RandomAutocontrast(p=PROB),
+            transforms.RandomEqualize(p=PROB),
+            transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+        ]
+    )
+
+    transformations_target = transforms.Compose(
+        [
+            transforms.RandomRotation(ROT_ANGLE),
+            transforms.RandomHorizontalFlip(p=PROB),
+            transforms.RandomVerticalFlip(p=PROB),
+
+        ]
+    )
 
     # load dataset
     seg_dataset = SegmentationDataset(
