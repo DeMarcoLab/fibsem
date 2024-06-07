@@ -1789,6 +1789,10 @@ class ThermoMicroscope(FibsemMicroscope):
             depth=pattern_settings.depth,
         )
 
+        if not np.isclose(pattern_settings.time, 0.0):
+            logging.debug(f"Setting pattern time to {pattern_settings.time}.")
+            pattern.time = pattern_settings.time
+
         # set pattern rotation
         pattern.rotation = pattern_settings.rotation
 
@@ -5738,6 +5742,8 @@ class DemoMicroscope(FibsemMicroscope):
 
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
+        if pattern_settings.time != 0:
+            logging.info(f"Setting pattern time to {pattern_settings.time}.")
 
     def draw_line(self, pattern_settings: FibsemLineSettings) -> None:
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
