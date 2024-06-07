@@ -889,7 +889,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
                 log_status_message(stage, f"Patterning mode: {stage.milling.patterning_mode}")
                 
-                estimated_time = ap2.config_dict['milling_interval_s'] # TODO LMAP: TEST
+                estimated_time = int(ap2.config_dict['milling_interval_s'])*int(ap2.config_dict['max_milling_cycles']) # TODO LMAP: TEST
                 progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
                 self._progress_bar_start.emit(progress_bar_dict)
 
@@ -902,8 +902,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 
                 except Exception as e:
                     napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
-                    logging.error(e)
+                    logging.error(f"Error occured while running adaptive milling: {str(e)}")
                 finally:
+                    logging.info("run_milling_step(): finish_milling")
                     milling.finish_milling(self.microscope,
                                            # imaging_current=self.microscope.system.ion.beam.beam_current,
                                            imaging_voltage=self.microscope.system.ion.beam.voltage)
