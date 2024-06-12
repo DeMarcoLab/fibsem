@@ -66,7 +66,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self._TESCAN = isinstance(self.microscope, TescanMicroscope)
         self.TAKING_IMAGES = False
         self._LIVE_IMAGING = False
-
+        self.state_eb_check = True
+        self.state_ib_check = True
+        
         self.setup_connections()
 
         if image_settings is not None:
@@ -418,6 +420,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self._toggle_interactions(False)
             self.pushButton_live_imaging.setEnabled(True)
             self.pushButton_live_imaging.setText("Stop live imaging")
+            self.state_eb_check = self.parent.movement_widget.checkBox_movement_acquire_electron.isChecked()
+            self.state_ib_check = self.parent.movement_widget.checkBox_movement_acquire_ion.isChecked()
             self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(False)
             self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked(False)
             self.pushButton_live_imaging.setStyleSheet("background-color: orange")
@@ -453,8 +457,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                     }
                     QPushButton:pressed { """
                 )
-            self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(False)
-            self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked(False)
+            self.parent.movement_widget.checkBox_movement_acquire_electron.setChecked(self.state_eb_check)
+            self.parent.movement_widget.checkBox_movement_acquire_ion.setChecked( self.state_ib_check)
 
 
     def update_live_finished(self):
