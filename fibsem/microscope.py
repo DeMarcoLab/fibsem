@@ -1612,18 +1612,19 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             mill_settings (FibsemMillingSettings): Milling settings.
         """
-        _check_beam(BeamType.ION, self.system)
-        self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
-        self.connection.imaging.set_active_device(BeamType.ION.value)
-        self.connection.patterning.set_default_beam_type(BeamType.ION.value)
+        self.milling_channel = BeamType.ION
+        _check_beam(self.milling_channel, self.system)
+        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
+        self.connection.imaging.set_active_device(self.milling_channel.value)
+        self.connection.patterning.set_default_beam_type(self.milling_channel.value)
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
         self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
 
         # self.set("hfw", mill_settings.hfw, BeamType.ION) # TODO: replace
-        self.set("current", mill_settings.milling_current, BeamType.ION)
-        self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
+        self.set("current", mill_settings.milling_current, self.milling_channel)
+        self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
@@ -1642,15 +1643,15 @@ class ThermoMicroscope(FibsemMicroscope):
         
         try:
             # change to milling current, voltage
-            if self.get("voltage", BeamType.ION) != milling_voltage:
-                self.set("voltage", milling_voltage, BeamType.ION)
-            if self.get("current", BeamType.ION) != milling_current:
-                self.set("current", milling_current, BeamType.ION)
+            if self.get("voltage", self.milling_channel) != milling_voltage:
+                self.set("voltage", milling_voltage, self.milling_channel)
+            if self.get("current", self.milling_channel) != milling_current:
+                self.set("current", milling_current, self.milling_channel)
         except Exception as e:
             logging.warning(f"Failed to set voltage or current: {e}, voltage={milling_voltage}, current={milling_current}")
 
         # run milling (asynchronously)
-        self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
+        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
         if asynch:
             self.connection.patterning.start()
@@ -1686,13 +1687,13 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             None
         """
-        _check_beam(BeamType.ION, self.system)
+        _check_beam(self.milling_channel, self.system)
         # change to milling current
-        self.connection.imaging.set_active_view(BeamType.ION.value)  # the ion beam view
-        if self.get("voltage", BeamType.ION) != milling_voltage:
-            self.set("voltage", milling_voltage, BeamType.ION)
-        if self.get("current", BeamType.ION) != milling_current:
-            self.set("current", milling_current, BeamType.ION)
+        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
+        if self.get("voltage", self.milling_channel) != milling_voltage:
+            self.set("voltage", milling_voltage, self.milling_channel)
+        if self.get("current", self.milling_channel) != milling_current:
+            self.set("current", milling_current, self.milling_channel)
 
 
         # run milling (asynchronously)
@@ -1709,7 +1710,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info("Drift correction")
             alignment.beam_shift_alignment_v2(microscope = self, ref_image=ref_image)
             time.sleep(1) # need delay to switch back to patterning mode 
-            self.connection.imaging.set_active_view(BeamType.ION.value)
+            self.connection.imaging.set_active_view(self.milling_channel.value)
             if self.connection.patterning.state == PatterningState.PAUSED: # check if finished 
                 self.connection.patterning.resume()
                 time.sleep(5)
@@ -1723,10 +1724,10 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             imaging_current (float): The current to use for imaging in amps.
         """
-        _check_beam(BeamType.ION, self.system)
+        _check_beam(self.milling_channel, self.system)
         self.connection.patterning.clear_patterns()
-        self.set("current", imaging_current, BeamType.ION)
-        self.set("voltage", imaging_voltage, BeamType.ION)
+        self.set("current", imaging_current, self.milling_channel)
+        self.set("voltage", imaging_voltage, self.milling_channel)
         self.connection.patterning.mode = "Serial"
 
         logging.debug({"msg": "finish_milling", "imaging_current": imaging_current, "imaging_voltage": imaging_voltage})
