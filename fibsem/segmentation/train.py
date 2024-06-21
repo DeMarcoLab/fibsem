@@ -187,6 +187,10 @@ def train_model(
     train_losses = []
     val_losses = []
 
+    # helps improve memory issues? 
+    # https://stackoverflow.com/questions/59129812/how-to-avoid-cuda-out-of-memory-in-pytorch
+    torch.cuda.empty_cache()
+
     # training loop
     for epoch in range(epochs):
         print(f"------- Epoch {epoch+1} of {epochs}  --------")
@@ -219,6 +223,7 @@ def _setup_model(config: dict) -> tuple:
     # Use gpu for training if available else use cpu
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
+
 
     # load model checkpoint
     if config["checkpoint"]:

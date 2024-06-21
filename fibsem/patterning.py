@@ -21,7 +21,7 @@ def check_keys(protocol: dict, required_keys: list[str]) -> bool:
 
     
 REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section"),
+    "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section", "time"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
     "Circle": ("radius", "depth"),
     "Trench": (
@@ -32,6 +32,7 @@ REQUIRED_KEYS = {
         "offset",
         "depth",
         "cross_section",
+        "time", 
     ),
     "Horseshoe": (
         "lamella_width",
@@ -285,6 +286,7 @@ class TrenchPattern(BasePattern):
         depth = protocol["depth"]
         use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+        time = protocol.get("time", 0.0)
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
@@ -300,7 +302,8 @@ class TrenchPattern(BasePattern):
             centre_y=centre_lower_y,
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="BottomToTop",
-            cross_section = cross_section
+            cross_section = cross_section,
+            time = time
 
         )
 
@@ -312,7 +315,8 @@ class TrenchPattern(BasePattern):
             centre_y=centre_upper_y,
             cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
-            cross_section = cross_section
+            cross_section = cross_section,
+            time = time
         )
 
         self.patterns = [lower_pattern_settings, upper_pattern_settings]

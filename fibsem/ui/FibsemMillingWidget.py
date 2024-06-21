@@ -30,7 +30,7 @@ import debugpy
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
                      "number", "passes", "n_rectangles", "overlap", "inverted", "use_side_patterns",
-                     "n_columns", "n_rows", "cross_section" ]
+                     "n_columns", "n_rows", "cross_section", "time"]
 _ANGLE_KEYS = ["rotation"]
 _LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
@@ -711,9 +711,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         for stage in milling_stages:
             if stage.pattern.name == "Trench":
                 if stage.pattern.protocol["trench_height"] / stage.milling.hfw < cfg.MILL_HFW_THRESHOLD:
-                    napari.utils.notifications.show_warning(f"Pattern dimensions are too small for milling. Please decrease the image hfw or increase the trench height.")
-                    _remove_all_layers(self.viewer)
-                    return
+                    napari.utils.notifications.show_warning(f"Pattern dimensions are too small for milling. Please decrease the image hfw or increase the trench height for {stage.name}.")
+                    # _remove_all_layers(self.viewer)
+                    # return
 
         t2 = time.time()
         try:

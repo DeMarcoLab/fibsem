@@ -916,6 +916,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     passes: int = 0
+    time: float = 0.0
 
     def to_dict(self) -> dict:
         return {
@@ -929,6 +930,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             "scan_direction": self.scan_direction,
             "cross_section": self.cross_section.name,
             "passes": self.passes,
+            "time": self.time,
         }
 
     @staticmethod
@@ -944,6 +946,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             scan_direction=data.get("scan_direction", "TopToBottom"),
             cross_section=CrossSectionPattern[data.get("cross_section", "Rectangle")],
             passes=data.get("passes", 0),
+            time=data.get("time", 0.0),
         )
 
 @dataclass

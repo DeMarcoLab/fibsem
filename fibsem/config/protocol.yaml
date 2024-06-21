@@ -23,6 +23,7 @@ patterns:
     cleaning_cross_section: False
     scan_direction: "ToptoBottom"
     passes: 0 # means auto
+    time: 0 # means auto
   Line:
     start_x: -10.0e-6
     start_y: 0.0
@@ -41,6 +42,7 @@ patterns:
     size_ratio: 1.0
     depth: 2.0e-6
     cleaning_cross_section: false
+    time: 0 # means auto
   Horseshoe:
     lamella_width: 40.0e-6
     lamella_height: 10.0e-6
