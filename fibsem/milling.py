@@ -142,7 +142,8 @@ def mill_stages(microscope: FibsemMicroscope, stages: list[FibsemMillingStage], 
     for stage in stages:
         mill_stage(microscope=microscope, stage=stage, asynch=asynch)
 
-        # TODO: add special case for overtilt milling
+    # finish milling (restore imaging conditions)
+    finish_milling(microscope)
 
 def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: bool=False):
 
@@ -157,9 +158,6 @@ def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: 
         milling_current=stage.milling.milling_current, 
         milling_voltage=stage.milling.milling_voltage, 
         asynch=asynch)
-
-    # finish milling
-    finish_milling(microscope)
 
 
 

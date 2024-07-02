@@ -868,9 +868,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                                 stages=milling_stages, 
                                 parent_ui=self)
             return
-            
-        for idx,stage in enumerate(milling_stages):
-            self.milling_notification.emit(f"Preparing: {stage.name}")
+        
+        try:
+            for idx,stage in enumerate(milling_stages):
+                self.milling_notification.emit(f"Preparing: {stage.name}")
 
             if self._STOP_MILLING:
                 return
@@ -927,22 +928,28 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                         self.milling_notification.emit(f"Running {stage.name}...")
                         milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
+                        self.milling_notification.emit(f"Running {stage.name}...")
+                        milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
 
+                        # TODO implement a special case for overtilt milling
                         # TODO implement a special case for overtilt milling
 
                     except Exception as e:
                         napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
                         logging.error(e)
-                    finally:
-                        milling.finish_milling(self.microscope,
-                                               # imaging_current=self.microscope.system.ion.beam.beam_current,
-                                               imaging_voltage=self.microscope.system.ion.beam.voltage)
-
-
-                    log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
-                    self._progress_bar_quit.emit()
+                log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
+                self._progress_bar_quit.emit()
 
             self.milling_notification.emit(f"Milling stage complete: {stage.name}")
+        
+        except Exception as e:
+            napari.utils.notifications.show_error(f"Error while milling. {e}")
+            logging.error(e)
+        finally:
+            milling.finish_milling(self.microscope, 
+                                imaging_current=self.microscope.system.ion.beam.beam_current, 
+                                imaging_voltage=self.microscope.system.ion.beam.voltage)
+
         self.milling_notification.emit(f"Milling complete. {len(self.milling_stages)} stages completed.")
 
 
