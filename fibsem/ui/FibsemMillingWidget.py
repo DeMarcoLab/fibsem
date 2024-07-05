@@ -900,6 +900,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
                 #Note that the adaptive milling imaging settings were passed through the protocol dictionary
                 try:
+                    # do not pass self.viewer to the line below, can'ts eem to get napari viewer to work in a separate thread
                     ap2.adaptive_polish_run(self.microscope, self.settings, stage.pattern.patterns)
                 
                 except Exception as e:
