@@ -69,6 +69,14 @@ patterns:
     side_depth: 40.0e-6
     side_height: 10.0e-6
     inverted: false
+  RectangleOffset: 
+    width: 10.0e-6
+    height: 5.0e-6
+    depth: 1.0e-6 
+    scan_direction: TopToBottom
+    cross_section: Rectangle
+    offset: 0.0e-6 
+    inverted: false
   Undercut: 
     height: 10.0e-6
     width: 10.0e-6
