@@ -1620,9 +1620,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
-        self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
-
-        # self.set("hfw", mill_settings.hfw, BeamType.ION) # TODO: replace
+        
+        self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
     
