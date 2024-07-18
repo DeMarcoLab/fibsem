@@ -66,6 +66,7 @@ REQUIRED_KEYS = {
         "inverted",
         "use_side_patterns",
     ),
+    "RectangleOffset": ("width", "height", "depth", "scan_direction", "cross_section", "offset", "inverted"),
     "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
     "Undercut": (
         "height",
@@ -548,6 +549,48 @@ class SerialSectionPattern(BasePattern):
         return self.patterns
 
 @dataclass
+class RectangleOffsetPattern(BasePattern):
+    name: str = "RectangleOffset"
+    required_keys: tuple[str] = REQUIRED_KEYS["RectangleOffset"]
+    patterns = None
+    protocol = None
+    point = None
+
+    def define(
+        self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemRectangleSettings]:
+        check_keys(protocol, self.required_keys)
+
+        width = protocol["width"]
+        height = protocol["height"]
+        depth = protocol["depth"]
+        offset = protocol["offset"]
+        scan_direction = protocol.get("scan_direction", "TopToBottom")
+        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+        inverted = protocol.get("inverted", False)
+
+        offset = offset + height / 2
+        if inverted:
+            offset = -offset
+            
+        center_y = point.y + offset
+
+        pattern = FibsemRectangleSettings(
+            width=width,
+            height=height,
+            depth=depth,
+            centre_x=point.x,
+            centre_y=center_y,
+            scan_direction=scan_direction,
+            cross_section = cross_section,
+        )
+
+        self.patterns = [pattern]
+        self.protocol = protocol
+        self.point = point
+        return self.patterns
+
+@dataclass
 class FiducialPattern(BasePattern):
     name: str = "Fiducial"
     required_keys: tuple[str] = REQUIRED_KEYS["Fiducial"]
@@ -1012,6 +1055,7 @@ __PATTERNS__ = [
     HorseshoePattern,
     HorseshoePatternVertical,
     SerialSectionPattern,
+    RectangleOffsetPattern,
     UndercutPattern,
     FiducialPattern,
     ArrayPattern,
