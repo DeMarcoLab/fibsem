@@ -396,12 +396,13 @@ def _create_annulus_shape(width, height, inner_radius, outer_radius):
     donut = np.logical_and(distance < outer_radius, distance > inner_radius).astype(int)
     return donut
 
+IGNORE_SHAPES_LAYERS = ["ruler_line","crosshair","scalebar","scalebar_value", "label", "alignment_area"] # ignore these layers when removing all shapes
 
 def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes, _ignore: list[str] = []):
 
     # remove all shapes layers
     layers_to_remove = []
-    layers_to_ignore = ["ruler_line","crosshair","scalebar","scalebar_value", "label"] + _ignore
+    layers_to_ignore = IGNORE_SHAPES_LAYERS + _ignore
     for layer in viewer.layers:
 
         if layer.name in layers_to_ignore:

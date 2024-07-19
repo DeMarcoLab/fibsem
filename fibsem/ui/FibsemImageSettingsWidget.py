@@ -1,38 +1,28 @@
-import napari
 import logging
-from pathlib import Path
-
-import napari.utils.notifications
-
-import numpy as np
-from PIL import Image
-from scipy.ndimage import median_filter
-
-from fibsem import acquire, constants
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
-from fibsem.structures import (BeamSettings, BeamType, FibsemDetectorSettings,
-                               FibsemImage, ImageSettings, Point)
-from fibsem.ui import utils as ui_utils
-
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
-from fibsem import constants, acquire
-
-from fibsem.structures import BeamType, ImageSettings, FibsemImage, Point, FibsemDetectorSettings, BeamSettings
-from fibsem.ui import utils as ui_utils 
-from fibsem.ui import _stylesheets
-
-from fibsem.ui.qtdesigner_files import ImageSettingsWidget
-from fibsem.ui import _stylesheets
-# from napari.qt.threading import thread_worker
-   
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSignal
 import threading
+from pathlib import Path
 from queue import Queue
 
+import napari
+import napari.utils.notifications
 import numpy as np
-from fibsem import config as cfg
-        
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
+from scipy.ndimage import median_filter
+
+from fibsem import acquire, constants, config as cfg
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.structures import (
+    BeamSettings,
+    BeamType,
+    FibsemDetectorSettings,
+    FibsemImage,
+    ImageSettings,
+    Point,
+    FibsemRectangle,
+)
+from fibsem.ui import utils as ui_utils, _stylesheets
+from fibsem.ui.qtdesigner_files import ImageSettingsWidget       
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
@@ -59,6 +49,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.ib_last = np.zeros(shape=(1024, 1536), dtype=np.uint8)
 
         self._features_layer = None
+        self.alignment_layer = None
         self.stop_event = threading.Event()
         self.stop_event.set()
         self.image_queue = Queue()
@@ -137,7 +128,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         else:
             self.comboBox_presets.hide()
             self.label_presets.hide()
-  
+
+        self.pushButton_show_alignment_area.setVisible(False)
+        self.pushButton_show_alignment_area.clicked.connect(lambda: self.toggle_alignment_area(None))
+
     def toggle_mode(self):
         """Toggle the visibility of the advanced settings"""
         advanced_mode = self.checkBox_advanced_settings.isChecked()
@@ -706,6 +700,136 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     def _set_active_layer(self):
         if self.eb_layer:
             self.viewer.layers.selection.active = self.eb_layer
+
+    def clear_alignment_area(self):
+        self.alignment_layer.visible = False
+        self._set_active_layer()
+
+    def toggle_alignment_area(self, reduced_area: FibsemRectangle = None):
+        logging.info(f"TOGGLE: {reduced_area}")
+        if self.viewer.layers.selection.active == self.eb_layer:
+            self.set_alignment_layer(reduced_area)
+            self.alignment_layer.visible = True
+        else:
+            self.clear_alignment_area()
+
+    def set_alignment_layer(self, reduced_area: FibsemRectangle = FibsemRectangle(0.25, 0.25, 0.5, 0.5)):
+        """Set the alignment area layer in napari."""
+        def convert_reduced_area_to_napari_shape(reduced_area: FibsemRectangle, image_shape: tuple, offset_shape: tuple = None) -> np.ndarray:
+            """Convert a reduced area to a napari shape."""
+            x0 = reduced_area.left * image_shape[1]
+            y0 = reduced_area.top * image_shape[0]
+            if offset_shape:
+                x0 += offset_shape[1]
+            x1 = x0 + reduced_area.width * image_shape[1]
+            y1 = y0 + reduced_area.height * image_shape[0]
+            data = [[y0, x0], [y0, x1], [y1, x1], [y1, x0]]
+            return data
+        
+        # add alignment area to napari
+        data = convert_reduced_area_to_napari_shape(reduced_area, 
+                                                    image_shape=self.ib_image.data.shape, 
+                                                    offset_shape=self.eb_image.data.shape)
+
+        if self.alignment_layer is None:
+            self.alignment_layer = self.viewer.add_shapes(data=data, name="alignment_area", 
+                        shape_type="rectangle", edge_color="lime", edge_width=20, 
+                        face_color="transparent", opacity=0.5)
+            self.alignment_layer.metadata = {"type": "alignment"}
+        else:
+            self.alignment_layer.data = data
+
+        
+        self.viewer.layers.selection.active = self.alignment_layer
+        self.alignment_layer.mode = "select"
+        # TODO: prevent rotation of rectangles?  
+        self.alignment_layer.events.data.connect(self.update_alignment)
+
+    def update_alignment(self, event):
+
+        reduced_area = self.get_alignment_area()
+        is_valid = is_valid_reduced_area(reduced_area)
+
+        logging.info(f"Updated alignment area: {reduced_area}, valid: {is_valid}")
+
+        # show valid/invalid message in parent
+        if self.parent.__class__.__name__ == "AutoLamellaUI":
+            logging.info("Parent is AutoLamellaUI")
+            try:
+                msg = "Edit Alignment Area. Press Continue when done." if is_valid else "Invalid Alignment Area. Please adjust inside FIB Image."
+                self.parent.label_instructions.setText(msg)
+                self.parent.pushButton_yes.setEnabled(is_valid)
+            except Exception as e:
+                logging.info(f"Error updating alignment area: {e}")
+
+        return reduced_area, is_valid
+
+    def get_alignment_area(self) -> FibsemRectangle:
+        """Get the alignment area from the alignment layer."""
+        data = self.alignment_layer.data
+        if data is None:
+            return None
+        data = data[0]
+        return convert_shape_to_image_area(data, self.ib_image.data.shape, self.eb_image.data.shape)
+
+
+def convert_shape_to_image_area(shape: list[list[int]], image_shape: tuple, offset_shape: tuple = None) -> FibsemRectangle:
+    """Convert a napari shape (rectangle) to  a FibsemRectangle expressed as a percentage of the image (reduced area)
+    shape: the coordinates of the shape
+    image_shape: the shape of the image (usually the ion beam image)
+    offset_shape: the shape of the offset image (usually the electron beam image, as it translates to the ion beam image)
+    
+    """
+    # get limits of rectangle
+    y0, x0 = shape[0]
+    y1, x1 = shape[1]
+    """
+        0################1
+        |               |
+        |               |
+        |               |
+        3################2
+    """
+    # get min/max coordinates
+    x_coords = [x[1] for x in shape]
+    y_coords = [x[0] for x in shape]
+    x0, x1 = min(x_coords), max(x_coords)
+    y0, y1 = min(y_coords), max(y_coords)
+
+    logging.debug(f"convert shape data: {x0}, {x1}, {y0}, {y1}, fib shape: {image_shape}, sem shape: {offset_shape}")
+        
+    # subtract shape of eb image
+    if offset_shape:
+        x0 -= offset_shape[1]
+        x1 -= offset_shape[1]
+    
+    # convert to percentage of image
+    x0 = x0 / image_shape[1]
+    x1 = x1 / image_shape[1]
+    y0 = y0 / image_shape[0]
+    y1 = y1 / image_shape[0]
+    w = x1 - x0
+    h = y1 - y0
+
+    reduced_area = FibsemRectangle(left=x0, top=y0, width=w, height=h)
+    logging.debug(f"reduced area: {reduced_area}")
+
+    return reduced_area
+
+def is_valid_reduced_area(reduced_area: FibsemRectangle) -> bool:
+    """Check whether the reduced area is valid. 
+    Left and top must be between 0 and 1, and width and height must be between 0 and 1.
+    Must not exceed the boundaries of the image 0 - 1
+    """
+    # if left or top is less than 0, or width or height is greater than 1, return False
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width > 1 or reduced_area.height > 1:
+        return False
+    if reduced_area.left + reduced_area.width > 1 or reduced_area.top + reduced_area.height > 1:
+        return False
+    # no negative values
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width <= 0 or reduced_area.height <= 0:
+        return False
+    return True                                
 
 def main():
 
