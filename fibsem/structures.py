@@ -1068,6 +1068,7 @@ class FibsemMillingSettings:
     preset: str = "30 keV; UHR imaging"
     spacing: float = 1.0
     milling_voltage: float = 30e3
+    milling_channel: BeamType = BeamType.ION
 
     def __post_init__(self):
         assert isinstance(
@@ -1108,6 +1109,7 @@ class FibsemMillingSettings:
             "preset": self.preset,
             "spacing": self.spacing,
             "milling_voltage": self.milling_voltage,
+            "milling_channel": self.milling_channel.name,
         }
 
         return settings_dict
@@ -1125,6 +1127,7 @@ class FibsemMillingSettings:
             preset=settings.get("preset", "30 keV; 1nA"),
             spacing=settings.get("spacing", 1.0),
             milling_voltage=settings.get("milling_voltage", 30e3),
+            milling_channel=BeamType[settings.get("milling_channel", "ION")],
         )
 
         return milling_settings
