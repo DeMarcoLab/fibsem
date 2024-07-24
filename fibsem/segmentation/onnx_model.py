@@ -16,6 +16,7 @@ class SegmentationModelONNX:
     def __init__(self, checkpoint: str = None):
         if checkpoint is not None:
             self.load_model(checkpoint)
+            self.device = "cpu" 
 
     def load_model(self, checkpoint="autolamella-mega.onnx"):
 
@@ -30,9 +31,12 @@ class SegmentationModelONNX:
     def inference(self, img: np.ndarray, rgb: bool = True):
         # preprocess
         imgt = img.astype(np.float32)
-        imgt = np.expand_dims(imgt, axis=0)
+        imgt = np.transpose(imgt, (2, 0, 1))
+        # imgt = np.expand_dims(imgt, axis=0)
         imgt = np.expand_dims(imgt, axis=0)
         imgt /= 255.0
+        print(f'shape before inference: {imgt.shape}')
+        print(f'min: {imgt.min()} max: {imgt.max()}')
 
         # inference
         ort_inputs = {self.session.get_inputs()[0].name: imgt}
@@ -40,10 +44,19 @@ class SegmentationModelONNX:
 
 
         # softmax
-        outputs = ort_outs[0] # TODO: support batch size > 1
-        outputs = np.exp(outputs) / np.sum(np.exp(outputs), axis=1, keepdims=True)
-        masks = np.argmax(outputs, axis=1)
-        mask = masks[0, :, :]
+        outputs = ort_outs[0] # TODO: support batch size > 1\
+        print(f'shape before transpose: {outputs.shape}')
+        outputs = np.transpose(outputs, (1,2,0))
+        print(f'shape after transpose: {outputs.shape}')
+        print(f'min: {outputs.min()} max: {outputs.max()}')
+        outputs = np.exp(outputs) / np.sum(np.exp(outputs), axis=2, keepdims=True)
+        print(f'shape after softmax: {outputs.shape}')
+        masks = np.argmax(outputs, axis=2)
+        print(f'shape after argmax: {masks.shape}')
+        # mask = masks[0, :, :]
+        mask = masks
+
+
 
         # convert to rgb
         if rgb: 
