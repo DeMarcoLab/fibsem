@@ -2703,7 +2703,7 @@ class ThermoMicroscope(FibsemMicroscope):
             return
         if key == "hfw":
             limits = beam.horizontal_field_width.limits
-            value = np.clip(value, limits.min, limits.max)
+            value = np.clip(value, limits.min, limits.max-10e-6)
             beam.horizontal_field_width.value = value
             logging.info(f"{beam_type.name} HFW set to {value} m.")
             return 
