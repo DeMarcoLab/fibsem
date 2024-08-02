@@ -273,9 +273,7 @@ class SegmentationModelWindowONNX:
                 executor.submit(self.worker_process, self.session, window, idx): (window, idx)
                 for (window, idx) in zip(windows, indices)
             }
-            for job in tqdm(
-                concurrent.futures.as_completed(jobs), desc="Processing", total=len(jobs)
-            ):
+            for job in concurrent.futures.as_completed(jobs):
                 logits, idx = job.result()
                 container[
                     :,
