@@ -1630,9 +1630,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns
-        self.connection.beams.ion_beam.horizontal_field_width.value = mill_settings.hfw
-
-        # self.set("hfw", mill_settings.hfw, BeamType.ION) # TODO: replace
+        
+        self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
     
@@ -2714,7 +2713,7 @@ class ThermoMicroscope(FibsemMicroscope):
             return
         if key == "hfw":
             limits = beam.horizontal_field_width.limits
-            value = np.clip(value, limits.min, limits.max)
+            value = np.clip(value, limits.min, limits.max-10e-6)
             beam.horizontal_field_width.value = value
             logging.info(f"{beam_type.name} HFW set to {value} m.")
             return 

@@ -43,82 +43,23 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-46</y>
+        <y>-77</y>
         <width>501</width>
-        <height>811</height>
+        <height>842</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="26" column="0" colspan="3">
-        <widget class="QLabel" name="label_detector_header">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
+       <item row="6" column="1" colspan="2">
+        <widget class="QComboBox" name="comboBox_presets"/>
+       </item>
+       <item row="34" column="1" colspan="2">
+        <widget class="QLabel" name="ion_ruler_label">
          <property name="text">
-          <string>Detector Settings</string>
+          <string/>
          </property>
         </widget>
        </item>
-       <item row="30" column="0">
-        <widget class="QLabel" name="label_detector_contrast">
-         <property name="text">
-          <string>Contrast (%)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="23" column="0">
-        <widget class="QLabel" name="label_shift">
-         <property name="text">
-          <string>Shift (x,y) (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1" colspan="2">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_image_hfw">
-         <property name="maximum">
-          <double>100000000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
-         </property>
-         <property name="value">
-          <double>150.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="3">
-        <widget class="QLabel" name="label_title">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Image Settings</string>
-         </property>
-        </widget>
-       </item>
-       <item row="33" column="0">
-        <widget class="QLabel" name="label_utils_header">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Utilities</string>
-         </property>
-        </widget>
-       </item>
-       <item row="34" column="1">
+       <item row="35" column="1">
         <widget class="QCheckBox" name="crosshair_checkbox">
          <property name="text">
           <string>Cross Hair</string>
@@ -128,14 +69,7 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="0" colspan="3">
-        <widget class="QCheckBox" name="checkBox_image_save_image">
-         <property name="text">
-          <string>Save Image</string>
-         </property>
-        </widget>
-       </item>
-       <item row="29" column="1">
+       <item row="30" column="1">
         <widget class="QSlider" name="detector_brightness_slider">
          <property name="maximum">
           <number>100</number>
@@ -157,21 +91,274 @@
          </property>
         </widget>
        </item>
-       <item row="27" column="0">
+       <item row="12" column="1" colspan="2">
+        <widget class="QLineEdit" name="lineEdit_image_label"/>
+       </item>
+       <item row="5" column="1" colspan="2">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_image_hfw">
+         <property name="maximum">
+          <double>100000000.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>150.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="26" column="0" colspan="3">
+        <widget class="QPushButton" name="button_set_beam_settings">
+         <property name="text">
+          <string>Set Beam Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="25" column="1" colspan="2">
+        <widget class="QSpinBox" name="spinBox_beam_scan_rotation">
+         <property name="maximum">
+          <number>360</number>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QCheckBox" name="checkBox_image_use_autogamma">
+         <property name="text">
+          <string>AutoGamma</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_beam_type">
+         <property name="text">
+          <string>Beam</string>
+         </property>
+        </widget>
+       </item>
+       <item row="37" column="0" colspan="2">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_image_dwell_time">
+         <property name="text">
+          <string>Dwell Time (us)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="0" colspan="3">
+        <widget class="QLabel" name="label_beam_header">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Beam Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="34" column="0">
+        <widget class="QLabel" name="label_utils_header">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Utilities</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_image_hfw">
+         <property name="text">
+          <string>HFW (um)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="30" column="2">
+        <widget class="QLabel" name="detector_brightness_label">
+         <property name="text">
+          <string>50%</string>
+         </property>
+        </widget>
+       </item>
+       <item row="29" column="1" colspan="2">
+        <widget class="QComboBox" name="detector_mode_combobox"/>
+       </item>
+       <item row="2" column="0" colspan="3">
+        <widget class="QLabel" name="label_title">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Image Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1" colspan="2">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_image_dwell_time">
+         <property name="maximum">
+          <double>10000000000000.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1" colspan="2">
+        <widget class="QLineEdit" name="lineEdit_image_path"/>
+       </item>
+       <item row="25" column="0">
+        <widget class="QLabel" name="label_beam_scan_rotation">
+         <property name="text">
+          <string>Scan Rotation (deg)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="24" column="1">
+        <widget class="QDoubleSpinBox" name="shift_x">
+         <property name="minimum">
+          <double>-1000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="29" column="0">
+        <widget class="QLabel" name="label_detector_mode">
+         <property name="text">
+          <string>Mode</string>
+         </property>
+        </widget>
+       </item>
+       <item row="28" column="0">
         <widget class="QLabel" name="label_detector_type">
          <property name="text">
           <string>Type</string>
          </property>
         </widget>
        </item>
-       <item row="31" column="0" colspan="3">
-        <widget class="QPushButton" name="set_detector_button">
+       <item row="24" column="0">
+        <widget class="QLabel" name="label_shift">
          <property name="text">
-          <string>Set Detector Settings</string>
+          <string>Shift (x,y) (um)</string>
          </property>
         </widget>
        </item>
-       <item row="30" column="1">
+       <item row="23" column="2">
+        <widget class="QDoubleSpinBox" name="stigmation_y">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QLabel" name="label_image_label">
+         <property name="text">
+          <string>Filename</string>
+         </property>
+        </widget>
+       </item>
+       <item row="20" column="1" colspan="2">
+        <widget class="QDoubleSpinBox" name="working_distance">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="31" column="2">
+        <widget class="QLabel" name="detector_contrast_label">
+         <property name="text">
+          <string>50%</string>
+         </property>
+        </widget>
+       </item>
+       <item row="31" column="0">
+        <widget class="QLabel" name="label_detector_contrast">
+         <property name="text">
+          <string>Contrast (%)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="35" column="0">
+        <widget class="QCheckBox" name="scalebar_checkbox">
+         <property name="text">
+          <string>Scale Bar</string>
+         </property>
+        </widget>
+       </item>
+       <item row="21" column="0">
+        <widget class="QLabel" name="label_beam_current">
+         <property name="text">
+          <string>Beam Current (pA)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QCheckBox" name="checkBox_image_use_autocontrast">
+         <property name="text">
+          <string>AutoContrast</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="24" column="2">
+        <widget class="QDoubleSpinBox" name="shift_y">
+         <property name="minimum">
+          <double>-1000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="23" column="0">
+        <widget class="QLabel" name="label_stigmation">
+         <property name="text">
+          <string>Stigmation (x,y)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="22" column="0">
+        <widget class="QLabel" name="label_beam_voltage">
+         <property name="text">
+          <string>Voltage (kV)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="20" column="0">
+        <widget class="QLabel" name="label_beam_working_distance">
+         <property name="text">
+          <string>Working Distance (mm)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="31" column="1">
         <widget class="QSlider" name="detector_contrast_slider">
          <property name="maximum">
           <number>100</number>
@@ -190,55 +377,6 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_image_hfw">
-         <property name="text">
-          <string>HFW (um)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="28" column="0">
-        <widget class="QLabel" name="label_detector_mode">
-         <property name="text">
-          <string>Mode</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_image_label">
-         <property name="text">
-          <string>Filename</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="2">
-        <widget class="QCheckBox" name="checkBox_advanced_settings">
-         <property name="text">
-          <string>Advanced Settings</string>
-         </property>
-        </widget>
-       </item>
-       <item row="18" column="0" colspan="3">
-        <widget class="QLabel" name="label_beam_header">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Beam Settings</string>
-         </property>
-        </widget>
-       </item>
-       <item row="22" column="2">
-        <widget class="QDoubleSpinBox" name="stigmation_y">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="1">
         <widget class="QSpinBox" name="spinBox_resolution_x">
          <property name="minimum">
@@ -252,132 +390,31 @@
          </property>
         </widget>
        </item>
-       <item row="19" column="0">
-        <widget class="QLabel" name="label_beam_working_distance">
+       <item row="27" column="0" colspan="3">
+        <widget class="QLabel" name="label_detector_header">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
-          <string>Working Distance (mm)</string>
+          <string>Detector Settings</string>
          </property>
         </widget>
        </item>
-       <item row="34" column="0">
-        <widget class="QCheckBox" name="scalebar_checkbox">
-         <property name="text">
-          <string>Scale Bar</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QCheckBox" name="checkBox_image_use_autocontrast">
-         <property name="text">
-          <string>AutoContrast</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="20" column="0">
-        <widget class="QLabel" name="label_beam_current">
-         <property name="text">
-          <string>Beam Current (pA)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="34" column="2">
+       <item row="35" column="2">
         <widget class="QCheckBox" name="ion_ruler_checkBox">
          <property name="text">
           <string>Ruler </string>
          </property>
         </widget>
        </item>
-       <item row="24" column="1" colspan="2">
-        <widget class="QSpinBox" name="spinBox_beam_scan_rotation">
-         <property name="maximum">
-          <number>360</number>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1" colspan="2">
-        <widget class="QDoubleSpinBox" name="doubleSpinBox_image_dwell_time">
-         <property name="maximum">
-          <double>10000000000000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.010000000000000</double>
-         </property>
-         <property name="value">
-          <double>1.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="25" column="0" colspan="3">
-        <widget class="QPushButton" name="button_set_beam_settings">
+       <item row="32" column="0" colspan="3">
+        <widget class="QPushButton" name="set_detector_button">
          <property name="text">
-          <string>Set Beam Settings</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1" colspan="2">
-        <widget class="QComboBox" name="selected_beam"/>
-       </item>
-       <item row="23" column="2">
-        <widget class="QDoubleSpinBox" name="shift_y">
-         <property name="minimum">
-          <double>-1000.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1" colspan="2">
-        <widget class="QComboBox" name="comboBox_presets"/>
-       </item>
-       <item row="22" column="0">
-        <widget class="QLabel" name="label_stigmation">
-         <property name="text">
-          <string>Stigmation (x,y)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="27" column="1" colspan="2">
-        <widget class="QComboBox" name="detector_type_combobox"/>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_image_dwell_time">
-         <property name="text">
-          <string>Dwell Time (us)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_presets">
-         <property name="text">
-          <string>Preset</string>
-         </property>
-        </widget>
-       </item>
-       <item row="24" column="0">
-        <widget class="QLabel" name="label_beam_scan_rotation">
-         <property name="text">
-          <string>Scan Rotation (deg)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="29" column="0">
-        <widget class="QLabel" name="label_detector_brightness">
-         <property name="text">
-          <string>Brightness (%)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1" colspan="2">
-        <widget class="QLineEdit" name="lineEdit_image_path"/>
-       </item>
-       <item row="29" column="2">
-        <widget class="QLabel" name="detector_brightness_label">
-         <property name="text">
-          <string>50%</string>
+          <string>Set Detector Settings</string>
          </property>
         </widget>
        </item>
@@ -394,18 +431,18 @@
          </property>
         </widget>
        </item>
-       <item row="10" column="0">
+       <item row="1" column="1" colspan="2">
+        <widget class="QComboBox" name="selected_beam"/>
+       </item>
+       <item row="11" column="0">
         <widget class="QLabel" name="label_image_save_path">
          <property name="text">
           <string>Path</string>
          </property>
         </widget>
        </item>
-       <item row="11" column="1" colspan="2">
-        <widget class="QLineEdit" name="lineEdit_image_label"/>
-       </item>
        <item row="28" column="1" colspan="2">
-        <widget class="QComboBox" name="detector_mode_combobox"/>
+        <widget class="QComboBox" name="detector_type_combobox"/>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_image_resolution">
@@ -414,7 +451,42 @@
          </property>
         </widget>
        </item>
-       <item row="22" column="1">
+       <item row="22" column="1" colspan="2">
+        <widget class="QDoubleSpinBox" name="beam_voltage">
+         <property name="maximum">
+          <double>100000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_presets">
+         <property name="text">
+          <string>Preset</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0" colspan="3">
+        <widget class="QCheckBox" name="checkBox_image_save_image">
+         <property name="text">
+          <string>Save Image</string>
+         </property>
+        </widget>
+       </item>
+       <item row="21" column="1" colspan="2">
+        <widget class="QDoubleSpinBox" name="beam_current">
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QCheckBox" name="checkBox_advanced_settings">
+         <property name="text">
+          <string>Advanced Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="23" column="1">
         <widget class="QDoubleSpinBox" name="stigmation_x">
          <property name="minimum">
           <double>-1000.000000000000000</double>
@@ -424,82 +496,17 @@
          </property>
         </widget>
        </item>
-       <item row="30" column="2">
-        <widget class="QLabel" name="detector_contrast_label">
+       <item row="30" column="0">
+        <widget class="QLabel" name="label_detector_brightness">
          <property name="text">
-          <string>50%</string>
+          <string>Brightness (%)</string>
          </property>
         </widget>
        </item>
-       <item row="21" column="0">
-        <widget class="QLabel" name="label_beam_voltage">
+       <item row="36" column="0" colspan="3">
+        <widget class="QPushButton" name="pushButton_show_alignment_area">
          <property name="text">
-          <string>Voltage (kV)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="23" column="1">
-        <widget class="QDoubleSpinBox" name="shift_x">
-         <property name="minimum">
-          <double>-1000.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_beam_type">
-         <property name="text">
-          <string>Beam</string>
-         </property>
-        </widget>
-       </item>
-       <item row="33" column="1" colspan="2">
-        <widget class="QLabel" name="ion_ruler_label">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="35" column="0" colspan="2">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="19" column="1" colspan="2">
-        <widget class="QDoubleSpinBox" name="working_distance">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="20" column="1" colspan="2">
-        <widget class="QDoubleSpinBox" name="beam_current">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="21" column="1" colspan="2">
-        <widget class="QDoubleSpinBox" name="beam_voltage">
-         <property name="maximum">
-          <double>100000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QCheckBox" name="checkBox_image_use_autogamma">
-         <property name="text">
-          <string>AutoGamma</string>
+          <string>Show Alignment Area</string>
          </property>
         </widget>
        </item>

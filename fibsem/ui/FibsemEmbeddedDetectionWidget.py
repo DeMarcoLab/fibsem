@@ -158,7 +158,10 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                 self.viewer.layers.remove(self._cross_hair_layer)
 
         # reshow all other layers
+        excluded_layers = ["alignment_area"]
         for layer in self.viewer.layers:
+            if layer.name in excluded_layers:
+                continue
             layer.visible = True
         
         # reset camera
