@@ -296,6 +296,11 @@ class TrenchPattern(BasePattern):
         )
         centre_lower_y = point.y - (lamella_height / 2 + lower_trench_height / 2 + offset)
 
+        # fillet radius on the corners
+        fillet = np.clip(fillet, 0, trench_height / 2)
+        if fillet > 0:
+            lamella_width = lamella_width - 2 * fillet # reduce the width by the fillet size
+
         # mill settings
         lower_pattern_settings = FibsemRectangleSettings(
             width=lamella_width,
@@ -324,10 +329,9 @@ class TrenchPattern(BasePattern):
 
         self.patterns = [lower_pattern_settings, upper_pattern_settings]
 
-        # fillet radius on the corners
-        fillet = np.clip(fillet, 0, trench_height / 2)
-        if fillet > 0:
-            
+
+        # add fillet to the corners
+        if fillet > 0:            
             left_x_pos = point.x - lamella_width / 2
             right_x_pos = point.x + lamella_width / 2
 
@@ -392,7 +396,6 @@ class TrenchPattern(BasePattern):
                 centre_x=right_x_pos + fillet / 2,
                 centre_y=centre_upper_y + fillet / 2,
             )
-
 
             self.patterns.extend([lower_left_fillet, lower_right_fillet, lower_left_fill, lower_right_fill, top_left_fillet, top_right_fillet, top_left_fill, top_right_fill])
 
