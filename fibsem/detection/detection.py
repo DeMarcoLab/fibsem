@@ -318,6 +318,17 @@ class VolumeBlockBottomRightCorner(Feature):
         self.px = px
         return self.px  
 
+@dataclass
+class AdaptiveLamellaCentre(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "red"
+    name: str = "AdaptiveLamellaCentre"
+
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'AdaptiveLamellaCentre':
+        self.px = detect_centre_point(mask == 2)
+        return self.px
+
 # TODO: we can probably consolidate this, rather than have so many classes
 # Feature(class_idx, name, keypoint)
                 
@@ -328,7 +339,8 @@ __FEATURES__ = [ImageCentre, NeedleTip,
     NeedleTipBottom, 
     CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge,
     VolumeBlockCentre, VolumeBlockTopEdge, VolumeBlockBottomEdge, 
-    VolumeBlockTopLeftCorner, VolumeBlockTopRightCorner, VolumeBlockBottomLeftCorner, VolumeBlockBottomRightCorner ]
+    VolumeBlockTopLeftCorner, VolumeBlockTopRightCorner, VolumeBlockBottomLeftCorner, VolumeBlockBottomRightCorner, 
+    AdaptiveLamellaCentre ]
  
 
 
