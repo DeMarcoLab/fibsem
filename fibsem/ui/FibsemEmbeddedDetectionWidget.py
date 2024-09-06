@@ -2,6 +2,7 @@ import os
 from copy import deepcopy
 
 import napari
+import napari._version
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
@@ -186,12 +187,20 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             self.det.image, name="image", opacity=0.7, blending="additive",
         )
 
-        # add mask to viewer
-        self._mask_layer = self.viewer.add_labels(self.det.mask, 
+        # conditionally change the argument color to color if the napari version is less than 0.5.0
+        if napari._version.version < "0.5.0":
+            # add mask to viewer
+            self._mask_layer = self.viewer.add_labels(self.det.mask, 
                                                     name="mask", 
                                                     opacity=0.3,
                                                     blending="additive", 
                                                     color=CLASS_COLORS)
+        else:
+            self._mask_layer = self.viewer.add_labels(self.det.mask, 
+                                                        name="mask", 
+                                                        opacity=0.3,
+                                                        blending="additive", 
+                                                        colormap=CLASS_COLORS)
 
         # add points to viewer
         data = []
