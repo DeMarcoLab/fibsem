@@ -117,34 +117,13 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
     def confirm_button_clicked(self, reset_camera=False):
         """Confirm the detected features, save the data and and remove the layers from the viewer."""
         
-        # log the difference between initial and final detections
-        try:
-            fname = self.det.fibsem_image.metadata.image_settings.filename
-            beam_type = self.det.fibsem_image.metadata.image_settings.beam_type
-        except:
-            fname = f"ml-{utils.current_timestamp_v2()}"
-            beam_type = "NULL"
-        
-        fd = [] # feature detections
-        for f0, f1 in zip(self.det.features, self._intial_det.features):
-            px_diff = f1.px - f0.px
-            msgd = {"msg": "feature_detection",
-                    "fname": fname,                                             # filename
-                    "feature": f0.name,                                         # feature name
-                    "px": f0.px.to_dict(),                                      # pixel coordinates
-                    "dpx": px_diff.to_dict(),                                   # pixel difference
-                    "dm": px_diff._to_metres(self.det.pixelsize).to_dict(),     # metre difference
-                    "is_correct": not np.any(px_diff),                          # is the feature correct    
-                    "beam_type": beam_type.name,                                # beam type         
-                    "pixelsize": self.det.pixelsize,                            # pixelsize
-                    "checkpoint": self.det.checkpoint,                          # checkpoint
-            }
-            logging.debug(msgd)
-            fd.append(deepcopy(msgd))                                           # to write to disk
-
-        # save features data
+        # update the mask as the user may edit it
         self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
-        det_utils.save_feature_data_to_csv(self.det, features=fd, filename=fname)
+        
+        # log the difference between initial and final detections
+        # TODO: move this to outside the widget, into the same place as the non-supervised logging.
+        det_utils.save_ml_feature_data(det=self.det, 
+                                       initial_features=self._intial_det.features)
             
         # remove feature detection layers
         if self._image_layer is not None:
