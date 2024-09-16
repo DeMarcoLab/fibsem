@@ -5313,7 +5313,7 @@ class DemoMicroscope(FibsemMicroscope):
                 contrast=0.5,
             )
         )
-        self.stage_is_compustage: bool = True
+        self.stage_is_compustage: bool = False
             
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -5466,7 +5466,22 @@ class DemoMicroscope(FibsemMicroscope):
 
     def project_stable_move(self, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
 
-        return base_position + FibsemStagePosition(x=dx, y=dy) # TODO: implement
+        scan_rotation = self.get("scan_rotation", beam_type)
+        if np.isclose(scan_rotation, np.pi):
+            dx *= -1.0
+            dy *= -1.0
+        
+        # stable-move-projection
+        point_yz = self._y_corrected_stage_movement(dy, beam_type)
+        dy, dz = point_yz.y, point_yz.z
+
+        # calculate the corrected move to reach that point from base-state?
+        _new_position = deepcopy(base_position)
+        _new_position.x += dx
+        _new_position.y += dy
+        _new_position.z += dz
+
+        return _new_position
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         """Move the stage to the specified position."""
