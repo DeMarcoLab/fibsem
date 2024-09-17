@@ -1612,15 +1612,14 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             mill_settings (FibsemMillingSettings): Milling settings.
         """
-        self.milling_channel = BeamType.ION
+        self.milling_channel = mill_settings.milling_channel
         _check_beam(self.milling_channel, self.system)
         self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
         self.connection.imaging.set_active_device(self.milling_channel.value)
         self.connection.patterning.set_default_beam_type(self.milling_channel.value)
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self.connection.patterning.mode = mill_settings.patterning_mode
-        self.connection.patterning.clear_patterns()  # clear any existing patterns
-        
+        self.connection.patterning.clear_patterns()  # clear any existing patterns       
         self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
@@ -5314,7 +5313,7 @@ class DemoMicroscope(FibsemMicroscope):
                 contrast=0.5,
             )
         )
-        self.stage_is_compustage: bool = True
+        self.stage_is_compustage: bool = False
             
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -5467,7 +5466,22 @@ class DemoMicroscope(FibsemMicroscope):
 
     def project_stable_move(self, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
 
-        return base_position + FibsemStagePosition(x=dx, y=dy) # TODO: implement
+        scan_rotation = self.get("scan_rotation", beam_type)
+        if np.isclose(scan_rotation, np.pi):
+            dx *= -1.0
+            dy *= -1.0
+        
+        # stable-move-projection
+        point_yz = self._y_corrected_stage_movement(dy, beam_type)
+        dy, dz = point_yz.y, point_yz.z
+
+        # calculate the corrected move to reach that point from base-state?
+        _new_position = deepcopy(base_position)
+        _new_position.x += dx
+        _new_position.y += dy
+        _new_position.z += dz
+
+        return _new_position
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         """Move the stage to the specified position."""

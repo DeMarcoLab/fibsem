@@ -1,0 +1,62 @@
+# Please don't edit or delet this file, it is the default configuration for the microscope
+# configuration 
+info:
+    name: tfs-aquilos2-configuration                        # a descriptive name for your configuration                     [SPECIFIED]
+    ip_address: 192.168.0.1                                 # the ip address of the microscope PC                           [SPECIFIED]
+    manufacturer: Thermo                                    # the microscope manufactuer                                    [SPECIFIED]        
+stage:
+    enabled:                    true                        # the stage is enabled                                          [USER]
+    rotation:                   true                        # the stage is able to rotate                                   [USER]
+    tilt:                       true                        # the stage is able to tilt                                     [USER]
+    rotation_reference:         0                           # the reference rotation value                                  [SPECIFIED] 
+    rotation_180:               180                         # the reference rotation + 180 degrees                          [DERIVED - rotation-reference]
+    shuttle_pre_tilt:           35.0                        # the pre-tilt of the shuttle                                   [SPECIFIED]
+    manipulator_height_limit:   0.0037                      # the linked height limit for manipulator (Thermo Only)         [DERIVED - manufactuer]
+electron:                                              
+    enabled:                    true                        # the electron beam is enabled                                  [USER]
+    column_tilt:                0                           # the column tilt of the electron beam                          [DERIVED - manufactuer]
+    eucentric_height:           7.0e-3                      # the eucentric height of the electron beam                     [SPECIFIED]
+    voltage:                    2000                        # the voltage of the electron beam                              [USER]
+    current:                    50.0e-12                    # the current of the electron beam                              [USER]
+    resolution:                 [1536, 1024]                # the default electron resolution                       [pixel] [USER]
+    hfw:                        150.0e-6                    # the default electron hfw                              [metres][USER]
+    dwell_time:                 1.0e-06                     # the default electron dwell time
+    detector_mode:              SecondaryElectrons          # the detector mode of the electron beam                        [USER]
+    detector_type:              ETD                         # the detector type of the electron beam                        [USER]
+ion:
+    enabled:                    true                        # the ion beam is enabled                                       [USER]
+    column_tilt:                52                          # the column tilt of the electron beam                          [SPECIFIED]
+    eucentric_height:           19.0e-3                     # the eucentric height of the ion beam                          [SPECIFIED]
+    plasma:                     false                       # ion beam is a plasma column                                   [USER]
+    plasma_gas:                 None                        # the plasma gas for the ion beam (plasma fib only)             [USER]
+    voltage:                    30000                       # the voltage of the ion beam                                   [USER]
+    current:                    2.0e-11                     # the current of the ion beam                                   [USER]
+    resolution:                 [1536, 1024]                # the default ion resolution                            [pixel] [USER]
+    hfw:                        150.0e-6                    # the default ion hfw                                   [metres][USER]
+    dwell_time:                 1.0e-06                     # the default ion dwell time
+    detector_mode:              SecondaryElectrons          # the detector mode of the ion beam                             [USER]
+    detector_type:              ETD                         # the detector type of the ion beam                             [USER]
+manipulator:
+    enabled:                    true                        # manipulator is enabled                                        [USER]
+    rotation:                   false                       # manipulator is able to rotate                                 [USER]
+    tilt:                       false                       # manipulator is able to tilt                                   [USER]
+gis:
+    enabled:                    true                        # gis is enabled                                                [USER]
+    multichem:                  false                        # multichem is enabled                                          [USER]
+    sputter_coater:             false                       # sputter coater is enabled                                     [USER]                        
+imaging:
+    beam_type:                  ELECTRON                    # the default imaging beam type (ELECTRON, or ION)              [USER]
+    resolution:                 [1536, 1024]                # the default imaging resolution                        [pixel] [USER]
+    hfw:                        150.0e-6                    # the default imaging hfw                               [metres][USER]
+    dwell_time:                 1.0e-06                     # the default imaging dwell time                        [second][USER]
+    imaging_current:            2.0e-11                     # the default imaging current                           [amp]   [USER]
+    autocontrast:               true                        # use autocontrast                                              [USER]
+    autogamma:                  false                       # use autogamma                                                 [USER]
+    save:                       false                       # auto save images                                              [USER]
+milling:
+    milling_voltage:            30000                       # the default milling voltage       (Thermo)            [volt]  [USER]
+    milling_current:            2.0e-09                     # the default milling current       (Thermo)            [amp]   [USER]   
+    dwell_time:                 1.0e-06                     # the default milling dwell time    (TESCAN)            [second][USER]
+    rate:                       3.4e-09                     # the default milling spuuter rate  (TESCAN)            [um3/s] [USER]
+    spot_size:                  5.4e-08                     # the default milling spot size     (TESCAN)            [metres][USER]
+    preset:                     "30 keV; 20 nA"             # the default milling preset        (TESCAN)                    [USER]
