@@ -1,4 +1,0 @@
-configurations:
-  default-configuration:
-    path: null
-default: default-configuration

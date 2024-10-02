@@ -1,27 +1,46 @@
 import logging
+import os
+from copy import deepcopy
+
 import napari
 import napari.utils.notifications
 import numpy as np
-from PyQt5 import QtWidgets
-from fibsem import config as cfg
-from fibsem import constants, conversions, utils, acquire
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings, BeamType, FibsemImage, Point, FibsemStagePosition
-from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
-import os
-from fibsem import patterning
 from napari.qt.threading import thread_worker
-from fibsem.ui import _stylesheets
-from fibsem.imaging import _tile
-from scipy.ndimage import median_filter,rotate
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
+from scipy.ndimage import median_filter
 
-from copy import deepcopy
+from fibsem import constants, conversions, patterning, utils
+from fibsem import config as cfg
+from fibsem.imaging import _tile
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import (
+    BeamType,
+    FibsemImage,
+    FibsemStagePosition,
+    MicroscopeSettings,
+    Point,
+)
+from fibsem.ui import _stylesheets
+from fibsem.ui import utils as ui_utils
+from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
 
 PATH = os.path.join(cfg.DATA_PATH, "tile")
 os.makedirs(PATH, exist_ok=True)
-from fibsem.ui import utils as ui_utils 
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+def _create_gridbar_image(shape: tuple, pixelsize: float, spacing: float, width: float) -> FibsemImage:
+
+    arr = np.zeros(shape=shape, dtype=np.uint8)
+
+    # create grid, grid bars thickness = 10px
+    BAR_THICKNESS_PX = int(width / pixelsize)
+    BAR_SPACING_PX = int(spacing / pixelsize)   
+    for i in range(0, arr.shape[0], BAR_SPACING_PX):
+        arr[i:i+BAR_THICKNESS_PX, :] = 255
+        arr[:, i:i+BAR_THICKNESS_PX] = 255
+
+    # TODO: add metadata
+    return FibsemImage(data=arr)
 
 
 class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWindow):
@@ -59,15 +78,24 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._correlation_mode: bool = False
 
         self._tile_info = {}
+        self.ADDING_POSITION: bool = False
 
         self.setup_connections()
 
         self._update_ui()
 
+        self.STOP_ACQUISITION: bool = False
+
+
     def setup_connections(self):
 
         self.pushButton_run_tile_collection.clicked.connect(self.run_tile_collection)
         self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_cancel_acquisition.clicked.connect(self.cancel_acquisition)
+        self.pushButton_cancel_acquisition.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_cancel_acquisition.setVisible(False)
+        self.progressBar_acquisition.setVisible(False)
+        self.progressBar_acquisition.setStyleSheet(_stylesheets.GREEN_PROGRESSBAR_STYLE)
         self.actionLoad_Image.triggered.connect(self.load_image)
 
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
@@ -130,13 +158,16 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self.lineEdit_tile_path.setText(self.settings.image.path)
 
-        # gridbar
-
-        self.checkBox_gridbar.stateChanged.connect(self._gridbar_set)
+        # gridbar controls
+        self.checkBox_gridbar.stateChanged.connect(self._toggle_gridbars)
         self.label_gb_spacing.setVisible(False)
         self.label_gb_width.setVisible(False)
         self.doubleSpinBox_gb_spacing.setVisible(False)
         self.doubleSpinBox_gb_width.setVisible(False)
+
+        # gridbar defaults
+        self.doubleSpinBox_gb_spacing.setValue(100)
+        self.doubleSpinBox_gb_width.setValue(20)
 
         self.doubleSpinBox_gb_spacing.valueChanged.connect(self._update_gridbar)
         self.doubleSpinBox_gb_width.valueChanged.connect(self._update_gridbar)
@@ -149,8 +180,9 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         if positions is not None:
             self.positions = positions
 
-        self._update_position_info()
-        self._update_viewer()
+        if not self.ADDING_POSITION:
+            self._update_position_info()
+            self._update_viewer()
 
 
     def run_tile_collection(self):
@@ -186,46 +218,39 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             return
         
         # ui feedback
-        self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
-        self.pushButton_run_tile_collection.setText("Running Tile Collection...")
+        self.toggle_interaction(enable=False)
 
+        self.STOP_ACQUISITION = False
         worker = self._run_tile_collection_thread(
             microscope=self.microscope, settings=self.settings, 
             grid_size=grid_size, tile_size=tile_size, 
             overlap=0, cryo=cryo)
 
         worker.finished.connect(self._tile_collection_finished)
+        worker.errored.connect(self._tile_collection_errored)
         worker.start()
 
+    def cancel_acquisition(self):
 
-    def _gridbar_set(self):
+        logging.info(f"Cancelling acquisition...")
+        self.STOP_ACQUISITION: bool = True
+
+    def _toggle_gridbars(self):
 
         if self.checkBox_gridbar.isChecked():
+            
+            spacing = self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI
+            width = self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI
+            gridbars_image = _create_gridbar_image(shape=self.image.data.shape, 
+                                                   pixelsize=self.image.metadata.pixel_size.x, 
+                                                   spacing=spacing, width=width)
 
-            grid_shape = self.image.data.shape
-            arr = np.zeros(shape=grid_shape, dtype=np.uint8)
-
-            pixelsize = self.image.metadata.pixel_size.x
-
-            # create grid, grid bars thickness = 10px
-            BAR_THICKNESS_PX = int(5 * constants.MICRO_TO_SI / pixelsize)
-            BAR_SPACING_PX = int(50 * constants.MICRO_TO_SI / pixelsize)   
-            for i in range(0, arr.shape[0], BAR_SPACING_PX ):
-                arr[i:i+BAR_THICKNESS_PX, :] = 255
-                arr[:, i:i+BAR_THICKNESS_PX] = 255
-
-            gridbar_image = FibsemImage(data=arr)
-
-            self._update_correlation_image(gridbar_image, gridbar=True)
+            self._update_correlation_image(gridbars_image, gridbar=True)
 
             self.label_gb_spacing.setVisible(True)
             self.label_gb_width.setVisible(True)
             self.doubleSpinBox_gb_spacing.setVisible(True)
-            self.doubleSpinBox_gb_width.setVisible(True)
-
-            self.doubleSpinBox_gb_spacing.setValue(50)
-            self.doubleSpinBox_gb_width.setValue(5)
-            
+            self.doubleSpinBox_gb_width.setVisible(True)            
 
         else:
             
@@ -250,55 +275,75 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
 
     def _update_gridbar(self):
+        
+        # update gridbars image
+        spacing = self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI
+        width = self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI
+        gridbars_image = _create_gridbar_image(shape=self.image.data.shape, 
+                                                pixelsize=self.image.metadata.pixel_size.x, 
+                                                spacing=spacing, width=width)
 
-        pixel_size = self.image.metadata.pixel_size.x
-
-        BAR_THICKNESS_PX = int(self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI / pixel_size)
-        BAR_SPACING_PX = int(self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI / pixel_size)
-
-        gridbar_layer = ''
-
+        # update gridbar layer
         for layer in self.viewer.layers:
             if "gridbar" in layer.name:
                 gridbar_layer = layer.name
-        
-        grid_shape = self.viewer.layers[gridbar_layer].data.shape
+                break
+        self.viewer.layers[gridbar_layer].data = gridbars_image.data
 
-        arr = np.zeros(shape=grid_shape, dtype=np.uint8)
-        for i in range(0, arr.shape[0], BAR_SPACING_PX ):
-            arr[i:i+BAR_THICKNESS_PX, :] = 255
-            arr[:, i:i+BAR_THICKNESS_PX] = 255
+    def toggle_interaction(self, enable: bool = True):
+        self.pushButton_run_tile_collection.setEnabled(enable)
+        self.pushButton_cancel_acquisition.setVisible(not enable)
+        self.progressBar_acquisition.setVisible(not enable)
+        # reset progress bar
+        self.progressBar_acquisition.setValue(0)
 
-        self.viewer.layers[gridbar_layer].data = arr
-
-
+        if enable:
+            self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_tile_collection.setText("Run Tile Collection")
+        else:
+            self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_tile_collection.setText("Running Tile Collection...")
 
 
     def _tile_collection_finished(self):
 
         napari.utils.notifications.show_info(f"Tile collection finished.")
         self._update_viewer(self.image)
-        self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_run_tile_collection.setText("Run Tile Collection")
+        self.toggle_interaction(enable=True)
+        self.STOP_ACQUISITION = False
+
+    def _tile_collection_errored(self):
+
+        logging.error(f"Tile collection errored.")
+        self.STOP_ACQUISITION = False
 
     
     @thread_worker
     def _run_tile_collection_thread(self, microscope: FibsemMicroscope, settings:MicroscopeSettings, 
         grid_size: float, tile_size:float, overlap:float=0, cryo: bool=True):
 
-        self.image = _tile._tile_image_collection_stitch(
-            microscope=microscope, settings=settings, 
-            grid_size=grid_size, tile_size=tile_size, 
-            overlap=overlap, cryo=cryo, parent_ui=self)
+        try:
+            self.image = _tile._tile_image_collection_stitch(
+                microscope=microscope, settings=settings, 
+                grid_size=grid_size, tile_size=tile_size, 
+                overlap=overlap, cryo=cryo, parent_ui=self)
+        except Exception as e:
+            # TODO: specify the error, user cancelled, or error in acquisition
+            logging.error(f"Error in tile collection: {e}")
+
 
     def _update_tile_collection_callback(self, ddict):
         
-        # msg = f"{ddict['msg']} ({ddict['i']+1}/{ddict['n_rows']}, {ddict['j']+1}/{ddict['n_cols']})"
         msg = f"{ddict['msg']} ({ddict['counter']}/{ddict['total']})"
         logging.info(msg)
         napari.utils.notifications.show_info(msg)
 
-        if ddict["image"] is not None:
+        # progress bar
+        count, total = ddict["counter"], ddict["total"]
+        self.progressBar_acquisition.setMaximum(100)
+        self.progressBar_acquisition.setValue(int(count/total*100))
+
+        if ddict.get("image", None) is not None:
 
             arr = median_filter(ddict["image"], size=3)
             try:
@@ -324,18 +369,16 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
     def _update_ui(self):
 
-        _image_loaded = self.image is not None
-        self.pushButton_update_position.setEnabled(_image_loaded)
-        self.pushButton_remove_position.setEnabled(_image_loaded)
-        self.pushButton_move_to_position.setEnabled(_image_loaded)
-
-        if _image_loaded:
+        if self.image is not None:
             self.label_instructions.setText("Alt+Click to Add a position, Shift+Click to Update a position \nor Double Click to Move the Stage...")
         else:
             self.label_instructions.setText("Please take or load an overview image...")
 
+        # TODO: why is this here?
         _positions_loaded = len(self.positions) > 0
         self.pushButton_move_to_position.setEnabled(_positions_loaded)
+        self.pushButton_update_position.setEnabled(_positions_loaded)
+        self.pushButton_remove_position.setEnabled(_positions_loaded)
 
         _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
         self.label_translation_x.setVisible(_MOVE_WITH_TRANSLATION)
@@ -363,7 +406,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self._image_layer.mouse_double_click_callbacks.clear()
             self._image_layer.mouse_drag_callbacks.append(self._on_click)
             self._image_layer.mouse_double_click_callbacks.append(self._on_double_click)
-    
+
+            # NOTE: how to do respace scaling, convert to infinite canvas
+            # px = self.image.metadata.pixel_size.x
+            # self._image_layer.scale = [px*constants.SI_TO_MICRO, px*constants.SI_TO_MICRO]
+            # self.viewer.scale_bar.visible = True
+            # self.viewer.scale_bar.unit = "um"
 
         self._draw_positions() # draw the reprojected positions on the image
 
@@ -433,6 +481,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                     beam_type=self.image.metadata.image_settings.beam_type, 
                     base_position=self.image.metadata.microscope_state.stage_position)            
        
+        self.ADDING_POSITION = True # flag prevent double drawing from circular update
         if 'Shift' in event.modifiers:
             idx = self.comboBox_tile_position.currentIndex()
             _name = self.positions[idx].name
@@ -450,6 +499,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
 
         self._minimap_positions.emit(self.positions)
+        self.ADDING_POSITION = False
 
     def _on_double_click(self, layer, event):
         
@@ -509,10 +559,15 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             msg += f"{pos.name}:\t x:{pos.x*1e3:.2f}mm, y:{pos.y*1e3:.2f}mm, z:{pos.z*1e3:.2f}m\n"
         self.label_position_info.setText(msg)
 
-
     def _update_position_pressed(self):
+
+        idx = self.comboBox_tile_position.currentIndex()
+        if idx == -1:
+            logging.debug(f"No position selected to update.")
+            return
+
         logging.info(f"Updating position...")
-        _position = self.positions[self.comboBox_tile_position.currentIndex()]
+        _position = self.positions[idx]
         
         name = self.lineEdit_tile_position_name.text()
         if name == "":
@@ -524,8 +579,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._update_viewer()
 
     def _remove_position_pressed(self):
+        idx = self.comboBox_tile_position.currentIndex()
+        if idx == -1:
+            logging.debug(f"No position selected to remove.")
+            return
         logging.info(f"Removing position...")
-        _position = self.positions[self.comboBox_tile_position.currentIndex()]
+        _position = self.positions[idx]
         self.positions.remove(_position)
         self._minimap_positions.emit(self.positions)
         self._update_position_info()
@@ -543,8 +602,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _move_to_position(self, _position:FibsemStagePosition)->None:
         self.microscope.safe_absolute_stage_movement(_position)
         self._stage_position_moved.emit(_position)
-        if self.checkBox_options_acquire_after_movement.isChecked():
-            self._update_region(_position)
         self._update_viewer()
 
 
@@ -601,6 +658,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         logging.info(f"Drawing Reprojected Positions...")
         current_position = deepcopy(self.microscope.get_stage_position())
         current_position.name = f"Current Position"
+
+        # Performance Note: the reason this is slow is because every time a new position is added, we re-draw every position
+        # this is not necessary, we can just add the new position to the existing layer
+        # almost all the slow down comes from the linked callbacks from autolamella. probably saving and re-drawing milling patterns
+        # we should delay that until the user requests it
 
         if self.image:
             

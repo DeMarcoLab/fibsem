@@ -51,6 +51,7 @@ QPushButton:hover {
 _ORANGE_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: orange;
+    color: black;
     }
 QPushButton:hover {
     background-color: rgba(255, 125, 0, 125);
@@ -61,3 +62,9 @@ QPushButton {
     background-color: none;
     }
 """    
+
+GREEN_PROGRESSBAR_STYLE = """
+QProgressBar::chunk {
+    background-color: green;
+    }
+"""

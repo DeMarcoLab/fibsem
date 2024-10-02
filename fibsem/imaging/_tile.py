@@ -77,6 +77,10 @@ def _tile_image_collection(microscope: FibsemMicroscope, settings: MicroscopeSet
             settings.image.filename = f"tile_{i}_{j}"
             microscope.stable_move(dx=dx*(j!=0),  dy=0, beam_type=settings.image.beam_type) # dont move on the first tile?
 
+            if parent_ui:
+                if parent_ui.STOP_ACQUISITION:
+                    raise Exception("User Stopped Acquisition")
+
             logging.info(f"ACQUIRING IMAGE {i}, {j}")
             image = acquire.new_image(microscope, settings.image)
 
@@ -122,6 +126,9 @@ def _stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemIm
     #             parent_ui._update_tile_collection.emit({"msg": "Tile Stitched", "i": i, "j": j, 
     #                 "n_rows": n_rows, "n_cols": n_cols, "image": arr })
     
+    if parent_ui:
+        total = ddict["n_rows"] * ddict["n_cols"]
+        parent_ui._update_tile_collection.emit({"msg": "Stitching Tiles", "counter": total, "total": total})
     arr = ddict["stitched_image"]
 
     # convert to fibsem image
@@ -133,12 +140,10 @@ def _stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemIm
 
     filename = os.path.join(image.metadata.image_settings.path, f'{ddict["prev-filename"]}')
     image.save(filename)
-
     # for cryo need to histogram equalise
     if ddict.get("cryo", False):
         from fibsem.imaging.autogamma import auto_gamma
         image = auto_gamma(image, method="autogamma")
-
     filename = os.path.join(image.metadata.image_settings.path, f'{ddict["prev-filename"]}-autogamma')
     image.save(filename)
 
@@ -150,6 +155,7 @@ def _stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemIm
     ddict["start_state"] = ddict["start_state"].to_dict()
     filename = os.path.join(filename, f'{ddict["prev-filename"]}') # subdir
     utils.save_yaml(filename, ddict) 
+    # NOTE: saving the image / yaml is most time consuming
 
     return image
 

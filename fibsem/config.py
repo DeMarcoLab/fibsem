@@ -114,8 +114,15 @@ def get_default_user_config() -> dict:
 
 
 # user configurations -> move to fibsem.db eventually
+DEFAULT_USER_CONFIGURATION_YAML: dict = {
+    "configurations": {"default-configuration": {"path": None}},
+    "default": "default-configuration",
+}
 USER_CONFIGURATIONS_PATH = os.path.join(CONFIG_PATH, "user-configurations.yaml")
-USER_CONFIGURATIONS_YAML = load_yaml(USER_CONFIGURATIONS_PATH)
+if os.path.exists(USER_CONFIGURATIONS_PATH):
+    USER_CONFIGURATIONS_YAML = load_yaml(USER_CONFIGURATIONS_PATH)
+else:
+    USER_CONFIGURATIONS_YAML = DEFAULT_USER_CONFIGURATION_YAML
 USER_CONFIGURATIONS = USER_CONFIGURATIONS_YAML["configurations"]
 DEFAULT_CONFIGURATION_NAME = USER_CONFIGURATIONS_YAML["default"]
 DEFAULT_CONFIGURATION_PATH = USER_CONFIGURATIONS[DEFAULT_CONFIGURATION_NAME]["path"]

@@ -46,7 +46,6 @@ fibsem/segmentation/*config*.y*ml
 
 fibsem/config/*.yaml
 !fibsem/config/microscope-configuration.yaml
-!fibsem/config/user-configurations.yaml
 !fibsem/config/tescan_manipulator.yaml
 !fibsem/config/tfs*.yaml
 
