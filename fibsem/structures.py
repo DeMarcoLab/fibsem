@@ -124,16 +124,17 @@ class MovementMode(Enum):
     # Needle = 3
 
 
-class ImagingState:
+class ImagingState(Enum):
     IDLE = 0
-    ACQUIRING = 1
+    RUNNING = 1
     STOPPING = 2
     PAUSED = 3
     ERROR = 4
 
-class PatterningState:
+
+class PatterningState(Enum):
     IDLE = 0
-    PATTERNING = 1
+    RUNNING = 1
     STOPPING = 2
     PAUSED = 3
     ERROR = 4

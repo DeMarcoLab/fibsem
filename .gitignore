@@ -48,6 +48,7 @@ fibsem/config/*.yaml
 !fibsem/config/microscope-configuration.yaml
 !fibsem/config/tescan_manipulator.yaml
 !fibsem/config/tfs*.yaml
+!fibsem/config/odemis*.yaml
 
 **/wandb/*
 tests/notebook.ipynb

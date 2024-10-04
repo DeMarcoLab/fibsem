@@ -11,7 +11,6 @@ from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
                                FibsemRectangle, FibsemStagePosition,
                                ImageSettings, MicroscopeSettings, FibsemImage,
                                MicroscopeState)
-from fibsem.detection.detection import NeedleTip, ImageCentre
 from fibsem import config as cfg
 def auto_focus_beam(
     microscope: FibsemMicroscope,
