@@ -2,7 +2,6 @@ import copy
 import datetime
 import logging
 import sys
-from napari.qt.threading import thread_worker
 import os
 
 # for easier usage
@@ -126,7 +125,6 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep: float = 0.1):
         pass
     
@@ -276,7 +274,7 @@ class FibsemMicroscope(ABC):
         return 
     
     @abstractmethod
-    def estimate_milling_time(self,patterns) -> float:
+    def estimate_milling_time(self, patterns: list = None) -> float:
         pass
 
     @abstractmethod
@@ -990,7 +988,6 @@ class ThermoMicroscope(FibsemMicroscope):
 
 
 
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
 
         logging.info("Consuming image queue")
@@ -3387,7 +3384,6 @@ class TescanMicroscope(FibsemMicroscope):
 
 
 
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
 
         logging.info("Consuming image queue")
@@ -5411,7 +5407,6 @@ class DemoMicroscope(FibsemMicroscope):
             self.sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
             time.sleep(self.sleep_time)
 
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
 
         logging.info("Consuming image queue")

@@ -9,9 +9,7 @@ from scipy.spatial import distance
 from skimage import feature, measure
 
 from fibsem import conversions
-from fibsem.imaging import masks
 from fibsem.microscope import FibsemMicroscope
-from fibsem.segmentation.model import SegmentationModel
 from fibsem.structures import FibsemImage, BeamType, MicroscopeSettings, Point
 import matplotlib.pyplot as plt
 
@@ -779,7 +777,7 @@ def detect_features_v2(
 
 def detect_features(
     image: Union[np.ndarray, FibsemImage],
-    model: SegmentationModel,
+    model: 'SegmentationModel',
     features: tuple[Feature],
     pixelsize: float = None,
     filter: bool = True,
@@ -1031,13 +1029,7 @@ def move_based_on_detection(
 
 import glob
 import os
-from pathlib import Path
-from typing import Optional
-
-import pandas as pd
 import tifffile as tff
-
-from fibsem.segmentation import utils as seg_utils
 from fibsem.structures import FibsemImage, Point, FibsemStagePosition
 
 
@@ -1165,11 +1157,11 @@ import matplotlib.patches as patches
 import numpy as np
 
 from skimage import measure
-
-from fibsem.segmentation import config as segcfg
-from fibsem.segmentation.utils import decode_segmap_v2
-
-
+try:
+    from fibsem.segmentation import config as segcfg
+    from fibsem.segmentation.utils import decode_segmap_v2
+except ImportError as e:
+    logging.warning(f"Could not import segmentation util / config {e}")
 
 def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict], ncols:int = 10, show: bool = True):
     """Plot image with instance masks overlayed"""
@@ -1471,7 +1463,6 @@ def load_json(filename):
     return data
 
 
-from tqdm import tqdm 
 
 def generate_segmentation_objects(data_path: str, labels_path: str, dataset_json_path: str, min_pixels: int = 100, save: bool=True):
     image_filenames = sorted(glob.glob(os.path.join(data_path, "*.tif")))
@@ -1479,7 +1470,7 @@ def generate_segmentation_objects(data_path: str, labels_path: str, dataset_json
 
     filenames = list(zip(image_filenames, label_filenames)) # TDOO: we dont actually need image files for this, just the labels?
     dat = []
-
+    from tqdm import tqdm
     progress = tqdm(filenames)
     for img_fname, label_fname in progress:
         progress.set_description(f"Processing {os.path.basename(img_fname)}")
