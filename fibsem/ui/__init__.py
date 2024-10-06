@@ -6,3 +6,4 @@ from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
+DETECTION_AVAILABLE = True
