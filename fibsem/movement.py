@@ -1,40 +1,6 @@
-import time
-import logging
 
 import numpy as np
 
-try:
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-    from autoscript_sdb_microscope_client.enumerations import (
-        ManipulatorCoordinateSystem,
-        ManipulatorSavedPosition,
-    )
-    from autoscript_sdb_microscope_client.structures import (
-        ManipulatorPosition,
-        MoveSettings,
-        StagePosition,
-    )
-    THERMO = True
-except:
-    THERMO = False
-
-from fibsem.structures import BeamType, MicroscopeSettings
-from fibsem.microscope import FibsemMicroscope
-
-# from fibsem.detection.detection import DetectionResult, FeatureType
-
-
-############################## NEEDLE ##############################
-
-if THERMO:
-    def retract_multichem(microscope: SdbMicroscopeClient) -> None:
-        # Retract the multichem
-        logging.info(f"retracting multichem")
-        multichem = microscope.gas.get_multichem()
-        multichem.retract()
-        logging.info(f"retract multichem complete")
-
-        return
 
 def rotation_angle_is_larger(angle1: float, angle2: float, atol: float = 90) -> bool:
     """Check the rotation angles are large

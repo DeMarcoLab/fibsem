@@ -1,9 +1,7 @@
-from fibsem.microscope import FibsemMicroscope
 import logging
-import time
-from fibsem.structures import BeamType, FibsemGasInjectionSettings
 
-
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import FibsemGasInjectionSettings
 
 gis_protocol = {
     "application_file": "cryo_Pt_dep",

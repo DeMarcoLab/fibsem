@@ -23,6 +23,7 @@ from fibsem.ui import _stylesheets
 from PyQt5.QtCore import pyqtSignal
 from fibsem.ui.qtdesigner_files import FibsemDetectionWidget
 import logging
+from typing import List
 
 CHECKPOINT_PATH = os.path.join(os.path.dirname(fibsem_model.__file__), "models", "model4.pt")
 CLASS_COLORS = {0: "black", 1: "red", 2: "green", 3: "cyan", 4: "yellow", 5: "magenta", 6: "blue"}
@@ -323,7 +324,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
                                                       name="mask", 
                                                       opacity=0.7,
                                                       blending="additive", 
-                                                      color=CLASS_COLORS)
+                                                      colormap=CLASS_COLORS)
 
         # if the features layer already exists, remove the layer
         if "features" in self.viewer.layers:
@@ -395,7 +396,7 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
         data = layer.data
 
         # get which point was moved
-        index: list[int] = list(layer.selected_data)  
+        index: List[int] = list(layer.selected_data)  
                 
         if len(data) != len(self.detected_features.features):
             # loop backwards to remove the features
@@ -426,7 +427,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings
 from fibsem.detection.detection import Feature, DetectedFeatures
 from fibsem import acquire
-def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: list[Feature], validate: bool = True) -> DetectedFeatures:
+def detection_ui(image: FibsemImage, model: fibsem_model.SegmentationModel, features: List[Feature], validate: bool = True) -> DetectedFeatures:
     print("GOT TO DETECTION UI")
     pixelsize = image.metadata.pixel_size.x if image.metadata is not None else 25e-9
 

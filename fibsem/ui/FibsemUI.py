@@ -1,27 +1,24 @@
 import napari
-
-import logging
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 
 import fibsem
-from fibsem import config as cfg
-from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,TescanMicroscope,
-                               ThermoMicroscope)
+from fibsem.microscope import (
+    DemoMicroscope,
+    FibsemMicroscope,
+    TescanMicroscope,
+    ThermoMicroscope,
+)
 from fibsem.structures import BeamType, MicroscopeSettings
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
-from fibsem.ui.FibsemImageViewer import FibsemImageViewer
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.FibsemImageViewer import FibsemImageViewer
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 from fibsem.ui.qtdesigner_files import FibsemUI
-from fibsem.ui.utils import message_box_ui
-
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import pyqtSignal
-
 
 # TODO: add calibrate manipulator procedure for thermo here
 
@@ -64,7 +61,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def setup_connections(self):
-        from fibsem import utils
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
         # self.actionCurrent_alignment.triggered.connect(self.align_currents)
@@ -81,11 +77,11 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def _open_minimap(self):
         if self.microscope is None:
-            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Microscope Connected]")
+            napari.utils.notifications.show_warning("Please connect to a microscope first... [No Microscope Connected]")
             return
 
         if self.movement_widget is None:
-            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Movement Widget]")
+            napari.utils.notifications.show_warning("Please connect to a microscope first... [No Movement Widget]")
             return
 
         # TODO: need to register this with the main ui somehow

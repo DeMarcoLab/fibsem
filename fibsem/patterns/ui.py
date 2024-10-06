@@ -21,6 +21,7 @@ from fibsem.structures import (
     ImageSettings,
     Point,
 )
+from typing import Tuple
 
 COLOURS = [
     "yellow",

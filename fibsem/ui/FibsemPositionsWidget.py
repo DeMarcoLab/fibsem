@@ -5,8 +5,7 @@ from pathlib import Path
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QPixmap, QImage
-from copy import deepcopy
+
 from fibsem import constants
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import FibsemStagePosition
@@ -40,13 +39,12 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_go_to.clicked.connect(self.go_to_position)
         self.pushButton_export.clicked.connect(self.export_positions)
         self.pushButton_import.clicked.connect(self.import_positions)
-        self.movement_widget.move_signal.connect(self.minimap)
+        # self.movement_widget.move_signal.connect(self.minimap)
 
     def select_position(self):
         if self.comboBox_positions.currentIndex() != -1:
             position = self.positions[self.comboBox_positions.currentIndex()]
             self.label_current_position.setText(f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}, y={position.y*constants.METRE_TO_MILLIMETRE:.3f}, z={position.z*constants.METRE_TO_MILLIMETRE:.3f}, r={position.r*constants.RADIANS_TO_DEGREES:.1f}, t={position.t*constants.RADIANS_TO_DEGREES:.1f}")
-            self.minimap()
 
     def add_position(self):
         position = self.microscope.get_stage_position()
@@ -98,49 +96,6 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
 
-    def minimap(self):
-        x = []
-        y = []
-        labels = []
-        pil_image = None
-        current_position = self.microscope.get_stage_position()
-        x.append(deepcopy(current_position.x)*constants.SI_TO_MICRO)
-        y.append(deepcopy(current_position.y)*constants.SI_TO_MICRO)
-        labels.append("Current Position")
-        for position in self.positions:
-            x.append(deepcopy(position.x)*constants.SI_TO_MICRO)
-            y.append(deepcopy(position.y)*constants.SI_TO_MICRO)
-            labels.append(deepcopy(position.name))
-        import pandas as pd
-        df = pd.DataFrame({'x': x, 'y': y, 'labels': labels})
-        import plotly.express as px
-        import plotly.io as pio
-        fig = px.scatter(df, color="labels", labels={'color': 'Position'}, title="Positions (um)", x = 'x', y = 'y')
-
-        # miminum graph zoom 
-        if len(self.positions) > 0:
-            flag = False
-            for i in range(len(self.positions)):
-                if (x[i] - x[0]) < 150 or (y[i] - y[0]) < 150:
-                    flag = True
-            if flag:
-                range_x = [min(x) - 75, max(x) + 75]
-                range_y = [min(y) - 75, max(y) + 75]
-                fig.update_layout(
-                    xaxis=dict(range=range_x),
-                    yaxis=dict(range=range_y)
-                )
-
-        image_from_plot = fig.to_image(format="png", engine="kaleido")
-
-        from PIL import Image
-        import io
-        pil_image = Image.open(io.BytesIO(image_from_plot))
-        # Convert the PIL image to a QImage
-        image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
-        # Convert the QImage to a QPixmap
-        qpixmap = QPixmap.fromImage(image_qt)
-        self.label_minimap.setPixmap(qpixmap)
 
 def main():
 

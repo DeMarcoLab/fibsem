@@ -1,33 +1,30 @@
-import io
+
 import logging
-import os
-import time
-import traceback
 from copy import deepcopy
-from pathlib import Path
 
 import napari
 import napari.utils.notifications
-from napari.qt.threading import thread_worker
 import numpy as np
 import yaml
-from PIL import Image
+from napari.qt.threading import thread_worker
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtGui import QImage, QPixmap
+
+import fibsem.utils as utils
 from fibsem import config as cfg
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (BeamType, FibsemStagePosition,
-                               MicroscopeSettings, MovementMode, Point, FibsemImage)
+from fibsem.structures import (
+    BeamType,
+    FibsemStagePosition,
+    MicroscopeSettings,
+    MovementMode,
+    Point,
+)
+from fibsem.ui import _stylesheets
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
-from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
-from fibsem.imaging._tile import _plot_positions, _minimap 
-from fibsem.ui import utils as ui_utils 
-from fibsem.ui.utils import message_box_ui
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-from fibsem.ui import _stylesheets
-import fibsem.utils as utils
+from fibsem.ui.utils import _get_file_ui, _get_save_file_ui, message_box_ui
+
 
 def log_status_message(step: str):
     logging.debug(
@@ -59,7 +56,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.setup_connections()
         self.image_widget.picture_signal.connect(self.update_ui)
         self.positions = []
-        self.minimap_image = None
         autoload_positions: bool = True # TODO: enable this
         if autoload_positions:
             self.import_positions(cfg.POSITION_PATH)
@@ -76,7 +72,8 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_move_flat_electron.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
         
         # minimap
-        self.pushButton_load_image_minimap.clicked.connect(self.load_image)
+        # TODO: deprecate this from ui
+        # self.pushButton_load_image_minimap.clicked.connect(self.load_image)
         self.pushButton_load_image_minimap.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
         self.label_4.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
         self.label_minimap.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
@@ -186,10 +183,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_movement_stage_rotation.setValue(np.rad2deg(stage_position.r))
         self.doubleSpinBox_movement_stage_tilt.setValue(np.rad2deg(stage_position.t))
 
-        # NOTE (pc): temporary to reduce number of updates    
-        if self.sender() is None:
-            self.minimap()
-
         _SAVED_POSITIONS = bool(len(self.positions))
         # self.pushButton_save_position.setVisible(_SAVED_POSITIONS) # always visible
         self.pushButton_remove_position.setEnabled(_SAVED_POSITIONS)
@@ -238,7 +231,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.movement_notification_signal.emit("Click to move in progress")
         if beam_type is None:
             napari.utils.notifications.show_info(
-                f"Clicked outside image dimensions. Please click inside the image to move."
+                "Clicked outside image dimensions. Please click inside the image to move."
             )
             return
 
@@ -295,7 +288,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.lineEdit_position_name.setText(position.name)
         logging.info(f"Added position {position.name}")
         self.positions_signal.emit(self.positions)
-        self.minimap()
         self.update_ui()
 
     def delete_position(self):
@@ -304,7 +296,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_positions.removeItem(self.comboBox_positions.currentIndex())
         logging.info(f"Removed position {name}")
         self.positions_signal.emit(self.positions)
-        self.minimap()
         self.update_ui()
 
     def update_saved_position(self):
@@ -321,7 +312,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.select_position()
         logging.info(f"Updated position {self.comboBox_positions.currentText()}")
         self.positions_signal.emit(self.positions)
-        self.minimap()
 
     def go_to_saved_position(self, pos:FibsemStagePosition = None):
         worker = self.go_to_saved_position_worker(pos)
@@ -366,7 +356,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_positions.clear()
         for position in positions:
             self.comboBox_positions.addItem(position.name)
-        self.minimap()
 
     def import_positions(self, path: str = None):
         if not isinstance(path, str):
@@ -381,40 +370,11 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             position = FibsemStagePosition.from_dict(pdict)
             self.positions.append(position)
             self.comboBox_positions.addItem(position.name)
-        self.minimap()
         self.positions_signal.emit(self.positions)
 
     def load_image(self):
-
-        path = ui_utils._get_file_ui( msg="Select image to load", path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
-
-        if path == "":
-            napari.utils.notifications.show_info(f"No file selected..")
-            return
-
-        
-        image = FibsemImage.load(path)
-        if image.metadata is None:
-            napari.utils.notifications.show_error(f"Could not load image {path}. Make sure it is an OpenFibsem Image.")
-            return
-
-        self.minimap_image = image
-        self.minimap()
-
-    def minimap(self):
-
-        if self.minimap_image is None:
-            return
-        
-        current_position = self.microscope.get_stage_position()
-        current_position.name = "Current Position"
-        positions = deepcopy(self.positions)
-        positions.insert(0, current_position)
-        
-        qpixmap = _minimap(self.minimap_image, positions)
-
-        self.label_minimap.setPixmap(qpixmap)
-
+        logging.debug("load image and embedded minimap are deprecated")
+        return 
 
     def update_ui_after_movement(self,retake:bool = True): # TODO: PPP Refactor
         # disable taking images after movement here

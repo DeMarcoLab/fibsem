@@ -7,6 +7,7 @@ import json
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import List
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -146,7 +147,7 @@ def save_ml_feature_data(det: DetectedFeatures, initial_features: DetectedFeatur
     # save features data csv
     save_feature_data_to_csv(det, features=fd, filename=fname)
 
-def save_feature_data_to_csv(det: DetectedFeatures, features: list[dict], filename: str):
+def save_feature_data_to_csv(det: DetectedFeatures, features: List[dict], filename: str):
     """Save the feature data to a csv file. Includes saving the image and mask to disk. 
     All data is saved at the cfg.DATA_ML_PATH location. This can be configured in the config.py file."""
 
