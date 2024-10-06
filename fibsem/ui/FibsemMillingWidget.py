@@ -7,6 +7,7 @@ from copy import deepcopy
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets, QtCore
+from typing import List
 
 from fibsem import config as cfg
 from fibsem import constants, conversions, milling, patterning, utils
@@ -62,7 +63,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         viewer: napari.Viewer = None,
         image_widget: FibsemImageSettingsWidget = None,
         protocol: dict = None,
-        milling_stages: list[FibsemMillingStage] = [], 
+        milling_stages: List[FibsemMillingStage] = [], 
         parent=None,
     ):
         super(FibsemMillingWidget, self).__init__(parent=parent)
@@ -257,7 +258,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         _remove_all_layers(self.viewer) # remove all shape layers
 
-    def set_milling_stages(self, milling_stages: list[FibsemMillingStage]) -> None:
+    def set_milling_stages(self, milling_stages: List[FibsemMillingStage]) -> None:
         logging.debug(f"Setting milling stages: {len(milling_stages)}")
         self.milling_stages = milling_stages
         
@@ -672,7 +673,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         return milling_settings
 
-    def update_ui(self, milling_stages: list[FibsemMillingStage] = None):
+    def update_ui(self, milling_stages: List[FibsemMillingStage] = None):
         self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
 
         if milling_stages is None and len(self.milling_stages) < 1:

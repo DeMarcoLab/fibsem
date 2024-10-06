@@ -22,6 +22,7 @@ from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget
 import logging
 
 from fibsem.segmentation.config import CLASS_COLORS
+from typing import List
 
 class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets.QWidget):
     continue_signal = pyqtSignal(DetectedFeatures)
@@ -170,7 +171,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                                                     name="mask", 
                                                     opacity=0.3,
                                                     blending="additive", 
-                                                    color=CLASS_COLORS)
+                                                    colormap=CLASS_COLORS)
 
         # add points to viewer
         data = []
@@ -256,7 +257,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         data = layer.data
 
         # get which point was moved
-        index: list[int] = list(layer.selected_data)  
+        index: List[int] = list(layer.selected_data)  
                 
         if len(data) != len(self.det.features):
             # loop backwards to remove the features

@@ -2,16 +2,12 @@ import logging
 
 import numpy as np
 from fibsem.microscope import FibsemMicroscope
-from fibsem import calibration
 from fibsem.structures import (
     BeamSystemSettings,
     BeamType,
-    ImageSettings,
     MicroscopeSettings,
-    MicroscopeState,
     FibsemImage,
 )
-
 
 # TODO: change return type to list of warnings rather than reading the log...
 def validate_initial_microscope_state(
@@ -168,7 +164,7 @@ def _validate_chamber_state(microscope: FibsemMicroscope) -> None:
     if chamber_pressure >= 1e-4:
         logging.warning(f"Chamber pressure is too high, please pump the system (Currently {chamber_pressure:.6f} mbar)"            )
 
-    logging.info(f"Vacuum Chamber State Validation finished.")
+    logging.info("Vacuum Chamber State Validation finished.")
 
 def validate_stage_height_for_needle_insertion(
     microscope: FibsemMicroscope, needle_stage_height_limit: float = 3.7e-3
@@ -294,10 +290,6 @@ def _validate_configuration_values(microscope: FibsemMicroscope, dictionary: dic
 
 # new validation v2
 
-from fibsem import utils
-from fibsem.structures import BeamType
-from fibsem.microscope import FibsemMicroscope
-import logging
 
 
 def validate_microscope(microscope: FibsemMicroscope):

@@ -1,5 +1,8 @@
+from typing import Tuple
+
 import numpy as np
-from fibsem.structures import Point, FibsemImage
+
+from fibsem.structures import FibsemImage, Point
 
 
 def image_to_microscope_image_coordinates(
@@ -34,7 +37,7 @@ def image_to_microscope_image_coordinates(
 
 def get_lamella_size_in_pixels(
     img: FibsemImage, protocol: dict, use_trench_height: bool = False
-) -> tuple[int]:
+) -> Tuple[int]:
     """Get the relative size of the lamella in pixels based on the hfw of the image.
 
     Args:
@@ -43,7 +46,7 @@ def get_lamella_size_in_pixels(
         use_trench_height (bool, optional): If True, returns the height of the trench instead of the lamella. Default is False.
 
     Returns:
-        tuple[int]: A tuple containing the height and width of the lamella in pixels.
+        Tuple[int]: A tuple containing the height and width of the lamella in pixels.
     """
     # get real size from protocol
     lamella_width = protocol["lamella_width"]

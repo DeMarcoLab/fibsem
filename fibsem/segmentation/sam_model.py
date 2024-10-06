@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from transformers import SamModel, SamProcessor
-
+from typing import List
 
 class SamModelWrapper:
     def __init__(self, checkpoint: str = "facebook/sam-vit-base", device: str = None):
@@ -18,8 +18,8 @@ class SamModelWrapper:
     def __call__(
         self,
         image: np.ndarray,
-        points: list[list[list[int]]] = None,
-        labels: list[list[bool]] = None,
+        points: List[List[List[int]]] = None,
+        labels: List[List[bool]] = None,
         input_masks=None,
         multimask_output: bool = False,
     ):
@@ -40,8 +40,8 @@ class SamModelWrapper:
     def predict(
         self,
         image,
-        points: list[list[list[int]]] = None,
-        labels: list[list[bool]] = None,
+        points: List[List[List[int]]] = None,
+        labels: List[List[bool]] = None,
         input_masks: np.ndarray = None,
         multimask_output: bool = False,
     ):

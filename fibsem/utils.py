@@ -1,26 +1,24 @@
 import datetime
 import glob
-import json
+
 import logging
 import os
-import numpy as np
+import sys
 import time
 from pathlib import Path
-import sys
+from typing import List, Tuple
+
 
 import yaml
-
 from PIL import Image
-from fibsem.structures import (
-    BeamType,
-    MicroscopeSettings,
-    ImageSettings,
-    SystemSettings,
-    FibsemImage,
-    FibsemMillingSettings,
-)
+
 from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import (
+    BeamType,
+    FibsemImage,
+    MicroscopeSettings,
+)
 
 
 def current_timestamp():
@@ -146,7 +144,7 @@ def setup_session(
     ip_address: str = None,
     manufacturer: str = None,
     debug: bool = False,
-) -> tuple[FibsemMicroscope, MicroscopeSettings]:
+) -> Tuple[FibsemMicroscope, MicroscopeSettings]:
     """Setup microscope session
 
     Args:
@@ -323,9 +321,10 @@ def get_params(main_str: str) -> list:
 
 def _get_position(name: str):
     
+    import os
+
     from fibsem import config as cfg
     from fibsem.structures import FibsemStagePosition
-    import os
 
     ddict = load_yaml(fname=os.path.join(cfg.CONFIG_PATH, "positions.yaml"))
     # get position from save positions?
@@ -334,11 +333,11 @@ def _get_position(name: str):
             return FibsemStagePosition.from_dict(d)
     return None
 
-def _get_positions(fname: str = None) -> list[str]:    
+def _get_positions(fname: str = None) -> List[str]:    
     
-    from fibsem import config as cfg
-    from fibsem.structures import FibsemStagePosition
     import os
+
+    from fibsem import config as cfg
 
     if fname is None:
         fname = os.path.join(cfg.CONFIG_PATH, "positions.yaml")
@@ -348,14 +347,9 @@ def _get_positions(fname: str = None) -> list[str]:
     return [d["name"] for d in ddict]
 
 
-import yaml
-
-
-
 def save_positions(positions: list, path: str = None, overwrite: bool = False) -> None:
     """save the list of positions to file"""
 
-    from fibsem.structures import FibsemStagePosition
     from fibsem import config as cfg
 
     # convert single position to list
@@ -381,9 +375,10 @@ def save_positions(positions: list, path: str = None, overwrite: bool = False) -
     
 
 def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show: bool = True):
+    import matplotlib.pyplot as plt
     import pytz
     from matplotlib_scalebar.scalebar import ScaleBar
-    import matplotlib.pyplot as plt
+
     import fibsem.constants as constants
     fig, ax = plt.subplots()
 
@@ -454,8 +449,8 @@ def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show
 
 # TODO: re-think this, dont like the pop ups
 def _register_metadata(microscope: FibsemMicroscope, application_software: str, application_software_version: str, experiment_name: str, experiment_method: str) -> None:
-    from fibsem.structures import FibsemUser, FibsemExperiment
     import fibsem
+    from fibsem.structures import FibsemExperiment, FibsemUser
 
     user = FibsemUser.from_environment()
 

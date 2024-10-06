@@ -2,6 +2,7 @@ import logging
 import threading
 from pathlib import Path
 from queue import Queue
+from typing import List
 
 import napari
 import napari.utils.notifications
@@ -10,19 +11,21 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from scipy.ndimage import median_filter
 
-from fibsem import acquire, constants, config as cfg
+from fibsem import acquire, constants
+from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope
 from fibsem.structures import (
     BeamSettings,
     BeamType,
     FibsemDetectorSettings,
-    FibsemImage,
+    FibsemRectangle,
     ImageSettings,
     Point,
-    FibsemRectangle,
 )
-from fibsem.ui import utils as ui_utils, _stylesheets
-from fibsem.ui.qtdesigner_files import ImageSettingsWidget       
+from fibsem.ui import _stylesheets
+from fibsem.ui import utils as ui_utils
+from fibsem.ui.qtdesigner_files import ImageSettingsWidget
+
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
     picture_signal = pyqtSignal()
@@ -457,19 +460,19 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_take_image.setEnabled(True)
         self._toggle_interactions(True)
 
-    def live_update(self, dict):
-        arr = dict["image"].data
+    def live_update(self, ddict):
+        arr = ddict["image"].data
         name = BeamType[self.selected_beam.currentText()].name
 
         try:
             self.viewer.layers[name].data = arr
-        except:    
-            layer = self.viewer.add_image(arr, name = name)
+        except KeyError:    
+            self.viewer.add_image(arr, name = name)
 
         if name == BeamType.ELECTRON.name:
-            self.eb_image = dict["image"]
+            self.eb_image = ddict["image"]
         if name == BeamType.ION.name:
-            self.ib_image = dict["image"]    
+            self.ib_image = ddict["image"]    
         
     def take_image(self, beam_type: BeamType = None):
         self.TAKING_IMAGES = True
@@ -534,7 +537,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.image_settings.beam_type = beam_type
 
         arr =  acquire.new_image(self.microscope, self.image_settings)
-        name = f"{self.image_settings.beam_type.name}"
 
         if self.image_settings.beam_type == BeamType.ELECTRON:
             self.eb_image = arr
@@ -581,7 +583,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
        
         try:
             self.viewer.layers[name].data = arr
-        except:    
+        except KeyError:    
             layer = self.viewer.add_image(arr, name = name)
         
 
@@ -619,7 +621,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
             try:
                 self.viewer.layers['label'].data = points
-            except:    
+            except KeyError:    
                 self.viewer.add_points(
                 points,
                 name="label",
@@ -773,7 +775,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         return convert_shape_to_image_area(data, self.ib_image.data.shape, self.eb_image.data.shape)
 
 
-def convert_shape_to_image_area(shape: list[list[int]], image_shape: tuple, offset_shape: tuple = None) -> FibsemRectangle:
+def convert_shape_to_image_area(shape: List[List[int]], image_shape: tuple, offset_shape: tuple = None) -> FibsemRectangle:
     """Convert a napari shape (rectangle) to  a FibsemRectangle expressed as a percentage of the image (reduced area)
     shape: the coordinates of the shape
     image_shape: the shape of the image (usually the ion beam image)

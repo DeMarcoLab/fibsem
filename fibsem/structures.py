@@ -8,18 +8,18 @@ from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
-from typing import Optional, Union
+from typing import Optional, Union, List
 import numpy as np
 import tifffile as tff
 import fibsem
 from fibsem.config import METADATA_VERSION
-from abc import ABC, abstractmethod, abstractstaticmethod
+from abc import ABC, abstractmethod
 
 try:
     from tescanautomation.Common import Document
 
     TESCAN = True
-except:
+except ImportError:
     TESCAN = False
 
 try:
@@ -39,15 +39,9 @@ try:
     from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 
     THERMO = True
-except:
+except ImportError:
     THERMO = False
 
-
-
-# @patrickcleeve: dataclasses.asdict -> :(
-
-
-# TODO: overload constructors instead of from_dict...
 @dataclass
 class Point:
     x: float = 0.0
@@ -1261,7 +1255,6 @@ class GISSystemSettings:
             sputter_coater=settings["sputter_coater"],
         )
 
-import fibsem
 
 @dataclass
 class SystemInfo:
@@ -1892,7 +1885,7 @@ class ReferenceImages:
     low_res_ib: FibsemImage
     high_res_ib: FibsemImage
 
-    def __iter__(self) -> list[FibsemImage]:
+    def __iter__(self) -> List[FibsemImage]:
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
 

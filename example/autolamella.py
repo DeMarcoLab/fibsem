@@ -9,7 +9,7 @@ from pprint import pprint
 import numpy as np
 from fibsem import acquire, alignment, milling, patterning, utils
 from fibsem.structures import BeamType, MicroscopeState,  FibsemImage, FibsemStagePosition
-
+from typing import List
 
 @dataclass
 class Lamella:
@@ -37,7 +37,7 @@ def main():
     acquire.take_reference_images(microscope, settings.image)
 
     # select positions
-    experiment: list[Lamella] = []
+    experiment: List[Lamella] = []
     lamella_no = 1
     settings.image.hfw = 80e-6
     base_path = settings.image.path

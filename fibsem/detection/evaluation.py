@@ -4,6 +4,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
+from typing import List
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -17,7 +18,7 @@ from fibsem.structures import FibsemImage, Point
 import tifffile as tff
 
 
-def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: bool = False, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre", "LandingPost"], save: bool = False, save_path: Path = None):
+def _run_evaluation(path:Path, image_path: Path, checkpoints: List[dict], plot: bool = False, _FEATURES_TO_IGNORE: List[str] = ["ImageCentre", "LandingPost"], save: bool = False, save_path: Path = None):
 
     # ground truth 
     df = pd.read_csv(path)
@@ -149,8 +150,8 @@ def _run_evaluation(path:Path, image_path: Path, checkpoints: list[dict], plot: 
 
 
 
-def run_evaluation_v2(path:Path, image_path: Path, checkpoints: list[dict], labels_path: Path = None, 
-                      plot: bool = False, _FEATURES_TO_IGNORE: list[str] = ["ImageCentre"], 
+def run_evaluation_v2(path:Path, image_path: Path, checkpoints: List[dict], labels_path: Path = None, 
+                      plot: bool = False, _FEATURES_TO_IGNORE: List[str] = ["ImageCentre"], 
                       save: bool = False, save_path: Path = None):
 
     # ground truth 
@@ -293,7 +294,7 @@ import plotly.express as px
 
 
 def plot_evaluation_data(df: pd.DataFrame, category_orders: dict, show: bool = True, 
-                            thresholds: list[int] =  [50, 25, 10], save: bool=False, save_path: Path = None):
+                            thresholds: List[int] =  [50, 25, 10], save: bool=False, save_path: Path = None):
     # scatter plot
     fig = px.scatter(df, x="d.p.x", y="d.p.y", color="feature", facet_col="checkpoint", 
         # facet_row="dataset", 

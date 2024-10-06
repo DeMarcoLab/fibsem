@@ -168,7 +168,7 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
                     name="Mask",    
                     opacity=0.7,
                     blending="additive",
-                    color=CLASS_COLORS,
+                    colormap=CLASS_COLORS,
                 )
             try:
                 self._pred_layer.data = info["pred"]
@@ -178,7 +178,7 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
                     name="Prediction",
                     opacity=0.7,
                     blending="additive",
-                    color=CLASS_COLORS,
+                    colormap=CLASS_COLORS,
                 )
 
     def train_model_finished(self):

@@ -1,20 +1,20 @@
 import logging
+from typing import List
+
+from fibsem.microscope import FibsemMicroscope
+from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     BeamType,
+    FibsemBitmapSettings,
+    FibsemCircleSettings,
     FibsemImage,
-    FibsemRectangle,
+    FibsemLineSettings,
     FibsemMillingSettings,
-    Point,
+    FibsemPatternSettings,
+    FibsemRectangle,
+    FibsemRectangleSettings,
     ImageSettings,
-    MicroscopeSettings
 )
-from fibsem.structures import (FibsemPatternSettings, FibsemRectangleSettings, 
-                               FibsemCircleSettings, FibsemLineSettings, 
-                               FibsemBitmapSettings)
-from fibsem.patterning import FibsemMillingStage
-from typing import Union
-from fibsem.microscope import FibsemMicroscope
-
 
 ########################### SETUP
 
@@ -91,7 +91,7 @@ def finish_milling(
     microscope.finish_milling(imaging_current=imaging_current, imaging_voltage=imaging_voltage)
     logging.info("Finished Ion Beam Milling.")
 
-def draw_patterns(microscope: FibsemMicroscope, patterns: list[FibsemPatternSettings]) -> None:
+def draw_patterns(microscope: FibsemMicroscope, patterns: List[FibsemPatternSettings]) -> None:
     """Draw a milling pattern from settings
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
@@ -129,8 +129,9 @@ def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
 
 
 def convert_to_bitmap_format(path):
+    import os
+
     from PIL import Image
-    import os 
     img=Image.open(path)
     a=img.convert("RGB", palette=Image.ADAPTIVE, colors=8)
     new_path = os.path.join(os.path.dirname(path), "24bit_img.tif")
@@ -138,7 +139,7 @@ def convert_to_bitmap_format(path):
     return new_path
 
 
-def mill_stages(microscope: FibsemMicroscope, stages: list[FibsemMillingStage], asynch: bool=False):
+def mill_stages(microscope: FibsemMicroscope, stages: List[FibsemMillingStage], asynch: bool=False):
     for stage in stages:
         mill_stage(microscope=microscope, stage=stage, asynch=asynch)
 
@@ -161,7 +162,7 @@ def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: 
 
 
 
-def mill_stages_ui(microscope: FibsemMicroscope, stages: list[FibsemMillingStage], asynch: bool=False, parent_ui = None):
+def mill_stages_ui(microscope: FibsemMicroscope, stages: List[FibsemMillingStage], asynch: bool=False, parent_ui = None):
     """Run a list of milling stages, with a progress bar and notifications."""
     import napari.utils.notifications
 
@@ -220,9 +221,10 @@ def mill_stage_with_overtilt(microscope: FibsemMicroscope, stage: FibsemMillingS
     # set up milling
     setup_milling(microscope, stage.milling)
 
-    from fibsem.structures import FibsemStagePosition
-    from fibsem import alignment, patterning
     import numpy as np
+
+    from fibsem import alignment, patterning
+    from fibsem.structures import FibsemStagePosition
 
     overtilt_in_degrees = stage.pattern.protocol.get("overtilt", 1)
 
