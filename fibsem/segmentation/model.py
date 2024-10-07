@@ -185,6 +185,8 @@ def get_backend(checkpoint: str) -> str:
         return "onnx"
     elif "hf" in checkpoint or "transformers" in checkpoint or "segformer" in checkpoint:
         return "huggingface"
+    elif "gis_lamela" in checkpoint or "adaptive" in checkpoint:
+        return "adaptive-smp"
     else:
         return "smp"
 
@@ -207,6 +209,9 @@ def load_model(
     elif backend == "huggingface":
         from fibsem.segmentation.hf_segmentation_model import SegmentationModelHuggingFace
         model = SegmentationModelHuggingFace(checkpoint=checkpoint)
+    elif backend == "adaptive-smp":
+        from fibsem.segmentation.adaptive_model import AdaptiveSegmentationModel
+        model = AdaptiveSegmentationModel(checkpoint=checkpoint)
     else:
         model = SegmentationModel(checkpoint=checkpoint, encoder=encoder, num_classes=nc, _fix_numeric_scaling=_fix_numeric_scaling)
 
