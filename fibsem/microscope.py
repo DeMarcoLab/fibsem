@@ -850,6 +850,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # set default coordinate system
         self.stage.set_default_coordinate_system(self._default_stage_coordinate_system)
         # TODO: set default move settings, is this dependent on the stage type?
+        self._default_application_file = "Si"
 
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
@@ -1615,6 +1616,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_device(self.milling_channel.value)
         self.connection.patterning.set_default_beam_type(self.milling_channel.value)
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
+        self._default_application_file = mill_settings.application_file
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns       
         self.set("hfw", mill_settings.hfw, self.milling_channel)
@@ -1858,6 +1860,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
         """
+        self.connection.patterning.set_default_application_file("Si")
         pattern = self.connection.patterning.create_circle(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
@@ -1865,6 +1868,10 @@ class ThermoMicroscope(FibsemMicroscope):
             inner_diameter = 0,
             depth=pattern_settings.depth,
         )
+        pattern.application_file = "Si"
+        pattern.overlap_r = 0.8
+        pattern.overlap_t = 0.8
+        self.connection.patterning.set_default_application_file(self._default_application_file)
 
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
 
