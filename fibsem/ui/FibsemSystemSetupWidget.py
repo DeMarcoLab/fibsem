@@ -89,7 +89,10 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         # TODO: validate configuration  
 
         # ask user to add to user configurations
-        configuration_name = os.path.basename(path).removesuffix(".yaml")
+        if hasattr(str, "removesuffix"):
+            configuration_name = os.path.basename(path).removesuffix(".yaml")
+        else:
+            configuration_name = os.path.basename(path).replace(".yaml", "")
 
         if configuration_name not in cfg.USER_CONFIGURATIONS: 
             from fibsem.ui.utils import message_box_ui
