@@ -64,7 +64,8 @@ def generate_blank_image(
         raise ValueError("Need to specify either hfw or pixelsize")
 
     if pixel_size is None:
-        pixel_size = Point(hfw / resolution[0], hfw / resolution[1])
+        vfw = hfw * resolution[1] / resolution[0]
+        pixel_size = Point(hfw / resolution[0], vfw / resolution[1])
 
     image = FibsemImage(
         data=np.zeros((resolution[1], resolution[0]), dtype=np.uint8),

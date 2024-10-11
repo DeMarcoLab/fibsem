@@ -360,33 +360,74 @@ def convert_bitmap_pattern_to_napari_image(
 
     
     return img_array, translate_position
-
-def convert_pattern_to_napari_image(pattern_settings: FibsemCircleSettings, image: FibsemImage) -> np.ndarray:
-    """Convert a circle pattern to a napari image. Note: annulus can only be plotted as image"""
-    # image centre
+   
+def draw_annulus_shape(pattern_settings: FibsemCircleSettings, image: FibsemImage) -> Tuple[np.ndarray, Point]:
+    """Convert an annulus pattern to a np array. Note: annulus can only be plotted as image
+    Args:
+        pattern_settings: FibsemCircleSettings: Annulus pattern settings.
+        image: FibsemImage: Image to draw pattern on.
+    Returns:
+        np.ndarray: Annulus shape in image.
+        Point: Position of the annulus in the image.
+    """
+    
+    # image parameters (centre, pixel size)
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
-    # pixel size
     pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
 
-    resize_x = int(2*pattern_settings.radius / pixelsize_x)
-    resize_y = int(2*pattern_settings.radius / pixelsize_y)
+    # pattern parameters
+    radius = pattern_settings.radius
+    thickness = pattern_settings.thickness
+    center_x = pattern_settings.centre_x
+    center_y = pattern_settings.centre_y
 
-    
-    inner_radius_ratio = (pattern_settings.radius - pattern_settings.thickness)/pattern_settings.radius
-
-    annulus_shape = _create_annulus_shape(width=resize_x, height=resize_y, inner_radius=inner_radius_ratio, outer_radius=1)
-    # annulus_image = np.array(image_rotated)
-
-    pattern_centre_x = int(icx - pattern_settings.radius/pixelsize_x) + image.data.shape[1] 
-    pattern_centre_y = int(icy - pattern_settings.radius/pixelsize_y)
-
-    pattern_point_x = int(pattern_centre_x + pattern_settings.centre_x / pixelsize_x)
-    pattern_point_y = int(pattern_centre_y - pattern_settings.centre_y / pixelsize_y)
-
-    translate_position = (pattern_point_y,pattern_point_x)
-
-    return annulus_shape, translate_position
+    radius_px = radius / pixelsize_x # isotropic
+    shape = int(2 * radius_px)
+    inner_radius_ratio = (radius - thickness)/radius
    
+    annulus_shape = _create_annulus_shape(width=shape, height=shape, 
+                                          inner_radius=inner_radius_ratio, 
+                                          outer_radius=1)
+
+    # get pattern centre in image coordinates
+    pattern_centre_x = int(icx + center_x / pixelsize_x)
+    pattern_centre_y = int(icy - center_y / pixelsize_y)
+
+    pos = Point(x=pattern_centre_x, y=pattern_centre_y)
+
+    return annulus_shape, pos
+
+def draw_annulus_in_image(image: np.ndarray, 
+                          annulus_shape: np.ndarray, 
+                          pos: Point) -> np.ndarray:
+
+    # place the annulus shape in the image
+    w = annulus_shape.shape[1] // 2
+    h = annulus_shape.shape[0] // 2
+    
+    # fill the annulus shape in the image
+    xmin, xmax = pos.x - w, pos.x + w
+    ymin, ymax = pos.y - h, pos.y + h
+    zero_image = np.zeros_like(image)
+    zero_image[ymin:ymax, xmin:xmax] = annulus_shape[:2*h, :2*w]
+
+    # add the annulus shape to the image, clip to 1
+    image = np.clip(image+zero_image, 0, 1)
+
+    return image
+
+def compose_annulus_image(image: np.ndarray, shapes: List[np.ndarray], positions: List[Point]) -> np.ndarray:
+    """Create an image with annulus shapes."""
+    # create an empty image
+    annulus_image = np.zeros_like(image)
+
+    # add each annulus shape to the image
+    for shape, pos in zip(shapes, positions):
+        annulus_image = draw_annulus_in_image(annulus_image, shape, pos)
+
+    return annulus_image
+        
+
 def _create_annulus_shape(width, height, inner_radius, outer_radius):
     # Create a grid of coordinates
     x = np.linspace(-1, 1, width)
@@ -408,7 +449,7 @@ def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.
 
         if layer.name in layers_to_ignore:
             continue
-        if isinstance(layer, layer_type) or layer.name in ["bmp_Image","annulus_Image"]:
+        if isinstance(layer, layer_type) or layer.name in ["bmp_Image"] or "annulus-layer" in layer.name:
             layers_to_remove.append(layer)
     for layer in layers_to_remove:
         viewer.layers.remove(layer)  # Not removing the second layer?
@@ -435,10 +476,14 @@ def _draw_patterns_in_napari(
         shape_types = []
         t0 = time.time()
 
-        patterns = stage.pattern.patterns
-        point = stage.pattern.point
-        name = stage.name
-        is_line_pattern = False
+        patterns: List[FibsemPatternSettings] = stage.pattern.patterns
+        point: Point = stage.pattern.point
+        name: str = stage.name
+        is_line_pattern: bool = False
+        
+        # amnulus shapes
+        stage_annulus_shapes = []
+        annulus_layer = f"{name}-annulus-layer"
 
         for pattern_settings in patterns:
             if isinstance(pattern_settings, FibsemBitmapSettings):
@@ -455,12 +500,9 @@ def _draw_patterns_in_napari(
 
             elif isinstance(pattern_settings, FibsemCircleSettings):
                 if pattern_settings.thickness != 0:
-                    annulus_image, translate_position = convert_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
-                    if "annulus_Image" in viewer.layers:
-                        viewer.layers.remove(viewer.layers["annulus_Image"])
-                    viewer.add_image(annulus_image,translate=translate_position,name="annulus_Image",blending="additive",colormap=COLOURS[i % len(COLOURS)],opacity=0.4)
-                    shape_patterns = []
-                    _ignore.append("annulus_Image")
+                    # annulus is special case becaue napari can't draw annulus as shape, so we draw them as an image
+                    shape, pos = draw_annulus_shape(pattern_settings, ib_image)
+                    stage_annulus_shapes.append((shape, pos))
                     continue
                 else:
                     shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
@@ -518,9 +560,26 @@ def _draw_patterns_in_napari(
             if is_line_pattern:
                 viewer.layers[name].edge_width = 3
 
+        if stage_annulus_shapes:
+            # draw all the annulus for the stage on the same image
+            if annulus_layer in viewer.layers:
+                viewer.layers.remove(viewer.layers[annulus_layer])
+
+            annulus_image = compose_annulus_image(ib_image.data, *zip(*stage_annulus_shapes))
+
+            translation = (0, eb_image.data.shape[1])
+            viewer.add_labels(data=annulus_image, 
+                                translate=translation, 
+                                name=annulus_layer,
+                                blending="additive",
+                                colormap={0: "black", 1: COLOURS[i % len(COLOURS)]},
+                                opacity=0.6)
+            _ignore.append(annulus_layer)
+
         t2 = time.time()
         # remove all un-updated layers (assume they have been deleted)        
-        _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=_ignore)#[stage.name for stage in milling_stages])
+        _remove_all_layers(viewer=viewer, layer_type=napari.layers.shapes.shapes.Shapes, _ignore=_ignore)
+        # TODO: annulus layers are not removed correctly
         t3 = time.time()
         logging.debug(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}, REMOVE: {t3-t2}")
     t_2 = time.time()
