@@ -6,6 +6,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+from typing import List, Tuple
 
 from fibsem import constants, conversions
 from fibsem.structures import Point, FibsemImage, FibsemRectangle
@@ -398,7 +399,7 @@ def _create_annulus_shape(width, height, inner_radius, outer_radius):
 
 IGNORE_SHAPES_LAYERS = ["ruler_line","crosshair","scalebar","scalebar_value", "label", "alignment_area"] # ignore these layers when removing all shapes
 
-def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes, _ignore: list[str] = []):
+def _remove_all_layers(viewer: napari.Viewer, layer_type = napari.layers.shapes.shapes.Shapes, _ignore: List[str] = []):
 
     # remove all shapes layers
     layers_to_remove = []
@@ -417,7 +418,7 @@ def _draw_patterns_in_napari(
     viewer: napari.Viewer,
     ib_image: FibsemImage,
     eb_image: FibsemImage,
-    milling_stages: list[FibsemMillingStage],
+    milling_stages: List[FibsemMillingStage],
     draw_crosshair: bool = True,
 ):
 
@@ -725,7 +726,7 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
 
 def validate_pattern_placement(
-    patterns: list[FibsemPatternSettings], resolution: list, shape: list[list[float]]
+    patterns: List[FibsemPatternSettings], resolution: list, shape: List[List[float]]
 ):
     x_lim = resolution[0]
     y_lim = resolution[1]
@@ -788,7 +789,7 @@ def _get_text_ui(
     title: str = "Text Entry",
     default: str = "UserText",
     parent=None,
-) -> tuple[str, bool]:
+) -> Tuple[str, bool]:
     text, okPressed = QtWidgets.QInputDialog.getText(
         parent,
         title,
@@ -799,7 +800,7 @@ def _get_text_ui(
 
     return text, okPressed
 
-def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[FibsemMillingStage], show: bool = True):
+def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: List[FibsemMillingStage], show: bool = True):
 
     viewer = napari.Viewer()
     viewer.add_image(image.data, name='test_image')
@@ -820,7 +821,7 @@ def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: list[Fibse
     
     return fig
 
-def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
+def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->Tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
     
     fiducial_centre.y = -fiducial_centre.y

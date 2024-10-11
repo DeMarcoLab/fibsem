@@ -1,20 +1,19 @@
 import logging
-import traceback
-import yaml
-import os 
+import os
+
 import napari
 import napari.utils.notifications
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
-import fibsem
 from fibsem import config as cfg
 from fibsem import utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, SystemSettings
-from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
-from fibsem.ui.utils import _get_file_ui, _get_save_file_ui
 from fibsem.ui import _stylesheets
+from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
+from fibsem.ui.utils import _get_file_ui
+
 
 def log_status_message(step: str):
     logging.debug(
@@ -57,7 +56,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         self.toolButton_import_configuration.clicked.connect(self.import_configuration_from_file)
     
         self.pushButton_apply_configuration.clicked.connect(lambda: self.apply_microscope_configuration(None))
-        self.pushButton_apply_configuration.setToolTip(f"Apply configuration can take some time. Please make sure the microscope beams are both on.")
+        self.pushButton_apply_configuration.setToolTip("Apply configuration can take some time. Please make sure the microscope beams are both on.")
 
     def load_configuration(self, configuration_name: str):
         if configuration_name is None:
@@ -72,7 +71,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         # load the configuration
         self.settings = utils.load_microscope_configuration(configuration_path)
 
-        from pprint import pprint 
+        from pprint import pprint
 
         pprint(self.settings.to_dict()["info"])
 
@@ -84,17 +83,20 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             path=cfg.CONFIG_PATH, _filter="YAML (*.yaml *.yml)")
 
         if path == "":
-            napari.utils.notifications.show_error(f"No file selected. Configuration not loaded.")
+            napari.utils.notifications.show_error("No file selected. Configuration not loaded.")
             return
         
         # TODO: validate configuration  
 
         # ask user to add to user configurations
-        configuration_name = os.path.basename(path).removesuffix(".yaml")
+        if hasattr(str, "removesuffix"):
+            configuration_name = os.path.basename(path).removesuffix(".yaml")
+        else:
+            configuration_name = os.path.basename(path).replace(".yaml", "")
 
         if configuration_name not in cfg.USER_CONFIGURATIONS: 
             from fibsem.ui.utils import message_box_ui
-            msg = f"Would you like to add this configuration to the user configurations?"
+            msg = "Would you like to add this configuration to the user configurations?"
             ret = message_box_ui(text=msg, title="Add to user configurations?")
 
             # add to user configurations
@@ -102,7 +104,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
                 cfg.add_configuration(configuration_name=configuration_name, path=path)
                 
                 # set default configuration
-                msg = f"Would you like to make this the default configuration?"
+                msg = "Would you like to make this the default configuration?"
                 ret = message_box_ui(text=msg, title="Set default configuration?")
                 
                 if ret:
@@ -121,12 +123,12 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
             self.microscope, self.settings = None, None
         else:
 
-            napari.utils.notifications.show_info(f"Connecting to microscope...")
+            napari.utils.notifications.show_info("Connecting to microscope...")
 
             configuration_path = self.load_configuration(None)
 
             if configuration_path is None:
-                napari.utils.notifications.show_error(f"Configuration not selected.")
+                napari.utils.notifications.show_error("Configuration not selected.")
                 return
 
             # connect
@@ -146,7 +148,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
         """Apply the microscope configuration to the microscope."""
 
         if self.microscope is None:
-            napari.utils.notifications.show_error(f"Microscope not connected.")
+            napari.utils.notifications.show_error("Microscope not connected.")
             return
         
         # apply the configuration

@@ -1,3 +1,9 @@
+import os
+
+import yaml
+
+import fibsem
+
 METADATA_VERSION = "v3"
 
 # sputtering rates, from microscope application files
@@ -42,8 +48,7 @@ REFERENCE_RES_SUPER = [6144, 4096]
 MILL_HFW_THRESHOLD = 0.005  # 0.5% of the image
 
 
-import os
-import fibsem
+
 
 BASE_PATH = os.path.dirname(
     fibsem.__path__[0]
@@ -71,7 +76,7 @@ os.makedirs(DATA_TILE_PATH, exist_ok=True)
 
 DATABASE_PATH = os.path.join(BASE_PATH, "fibsem", "db", "fibsem.db")
 os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-import yaml
+
 
 
 def load_yaml(fname):
@@ -216,10 +221,12 @@ TESCAN_MANIPULATOR_CALIBRATION_PATH = os.path.join(CONFIG_PATH, "tescan_manipula
 
 def load_tescan_manipulator_calibration() -> dict:
     """Load the tescan manipulator calibration"""
-    config = utils.load_yaml(cfg.TESCAN_MANIPULATOR_CALIBRATION_PATH)
+    from fibsem.utils import load_yaml
+    config = load_yaml(TESCAN_MANIPULATOR_CALIBRATION_PATH)
     return config
 
 def save_tescan_manipulator_calibration(config: dict) -> None:
     """Save the tescan manipulator calibration"""
-    utils.save_yaml(cfg.TESCAN_MANIPULATOR_CALIBRATION_PATH, config)
+    from fibsem.utils import save_yaml
+    save_yaml(TESCAN_MANIPULATOR_CALIBRATION_PATH, config)
     return None

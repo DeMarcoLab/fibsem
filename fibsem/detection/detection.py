@@ -1,17 +1,37 @@
-#!/usr/bin/env python3
+import copy
+import glob
+import json
 import logging
+import os
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
-from enum import Enum
+from typing import List, Tuple, Union
 
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import numpy as np
+import tifffile as tff
+from scipy import ndimage
 from scipy.spatial import distance
 from skimage import feature, measure
 
 from fibsem import conversions
+from fibsem.imaging import _tile
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import FibsemImage, BeamType, MicroscopeSettings, Point
-import matplotlib.pyplot as plt
+from fibsem.structures import (
+    BeamType,
+    FibsemImage,
+    FibsemStagePosition,
+    MicroscopeSettings,
+    Point,
+)
+
+try:
+    from fibsem.segmentation import config as segcfg
+    from fibsem.segmentation.utils import decode_segmap_v2
+except ImportError as e:
+    logging.warning(f"Could not import segmentation util / config {e}")
 
 @dataclass
 class Feature(ABC):
@@ -631,7 +651,7 @@ def edge_detection(img: np.ndarray, sigma=3) -> np.ndarray:
 
 def detect_closest_edge_v2(
     mask: np.ndarray, landing_pt: Point
-) -> tuple[Point, np.ndarray]:
+) -> Tuple[Point, np.ndarray]:
     """ Identify the closest edge point to the initially selected point
 
     args:
@@ -713,12 +733,13 @@ def detect_bounding_box(mask, color, threshold=25):
 
     return bbox
 
-from typing import Union
+
+
 ### v2
 
 @dataclass
 class DetectedFeatures:
-    features: list[Feature]
+    features: List[Feature]
     image: np.ndarray # TODO: convert or add FIBSEMImage
     mask: np.ndarray # class binary mask
     rgb: np.ndarray # rgb mask
@@ -750,8 +771,8 @@ class DetectedFeatures:
         }
         
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: tuple[Feature], filter: bool = True, point: Point = None
-) -> list[Feature]:
+    img: np.ndarray, mask: np.ndarray, features: Tuple[Feature], filter: bool = True, point: Point = None
+) -> List[Feature]:
 
     detection_features = []
 
@@ -778,7 +799,7 @@ def detect_features_v2(
 def detect_features(
     image: Union[np.ndarray, FibsemImage],
     model: 'SegmentationModel',
-    features: tuple[Feature],
+    features: Tuple[Feature],
     pixelsize: float = None,
     filter: bool = True,
     point: Point = None
@@ -793,7 +814,8 @@ def detect_features(
     if pixelsize is None:
         try:
             pixelsize = image.metadata.pixel_size.x
-        except: # default (wrong value)
+        except Exception as e: # default (wrong value)
+            logging.debug(f"Error getting pixelsize: {e}, using default value of 25nm")
             pixelsize = 25e-9
         
     # model inference
@@ -832,17 +854,17 @@ def detect_features(
 def take_image_and_detect_features(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
-    features: tuple[Feature],
+    features: Tuple[Feature],
     point: Point = None,
 ) -> DetectedFeatures:
     
     from fibsem import acquire, utils
-    from fibsem.segmentation.model import load_model
     from fibsem import config as cfg
+    from fibsem.segmentation.model import load_model
 
     if settings.image.reduced_area is not None:
         logging.info(
-            f"Reduced area is not compatible with model detection, disabling..."
+            "Reduced area is not compatible with model detection, disabling..."
         )
         settings.image.reduced_area = None
     
@@ -927,7 +949,7 @@ def plot_det(det: DetectedFeatures, ax: plt.Axes, title: str = "Prediction", sho
         plt.show()
 
 
-def plot_detections(dets: list[DetectedFeatures], titles: list[str] = None) -> plt.Figure:
+def plot_detections(dets: List[DetectedFeatures], titles: List[str] = None) -> plt.Figure:
     """Plotting image with detected features
 
     Args:
@@ -970,7 +992,6 @@ def move_based_on_detection(
     move_y: bool = True,
     _move_system: str = None, # auto
 ):
-    from fibsem import movement
 
     dx, dy = det.distance.x, det.distance.y
 
@@ -1027,11 +1048,6 @@ def move_based_on_detection(
     return
 
 
-import glob
-import os
-import tifffile as tff
-from fibsem.structures import FibsemImage, Point, FibsemStagePosition
-
 
 def mask_contours(image):
     # Find contours
@@ -1062,7 +1078,9 @@ def mask_contours(image):
 
     return mask
 
-from copy import deepcopy
+
+
+
 # TODO: need passthrough for the params
 def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature, class_idx: int = 1):
     
@@ -1092,7 +1110,7 @@ def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature,
     return features
 
 
-def filter_best_feature(mask: np.ndarray, features: list[Feature], method: str = "closest", point: Point = None):
+def filter_best_feature(mask: np.ndarray, features: List[Feature], method: str = "closest", point: Point = None):
     if method == "closest":
         # plot feature closest to point
         if point is None:
@@ -1118,12 +1136,8 @@ def get_feature(name: str) -> Feature:
 
 
 # v4 intersection features
-from fibsem.microscope import FibsemMicroscope 
-from fibsem.structures import MicroscopeSettings
-import numpy as np
-from fibsem.imaging import _tile
 
-def _detect_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings, image: FibsemImage, mask:np.ndarray, features: list[Feature]) -> list[FibsemStagePosition]:
+def _detect_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings, image: FibsemImage, mask:np.ndarray, features: List[Feature]) -> List[FibsemStagePosition]:
 
     # detect features
     features = detect_features_v2(img=image, 
@@ -1136,7 +1150,7 @@ def _detect_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings
 
     return positions, features
 
-def _calculate_intersection(masks: list[np.ndarray]) -> np.ndarray:
+def _calculate_intersection(masks: List[np.ndarray]) -> np.ndarray:
 
     intersection = masks[0]
     for mask in masks[1:]:
@@ -1148,22 +1162,10 @@ def _calculate_intersection(masks: list[np.ndarray]) -> np.ndarray:
 
 ### SEGMENTATION TOOLS
 
-import copy
-import glob
-import os
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
 
-from skimage import measure
-try:
-    from fibsem.segmentation import config as segcfg
-    from fibsem.segmentation.utils import decode_segmap_v2
-except ImportError as e:
-    logging.warning(f"Could not import segmentation util / config {e}")
 
-def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict], ncols:int = 10, show: bool = True):
+def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: List[dict], ncols:int = 10, show: bool = True):
     """Plot image with instance masks overlayed"""
     # plot instance masks
     n_objects = min(len(objects), ncols) # limit to 10 objects
@@ -1204,7 +1206,7 @@ def plot_instance_masks(image: np.ndarray, mask: np.ndarray, objects: list[dict]
 
 
 def plot_instance_masks_grid(image: np.ndarray, mask: np.ndarray, 
-                             objects: list[dict], ncols: int = 5, 
+                             objects: List[dict], ncols: int = 5, 
                              show: bool = True):
     """Plot image with instance masks overlayed"""
     # plot instance masks
@@ -1279,7 +1281,7 @@ def plot_instance_masks_grid(image: np.ndarray, mask: np.ndarray,
 
     return fig
 
-def plot_bounding_boxes(image: np.ndarray, mask: np.ndarray, objects: list[dict], show:bool = True):
+def plot_bounding_boxes(image: np.ndarray, mask: np.ndarray, objects: List[dict], show:bool = True):
     """Plot image with bounding boxes around detected objects"""
     
     # plot bounding boxes
@@ -1319,7 +1321,7 @@ def plot_bounding_boxes(image: np.ndarray, mask: np.ndarray, objects: list[dict]
 
     return fig
 
-def plot_keypoints(mask: np.ndarray, objects: list[dict]):
+def plot_keypoints(mask: np.ndarray, objects: List[dict]):
     for obj in objects:
 
         c = obj["class"]
@@ -1356,7 +1358,7 @@ def plot_keypoints(mask: np.ndarray, objects: list[dict]):
         plt.legend()
         plt.show()
 
-def get_objects(mask: np.ndarray, ignore_classes: list[int] = [0, 3], min_pixels: int = 100):
+def get_objects(mask: np.ndarray, ignore_classes: List[int] = [0, 3], min_pixels: int = 100):
     """ Extract individual objects from a mask """
 
     classes = [c for c in np.unique(mask) if c not in ignore_classes] # TODO: make this more granular, e.g. ignore-bbox, ignore-keypoints, etc.
@@ -1394,7 +1396,6 @@ def get_objects(mask: np.ndarray, ignore_classes: list[int] = [0, 3], min_pixels
 
     return objects
 
-from scipy import ndimage
 
 def get_keypoints(mask: np.ndarray) -> dict:
         """Get keypoints from instance mask.
@@ -1439,7 +1440,7 @@ def get_keypoints(mask: np.ndarray) -> dict:
 
 
 # SAVE/ LOAD data as json
-import json
+
 
 def save_json(data, filename):
     # write np array to json
@@ -1475,7 +1476,7 @@ def generate_segmentation_objects(data_path: str, labels_path: str, dataset_json
     for img_fname, label_fname in progress:
         progress.set_description(f"Processing {os.path.basename(img_fname)}")
         
-        image = tff.imread(img_fname)
+        # image = tff.imread(img_fname)
         mask = tff.imread(label_fname)
 
         # get objects

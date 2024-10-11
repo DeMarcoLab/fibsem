@@ -1,17 +1,21 @@
 import logging
-from datetime import datetime
-import numpy as np
-from pathlib import Path
 
+import numpy as np
 import skimage
 
 from fibsem import acquire, utils
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
-                               FibsemRectangle, FibsemStagePosition,
-                               ImageSettings, MicroscopeSettings, FibsemImage,
-                               MicroscopeState)
 from fibsem import config as cfg
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import (
+    BeamType,
+    FibsemImage,
+    FibsemRectangle,
+    ImageSettings,
+    MicroscopeSettings,
+    MicroscopeState,
+)
+
+
 def auto_focus_beam(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -156,7 +160,7 @@ def auto_charge_neutralisation(
     # take image
     acquire.new_image(microscope, image_settings)
 
-    logging.info(f"BAM! and the charge is gone!")  # important information
+    logging.info("BAM! and the charge is gone!")  # important information
 
 
 # def auto_needle_calibration(
@@ -260,18 +264,17 @@ def auto_home_and_link_v2(
         state = microscope.get_microscope_state()
 
     # home the stage
-    microscope.home_stage()
+    microscope.home()
 
     # move to saved linked state
     microscope.set_microscope_state(state)
 
 
 def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:MicroscopeSettings, parent_ui = None):
+    from autolamella.workflows.ui import ask_user, update_detection_ui
+
     from fibsem.detection import detection
     from fibsem.segmentation.model import load_model
-    import matplotlib.pyplot as plt
-
-    from autolamella.workflows.ui import update_detection_ui, ask_user
 
     if parent_ui:
         ret = ask_user(parent_ui, 
@@ -304,7 +307,7 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
             features = [detection.NeedleTip(), detection.ImageCentre()] if np.isclose(microscope.get("scan_rotation", beam_type), 0) else [detection.NeedleTipBottom(), detection.ImageCentre()]
             
             if parent_ui:
-                det = update_detection_ui(microscope, settings, features, parent_ui, validate = True, msg = f"Confirm Feature Detection. Press Continue to proceed.")
+                det = update_detection_ui(microscope, settings, features, parent_ui, validate = True, msg = "Confirm Feature Detection. Press Continue to proceed.")
             else:
                 image = acquire.new_image(microscope, settings.image)
                 det = detection.detect_features(image, model, features=features, pixelsize=image.metadata.pixel_size.x)
@@ -324,4 +327,4 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
         ask_user(parent_ui, 
             msg="Alignment of EasyLift complete. Please complete the procedure in xT UI. Press Continue to proceed.",
             pos="Continue")
-    print(f"The manipulator should now be centred in both beams.")
+    print("The manipulator should now be centred in both beams.")

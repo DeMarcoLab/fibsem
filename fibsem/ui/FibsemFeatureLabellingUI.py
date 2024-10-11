@@ -29,6 +29,7 @@ from typing import Optional, Any
 import copy
 from fibsem.structures import Point
 from fibsem.ui import _stylesheets
+from typing import List
 
 logging.basicConfig(level=logging.INFO)
 
@@ -148,7 +149,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         self.pts_layer = None
 
         self.feature = None
-        self.features: list[dict] = []
+        self.features: List[dict] = []
 
         self.setup_connections()
 
@@ -289,7 +290,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         self.load_data(df, filenames, path, csv_path)
 
     def load_data(
-        self, df: pd.DataFrame, filenames: list[str], path: str, csv_path: str
+        self, df: pd.DataFrame, filenames: List[str], path: str, csv_path: str
     ):
         # set attributes
         self.filenames = filenames
@@ -378,7 +379,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         points = self.pts_layer.data
 
         # get which point was moved
-        index: list[int] = list(self.pts_layer.selected_data)
+        index: List[int] = list(self.pts_layer.selected_data)
 
         def napari_pt_to_point(pt: np.ndarray, dtype=int) -> Point:
             return Point.from_list(np.flip(pt, axis=-1).astype(dtype))

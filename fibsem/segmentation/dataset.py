@@ -11,6 +11,7 @@ import os
 import tifffile as tff
 import random
 from PIL import Image
+from typing import List
 
 # transformations
 ROT_ANGLE = 15
@@ -91,7 +92,7 @@ class SegmentationDataset(Dataset):
 
 from pathlib import Path
 
-def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
+def load_dask_dataset_v2(data_paths: List[Path], label_paths: List[Path]):
 
     sorted_img_filenames, sorted_mask_filenames = [], []
     for data_path, label_path in zip(data_paths, label_paths):
@@ -111,7 +112,7 @@ def load_dask_dataset_v2(data_paths: list[Path], label_paths: list[Path]):
     return images, masks
 
 
-def preprocess_data(data_paths: list[Path], label_paths: list[Path], num_classes: int = 3, 
+def preprocess_data(data_paths: List[Path], label_paths: List[Path], num_classes: int = 3, 
                     batch_size: int = 1, val_split: float = 0.15, 
                     _validate_dataset:bool = True, apply_transforms: bool = False):
     

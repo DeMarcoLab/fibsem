@@ -269,7 +269,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             name="Mask",
             opacity=CONFIGURATION["UI"]["MASK_OPACITY"],
             blending="additive",
-            color=CONFIGURATION["LABELS"]["COLOR_MAP"],
+            colormap=CONFIGURATION["LABELS"]["COLOR_MAP"],
         )
 
         self.viewer.dims.events.current_step.connect(self.update_image)
@@ -507,7 +507,7 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
                 name="SAM Mask",
                 opacity=0.7,
                 blending="additive",
-                color={0: "black", 1: "white"},
+                colormap={0: "black", 1: "white"},
             )
 
         self.set_sam_active()
