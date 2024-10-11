@@ -6,7 +6,6 @@ from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 
-
 try:
     from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
     DETECTION_AVAILABLE = True
@@ -14,3 +13,4 @@ except ImportError:
     DETECTION_AVAILABLE = False
     import logging
     logging.debug("Could not import FibsemEmbeddedDetectionWidget")
+
