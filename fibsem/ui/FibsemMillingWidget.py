@@ -79,6 +79,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.protocol = protocol
         
         self.milling_stages = milling_stages
+        self.milling_pattern_layers = []
 
         self.setup_connections()
 
@@ -205,7 +206,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_y.setKeyboardTracking(False)
         self.doubleSpinBox_centre_x.valueChanged.connect(self.update_ui_pattern)
         self.doubleSpinBox_centre_y.valueChanged.connect(self.update_ui_pattern)
+        self.checkBox_show_milling_crosshair.setChecked(True)
         self.checkBox_show_milling_crosshair.stateChanged.connect(self.update_ui_pattern)
+        self.checkBox_show_milling_patterns.setChecked(True)
+        self.checkBox_show_milling_patterns.stateChanged.connect(self.toggle_pattern_visibility)
         self.checkBox_live_update.setChecked(True)
         self.checkBox_live_update.stateChanged.connect(self.toggle_live_update)
         self.toggle_live_update()
@@ -711,7 +715,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             if not isinstance(self.image_widget.eb_image, FibsemImage):
                 raise Exception(f"No Electron Image, cannot draw patterns. Please take an image.") # TODO: this is unintuitive why this is required -> ui issue only
             # clear patterns then draw new ones
-            _draw_patterns_in_napari(self.viewer, 
+            self.milling_pattern_layers = _draw_patterns_in_napari(self.viewer, 
                 ib_image=self.image_widget.ib_image, 
                 eb_image=self.image_widget.eb_image, 
                 milling_stages = milling_stages,
@@ -724,6 +728,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         t2 = time.time()
         logging.debug(f"UPDATE_UI: GET: {t1-t0}, DRAW: {t2-t1}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
+
+    def toggle_pattern_visibility(self):
+
+        is_visible = self.checkBox_show_milling_patterns.isChecked()
+        for layer in self.milling_pattern_layers:
+            if layer in self.viewer.layers:
+                self.viewer.layers[layer].visible = is_visible
 
     def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
 

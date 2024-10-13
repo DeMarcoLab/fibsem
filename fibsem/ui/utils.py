@@ -585,6 +585,8 @@ def _draw_patterns_in_napari(
     t_2 = time.time()
     logging.debug(f"_DRAW_SHAPES: total time: {t_2-t_1}")
 
+    return _ignore # list of milling pattern layers
+
 def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
     msg = QMessageBox()
     msg.setWindowTitle(title)
