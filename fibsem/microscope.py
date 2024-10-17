@@ -1225,6 +1225,14 @@ class ThermoMicroscope(FibsemMicroscope):
         z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         # TODO: do this manually without autoscript in raw coordinates
+        # TODO: test if this results in the same movement
+        # manually calculate the dx, dy, dz 
+        # theta = self.get_stage_position().t # rad
+        # dy = z_move * np.sin(theta)
+        # dz = z_move / np.cos(theta)
+        # logging.debug(f"dx: {dx}, dy: {dy}, dz: {dz}")
+        # stage_position = FibsemStagePosition(x=dx, y=dy, z=z_move, coordinate_system="RAW")
+
         stage_position = FibsemStagePosition(
             x=dx,
             z=z_move, 
@@ -1329,15 +1337,13 @@ class ThermoMicroscope(FibsemMicroscope):
         # perspective tilt adjustment (difference between perspective view and sample coordinate system)
         if beam_type == BeamType.ELECTRON:
             perspective_tilt_adjustment = -corrected_pretilt_angle
-            SCALE_FACTOR = 1.0  # 0.78342  # patented technology
         elif beam_type == BeamType.ION:
             perspective_tilt_adjustment = (
                 -corrected_pretilt_angle - stage_tilt_flat_to_ion
             )
-            SCALE_FACTOR = 1.0
 
         # the amount the sample has to move in the y-axis
-        y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
+        y_sample_move = expected_y  / np.cos(
             stage_tilt + perspective_tilt_adjustment
         )
        

@@ -1,3 +1,4 @@
+import os
 import logging
 import sys
 from copy import deepcopy
@@ -55,7 +56,6 @@ add_odemis_path()
 
 from odemis import model
 from odemis.acq.stream import FIBStream, SEMStream
-
 
 def stage_position_to_odemis_dict(position: FibsemStagePosition) -> dict:
     """Convert a FibsemStagePosition to a dict with the odemis keys"""
@@ -143,6 +143,50 @@ def odemis_md_to_microscope_state(md) -> MicroscopeState:
 
     return ms
 
+def from_odemis_image(image: model.DataArray, path: str = None) -> FibsemImage:
+    md = image.metadata
+    ms = MicroscopeState.from_odemis_dict(md[model.MD_EXTRA_SETTINGS])
+
+    # image settings
+    pixel_size = Point.from_list(md[model.MD_PIXEL_SIZE])
+
+    # TODO: this should be acq_type, but it's not saved in the metadata yet...
+    d2b = {"SEM": BeamType.ELECTRON, "FIB": BeamType.ION}
+
+    if d2b[md[model.MD_DESCRIPTION]] is BeamType.ELECTRON:
+        sys_state = ms.electron_beam
+    if d2b[md[model.MD_DESCRIPTION]] is BeamType.ION:
+        sys_state = ms.ion_beam
+
+    filename = None
+    if path is not None:
+        path = os.path.dirname(path)
+        filename = os.path.basename(path)
+
+    image_settings = ImageSettings(
+        resolution = [image.shape[1], image.shape[0]],
+        dwell_time=sys_state.dwell_time,
+        hfw=sys_state.hfw,
+        beam_type=sys_state.beam_type,
+        path = path,
+        filename=filename,
+        save = True,
+        autocontrast=False,
+        autogamma=False,
+    )
+
+    image_md = FibsemImageMetadata(
+        image_settings=image_settings,
+        pixel_size=pixel_size,
+        microscope_state=ms,
+        # TODO: the rest of the metadata is not saved in the odemis metadata
+    )
+
+    # get the data
+    da = image.getData() if isinstance(image, model.DataArrayShadow) else image
+    
+    return FibsemImage(data=da, metadata=image_md)
+
 
 # add as class methods
 FibsemStagePosition.to_odemis_dict = stage_position_to_odemis_dict
@@ -150,6 +194,7 @@ FibsemStagePosition.from_odemis_dict = odemis_dict_to_stage_position
 BeamSettings.from_odemis_dict = beam_settings_from_odemis_dict
 FibsemDetectorSettings.from_odemis_dict = detector_settings_from_odemis_dict
 MicroscopeState.from_odemis_dict = odemis_md_to_microscope_state
+FibsemImage.from_odemis = from_odemis_image
 
 beam_type_to_odemis = {
     BeamType.ELECTRON: "electron",
@@ -166,21 +211,23 @@ class OdemisMicroscope(FibsemMicroscope):
         # stage
         self.stage: model.Actuator = model.getComponent(role="stage-bare")
 
-        # setup electron beam, det
-        self.electron_beam = model.getComponent(role="e-beam")
-        self.electron_det = model.getComponent(role="se-detector")
+        # # setup electron beam, det
+        # self.electron_beam = model.getComponent(role="e-beam")
+        # self.electron_det = model.getComponent(role="se-detector")
+        # self.electron_focus = model.getComponent(role="ebeam-focus")
 
-        # setup ion beam, det
-        self.ion_beam = model.getComponent(role="ion-beam")
-        self.ion_det = model.getComponent(role="se-detector-ion")
+        # # setup ion beam, det
+        # self.ion_beam = model.getComponent(role="ion-beam")
+        # self.ion_det = model.getComponent(role="se-detector-ion")
+        # self.ion_focus = model.getComponent(role="ion-focus")
 
-        # create streams
-        self.sem_stream = SEMStream(
-            "sem-stream", self.electron_det, self.electron_det.data, self.electron_beam
-        )
-        self.fib_stream = FIBStream(
-            "fib-stream", self.ion_det, self.ion_det.data, self.ion_beam
-        )
+        # # create streams
+        # self.sem_stream = SEMStream(
+        #     "sem-stream", self.electron_det, self.electron_det.data, self.electron_beam
+        # )
+        # self.fib_stream = FIBStream(
+        #     "fib-stream", self.ion_det, self.ion_det.data, self.ion_beam
+        # )
 
         logging.info("OdemisMicroscope initialized")
 
@@ -630,7 +677,8 @@ class OdemisMicroscope(FibsemMicroscope):
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         pdict = stage_position_to_odemis_dict(position)
-        self.stage.moveAbsSync(pdict)
+        f = self.stage.moveAbs(pdict)
+        f.result()
 
     def move_stage_relative(self, position: FibsemStagePosition, vertical: bool = False) -> None:
         pdict = stage_position_to_odemis_dict(position)
@@ -708,6 +756,13 @@ class OdemisMicroscope(FibsemMicroscope):
             / np.cos(np.deg2rad(90 - self.system.ion.column_tilt))
             * PERSPECTIVE_CORRECTION
         )  # TODO: MAGIC NUMBER, 90 - fib tilt
+
+        # manually calculate the dx, dy, dz # TODO: test
+        # theta = self.get_stage_position().t # rad
+        # dy = z_move * np.sin(theta)
+        # dz = z_move / np.cos(theta)
+        # stage_position = FibsemStagePosition(x=dx, y=dy, z=dz)
+        # self.move_stage_relative(stage_position)
 
         # TODO: do this manually without autoscript in raw coordinates
         stage_position = FibsemStagePosition(
@@ -794,15 +849,13 @@ class OdemisMicroscope(FibsemMicroscope):
         # perspective tilt adjustment (difference between perspective view and sample coordinate system)
         if beam_type == BeamType.ELECTRON:
             perspective_tilt_adjustment = -corrected_pretilt_angle
-            SCALE_FACTOR = 1.0  # 0.78342  # patented technology
         elif beam_type == BeamType.ION:
             perspective_tilt_adjustment = (
                 -corrected_pretilt_angle - stage_tilt_flat_to_ion
             )
-            SCALE_FACTOR = 1.0
 
         # the amount the sample has to move in the y-axis
-        y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
+        y_sample_move = expected_y / np.cos(
             stage_tilt + perspective_tilt_adjustment
         )
 

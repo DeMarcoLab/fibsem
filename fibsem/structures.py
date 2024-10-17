@@ -1508,15 +1508,20 @@ class FibsemImageMetadata:
                 settings["microscope_state"]
             )
 
+        # the system settings are optional
+        system_dict = settings.get("system", {})
+        system_settings = None
+        if system_dict:
+            system_settings = SystemSettings.from_dict(system_dict)
+
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
             version=version,
             pixel_size=pixel_size,
             microscope_state=microscope_state,
-            # detector_settings=detector_settings, # TODO: remove this
             user=FibsemUser.from_dict(settings.get("user", {})),
             experiment=FibsemExperiment.from_dict(settings.get("experiment", {})),
-            system=SystemSettings.from_dict(settings.get("system", {})),
+            system=system_settings
         )
         return metadata
 
