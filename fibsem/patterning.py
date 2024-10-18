@@ -1268,7 +1268,8 @@ def get_protocol_from_stages(stages: list):
         # join two dicts union
         ddict = {**stage.to_dict()["milling"], 
             **stage.to_dict()["pattern"]["protocol"], 
-            "type": stage.to_dict()["pattern"]["name"]}
+            "type": stage.to_dict()["pattern"]["name"],
+            "name": stage.name}
         protocol["stages"].append(deepcopy(ddict))
 
     return protocol
