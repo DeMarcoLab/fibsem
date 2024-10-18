@@ -868,6 +868,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # set default coordinate system
         self.stage.set_default_coordinate_system(self._default_stage_coordinate_system)
         # TODO: set default move settings, is this dependent on the stage type?
+        self._default_application_file = "Si"
 
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
@@ -1639,6 +1640,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_device(self.milling_channel.value)
         self.connection.patterning.set_default_beam_type(self.milling_channel.value)
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
+        self._default_application_file = mill_settings.application_file
         self.connection.patterning.mode = mill_settings.patterning_mode
         self.connection.patterning.clear_patterns()  # clear any existing patterns       
         self.set("hfw", mill_settings.hfw, self.milling_channel)
@@ -1794,10 +1796,6 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             create_pattern_function = patterning_api.create_rectangle
         
-        # if pattern_settings.cleaning_cross_section:
-        #     logging.warning(f"Deprecated: cleaning_cross_section is deprecated. Use cross_section instead. This will be removed in a future release.")    
-        #     create_pattern_function = patterning_api.create_cleaning_cross_section
-
         
             
         # create pattern
@@ -1885,6 +1883,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
         """
+        self.connection.patterning.set_default_application_file("Si")
         pattern = self.connection.patterning.create_circle(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
@@ -1892,6 +1891,10 @@ class ThermoMicroscope(FibsemMicroscope):
             inner_diameter = 0,
             depth=pattern_settings.depth,
         )
+        pattern.application_file = "Si"
+        pattern.overlap_r = 0.8
+        pattern.overlap_t = 0.8
+        self.connection.patterning.set_default_application_file(self._default_application_file)
 
         # set exclusion
         pattern.is_exclusion_zone = pattern_settings.is_exclusion
@@ -1905,6 +1908,7 @@ class ThermoMicroscope(FibsemMicroscope):
         outer_diameter = 2*pattern_settings.radius
         inner_diameter = outer_diameter - 2*pattern_settings.thickness
 
+        self.connection.patterning.set_default_application_file("Si")
         pattern = self.connection.patterning.create_circle(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
@@ -1912,6 +1916,10 @@ class ThermoMicroscope(FibsemMicroscope):
             inner_diameter = inner_diameter,
             depth=pattern_settings.depth,
         )
+        pattern.application_file = "Si"
+        pattern.overlap_r = 0.8
+        pattern.overlap_t = 0.8
+        self.connection.patterning.set_default_application_file(self._default_application_file)
 
         # set exclusion
         pattern.is_exclusion_zone = pattern_settings.is_exclusion
