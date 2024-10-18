@@ -217,4 +217,4 @@ def draw_milling_patterns(
         except ImportError:
             logging.debug("Scalebar not available, skipping")
 
-    return fig
+    return fig, ax

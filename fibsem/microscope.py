@@ -1816,6 +1816,9 @@ class ThermoMicroscope(FibsemMicroscope):
         # set pattern rotation
         pattern.rotation = pattern_settings.rotation
 
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
+
         # set scan direction
         available_scan_directions = self.get_available_values("scan_direction")        
     
@@ -1890,6 +1893,9 @@ class ThermoMicroscope(FibsemMicroscope):
             depth=pattern_settings.depth,
         )
 
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
+
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
 
         return pattern
@@ -1906,6 +1912,9 @@ class ThermoMicroscope(FibsemMicroscope):
             inner_diameter = inner_diameter,
             depth=pattern_settings.depth,
         )
+
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
 

@@ -906,6 +906,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     passes: int = 0
     time: float = 0.0
+    is_exclusion: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -920,6 +921,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             "cross_section": self.cross_section.name,
             "passes": self.passes,
             "time": self.time,
+            "is_exclusion": self.is_exclusion,
         }
 
     @staticmethod
@@ -936,6 +938,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             cross_section=CrossSectionPattern[data.get("cross_section", "Rectangle")],
             passes=data.get("passes", 0),
             time=data.get("time", 0.0),
+            is_exclusion=data.get("is_exclusion", False),
         )
 
 @dataclass
@@ -975,6 +978,7 @@ class FibsemCircleSettings(FibsemPatternSettings):
     start_angle: float = 0.0
     end_angle: float = 360.0
     rotation: float = 0.0           # annulus -> thickness !=0
+    is_exclusion: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -986,6 +990,7 @@ class FibsemCircleSettings(FibsemPatternSettings):
             "end_angle": self.end_angle,
             "rotation": self.rotation,
             "thickness": self.thickness,
+            "is_exclusion": self.is_exclusion,
         }
 
     @staticmethod
@@ -999,6 +1004,7 @@ class FibsemCircleSettings(FibsemPatternSettings):
             end_angle=data.get("end_angle", 360),
             rotation=data.get("rotation", 0),
             thickness=data.get("thickness", 0),
+            is_exclusion=data.get("is_exclusion", False),
         )
 
 

@@ -1219,7 +1219,8 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
         milling_current=protocol["milling_current"], 
         hfw=float(protocol["hfw"]),
         application_file=protocol.get("application_file", "Si"),
-        preset=protocol.get("preset", "30 keV; 20 nA"))
+        preset=protocol.get("preset", "30 keV; 20 nA"),
+        patterning_mode=protocol.get("patterning_mode", "Serial"))
 
     # milling stage name
     name = protocol.get("name", f"{key.title()} {i+1:02d}")
