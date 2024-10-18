@@ -27,7 +27,7 @@ def check_keys(protocol: dict, required_keys: List[str]) -> bool:
 # "width": {"type": "float", "min": 0, "max": 1000, "default": 100, "description": "Width of the rectangle"}
 # "cross_section": {"type": "str", "options": [cs.name for cs in CrossSectionPattern], "default": "Rectangle", "description": "Cross section of the milling pattern"}
 
-    
+
 REQUIRED_KEYS = {
     "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section", "time"),
     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
@@ -40,7 +40,8 @@ REQUIRED_KEYS = {
         "offset",
         "depth",
         "cross_section",
-        "time", 
+        "time",
+        "fillet", 
     ),
     "Horseshoe": (
         "lamella_width",
@@ -293,14 +294,19 @@ class TrenchPattern(BasePattern):
         lower_trench_height = trench_height * min(protocol["size_ratio"], 1.0)
         offset = protocol["offset"]
         depth = protocol["depth"]
-        use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
         time = protocol.get("time", 0.0)
+        fillet = protocol.get("fillet", 0.0)
 
         centre_upper_y = point.y + (
             lamella_height / 2 + upper_trench_height / 2 + offset
         )
         centre_lower_y = point.y - (lamella_height / 2 + lower_trench_height / 2 + offset)
+
+        # fillet radius on the corners
+        fillet = np.clip(fillet, 0, trench_height / 2)
+        if fillet > 0:
+            lamella_width = lamella_width - 2 * fillet # reduce the width by the fillet size
 
         # mill settings
         lower_pattern_settings = FibsemRectangleSettings(
@@ -309,7 +315,6 @@ class TrenchPattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_lower_y,
-            cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="BottomToTop",
             cross_section = cross_section,
             time = time
@@ -322,13 +327,90 @@ class TrenchPattern(BasePattern):
             depth=depth,
             centre_x=point.x,
             centre_y=centre_upper_y,
-            cleaning_cross_section=use_cleaning_cross_section,
             scan_direction="TopToBottom",
             cross_section = cross_section,
             time = time
         )
 
         self.patterns = [lower_pattern_settings, upper_pattern_settings]
+
+
+        # add fillet to the corners
+        if fillet > 0:            
+            left_x_pos = point.x - lamella_width / 2
+            right_x_pos = point.x + lamella_width / 2
+
+            lower_y_pos = centre_lower_y + lower_trench_height / 2 - fillet
+            top_y_pos = centre_upper_y - upper_trench_height / 2 + fillet
+
+            lower_left_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth/2,
+                centre_x=point.x - lamella_width / 2,
+                centre_y=centre_lower_y + lower_trench_height / 2 - fillet * 1.5,
+            )
+            lower_right_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth/2,
+                centre_x=point.x + lamella_width / 2,
+                centre_y=centre_lower_y + lower_trench_height / 2 - fillet * 1.5,
+            )
+
+            # fill the remaining space with rectangles
+            lower_left_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=lower_trench_height - fillet,
+                depth=depth,
+                centre_x=left_x_pos - fillet / 2,
+                centre_y=centre_lower_y - fillet / 2,
+                cross_section = cross_section,
+                scan_direction="BottomToTop",
+
+            )
+            lower_right_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=lower_trench_height - fillet,
+                depth=depth,
+                centre_x=right_x_pos + fillet / 2,
+                centre_y=centre_lower_y - fillet / 2,
+                cross_section = cross_section,
+                scan_direction="BottomToTop",
+            )
+
+            top_left_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth,
+                centre_x=point.x - lamella_width / 2,
+                centre_y=centre_upper_y - upper_trench_height / 2 + fillet * 1.5,
+            )
+            top_right_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth,
+                centre_x=point.x + lamella_width / 2,
+                centre_y=centre_upper_y - upper_trench_height / 2 + fillet * 1.5,
+            )
+
+            top_left_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=upper_trench_height - fillet,
+                depth=depth,
+                centre_x=left_x_pos - fillet / 2,
+                centre_y=centre_upper_y + fillet / 2,
+                cross_section = cross_section,
+                scan_direction="TopToBottom",
+            )
+            top_right_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=upper_trench_height - fillet,
+                depth=depth,
+                centre_x=right_x_pos + fillet / 2,
+                centre_y=centre_upper_y + fillet / 2,
+                cross_section = cross_section,
+                scan_direction="TopToBottom",
+            )
+
+            self.patterns.extend([lower_left_fill, lower_right_fill, top_left_fill, top_right_fill, lower_left_fillet, lower_right_fillet, top_left_fillet, top_right_fillet])
+
         self.protocol = protocol
         self.point = point
         return self.patterns
