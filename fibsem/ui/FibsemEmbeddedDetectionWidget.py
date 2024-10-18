@@ -171,7 +171,11 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                                                     name="mask", 
                                                     opacity=0.3,
                                                     blending="additive", 
-                                                    colormap=CLASS_COLORS)
+                                                    )
+        if hasattr(self._mask_layer, "colormap"):
+            self._mask_layer.colormap = CLASS_COLORS
+        else:
+            self._mask_layer.color = CLASS_COLORS
 
         # add points to viewer
         data = []

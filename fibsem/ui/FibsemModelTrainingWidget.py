@@ -168,8 +168,11 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
                     name="Mask",    
                     opacity=0.7,
                     blending="additive",
-                    colormap=CLASS_COLORS,
                 )
+                if hasattr(self._label_layer, "colormap"):
+                    self._label_layer.colormap = CLASS_COLORS
+                else:
+                    self._label_layer.color = CLASS_COLORS
             try:
                 self._pred_layer.data = info["pred"]
             except:
@@ -178,8 +181,11 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
                     name="Prediction",
                     opacity=0.7,
                     blending="additive",
-                    colormap=CLASS_COLORS,
                 )
+                if hasattr(self._pred_layer, "colormap"):
+                    self._pred_layer.colormap = CLASS_COLORS
+                else:
+                    self._pred_layer.color = CLASS_COLORS
 
     def train_model_finished(self):
         msg = "Train Model Finished!"

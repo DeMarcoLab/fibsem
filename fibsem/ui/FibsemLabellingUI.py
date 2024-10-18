@@ -269,8 +269,11 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
             name="Mask",
             opacity=CONFIGURATION["UI"]["MASK_OPACITY"],
             blending="additive",
-            colormap=CONFIGURATION["LABELS"]["COLOR_MAP"],
         )
+        if hasattr(self.mask_layer, "colormap"):
+            self.mask_layer.colormap=CONFIGURATION["LABELS"]["COLOR_MAP"],
+        else:
+            self.mask_layer.color=CONFIGURATION["LABELS"]["COLOR_MAP"]
 
         self.viewer.dims.events.current_step.connect(self.update_image)
         self.update_viewer_to_image(0)
@@ -507,8 +510,11 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
                 name="SAM Mask",
                 opacity=0.7,
                 blending="additive",
-                colormap={0: "black", 1: "white"},
             )
+            if hasattr(self.sam_mask_layer, "colormap"):
+                self.sam_mask_layer.colormap={0: "black", 1: "white"},
+            else:
+                self.sam_mask_layer.color={0: "black", 1: "white"}
 
         self.set_sam_active()
 

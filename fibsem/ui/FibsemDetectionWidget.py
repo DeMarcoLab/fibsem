@@ -325,6 +325,10 @@ class FibsemDetectionWidgetUI(FibsemDetectionWidget.Ui_Form, QtWidgets.QDialog):
                                                       opacity=0.7,
                                                       blending="additive", 
                                                       colormap=CLASS_COLORS)
+            if hasattr(self._mask_layer, "colormap"):
+                self._mask_layer.colormap = CLASS_COLORS
+            else:
+                self._mask_layer.color = CLASS_COLORS
 
         # if the features layer already exists, remove the layer
         if "features" in self.viewer.layers:
