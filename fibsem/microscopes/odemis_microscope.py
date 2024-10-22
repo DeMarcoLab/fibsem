@@ -736,7 +736,7 @@ class OdemisMicroscope(FibsemMicroscope):
         return stage_position
 
     def vertical_move(
-        self, dy: float, dx: float = 0.0, static_wd: bool = True
+        self, dy: float, dx: float = 0.0, static_wd: bool = True, use_perspective: bool = True
     ) -> FibsemStagePosition:
         """Move the stage vertically by the specified amount."""
 
@@ -751,26 +751,21 @@ class OdemisMicroscope(FibsemMicroscope):
 
         # TODO: implement perspective correction
         PERSPECTIVE_CORRECTION = 0.9
-        z_move = (
-            dy
-            / np.cos(np.deg2rad(90 - self.system.ion.column_tilt))
-            * PERSPECTIVE_CORRECTION
+        z_move = dy
+        if use_perspective:
+            z_move = (
+                dy
+                / np.cos(np.deg2rad(90 - self.system.ion.column_tilt))
+                * PERSPECTIVE_CORRECTION
         )  # TODO: MAGIC NUMBER, 90 - fib tilt
 
-        # manually calculate the dx, dy, dz # TODO: test
-        # theta = self.get_stage_position().t # rad
-        # dy = z_move * np.sin(theta)
-        # dz = z_move / np.cos(theta)
-        # stage_position = FibsemStagePosition(x=dx, y=dy, z=dz)
-        # self.move_stage_relative(stage_position)
+        # manually calculate the dx, dy, dz
+        theta = self.get_stage_position().t # rad
+        dy = z_move * np.sin(theta)
+        dz = z_move / np.cos(theta)
+        stage_position = FibsemStagePosition(x=dx, y=dy, z=dz)
+        self.move_stage_relative(stage_position)
 
-        # TODO: do this manually without autoscript in raw coordinates
-        stage_position = FibsemStagePosition(
-            x=dx, z=z_move, coordinate_system="Specimen"
-        )
-
-        # move stage
-        self.move_stage_relative(stage_position, vertical = True)
 
         if static_wd:
             self.set(
