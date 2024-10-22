@@ -252,11 +252,20 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         
         log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
         self.movement_notification_signal.emit("Moving stage ")
-        # eucentric is only supported for ION beam
-        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Vertical:
-            self.microscope.vertical_move(dx=point.x, dy=-point.y
-            )
 
+        # vertical movements correct beam coincidence, stable movements maintain it
+        if self.movement_mode is MovementMode.Vertical:
+            if beam_type is BeamType.ION:
+                self.microscope.vertical_move(dx=point.x, dy=point.y) # only vertical movement
+            if beam_type is BeamType.ELECTRON:
+                # stable move -> vertical move
+                self.microscope.stable_move(
+                    dx=point.x,
+                    dy=point.y,
+                    beam_type=beam_type,
+                )
+                # invert vertical movement to maintain coincidence
+                self.microscope.vertical_move(dx=0, dy=-point.y, use_perspective=False) 
         else:
             # corrected stage movement
             self.microscope.stable_move(

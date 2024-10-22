@@ -191,7 +191,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def vertical_move(self, dy: float, dx: float = 0, static_wd: bool = True) -> None:
+    def vertical_move(self, dy: float, dx: float = 0, static_wd: bool = True, use_perspective: bool = True) -> None:
         pass
 
     def move_flat_to_beam(self, beam_type: BeamType, _safe:bool = True) -> None:
@@ -1194,6 +1194,7 @@ class ThermoMicroscope(FibsemMicroscope):
         dy: float,
         dx: float = 0.0,
         static_wd: bool = True,
+        use_perspective: bool = True,
     ) -> None:
         """ Move the stage vertically to correct coincidence point
 
@@ -1223,28 +1224,31 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # TODO: implement perspective correction
         PERSPECTIVE_CORRECTION = 0.9
-        z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy
+        if use_perspective: 
+            z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
 
         # TODO: do this manually without autoscript in raw coordinates
         # TODO: test if this results in the same movement
         # manually calculate the dx, dy, dz 
-        # theta = self.get_stage_position().t # rad
-        # dy = z_move * np.sin(theta)
-        # dz = z_move / np.cos(theta)
-        # logging.debug(f"dx: {dx}, dy: {dy}, dz: {dz}")
-        # stage_position = FibsemStagePosition(x=dx, y=dy, z=z_move, coordinate_system="RAW")
+        theta = self.get_stage_position().t # rad
+        dy = z_move * np.sin(theta)
+        dz = z_move / np.cos(theta)
+        stage_position = FibsemStagePosition(x=dx, y=dy, z=dz, coordinate_system="RAW")
+        logging.info(f"Vertical movement: {stage_position}")
+        self.move_stage_relative(stage_position) # NOTE: this seems to be a bit less than previous... -> perspective correction?
+        
+        # stage_position = FibsemStagePosition(
+        #     x=dx,
+        #     z=z_move, 
+        #     coordinate_system="Specimen"
+        # )
 
-        stage_position = FibsemStagePosition(
-            x=dx,
-            z=z_move, 
-            coordinate_system="Specimen"
-        )
-
-        # move stage
-        move_settings = MoveSettings(link_z_y=True)
-        autoscript_position = stage_position.to_autoscript_position(self.stage_is_compustage)
-        autoscript_position.coordinate_system = CoordinateSystem.SPECIMEN 
-        self.stage.relative_move(autoscript_position, move_settings)
+        # # move stage
+        # move_settings = MoveSettings(link_z_y=True)
+        # autoscript_position = stage_position.to_autoscript_position(self.stage_is_compustage)
+        # autoscript_position.coordinate_system = CoordinateSystem.SPECIMEN 
+        # self.stage.relative_move(autoscript_position, move_settings)
 
         # restore working distance to adjust for microscope compenstation
         if static_wd and not self.stage_is_compustage:
@@ -3794,6 +3798,7 @@ class TescanMicroscope(FibsemMicroscope):
         dy: float,
         dx: float = 0.0,
         static_wd: bool = True,
+        use_perspective: bool = True 
     ) -> None:
         """
         Move the stage vertically to correct eucentric point
@@ -5589,7 +5594,7 @@ class DemoMicroscope(FibsemMicroscope):
         return stage_position
 
 
-    def vertical_move(self, dy: float, dx:float = 0.0, static_wd: bool=True) -> FibsemStagePosition:
+    def vertical_move(self, dy: float, dx:float = 0.0, static_wd: bool=True, use_perspective: bool = True) -> FibsemStagePosition:
         """Move the stage vertically by the specified amount."""
         # confirm stage is enabled
         _check_stage(self.system)
@@ -5605,7 +5610,10 @@ class DemoMicroscope(FibsemMicroscope):
 
         # TODO: implement perspective correction
         PERSPECTIVE_CORRECTION = 0.9
-        z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy
+        if use_perspective: 
+            z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
+
 
         # TODO: do this manually without autoscript in raw coordinates
         stage_position = FibsemStagePosition(
