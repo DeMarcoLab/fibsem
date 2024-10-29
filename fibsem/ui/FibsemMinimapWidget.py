@@ -132,8 +132,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.comboBox_pattern_overlay.addItems(milling_patterns)
         if "trench" in milling_patterns:
             self.comboBox_pattern_overlay.setCurrentText("trench")
-        elif "lamella" in milling_patterns:
-            self.comboBox_pattern_overlay.setCurrentText("lamella")
+        elif "mill_rough" in milling_patterns:
+            self.comboBox_pattern_overlay.setCurrentText("mill_rough")
         self.comboBox_pattern_overlay.currentIndexChanged.connect(self._update_pattern_overlay)
         self.checkBox_pattern_overlay.stateChanged.connect(self._update_pattern_overlay)
 

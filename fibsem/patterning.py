@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union
@@ -1200,6 +1201,8 @@ PROTOCOL_MILL_MAP = {
     "MillRoughCut": TrenchPattern,
     "MillRegularCut": TrenchPattern,
     "MillPolishingCut": TrenchPattern,
+    "mill_rough": TrenchPattern,
+    "mill_polishing": TrenchPattern,
 
 }
 
@@ -1252,9 +1255,6 @@ def get_milling_stages(key, protocol, point: Union[Point, List[Point]] = Point()
     else:
         stages = [_get_stage(key, protocol[key], point=point)]
     return stages
-
-
-from copy import deepcopy
 
 
 def get_protocol_from_stages(stages: list):
