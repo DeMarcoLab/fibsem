@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Tuple
 import numpy as np
 import tifffile as tff
 import fibsem
@@ -467,6 +467,9 @@ class FibsemRectangle:
         @classmethod
         def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
             return cls(rect.left, rect.top, rect.width, rect.height)
+
+
+
 
 
 @dataclass
@@ -1975,3 +1978,35 @@ class FibsemGasInjectionSettings:
             "insert_position": self.insert_position,
         }
 
+
+def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->Tuple[FibsemRectangle, bool]:
+    from fibsem import conversions
+    pixelsize = image.metadata.pixel_size.x
+    
+    fiducial_centre.y = -fiducial_centre.y
+    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
+        fiducial_centre, pixelsize
+    )
+
+    rcx = fiducial_centre_px.x / image.metadata.image_settings.resolution[0] + 0.5
+    rcy = fiducial_centre_px.y / image.metadata.image_settings.resolution[1] + 0.5
+
+    fiducial_length_px = (
+        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5 # SCALE_FACTOR
+    )
+    h_offset = fiducial_length_px / image.metadata.image_settings.resolution[0] / 2
+    v_offset = fiducial_length_px / image.metadata.image_settings.resolution[1] / 2
+
+    left = rcx - h_offset
+    top = rcy - v_offset
+    width = 2 * h_offset
+    height = 2 * v_offset
+
+    if left < 0 or (left + width) > 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+
+    fiducial_area = FibsemRectangle(left, top, width, height)
+
+    return fiducial_area, flag

@@ -16,14 +16,13 @@ from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                MicroscopeSettings,
-                               Point, CrossSectionPattern)
+                               Point, CrossSectionPattern, calculate_fiducial_area_v2)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.utils import (_draw_patterns_in_napari, _remove_all_layers, 
                             convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, 
                             validate_pattern_placement,
-                            _get_directory_ui,_get_file_ui, 
-                            calculate_fiducial_area_v2)
+                            _get_directory_ui,_get_file_ui)
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
