@@ -673,9 +673,9 @@ class OdemisMicroscope(FibsemMicroscope):
         f = self.stage.moveAbs(pdict)
         f.result()
 
-    def move_stage_relative(self, position: FibsemStagePosition, vertical: bool = False) -> None:
+    def move_stage_relative(self, position: FibsemStagePosition) -> None:
         pdict = stage_position_to_odemis_dict(position)
-        f = self.stage.moveRel(pdict, vertical=vertical)
+        f = self.stage.moveRel(pdict)
         f.result()
 
     # NOTE: this is an exact copy of the stable_move method from the ThermoMicroscope class, it can be consolidated
