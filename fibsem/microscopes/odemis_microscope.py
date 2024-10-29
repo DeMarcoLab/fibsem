@@ -428,8 +428,11 @@ class OdemisMicroscope(FibsemMicroscope):
         # beam properties
         if key == "working_distance":
             self.connection.set_working_distance(value, channel)
-            if beam_type is BeamType.ELECTRON:
-                self.set("stage_link", True)  # link the specimen stage for electron
+            try: # TODO: remove linking once testing is done
+                if beam_type is BeamType.ELECTRON:
+                    self.set("stage_link", True)  # link the specimen stage for electron
+            except Exception as e:
+                logging.info(f"Failed to link stage: {e}")
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return
         if key == "current":

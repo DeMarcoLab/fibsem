@@ -2726,8 +2726,11 @@ class ThermoMicroscope(FibsemMicroscope):
         # beam properties
         if key == "working_distance":
             beam.working_distance.value = value
-            if beam_type is BeamType.ELECTRON:
-                self.set("stage_link", True)  # link the specimen stage for electron
+            try: # TODO: remove linking here once testing is done
+                if beam_type is BeamType.ELECTRON:
+                    self.set("stage_link", True)  # link the specimen stage for electron
+            except Exception as e:
+                logging.info(f"Could not link stage: {e}")
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return 
         if key == "current":
@@ -3785,7 +3788,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         # adjust working distance to compensate for stage movement
         self.connection.SEM.Optics.SetWD(wd)
-        # self.connection.specimen.stage.link() # TODO how to link for TESCAN?
 
         return
 
