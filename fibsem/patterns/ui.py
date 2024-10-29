@@ -70,7 +70,7 @@ def generate_blank_image(
     image = FibsemImage(
         data=np.zeros((resolution[1], resolution[0]), dtype=np.uint8),
         metadata=FibsemImageMetadata(
-            image_settings=ImageSettings(hfw=hfw),
+            image_settings=ImageSettings(hfw=hfw, resolution=resolution),
             microscope_state=None,
             pixel_size=pixel_size,
         ),

@@ -23,7 +23,7 @@ from fibsem.ui.utils import (_draw_patterns_in_napari, _remove_all_layers,
                             convert_pattern_to_napari_circle, convert_pattern_to_napari_rect, 
                             validate_pattern_placement,
                             _get_directory_ui,_get_file_ui, 
-                            _calculate_fiducial_area_v2)
+                            calculate_fiducial_area_v2)
 from napari.qt.threading import thread_worker
 from fibsem.ui import _stylesheets
 
@@ -623,7 +623,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def valid_pattern_location(self, stage_pattern: FibsemMillingStage) -> bool:
 
         if stage_pattern.name == "Fiducial":
-            _,flag = _calculate_fiducial_area_v2(image=self.image_widget.ib_image, fiducial_centre = deepcopy(stage_pattern.point), fiducial_length = stage_pattern.patterns[0].height)
+            _,flag = calculate_fiducial_area_v2(image=self.image_widget.ib_image, fiducial_centre = deepcopy(stage_pattern.point), fiducial_length = stage_pattern.patterns[0].height)
             
             if flag:
                 napari.utils.notifications.show_warning(f"Fiducial reduce area is not within the image.")

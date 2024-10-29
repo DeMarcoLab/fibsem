@@ -956,7 +956,7 @@ def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: List[Fibse
     
     return fig
 
-def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->Tuple[FibsemRectangle, bool]:
+def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->Tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
     
     fiducial_centre.y = -fiducial_centre.y
@@ -968,7 +968,7 @@ def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fidu
     rcy = fiducial_centre_px.y / image.metadata.image_settings.resolution[1] + 0.5
 
     fiducial_length_px = (
-        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 2 # SCALE_FACTOR
+        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5 # SCALE_FACTOR
     )
     h_offset = fiducial_length_px / image.metadata.image_settings.resolution[0] / 2
     v_offset = fiducial_length_px / image.metadata.image_settings.resolution[1] / 2
