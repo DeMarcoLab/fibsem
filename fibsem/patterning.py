@@ -290,9 +290,10 @@ class TrenchPattern(BasePattern):
         lamella_width = protocol["lamella_width"]
         lamella_height = protocol["lamella_height"]
         trench_height = protocol["trench_height"]
-        upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
-        lower_trench_height = trench_height * min(protocol["size_ratio"], 1.0)
-        offset = protocol["offset"]
+        size_ratio = protocol.get("size_ratio", 1.0)
+        upper_trench_height = trench_height / max(size_ratio, 1.0)
+        lower_trench_height = trench_height * min(size_ratio, 1.0)
+        offset = protocol.get("offset", 0)
         depth = protocol["depth"]
         use_cleaning_cross_section = protocol.get("cleaning_cross_section", False)
         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
@@ -1080,7 +1081,7 @@ __PATTERNS__ = [
 
 def get_pattern(name: str) -> BasePattern:
     for pattern in __PATTERNS__:
-        if pattern.name == name:
+        if pattern.name.lower() == name.lower():
             return pattern()
 
     raise ValueError(f"Pattern {name} not found.")
