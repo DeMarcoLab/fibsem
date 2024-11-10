@@ -42,7 +42,8 @@ patterns:
     size_ratio: 1.0
     depth: 2.0e-6
     cleaning_cross_section: false
-    time: 0 # means auto
+    time: 0     # means auto
+    fillet: 0   # no fillet radius
   Horseshoe:
     lamella_width: 40.0e-6
     lamella_height: 10.0e-6
