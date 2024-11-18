@@ -144,7 +144,9 @@ def mill_stages(microscope: FibsemMicroscope, stages: List[FibsemMillingStage], 
         mill_stage(microscope=microscope, stage=stage, asynch=asynch)
 
     # finish milling (restore imaging conditions)
-    finish_milling(microscope)
+    finish_milling(microscope,
+                   imaging_current=microscope.system.ion.beam.beam_current,
+                   imaging_voltage=microscope.system.ion.beam.voltage)
 
 def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: bool=False):
 
