@@ -13,7 +13,8 @@ from scipy.ndimage import median_filter
 
 from fibsem import acquire, constants
 from fibsem import config as cfg
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.microscope import FibsemMicroscope
+from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.structures import (
     BeamSettings,
     BeamType,
@@ -369,11 +370,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
         self.spinBox_beam_scan_rotation.setValue(np.rad2deg(beam_settings.scan_rotation))
         
-        self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
-        self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
-        self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
-        self.stigmation_x.setValue(beam_settings.stigmation.x)
-        self.stigmation_y.setValue(beam_settings.stigmation.y)
+        if beam_settings.working_distance is not None:
+            self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
+        if beam_settings.shift is not None:
+            self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
+            self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
+        if beam_settings.stigmation is not None:
+            self.stigmation_x.setValue(beam_settings.stigmation.x)
+            self.stigmation_y.setValue(beam_settings.stigmation.y)
         
         self.update_ui_saving_settings()
 

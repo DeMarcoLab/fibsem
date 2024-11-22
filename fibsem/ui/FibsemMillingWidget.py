@@ -12,7 +12,8 @@ from typing import List
 from fibsem import config as cfg
 from fibsem import constants, conversions, milling, patterning, utils
 from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
-                               TescanMicroscope, ThermoMicroscope)
+                            ThermoMicroscope)
+from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                MicroscopeSettings,
