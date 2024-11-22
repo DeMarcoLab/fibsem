@@ -1,14 +1,12 @@
-import copy
 import datetime
 import logging
 import os
 import sys
 import threading
 import time
-import warnings
 from copy import deepcopy
 from queue import Queue
-from typing import List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 
@@ -17,16 +15,16 @@ from fibsem.microscope import (
     FibsemMicroscope,
     _check_beam,
     _check_manipulator,
-    _check_stage,
     _check_sputter,
+    _check_stage,
 )
 
-_TESCAN_API_AVAILABLE = False
+TESCAN_API_AVAILABLE = False
 
 try:
-
+    import tescanautomation
     from tescanautomation import Automation
-    from tescanautomation.Common import Bpp
+    from tescanautomation.Common import Bpp, Detector
     from tescanautomation.DrawBeam import IEtching
     from tescanautomation.DrawBeam import Status as DBStatus
     from tescanautomation.SEM import HVBeamStatus as SEMStatus
@@ -39,7 +37,7 @@ try:
     sys.modules.pop("tescanautomation.pyside6gui.rc_GUI")
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
     sys.modules.pop("PySide6.QtCore")
-    _TESCAN_API_AVAILABLE = True
+    TESCAN_API_AVAILABLE = True
 except Exception as e:
     logging.debug(f"Automation (TESCAN) not installed. {e}")
 
@@ -67,6 +65,7 @@ from fibsem.structures import (
     Point,
     SystemSettings,
 )
+
 
 def printProgressBar(
     value, total, prefix="", suffix="", decimals=0, length=100, fill="█"
@@ -196,21 +195,14 @@ class TescanMicroscope(FibsemMicroscope):
     """
 
     def __init__(self, system_settings: SystemSettings, ip_address: str = None):
-        if _TESCAN_API_AVAILABLE == False:
+        if not TESCAN_API_AVAILABLE:
             raise ImportError("The TESCAN Automation API is not available. Please see the user guide for installation instructions.")
         
         if ip_address is None:
             ip_address = system_settings.info.ip_address
         
         # create microscope client
-        self.connection = Automation(ip_address)
-
-        # set up detectors                
-        detectors = self.connection.FIB.Detector.Enum()
-        self.ion_detector_active = detectors[1] # find the se detector?
-        self.connection.FIB.Detector.Set(Channel = 0, Detector= self.ion_detector_active)
-        self.electron_detector_active = self.connection.SEM.Detector.SESuitable()
-        self.connection.SEM.Detector.Set(Channel = 0, Detector = self.electron_detector_active)
+        self.connection: Automation 
         # TODO: rename to active_detector_beam_type
         # TODO: move to connect_to_microscope
 
@@ -250,8 +242,15 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info(f"Microscope client connecting to [{ip_address}:{port}]")
         self.connection = Automation(ip_address, port)
         logging.info(f"Microscope client connected to [{ip_address}:{port}]")
-        self.connection.SEM.Detector.Set(0, self.electron_detector_active, Bpp.Grayscale_8_bit)
-        image = self.connection.SEM.Scan.AcquireImageFromChannel(0, 1, 1, 100)
+
+        self._default_detector_names = {BeamType.ELECTRON: "E-T", BeamType.ION: "SE"}
+        self._active_detector: Dict[BeamType, Detector] = {}    
+
+        # TODO: use what the user specified in the configuration file
+        # set up detectors
+        self.set("detector_type", self._default_detector_names[BeamType.ELECTRON], BeamType.ELECTRON)
+        self.set("detector_type", self._default_detector_names[BeamType.ION], BeamType.ION) 
+        image = self.connection.SEM.Scan.AcquireImageFromChannel(0, 1, 1, 100) # TODO: find a better way to get system info
 
         # system info
         self.system.info.manufacturer = "TESCAN"
@@ -336,7 +335,9 @@ class TescanMicroscope(FibsemMicroscope):
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
         
-        self.connection.SEM.Detector.Set(0, self.electron_detector_active, Bpp.Grayscale_8_bit)
+        self.set("detector_type", 
+                 self._active_detector[BeamType.ELECTRON], 
+                 image_settings.beam_type)
 
         dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
         # resolution
@@ -439,7 +440,7 @@ class TescanMicroscope(FibsemMicroscope):
         # 1. assign the detector to a channel
         # 2. enable the channel for acquisition
         self.connection.FIB.Detector.Set(
-            0, self.ion_detector_active, Bpp.Grayscale_8_bit
+            0, self._active_detector[image_settings.beam_type], Bpp.Grayscale_8_bit
         )
 
         dwell_time = image_settings.dwell_time * constants.SI_TO_NANO
@@ -545,9 +546,7 @@ class TescanMicroscope(FibsemMicroscope):
         
         return image
 
-    def _get_presets(self):
-        presets = self.connection.FIB.Preset.Enum()	
-        return presets
+
 
     def acquire_chamber_image(self) -> FibsemImage:
         """Acquire an image of the chamber inside."""
@@ -606,17 +605,18 @@ class TescanMicroscope(FibsemMicroscope):
         """
         _check_beam(beam_type, self.system)
         logging.info(f"Running autocontrast on {beam_type.name}.")
-        if beam_type == BeamType.ELECTRON:
-            self.connection.SEM.Detector.AutoSignal(Detector=self.electron_detector_active)
-        if beam_type == BeamType.ION:
-            self.connection.FIB.Detector.AutoSignal(Detector=self.ion_detector_active)
+        self._get_beam(beam_type=beam_type).Detector.AutoSignal(Detector=self._active_detector[beam_type])
+        # if beam_type == BeamType.ELECTRON:
+        #     self.connection.SEM.Detector.AutoSignal(Detector=self._active_detector[beam_type])
+        # if beam_type == BeamType.ION:
+        #     self.connection.FIB.Detector.AutoSignal(Detector=self._active_detector[beam_type])
 
     
     def auto_focus(self, beam_type: BeamType) -> None:
         _check_beam(beam_type, self.system)
         if beam_type == BeamType.ELECTRON:
             logging.info("Running autofocus on electron beam.")
-            self.connection.SEM.AutoWDFine(self.electron_detector_active)
+            self.connection.SEM.AutoWDFine(self._active_detector[beam_type])
         else:
             logging.info("Auto focus is not supported for ion beam type.")
         return 
@@ -700,7 +700,7 @@ class TescanMicroscope(FibsemMicroscope):
             MicroscopeState: current microscope state
         """
 
-        if self.system.electron is True:
+        if self.system.electron.enabled is True:
             image_eb = self.last_image(BeamType.ELECTRON)
             if image_eb is not None:
                 electron_beam = BeamSettings(
@@ -720,7 +720,7 @@ class TescanMicroscope(FibsemMicroscope):
         else:
             electron_beam = BeamSettings(BeamType.ELECTRON)
         
-        if self.system.ion is True:
+        if self.system.ion.enabled is True:
             image_ib = self.last_image(BeamType.ION)
             if image_ib is not None:
                 ion_beam = BeamSettings(
@@ -1486,7 +1486,7 @@ class TescanMicroscope(FibsemMicroscope):
         print()  # new line on complete
         self.connection.Progress.Hide()
 
-    def finish_milling(self, imaging_current: float):
+    def finish_milling(self, imaging_current: float = None, imaging_voltage: float = None):
         """
         Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
 
@@ -1494,7 +1494,7 @@ class TescanMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         # """
         try:
-            self.connection.FIB.Preset.Activate("30 keV; 150 pA")
+            self.connection.FIB.Preset.Activate("30 keV; 150 pA") # TODO: restore the default preset?
             self.connection.DrawBeam.UnloadLayer()
             print("hello")
         except Exception as e:
@@ -1502,7 +1502,13 @@ class TescanMicroscope(FibsemMicroscope):
             pass
     
     def stop_milling(self):
-        pass
+        self.connection.DrawBeam.Stop()
+
+    def pause_milling(self):
+        self.connection.DrawBeam.Pause()
+
+    def resume_milling(self):
+        self.connection.DrawBeam.Resume()
 
     def cryo_deposition_v2(self, gis_settings: FibsemGasInjectionSettings):
         pass
@@ -2038,10 +2044,11 @@ class TescanMicroscope(FibsemMicroscope):
         # restore electron beam
         _check_beam(BeamType.ELECTRON, self.system)
         logging.info("restoring electron beam settings...")
-        self.connection.SEM.Optics.SetWD(
-            microscope_state.electron_beam.working_distance
-            * constants.METRE_TO_MILLIMETRE
-        )
+        if microscope_state.electron_beam.working_distance is not None:
+            self.connection.SEM.Optics.SetWD(
+                microscope_state.electron_beam.working_distance
+                * constants.METRE_TO_MILLIMETRE
+            )
 
         self.connection.SEM.Beam.SetCurrent(
             microscope_state.electron_beam.beam_current * constants.SI_TO_PICO
@@ -2080,6 +2087,42 @@ class TescanMicroscope(FibsemMicroscope):
         logging.info("microscope state restored")
         return
 
+    def _get_beam(self, beam_type: BeamType) -> Union[Automation.SEM, Automation.FIB]:
+        """Get the beam object for the given beam type."""
+        if not isinstance(beam_type, BeamType):
+            raise ValueError(f"Invalid beam type: {beam_type}")
+
+        if beam_type is BeamType.ELECTRON:
+            return self.connection.SEM
+        if beam_type is BeamType.ION:
+            return self.connection.FIB
+
+    def _get_presets(self, beam_type: BeamType) -> List[str]:
+        presets = self._get_beam(beam_type=beam_type).Preset.Enum()	
+        return presets
+
+    def _get_available_detectors(self, beam_type: BeamType) -> List[str]:
+        """Get a list of available detectors for the given beam type."""
+        detectors = []
+        if beam_type == BeamType.ELECTRON:
+            detectors = self.connection.SEM.Detector.Enum()
+        elif beam_type == BeamType.ION:
+            detectors = self.connection.FIB.Detector.Enum()
+        return detectors
+
+    def _get_detector(self, detector_type: Union[Detector, str], beam_type: BeamType) -> str:
+        """Get the detector object for the given detector type and beam type."""
+        if isinstance(detector_type, Detector):
+            detector_type = detector_type.name
+        
+        available_detectors = self._get_available_detectors(beam_type)
+        detector: Detector
+        for detector in available_detectors:
+            if detector_type == detector.name:
+                logging.debug(f"Found detector {detector.name}, index {detector.index}")
+                return detector
+        return None
+
     def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
         """Get a list of available values for a given key.
         Keys: plasma_gas, current, detector_type
@@ -2095,20 +2138,15 @@ class TescanMicroscope(FibsemMicroscope):
             if beam_type == BeamType.ION:
                 values = [20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.6e-9, 28.0e-9, 120e-9]
 
-        if key == "detector_type" and beam_type == BeamType.ELECTRON:
-            values = self.connection.SEM.Detector.Enum()
-            for i in range(len(values)):
-                values[i-1] = values[i-1].name 
-        if key == "detector_type" and beam_type == BeamType.ION:
-            values = self.connection.FIB.Detector.Enum()
-            for i in range(len(values)):
-                values[i-1] = values[i-1].name
+        if key == "detector_type":
+            detectors = self._get_available_detectors(beam_type=beam_type)
+            values = [detector.name for detector in detectors]
         
         if key == "detector_mode": 
-            values = None 
+            values = None  # TODO: this should be empty list?
 
         if key == "presets":
-            return self._get_presets()
+            return self._get_presets(beam_type=beam_type)
 
         if key == "scan_direction":
             values = ["Flyback", "RLE", "SpiralInsideOut", "SpiralOutsideIn", "ZigZag"]
@@ -2154,8 +2192,6 @@ class TescanMicroscope(FibsemMicroscope):
             shift = Point(values[0]*constants.MILLIMETRE_TO_METRE, values[1]*constants.MILLIMETRE_TO_METRE)
             return shift
         
-
-
         # system properties
         if key == "eucentric_height":
             if beam_type is BeamType.ELECTRON:
@@ -2197,22 +2233,19 @@ class TescanMicroscope(FibsemMicroscope):
         # detector properties
         if key == "detector_type":
             detector = beam.Detector.Get(Channel = 0) 
-            if detector is not None:
-                return detector.name
-            else: 
+            if detector is None: # QUERY: can this be None?
                 return None
-        if key == "detector_contrast":
-            if beam_type == BeamType.ELECTRON:
-                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
-            elif beam_type == BeamType.ION:
-                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
-            return contrast/100
-        if key == "detector_brightness":
-            if beam_type == BeamType.ELECTRON:
-                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
-            elif beam_type == BeamType.ION:
-                contrast, brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
-            return brightness/100
+            return detector.name
+         
+        if key in ["detector_contrast", "detector_brightness"]:
+            contrast, brightness = beam.Detector.GetGainBlack(
+                Detector=self._active_detector[beam_type]
+            )
+
+            if key == "detector_contrast":
+                return contrast / 100
+            if key == "detector_brightness":
+                return brightness / 100
         
         # manipulator properties
         if key == "manipulator_position":
@@ -2226,8 +2259,7 @@ class TescanMicroscope(FibsemMicroscope):
             return self.connection.Nanomanipulator.GetStatus(0)
 
         if key == "presets":
-            return self._get_presets()
-
+            return self._get_presets(beam_type=beam_type)
 
         # manufacturer properties
         if key == "manufacturer":
@@ -2260,26 +2292,30 @@ class TescanMicroscope(FibsemMicroscope):
             _check_beam(beam_type, self.system)
 
         if key == "working_distance":
-            if beam_type == BeamType.ELECTRON:
+            if beam_type is BeamType.ION:
+                logging.warning(f"Setting working distance directly for {beam_type} is not supported by Tescan API")
+                return
+            if beam_type is BeamType.ELECTRON:
                 beam.Optics.SetWD(value * constants.METRE_TO_MILLIMETRE)
                 logging.info(f"Electron beam working distance set to {value} m.")
-            else: 
-                logging.info("Setting working distance for ion beam is not supported by Tescan API.")
             return
         if key == "current":
-            if beam_type == BeamType.ELECTRON:
+            if beam_type is BeamType.ION:
+                logging.warning(f"Setting current directly for {beam_type} is not supported by Tescan API, please use presets instead.") 
+                return
+            if beam_type is BeamType.ELECTRON:
                 beam.Beam.SetCurrent(value * constants.SI_TO_PICO)
                 logging.info(f"Electron beam current set to {value} A.")
-            else: 
-                logging.warning("Setting current for ion beam is not supported by Tescan API, please use the native microscope interface.")
             return
         if key == "voltage":
-            if beam_type == BeamType.ELECTRON:
+            if beam_type is BeamType.ION:
+                logging.warning(f"Setting voltage directly for {beam_type} is not supported by Tescan API, please use presets instead.") 
+                return
+            if beam_type is BeamType.ELECTRON:
                 beam.Beam.SetVoltage(value)
                 logging.info(f"Electron beam voltage set to {value} V.")
-            else:
-                logging.warning("Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
             return
+
         if key == "hfw":
             beam.Optics.SetViewfield(value * constants.METRE_TO_MILLIMETRE)
             logging.info(f"{beam_type.name} HFW set to {value} m.")
@@ -2302,52 +2338,51 @@ class TescanMicroscope(FibsemMicroscope):
         
         # detector control
         if key == "detector_type":
-            if beam_type == BeamType.ELECTRON:
-                self.electron_detector_active = value
-                beam.Detector.Set(Channel = 0, Detector = value)
-                self.electron_detector_active = beam.Detector.Get(Channel = 0)
-                logging.info(f"{beam_type} detector type set to {value}.")
+            detector = self._get_detector(value, beam_type)
+            if detector is None:
+                logging.warning(f"Detector {value} not found for {beam_type}.")
                 return
-            elif beam_type == BeamType.ION:
-                self.ion_detector_active = value
-                beam.Detector.Set(Channel = 0, Detector = value)
-                self.ion_detector_active = beam.Detector.Get(Channel = 0)
-                logging.info(f"{beam_type} detector type set to {value}.")
-                return
+            beam.Detector.Set(Channel = 0, Detector = detector)
+            self._active_detector[beam_type] = detector
+            logging.debug(f"{beam_type.name} detector type set to {value}.")
+            return
+
+        if key == "detector_mode":
+            logging.debug("Setting detector mode not supported by Tescan API.")
+            return
+
         if key in ["detector_brightness", "detector_contrast"]:
-            _check_beam(beam_type, self.system)
-            if key == "detector_brightness":
-                if 0 <= value <= 1:
-                    if beam_type == BeamType.ELECTRON:
-                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
-                        beam.Detector.SetGainBlack(Detector= self.electron_detector_active, Gain = og_contrast, Black = value*100)
-                        logging.info(f"{beam_type} detector brightness set to {value}.")
-                    elif beam_type == BeamType.ION:
-                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
-                        beam.Detector.SetGainBlack(Detector= self.ion_detector_active, Gain = og_contrast, Black = value*100)
-                        logging.info(f"{beam_type} detector brightness set to {value}.")
-                else:
-                    logging.warning(f"Invalid brightness value: {value}, must be between 0 and 1.")
-                return 
+            
+            # check if value is between 0 and 1
+            if not (0 <= value <= 1):
+                logging.warning(f"Invalid value for {beam_type} {key}: {value}. Must be between 0 and 1.")
+                return
+            
+            # get active detector 
+            active_detector =  self._active_detector[beam_type]
+            if active_detector is None:
+                logging.warning(f"No active detector for {beam_type}. Please set detector type first.")
+                return
+            
+            # get current gain and black level
+            contrast, brightness = beam.Detector.GetGainBlack(Detector= active_detector)
             if key == "detector_contrast":
-                if 0 <= value <= 1:
-                    if beam_type == BeamType.ELECTRON:
-                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.electron_detector_active)
-                        beam.Detector.SetGainBlack(Detector= self.electron_detector_active, Gain = value*100, Black = og_brightness)
-                        logging.info(f"{beam_type} detector contrast set to {value}.")
-                    elif beam_type == BeamType.ION:
-                        og_contrast, og_brightness = beam.Detector.GetGainBlack(Detector= self.ion_detector_active)
-                        beam.Detector.SetGainBlack(Detector= self.ion_detector_active, Gain = value*100, Black = og_brightness)
-                        logging.info(f"{beam_type} detector contrast set to {value}.")
-                else:
-                    logging.warning(f"Invalid contrast value: {value}, must be between 0 and 1.")
-                return 
+                contrast = value * 100
+            if key == "detector_brightness":
+                brightness = value * 100
+
+            # set new gain and black level
+            beam.Detector.SetGainBlack(Detector= active_detector, 
+                                        Gain = contrast, 
+                                        Black = brightness)
+            logging.info(f"{beam_type.name} {key} set to {value}.")
+            return
 
         if key == "preset":
             beam.Preset.Activate(value)
             logging.info(f"Preset {value} activated for {beam_type}.")
             return
-                    
+
 
         logging.warning(f"Unknown key: {key}, value: {value} ({beam_type})")
         return

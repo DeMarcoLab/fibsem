@@ -21,8 +21,8 @@ electron:
     resolution:                 [1536, 1024]                # the default electron resolution                       [pixel] [USER]
     hfw:                        150.0e-6                    # the default electron hfw                              [metres][USER]
     dwell_time:                 1.0e-06                     # the default electron dwell time
-    detector_mode:              SecondaryElectrons          # the detector mode of the electron beam                        [USER]
-    detector_type:              ETD                         # the detector type of the electron beam                        [USER]
+    detector_mode:              null                        # the detector mode of the electron beam                        [USER]
+    detector_type:              E-T                         # the detector type of the electron beam                        [USER]
 ion:
     enabled:                    true                        # the ion beam is enabled                                       [USER]
     column_tilt:                55                          # the column tilt of the electron beam                          [SPECIFIED]
@@ -34,8 +34,8 @@ ion:
     resolution:                 [1536, 1024]                # the default ion resolution                            [pixel] [USER]
     hfw:                        150.0e-6                    # the default ion hfw                                   [metres][USER]
     dwell_time:                 1.0e-06                     # the default ion dwell time
-    detector_mode:              SecondaryElectrons          # the detector mode of the ion beam                             [USER]
-    detector_type:              ETD                         # the detector type of the ion beam                             [USER]
+    detector_mode:              null                        # the detector mode of the ion beam                             [USER]
+    detector_type:              SE                          # the detector type of the ion beam                             [USER]
 manipulator:
     enabled:                    true                        # manipulator is enabled                                        [USER]
     rotation:                   false                       # manipulator is able to rotate                                 [USER]

@@ -126,7 +126,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.stigmation_y.hide()
             self.stigmation_x.setEnabled(False)
             self.stigmation_y.setEnabled(False)
-            available_presets = self.microscope.get_available_values("presets")
+            available_presets = self.microscope.get_available_values("presets", beam_type=BeamType.ION)
             self.comboBox_presets.addItems(available_presets)   
             self.comboBox_presets.currentTextChanged.connect(self.update_presets)
         else:

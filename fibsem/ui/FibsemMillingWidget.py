@@ -112,27 +112,30 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if isinstance(self.microscope, DemoMicroscope):
             _THERMO, _TESCAN = True, False
         
+
+        # COMMON
+        self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
+        self.comboBox_patterning_mode.addItems(["Serial", "Parallel"])
+
         # THERMO 
         self.label_application_file.setVisible(_THERMO)
         self.comboBox_application_file.setVisible(_THERMO)
-        available_application_files = self.microscope.get_available_values("application_file")
-        self.comboBox_application_file.addItems(available_application_files)
         self.comboBox_preset.setVisible(_THERMO)
         self.label_preset.setVisible(_THERMO)
         self.doubleSpinBox_milling_current.setVisible(_THERMO)
         self.label_milling_current.setVisible(_THERMO)
         self.label_voltage.setVisible(_THERMO)
         self.spinBox_voltage.setVisible(_THERMO) # TODO: set this to the available voltages
-        self.label_patterning_mode.setVisible(_THERMO)
-        self.comboBox_patterning_mode.setVisible(_THERMO)
-        self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
-        self.doubleSpinBox_milling_current.valueChanged.connect(self.update_settings)
-        self.doubleSpinBox_hfw.valueChanged.connect(self.update_settings)
-        if self.comboBox_application_file.findText(self.protocol["milling"]["application_file"]) == -1:
-                napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
-                self.protocol["milling"]["application_file"] = "Si"
-        self.comboBox_application_file.setCurrentText(self.protocol["milling"]["application_file"])
-        self.comboBox_patterning_mode.addItems(["Serial", "Parallel"])
+        if _THERMO:
+            available_application_files = self.microscope.get_available_values("application_file")
+            self.comboBox_application_file.addItems(available_application_files)
+            self.comboBox_application_file.currentIndexChanged.connect(self.update_settings)
+            self.doubleSpinBox_milling_current.valueChanged.connect(self.update_settings)
+            self.spinBox_voltage.valueChanged.connect(self.update_settings)
+            if self.comboBox_application_file.findText(self.protocol["milling"]["application_file"]) == -1:
+                    napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
+                    self.protocol["milling"]["application_file"] = "Si"
+            self.comboBox_application_file.setCurrentText(self.protocol["milling"]["application_file"])
         
         # TESCAN
         self.label_rate.setVisible(_TESCAN)
@@ -145,14 +148,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.label_preset.setVisible(_TESCAN)
         self.label_spacing.setVisible(_TESCAN)
         self.doubleSpinBox_spacing.setVisible(_TESCAN)
-        available_presets = self.microscope.get_available_values("presets")
-        self.comboBox_preset.addItems(available_presets)   
-        self.doubleSpinBox_rate.valueChanged.connect(self.update_settings)
-        self.doubleSpinBox_spot_size.valueChanged.connect(self.update_settings)
-        self.doubleSpinBox_dwell_time.valueChanged.connect(self.update_settings)  
-        self.comboBox_preset.currentIndexChanged.connect(self.update_settings)
-        self.doubleSpinBox_spacing.valueChanged.connect(self.update_settings)
-        self.spinBox_voltage.valueChanged.connect(self.update_settings)
+        if _TESCAN:
+            available_presets = self.microscope.get_available_values(key="presets", beam_type=BeamType.ION)
+            self.comboBox_preset.addItems(available_presets)   
+            self.doubleSpinBox_rate.valueChanged.connect(self.update_settings)
+            self.doubleSpinBox_spot_size.valueChanged.connect(self.update_settings)
+            self.doubleSpinBox_dwell_time.valueChanged.connect(self.update_settings)  
+            self.comboBox_preset.currentIndexChanged.connect(self.update_settings)
+            self.doubleSpinBox_spacing.valueChanged.connect(self.update_settings)
         
 
         # register mouse callbacks
