@@ -1791,8 +1791,10 @@ class ThermoMicroscope(FibsemMicroscope):
         patterning_api = self.connection.patterning
         if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
             create_pattern_function = patterning_api.create_regular_cross_section
+            self.connection.patterning.mode = "Serial" # parallel mode not supported for regular cross section
         elif pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
             create_pattern_function = patterning_api.create_cleaning_cross_section
+            self.connection.patterning.mode = "Serial" # parallel mode not supported for cleaning cross section
         else:
             create_pattern_function = patterning_api.create_rectangle
         
@@ -2920,7 +2922,14 @@ class ThermoMicroscope(FibsemMicroscope):
             else:
                 logging.warning(f"Invalid value for vent_chamber: {value}.")
                 return
-            
+        
+        # patterning
+        if key == "patterning_mode":
+            if value in ["Serial", "Parallel"]:
+                self.connection.patterning.mode = value
+                logging.info(f"Patterning mode set to {value}.")
+                return
+
         logging.warning(f"Unknown key: {key} ({beam_type})")
 
         return
@@ -5796,6 +5805,10 @@ class DemoMicroscope(FibsemMicroscope):
 
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
+
+        if pattern_settings.cross_section in (CrossSectionPattern.CleaningCrossSection, CrossSectionPattern.RegularCrossSection):
+            logging.info("setting patterning mode to serial for cross section patterns.")
+
         if pattern_settings.time != 0:
             logging.info(f"Setting pattern time to {pattern_settings.time}.")
 
