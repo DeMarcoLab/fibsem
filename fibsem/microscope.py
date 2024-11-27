@@ -388,6 +388,7 @@ class FibsemMicroscope(ABC):
             stigmation=self.get("stigmation", beam_type),
             shift=self.get("shift", beam_type),
             scan_rotation=self.get("scan_rotation", beam_type),
+            preset=self.get("preset", beam_type),
         )
         logging.debug({"msg": "get_beam_settings", "beam_settings": beam_settings.to_dict(), "beam_type": beam_type.name})
         
@@ -405,6 +406,7 @@ class FibsemMicroscope(ABC):
         self.set("stigmation", beam_settings.stigmation, beam_settings.beam_type)
         self.set("shift", beam_settings.shift, beam_settings.beam_type)
         self.set("scan_rotation", beam_settings.scan_rotation, beam_settings.beam_type)
+        self.set("preset", beam_settings.preset, beam_settings.beam_type)
 
         logging.debug({"msg": "set_beam_settings", "beam_settings": beam_settings.to_dict(), "beam_type": beam_settings.beam_type.name})
         return 

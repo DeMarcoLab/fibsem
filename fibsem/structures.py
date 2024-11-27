@@ -149,8 +149,6 @@ class FibsemStagePosition:
         from_dict(data: dict): Create a new stage position object from a dictionary.
         to_autoscript_position(compustage: bool) -> StagePosition: Convert the stage position to a StagePosition object that is compatible with Autoscript.
         from_autoscript_position(position: StagePosition) -> None: Create a new FibsemStagePosition object from a StagePosition object that is compatible with Autoscript.
-        to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
-        from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
     """
 
     name: str = None
@@ -625,6 +623,7 @@ class BeamSettings:
     stigmation: Point = None
     shift: Point = None
     scan_rotation: float = None
+    preset: str = None
 
     def __post_init__(self):
         assert (
@@ -656,7 +655,12 @@ class BeamSettings:
         assert (
             isinstance(self.shift, Point) or self.shift is None
         ), f"shift must be a Point instance, currently is {type(self.shift)}"
-
+        assert (
+            isinstance(self.scan_rotation, (float, int)) or self.scan_rotation is None
+        ), f"scan rotation must be float or int, currently is {type(self.scan_rotation)}"
+        assert (
+            isinstance(self.preset, str) or self.preset is None
+        ), f"preset must be str, currently is {type(self.preset)}"
 
     def to_dict(self) -> dict:
         state_dict = {
@@ -672,6 +676,7 @@ class BeamSettings:
             else None,
             "shift": self.shift.to_dict() if self.shift is not None else None,
             "scan_rotation": self.scan_rotation,
+            "preset": self.preset,
         }
 
         return state_dict
@@ -701,6 +706,7 @@ class BeamSettings:
             stigmation=stigmation,
             shift=shift,
             scan_rotation=state_dict.get("scan_rotation", 0.0),
+            preset=state_dict.get("preset", None),
         )
 
         return beam_settings

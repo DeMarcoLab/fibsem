@@ -8,9 +8,9 @@ stage:
     enabled:                    true                        # the stage is enabled                                          [USER]
     rotation:                   true                        # the stage is able to rotate                                   [USER]
     tilt:                       true                        # the stage is able to tilt                                     [USER]
-    rotation_reference:         0                           # the reference rotation value                                  [SPECIFIED] 
-    rotation_180:               180                         # the reference rotation + 180 degrees                          [DERIVED - rotation-reference]
-    shuttle_pre_tilt:           35.0                        # the pre-tilt of the shuttle                                   [SPECIFIED]
+    rotation_reference:         180                         # the reference rotation value                                  [SPECIFIED] 
+    rotation_180:               0                           # the reference rotation + 180 degrees                          [DERIVED - rotation-reference]
+    shuttle_pre_tilt:           0                           # the pre-tilt of the shuttle                                   [SPECIFIED]
     manipulator_height_limit:   0.0037                      # the linked height limit for manipulator (Thermo Only)         [DERIVED - manufactuer]
 electron:                                              
     enabled:                    true                        # the electron beam is enabled                                  [USER]
@@ -50,7 +50,7 @@ imaging:
     hfw:                        150.0e-6                    # the default imaging hfw                               [metres][USER]
     dwell_time:                 1.0e-06                     # the default imaging dwell time                        [second][USER]
     imaging_current:            2.0e-11                     # the default imaging current                           [amp]   [USER]
-    autocontrast:               true                        # use autocontrast                                              [USER]
+    autocontrast:               false                        # use autocontrast                                              [USER]
     autogamma:                  false                       # use autogamma                                                 [USER]
     save:                       false                       # auto save images                                              [USER]
 milling:
