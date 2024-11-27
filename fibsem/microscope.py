@@ -2923,6 +2923,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
 
 ########################
+SIMULATOR_KNOWN_UNKNOWN_KEYS = ["preset"]
+
 class DemoMicroscope(FibsemMicroscope):
 
     def __init__(self, system_settings: SystemSettings):            
@@ -3063,6 +3065,7 @@ class DemoMicroscope(FibsemMicroscope):
             )
         )
         self.stage_is_compustage: bool = False
+        self._patterns: List = []
             
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -3478,9 +3481,8 @@ class DemoMicroscope(FibsemMicroscope):
     def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
         """Run milling with the specified current and voltage."""
         _check_beam(BeamType.ION, self.system)
-        # import random
-        # time.sleep(random.randint(1, 5))
-        time.sleep(5)
+        estimated_time = self.estimate_milling_time(self._patterns)
+        time.sleep(estimated_time)
         logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
@@ -3489,33 +3491,33 @@ class DemoMicroscope(FibsemMicroscope):
         logging.info(f"Finishing milling: {imaging_current:.2e}")
         self.set("current", imaging_current, BeamType.ION)
         self.set("voltage", imaging_voltage, BeamType.ION)
+        self._patterns = []
 
     def stop_milling(self) -> None:
         return
 
     def estimate_milling_time(self, patterns: list) -> float:
         """Estimate the milling time for the specified patterns."""
-        total_time = 0
-        for pattern in patterns:
-            total_time += 5
-        
-        return total_time
-        
+        PATTERN_SLEEP_TIME = 5
+        return PATTERN_SLEEP_TIME * len(self._patterns)
 
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
         if pattern_settings.time != 0:
             logging.info(f"Setting pattern time to {pattern_settings.time}.")
+        self._patterns.append(pattern_settings)
 
     def draw_line(self, pattern_settings: FibsemLineSettings) -> None:
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
+        self._patterns.append(pattern_settings)
 
     def draw_circle(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
-    
+        self._patterns.append(pattern_settings)
+
     def draw_annulus(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
-
+        self._patterns.append(pattern_settings)
 
     def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings,
         path: str):
@@ -3729,7 +3731,11 @@ class DemoMicroscope(FibsemMicroscope):
             return self.chamber.state
         if key == "chamber_pressure":
             return self.chamber.pressure
-        
+
+        if key in SIMULATOR_KNOWN_UNKNOWN_KEYS:
+            logging.debug(f"Skipping unknown key: {key} for {beam_type}")
+            return None
+
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return None
 
@@ -3887,6 +3893,9 @@ class DemoMicroscope(FibsemMicroscope):
                 logging.info(f"Invalid value for vent_chamber: {value}")
             return
 
+        if key in SIMULATOR_KNOWN_UNKNOWN_KEYS:
+            logging.debug(f"Skipping unknown key: {key} for {beam_type}")
+            return
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return None
