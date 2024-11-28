@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from fibsem.microscope import FibsemMicroscope
-from fibsem.patterning import FibsemMillingStage
+from fibsem.milling.base import FibsemMillingStage
 from fibsem.structures import (
     BeamType,
     FibsemBitmapSettings,
@@ -139,15 +139,6 @@ def convert_to_bitmap_format(path):
     return new_path
 
 
-def mill_stages(microscope: FibsemMicroscope, stages: List[FibsemMillingStage], asynch: bool=False):
-    for stage in stages:
-        mill_stage(microscope=microscope, stage=stage, asynch=asynch)
-
-    # finish milling (restore imaging conditions)
-    finish_milling(microscope,
-                   imaging_current=microscope.system.ion.beam.beam_current,
-                   imaging_voltage=microscope.system.ion.beam.voltage)
-
 def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: bool=False):
 
     # set up milling
@@ -162,114 +153,59 @@ def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: 
         milling_voltage=stage.milling.milling_voltage, 
         asynch=asynch)
 
-
-
-def mill_stages_ui(microscope: FibsemMicroscope, stages: List[FibsemMillingStage], asynch: bool=False, parent_ui = None):
+def mill_stages(
+    microscope: FibsemMicroscope,
+    stages: List[FibsemMillingStage],
+    asynch: bool = False,
+    parent_ui=None,
+):
     """Run a list of milling stages, with a progress bar and notifications."""
-    import napari.utils.notifications
 
     if isinstance(stages, FibsemMillingStage):
         stages = [stages]
 
-  
-    for idx, stage in enumerate(stages):
-    
+    try:
+        for idx, stage in enumerate(stages):
+            if parent_ui:
+                parent_ui.milling_notification.emit(f"Preparing: {stage.name}")
+
+            if parent_ui:
+                if parent_ui._STOP_MILLING:
+                    raise Exception("Milling stopped by user.")
+
+            try:
+                stage.strategy.run(
+                    microscope=microscope,
+                    stage=stage,
+                    asynch=False,
+                    parent_ui=parent_ui,
+                    current_stage_index=idx,
+                    total_stages=len(stages),
+                )
+                # TODO: drift correction
+
+                if parent_ui:
+                    parent_ui._progress_bar_quit.emit()
+                    parent_ui.milling_notification.emit(f"Milling stage complete: {stage.name}")
+            except Exception as e:
+                logging.error(f"Error running milling stage: {stage.name}")
+
         if parent_ui:
-            parent_ui.milling_notification.emit(f"Preparing: {stage.name}")
+            parent_ui.milling_notification.emit(
+                f"Milling complete. {len(stages)} stages completed."
+            )
     
-        try:
-            mill_stage_ui(microscope, stage, parent_ui, idx, len(stages))
-            # TODO implement a special case for overtilt milling
-
-            # drift correction
-
-        except Exception as e:
-            napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
-            logging.error(e)
-        finally:
-            finish_milling(microscope, 
-                                        imaging_current=microscope.system.ion.beam.beam_current, 
-                                        imaging_voltage=microscope.system.ion.beam.voltage)
+    except Exception as e:
         if parent_ui:
-            parent_ui._progress_bar_quit.emit()
-            parent_ui.milling_notification.emit(f"Milling stage complete: {stage.name}")
-    
-    if parent_ui:
-        parent_ui.milling_notification.emit(f"Milling complete. {len(stages)} stages completed.")
-
-
-def mill_stage_ui(microscope: FibsemMicroscope, stage: FibsemMillingStage, parent_ui = None, idx: int = 0, n_stages: int = 1):
-
-    setup_milling(microscope, mill_settings=stage.milling)
-
-    patterns = draw_patterns(microscope, stage.pattern.patterns)
-    estimated_time = estimate_milling_time(microscope, patterns)
-    logging.info(f"Estimated time for {stage.name}: {estimated_time:.2f} seconds")
-
-    if parent_ui:
-        progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": n_stages}
-        parent_ui._progress_bar_start.emit(progress_bar_dict)
-        parent_ui.milling_notification.emit(f"Running {stage.name}...")
-
-    run_milling(microscope, stage.milling.milling_current, stage.milling.milling_voltage)
-
-    return 
-
-
-
-def mill_stage_with_overtilt(microscope: FibsemMicroscope, stage: FibsemMillingStage, ref_image: FibsemImage, asynch=False ):
-    """Mill a trench pattern with overtilt, 
-    based on https://www.sciencedirect.com/science/article/abs/pii/S1047847716301514 and autolamella v1"""
-    # set up milling
-    setup_milling(microscope, stage.milling)
-
-    import numpy as np
-
-    from fibsem import alignment, patterning
-    from fibsem.structures import FibsemStagePosition
-
-    overtilt_in_degrees = stage.pattern.protocol.get("overtilt", 1)
-
-    # assert pattern is TrenchPattern
-    if not isinstance(stage.pattern, patterning.TrenchPattern):
-        raise ValueError("Pattern must be TrenchPattern for overtilt milling")
-
-    for i, pattern in enumerate(stage.pattern.patterns):
-        
-        # save initial position
-        initial_position = microscope.get_stage_position()
-        
-        # overtilt
-        if i == 0:
-            t = -np.deg2rad(overtilt_in_degrees)
-        else:
-            t = +np.deg2rad(overtilt_in_degrees)
-        microscope.move_stage_relative(FibsemStagePosition(t=t))
-
-        # beam alignment
-        image_settings = ImageSettings.fromFibsemImage(ref_image)
-        image_settings.filename = f"alignment_target_{stage.name}"
-        
-        alignment.multi_step_alignment_v2(microscope=microscope, 
-                                        ref_image=ref_image, 
-                                        beam_type=BeamType.ION, 
-                                        alignment_current=None,
-                                        steps=3)
-
-        # setup again to ensure we are milling at the correct current, cleared patterns
-        setup_milling(microscope, stage.milling)
-
-        # draw pattern
-        draw_pattern(microscope, pattern)
-
-        # run milling
-        run_milling(microscope, stage.milling.milling_current, asynch)
-
-        # return to initial position
-        microscope.move_stage_absolute(initial_position)
-
-    # finish milling
-    finish_milling(microscope)
+            import napari.utils.notifications
+            napari.utils.notifications.show_error(f"Error while milling {e}")
+        logging.error(e)
+    finally:
+        finish_milling(
+            microscope=microscope,
+            imaging_current=microscope.system.ion.beam.beam_current,
+            imaging_voltage=microscope.system.ion.beam.voltage,
+        )
 
 
 

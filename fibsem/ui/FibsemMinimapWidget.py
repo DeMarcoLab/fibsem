@@ -10,10 +10,11 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from scipy.ndimage import median_filter
 
-from fibsem import constants, conversions, patterning, utils
+from fibsem import constants, conversions, utils
 from fibsem import config as cfg
 from fibsem.imaging import _tile
 from fibsem.microscope import FibsemMicroscope
+from fibsem.milling.patterning import patterns
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -712,7 +713,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
                 pattern = self.comboBox_pattern_overlay.currentText() 
                 
-                milling_stages = [patterning.get_milling_stages(pattern, self.settings.protocol["milling"], Point(point.x, point.y))[0] for point in points]
+                milling_stages = [patterns.get_milling_stages(pattern, self.settings.protocol["milling"], Point(point.x, point.y))[0] for point in points]
                 
                 for stage, pos in zip(milling_stages, drawn_positions[:-1]):
                     stage.name = pos.name

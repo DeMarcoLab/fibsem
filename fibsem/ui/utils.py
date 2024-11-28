@@ -14,14 +14,12 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QVBoxLayout, QWidget
-from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (FibsemPatternSettings, 
                                FibsemRectangleSettings,  FibsemLineSettings, 
                                FibsemCircleSettings, FibsemBitmapSettings)
 from fibsem.microscope import FibsemMicroscope
 import napari
 from fibsem.utils import load_yaml, save_yaml
-import fibsem.patterning as patterning
 from dataclasses import dataclass
 
 @dataclass
@@ -526,7 +524,7 @@ def _draw_patterns_in_napari(
     viewer: napari.Viewer,
     ib_image: FibsemImage,
     eb_image: FibsemImage,
-    milling_stages: List[FibsemMillingStage],
+    milling_stages: List["FibsemMillingStage"],
     draw_crosshair: bool = True,
 ):
 
@@ -935,7 +933,7 @@ def _get_text_ui(
 
     return text, okPressed
 
-def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: List[FibsemMillingStage], show: bool = True):
+def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: List["FibsemMillingStage"], show: bool = True):
 
     viewer = napari.Viewer()
     viewer.add_image(image.data, name='test_image')

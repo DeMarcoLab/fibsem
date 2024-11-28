@@ -6,8 +6,8 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 
-from fibsem.patterning import (
-    FibsemMillingStage,
+from fibsem.milling.base import FibsemMillingStage
+from fibsem.milling.patterning.patterns import (
     FiducialPattern,
     MicroExpansionPattern,
     RectanglePattern,
@@ -21,7 +21,6 @@ from fibsem.structures import (
     ImageSettings,
     Point,
 )
-from typing import Tuple
 
 COLOURS = [
     "yellow",
@@ -179,6 +178,8 @@ def draw_milling_patterns(
     Returns:
         plt.Figure: Figure with patterns drawn.
     """
+    fig: plt.Figure
+    ax: plt.Axes    
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.imshow(image.data, cmap="gray")
 

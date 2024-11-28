@@ -10,10 +10,11 @@ from PyQt5 import QtWidgets, QtCore
 from typing import List
 
 from fibsem import config as cfg
-from fibsem import constants, conversions, milling, patterning, utils
+from fibsem import constants, conversions, milling, utils
 from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                TescanMicroscope, ThermoMicroscope)
-from fibsem.patterning import FibsemMillingStage
+from fibsem.milling.patterning import patterns
+from fibsem.milling.base import FibsemMillingStage
 from fibsem.structures import (BeamType, FibsemMillingSettings,
                                MicroscopeSettings,
                                Point, CrossSectionPattern, calculate_fiducial_area_v2)
@@ -163,7 +164,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # self.pushButton_importMilling.clicked.connect(self.import_milling_stages)
 
         # new patterns
-        self.comboBox_patterns.addItems([pattern.name for pattern in patterning.__PATTERNS__])
+        self.comboBox_patterns.addItems([pattern.name for pattern in patterns.__PATTERNS__])
         if _TESCAN and not _THERMO:
             index = self.comboBox_patterns.findText("BitmapPattern")
             self.comboBox_patterns.removeItem(index)
@@ -230,7 +231,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         num = len(self.milling_stages) + 1
         name = f"Milling Stage {num}"
-        pattern = patterning.RectanglePattern()
+        pattern = patterns.RectanglePattern()
         pattern.define(self.protocol["patterns"]["Rectangle"], Point(0,0))
         milling_stage = FibsemMillingStage(name=name, num=num, pattern=pattern)
         self.milling_stages.append(milling_stage)
@@ -353,9 +354,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # get current pattern
         if milling_stage is None:
             current_pattern_text = self.comboBox_patterns.currentText()
-            patterns_available = [pattern.name for pattern in patterning.__PATTERNS__]
+            patterns_available = [pattern.name for pattern in patterns.__PATTERNS__]
             pattern_available_index = patterns_available.index(current_pattern_text)
-            pattern = patterning.__PATTERNS__[pattern_available_index]
+            pattern = patterns.__PATTERNS__[pattern_available_index]
             pattern_protocol = self.protocol["patterns"][pattern.name]
             point = None
         else:
@@ -466,7 +467,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self._UPDATING_PATTERN = False
     
-    def get_pattern_settings_from_ui(self, pattern: patterning.BasePattern):
+    def get_pattern_settings_from_ui(self, pattern: patterns.BasePattern):
         # get pattern protocol from ui
         pattern_dict = {}
         for i, key in enumerate(pattern.required_keys):
@@ -502,7 +503,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def get_pattern_from_ui_v2(self):
 
         # get current pattern
-        pattern = patterning.get_pattern(self.comboBox_patterns.currentText())
+        pattern = patterns.get_pattern(self.comboBox_patterns.currentText())
 
         pattern_dict = self.get_pattern_settings_from_ui(pattern)
         # define pattern
@@ -557,7 +558,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                     continue
             pattern_dict_existing = deepcopy(milling_stage.pattern.protocol)
             pattern_name = milling_stage.pattern.name
-            pattern_renew = patterning.get_pattern(pattern_name)
+            pattern_renew = patterns.get_pattern(pattern_name)
 
             if self.checkBox_relative_move.isChecked():
                 point = Point(x=milling_stage.pattern.point.x + diff.x, y=milling_stage.pattern.point.y + diff.y)
@@ -631,7 +632,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 return True    
         
         for pattern_settings in stage_pattern.patterns:
-            if isinstance(pattern_settings, patterning.CirclePattern):
+            if isinstance(pattern_settings, patterns.CirclePattern):
                 shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
             else:
                 shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=self.image_widget.ib_image)
@@ -846,59 +847,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         milling_stages = self.get_milling_stages()
         self._toggle_interactions(enabled=False,milling=True)
         
-        # TODO: enable new milling after testing
-        USE_MILL_STAGES_UI_V2 = False
-        if USE_MILL_STAGES_UI_V2:
-            milling.mill_stages_ui(microscope=self.microscope, 
-                                stages=milling_stages, 
-                                parent_ui=self)
-            return
-        
-        try:
-            for idx,stage in enumerate(milling_stages):
-                self.milling_notification.emit(f"Preparing: {stage.name}")
-
-                if self._STOP_MILLING:
-                    raise Exception("Milling stopped by user.")
-                    
-                if stage.pattern is not None:
-                    log_status_message(stage, f"RUNNING_MILLING_STAGE_{stage.name}") # TODO: refactor to json
-                    log_status_message(stage, f"MILLING_PATTERN_{stage.pattern.name}: {stage.pattern.patterns}")
-                    log_status_message(stage, f"MILLING_SETTINGS_{stage.milling}")
-                    try:
-                        milling.setup_milling(self.microscope, mill_settings=stage.milling)
-                        
-                        if self._STOP_MILLING:
-                            raise Exception("Milling stopped by user.")
-                        
-                        microscope_patterns = milling.draw_patterns(self.microscope, stage.pattern.patterns)
-                        estimated_time = milling.estimate_milling_time(self.microscope, microscope_patterns)
-                        progress_bar_dict = {"estimated_time": estimated_time, "idx": idx, "total": len(milling_stages)}
-                        self._progress_bar_start.emit(progress_bar_dict)
-
-                        self.milling_notification.emit(f"Running {stage.name}...")
-                        milling.run_milling(self.microscope, stage.milling.milling_current, stage.milling.milling_voltage)
-
-                        # TODO implement a special case for overtilt milling
-
-                    except Exception as e:
-                        napari.utils.notifications.show_error(f"Error running milling stage: {stage.name}")
-                        logging.error(e)
-                log_status_message(stage, "MILLING_COMPLETED_SUCCESSFULLY")
-                self._progress_bar_quit.emit()
-
-            self.milling_notification.emit(f"Milling stage complete: {stage.name}")
-        
-        except Exception as e:
-            napari.utils.notifications.show_error(f"Error while milling. {e}")
-            logging.error(e)
-        finally:
-            milling.finish_milling(self.microscope, 
-                                imaging_current=self.microscope.system.ion.beam.beam_current, 
-                                imaging_voltage=self.microscope.system.ion.beam.voltage)
-
-        self.milling_notification.emit(f"Milling complete. {len(self.milling_stages)} stages completed.")
-
+        # new milling interface
+        milling.mill_stages(microscope=self.microscope, 
+                            stages=milling_stages, 
+                            parent_ui=self)
+        return
 
     def update_milling_ui(self, msg: str):
         logging.info(msg)
@@ -917,21 +870,19 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._STOP_MILLING = False
 
 
-
-
 def main():
     millings_stages = [
     FibsemMillingStage(
         name="Milling Stage X",
         num = 1,
         milling = FibsemMillingSettings(hfw=400e-6),
-        pattern = patterning.get_pattern("Trench"),
+        pattern = patterns.get_pattern("Trench"),
     ),
         FibsemMillingStage(
         name="Milling Stage 2",
         num = 2,
         milling = FibsemMillingSettings(hfw=200e-6),
-        pattern = patterning.get_pattern("Horseshoe"),
+        pattern = patterns.get_pattern("Horseshoe"),
     )
     ]
     viewer = napari.Viewer(ndisplay=2)
