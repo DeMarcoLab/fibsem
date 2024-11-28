@@ -461,14 +461,14 @@ class TescanMicroscope(FibsemMicroscope):
 
         # dx =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         # dy = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
-        point_yz = self._y_corrected_stage_movement(dy, beam_type)
-        dy, dz = point_yz.y, point_yz.z
+        # point_yz = self._y_corrected_stage_movement(dy, beam_type)
+        # dy, dz = point_yz.y, point_yz.z
 
         # calculate the corrected move to reach that point from base-state?
         _new_position = deepcopy(base_position)
         _new_position.x += dx
         _new_position.y += dy
-        _new_position.z += dz
+        # _new_position.z += dz
 
         return _new_position # TODO: implement
 
@@ -529,32 +529,27 @@ class TescanMicroscope(FibsemMicroscope):
             dy (float): distance along the y-axis (image coordinates)
         """
 
+        # adjust for scan rotation
         scan_rotation = self.get("scan_rotation", beam_type)
-
-
-        if np.isnan(scan_rotation):
-            scan_rotation = 0.0
-        # if image_rotation == 0:
-        #     dx_move = -dx
-        #     dy_move = dy
-        # elif image_rotation == 180:
-        #     dx_move = dx
-        #     dy_move = -dy
+        if np.isclose(scan_rotation, np.pi):
+            dx *= -1.0
+            dy *= -1.0
 
         # dx_move =  -(dx*np.cos(image_rotation*np.pi/180) + dy*np.sin(image_rotation*np.pi/180))
         # dy_move = -(dy*np.cos(image_rotation*np.pi/180) - dx*np.sin(image_rotation*np.pi/180))
 
         # calculate stage movement
-        x_move = FibsemStagePosition(x=dx, y=0, z=0) 
-        yz_move = self._y_corrected_stage_movement(
-            expected_y=dy,
-            beam_type=beam_type,
-        )
+        # x_move = FibsemStagePosition(x=dx, y=0, z=0) 
+        # yz_move = self._y_corrected_stage_movement(
+        #     expected_y=dy,
+        #     beam_type=beam_type,
+        # )
 
-        # move stage
-        stage_position = FibsemStagePosition(
-            x=x_move.x, y=yz_move.y, z=yz_move.z, r=0, t=0
-        )
+        # # move stage
+        # stage_position = FibsemStagePosition(
+        #     x=x_move.x, y=yz_move.y, z=yz_move.z, r=0, t=0
+        # )
+        stage_position = FibsemStagePosition(x=-dx, y=-dy, z=0, r=0, t=0)
         logging.info(f"moving stage ({beam_type.name}): {stage_position}")
         self.move_stage_relative(stage_position)
 
@@ -1409,7 +1404,10 @@ class TescanMicroscope(FibsemMicroscope):
             elif beam_type == BeamType.ION and self.last_image_ib is not None:
                 return self.last_image_ib.metadata.microscope_state.ion_beam.stigmation         
         if key =="scan_rotation":
-            return beam.Optics.GetImageRotation()
+            scan_rotation = beam.Optics.GetImageRotation() # can be nan on simulator
+            if np.isnan(scan_rotation):
+                scan_rotation = 0.0
+            return scan_rotation
         if key == "shift":
             values = beam.Optics.GetImageShift()
             shift = Point(values[0]*constants.MILLIMETRE_TO_METRE, 
@@ -1507,7 +1505,7 @@ class TescanMicroscope(FibsemMicroscope):
         
         NOT_SUPPORTED_KEYS = ["resolution", "dwell_time", "stigmation", "preset", "detector_mode"]
         if key in NOT_SUPPORTED_KEYS:
-            logging.info(f"Key {key} directly not supported by Tescan API.")
+            logging.debug(f"Key {key} directly not supported by Tescan API.")
             return None
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
