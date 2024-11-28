@@ -13,10 +13,14 @@ class MillingStrategyConfig(ABC):
     pass
 
 class MillingStrategy(ABC):
-    """Abstract base class for different milling strategies"""    
+    """Abstract base class for different milling strategies"""
+    name: str = "Milling Strategy"    
     @abstractmethod
     def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False) -> None:
         pass
+
+    def to_dict(self):
+        return {"name": self.name}
 
 def get_strategy(name: str = "Standard") -> MillingStrategy:
     if name == "Standard":
@@ -48,15 +52,19 @@ class FibsemMillingStage:
             "num": self.num,
             "milling": self.milling.to_dict(),
             "pattern": self.pattern.to_dict(),
+            "strategy": self.strategy.to_dict(),
         }
 
     @classmethod
     def from_dict(cls, data: dict):
+        default_strat = {"name": "Standard"}
+        strat = data.get("strategy", default_strat)["name"]
         return cls(
             name=data["name"],
             num=data["num"],
             milling=FibsemMillingSettings.from_dict(data["milling"]),
             pattern=get_pattern(data["pattern"]["name"]).from_dict(data["pattern"]),
+            strategy=get_strategy(strat),
         )
 
 def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> FibsemMillingStage:

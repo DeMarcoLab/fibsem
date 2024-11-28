@@ -15,7 +15,7 @@ from fibsem.milling import (
 class StandardMillingStrategy(MillingStrategy):
     """Basic milling strategy that mills continuously until completion"""
 
-    name: str = "Standard Milling Strategy"
+    name: str = "Standard"
 
     def run(
         self,

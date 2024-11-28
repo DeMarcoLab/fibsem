@@ -2,18 +2,14 @@ import logging
 from typing import List
 
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling.base import FibsemMillingStage
+from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
-    BeamType,
     FibsemBitmapSettings,
     FibsemCircleSettings,
-    FibsemImage,
     FibsemLineSettings,
     FibsemMillingSettings,
     FibsemPatternSettings,
-    FibsemRectangle,
     FibsemRectangleSettings,
-    ImageSettings,
 )
 
 ########################### SETUP
@@ -31,22 +27,6 @@ def setup_milling(
         hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
     """
     microscope.setup_milling(mill_settings = mill_settings)
-
-def run_milling_drift_corrected(
-    microscope: FibsemMicroscope, 
-    milling_current: float,  
-    image_settings: ImageSettings, 
-    ref_image: FibsemImage, 
-    reduced_area: FibsemRectangle = None,
-) -> None:
-    """Run Ion Beam Milling.
-
-    Args:
-        microscope (FibsemMicroscope): Fibsem microscope instance
-        milling_current (float, optional): ion beam milling current. Defaults to None.
-        asynch (bool, optional): flag to run milling asynchronously. Defaults to False.
-    """
-    microscope.run_milling_drift_corrected(milling_current, image_settings, ref_image, reduced_area)
 
 def run_milling(
     microscope: FibsemMicroscope,
