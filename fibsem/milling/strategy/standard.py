@@ -26,7 +26,7 @@ class StandardMillingStrategy(MillingStrategy):
         current_stage_index: int = 0,
         total_stages: int = 1,
     ) -> None:
-        logging.info(f"Running {self.name} for {stage.name}")
+        logging.info(f"Running {self.name} Milling Strategy for {stage.name}")
         setup_milling(microscope, stage.milling)
 
         patterns = draw_patterns(microscope, stage.pattern.patterns)
