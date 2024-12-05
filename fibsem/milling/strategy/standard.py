@@ -2,20 +2,34 @@ import logging
 from dataclasses import dataclass
 
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling.base import FibsemMillingStage, MillingStrategy
-from fibsem.milling import (
-    draw_patterns,
-    run_milling,
-    setup_milling,
-    estimate_milling_time,
-)
+from fibsem.milling import (draw_patterns, estimate_milling_time, run_milling,
+                            setup_milling)
+from fibsem.milling.base import (FibsemMillingStage, MillingStrategy,
+                                 MillingStrategyConfig)
+
+
+@dataclass
+class StandardMillingConfig(MillingStrategyConfig):
+    """Configuration for standard milling strategy"""
+    pass
 
 
 @dataclass
 class StandardMillingStrategy(MillingStrategy):
     """Basic milling strategy that mills continuously until completion"""
-
     name: str = "Standard"
+    fullname: str = "Standard Milling"
+
+    def __init__(self, config: StandardMillingConfig = None):
+        self.config = config or StandardMillingConfig()
+
+    def to_dict(self):
+        return {"name": self.name, "config": self.config.to_dict()}
+
+    @staticmethod
+    def from_dict(d: dict) -> "StandardMillingStrategy":
+        config=StandardMillingConfig.from_dict(d.get("config", {}))   
+        return StandardMillingStrategy(config=config)
 
     def run(
         self,

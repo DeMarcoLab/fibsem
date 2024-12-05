@@ -5,32 +5,67 @@ from typing import List, Union
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.patterning.patterns import BasePattern, _get_pattern, get_pattern
-from fibsem.structures import FibsemMillingSettings, Point
+from fibsem.structures import FibsemMillingSettings, Point, FibsemRectangle
 
 
 @dataclass
 class MillingStrategyConfig(ABC):
-    pass
+    """Abstract base class for milling strategy configurations"""
+    
+    def to_dict(self):
+        return {}
 
+    @staticmethod
+    def from_dict(d: dict) -> "MillingStrategyConfig":
+        return MillingStrategyConfig()
+
+@dataclass
 class MillingStrategy(ABC):
     """Abstract base class for different milling strategies"""
     name: str = "Milling Strategy"    
+    config = MillingStrategyConfig()
+
+    def __init__(self, **kwargs):
+        pass
+    
+    @abstractmethod
+    def to_dict(self):
+        return {"name": self.name, "config": self.config.to_dict()}
+    
+    @staticmethod
+    @abstractmethod
+    def from_dict(d: dict) -> "MillingStrategy":
+        pass
+
     @abstractmethod
     def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False) -> None:
         pass
 
-    def to_dict(self):
-        return {"name": self.name}
+def get_strategy(name: str = "Standard", config: dict = {}) -> MillingStrategy:
+    from fibsem.milling.strategy import strategies, DEFAULT_STRATEGY
+    return strategies.get(name, DEFAULT_STRATEGY).from_dict(config)
 
-def get_strategy(name: str = "Standard") -> MillingStrategy:
-    if name == "Standard":
-        from fibsem.milling.strategy.standard import (
-            StandardMillingStrategy,  # avoid circular import
+
+# TODO: integrate this into the main fibsem.milling module
+@dataclass
+class MillingDriftCorrection:
+    """Drift correction settings for milling"""
+    enabled: bool = False
+    interval: int = 30 # seconds
+    rect: FibsemRectangle = None
+
+    def to_dict(self):
+        return {"enabled": self.enabled, "interval": self.interval, "rect": self.rect.to_dict()}
+    
+    @staticmethod
+    def from_dict(d: dict) -> "MillingDriftCorrection":
+        default_rect = {"left": 0, "top": 0, "width": 1.0, "height": 1.0}
+        return MillingDriftCorrection(
+            enabled=d.get("enabled", False),
+            interval=d.get("interval", 30),
+            rect=FibsemRectangle.from_dict(d.get("rect", default_rect))
         )
-        # TODO: search strategies in fibsem.milling.strategy
-        return StandardMillingStrategy()
-    else:
-        raise ValueError(f"Unknown milling strategy: {name}")
+
 
 @dataclass
 class FibsemMillingStage:
@@ -39,6 +74,7 @@ class FibsemMillingStage:
     milling: FibsemMillingSettings = FibsemMillingSettings()
     pattern: BasePattern = None
     strategy: MillingStrategy = None
+    drift_correction: MillingDriftCorrection = MillingDriftCorrection()
 
     def __post_init__(self):
         if self.pattern is None:
@@ -57,14 +93,14 @@ class FibsemMillingStage:
 
     @classmethod
     def from_dict(cls, data: dict):
-        default_strat = {"name": "Standard"}
-        strat = data.get("strategy", default_strat)["name"]
+        strat_config = data.get("strategy", {})
+        strategy_name = strat_config.get("name", "Standard")
         return cls(
             name=data["name"],
             num=data["num"],
             milling=FibsemMillingSettings.from_dict(data["milling"]),
             pattern=get_pattern(data["pattern"]["name"]).from_dict(data["pattern"]),
-            strategy=get_strategy(strat),
+            strategy=get_strategy(strategy_name, config=strat_config),
         )
 
 def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> FibsemMillingStage:
@@ -79,9 +115,15 @@ def _get_stage(key, protocol: dict, point: Point = Point(), i: int = 0) -> Fibse
     # milling stage name
     name = protocol.get("name", f"{key.title()} {i+1:02d}")
 
+    # strategy
+    strategy_config = protocol.get("strategy", {})
+    strategy_name = strategy_config.get("name", "Standard")
+    strategy = get_strategy(strategy_name, config=strategy_config)
+
     stage = FibsemMillingStage(
-        name=name, num=i, milling=mill_settings, pattern=pattern
+        name=name, num=i, milling=mill_settings, pattern=pattern, strategy=strategy
     )
+    # TODO: migrate to use from_dict?
     return stage
 
 def get_milling_stages(key, protocol, point: Union[Point, List[Point]] = Point()):
