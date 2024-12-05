@@ -158,7 +158,8 @@ def get_protocol_from_stages(stages: list):
         ddict = {**stage.to_dict()["milling"], 
             **stage.to_dict()["pattern"]["protocol"], 
             "type": stage.to_dict()["pattern"]["name"],
-            "name": stage.name}
+            "name": stage.name, 
+            "strategy": stage.strategy.to_dict(),}
         protocol["stages"].append(deepcopy(ddict))
 
     return protocol
