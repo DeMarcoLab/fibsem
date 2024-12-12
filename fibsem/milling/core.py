@@ -7,26 +7,49 @@ from fibsem.structures import (
     FibsemBitmapSettings,
     FibsemCircleSettings,
     FibsemLineSettings,
-    FibsemMillingSettings,
     FibsemPatternSettings,
     FibsemRectangleSettings,
+    ImageSettings,
 )
-
+from fibsem import config as fcfg
+from fibsem.utils import current_timestamp_v2
 ########################### SETUP
 
 
 def setup_milling(
     microscope: FibsemMicroscope,
-    mill_settings: FibsemMillingSettings = None,
+    milling_stage: FibsemMillingStage,
 ):
-    """Setup Microscope for Ion Beam Milling.
+    """Setup Microscope for FIB Milling.
 
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
-        patterning_mode (str, optional): Ion beam milling patterning mode. Defaults to "Serial".
-        hfw (float, optional): horizontal field width for milling. Defaults to 100e-6.
+        milling_stage (FibsemMillingStage): Milling Stage
     """
-    microscope.setup_milling(mill_settings = mill_settings)
+
+    # acquire reference image for drift correction
+    if milling_stage.drift_correction.enabled:
+        image_settings = ImageSettings(
+            hfw=milling_stage.milling.hfw,
+            dwell_time=1e-6,
+            resolution=[1536, 1024],
+            beam_type=milling_stage.milling.milling_channel,
+            reduced_area=milling_stage.drift_correction.rect,
+            path=fcfg.DATA_CC_PATH, 
+            filename=f"ref_{milling_stage.name}_initial_alignment_{current_timestamp_v2()}"
+        )
+        ref_image = microscope.acquire_image(image_settings)
+
+    # set up milling settings
+    microscope.setup_milling(mill_settings=milling_stage.milling)
+
+    # align at the milling current to correct for shift
+    if milling_stage.drift_correction.enabled:
+        from fibsem import alignment
+        alignment.multi_step_alignment_v2(microscope=microscope, 
+                                        ref_image=ref_image, 
+                                        beam_type=milling_stage.milling.milling_channel, 
+                                        steps=1)  # high current -> damaging
 
 def run_milling(
     microscope: FibsemMicroscope,
@@ -122,7 +145,7 @@ def convert_to_bitmap_format(path):
 def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: bool=False):
 
     # set up milling
-    setup_milling(microscope, stage.milling)
+    setup_milling(microscope, milling_stage=stage)
 
     # draw patterns
     for pattern in stage.pattern.patterns:
@@ -168,7 +191,7 @@ def mill_stages(
                     parent_ui._progress_bar_quit.emit()
                     parent_ui.milling_notification.emit(f"Milling stage complete: {stage.name}")
             except Exception as e:
-                logging.error(f"Error running milling stage: {stage.name}")
+                logging.error(f"Error running milling stage: {stage.name}, {e}")
 
         if parent_ui:
             parent_ui.milling_notification.emit(

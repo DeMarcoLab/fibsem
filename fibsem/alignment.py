@@ -139,7 +139,7 @@ def beam_shift_alignment_v2(
     )
     dx, dy, _ = shift_from_crosscorrelation(
         ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
-    )    
+    )
 
     # adjust beamshift (reverse direction)
     microscope.beam_shift(-dx, -dy, image_settings.beam_type)
@@ -148,6 +148,8 @@ def beam_shift_alignment_v2(
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
     
+    # TODO: use structured logging format
+    logging.info(f"beam shift alignment: dx: {dx}, dy: {dy}, image_settings: {image_settings.to_dict()}")
 
 def correct_stage_drift(
     microscope: FibsemMicroscope,

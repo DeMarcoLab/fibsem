@@ -41,7 +41,7 @@ class StandardMillingStrategy(MillingStrategy):
         total_stages: int = 1,
     ) -> None:
         logging.info(f"Running {self.name} Milling Strategy for {stage.name}")
-        setup_milling(microscope, stage.milling)
+        setup_milling(microscope, milling_stage=stage)
 
         patterns = draw_patterns(microscope, stage.pattern.patterns)
 

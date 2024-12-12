@@ -7,14 +7,13 @@ import numpy as np
 
 from fibsem import acquire, alignment
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling import draw_pattern, run_milling, setup_milling
+from fibsem.milling import draw_pattern, run_milling, setup_milling, finish_milling
 from fibsem.milling.base import (FibsemMillingStage, MillingStrategy,
                                  MillingStrategyConfig)
 from fibsem.milling.patterning import patterns
 from fibsem.structures import (BeamType, FibsemImage, FibsemRectangle,
                                FibsemStagePosition, ImageSettings)
 
-DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
 
 @dataclass
 class OvertiltTrenchMillingConfig(MillingStrategyConfig):
@@ -65,14 +64,14 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
         # TODO: pass in image settings
         # TODO: attach image_settings to microscope? or get current settings?
         # TODO: use drift correction structure to re-align? once added to milling stage
-        image_settings = ImageSettings(hfw=stage.pattern.protocol["hfw"], 
+        image_settings = ImageSettings(hfw=stage.milling.hfw,
                                        dwell_time=1e-6, 
                                        resolution=[1536, 1024], 
                                        beam_type=stage.milling.milling_channel)
-        image_settings.reduced_area = FibsemRectangle.from_dict(DEFAULT_ALIGNMENT_AREA)
+        image_settings.reduced_area = stage.drift_correction.rect
         image_settings.path = os.getcwd()
         image_settings.filename = f"ref_{stage.name}_overtilt_alignment"
-        ref_image  = acquire.acquire_image(microscope, image_settings)
+        ref_image = acquire.acquire_image(microscope, image_settings)
 
         # TODO: support rr
         for i, pattern in enumerate(stage.pattern.patterns):
@@ -97,7 +96,7 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
                                             steps=3)
 
             # setup again to ensure we are milling at the correct current, cleared patterns
-            setup_milling(microscope=microscope, mill_settings=stage.milling)
+            setup_milling(microscope=microscope, milling_stage=stage)
 
             # draw pattern
             draw_pattern(microscope=microscope, pattern=pattern)
@@ -107,6 +106,13 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
                         milling_current=stage.milling.milling_current, 
                         milling_voltage=stage.milling.milling_voltage, 
                         asynch=False)
+            
+            # finish milling (clear patterns, restore imaging current)
+            finish_milling(
+                microscope=microscope,
+                imaging_current=microscope.system.ion.beam.beam_current,
+                imaging_voltage=microscope.system.ion.beam.voltage,
+            )
 
             # return to initial position
             microscope.move_stage_absolute(initial_position)
