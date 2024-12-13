@@ -20,7 +20,6 @@ patterns:
     height: 5.0e-6
     depth: 1.0e-6
     rotation: 0.0
-    cleaning_cross_section: False
     scan_direction: "ToptoBottom"
     passes: 0 # means auto
     time: 0 # means auto
@@ -33,22 +32,18 @@ patterns:
   Circle:
     radius: 5.0e-6
     depth: 1.0e-6
-    cleaning_cross_section: False
   Trench:
-    lamella_width: 10.0e-6
-    lamella_height: 5.0e-6
-    trench_height: 5.0e-6
-    offset: 1.0e-6
-    size_ratio: 1.0
+    width: 10.0e-6
+    spacing: 5.0e-6
+    upper_trench_height: 5.0e-6
+    lower_trench_height: 5.0e-6
     depth: 2.0e-6
-    cleaning_cross_section: false
     time: 0 # means auto
   Horseshoe:
-    lamella_width: 40.0e-6
-    lamella_height: 10.0e-6
-    trench_height: 10.0e-6
-    offset: 1.0e-6
-    size_ratio: 1.0
+    width: 40.0e-6
+    spacing: 10.0e-6
+    upper_trench_height: 10.0e-6
+    lower_trench_height: 10.0e-6
     side_width: 5.0e-6
     side_offset: 0.0
     depth: 10.0e-6
@@ -84,13 +79,11 @@ patterns:
     trench_width: 2.0e-6
     rhs_height: 10.0e-6
     h_offset: 5.0e-6
-    cleaning_cross_section: false
   Fiducial:
     height: 10.0e-6
     width: 1.0e-6
     depth: 5.0e-6
     rotation: 45.0
-    cleaning_cross_section: false
   ArrayPattern:
     height: 2.0e-6
     width: 2.0e-6

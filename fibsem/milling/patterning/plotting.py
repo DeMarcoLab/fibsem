@@ -1,18 +1,14 @@
 import logging
 import math
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 
 from fibsem.milling.base import FibsemMillingStage
-from fibsem.milling.patterning.patterns import (
-    FiducialPattern,
-    MicroExpansionPattern,
-    RectanglePattern,
-    TrenchPattern,
-    WaffleNotchPattern,
+from fibsem.milling.patterning.patterns2 import (
+    BasePattern,
 )
 from fibsem.structures import (
     FibsemImage,
@@ -111,14 +107,14 @@ def _rect_pattern_to_image_pixels(
 # TODO: circle patches, line patches
 def _draw_rectangle_pattern(
     image: FibsemImage,
-    pattern: RectanglePattern,
+    pattern: BasePattern,
     colour: str = "yellow",
     name: str = "Rectangle",
 ) -> List[mpatches.Rectangle]:
     """Draw a rectangle pattern on an image.
     Args:
         image: FibsemImage: Image to draw pattern on.
-        pattern: RectanglePattern: Rectangle pattern to draw.
+        pattern: BasePattern: Rectangle pattern to draw.
         colour: str: Colour of rectangle patches.
         name: str: Name of the rectangle patches.
     Returns:
@@ -129,7 +125,8 @@ def _draw_rectangle_pattern(
     image_shape = image.data.shape
 
     patches = []
-    for i, p in enumerate(pattern.patterns, 1):
+    p: FibsemRectangleSettings
+    for i, p in enumerate(pattern.define(), 1):
         # convert from microscope image (real-space) to image pixel-space
         px, py, width, height = _rect_pattern_to_image_pixels(
             p, pixel_size, image_shape
@@ -153,13 +150,11 @@ def _draw_rectangle_pattern(
     return patches
 
 
-drawing_functions = {
-    RectanglePattern: _draw_rectangle_pattern,
-    TrenchPattern: _draw_rectangle_pattern,
-    MicroExpansionPattern: _draw_rectangle_pattern,
-    FiducialPattern: _draw_rectangle_pattern,
-    WaffleNotchPattern: _draw_rectangle_pattern,
-}
+def get_drawing_function(name: str) -> Callable:
+    
+    if name in ["Circle", "Bitmap", "Line", "SerialSection"]:
+        return None
+    return _draw_rectangle_pattern
 
 
 def draw_milling_patterns(
@@ -188,8 +183,13 @@ def draw_milling_patterns(
         colour = COLOURS[i % len(COLOURS)]
         p = stage.pattern
 
+        drawing_func = get_drawing_function(p.name)
+        if drawing_func is None:
+            logging.debug(f"Drawing Pattern {p.name} not currently supported, skipping")
+            continue
+
         patches.extend(
-            drawing_functions[type(p)](image, p, colour=colour, name=stage.name)
+            drawing_func(image, p, colour=colour, name=stage.name)
         )
 
     for patch in patches:

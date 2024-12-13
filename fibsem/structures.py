@@ -1123,7 +1123,7 @@ class FibsemMillingSettings:
             spot_size=settings.get("spot_size", 5.0e-8),
             rate=settings.get("rate", 3.0e-11),
             dwell_time=settings.get("dwell_time", 1.0e-6),
-            hfw=settings.get("hfw", 150e-6),
+            hfw=float(settings.get("hfw", 150e-6)),
             patterning_mode=settings.get("patterning_mode", "Serial"),
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; 1nA"),

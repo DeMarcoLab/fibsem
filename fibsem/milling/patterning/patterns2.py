@@ -115,26 +115,23 @@ DEFAULT_POINT_DDICT = {"x": 0.0, "y": 0.0}
 
 @dataclass
 class BasePattern(ABC):
-    name: str = "BasePattern"
-    shapes: List[FibsemPatternSettings] = None
-    point: Point = Point()
+    # name: str = "BasePattern"
+    # point: Point = Point() 
+    # shapes: List[FibsemPatternSettings] = None
+    # TODO: investigate TypeError: non-default argument 'width' follows default argument when uncommenting the above lines
 
     @abstractmethod
     def define(self) -> List[FibsemPatternSettings]:
         pass
 
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "point": self.point.to_dict()
-        }
-
     @abstractmethod
-    @classmethod
-    def from_dict(cls, ddict: dict) -> "BasePattern":
+    def to_dict(self):
         pass
 
-
+    @classmethod
+    @abstractmethod
+    def from_dict(cls, ddict: dict) -> "BasePattern":
+        pass
 
 @dataclass
 class BitmapPattern(BasePattern):
@@ -145,7 +142,7 @@ class BitmapPattern(BasePattern):
     path: str = ""
     shapes: List[FibsemPatternSettings] = None
     point: Point = Point()
-    name: str = "BitmapPattern"
+    name: str = "Bitmap"
 
     def define(self) -> List[FibsemPatternSettings]:
 
@@ -181,7 +178,7 @@ class BitmapPattern(BasePattern):
             depth=ddict["depth"],
             rotation=ddict.get("rotation", 0),
             path=ddict.get("path", ""),
-            point=Point.from_dict(ddict["point"])
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
         )
 
 
@@ -224,6 +221,38 @@ class RectanglePattern(BasePattern):
 
         self.shapes = [shape]
         return self.shapes
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "rotation": self.rotation,
+            "time": self.time,
+            "passes": self.passes,
+            "offset": self.offset,
+            "invert_offset": self.invert_offset,
+            "scan_direction": self.scan_direction,
+            "cross_section": self.cross_section.name
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "RectanglePattern":
+        return cls(
+            width=ddict["width"],
+            height=ddict["height"],
+            depth=ddict["depth"],
+            rotation=ddict.get("rotation", 0),
+            time=ddict.get("time", 0),
+            passes=ddict.get("passes", 0),
+            offset=ddict.get("offset", 0),
+            invert_offset=ddict.get("invert_offset", False),
+            scan_direction=ddict.get("scan_direction", "TopToBottom"),
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 
 @dataclass
@@ -247,7 +276,28 @@ class LinePattern(BasePattern):
         )
         self.shapes = [shape]
         return self.shapes
-
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "start_x": self.start_x,
+            "end_x": self.end_x,
+            "start_y": self.start_y,
+            "end_y": self.end_y,
+            "depth": self.depth
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "LinePattern":
+        return cls(
+            start_x=ddict["start_x"],
+            end_x=ddict["end_x"],
+            start_y=ddict["start_y"],
+            end_y=ddict["end_y"],
+            depth=ddict["depth"],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class CirclePattern(BasePattern):
@@ -269,6 +319,24 @@ class CirclePattern(BasePattern):
         )
         self.shapes = [shape]
         return self.shapes
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "radius": self.radius,
+            "depth": self.depth,
+            "thickness": self.thickness
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "CirclePattern":
+        return cls(
+            radius=ddict["radius"],
+            depth=ddict["depth"],
+            thickness=ddict.get("thickness", 0),
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class TrenchPattern(BasePattern):
@@ -323,6 +391,31 @@ class TrenchPattern(BasePattern):
         self.shapes = [lower_trench_settings, upper_trench_settings]
         return self.shapes
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "depth": self.depth,
+            "spacing": self.spacing,
+            "upper_trench_height": self.upper_trench_height,
+            "lower_trench_height": self.lower_trench_height,
+            "cross_section": self.cross_section.name,
+            "time": self.time
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "TrenchPattern":
+        return cls(
+            width=ddict["width"],
+            depth=ddict["depth"],
+            spacing=ddict["spacing"],
+            upper_trench_height=ddict["upper_trench_height"],
+            lower_trench_height=ddict["lower_trench_height"],
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            time=ddict.get("time", 0),
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class HorseshoePattern(BasePattern):
@@ -391,6 +484,35 @@ class HorseshoePattern(BasePattern):
 
         self.shapes = [lower_pattern, upper_pattern, side_pattern]
         return self.shapes
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "spacing": self.spacing,
+            "depth": self.depth,
+            "upper_trench_height": self.upper_trench_height,
+            "lower_trench_height": self.lower_trench_height,
+            "side_width": self.side_width,
+            "side_offset": self.side_offset,
+            "cross_section": self.cross_section.name
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "HorseshoePattern":
+        return cls(
+            width=ddict["width"],
+            spacing=ddict["spacing"],
+            depth=ddict["depth"],
+            upper_trench_height=ddict["upper_trench_height"],
+            lower_trench_height=ddict["lower_trench_height"],
+            side_width=ddict["side_width"],
+            side_offset=ddict["side_offset"],
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
+    
 
 @dataclass
 class HorseshoePatternVertical(BasePattern):
@@ -413,7 +535,7 @@ class HorseshoePatternVertical(BasePattern):
         width = self.width
         height = self.height
         trench_width = self.side_trench_width
-        upper_trench_height = self.upper_trench_height
+        upper_trench_height = self.top_trench_height
         depth = self.depth
         scan_direction = self.scan_direction
         inverted = self.inverted
@@ -453,6 +575,34 @@ class HorseshoePatternVertical(BasePattern):
         
         self.shapes = [left_pattern,right_pattern, upper_pattern]
         return self.shapes
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "height": self.height,
+            "side_trench_width": self.side_trench_width,
+            "top_trench_height": self.top_trench_height,
+            "depth": self.depth,
+            "scan_direction": self.scan_direction,
+            "inverted": self.inverted,
+            "cross_section": self.cross_section.name
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "HorseshoePatternVertical":
+        return cls(
+            width=ddict["width"],
+            height=ddict["height"],
+            side_trench_width=ddict["side_trench_width"],
+            top_trench_height=ddict["top_trench_height"],
+            depth=ddict["depth"],
+            scan_direction=ddict.get("scan_direction", "TopToBottom"),
+            inverted=ddict.get("inverted", False),
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class SerialSectionPattern(BasePattern):
@@ -537,6 +687,34 @@ class SerialSectionPattern(BasePattern):
             
         return self.shapes
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "section_thickness": self.section_thickness,
+            "section_width": self.section_width,
+            "section_depth": self.section_depth,
+            "side_width": self.side_width,
+            "side_height": self.side_height,
+            "side_depth": self.side_depth,
+            "inverted": self.inverted,
+            "use_side_patterns": self.use_side_patterns
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "SerialSectionPattern":
+        return cls(
+            section_thickness=ddict["section_thickness"],
+            section_width=ddict["section_width"],
+            section_depth=ddict["section_depth"],
+            side_width=ddict["side_width"],
+            side_height=ddict.get("side_height", 0),
+            side_depth=ddict.get("side_depth", 0),
+            inverted=ddict.get("inverted", False),
+            use_side_patterns=ddict.get("use_side_patterns", True),
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
+
 # TODO: deprecate this pattern, add offset to RectanglePattern
 # @dataclass
 # class RectangleOffsetPattern(BasePattern):
@@ -582,58 +760,95 @@ class SerialSectionPattern(BasePattern):
 
 @dataclass
 class FiducialPattern(BasePattern):
+    width: float
+    height: float
+    depth: float
+    rotation: float = 0
+    cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
     name: str = "Fiducial"
-    required_keys: Tuple[str] = REQUIRED_KEYS["Fiducial"]
-    patterns = None
-    protocol = None
-    point = None
 
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> List[FibsemRectangleSettings]:
-        import numpy as np
+    def define(self) -> List[FibsemRectangleSettings]:
+        """Draw a fiducial milling pattern (cross shape)"""
 
-        # ?
-        protocol["centre_x"] = point.x
-        protocol["centre_y"] = point.y
-        protocol["pattern"] = "Rectangle"
-        protocol["cleaning_cross_section"] = protocol.get(
-            "cleaning_cross_section", False
+        width = self.width
+        height = self.height
+        depth = self.depth
+        rotation = self.rotation * constants.DEGREES_TO_RADIANS
+        cross_section = self.cross_section
+
+
+        left_pattern = FibsemRectangleSettings(
+            width=width,
+            height=height,
+            depth=depth,
+            centre_x=self.point.x,
+            centre_y=self.point.y,
+            scan_direction="TopToBottom",
+            cross_section=cross_section,
+            rotation=rotation,
         )
-        protocol["cross_section"] = protocol.get("cross_section", "Rectangle")
-        protocol["scan_direction"] = protocol.get("scan_direction", "TopToBottom")
+        right_pattern = FibsemRectangleSettings(
+            width=width,
+            height=height,
+            depth=depth,
+            centre_x=self.point.x,
+            centre_y=self.point.y,
+            scan_direction="TopToBottom",
+            cross_section=cross_section,
+            rotation=rotation + np.deg2rad(90),
+        )
 
-        left_pattern = FibsemRectangleSettings.from_dict(protocol)
-        left_pattern.rotation = protocol["rotation"] * constants.DEGREES_TO_RADIANS
-        right_pattern = FibsemRectangleSettings.from_dict(protocol)
-        right_pattern.rotation = left_pattern.rotation + np.deg2rad(90)
+        self.shapes = [left_pattern, right_pattern]
+        return self.shapes
 
-        self.patterns = [left_pattern, right_pattern]
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "rotation": self.rotation,
+            "cross_section": self.cross_section.name
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "FiducialPattern":
+        return cls(
+            width=ddict["width"],
+            height=ddict["height"],
+            depth=ddict["depth"],
+            rotation=ddict.get("rotation", 0),
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 
 @dataclass
 class UndercutPattern(BasePattern):
+    width: float
+    height: float
+    depth: float
+    trench_width: float
+    rhs_height: float
+    h_offset: float
+    cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     name: str = "Undercut"
-    required_keys: Tuple[str] = REQUIRED_KEYS["Undercut"]
-    patterns = None
-    protocol = None
-    point = None
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
 
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> List[FibsemRectangleSettings]:
-        check_keys(protocol, self.required_keys)
-
-        jcut_rhs_height = protocol["rhs_height"]
-        jcut_lamella_height = protocol["height"]
-        jcut_width = protocol["width"]
-        jcut_trench_thickness = protocol["trench_width"]
-        jcut_depth = protocol["depth"]
-        jcut_h_offset = protocol["h_offset"]
-        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+    def define(self) -> List[FibsemRectangleSettings]:
+        
+        point = self.point
+        jcut_rhs_height = self.rhs_height
+        jcut_lamella_height = self.height
+        jcut_width = self.width
+        jcut_trench_thickness = self.trench_width
+        jcut_depth = self.depth
+        jcut_h_offset = self.h_offset
+        cross_section = self.cross_section
 
         # top_jcut
         jcut_top_centre_x = point.x + jcut_width / 2 - jcut_h_offset
@@ -665,51 +880,63 @@ class UndercutPattern(BasePattern):
             centre_x=jcut_rhs_centre_x,
             centre_y=jcut_rhs_centre_y,
             scan_direction="TopToBottom",
-            cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+            cross_section = cross_section
         )
 
+        self.shapes = [top_pattern, rhs_pattern]
+        return self.shapes
 
-
-        self.patterns = [top_pattern, rhs_pattern]
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
-
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "trench_width": self.trench_width,
+            "rhs_height": self.rhs_height,
+            "h_offset": self.h_offset,
+            "cross_section": self.cross_section.name
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "UndercutPattern":
+        return cls(
+            width=ddict["width"],
+            height=ddict["height"],
+            depth=ddict["depth"],
+            trench_width=ddict["trench_width"],
+            rhs_height=ddict["rhs_height"],
+            h_offset=ddict["h_offset"],
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class MicroExpansionPattern(BasePattern):
+    width: float
+    height: float
+    depth: float
+    distance: float
     name: str = "MicroExpansion"
-    required_keys: Tuple[str] = REQUIRED_KEYS["MicroExpansion"]
-    patterns = None
-    protocol = None
-    point = None
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
 
     # ref: https://www.nature.com/articles/s41467-022-29501-3
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> List[FibsemRectangleSettings]:
-        """
-        Draw the microexpansion joints for stress relief of lamella.
+    def define(self) -> List[FibsemRectangleSettings]:
+        """Draw the microexpansion joints for stress relief of lamella"""
 
-        Args:
-            microscope (FibsemMicroscope): OpenFIBSEM microscope instance
-            protocol (dict): Contains a dictionary of the necessary values for drawing the joints.
-            protocol (dict): Lamella protocol
-
-        Returns:
-            patterns: List[FibsemPatternSettings]
-        """
-        check_keys(protocol, self.required_keys)
-
-        width = protocol["width"]
-        height = protocol["height"]
-        depth = protocol["depth"]  # lamella milling depth
+        point = self.point
+        width = self.width
+        height = self.height
+        depth = self.depth
+        distance = self.distance
 
         left_pattern_settings = FibsemRectangleSettings(
             width=width,
             height=height,
             depth=depth,
-            centre_x=point.x -  protocol["distance"] ,
+            centre_x=point.x -  distance,
             centre_y=point.y,
             scan_direction="TopToBottom",
         )
@@ -718,46 +945,71 @@ class MicroExpansionPattern(BasePattern):
             width=width,
             height=height,
             depth=depth,
-            centre_x=point.x + protocol["distance"],
+            centre_x=point.x + distance,
             centre_y=point.y,
             scan_direction="TopToBottom",
         )
 
-        self.patterns = [left_pattern_settings, right_pattern_settings]
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
+        self.shapes = [left_pattern_settings, right_pattern_settings]
+        return self.shapes
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "distance": self.distance
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "MicroExpansionPattern":
+        return cls(
+            width=ddict["width"],
+            height=ddict["height"],
+            depth=ddict["depth"],
+            distance=ddict["distance"],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class ArrayPattern(BasePattern):
+    width: float
+    height: float
+    depth: float
+    n_columns: int
+    n_rows: int
+    pitch_vertical: float
+    pitch_horizontal: float
+    passes: int = 0
+    rotation: float = 0
+    scan_direction: str = "TopToBottom"
+    cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     name: str = "ArrayPattern"
-    required_keys: Tuple[str] = REQUIRED_KEYS["ArrayPattern"]
-    patterns = None
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
     # ref: weld cross-section/ passes: https://www.nature.com/articles/s41592-023-02113-5
-    protocol = None
-    point = None
 
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> List[FibsemRectangleSettings]:
-        check_keys(protocol, self.required_keys)
-
-        width = protocol["width"]
-        height = protocol["height"]
-        depth = protocol["depth"]
-        n_columns = int(protocol["n_columns"])
-        n_rows = int(protocol["n_rows"])
-        pitch_vertical = protocol["pitch_vertical"]
-        pitch_horizontal = protocol["pitch_horizontal"]
-        rotation = protocol.get("rotation", 0)
-        passes = protocol.get("passes", 1)
-        scan_direction = protocol.get("scan_direction", "TopToBottom")
-        passes = int(passes) if passes is not None else None
-        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
+    def define(self) -> List[FibsemRectangleSettings]:
+        
+        point = self.point
+        width = self.width
+        height = self.height
+        depth = self.depth
+        n_columns = int(self.n_columns)
+        n_rows = int(self.n_rows)
+        pitch_vertical = self.pitch_vertical
+        pitch_horizontal = self.pitch_horizontal
+        rotation = self.rotation
+        passes = self.passes
+        scan_direction = self.scan_direction
+        passes = int(passes)
+        cross_section = self.cross_section
 
         # create a 2D array of points
-        points = []
+        points: List[Point] = []
         for i in range(n_columns):
             for j in range(n_rows):
                 points.append(
@@ -767,52 +1019,83 @@ class ArrayPattern(BasePattern):
                     )
                 )
         # create patterns
-        patterns = []
-        for point in points:
+        self.shapes = []
+        for pt in points:
             pattern_settings = FibsemRectangleSettings(
                 width=width,
                 height=height,
                 depth=depth,
-                centre_x=point.x,
-                centre_y=point.y,  
+                centre_x=pt.x,
+                centre_y=pt.y,  
                 scan_direction=scan_direction,
-
                 rotation=rotation,
                 passes=passes,
                 cross_section=cross_section,
             )
-            patterns.append(pattern_settings)
+            self.shapes.append(pattern_settings)
 
-        self.patterns = patterns
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
+        return self.shapes
 
-
-
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+            "n_columns": self.n_columns,
+            "n_rows": self.n_rows,
+            "pitch_vertical": self.pitch_vertical,
+            "pitch_horizontal": self.pitch_horizontal,
+            "passes": self.passes,
+            "rotation": self.rotation,
+            "scan_direction": self.scan_direction,
+            "cross_section": self.cross_section.name
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "ArrayPattern":
+        return cls(
+            width=ddict["width"],
+            height=ddict["height"],
+            depth=ddict["depth"],
+            n_columns=ddict["n_columns"],
+            n_rows=ddict["n_rows"],
+            pitch_vertical=ddict["pitch_vertical"],
+            pitch_horizontal=ddict["pitch_horizontal"],
+            passes=ddict.get("passes", 0),
+            rotation=ddict.get("rotation", 0),
+            scan_direction=ddict.get("scan_direction", "TopToBottom"),
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class WaffleNotchPattern(BasePattern):
+    vheight: float
+    vwidth: float
+    hheight: float
+    hwidth: float
+    depth: float
+    distance: float
+    inverted: bool = False
+    cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     name: str = "WaffleNotch"
-    required_keys: Tuple[str] = REQUIRED_KEYS["WaffleNotch"]
-    patterns = None
-    protocol = None
-    point = None
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
     # ref: https://www.nature.com/articles/s41467-022-29501-3
 
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> List[FibsemRectangleSettings]:
-        check_keys(protocol, self.required_keys)
+    def define(self) -> List[FibsemRectangleSettings]:
 
-        vwidth = protocol["vwidth"]
-        vheight = protocol["vheight"]
-        hwidth = protocol["hwidth"]
-        hheight = protocol["hheight"]
-        depth = protocol["depth"]
-        distance = protocol["distance"]
-        cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
-        inverted = -1  if protocol.get("inverted", False) else 1
+        point = self.point
+        vwidth = self.vwidth
+        vheight = self.vheight
+        hwidth = self.hwidth
+        hheight = self.hheight
+        depth = self.depth
+        distance = self.distance
+        cross_section = self.cross_section
+        inverted = -1 if self.inverted else 1
 
         # five patterns
         top_vertical_pattern = FibsemRectangleSettings(
@@ -865,33 +1148,58 @@ class WaffleNotchPattern(BasePattern):
             cross_section=cross_section
         )
 
-        self.patterns = [
+        self.shapes = [
             top_vertical_pattern,
             bottom_vertical_pattern,
             top_horizontal_pattern,
             bottom_horizontal_pattern,
             centre_vertical_pattern,
         ]
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
 
+        return self.shapes
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "vheight": self.vheight,
+            "vwidth": self.vwidth,
+            "hheight": self.hheight,
+            "hwidth": self.hwidth,
+            "depth": self.depth,
+            "distance": self.distance,
+            "inverted": self.inverted,
+            "cross_section": self.cross_section.name
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "WaffleNotchPattern":
+        return cls(
+            vheight=ddict["vheight"],
+            vwidth=ddict["vwidth"],
+            hheight=ddict["hheight"],
+            hwidth=ddict["hwidth"],
+            depth=ddict["depth"],
+            distance=ddict["distance"],
+            inverted=ddict.get("inverted", False),
+            cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class CloverPattern(BasePattern):
+    radius: float
+    depth: float
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
     name: str = "Clover"
-    required_keys: Tuple[str] = REQUIRED_KEYS["Clover"]
-    patterns = None
-    protocol = None
-    point = None
 
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> List[FibsemPatternSettings]:
-        check_keys(protocol, self.required_keys)
 
-        radius = protocol["radius"]
-        depth = protocol["depth"]
+    def define(self) -> List[FibsemPatternSettings]:
+        
+        point = self.point
+        radius = self.radius
+        depth = self.depth
 
         # three leaf clover pattern
 
@@ -925,33 +1233,44 @@ class CloverPattern(BasePattern):
             scan_direction="TopToBottom",
         )
 
-        self.patterns = [top_pattern, right_pattern, left_pattern, stem_pattern]
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
+        self.shapes = [top_pattern, right_pattern, left_pattern, stem_pattern]
+        return self.shapes
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "radius": self.radius,
+            "depth": self.depth
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "CloverPattern":
+        return cls(
+            radius=ddict["radius"],
+            depth=ddict["depth"],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 
 @dataclass
 class TriForcePattern(BasePattern):
+    width: float
+    height: float
+    depth: float
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
     name: str = "TriForce"
-    required_keys: Tuple[str] = REQUIRED_KEYS["TriForce"]
-    patterns = None
-    protocol = None
-    point = None
 
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> List[FibsemPatternSettings]:
-        check_keys(protocol, self.required_keys)
-
-        height = protocol["height"]
-        width = protocol["width"]
-        depth = protocol["depth"]
-
-        # triforce pattern
+    def define(self) -> List[FibsemPatternSettings]:
+        
+        point = self.point
+        height = self.height
+        width = self.width
+        depth = self.depth
         angle = 30
 
-        self.patterns = []
+        self.shapes = []
 
         # centre of each triangle
         points = [
@@ -962,113 +1281,116 @@ class TriForcePattern(BasePattern):
 
         for point in points:
 
-            left_pattern, right_pattern, bottom_pattern = create_triangle_patterns(width=width, height=height, depth=depth, point=point, angle=angle)
+            triangle_shapes =  create_triangle_patterns(width=width, 
+                                                        height=height, 
+                                                        depth=depth, 
+                                                        point=point, 
+                                                        angle=angle)
+            self.shapes.extend(triangle_shapes)
+            
+        return self.shapes
 
-            self.patterns.append(left_pattern)
-            self.patterns.append(right_pattern)
-            self.patterns.append(bottom_pattern)
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
-
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "TriForcePattern":
+        return cls(
+            width=ddict["width"],
+            height=ddict["height"],
+            depth=ddict["depth"],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 @dataclass
 class TrapezoidPattern(BasePattern):
+    inner_width: float
+    outer_width: float
+    trench_height: float
+    depth: float
+    distance: float
+    n_rectangles: int
+    overlap: float
     name: str = "Trapezoid"
-    required_keys: Tuple[str] = REQUIRED_KEYS["Trapezoid"]
-    patterns = None
-    protocol = None
-    point = None
+    point: Point = Point()
+    shapes: List[FibsemPatternSettings] = None
 
-    def define(self, protocol: dict, point: Point = Point()) -> List[FibsemPatternSettings]:
-        check_keys(protocol, self.required_keys)
-        self.patterns = []
-        width_increments = (protocol["outer_width"] - protocol["inner_width"]) / (protocol["n_rectangles"]-1)
-        dict = {}
-        dict["trench_height"] = protocol["trench_height"] / protocol["n_rectangles"] * (1+protocol["overlap"])
-        dict["depth"] = protocol["depth"]
+    def define(self) -> List[FibsemPatternSettings]:
+        
+        outer_width = self.outer_width
+        inner_width = self.inner_width
+        trench_height = self.trench_height
+        depth = self.depth
+        distance = self.distance
+        n_rectangles = int(self.n_rectangles)
+        overlap = self.overlap
+        point = self.point
+
+        self.shapes = []
+        width_increments = (outer_width - inner_width) / (n_rectangles - 1)
+        height = trench_height / n_rectangles * (1 + overlap)
         # bottom half
-        for i in range(int(protocol["n_rectangles"])):
-            dict["width"] = protocol["outer_width"] - i * width_increments
-            pattern = RectanglePattern()
-            y = point.y + (i * dict["trench_height"] * (1-protocol["overlap"])) - protocol["distance"] - protocol["trench_height"]
+        for i in range(n_rectangles):
+            width = outer_width - i * width_increments
+            y = point.y + (i * dict["trench_height"] * (1-overlap)) - distance - trench_height
             centre = Point(point.x, y)
             pattern = FibsemRectangleSettings(
-                width=dict["width"],
-                height=dict["trench_height"],
-                depth=dict["depth"],
+                width=width,
+                height=height,
+                depth=depth,
                 centre_x=centre.x,
                 centre_y=centre.y,
                 scan_direction="BottomToTop",
             )
-            self.patterns.append(deepcopy(pattern))
+            self.shapes.append(deepcopy(pattern))
         # top half
-        for i in range(int(protocol["n_rectangles"])):
-            dict["width"] = protocol["outer_width"] - i * width_increments
-            pattern = RectanglePattern()
-            y = point.y - (i * dict["trench_height"] * (1-protocol["overlap"])) + protocol["distance"] + protocol["trench_height"]
+        for i in range(n_rectangles):
+            width = outer_width - i * width_increments
+            y = point.y - (i * dict["trench_height"] * (1-overlap)) + distance + trench_height
             centre = Point(point.x, y)
             pattern = FibsemRectangleSettings(
-                width=dict["width"],
-                height=dict["trench_height"],
-                depth=dict["depth"],
+                width=width,
+                height=height,
+                depth=depth,
                 centre_x=centre.x,
                 centre_y=centre.y,
                 scan_direction="TopToBottom",
             )
-            self.patterns.append(deepcopy(pattern))
-        self.protocol = protocol
-        self.point = point
-        return self.patterns
+            self.shapes.append(deepcopy(pattern))
+        return self.shapes
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "inner_width": self.inner_width,
+            "outer_width": self.outer_width,
+            "trench_height": self.trench_height,
+            "depth": self.depth,
+            "distance": self.distance,
+            "n_rectangles": self.n_rectangles,
+            "overlap": self.overlap
+        }
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "TrapezoidPattern":
 
-
-__PATTERNS__ = [
-    RectanglePattern,
-    LinePattern,
-    CirclePattern,
-    TrenchPattern,
-    HorseshoePattern,
-    HorseshoePatternVertical,
-    SerialSectionPattern,
-    UndercutPattern,
-    FiducialPattern,
-    ArrayPattern,
-    MicroExpansionPattern,
-    WaffleNotchPattern,
-    CloverPattern,
-    TriForcePattern,
-    BitmapPattern,
-    TrapezoidPattern,
-]
-
-
-def get_pattern(name: str) -> BasePattern:
-    for pattern in __PATTERNS__:
-        if pattern.name.lower() == name.lower():
-            return pattern()
-
-    raise ValueError(f"Pattern {name} not found.")
-
-
-def get_pattern_names() -> List[str]:
-    return [pattern.name for pattern in __PATTERNS__]
-
-
-def get_pattern_required_keys(name: str) -> Tuple[str]:
-    pattern = get_pattern(name)
-    return pattern.required_keys
-
-
-def get_pattern_required_keys_dict() -> Dict[str, List[str]]:
-    return {pattern.name: pattern.required_keys for pattern in __PATTERNS__}
-
-
-def get_pattern_required_keys_json() -> str:
-    return json.dumps(get_pattern_required_keys_dict())
-
-
-def get_pattern_required_keys_yaml() -> str:
-    return yaml.dump(get_pattern_required_keys_dict())
+        return cls(
+            inner_width=ddict["inner_width"],
+            outer_width=ddict["outer_width"],
+            trench_height=ddict["trench_height"],
+            depth=ddict["depth"],
+            distance=ddict["distance"],
+            n_rectangles=ddict["n_rectangles"],
+            overlap=ddict["overlap"],
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
 
 
 def create_triangle_patterns(
@@ -1109,46 +1431,59 @@ def create_triangle_patterns(
     return [left_pattern, right_pattern, bottom_pattern]
 
 
-
-PROTOCOL_MILL_MAP = {
-    "cut": RectanglePattern,
-    "fiducial": FiducialPattern,
-    "flatten": RectanglePattern,
-    "undercut": UndercutPattern,
-    "horseshoe": HorseshoePattern,
-    "lamella": TrenchPattern,
-    "polish_lamella": TrenchPattern,
-    "thin_lamella": TrenchPattern,
-    "sever": RectanglePattern,
-    "sharpen": RectanglePattern,
-    "needle": RectanglePattern,
-    "copper_release": HorseshoePattern,
-    "serial_trench": HorseshoePattern,
-    "serial_undercut": RectanglePattern,
-    "serial_sever": RectanglePattern,
-    "lamella_sever": RectanglePattern,
-    "lamella_polish": TrenchPattern,
-    "trench": TrenchPattern,
-    "notch": WaffleNotchPattern,
-    "microexpansion": MicroExpansionPattern,
-    "clover": CloverPattern,
-    "autolamella": TrenchPattern,
-    "MillUndercut": RectanglePattern,
-    "rectangle": RectanglePattern,
-    "MillRoughCut": TrenchPattern,
-    "MillRegularCut": TrenchPattern,
-    "MillPolishingCut": TrenchPattern,
-    "mill_rough": TrenchPattern,
-    "mill_polishing": TrenchPattern,
-
+MILLING_PATTERNS: Dict[str, BasePattern] = {
+    RectanglePattern.name.lower(): RectanglePattern,
+    LinePattern.name.lower(): LinePattern,
+    CirclePattern.name.lower(): CirclePattern,
+    TrenchPattern.name.lower(): TrenchPattern,
+    HorseshoePattern.name.lower(): HorseshoePattern,
+    HorseshoePatternVertical.name.lower(): HorseshoePatternVertical,
+    SerialSectionPattern.name.lower(): SerialSectionPattern,
+    UndercutPattern.name.lower(): UndercutPattern,
+    FiducialPattern.name.lower(): FiducialPattern,
+    ArrayPattern.name.lower(): ArrayPattern,
+    MicroExpansionPattern.name.lower(): MicroExpansionPattern,
+    WaffleNotchPattern.name.lower(): WaffleNotchPattern,
+    CloverPattern.name.lower(): CloverPattern,
+    TriForcePattern.name.lower(): TriForcePattern,
+    BitmapPattern.name.lower(): BitmapPattern,
+    TrapezoidPattern.name.lower(): TrapezoidPattern,
 }
 
 
-def _get_pattern(key: str, protocol: dict, point: Point = Point()) -> BasePattern:
-    if "type" in protocol:
-        pattern = get_pattern(protocol["type"])
-    else:
-        pattern = PROTOCOL_MILL_MAP[key]()
-    pattern.define(protocol, point=point)
-    return pattern
+# PROTOCOL_MILL_MAP = {
+#     "cut": RectanglePattern,
+#     "fiducial": FiducialPattern,
+#     "flatten": RectanglePattern,
+#     "undercut": UndercutPattern,
+#     "horseshoe": HorseshoePattern,
+#     "lamella": TrenchPattern,
+#     "polish_lamella": TrenchPattern,
+#     "thin_lamella": TrenchPattern,
+#     "sever": RectanglePattern,
+#     "sharpen": RectanglePattern,
+#     "needle": RectanglePattern,
+#     "copper_release": HorseshoePattern,
+#     "serial_trench": HorseshoePattern,
+#     "serial_undercut": RectanglePattern,
+#     "serial_sever": RectanglePattern,
+#     "lamella_sever": RectanglePattern,
+#     "lamella_polish": TrenchPattern,
+#     "trench": TrenchPattern,
+#     "notch": WaffleNotchPattern,
+#     "microexpansion": MicroExpansionPattern,
+#     "clover": CloverPattern,
+#     "autolamella": TrenchPattern,
+#     "MillUndercut": RectanglePattern,
+#     "rectangle": RectanglePattern,
+#     "MillRoughCut": TrenchPattern,
+#     "MillRegularCut": TrenchPattern,
+#     "MillPolishingCut": TrenchPattern,
+#     "mill_rough": TrenchPattern,
+#     "mill_polishing": TrenchPattern,
+# }
 
+def get_pattern(name: str, config: dict) -> BasePattern:
+    cls_pattern = MILLING_PATTERNS.get(name.lower())
+    pattern = cls_pattern.from_dict(config)
+    return pattern

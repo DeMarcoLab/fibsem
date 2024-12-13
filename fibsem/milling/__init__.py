@@ -2,7 +2,7 @@ from fibsem.milling.base import (
     FibsemMillingStage,
     MillingStrategy,
     get_milling_stages,
-    get_protocol_from_stages,
+    # get_protocol_from_stages,
 )
 from fibsem.milling.core import (
     draw_pattern,
