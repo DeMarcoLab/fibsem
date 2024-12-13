@@ -7,7 +7,8 @@ description: protocol for fibsem
 
 milling:
     milling_current: 2.e-9
-    application_file: autolamella
+    milling_voltage: 30000
+    application_file: Si
     hfw: 150.0e-6
     spot_size: 5.0e-8
     rate: 3.0e-3
@@ -20,7 +21,7 @@ patterns:
     height: 5.0e-6
     depth: 1.0e-6
     rotation: 0.0
-    scan_direction: "ToptoBottom"
+    scan_direction: TopToBottom
     passes: 0 # means auto
     time: 0 # means auto
   Line:

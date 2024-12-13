@@ -541,7 +541,7 @@ def _draw_patterns_in_napari(
         shape_types = []
         t0 = time.time()
 
-        patterns: List[FibsemPatternSettings] = stage.pattern.patterns
+        patterns: List[FibsemPatternSettings] = stage.pattern.define()
         point: Point = stage.pattern.point
         name: str = stage.name
         is_line_pattern: bool = False
@@ -553,23 +553,23 @@ def _draw_patterns_in_napari(
         drawn_patterns = []
 
         for pattern_settings in patterns:
-            if isinstance(pattern_settings, FibsemBitmapSettings):
-                if pattern_settings.path == None or pattern_settings.path == '':
-                    continue
+            # if isinstance(pattern_settings, FibsemBitmapSettings):
+            #     if pattern_settings.path == None or pattern_settings.path == '':
+            #         continue
 
-                bmp_Image, translate_position = convert_bitmap_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
-                if "bmp_Image" in viewer.layers:
-                    viewer.layers.remove(viewer.layers["bmp_Image"])
-                viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
-                shape_patterns = []
-                _ignore.append("bmp_Image")
-                continue
+            #     bmp_Image, translate_position = convert_bitmap_pattern_to_napari_image(pattern_settings=pattern_settings, image=ib_image)
+            #     if "bmp_Image" in viewer.layers:
+            #         viewer.layers.remove(viewer.layers["bmp_Image"])
+            #     viewer.add_image(bmp_Image,translate=translate_position,name="bmp_Image")
+            #     shape_patterns = []
+            #     _ignore.append("bmp_Image")
+            #     continue
 
-            elif isinstance(pattern_settings, FibsemCircleSettings):
+            if isinstance(pattern_settings, FibsemCircleSettings):
                 if pattern_settings.thickness != 0:
-                    # annulus is special case becaue napari can't draw annulus as shape, so we draw them as an image
-                    is_annulus = True
-                    drawn_patterns.append(draw_pattern_shape(pattern_settings, ib_image))
+                    # # annulus is special case becaue napari can't draw annulus as shape, so we draw them as an image
+                    # is_annulus = True
+                    # drawn_patterns.append(draw_pattern_shape(pattern_settings, ib_image))
                     continue
                 else:
                     shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=ib_image)
@@ -859,7 +859,7 @@ def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
 
 
 def validate_pattern_placement(
-    patterns: List[FibsemPatternSettings], resolution: list, shape: List[List[float]]
+    resolution: Tuple[int, int], shape: List[List[float]]
 ):
     x_lim = resolution[0]
     y_lim = resolution[1]

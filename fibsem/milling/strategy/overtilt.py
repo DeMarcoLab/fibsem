@@ -74,7 +74,7 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
         ref_image = acquire.acquire_image(microscope, image_settings)
 
         # TODO: support rr
-        for i, pattern in enumerate(stage.pattern.patterns):
+        for i, pattern in enumerate(stage.pattern.define()):
             
             # TODO: validate which direction to tilt, including when combined with scan rotation
             scan_rotation = microscope.get("scan_rotation", stage.milling.milling_channel)

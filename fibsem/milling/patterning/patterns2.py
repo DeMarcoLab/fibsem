@@ -1,7 +1,7 @@
 import json
 from copy import deepcopy
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -28,90 +28,92 @@ def check_keys(protocol: dict, required_keys: List[str]) -> bool:
 # "cross_section": {"type": "str", "options": [cs.name for cs in CrossSectionPattern], "default": "Rectangle", "description": "Cross section of the milling pattern"}
 
     
-REQUIRED_KEYS = {
-    "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section", "time"),
-    "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-    "Circle": ("radius", "depth"),
-    "Trench": (
-        "lamella_width",
-        "lamella_height",
-        "trench_height",
-        "size_ratio",
-        "offset",
-        "depth",
-        "cross_section",
-        "time", 
-    ),
-    "Horseshoe": (
-        "lamella_width",
-        "lamella_height",
-        "trench_height",
-        "size_ratio",
-        "offset",
-        "side_offset",
-        "side_width",
-        "depth",
-        "scan_direction",
-        "cross_section",
-    ),
-    "HorseshoeVertical": (
-        "width",
-        "height",
-        "side_trench_width",
-        "top_trench_height",
-        "depth",
-        "scan_direction",
-        "inverted",
-        "cross_section", 
-    ),
-    "SerialSection": (
-        "section_thickness",
-        "section_width",
-        "section_depth",
-        "side_width",
-        "side_height",
-        "side_depth",
-        "inverted",
-        "use_side_patterns",
-    ),
-    "RectangleOffset": ("width", "height", "depth", "scan_direction", "cross_section", "offset", "inverted"),
-    "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
-    "Undercut": (
-        "height",
-        "width",
-        "depth",
-        "trench_width",
-        "rhs_height",
-        "h_offset",
-        "cross_section",
-    ),
-    "MicroExpansion": (
-        "height",
-        "width",
-        "depth",
-        "distance",
-    ),
-    "ArrayPattern": ("height", "width", "depth", "n_columns", "n_rows", 
-                    "pitch_vertical", "pitch_horizontal", 
-                    "passes", "scan_direction", "cross_section"),
-    "WaffleNotch": (
-        "vheight",
-        "vwidth",
-        "hheight",
-        "hwidth",
-        "depth",
-        "distance",
-        "inverted",
-        "cross_section",
-    ),
-    "Clover": ("radius", "depth"),
-    "TriForce": ("height", "width", "depth"),
-    "Trapezoid": ("inner_width", "outer_width", "trench_height", "depth", "distance", "n_rectangles", "overlap"),
-}
+# REQUIRED_KEYS = {
+#     "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section", "time"),
+#     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
+#     "Circle": ("radius", "depth"),
+#     "Trench": (
+#         "lamella_width",
+#         "lamella_height",
+#         "trench_height",
+#         "size_ratio",
+#         "offset",
+#         "depth",
+#         "cross_section",
+#         "time", 
+#     ),
+#     "Horseshoe": (
+#         "lamella_width",
+#         "lamella_height",
+#         "trench_height",
+#         "size_ratio",
+#         "offset",
+#         "side_offset",
+#         "side_width",
+#         "depth",
+#         "scan_direction",
+#         "cross_section",
+#     ),
+#     "HorseshoeVertical": (
+#         "width",
+#         "height",
+#         "side_trench_width",
+#         "top_trench_height",
+#         "depth",
+#         "scan_direction",
+#         "inverted",
+#         "cross_section", 
+#     ),
+#     "SerialSection": (
+#         "section_thickness",
+#         "section_width",
+#         "section_depth",
+#         "side_width",
+#         "side_height",
+#         "side_depth",
+#         "inverted",
+#         "use_side_patterns",
+#     ),
+#     "RectangleOffset": ("width", "height", "depth", "scan_direction", "cross_section", "offset", "inverted"),
+#     "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
+#     "Undercut": (
+#         "height",
+#         "width",
+#         "depth",
+#         "trench_width",
+#         "rhs_height",
+#         "h_offset",
+#         "cross_section",
+#     ),
+#     "MicroExpansion": (
+#         "height",
+#         "width",
+#         "depth",
+#         "distance",
+#     ),
+#     "ArrayPattern": ("height", "width", "depth", "n_columns", "n_rows", 
+#                     "pitch_vertical", "pitch_horizontal", 
+#                     "passes", "scan_direction", "cross_section"),
+#     "WaffleNotch": (
+#         "vheight",
+#         "vwidth",
+#         "hheight",
+#         "hwidth",
+#         "depth",
+#         "distance",
+#         "inverted",
+#         "cross_section",
+#     ),
+#     "Clover": ("radius", "depth"),
+#     "TriForce": ("height", "width", "depth"),
+#     "Trapezoid": ("inner_width", "outer_width", "trench_height", "depth", "distance", "n_rectangles", "overlap"),
+# }
 
 DEFAULT_POINT_DDICT = {"x": 0.0, "y": 0.0}
 
 ####### Combo Patterns
+
+CORE_PATTERN_ATTRIBUTES = ["name", "point", "shapes"]
 
 @dataclass
 class BasePattern(ABC):
@@ -132,6 +134,10 @@ class BasePattern(ABC):
     @abstractmethod
     def from_dict(cls, ddict: dict) -> "BasePattern":
         pass
+
+    @property
+    def required_attributes(self) -> Tuple[str]:
+        return [field.name for field in fields(self) if field.name not in CORE_PATTERN_ATTRIBUTES]
 
 @dataclass
 class BitmapPattern(BasePattern):
@@ -201,7 +207,9 @@ class RectanglePattern(BasePattern):
     def define(self) -> List[FibsemRectangleSettings]:
 
         # allow for offsetting the rectangle from the point
-        offset = self.offset + self.height / 2
+        offset = 0
+        if not np.isclose(self.offset, 0):
+            offset = self.offset + self.height / 2
         if self.invert_offset:
             offset = -offset
         center_y = self.point.y + offset
@@ -247,8 +255,8 @@ class RectanglePattern(BasePattern):
             rotation=ddict.get("rotation", 0),
             time=ddict.get("time", 0),
             passes=ddict.get("passes", 0),
-            offset=ddict.get("offset", 0),
-            invert_offset=ddict.get("invert_offset", False),
+            # offset=ddict.get("offset", 0),
+            # invert_offset=bool(ddict.get("invert_offset", False)),
             scan_direction=ddict.get("scan_direction", "TopToBottom"),
             cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
@@ -716,47 +724,8 @@ class SerialSectionPattern(BasePattern):
         )
 
 # TODO: deprecate this pattern, add offset to RectanglePattern
-# @dataclass
-# class RectangleOffsetPattern(BasePattern):
-#     name: str = "RectangleOffset"
-#     required_keys: Tuple[str] = REQUIRED_KEYS["RectangleOffset"]
-#     patterns = None
-#     protocol = None
-#     point = None
+# TODO: understand how this was used in the past 
 
-#     def define(
-#         self, protocol: dict, point: Point = Point()
-#     ) -> List[FibsemRectangleSettings]:
-#         check_keys(protocol, self.required_keys)
-
-#         width = protocol["width"]
-#         height = protocol["height"]
-#         depth = protocol["depth"]
-#         offset = protocol["offset"]
-#         scan_direction = protocol.get("scan_direction", "TopToBottom")
-#         cross_section = CrossSectionPattern[protocol.get("cross_section", "Rectangle")]
-#         inverted = protocol.get("inverted", False)
-
-#         offset = offset + height / 2
-#         if inverted:
-#             offset = -offset
-            
-#         center_y = point.y + offset
-
-#         pattern = FibsemRectangleSettings(
-#             width=width,
-#             height=height,
-#             depth=depth,
-#             centre_x=point.x,
-#             centre_y=center_y,
-#             scan_direction=scan_direction,
-#             cross_section = cross_section,
-#         )
-
-#         self.patterns = [pattern]
-#         self.protocol = protocol
-#         self.point = point
-#         return self.patterns
 
 @dataclass
 class FiducialPattern(BasePattern):
@@ -1446,9 +1415,10 @@ MILLING_PATTERNS: Dict[str, BasePattern] = {
     WaffleNotchPattern.name.lower(): WaffleNotchPattern,
     CloverPattern.name.lower(): CloverPattern,
     TriForcePattern.name.lower(): TriForcePattern,
-    BitmapPattern.name.lower(): BitmapPattern,
-    TrapezoidPattern.name.lower(): TrapezoidPattern,
+    # TrapezoidPattern.name.lower(): TrapezoidPattern,
+    # BitmapPattern.name.lower(): BitmapPattern,
 }
+MILLING_PATTERN_NAMES = [p.name for p in MILLING_PATTERNS.values()]
 
 # legacy mapping
 PROTOCOL_MILL_MAP = {

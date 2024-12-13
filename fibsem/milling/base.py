@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Union, Dict, Any
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
@@ -83,9 +83,17 @@ class FibsemMillingStage:
             strategy=get_strategy(strategy_name, config=strategy_config),
         )
 
-def get_milling_stages(key: str, protocol: dict) -> List[FibsemMillingStage]:
+def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> List[FibsemMillingStage]:
     stages = []
     for stage_config in protocol[key]:
         stage = FibsemMillingStage.from_dict(stage_config)
         stages.append(stage)
     return stages
+
+
+def get_protocol_from_stages(stages: List[FibsemMillingStage]) -> List[Dict[str, Any]]:
+    
+    if not isinstance(stages, list):
+        stages = [stages]
+    
+    return deepcopy([stage.to_dict() for stage in stages])

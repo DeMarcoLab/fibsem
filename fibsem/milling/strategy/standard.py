@@ -43,7 +43,7 @@ class StandardMillingStrategy(MillingStrategy):
         logging.info(f"Running {self.name} Milling Strategy for {stage.name}")
         setup_milling(microscope, milling_stage=stage)
 
-        patterns = draw_patterns(microscope, stage.pattern.patterns)
+        patterns = draw_patterns(microscope, stage.pattern.define())
 
         estimated_time = estimate_milling_time(microscope, patterns)
         logging.info(f"Estimated time for {stage.name}: {estimated_time:.2f} seconds")
