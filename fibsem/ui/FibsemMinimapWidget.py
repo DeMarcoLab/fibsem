@@ -24,6 +24,7 @@ from fibsem.structures import (
 )
 from fibsem.ui import _stylesheets
 from fibsem.ui import utils as ui_utils
+from fibsem.ui.napari.patterns import draw_milling_patterns_in_napari, remove_all_napari_shapes_layers
 from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
 
 PATH = os.path.join(cfg.DATA_PATH, "tile")
@@ -718,12 +719,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 for stage, pos in zip(milling_stages, drawn_positions[:-1]):
                     stage.name = pos.name
 
-                ui_utils._draw_patterns_in_napari(self.viewer, 
+                draw_milling_patterns_in_napari(self.viewer, 
                     ib_image=self.image, 
                     eb_image=None, 
                     milling_stages = milling_stages)
             else:
-                ui_utils._remove_all_layers(viewer=self.viewer)
+                remove_all_napari_shapes_layers(viewer=self.viewer)
 
         self.viewer.layers.selection.active = self._image_layer
 
