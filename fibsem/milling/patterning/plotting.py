@@ -43,36 +43,7 @@ PROPERTIES = {
 }
 
 
-def generate_blank_image(
-    resolution: List[int] = [1536, 1024],
-    hfw: float = 100e-6,
-    pixel_size: Point = None,
-) -> FibsemImage:
-    """Generate a blank image with a given resolution and field of view.
-    Args:
-        resolution: List[int]: Resolution of the image.
-        hfw: float: Horizontal field width of the image.
-        pixel_size: Point: Pixel size of the image.
-    Returns:
-        FibsemImage: Blank image with valid metadata from display.
-    """
-    # need at least one of hfw, pixelsize
-    if pixel_size is None and hfw is None:
-        raise ValueError("Need to specify either hfw or pixelsize")
 
-    if pixel_size is None:
-        vfw = hfw * resolution[1] / resolution[0]
-        pixel_size = Point(hfw / resolution[0], vfw / resolution[1])
-
-    image = FibsemImage(
-        data=np.zeros((resolution[1], resolution[0]), dtype=np.uint8),
-        metadata=FibsemImageMetadata(
-            image_settings=ImageSettings(hfw=hfw, resolution=resolution),
-            microscope_state=None,
-            pixel_size=pixel_size,
-        ),
-    )
-    return image
 
 
 def _rect_pattern_to_image_pixels(

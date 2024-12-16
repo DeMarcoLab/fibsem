@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 from PyQt5 import QtGui, QtWidgets
@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import (
 
 from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope
-
 
 def set_arr_as_qlabel(
     arr: np.ndarray,

@@ -1,13 +1,12 @@
 import logging
-import threading
 from pathlib import Path
-from queue import Queue
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import napari
 import napari.utils.notifications
 import numpy as np
-from napari.layers import Shapes as NapariShapesLayer, Image as NapariImageLayer
+from napari.layers import Image as NapariImageLayer
+from napari.layers import Shapes as NapariShapesLayer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
@@ -26,17 +25,24 @@ from fibsem.structures import (
     Point,
 )
 from fibsem.ui import _stylesheets as stylesheets
+from fibsem.ui.napari.patterns import (
+    convert_reduced_area_to_napari_shape,
+    convert_shape_to_image_area,
+)
+from fibsem.ui.napari.properties import (
+    ALIGNMENT_LAYER_PROPERTIES,
+    IMAGE_TEXT_LAYER_PROPERTIES,
+    RULER_LAYER_NAME,
+    RULER_LINE_LAYER_NAME,
+    RULER_VALUE_LAYER_NAME,
+)
 from fibsem.ui.napari.utilities import draw_crosshair_in_napari, draw_scalebar_in_napari
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget
 
-RULER_LAYER_NAME = "ruler"
-RULER_LINE_LAYER_NAME = "ruler_line"
-RULER_VALUE_LAYER_NAME = "ruler_value"
 
 class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
-    viewer_update_signal = pyqtSignal()
-    # TODO: consolidate the signals, add progress indicator
-    acquisition_progress_signal = pyqtSignal(dict)
+    viewer_update_signal = pyqtSignal()             # when the viewer is updated
+    acquisition_progress_signal = pyqtSignal(dict)  # TODO: add progress indicator
 
     def __init__(
         self,
@@ -52,8 +58,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer = viewer
         self.eb_layer: NapariImageLayer = None
         self.ib_layer: NapariImageLayer = None
-        self.eb_image = FibsemImage(data=np.zeros(shape=(1024, 1536), dtype=np.uint8))
-        self.ib_image = FibsemImage(data=np.zeros(shape=(1024, 1536), dtype=np.uint8))
+
+        # TODO: migrate to this structure
+        self.imaging_layers: Dict[str, NapariImageLayer] = {}
+        self.imaging_layers[BeamType.ELECTRON] = None
+        self.imaging_layers[BeamType.ION] = None
+        
+        # generate initial blank images 
+        self.eb_image = FibsemImage.generate_blank_image(resolution=image_settings.resolution, hfw=image_settings.hfw)
+        self.ib_image = FibsemImage.generate_blank_image(resolution=image_settings.resolution, hfw=image_settings.hfw)
 
         # overlay layers
         self.ruler_layer: NapariShapesLayer = None
@@ -69,9 +82,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.update_detector_ui() # TODO: can this be removed?
 
         # register initial images
-        self.update_viewer(self.ib_image.data, BeamType.ION.name)
-        self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
-        self.update_ui_tools()
+        self.update_viewer(self.ib_image.data, BeamType.ION)
+        self.update_viewer(self.eb_image.data, BeamType.ELECTRON)
     
     def setup_connections(self):
 
@@ -97,11 +109,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
-        self.viewer_update_signal.connect(self.update_ui_tools)
         
         # signals
-        # self.image_notification_signal.connect(self.update_imaging_ui)
-        
+        self.acquisition_progress_signal.connect(self.handle_acquisition_progress_update)
+        self.viewer_update_signal.connect(self.update_ui_tools)
+                
         # advanced settings
         self.checkBox_advanced_settings.stateChanged.connect(self.toggle_mode)
         self.toggle_mode()
@@ -112,9 +124,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.set_detector_button.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
         self.button_set_beam_settings.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
 
-        IS_TESCAN = isinstance(self.microscope, TescanMicroscope)
-        if IS_TESCAN:
-
+        self.IS_TESCAN = isinstance(self.microscope, TescanMicroscope)
+        if self.IS_TESCAN:
             self.label_stigmation.hide()
             self.stigmation_x.hide()
             self.stigmation_y.hide()
@@ -255,6 +266,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.detector_brightness_label.setText(f"{self.detector_brightness_slider.value()}%")
 
     def apply_detector_settings(self):
+        """Apply the detector settings from the UI to the microscope."""
         
         # read settings from ui
         beam =  BeamType[self.selected_beam.currentText()]
@@ -270,6 +282,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         napari.utils.notifications.show_info("Detector Settings Updated")
 
     def apply_beam_settings(self):
+        """Apply the beam settings from the UI to the microscope."""
         beam = BeamType[self.selected_beam.currentText()]
         self.get_settings_from_ui()
 
@@ -286,7 +299,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         napari.utils.notifications.show_info("Beam Settings Updated")
 
     def get_settings_from_ui(self):
+        """Get the imaging, detector and beam settings from the UI"""
 
+        # imaging settings
         self.image_settings = ImageSettings(
             resolution=[self.spinBox_resolution_x.value(), self.spinBox_resolution_y.value()],
             dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
@@ -299,7 +314,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             filename=self.lineEdit_image_label.text()
             
         )
-
+        
+        # detector settings
         self.detector_settings = FibsemDetectorSettings(
             type=self.detector_type_combobox.currentText(),
             mode=self.detector_mode_combobox.currentText(),
@@ -307,6 +323,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             contrast=self.detector_contrast_slider.value()*constants.FROM_PERCENTAGES,
         )
 
+        # beam settings
         self.beam_settings = BeamSettings(
             beam_type=BeamType[self.selected_beam.currentText()],
             working_distance=self.working_distance.value()*constants.MILLI_TO_SI,
@@ -319,6 +336,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             shift = Point(self.shift_x.value() * constants.MICRO_TO_SI, self.shift_y.value()*constants.MICRO_TO_SI),
             scan_rotation = np.deg2rad(self.spinBox_beam_scan_rotation.value())
         )
+
         return self.image_settings, self.detector_settings, self.beam_settings
 
     def set_ui_from_settings(self, image_settings: ImageSettings, 
@@ -375,18 +393,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.lineEdit_image_path.setVisible(self.checkBox_image_save_image.isChecked())
         self.label_image_label.setVisible(self.checkBox_image_save_image.isChecked())
         self.lineEdit_image_label.setVisible(self.checkBox_image_save_image.isChecked())
-        
-  
+
     def update_detector_ui(self):
         """Update the detector ui based on currently selected beam"""
         beam_type = BeamType[self.selected_beam.currentText()]
 
-        _is_ion = bool(beam_type is BeamType.ION)
-        _is_tescan = isinstance(self.microscope, TescanMicroscope)
-        
-        self.comboBox_presets.setVisible(_is_ion and _is_tescan)
-        self.label_presets.setVisible(_is_ion and _is_tescan)
-
+        IS_FIB = bool(beam_type is BeamType.ION)
+        self.comboBox_presets.setVisible(IS_FIB and self.IS_TESCAN)
+        self.label_presets.setVisible(IS_FIB and self.IS_TESCAN)
 
         available_detector_types = self.microscope.get_available_values("detector_type", beam_type=beam_type)
         self.detector_type_combobox.clear()
@@ -432,7 +446,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_take_image.setText("Acquire Image")
             self.pushButton_take_all_images.setText("Acquire All Images")
 
-
     def handle_acquisition_progress_update(self, ddict: dict):
         """Handle the acquisition progress update"""
         logging.debug(f"Acquisition Progress Update: {ddict}")
@@ -445,12 +458,12 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         # TODO: implement progress bar for acquisition
 
-    def imaging_finished(self):
+    def acquisition_finished(self):
         """Imaging has finished, update the viewer and re-enable interactions"""
         if self.ib_image is not None:
-            self.update_viewer(self.ib_image.data, BeamType.ION.name)
+            self.update_viewer(self.ib_image.data, BeamType.ION)
         if self.eb_image is not None:
-            self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
+            self.update_viewer(self.eb_image.data, BeamType.ELECTRON)
         self._toggle_interactions(True)
         self.ACQUIRING_IMAGES = False
 
@@ -463,7 +476,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.start_acquisition(both=True)
 
     def start_acquisition(self, both: bool = False):
-        
+        """Start the image acquisition process"""
         # disable interactions
         self.ACQUIRING_IMAGES = True
         self._toggle_interactions(enable=False, imaging=True)
@@ -473,7 +486,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         
         # start the acquisition worker
         worker = self.acquisition_worker(self.image_settings, both=both)
-        worker.finished.connect(self.imaging_finished)
+        worker.finished.connect(self.acquisition_finished)
         worker.start()
 
     @thread_worker
@@ -501,30 +514,34 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
         # draw scalebar and crosshair
         if self.eb_image is not None and self.ib_image is not None:
-            draw_scalebar_in_napari(viewer=self.viewer,
-                                    eb_image= self.eb_image,
-                                    ib_image= self.ib_image,
-                                    is_checked=self.scalebar_checkbox.isChecked())
-            draw_crosshair_in_napari(viewer=self.viewer,eb_image= self.eb_image,
-                                     ib_image= self.ib_image,
-                                     is_checked=self.crosshair_checkbox.isChecked()) 
+            draw_scalebar_in_napari(
+                viewer=self.viewer,
+                eb_image=self.eb_image,
+                ib_image=self.ib_image,
+                is_checked=self.scalebar_checkbox.isChecked(),
+            )
+            draw_crosshair_in_napari(
+                viewer=self.viewer,
+                sem_shape=self.eb_image.data.shape,
+                fib_shape=self.ib_image.data.shape,
+                is_checked=self.crosshair_checkbox.isChecked(),
+            ) 
             
-    def update_viewer(self, arr: np.ndarray, name: str, _set_ui: bool = False):
+    def update_viewer(self, arr: np.ndarray, beam_type: BeamType, set_ui_from_image: bool = False):
         """Update the viewer with the given image array"""
 
         # median filter for display
         arr = median_filter(arr, size=3)
        
         try:
-            self.viewer.layers[name].data = arr
+            self.viewer.layers[beam_type.name].data = arr
         except KeyError:    
-            layer = self.viewer.add_image(arr, name = name)
-        
+            layer = self.viewer.add_image(arr, name = beam_type.name, blending='additive')
 
-        layer = self.viewer.layers[name]
-        if self.eb_layer is None and name == BeamType.ELECTRON.name:
+        layer = self.viewer.layers[beam_type.name]
+        if self.eb_layer is None and beam_type is BeamType.ELECTRON:
             self.eb_layer = layer
-        if self.ib_layer is None and name == BeamType.ION.name:
+        if self.ib_layer is None and beam_type is BeamType.ION:
             self.ib_layer = layer
 
         # centre the camera
@@ -535,63 +552,71 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
                 self.eb_layer.data.shape[1],
             ]
             self.viewer.camera.zoom = 0.45
+            # TODO: fit image to window?
 
         if self.ib_layer:
             translation = (
-                self.viewer.layers["ELECTRON"].data.shape[1]
+                self.viewer.layers[BeamType.ELECTRON.name].data.shape[1]
                 if self.eb_layer
                 else arr.shape[1]
             )
             self.ib_layer.translate = [0.0, translation]       
 
+
         if self.eb_layer:
-            points = np.array([[-20, 200], [-20, self.eb_layer.data.shape[1] + 150]])
-            string = ["ELECTRON BEAM", "ION BEAM"]
-            text = {
-                "string": string,
-                "color": "white"
-            }
+            points = np.array([[-20, 200], [-20, self.ib_layer.translate[1] + 150]])
 
             try:
                 self.viewer.layers['label'].data = points
             except KeyError:    
                 self.viewer.add_points(
-                points,
-                name="label",
-                text=text,
-                size=20,
-                edge_width=7,
-                edge_width_is_relative=False,
-                edge_color='transparent',
-                face_color='transparent',
+                    data=points,
+                    name=IMAGE_TEXT_LAYER_PROPERTIES["name"],
+                    size=IMAGE_TEXT_LAYER_PROPERTIES["size"],
+                    text=IMAGE_TEXT_LAYER_PROPERTIES["text"],
+                    edge_width=IMAGE_TEXT_LAYER_PROPERTIES["edge_width"],
+                    edge_width_is_relative=IMAGE_TEXT_LAYER_PROPERTIES[
+                        "edge_width_is_relative"
+                    ],
+                    edge_color=IMAGE_TEXT_LAYER_PROPERTIES["edge_color"],
+                    face_color=IMAGE_TEXT_LAYER_PROPERTIES["face_color"],
                 )   
 
-
         # set ui from image metadata
-        if _set_ui:
-            if name == BeamType.ELECTRON.name:
+        if set_ui_from_image:
+            if beam_type is BeamType.ELECTRON:
                 self.image_settings = self.eb_image.metadata.image_settings
                 beam_settings = self.eb_image.metadata.microscope_state.electron_beam
-                detector_settings = self.eb_image.metadata.microscope_state.electron_detector
+                detector_settings = (
+                    self.eb_image.metadata.microscope_state.electron_detector
+                )
                 beam_type = BeamType.ELECTRON
-            if name == BeamType.ION.name:
+            if beam_type is BeamType.ION:
                 self.image_settings = self.ib_image.metadata.image_settings
                 beam_settings = self.ib_image.metadata.microscope_state.ion_beam
                 detector_settings = self.ib_image.metadata.microscope_state.ion_detector
-                beam_type = BeamType.ION            
+                beam_type = BeamType.ION
         else:
             beam_type = BeamType[self.selected_beam.currentText()]
-            beam_settings, detector_settings = None, None    
-    
-        self.set_ui_from_settings(image_settings = self.image_settings, beam_type= beam_type, 
-            beam_settings=beam_settings, detector_settings=detector_settings)  
-            
+            beam_settings, detector_settings = None, None
+            # QUERY: what is this doing?
+
+        self.set_ui_from_settings(
+            image_settings=self.image_settings,
+            beam_type=beam_type,
+            beam_settings=beam_settings,
+            detector_settings=detector_settings,
+        )
+
         # set the active layer to the electron beam (for movement)
         self.restore_active_layer_for_movement()
 
         self.viewer_update_signal.emit()
 
     def get_data_from_coord(self, coords: Tuple[float, float]) -> Tuple[Tuple[float, float], BeamType, FibsemImage]:
+        
+        # TODO: change this to use the image layers, and extent
+
         # check inside image dimensions, (y, x)
         eb_shape = self.eb_image.data.shape[0], self.eb_image.data.shape[1]
         ib_shape = self.ib_image.data.shape[0], self.ib_image.data.shape[1] + self.eb_image.data.shape[1]
@@ -631,12 +656,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
             self.viewer.layers.selection.active = self.eb_layer
 
     def clear_alignment_area(self):
+        """Hide the alignment area layer"""
         self.alignment_layer.visible = False
         self.restore_active_layer_for_movement()
 
     def toggle_alignment_area(self, reduced_area: FibsemRectangle = None):
-        logging.info(f"TOGGLE: {reduced_area}")
+        """Toggle the alignment area layer to selection mode, and display the alignment area."""
         if self.viewer.layers.selection.active == self.eb_layer:
+            logging.debug(f"Alignment area being set to: {reduced_area}")
             self.set_alignment_layer(reduced_area)
             self.alignment_layer.visible = True
         else:
@@ -644,48 +671,43 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
 
     def set_alignment_layer(self, reduced_area: FibsemRectangle = FibsemRectangle(0.25, 0.25, 0.5, 0.5)):
         """Set the alignment area layer in napari."""
-        def convert_reduced_area_to_napari_shape(reduced_area: FibsemRectangle, image_shape: tuple, offset_shape: tuple = None) -> np.ndarray:
-            """Convert a reduced area to a napari shape."""
-            x0 = reduced_area.left * image_shape[1]
-            y0 = reduced_area.top * image_shape[0]
-            if offset_shape:
-                x0 += offset_shape[1]
-            x1 = x0 + reduced_area.width * image_shape[1]
-            y1 = y0 + reduced_area.height * image_shape[0]
-            data = [[y0, x0], [y0, x1], [y1, x1], [y1, x0]]
-            return data
-        
-        # add alignment area to napari
-        data = convert_reduced_area_to_napari_shape(reduced_area, 
-                                                    image_shape=self.ib_image.data.shape, 
-                                                    offset_shape=self.eb_image.data.shape)
 
+        # add alignment area to napari
+        data = convert_reduced_area_to_napari_shape(reduced_area=reduced_area, 
+                                                    image_shape=self.ib_image.data.shape, 
+                                                   )
         if self.alignment_layer is None:
-            self.alignment_layer = self.viewer.add_shapes(data=data, name="alignment_area", 
-                        shape_type="rectangle", edge_color="lime", edge_width=20, 
-                        face_color="transparent", opacity=0.5)
-            self.alignment_layer.metadata = {"type": "alignment"}
+            self.alignment_layer = self.viewer.add_shapes(data=data, 
+                                                          name=ALIGNMENT_LAYER_PROPERTIES["name"], 
+                        shape_type=ALIGNMENT_LAYER_PROPERTIES["shape_type"], 
+                        edge_color=ALIGNMENT_LAYER_PROPERTIES["edge_color"], 
+                        edge_width=ALIGNMENT_LAYER_PROPERTIES["edge_width"], 
+                        face_color=ALIGNMENT_LAYER_PROPERTIES["face_color"], 
+                        opacity=ALIGNMENT_LAYER_PROPERTIES["opacity"], 
+                        translate=self.ib_layer.translate) # match the ib layer translation
+            self.alignment_layer.metadata = ALIGNMENT_LAYER_PROPERTIES["metadata"]
         else:
             self.alignment_layer.data = data
 
-        
         self.viewer.layers.selection.active = self.alignment_layer
         self.alignment_layer.mode = "select"
         # TODO: prevent rotation of rectangles?  
         self.alignment_layer.events.data.connect(self.update_alignment)
 
     def update_alignment(self, event):
-
+        """Validate the alignment area, and update the parent ui."""
         reduced_area = self.get_alignment_area()
-        is_valid = is_valid_reduced_area(reduced_area)
+        is_valid = reduced_area.is_valid_reduced_area
 
         logging.info(f"Updated alignment area: {reduced_area}, valid: {is_valid}")
 
-        # show valid/invalid message in parent
+        # show valid/invalid message in parent # TODO: make this more generic
         if self.parent.__class__.__name__ == "AutoLamellaUI":
             logging.info("Parent is AutoLamellaUI")
             try:
-                msg = "Edit Alignment Area. Press Continue when done." if is_valid else "Invalid Alignment Area. Please adjust inside FIB Image."
+                msg = "Edit Alignment Area. Press Continue when done." 
+                if not is_valid:
+                    msg = "Invalid Alignment Area. Please adjust inside FIB Image."
                 self.parent.label_instructions.setText(msg)
                 self.parent.pushButton_yes.setEnabled(is_valid)
             except Exception as e:
@@ -699,66 +721,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if data is None:
             return None
         data = data[0]
-        return convert_shape_to_image_area(data, self.ib_image.data.shape, self.eb_image.data.shape)
-
-
-def convert_shape_to_image_area(shape: List[List[int]], image_shape: tuple, offset_shape: tuple = None) -> FibsemRectangle:
-    """Convert a napari shape (rectangle) to  a FibsemRectangle expressed as a percentage of the image (reduced area)
-    shape: the coordinates of the shape
-    image_shape: the shape of the image (usually the ion beam image)
-    offset_shape: the shape of the offset image (usually the electron beam image, as it translates to the ion beam image)
+        return convert_shape_to_image_area(data, self.ib_image.data.shape)
     
-    """
-    # get limits of rectangle
-    y0, x0 = shape[0]
-    y1, x1 = shape[1]
-    """
-        0################1
-        |               |
-        |               |
-        |               |
-        3################2
-    """
-    # get min/max coordinates
-    x_coords = [x[1] for x in shape]
-    y_coords = [x[0] for x in shape]
-    x0, x1 = min(x_coords), max(x_coords)
-    y0, y1 = min(y_coords), max(y_coords)
-
-    logging.debug(f"convert shape data: {x0}, {x1}, {y0}, {y1}, fib shape: {image_shape}, sem shape: {offset_shape}")
-        
-    # subtract shape of eb image
-    if offset_shape:
-        x0 -= offset_shape[1]
-        x1 -= offset_shape[1]
-    
-    # convert to percentage of image
-    x0 = x0 / image_shape[1]
-    x1 = x1 / image_shape[1]
-    y0 = y0 / image_shape[0]
-    y1 = y1 / image_shape[0]
-    w = x1 - x0
-    h = y1 - y0
-
-    reduced_area = FibsemRectangle(left=x0, top=y0, width=w, height=h)
-    logging.debug(f"reduced area: {reduced_area}")
-
-    return reduced_area
-
-def is_valid_reduced_area(reduced_area: FibsemRectangle) -> bool:
-    """Check whether the reduced area is valid. 
-    Left and top must be between 0 and 1, and width and height must be between 0 and 1.
-    Must not exceed the boundaries of the image 0 - 1
-    """
-    # if left or top is less than 0, or width or height is greater than 1, return False
-    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width > 1 or reduced_area.height > 1:
-        return False
-    if reduced_area.left + reduced_area.width > 1 or reduced_area.top + reduced_area.height > 1:
-        return False
-    # no negative values
-    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width <= 0 or reduced_area.height <= 0:
-        return False
-    return True                                
 
 def main():
 

@@ -23,6 +23,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemLineSettings,
     FibsemPatternSettings,
+    FibsemRectangle,
     FibsemRectangleSettings,
     Point,
     calculate_fiducial_area_v2,
@@ -432,3 +433,54 @@ def is_pattern_placement_valid(pattern: BasePattern, image: FibsemImage) -> bool
             return False
     
     return True
+
+
+def convert_reduced_area_to_napari_shape(reduced_area: FibsemRectangle, image_shape: Tuple[int, int]) -> np.ndarray:
+    """Convert a reduced area to a napari shape."""
+    x0 = reduced_area.left * image_shape[1]
+    y0 = reduced_area.top * image_shape[0]
+    x1 = x0 + reduced_area.width * image_shape[1]
+    y1 = y0 + reduced_area.height * image_shape[0]
+    data = [[y0, x0], [y0, x1], [y1, x1], [y1, x0]]
+    return data
+
+def convert_shape_to_image_area(shape: List[List[int]], image_shape: Tuple[int, int]) -> FibsemRectangle:
+    """Convert a napari shape (rectangle) to  a FibsemRectangle expressed as a percentage of the image (reduced area)
+    shape: the coordinates of the shape
+    image_shape: the shape of the image (usually the ion beam image)    
+    """
+    # get limits of rectangle
+    y0, x0 = shape[0]
+    y1, x1 = shape[1]
+    """
+        0################1
+        |               |
+        |               |
+        |               |
+        3################2
+    """
+    # get min/max coordinates
+    x_coords = [x[1] for x in shape]
+    y_coords = [x[0] for x in shape]
+    x0, x1 = min(x_coords), max(x_coords)
+    y0, y1 = min(y_coords), max(y_coords)
+
+    logging.debug(f"convert shape data: {x0}, {x1}, {y0}, {y1}, fib shape: {image_shape}")
+        
+    # # subtract shape of eb image
+    # if offset_shape:
+    #     x0 -= offset_shape[1]
+    #     x1 -= offset_shape[1]
+    
+    # convert to percentage of image
+    x0 = x0 / image_shape[1]
+    x1 = x1 / image_shape[1]
+    y0 = y0 / image_shape[0]
+    y1 = y1 / image_shape[0]
+    w = x1 - x0
+    h = y1 - y0
+
+    reduced_area = FibsemRectangle(left=x0, top=y0, width=w, height=h)
+    logging.debug(f"reduced area: {reduced_area}")
+
+    return reduced_area

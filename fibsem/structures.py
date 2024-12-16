@@ -470,7 +470,24 @@ class FibsemRectangle:
         def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
             return cls(rect.left, rect.top, rect.width, rect.height)
 
+    @property
+    def is_valid_reduced_area(self) -> bool:
+        return _is_valid_reduced_area(self)
 
+def _is_valid_reduced_area(reduced_area: FibsemRectangle) -> bool:
+    """Check whether the reduced area is valid. 
+    Left and top must be between 0 and 1, and width and height must be between 0 and 1.
+    Must not exceed the boundaries of the image 0 - 1
+    """
+    # if left or top is less than 0, or width or height is greater than 1, return False
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width > 1 or reduced_area.height > 1:
+        return False
+    if reduced_area.left + reduced_area.width > 1 or reduced_area.top + reduced_area.height > 1:
+        return False
+    # no negative values
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width <= 0 or reduced_area.height <= 0:
+        return False
+    return True                           
 
 
 
@@ -1891,6 +1908,37 @@ class FibsemImage:
             )
             return cls(data=data, metadata=metadata)
 
+    @staticmethod
+    def generate_blank_image(
+        resolution: List[int] = [1536, 1024],
+        hfw: float = 100e-6,
+        pixel_size: Point = None,
+    ) -> 'FibsemImage':
+        """Generate a blank image with a given resolution and field of view.
+        Args:
+            resolution: List[int]: Resolution of the image.
+            hfw: float: Horizontal field width of the image.
+            pixel_size: Point: Pixel size of the image.
+        Returns:
+            FibsemImage: Blank image with valid metadata from display.
+        """
+        # need at least one of hfw, pixelsize
+        if pixel_size is None and hfw is None:
+            raise ValueError("Need to specify either hfw or pixelsize")
+
+        if pixel_size is None:
+            vfw = hfw * resolution[1] / resolution[0]
+            pixel_size = Point(hfw / resolution[0], vfw / resolution[1])
+
+        image = FibsemImage(
+            data=np.zeros((resolution[1], resolution[0]), dtype=np.uint8),
+            metadata=FibsemImageMetadata(
+                image_settings=ImageSettings(hfw=hfw, resolution=resolution),
+                microscope_state=None,
+                pixel_size=pixel_size,
+            ),
+        )
+        return image
 
 @dataclass
 class ReferenceImages:

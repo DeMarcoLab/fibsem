@@ -25,6 +25,7 @@ from fibsem.structures import (
 from fibsem.ui import _stylesheets
 from fibsem.ui import utils as ui_utils
 from fibsem.ui.napari.patterns import draw_milling_patterns_in_napari, remove_all_napari_shapes_layers
+from fibsem.ui.napari.utilities import draw_crosshair_in_napari
 from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
 
 PATH = os.path.join(cfg.DATA_PATH, "tile")
@@ -401,7 +402,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 self._image_layer = self.viewer.add_image(arr, name="overview-image", colormap="gray", blending="additive")
 
             # draw a point on the image at center
-            ui_utils.draw_crosshair_in_napari(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
+            draw_crosshair_in_napari(viewer=self.viewer,
+                                    sem_shape=self.image.data.shape, 
+                                    fib_shape=None, 
+                                    is_checked=True) 
 
             self._image_layer.mouse_drag_callbacks.clear()
             self._image_layer.mouse_double_click_callbacks.clear()
