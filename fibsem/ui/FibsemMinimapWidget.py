@@ -14,7 +14,7 @@ from fibsem import constants, conversions, utils
 from fibsem import config as cfg
 from fibsem.imaging import _tile
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling.patterning import patterns
+from fibsem.milling import get_milling_stages
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -83,7 +83,6 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.ADDING_POSITION: bool = False
 
         self.setup_connections()
-
         self._update_ui()
 
         self.STOP_ACQUISITION: bool = False
@@ -402,7 +401,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 self._image_layer = self.viewer.add_image(arr, name="overview-image", colormap="gray", blending="additive")
 
             # draw a point on the image at center
-            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
+            ui_utils.draw_crosshair_in_napari(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
 
             self._image_layer.mouse_drag_callbacks.clear()
             self._image_layer.mouse_double_click_callbacks.clear()
@@ -714,7 +713,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
                 pattern = self.comboBox_pattern_overlay.currentText() 
                 
-                milling_stages = [patterns.get_milling_stages(pattern, self.settings.protocol["milling"], Point(point.x, point.y))[0] for point in points]
+                milling_stages = [get_milling_stages(pattern, self.settings.protocol["milling"], Point(point.x, point.y))[0] for point in points]
                 
                 for stage, pos in zip(milling_stages, drawn_positions[:-1]):
                     stage.name = pos.name

@@ -2028,9 +2028,9 @@ class MillingDriftCorrection:
     
     @staticmethod
     def from_dict(d: dict) -> "MillingDriftCorrection":
-        default_rect = {"left": 0, "top": 0, "width": 1.0, "height": 1.0}
         return MillingDriftCorrection(
             enabled=d.get("enabled", False),
+            interval_enabled=d.get("interval_enabled", False),
             interval=d.get("interval", 30),
-            rect=FibsemRectangle.from_dict(d.get("rect", default_rect))
+            rect=FibsemRectangle.from_dict(d.get("rect", DEFAULT_ALIGNMENT_AREA))
         )

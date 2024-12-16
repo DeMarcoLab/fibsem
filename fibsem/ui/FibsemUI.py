@@ -162,9 +162,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
-                settings=self.settings,
                 viewer=self.viewer,
-                image_widget=self.image_widget,
                 parent=self,
             )
             if self.microscope.system.manipulator.enabled:

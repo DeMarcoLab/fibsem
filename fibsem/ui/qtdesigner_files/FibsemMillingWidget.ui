@@ -60,9 +60,9 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>-217</y>
+           <y>0</y>
            <width>545</width>
-           <height>663</height>
+           <height>809</height>
           </rect>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
@@ -250,7 +250,47 @@
             </layout>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="1" column="0">
+           <widget class="QGroupBox" name="groupBox_drift_correction">
+            <property name="title">
+             <string>Drift Correction</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_7">
+             <item row="1" column="0">
+              <widget class="QCheckBox" name="checkBox_drift_correction_enabled">
+               <property name="text">
+                <string>Initial Alignment</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QCheckBox" name="checkBox_drift_correction_interval_enabled">
+               <property name="text">
+                <string>Interval Alignment</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_drift_correction_interval"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_drift_correction_interval">
+               <property name="text">
+                <string>Interval (s)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QPushButton" name="pushButton_drift_correction_edit_area">
+               <property name="text">
+                <string>Edit Alignment Area</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="3" column="0">
            <widget class="QGroupBox" name="groupBox_pattern_settings">
             <property name="title">
              <string>Pattern</string>
@@ -305,7 +345,7 @@
             </layout>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="4" column="0">
            <widget class="QGroupBox" name="groupBox_options">
             <property name="title">
              <string>Options</string>
@@ -341,18 +381,24 @@
             </layout>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QGroupBox" name="groupBox_drift_correction">
+          <item row="2" column="0">
+           <widget class="QGroupBox" name="groupBox_strategy">
             <property name="title">
-             <string>Drift Correction</string>
+             <string>Milling Strategy</string>
             </property>
-            <layout class="QGridLayout" name="gridLayout_7">
+            <layout class="QGridLayout" name="gridLayout_8">
              <item row="0" column="0">
-              <widget class="QCheckBox" name="checkBox_drift_correction_enabled">
+              <widget class="QLabel" name="label_strategy_name">
                <property name="text">
-                <string>Enabled</string>
+                <string>Strategy Name</string>
                </property>
               </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="comboBox_strategy_name"/>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <layout class="QGridLayout" name="gridLayout_strategy"/>
              </item>
             </layout>
            </widget>

@@ -2,7 +2,7 @@
 import logging
 import time
 from copy import deepcopy
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 import napari
 import napari.utils.notifications
@@ -19,16 +19,17 @@ from fibsem.microscope import (
     TescanMicroscope,
     ThermoMicroscope,
 )
-from fibsem.milling import FibsemMillingStage, get_strategy, mill_stages
+from fibsem.milling import FibsemMillingStage, get_strategy, mill_stages, MillingDriftCorrection
 from fibsem.milling.patterning.patterns2 import (
+    DEFAULT_MILLING_PATTERN,
     MILLING_PATTERN_NAMES,
     BasePattern,
     CirclePattern,
     FiducialPattern,
     LinePattern,
-    RectanglePattern,
     get_pattern,
 )
+from fibsem.milling.strategy import DEFAULT_STRATEGY, MILLING_STRATEGY_NAMES
 from fibsem.structures import (
     BeamType,
     CrossSectionPattern,
@@ -40,14 +41,14 @@ from fibsem.structures import (
 )
 from fibsem.ui import _stylesheets as stylesheets
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 from fibsem.ui.napari.patterns import (
-    draw_milling_patterns_in_napari,
-    remove_all_napari_shapes_layers,
     convert_pattern_to_napari_circle,
     convert_pattern_to_napari_rect,
+    draw_milling_patterns_in_napari,
+    remove_all_napari_shapes_layers,
     validate_pattern_placement,
 )
+from fibsem.ui.qtdesigner_files import FibsemMillingWidget
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
                      "number", "passes", "n_rectangles", "overlap", "inverted", "use_side_patterns",
@@ -65,27 +66,24 @@ def scale_value_for_display(key: str, value: Union[float, int], scale: float) ->
         return value * scale    
     return value
 
-def log_status_message(stage: FibsemMillingStage, step: str):
-    logging.debug(
-        f"STATUS | Milling Widget | {stage.name} | {step}"
-    )
-
-
-# ned to re-write
+# need to re-write
 # if no milling stage, dont show milling settings or pattern settings
 # add groups for milling settings, pattern settings
 # add drift correction block
 # make everything into scollable
 
-
 # advanced settings/hidden by default
 # external events should stay the same
-
-
 
 # milling operations
 # run, pause/resume, stop
 
+# default milling protocol
+DEFAULT_PROTOCOL = utils.load_yaml(cfg.PROTOCOL_PATH)
+
+def get_default_milling_pattern(name: str) -> BasePattern:
+    """Get the default milling pattern."""
+    return get_pattern(name, config = DEFAULT_PROTOCOL["patterns"][name])
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
@@ -98,38 +96,30 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
     def __init__(
         self,
-        microscope: FibsemMicroscope = None,
-        settings: MicroscopeSettings = None, # TODO: deprecate external settings
-        viewer: napari.Viewer = None,
-        image_widget: FibsemImageSettingsWidget = None,
-        parent=None,
+        microscope: FibsemMicroscope,
+        viewer: napari.Viewer,
+        parent: QtWidgets.QWidget = None,
     ):
         super(FibsemMillingWidget, self).__init__(parent=parent)
         self.setupUi(self)
         self.parent = parent
         self.microscope = microscope
-        
-        self.viewer = viewer
-        self.image_widget = image_widget
 
-        # default milling protocol
-        self.protocol = utils.load_yaml(cfg.PROTOCOL_PATH)
-        
+        self.viewer = viewer
+        self.image_widget = parent.image_widget
+
+        self.UPDATING_PATTERN: bool = False
+        self.CAN_MOVE_PATTERN: bool = True
+        self.STOP_MILLING: bool = False
+
         self.current_milling_stage: Optional[FibsemMillingStage] = None
         self.milling_stages: List[FibsemMillingStage] = []
         self.milling_pattern_layers: List[Layer] = []
 
         self.setup_connections()
 
-        self.good_copy_pattern = None
-
-        self.UPDATING_PATTERN:bool = False
-        self.CAN_MOVE_PATTERN: bool = True
-        self._STOP_MILLING: bool = False
-
     def setup_connections(self):
         """Setup the connections for the milling widget."""
-
 
         IS_THERMO = isinstance(self.microscope, ThermoMicroscope)
         IS_TESCAN = isinstance(self.microscope, TescanMicroscope)
@@ -164,7 +154,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.comboBox_application_file.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.doubleSpinBox_milling_current.valueChanged.connect(self.update_milling_settings_from_ui)
             self.spinBox_voltage.valueChanged.connect(self.update_milling_settings_from_ui)
-        
+
         # Tescan Only
         AVAILABLE_PRESETS = self.microscope.get_available_values("presets")
         self.label_rate.setVisible(IS_TESCAN)
@@ -192,12 +182,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # new patterns
         self.comboBox_patterns.addItems(MILLING_PATTERN_NAMES)
         self.comboBox_patterns.currentIndexChanged.connect(self.update_current_selected_pattern)
-    
+
+        # strategy
+        self.comboBox_strategy_name.addItems(MILLING_STRATEGY_NAMES)
+        self.comboBox_strategy_name.setCurrentText(DEFAULT_STRATEGY)
+        self.comboBox_strategy_name.currentIndexChanged.connect(self.update_current_selected_strategy) # TODO: connect event
+        # TODO: auto-update drift correction and strategy on value changes
+
         # milling stages
         self.pushButton_add_milling_stage.clicked.connect(self.add_milling_stage)
         self.pushButton_remove_milling_stage.clicked.connect(self.remove_milling_stage)
         self.comboBox_milling_stage.currentIndexChanged.connect(self.update_milling_stage_ui)
-        
+
         # update ui
         self.milling_notification.connect(self.update_milling_ui)
 
@@ -240,9 +236,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.image_widget.viewer_update_signal.connect(self.update_ui) # update the ui when the image is updated
 
     def update_milling_settings_from_ui(self):
-        settings = self.get_milling_settings_from_ui()
         index = self.comboBox_milling_stage.currentIndex()
         if index != -1:
+            settings = self.get_milling_settings_from_ui()
             self.milling_stages[index].milling = settings
 
     def add_milling_stage(self):
@@ -250,15 +246,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         num = len(self.milling_stages) + 1
         name = f"Milling Stage {num}"
-        pattern = RectanglePattern.from_dict(self.protocol["patterns"]["Rectangle"])
-        milling_stage = FibsemMillingStage(name=name, num=num, 
+        pattern = get_default_milling_pattern(DEFAULT_MILLING_PATTERN)
+        strategy = get_strategy(DEFAULT_STRATEGY)
+        milling_stage = FibsemMillingStage(name=name, 
+                                           num=num, 
                                            pattern=pattern, 
-                                           strategy=get_strategy())
+                                           strategy=strategy)
         self.milling_stages.append(milling_stage)
         self.comboBox_milling_stage.addItem(name)
         self.comboBox_milling_stage.setCurrentText(name)
         napari.utils.notifications.show_info(f"Added {name}.")
-        log_status_message(self.milling_stages[-1], "CREATED_STAGE")
 
     def remove_milling_stage(self):
         logging.info("Removing milling stage")
@@ -266,11 +263,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         current_index = self.comboBox_milling_stage.currentIndex()
         if current_index == -1:
             return
-        log_status_message(self.milling_stages[current_index], "REMOVED_STAGE")
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info("Removed milling stage.")     
-
 
     def clear_all_milling_stages(self):
         """Remove all milling stages from the widget."""
@@ -282,6 +277,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         remove_all_napari_shapes_layers(self.viewer) # remove all shape layers
 
     def set_milling_stages(self, milling_stages: List[FibsemMillingStage]) -> None:
+        """Set the milling stages in the widget and update the UI."""
         logging.debug(f"Setting milling stages: {len(milling_stages)}")
         self.milling_stages = milling_stages
         
@@ -332,12 +328,89 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         self.current_milling_stage: FibsemMillingStage = self.milling_stages[current_index]
 
-        # update the milling and pattern settings
+        # update the milling stage UI
         self.set_milling_settings_ui()        
         self.setup_pattern_ui()
-        # TODO: drift correction
-
+        self.set_milling_strategy_ui()
+        self.set_drift_correction_ui()
+    
         self.show_milling_stage_widgets()
+
+    def set_milling_strategy_ui(self):
+        """Set the milling strategy UI from the current milling stage."""
+        strategy = self.current_milling_stage.strategy
+
+        self.comboBox_strategy_name.setCurrentText(strategy.name)
+
+        self.strategy_config_widgets: Dict[str, QtWidgets.QWidget] = {}
+        
+        # clear the grid layout
+        self.clear_grid_layout(self.gridLayout_strategy)
+        
+        for i, key in enumerate(strategy.config.required_attributes):
+            label = QtWidgets.QLabel(key.replace("_", " ").title())    
+
+            # default None
+            val = getattr(strategy.config, key, None)
+
+            if isinstance(val, (int, float)):
+                # limits
+                min_val = -1000 if key in _LINE_KEYS else 0
+
+                control_widget = QtWidgets.QDoubleSpinBox()
+                control_widget.setDecimals(1)
+                control_widget.setSingleStep(0.001)
+                control_widget.setRange(min_val, 1000)
+                control_widget.setValue(0)
+                control_widget.setKeyboardTracking(False)
+
+                control_widget.setValue(val)
+            # TODO: add support for scaling, str, bool, etc.
+            # TODO: attached events
+
+            # add to grid layout
+            self.gridLayout_strategy.addWidget(label, i, 0)
+            self.gridLayout_strategy.addWidget(control_widget, i, 1)
+
+            # store the widget
+            self.strategy_config_widgets[key] = control_widget
+
+    def get_milling_strategy_from_ui(self):
+        """Get the milling strategy from the UI."""
+        strategy = self.current_milling_stage.strategy
+
+        # get the updated pattern values from ui
+        for i, key in enumerate(strategy.config.required_attributes):
+            widget = self.strategy_config_widgets[key]
+
+            if isinstance(widget, QtWidgets.QDoubleSpinBox):
+                value = widget.value() 
+            # TODO: add support for scaling, str, bool, etc.
+
+            setattr(strategy.config, key, value)
+
+        # from pprint import pprint
+        # pprint(strategy.to_dict())
+
+        return strategy
+
+    def set_drift_correction_ui(self):
+        """Set the drift correction UI from the current milling stage."""
+        drift_correction = self.current_milling_stage.drift_correction
+
+        self.checkBox_drift_correction_enabled.setChecked(drift_correction.enabled)
+        self.checkBox_drift_correction_interval_enabled.setChecked(drift_correction.interval_enabled)
+        self.doubleSpinBox_drift_correction_interval.setValue(drift_correction.interval)
+
+    def get_drift_correction_from_ui(self):
+        """Get the drift correction settings from the UI."""
+        drift_correction = MillingDriftCorrection(
+            enabled=self.checkBox_drift_correction_enabled.isChecked(),
+            interval_enabled=self.checkBox_drift_correction_interval_enabled.isChecked(),
+            interval=self.doubleSpinBox_drift_correction_interval.value(),
+        )
+
+        return drift_correction
 
     def redraw_patterns(self):
         """Redraw the patterns in the viewer."""
@@ -348,14 +421,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui()
 
     def update_milling_stage_from_ui(self):
-                
+        """Get the updated milling stage from the UI."""
+
         # get current milling stage
         current_index = self.comboBox_milling_stage.currentIndex()
 
         if current_index == -1:
-            msg = "No milling stages defined, cannot draw patterns."
-            logging.warning(msg)
-            napari.utils.notifications.show_warning(msg)
+            # msg = "No milling stages defined, cannot draw patterns."
+            # logging.warning(msg)
+            # napari.utils.notifications.show_warning(msg)
             return
 
         milling_stage: FibsemMillingStage = self.milling_stages[current_index]
@@ -366,12 +440,26 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # update pattern and define
         milling_stage.pattern = self.get_pattern_from_ui_v2()
 
-        # TODO: drift correction
-        # milling_stage.drift_correction = self.get_drift_correction_from_ui()
+        milling_stage.drift_correction = self.get_drift_correction_from_ui()
+
+        milling_stage.strategy = self.get_milling_strategy_from_ui()
 
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
         return 
 
+    def clear_grid_layout(self, grid_layout: QtWidgets.QGridLayout):
+        # clear layout
+        for i in reversed(range(grid_layout.count())):
+            grid_layout.itemAt(i).widget().setParent(None)
+
+    def update_current_selected_strategy(self):
+        """Update the current selected strategy."""
+
+        strategy_name = self.comboBox_strategy_name.currentText()
+        logging.info(f"selected strategy: {strategy_name}")
+        strategy = get_strategy(strategy_name, {"config": {"overtilt": 1}}) # TODO: default strategy configs
+        self.current_milling_stage.strategy = strategy
+        self.set_milling_strategy_ui()
 
     def update_current_selected_pattern(self):
         """When the currently selected pattern is changed, update the current milling stage, and then reset the ui."""
@@ -379,7 +467,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         pattern_name = self.comboBox_patterns.currentText()
 
         logging.info(f"selected pattern: {pattern_name}")
-        pattern = get_pattern(pattern_name, self.protocol["patterns"][pattern_name])
+        pattern = get_default_milling_pattern(pattern_name)
         self.current_milling_stage.pattern = pattern
         self.setup_pattern_ui()
 
@@ -401,9 +489,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         pattern: BasePattern = milling_stage.pattern
         point: Point = pattern.point
 
-        # clear layout
-        for i in reversed(range(self.gridLayout_patterns.count())):
-            self.gridLayout_patterns.itemAt(i).widget().setParent(None)
+        # clear the grid layout
+        self.clear_grid_layout(self.gridLayout_patterns)
 
         self.pattern_attribute_widgets: Dict[str, QtWidgets.QWidget] = {}
 
@@ -669,6 +756,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if not isinstance(milling_stages, list):
             milling_stages = [milling_stages]
 
+        from pprint import pprint
+        pprint(milling_stages[0].to_dict())
+
         # # check hfw threshold # TODO: do this check more seriously, rather than rule of thumb
 
         t2 = time.time()
@@ -676,13 +766,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             draw_crosshair = self.checkBox_show_milling_crosshair.isChecked()
             if not isinstance(self.image_widget.ib_image, FibsemImage):
                 raise Exception("No Ion Image, cannot draw patterns. Please take an image.")
-            if not isinstance(self.image_widget.eb_image, FibsemImage):
-                raise Exception("No Electron Image, cannot draw patterns. Please take an image.") # TODO: this is unintuitive why this is required -> ui issue only
-            # clear patterns then draw new ones
+             # clear patterns then draw new ones
             self.milling_pattern_layers = draw_milling_patterns_in_napari(
                 viewer=self.viewer, 
                 ib_image=self.image_widget.ib_image, 
-                eb_image=self.image_widget.eb_image, 
+                translation=self.image_widget.ib_layer.translate, # TODO: can we just use the ib layer translation instead??? 
                 milling_stages = milling_stages,
                 draw_crosshair=draw_crosshair)  # TODO: add names and legend for this
         
@@ -695,7 +783,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def toggle_pattern_visibility(self):
-
+        """Toggle the visibility of the milling patterns layers."""
         is_visible = self.checkBox_show_milling_patterns.isChecked()
         for layer in self.milling_pattern_layers:
             if layer in self.viewer.layers:
@@ -705,9 +793,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         """Toggle microscope and pattern interactions."""
         self.pushButton_add_milling_stage.setEnabled(enabled)
-        self.pushButton_remove_milling_stage.setEnabled(enabled)
+        self.pushButton_remove_milling_stage.setEnabled(bool(enabled and self.milling_stages))
         # self.pushButton_save_milling_stage.setEnabled(enabled)
-        self.pushButton_run_milling.setEnabled(enabled)
+        self.pushButton_run_milling.setEnabled(bool(enabled and self.milling_stages))
         if enabled:
             self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Run Milling")
@@ -718,12 +806,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_run_milling.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Running...")
             self.pushButton_stop_milling.setVisible(True)
+            self.pushButton_pause_milling.setVisible(True)
         else:
             self.pushButton_run_milling.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_add_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_stop_milling.setVisible(False)
-
+            self.pushButton_pause_milling.setVisible(False)
 
         if caller is None:
             self.parent.image_widget._toggle_interactions(enabled, caller="milling")
@@ -738,7 +827,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     
     def stop_milling(self):
         """Request milling stop."""
-        self._STOP_MILLING = True
+        self.STOP_MILLING = True
         self.microscope.stop_milling()
         self._quit_progress_bar()
         self.finish_progress_bar()
@@ -829,7 +918,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._milling_finished.emit()
         self._quit_progress_bar()
         self.finish_progress_bar()
-        self._STOP_MILLING = False
+        self.STOP_MILLING = False
 
 
 def valid_pattern_location(pattern: BasePattern, image: FibsemImage) -> bool:
@@ -860,20 +949,6 @@ def valid_pattern_location(pattern: BasePattern, image: FibsemImage) -> bool:
 
 
 def main():
-    # millings_stages = [
-    # FibsemMillingStage(
-    #     name="Milling Stage X",
-    #     num = 1,
-    #     milling = FibsemMillingSettings(hfw=400e-6),
-    #     pattern = patterns.get_pattern("Trench"),
-    # ),
-    #     FibsemMillingStage(
-    #     name="Milling Stage 2",
-    #     num = 2,
-    #     milling = FibsemMillingSettings(hfw=200e-6),
-    #     pattern = patterns.get_pattern("Horseshoe"),
-    # )
-    # ]
     viewer = napari.Viewer(ndisplay=2)
     milling_widget = FibsemMillingWidget()
     viewer.window.add_dock_widget(

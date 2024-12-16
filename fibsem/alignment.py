@@ -149,7 +149,8 @@ def beam_shift_alignment_v2(
         microscope.set("current", initial_current, image_settings.beam_type)
     
     # TODO: use structured logging format
-    logging.info(f"beam shift alignment: dx: {dx}, dy: {dy}, image_settings: {image_settings.to_dict()}")
+    msgd = {"msg": "beam shift alignment", "dx": dx, "dy": dy, "image_settings": image_settings.to_dict()}
+    logging.debug(msgd)
 
 def correct_stage_drift(
     microscope: FibsemMicroscope,

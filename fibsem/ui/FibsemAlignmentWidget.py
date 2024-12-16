@@ -122,7 +122,6 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
 
 
     def update_viewer(self, arr: np.ndarray, name: str = None):
-        # arr = ui_utils._draw_crosshair(arr)
 
         try:
             self.viewer.layers[name].data = arr

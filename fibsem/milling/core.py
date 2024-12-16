@@ -173,7 +173,7 @@ def mill_stages(
                 parent_ui.milling_notification.emit(f"Preparing: {stage.name}")
 
             if parent_ui:
-                if parent_ui._STOP_MILLING:
+                if parent_ui.STOP_MILLING:
                     raise Exception("Milling stopped by user.")
 
             try:
@@ -185,7 +185,6 @@ def mill_stages(
                     current_stage_index=idx,
                     total_stages=len(stages),
                 )
-                # TODO: drift correction
 
                 if parent_ui:
                     parent_ui._progress_bar_quit.emit()

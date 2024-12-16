@@ -10,7 +10,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import draw_pattern, run_milling, setup_milling, finish_milling
 from fibsem.milling.base import (FibsemMillingStage, MillingStrategy,
                                  MillingStrategyConfig)
-from fibsem.milling.patterning import patterns
+from fibsem.milling.patterning.patterns2 import TrenchPattern
 from fibsem.structures import (BeamType, FibsemImage, FibsemRectangle,
                                FibsemStagePosition, ImageSettings)
 
@@ -54,7 +54,7 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
         logging.info(f"Running {self.fullname} for {stage.name}")
 
         # assert pattern is TrenchPattern
-        if not isinstance(stage.pattern, patterns.TrenchPattern):
+        if not isinstance(stage.pattern, TrenchPattern):
             raise ValueError("Pattern must be TrenchPattern for overtilt milling")
 
         # save initial position

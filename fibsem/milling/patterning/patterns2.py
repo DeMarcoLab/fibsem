@@ -1419,6 +1419,7 @@ MILLING_PATTERNS: Dict[str, BasePattern] = {
     # BitmapPattern.name.lower(): BitmapPattern,
 }
 MILLING_PATTERN_NAMES = [p.name for p in MILLING_PATTERNS.values()]
+DEFAULT_MILLING_PATTERN = RectanglePattern.name
 
 # legacy mapping
 PROTOCOL_MILL_MAP = {

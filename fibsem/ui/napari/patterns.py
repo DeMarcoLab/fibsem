@@ -158,9 +158,6 @@ def create_crosshair_shape(centre_point: Point, image: FibsemImage) -> np.ndarra
         py3 = cy + (xmin * np.sin(r) + ymax * np.cos(r))
         # napari shape format
         shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
-        # if eb_image is not None:
-        #         for c in shape:
-        #             c[1] += eb_image.data.shape[1]
         crosshair_shapes.append(shape)
 
     return crosshair_shapes
@@ -227,7 +224,7 @@ NAPARI_DRAWING_FUNCTIONS = {
 def draw_milling_patterns_in_napari(
     viewer: napari.Viewer,
     ib_image: FibsemImage,
-    eb_image: FibsemImage,
+    translation: Tuple[int, int],
     milling_stages: List[FibsemMillingStage],
     draw_crosshair: bool = True,
 ):
@@ -321,7 +318,7 @@ def draw_milling_patterns_in_napari(
                     face_color=COLOURS[i % len(COLOURS)],
                     opacity=0.5,
                     blending="translucent",
-                    translate=(0, eb_image.data.shape[1])
+                    translate=translation,
                 )
 
             # TODO: properties dict for all parameters
@@ -336,7 +333,7 @@ def draw_milling_patterns_in_napari(
 
         #     annulus_image = compose_pattern_image(ib_image.data, drawn_patterns)
 
-        #     translation = (0, eb_image.data.shape[1])
+        #     
         #     label_layer = viewer.add_labels(data=annulus_image, 
         #                         translate=translation, 
         #                         name=annulus_layer,

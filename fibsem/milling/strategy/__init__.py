@@ -8,3 +8,4 @@ strategies: Dict[str, MillingStrategy] = {
     StandardMillingStrategy.name: StandardMillingStrategy,
     OvertiltTrenchMillingStrategy.name: OvertiltTrenchMillingStrategy,
 }
+MILLING_STRATEGY_NAMES = list(strategies.keys())
