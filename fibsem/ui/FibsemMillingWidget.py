@@ -3,7 +3,7 @@ import logging
 import time
 from copy import deepcopy
 from pprint import pprint
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import napari
 import napari.utils.notifications
@@ -11,7 +11,6 @@ import numpy as np
 from napari.layers import Layer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import QTimer, QMetaObject, Qt
 
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
@@ -31,8 +30,6 @@ from fibsem.milling.patterning.patterns2 import (
     DEFAULT_MILLING_PATTERN,
     MILLING_PATTERN_NAMES,
     BasePattern,
-    CirclePattern,
-    FiducialPattern,
     LinePattern,
     get_pattern,
 )
@@ -43,17 +40,15 @@ from fibsem.structures import (
     FibsemImage,
     FibsemMillingSettings,
     Point,
-    calculate_fiducial_area_v2,
 )
 from fibsem.ui import _stylesheets as stylesheets
 from fibsem.ui.napari.patterns import (
-    convert_pattern_to_napari_circle,
-    convert_pattern_to_napari_rect,
     draw_milling_patterns_in_napari,
     remove_all_napari_shapes_layers,
-    validate_pattern_placement,
+    is_pattern_placement_valid
 )
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
                      "number", "passes", "n_rectangles", "overlap", "inverted", "use_side_patterns",
@@ -109,7 +104,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope = microscope
 
         self.viewer = viewer
-        self.image_widget = parent.image_widget
+        self.image_widget: FibsemImageSettingsWidget = parent.image_widget
 
         self.UPDATING_PATTERN: bool = False
         self.CAN_MOVE_PATTERN: bool = True
@@ -607,7 +602,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             napari.utils.notifications.show_info(msg)
             return
 
-        self.UPDATING_PATTERN = True
+        current_stage_index = self.comboBox_milling_stage.currentIndex()
+        
+        # no milling stage selected
+        if current_stage_index == -1:
+            return
 
         # get coords
         coords = layer.world_to_data(event.position)
@@ -616,34 +615,36 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         coords, beam_type, image = self.image_widget.get_data_from_coord(coords)
         
         if beam_type is not BeamType.ION:
-            napari.utils.notifications.show_info(
-                f"Please right click on the {BeamType.ION.name} image to move pattern."
-            )
+            napari.utils.notifications.show_warning("Patterns can only be placed inside the FIB image.")
             return
         
         point = conversions.image_to_microscope_image_coordinates(
-                Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+                coord=Point(x=coords[1], y=coords[0]), # yx required
+                image=image.data, 
+                pixelsize=image.metadata.pixel_size.x,
             )
-        
         point_clicked = deepcopy(point)
-
-        # only move the pattern if milling widget is activate and beamtype is ion?
+        
+        # conditions to move:
+        #   all moved patterns are within the fib image
         renewed_patterns = []
-        _patterns_valid = True
-
-        current_stage_index = self.comboBox_milling_stage.currentIndex()
+        all_patterns_are_valid: bool = True
+        moving_all_patterns: bool = bool('Control' in event.modifiers)
+        use_relative_movement: bool = self.checkBox_relative_move.isChecked()
 
         diff = point - self.milling_stages[current_stage_index].pattern.point
 
-        for idx, milling_stage in enumerate(self.milling_stages):
+        self.UPDATING_PATTERN = True
+
         # loop to check through all patterns to see if they are in bounds
-            if 'Control' not in event.modifiers:
+        for idx, milling_stage in enumerate(self.milling_stages):
+            if not moving_all_patterns:
                 if idx != current_stage_index: 
                     continue
-            
+
             pattern_renew = deepcopy(milling_stage.pattern)
 
-            if self.checkBox_relative_move.isChecked():
+            if use_relative_movement:
                 point = Point(x=pattern_renew.point.x + diff.x, 
                               y=pattern_renew.point.y + diff.y)
             
@@ -654,42 +655,39 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 pattern_renew.end_x += diff.x
                 pattern_renew.end_y += diff.y
                 # TODO: this doesnt work if the line is rotated at all
-            
+
             # update the pattern point
             pattern_renew.point = point
 
-            pattern_is_valid = valid_pattern_location(pattern_renew, image=self.image_widget.ib_image)
-            # TODO: if the line goes out of bounds it is not reset correcectly, need to fix this
+            pattern_is_valid = is_pattern_placement_valid(pattern=pattern_renew, 
+                                                          image=self.image_widget.ib_image)
+            # TODO: if the line goes out of bounds it is not reset correctly, need to fix this
 
             if not pattern_is_valid:
-                logging.warning(f"Could not move Patterns, out of bounds at at {point}")
-                napari.utils.notifications.show_warning("Patterns is not within the image.")
-                _patterns_valid = False
+                all_patterns_are_valid = False
+                msg = f"{milling_stage.name} pattern is not within the FIB image."
+                logging.warning(msg)
+                napari.utils.notifications.show_warning(msg)
                 break
-            else:
-                renewed_patterns.append(pattern_renew)
+            renewed_patterns.append(pattern_renew)
 
-        _redraw = False
+        if all_patterns_are_valid:
 
-        if _patterns_valid:
-
-            if len(renewed_patterns) == len(self.milling_stages):
+            if moving_all_patterns: # moving all patterns
                 for milling_stage, pattern_renew in zip(self.milling_stages, renewed_patterns):
                     milling_stage.pattern = pattern_renew
-                _redraw = True
-            elif len(renewed_patterns)>0:
+            else: # only moving selected pattern
                 self.milling_stages[current_stage_index].pattern = renewed_patterns[0]
-                _redraw = True
 
-        if _redraw:
+            # update the ui
             self.doubleSpinBox_centre_x.setValue(point_clicked.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(point_clicked.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
-            logging.info(f"Moved patterns to {point} ")
+            logging.debug(f"Moved patterns to {point}")
 
             # if current pattern is Line, we need to update the ui elements
-            if self.milling_stages[current_stage_index].pattern.name == "Line":
+            if isinstance(self.milling_stages[current_stage_index].pattern, LinePattern):
                 # self.update_pattern_ui(milling_stage=self.milling_stages[current_stage_index])
-                print("NOT IMPLEMENTED TODO: update line pattern ui")
+                logging.error("NOT IMPLEMENTED TODO: update line pattern ui")
 
             logging.debug({
                 "msg": "move_milling_patterns",                                     # message type
@@ -698,12 +696,12 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 "beam_type": BeamType.ION.name,                                     # beam type
             })
             
+            # redraw the patterns
             self.update_ui()
             self.milling_position_changed.emit()
             
         self.UPDATING_PATTERN = False
 
-    
     # TODO: add a validation check for the patterns based on the image hfw, rather than napari shapes
    
     def set_milling_settings_ui(self) -> None:
@@ -739,18 +737,16 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         return milling_settings
 
-    def update_ui(self, milling_stages: List[FibsemMillingStage] = None):
+    def update_ui(self):
+        """Update the milling stages from the UI and try to redraw the patterns."""
 
-        # force the milling hfw to match the current image hfw
+        # force the milling hfw to match the current image hfw (TODO: do this more elegantly)
         self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
         
-        t0 = time.time()
-
         self.update_milling_stage_from_ui()         # update milling stage from ui
-        milling_stages = self.get_milling_stages() # get the latest milling stages from the ui
+        milling_stages = self.get_milling_stages()  # get the latest milling stages from the ui
 
-        t1 = time.time()
-
+        # remove all patterns if there are no milling stages
         if not milling_stages:
             remove_all_napari_shapes_layers(self.viewer)
             return
@@ -763,11 +759,13 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # # check hfw threshold # TODO: do this check more seriously, rather than rule of thumb
 
-        t2 = time.time()
+        t1 = time.time()
         try:
             draw_crosshair = self.checkBox_show_milling_crosshair.isChecked()
             if not isinstance(self.image_widget.ib_image, FibsemImage):
                 raise Exception("No FIB Image, cannot draw patterns. Please take an image.")
+            if self.image_widget.ib_layer is None:
+                raise Exception("No FIB Image Layer, cannot draw patterns. Please take an image.")
 
             # TODO: upgrades. 
             # Don't draw each pattern on a separate layer
@@ -777,9 +775,9 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             # clear patterns then draw new ones 
             self.milling_pattern_layers = draw_milling_patterns_in_napari(
                 viewer=self.viewer, 
-                ib_image=self.image_widget.ib_image, 
-                translation=self.image_widget.ib_layer.translate,
+                image_layer=self.image_widget.ib_layer, 
                 milling_stages = milling_stages,
+                pixelsize=self.image_widget.ib_image.metadata.pixel_size.x,
                 draw_crosshair=draw_crosshair)  # TODO: add names and legend for this
         
         except Exception as e:
@@ -787,7 +785,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             logging.error(e)
             return
         t2 = time.time()
-        logging.debug(f"UPDATE_UI: GET: {t1-t0}, DRAW: {t2-t1}")
+        logging.debug(f"UPDATE_UI: DRAW: {t2-t1}")
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def toggle_pattern_visibility(self):
@@ -798,11 +796,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                 self.viewer.layers[layer].visible = is_visible
 
     def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
-
         """Toggle microscope and pattern interactions."""
+
         self.pushButton_add_milling_stage.setEnabled(enabled)
         self.pushButton_remove_milling_stage.setEnabled(bool(enabled and self.milling_stages))
-        # self.pushButton_save_milling_stage.setEnabled(enabled)
         self.pushButton_run_milling.setEnabled(bool(enabled and self.milling_stages))
         if enabled:
             self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
@@ -823,7 +820,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.pushButton_pause_milling.setVisible(False)
 
         if caller is None:
-            self.parent.image_widget._toggle_interactions(enabled, caller="milling")
+            self.image_widget._toggle_interactions(enabled, caller="milling")
             self.parent.movement_widget._toggle_interactions(enabled, caller="milling")
 
 
@@ -919,24 +916,3 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.update_ui()
         self.milling_progress_signal.emit({"finished": True, "msg": "Milling Finished."})
         self.STOP_MILLING = False
-
-def valid_pattern_location(pattern: BasePattern, image: FibsemImage) -> bool:
-    """Check if the pattern is within the image bounds."""
-
-    if isinstance(pattern, FiducialPattern):
-        _, is_valid_placement = calculate_fiducial_area_v2(image=image, 
-                                            fiducial_centre = deepcopy(pattern.point), 
-                                            fiducial_length = pattern.height)
-        return is_valid_placement
-    
-    for pattern_settings in pattern.define():
-        if isinstance(pattern_settings, CirclePattern):
-            napari_shape = convert_pattern_to_napari_circle(pattern_settings=pattern_settings, image=image)
-        else:
-            napari_shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=image)
-
-        is_valid_placement = validate_pattern_placement(resolution=image.data.shape[::-1], shape=napari_shape)
-        if not is_valid_placement:
-            return False
-    
-    return True

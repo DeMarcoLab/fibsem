@@ -135,8 +135,8 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self.comboBox_pattern_overlay.setCurrentText("trench")
         elif "mill_rough" in milling_patterns:
             self.comboBox_pattern_overlay.setCurrentText("mill_rough")
-        self.comboBox_pattern_overlay.currentIndexChanged.connect(self._update_pattern_overlay)
-        self.checkBox_pattern_overlay.stateChanged.connect(self._update_pattern_overlay)
+        self.comboBox_pattern_overlay.currentIndexChanged.connect(self.redraw_pattern_overlay)
+        self.checkBox_pattern_overlay.stateChanged.connect(self.redraw_pattern_overlay)
 
         # correlation
         self.actionLoad_Correlation_Image.triggered.connect(self._load_correlation_image)
@@ -233,7 +233,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
     def cancel_acquisition(self):
 
-        logging.info(f"Cancelling acquisition...")
+        logging.info("Cancelling acquisition...")
         self.STOP_ACQUISITION: bool = True
 
     def _toggle_gridbars(self):
@@ -649,16 +649,19 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         napari.utils.notifications.show_info(f"Saved positions to {path}")
 
-    def _update_pattern_overlay(self):
+    def redraw_pattern_overlay(self):
+        """Redraw the milling patterns on the image."""
 
+        selected_pattern = self.comboBox_pattern_overlay.currentText()
+        self.selected_milling_stage = get_milling_stages(selected_pattern, 
+                                                         protocol=self.settings.protocol["milling"])[0]
         self._draw_positions()
-
 
     def _draw_positions(self):
         
-        logging.info(f"Drawing Reprojected Positions...")
+        logging.info("Drawing Reprojected Positions...")
         current_position = deepcopy(self.microscope.get_stage_position())
-        current_position.name = f"Current Position"
+        current_position.name = "Current Position"
 
         # Performance Note: the reason this is slow is because every time a new position is added, we re-draw every position
         # this is not necessary, we can just add the new position to the existing layer
@@ -708,20 +711,27 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
             self._reprojection_layer.face_color= colors_rgba
 
 
-            _SHOW_PATTERNS: bool = self.checkBox_pattern_overlay.isChecked()
-            if _SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
-                points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
-                pattern = self.comboBox_pattern_overlay.currentText() 
-                
-                milling_stages = [get_milling_stages(pattern, self.settings.protocol["milling"], Point(point.x, point.y))[0] for point in points]
-                
-                for stage, pos in zip(milling_stages, drawn_positions[:-1]):
-                    stage.name = pos.name
+            
 
-                draw_milling_patterns_in_napari(self.viewer, 
-                    ib_image=self.image, 
-                    eb_image=None, 
-                    milling_stages = milling_stages)
+
+            SHOW_PATTERNS: bool = self.checkBox_pattern_overlay.isChecked()
+            if SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
+                points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
+                                                                            self.image.data, 
+                                                                            self.image.metadata.pixel_size.x ) for coords in data[:-1]]
+                
+                milling_stages = []
+                for point, pos in zip(points, drawn_positions[:-1]):
+                    stage = deepcopy(self.selected_milling_stage)
+                    stage.name = pos.name
+                    stage.pattern.point = point
+                    milling_stages.append(stage)
+
+                draw_milling_patterns_in_napari(
+                    viewer=self.viewer, 
+                    image=self.image,
+                    milling_stages = milling_stages,
+                    translation=None)
             else:
                 remove_all_napari_shapes_layers(viewer=self.viewer)
 

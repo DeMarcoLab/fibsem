@@ -7,7 +7,7 @@ from typing import List, Tuple
 import napari
 import napari.utils.notifications
 import numpy as np
-from napari.layers import Shapes as NapariShapesLayer
+from napari.layers import Shapes as NapariShapesLayer, Image as NapariImageLayer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
@@ -51,7 +51,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.parent = parent
         self.microscope = microscope
         self.viewer = viewer
-        self.eb_layer, self.ib_layer = None, None
+        self.eb_layer: NapariImageLayer = None
+        self.ib_layer: NapariImageLayer = None
         self.eb_image = FibsemImage(data=np.zeros(shape=(1024, 1536), dtype=np.uint8))
         self.ib_image = FibsemImage(data=np.zeros(shape=(1024, 1536), dtype=np.uint8))
 
@@ -68,8 +69,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.setup_connections()
 
         if image_settings is not None:
-            # self.detector_settings = self.get_detector_settings()
-            # self.beam_settings = self.get_beam_settings()
             self.image_settings = image_settings
             self.set_ui_from_settings(image_settings = image_settings, beam_type = BeamType.ELECTRON)
         self.update_detector_ui() # TODO: can this be removed?
@@ -77,7 +76,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         # register initial images
         self.update_viewer(self.ib_image.data, BeamType.ION.name)
         self.update_viewer(self.eb_image.data, BeamType.ELECTRON.name)
-        # self.live_imaging_signal.connect(self.live_update)
         self.update_ui_tools()
     
     def setup_connections(self):
