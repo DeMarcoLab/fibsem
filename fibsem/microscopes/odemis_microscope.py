@@ -1032,9 +1032,6 @@ class OdemisMicroscope(FibsemMicroscope):
     def get_milling_state(self):
         return PatterningState[self.connection.get_patterning_state().upper()]
 
-    def run_milling_drift_corrected(self):
-        pass
-
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         self.connection.clear_patterns()
         self.set("current", imaging_current, self.milling_channel)
