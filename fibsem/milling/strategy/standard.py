@@ -55,7 +55,7 @@ class StandardMillingStrategy(MillingStrategy):
                 "total": total_stages,
             }
             parent_ui._progress_bar_start.emit(progress_bar_dict)
-            parent_ui.milling_notification.emit(f"Running {stage.name}...")
+            parent_ui.milling_progress_signal.emit({"msg": f"Running {stage.name}..."})
 
         run_milling(
             microscope=microscope,

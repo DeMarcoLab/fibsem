@@ -170,11 +170,10 @@ def mill_stages(
     try:
         for idx, stage in enumerate(stages):
             if parent_ui:
-                parent_ui.milling_notification.emit(f"Preparing: {stage.name}")
-
-            if parent_ui:
                 if parent_ui.STOP_MILLING:
                     raise Exception("Milling stopped by user.")
+
+                parent_ui.milling_progress_signal.emit({"msg": f"Preparing: {stage.name}"})
 
             try:
                 stage.strategy.run(
@@ -188,14 +187,12 @@ def mill_stages(
 
                 if parent_ui:
                     parent_ui._progress_bar_quit.emit()
-                    parent_ui.milling_notification.emit(f"Milling stage complete: {stage.name}")
+                    parent_ui.milling_progress_signal.emit({"msg": f"Finished: {stage.name}"})
             except Exception as e:
                 logging.error(f"Error running milling stage: {stage.name}, {e}")
 
         if parent_ui:
-            parent_ui.milling_notification.emit(
-                f"Milling complete. {len(stages)} stages completed."
-            )
+            parent_ui.milling_progress_signal.emit({"msg": f"Finished {len(stages)} Milling Stages"})
     
     except Exception as e:
         if parent_ui:

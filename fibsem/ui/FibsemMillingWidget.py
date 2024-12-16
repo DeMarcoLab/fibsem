@@ -2,7 +2,8 @@
 import logging
 import time
 from copy import deepcopy
-from typing import Dict, List, Optional, Union
+from pprint import pprint
+from typing import Any, Dict, List, Optional, Union
 
 import napari
 import napari.utils.notifications
@@ -19,7 +20,12 @@ from fibsem.microscope import (
     TescanMicroscope,
     ThermoMicroscope,
 )
-from fibsem.milling import FibsemMillingStage, get_strategy, mill_stages, MillingDriftCorrection
+from fibsem.milling import (
+    FibsemMillingStage,
+    MillingDriftCorrection,
+    get_strategy,
+    mill_stages,
+)
 from fibsem.milling.patterning.patterns2 import (
     DEFAULT_MILLING_PATTERN,
     MILLING_PATTERN_NAMES,
@@ -88,11 +94,12 @@ def get_default_milling_pattern(name: str) -> BasePattern:
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
     _milling_finished = QtCore.pyqtSignal()
-    milling_notification = QtCore.pyqtSignal(str)
     _progress_bar_update = QtCore.pyqtSignal(object)
     _progress_bar_start = QtCore.pyqtSignal(object)
     _progress_bar_quit = QtCore.pyqtSignal()
+
     # TODO: consolidate these into a single signal
+    milling_progress_signal = QtCore.pyqtSignal(dict) # TODO: replace with pysygnal (pure-python signal)
 
     def __init__(
         self,
@@ -195,7 +202,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.currentIndexChanged.connect(self.update_milling_stage_ui)
 
         # update ui
-        self.milling_notification.connect(self.update_milling_ui)
+        self.milling_progress_signal.connect(self.handle_milling_progress_update)
 
         # run milling
         self.pushButton_run_milling.clicked.connect(self.run_milling)
@@ -756,8 +763,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         if not isinstance(milling_stages, list):
             milling_stages = [milling_stages]
 
-        from pprint import pprint
-        pprint(milling_stages[0].to_dict())
+        # pprint(milling_stages[0].to_dict())
 
         # # check hfw threshold # TODO: do this check more seriously, rather than rule of thumb
 
@@ -765,12 +771,18 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         try:
             draw_crosshair = self.checkBox_show_milling_crosshair.isChecked()
             if not isinstance(self.image_widget.ib_image, FibsemImage):
-                raise Exception("No Ion Image, cannot draw patterns. Please take an image.")
-             # clear patterns then draw new ones
+                raise Exception("No FIB Image, cannot draw patterns. Please take an image.")
+
+            # TODO: upgrades. 
+            # Don't draw each pattern on a separate layer
+            # Don't redraw the patterns each time, only update the position if it has changed
+            # Only draw the patterns that are visible 
+             
+            # clear patterns then draw new ones 
             self.milling_pattern_layers = draw_milling_patterns_in_napari(
                 viewer=self.viewer, 
                 ib_image=self.image_widget.ib_image, 
-                translation=self.image_widget.ib_layer.translate, # TODO: can we just use the ib layer translation instead??? 
+                translation=self.image_widget.ib_layer.translate,
                 milling_stages = milling_stages,
                 draw_crosshair=draw_crosshair)  # TODO: add names and legend for this
         
@@ -871,7 +883,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             i += inc 
             yield
 
-
     def update_progress_bar(self, info):
         
         value = info['progress_percent']
@@ -896,7 +907,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     def run_milling_step(self):
 
         milling_stages = self.get_milling_stages()
-        self._toggle_interactions(enabled=False,milling=True)
+        self._toggle_interactions(enabled=False, milling=True)
         
         # new milling interface
         mill_stages(microscope=self.microscope, 
@@ -904,10 +915,19 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                             parent_ui=self)
         return
 
-    def update_milling_ui(self, msg: str):
-        logging.info(msg)
-        napari.utils.notifications.notification_manager.records.clear()
-        napari.utils.notifications.show_info(msg)
+    def handle_milling_progress_update(self, ddict: Dict[str, Union[str, int, float]]) -> None:
+        """Handler the milling update. Displays messages to user, updates progress bar, etc."""
+
+        msg = ddict.get("msg", None)
+        if msg is not None:
+            logging.info(msg)
+            napari.utils.notifications.notification_manager.records.clear()
+            napari.utils.notifications.show_info(msg) # TODO: change this to update qtlabel not napari
+
+        # progress bar
+        # two progress bars? overall and stage?
+        # we need proper estimates for milling
+
 
     def run_milling_finished(self):
 
@@ -919,7 +939,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._quit_progress_bar()
         self.finish_progress_bar()
         self.STOP_MILLING = False
-
 
 def valid_pattern_location(pattern: BasePattern, image: FibsemImage) -> bool:
     """Check if the pattern is within the image bounds."""
