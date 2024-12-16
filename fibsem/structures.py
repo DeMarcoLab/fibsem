@@ -133,6 +133,8 @@ class MillingState(Enum):
     PAUSED = 3
     ERROR = 4
 
+ACTIVE_MILLING_STATES = [MillingState.RUNNING, MillingState.STOPPING, MillingState.PAUSED]
+
 class ManipulatorState(Enum):
     RETRACTED = 0
     INSERTED = 1

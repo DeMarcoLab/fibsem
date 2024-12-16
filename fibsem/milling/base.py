@@ -61,7 +61,8 @@ class FibsemMillingStage:
 
     def __post_init__(self):
         if self.pattern is None:
-            self.pattern = get_pattern("Rectangle")
+            self.pattern = get_pattern("Rectangle", 
+                                       config={"width": 10e-6, "height": 5e-6, "depth": 1e-6})
         if self.strategy is None:
             self.strategy = get_strategy("Standard")
 

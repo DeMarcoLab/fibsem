@@ -904,7 +904,7 @@ class OdemisMicroscope(FibsemMicroscope):
             self.connection.set_default_application_file("Si-ccs")
         if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
             create_pattern_function = self.connection.create_regular_cross_section
-            self.connection.set_default_application_file("Si-multi-pass")
+            self.connection.set_default_application_file("Si-multipass")
 
         # create the pattern (draw)
         pinfo = create_pattern_function(pdict)
