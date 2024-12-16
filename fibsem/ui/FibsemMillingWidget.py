@@ -87,7 +87,6 @@ def get_default_milling_pattern(name: str) -> BasePattern:
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
-    _progress_bar_start = QtCore.pyqtSignal(object)
 
     # TODO: consolidate these into a single signal
     milling_progress_signal = QtCore.pyqtSignal(dict) # TODO: replace with pysygnal (pure-python signal)
@@ -786,7 +785,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             return
         t2 = time.time()
         logging.debug(f"UPDATE_UI: DRAW: {t2-t1}")
-        self.viewer.layers.selection.active = self.image_widget.eb_layer
+        self.image_widget.restore_active_layer_for_movement()
 
     def toggle_pattern_visibility(self):
         """Toggle the visibility of the milling patterns layers."""
@@ -912,7 +911,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # take new images and update ui
         self._toggle_interactions(enabled=True)
-        self.image_widget.take_reference_images()
+        self.image_widget.acquire_reference_images()
         self.update_ui()
         self.milling_progress_signal.emit({"finished": True, "msg": "Milling Finished."})
         self.STOP_MILLING = False

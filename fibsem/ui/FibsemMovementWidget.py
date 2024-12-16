@@ -51,15 +51,21 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.microscope = microscope
         self.settings = settings
         self.viewer = viewer
-        self.image_widget = image_widget
+        self.image_widget: FibsemImageSettingsWidget = parent.image_widget
 
         self.setup_connections()
-        self.image_widget.picture_signal.connect(self.update_ui)
+        self.image_widget.acquisition_progress_signal.connect(self.handle_acquisition_update)
         self.positions = []
         autoload_positions: bool = True # TODO: enable this
         if autoload_positions:
             self.import_positions(cfg.POSITION_PATH)
         self.update_ui()
+
+    def handle_acquisition_update(self, ddict: dict):
+        """Handle acquisition updates from the image widget"""
+        is_finished = ddict.get("finished", False)
+        if is_finished:
+            self.update_ui()
 
     def setup_connections(self):
 
@@ -161,12 +167,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def run_moving_finished(self):
         self.positions_signal.emit(None)
-        if self.parent.image_widget.TAKING_IMAGES:
+        if self.parent.image_widget.ACQUIRING_IMAGES:
             return
         self._toggle_interactions(True)
-        if self.parent.image_widget._LIVE_IMAGING:
-            self.parent.image_widget.live_imaging()
-
 
     def update_moving_ui(self, msg: str):
         logging.info(msg)
@@ -213,8 +216,6 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         worker = self._double_click_worker(layer, event)
         worker.finished.connect(self.run_moving_finished)
         # worker.yielded.connect(self.update_moving_ui)
-        if self.parent.image_widget._LIVE_IMAGING:
-            self.parent.image_widget.stop_event.set()
         worker.start()
 
     @thread_worker
@@ -382,12 +383,14 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             self.update_ui()
             return
         if self.checkBox_movement_acquire_electron.isChecked() and self.checkBox_movement_acquire_ion.isChecked():
-            self.image_widget.take_reference_images()
+            self.image_widget.acquire_reference_images()
             return
         if self.checkBox_movement_acquire_electron.isChecked():
-            self.image_widget.take_image(BeamType.ELECTRON)
+            # self.image_widget.acquire_image(BeamType.ELECTRON)
+            logging.warning("Acquiring electron image after movement has been disabled temporarily. Please only acquire both images after movement")
         elif self.checkBox_movement_acquire_ion.isChecked():
-            self.image_widget.take_image(BeamType.ION)
+            # self.image_widget.acquire_image(BeamType.ION)
+            logging.warning("Acquiring ion image after movement has been disabled temporarily. Please only acquire both images after movement")
         else: 
             self.update_ui()
     
