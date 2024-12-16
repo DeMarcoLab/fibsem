@@ -155,9 +155,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
-                settings=self.settings,
                 viewer=self.viewer,
-                image_widget=self.image_widget,
                 parent=self,
             )
             self.milling_widget = FibsemMillingWidget(
@@ -191,7 +189,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         
             # connect movement widget signal
             self.movement_widget.positions_signal.connect(self.minimap_connection)
-            self.movement_widget.move_signal.connect(self.minimap_connection)
 
         else:
             if self.image_widget is None:

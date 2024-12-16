@@ -39,7 +39,6 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_go_to.clicked.connect(self.go_to_position)
         self.pushButton_export.clicked.connect(self.export_positions)
         self.pushButton_import.clicked.connect(self.import_positions)
-        # self.movement_widget.move_signal.connect(self.minimap)
 
     def select_position(self):
         if self.comboBox_positions.currentIndex() != -1:

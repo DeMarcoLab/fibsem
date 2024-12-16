@@ -16,45 +16,32 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemStagePosition,
-    MicroscopeSettings,
     MovementMode,
     Point,
 )
-from fibsem.ui import _stylesheets
+from fibsem.ui._stylesheets import _GRAY_PUSHBUTTON_STYLE, _GREEN_PUSHBUTTON_STYLE, _ORANGE_PUSHBUTTON_STYLE, _RED_PUSHBUTTON_STYLE, _BLUE_PUSHBUTTON_STYLE, _DISABLED_PUSHBUTTON_STYLE
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget
 from fibsem.ui.utils import _get_file_ui, _get_save_file_ui, message_box_ui
 
-
-def log_status_message(step: str):
-    logging.debug(
-        f"STATUS | Movement Widget | {step}"
-    )
-
-
 class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
-    move_signal = QtCore.pyqtSignal()
-    movement_notification_signal = QtCore.pyqtSignal(str)
     positions_signal = QtCore.pyqtSignal(object)
+    movement_progress_signal = QtCore.pyqtSignal(dict) # TODO: consolidate
 
     def __init__(
         self,
-        microscope: FibsemMicroscope = None,
-        settings: MicroscopeSettings = None,
-        viewer: napari.Viewer = None,
-        image_widget: FibsemImageSettingsWidget = None, 
+        microscope: FibsemMicroscope,
+        viewer: napari.Viewer,
         parent=None,
     ):
         super(FibsemMovementWidget, self).__init__(parent=parent)
         self.setupUi(self)
         self.parent = parent
         self.microscope = microscope
-        self.settings = settings
         self.viewer = viewer
         self.image_widget: FibsemImageSettingsWidget = parent.image_widget
 
         self.setup_connections()
-        self.image_widget.acquisition_progress_signal.connect(self.handle_acquisition_update)
         self.positions = []
         autoload_positions: bool = True # TODO: enable this
         if autoload_positions:
@@ -71,21 +58,14 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
         # buttons
         self.pushButton_move.clicked.connect(self.move_to_position)
-        self.pushButton_move.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_move.setStyleSheet(_GREEN_PUSHBUTTON_STYLE)
         self.pushButton_move_flat_ion.clicked.connect(self.move_flat_to_beam)
-        self.pushButton_move_flat_ion.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_move_flat_ion.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
         self.pushButton_move_flat_electron.clicked.connect(self.move_flat_to_beam)
-        self.pushButton_move_flat_electron.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
-        
-        # minimap
-        # TODO: deprecate this from ui
-        # self.pushButton_load_image_minimap.clicked.connect(self.load_image)
-        self.pushButton_load_image_minimap.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
-        self.label_4.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
-        self.label_minimap.setVisible(cfg._MINIMAP_VISUALISATION) # DISABLE_MINIMAP IN UI
+        self.pushButton_move_flat_electron.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
 
         self.pushButton_refresh_stage_position_data.clicked.connect(self.update_ui)
-        self.pushButton_refresh_stage_position_data.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_refresh_stage_position_data.setStyleSheet(_GRAY_PUSHBUTTON_STYLE)
 
         # register mouse callbacks
         self.image_widget.eb_layer.mouse_double_click_callbacks.append(self._double_click)
@@ -97,19 +77,21 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         # positions
         self.comboBox_positions.currentIndexChanged.connect(self.select_position)
         self.pushButton_save_position.clicked.connect(lambda: self.add_position(position=None))
-        self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_save_position.setStyleSheet(_GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_position.clicked.connect(self.delete_position)
-        self.pushButton_remove_position.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_remove_position.setStyleSheet(_RED_PUSHBUTTON_STYLE)
         self.pushButton_go_to.clicked.connect(lambda: self.go_to_saved_position(None))
-        self.pushButton_go_to.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_go_to.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
         self.pushButton_export.clicked.connect(self.export_positions)
-        self.pushButton_export.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_export.setStyleSheet(_GRAY_PUSHBUTTON_STYLE)
         self.pushButton_import.clicked.connect(self.import_positions)
-        self.pushButton_import.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_import.setStyleSheet(_GRAY_PUSHBUTTON_STYLE)
         self.pushButton_update_position.clicked.connect(self.update_saved_position)
-        self.pushButton_update_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+        self.pushButton_update_position.setStyleSheet(_ORANGE_PUSHBUTTON_STYLE)
 
-        self.movement_notification_signal.connect(self.update_moving_ui)
+        # signals
+        self.movement_progress_signal.connect(self.handle_movement_progress_update)
+        self.image_widget.acquisition_progress_signal.connect(self.handle_acquisition_update)
 
         # set custom tilt limits for the compustage
         if self.microscope is not None:
@@ -139,30 +121,31 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             self.parent.milling_widget._toggle_interactions(enable, caller="movement")
             self.parent.image_widget._toggle_interactions(enable, caller="movement")
         if enable:
-            self.pushButton_move.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_ion.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_electron.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
-            self.pushButton_go_to.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_move.setStyleSheet(_GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_ion.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_electron.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_go_to.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
         else:
-            self.pushButton_move.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_ion.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_electron.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_go_to.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_move.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_ion.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_electron.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_go_to.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
 
     def move_to_position(self):
-        worker = self.move_worker()
+        """Move the stage to the position specified in the UI"""
+        self._toggle_interactions(enable=False)
+        stage_position = self.get_position_from_ui()
+
+        worker = self.move_worker(stage_position=stage_position)
         worker.finished.connect(self.run_moving_finished)
-        # worker.yielded.connect(self.update_moving_ui)
         worker.start()
     
     @thread_worker
-    def move_worker(self):
-        self._toggle_interactions(False)
-        stage_position = self.get_position_from_ui()
-        self.movement_notification_signal.emit(f"Moving to {stage_position}")
+    def move_worker(self, stage_position: FibsemStagePosition) -> None:
+        """Worker function to move the stage to the specified position"""
+        self.movement_progress_signal.emit({"msg": f"Moving to {stage_position}"})
         self.microscope.move_stage_absolute(stage_position)
-        log_status_message(f"MOVED_TO_{stage_position}")
-        self.movement_notification_signal.emit("Move finished, taking new images")
+        self.movement_progress_signal.emit({"msg": "Move finished, taking new images"})
         self.update_ui_after_movement()
 
     def run_moving_finished(self):
@@ -170,14 +153,24 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if self.parent.image_widget.ACQUIRING_IMAGES:
             return
         self._toggle_interactions(True)
+        self.movement_progress_signal.emit({"finished": True})
 
-    def update_moving_ui(self, msg: str):
-        logging.info(msg)
-        napari.utils.notifications.notification_manager.records.clear()
-        napari.utils.notifications.show_info(msg)
+    def handle_movement_progress_update(self, ddict: dict) -> None:
+        """Handle movement progress updates from the microscope"""
+        
+        msg = ddict.get("msg", None)
+        if msg is not None:
+            logging.debug(msg)
+            napari.utils.notifications.notification_manager.records.clear()
+            napari.utils.notifications.show_info(msg)
+
+        is_finished = ddict.get("finished", False)
+        if is_finished:
+            logging.info("Movement finished")
+            # TODO: handle the signals
 
     def update_ui(self):
-
+        """Update the UI with the current stage position and saved positions"""
         stage_position: FibsemStagePosition = self.microscope.get_stage_position()
 
         self.doubleSpinBox_movement_stage_x.setValue(stage_position.x * constants.SI_TO_MILLI)
@@ -186,17 +179,17 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_movement_stage_rotation.setValue(np.rad2deg(stage_position.r))
         self.doubleSpinBox_movement_stage_tilt.setValue(np.rad2deg(stage_position.t))
 
-        _SAVED_POSITIONS = bool(len(self.positions))
-        # self.pushButton_save_position.setVisible(_SAVED_POSITIONS) # always visible
-        self.pushButton_remove_position.setEnabled(_SAVED_POSITIONS)
-        self.pushButton_go_to.setVisible(_SAVED_POSITIONS)
-        self.pushButton_update_position.setVisible(_SAVED_POSITIONS)
-        self.pushButton_export.setVisible(_SAVED_POSITIONS)
-        self.comboBox_positions.setVisible(_SAVED_POSITIONS)
-        self.pushButton_import.setVisible(_SAVED_POSITIONS)
-        self.label_saved_positions.setVisible(_SAVED_POSITIONS)
-        self.label_current_position.setVisible(_SAVED_POSITIONS)
-        self.lineEdit_position_name.setVisible(_SAVED_POSITIONS)
+        HAS_SAVED_POSITIONS = bool(len(self.positions))
+        # self.pushButton_save_position.setVisible(HAS_SAVED_POSITIONS) # always visible
+        self.pushButton_remove_position.setEnabled(HAS_SAVED_POSITIONS)
+        self.pushButton_go_to.setVisible(HAS_SAVED_POSITIONS)
+        self.pushButton_update_position.setVisible(HAS_SAVED_POSITIONS)
+        self.pushButton_export.setVisible(HAS_SAVED_POSITIONS)
+        self.comboBox_positions.setVisible(HAS_SAVED_POSITIONS)
+        self.pushButton_import.setVisible(HAS_SAVED_POSITIONS)
+        self.label_saved_positions.setVisible(HAS_SAVED_POSITIONS)
+        self.label_current_position.setVisible(HAS_SAVED_POSITIONS)
+        self.lineEdit_position_name.setVisible(HAS_SAVED_POSITIONS)
     
     def get_position_from_ui(self):
 
@@ -213,9 +206,11 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         return stage_position
 
     def _double_click(self, layer, event):
+        """Callback for double-click mouse events on the image widget"""
+        self._toggle_interactions(enable= False)
+
         worker = self._double_click_worker(layer, event)
         worker.finished.connect(self.run_moving_finished)
-        # worker.yielded.connect(self.update_moving_ui)
         worker.start()
 
     @thread_worker
@@ -223,13 +218,14 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         
         if event.button != 1 or "Shift" in event.modifiers:
             return
-        self._toggle_interactions(False)
+        
         # get coords
         coords = layer.world_to_data(event.position)
 
         # TODO: dimensions are mixed which makes this confusing to interpret... resolve
         coords, beam_type, image = self.image_widget.get_data_from_coord(coords)
-        self.movement_notification_signal.emit("Click to move in progress")
+        self.movement_progress_signal.emit({"msg": "Click to move in progress..."})
+
         if beam_type is None:
             napari.utils.notifications.show_info(
                 "Clicked outside image dimensions. Please click inside the image to move."
@@ -237,7 +233,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             return
 
         point = conversions.image_to_microscope_image_coordinates(
-            Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+            coord=Point(x=coords[1], y=coords[0]), 
+            image=image.data, 
+            pixelsize=image.metadata.pixel_size.x,
         )
 
         # move
@@ -251,8 +249,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             "coords": {"x": coords[1], "y": coords[0]}, # coords in image coordinates
         })
         
-        log_status_message(f"MOVING_{self.movement_mode.name}_BY_{point.x:.2e}, {point.y:.2e} | {beam_type}")
-        self.movement_notification_signal.emit("Moving stage ")
+        self.movement_progress_signal.emit({"msg": "Moving stage..."})
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Vertical:
             self.microscope.vertical_move(dx=point.x, dy=-point.y
@@ -265,7 +262,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 dy=point.y,
                 beam_type=beam_type,
             )
-        self.movement_notification_signal.emit("Move finished, updating UI")
+        self.movement_progress_signal.emit({"msg": "Move finished, updating UI"})
         self.update_ui_after_movement()
 
     def select_position(self):
@@ -326,11 +323,10 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         if pos is None:
             pos = self.positions[self.comboBox_positions.currentIndex()]
         self._toggle_interactions(False)
-        self.movement_notification_signal.emit(f"Moving to saved position {pos}")
+        self.movement_progress_signal.emit({"msg": f"Moving to saved position {pos}"})
         self.microscope.safe_absolute_stage_movement(pos)
         logging.info(f"Moved to position {pos}")
         self.update_ui_after_movement()
-
 
     def export_positions(self):
 
@@ -377,7 +373,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         logging.debug("load image and embedded minimap are deprecated")
         return 
 
-    def update_ui_after_movement(self,retake:bool = True): # TODO: PPP Refactor
+    def update_ui_after_movement(self, retake:bool = True): # TODO: PPP Refactor
         # disable taking images after movement here
         if retake is False:
             self.update_ui()
@@ -401,13 +397,12 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         beam_type = BeamType.ION if self.sender() == self.pushButton_move_flat_ion else BeamType.ELECTRON
         worker = self.move_flat_to_beam_worker(beam_type)
         worker.finished.connect(self.run_moving_finished)
-        # worker.yielded.connect(self.update_moving_ui)
         worker.start()
 
     @thread_worker
     def move_flat_to_beam_worker(self, beam_type):
         self._toggle_interactions(False)
-        self.movement_notification_signal.emit(f"Moving flat to {beam_type.name} beam")
+        self.movement_progress_signal.emit({"msg": f"Moving flat to {beam_type.name} beam"})
         self.microscope.move_flat_to_beam(beam_type=beam_type)
         self.update_ui_after_movement()
 
