@@ -118,8 +118,11 @@ from fibsem.structures import (
 )
 
 
+from psygnal import Signal
+
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
+    milling_progress_signal = Signal(dict)
 
     @abstractmethod
     def connect_to_microscope(self, ip_address: str, port: int) -> None:
@@ -800,6 +803,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # initialise system settings
         self.system: SystemSettings = system_settings
+        self._patterns: List = []
 
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -1655,7 +1659,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self._default_application_file = mill_settings.application_file
         self.connection.patterning.mode = mill_settings.patterning_mode
-        self.connection.patterning.clear_patterns()  # clear any existing patterns       
+        self.clear_patterns()  # clear any existing patterns       
         self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
@@ -1696,15 +1700,30 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
         self.start_milling()
 
+        start_time = time.time()
+        estimated_time = self.estimate_milling_time()
+        remaining_time = estimated_time
+        
         if asynch:
             return # return immediately, up to the caller to handle the milling process
         
+        MILLING_SLEEP_TIME = 1
         while self.get_milling_state() is MillingState.IDLE: # giving time to start 
             time.sleep(0.5)
         while self.get_milling_state() in ACTIVE_MILLING_STATES:
             # logging.info(f"Patterning State: {self.connection.patterning.state}")
             # TODO: add drift correction support here... generically
-            time.sleep(1)
+            if self.get_milling_state() is MillingState.RUNNING:
+                remaining_time -= MILLING_SLEEP_TIME # TODO: investigate if this is a good estimate
+            time.sleep(MILLING_SLEEP_TIME)
+
+            # update milling progress via signal
+            self.milling_progress_signal.emit({"progress": {
+                    "state": "update", 
+                    "start_time": start_time, 
+                    "estimated_time": estimated_time, 
+                    "remaining_time": remaining_time}
+                    })
 
         # milling complete
         self.clear_patterns()
@@ -1760,12 +1779,13 @@ class ThermoMicroscope(FibsemMicroscope):
     def clear_patterns(self):
         """Clear all currently drawn milling patterns."""
         self.connection.patterning.clear_patterns()
+        self._patterns = []
 
     def estimate_milling_time(self, patterns: list) -> float:
         """Calculates the estimated milling time for a list of patterns."""
         # TODO: use the internally stored patterns, don't require the user to pass them in
         total_time = 0
-        for pattern in patterns:
+        for pattern in self._patterns:
             total_time += pattern.time
 
         return total_time
@@ -1846,6 +1866,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
 
+        self._patterns.append(pattern)
+
         return pattern
 
     def draw_line(self, pattern_settings: FibsemLineSettings):
@@ -1871,6 +1893,7 @@ class ThermoMicroscope(FibsemMicroscope):
             depth=pattern_settings.depth,
         )
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
+        self._patterns.append(pattern)
         return pattern
     
     def draw_circle(self, pattern_settings: FibsemCircleSettings):
@@ -1905,7 +1928,7 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
-
+        self._patterns.append(pattern)
         return pattern
 
     def draw_annulus(self, pattern_settings: FibsemCircleSettings):
@@ -1930,7 +1953,7 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
-
+        self._patterns.append(pattern)
         return pattern
     
     
@@ -1952,7 +1975,7 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
-
+        self._patterns.append(pattern)
         return pattern
 
     def get_gis(self, port: str = None):
@@ -5699,14 +5722,16 @@ class DemoMicroscope(FibsemMicroscope):
 
         # TODO: make this stop/pauseable
 
-        MILLING_SLEEP_TIME = 2.5
+        MILLING_SLEEP_TIME = 1
 
         # start milling
-        remaining_time = self.estimate_milling_time()
+        start_time = time.time()
+        estimated_time = self.estimate_milling_time()
+        remaining_time = estimated_time
         self.milling_system.state = MillingState.RUNNING
 
         while remaining_time > 0 or self.get_milling_state() in ACTIVE_MILLING_STATES:
-            logging.info(f"Running milling: {remaining_time} s remaining.")
+            logging.debug(f"Running milling: {remaining_time} s remaining.")
             if self.get_milling_state() == MillingState.PAUSED:
                 logging.info("Milling paused.")
                 time.sleep(MILLING_SLEEP_TIME)
@@ -5716,6 +5741,14 @@ class DemoMicroscope(FibsemMicroscope):
                 break
             time.sleep(MILLING_SLEEP_TIME)
             remaining_time -= MILLING_SLEEP_TIME
+
+            # update milling progress via signal
+            self.milling_progress_signal.emit({"progress": {
+                    "state": "update", 
+                    "start_time": start_time, 
+                    "estimated_time": estimated_time, 
+                    "remaining_time": remaining_time}
+                    })
 
             if remaining_time <= 0: # milling complete
                 self.milling_system.state = MillingState.IDLE

@@ -45,9 +45,7 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
         return OvertiltTrenchMillingStrategy(config=config)
 
     def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False,
-        parent_ui = None,
-        current_stage_index: int = 0,
-        total_stages: int = 1,) -> None:
+        parent_ui = None) -> None:
 
         """Mill a trench pattern with overtilt, 
         based on https://www.sciencedirect.com/science/article/abs/pii/S1047847716301514 and autolamella v1"""

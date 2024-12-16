@@ -1,6 +1,8 @@
 import logging
+import time
 from typing import List
 
+from fibsem import config as fcfg
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
@@ -11,8 +13,8 @@ from fibsem.structures import (
     FibsemRectangleSettings,
     ImageSettings,
 )
-from fibsem import config as fcfg
 from fibsem.utils import current_timestamp_v2
+
 ########################### SETUP
 
 
@@ -168,12 +170,24 @@ def mill_stages(
         stages = [stages]
 
     try:
+        if hasattr(microscope, "milling_progress_signal"):
+            # TODO: tmp ladder to handle progress indirectly
+            def _handle_progress(ddict: dict) -> None:
+                parent_ui.milling_progress_signal.emit(ddict)
+            microscope.milling_progress_signal.connect(_handle_progress)
+
         for idx, stage in enumerate(stages):
             if parent_ui:
                 if parent_ui.STOP_MILLING:
                     raise Exception("Milling stopped by user.")
 
-                parent_ui.milling_progress_signal.emit({"msg": f"Preparing: {stage.name}"})
+                msgd =  {"msg": f"Preparing: {stage.name}",
+                        "progress": {"state": "start", 
+                                    "start_time": time.time(),
+                                    "current_stage": idx, 
+                                    "total_stages": len(stages),
+                                    }}
+                parent_ui.milling_progress_signal.emit(msgd)
 
             try:
                 stage.strategy.run(
@@ -181,19 +195,19 @@ def mill_stages(
                     stage=stage,
                     asynch=False,
                     parent_ui=parent_ui,
-                    current_stage_index=idx,
-                    total_stages=len(stages),
                 )
 
                 if parent_ui:
-                    parent_ui._progress_bar_quit.emit()
                     parent_ui.milling_progress_signal.emit({"msg": f"Finished: {stage.name}"})
             except Exception as e:
                 logging.error(f"Error running milling stage: {stage.name}, {e}")
 
         if parent_ui:
-            parent_ui.milling_progress_signal.emit({"msg": f"Finished {len(stages)} Milling Stages"})
-    
+            parent_ui.milling_progress_signal.emit({"msg": f"Finished {len(stages)} Milling Stages. Restoring Imaging Conditions..."})
+
+            if hasattr(microscope, "milling_progress_signal"):
+                microscope.milling_progress_signal.disconnect(_handle_progress)
+
     except Exception as e:
         if parent_ui:
             import napari.utils.notifications
@@ -206,6 +220,14 @@ def mill_stages(
             imaging_voltage=microscope.system.ion.beam.voltage,
         )
 
+
+from dataclasses import dataclass
+@dataclass
+class ProgressHandler:
+    parent_ui: None
+    def _progress_handler(self, ddict: dict) -> None:
+        if self.parent_ui:
+            self.parent_ui.milling_progress_signal.emit(ddict)
 
 
 ############################# UTILS #############################

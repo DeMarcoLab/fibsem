@@ -96,7 +96,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.pushButton_cancel_acquisition.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
         self.pushButton_cancel_acquisition.setVisible(False)
         self.progressBar_acquisition.setVisible(False)
-        self.progressBar_acquisition.setStyleSheet(_stylesheets.GREEN_PROGRESSBAR_STYLE)
+        self.progressBar_acquisition.setStyleSheet(_stylesheets.PROGRESS_BAR_GREEN_STYLE)
         self.actionLoad_Image.triggered.connect(self.load_image)
 
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])

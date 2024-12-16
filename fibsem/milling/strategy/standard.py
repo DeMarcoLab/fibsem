@@ -7,6 +7,7 @@ from fibsem.milling import (draw_patterns, estimate_milling_time, run_milling,
 from fibsem.milling.base import (FibsemMillingStage, MillingStrategy,
                                  MillingStrategyConfig)
 
+import time
 
 @dataclass
 class StandardMillingConfig(MillingStrategyConfig):
@@ -37,8 +38,6 @@ class StandardMillingStrategy(MillingStrategy):
         stage: FibsemMillingStage,
         asynch: bool = False,
         parent_ui = None,
-        current_stage_index: int = 0,
-        total_stages: int = 1,
     ) -> None:
         logging.info(f"Running {self.name} Milling Strategy for {stage.name}")
         setup_milling(microscope, milling_stage=stage)
@@ -49,13 +48,13 @@ class StandardMillingStrategy(MillingStrategy):
         logging.info(f"Estimated time for {stage.name}: {estimated_time:.2f} seconds")
 
         if parent_ui:
-            progress_bar_dict = {
-                "estimated_time": estimated_time,
-                "idx": current_stage_index,
-                "total": total_stages,
-            }
-            parent_ui._progress_bar_start.emit(progress_bar_dict)
-            parent_ui.milling_progress_signal.emit({"msg": f"Running {stage.name}..."})
+            parent_ui.milling_progress_signal.emit({"msg": f"Running {stage.name}...", 
+                                                    "progress": 
+                                                        {"started": True,
+                                                            "start_time": time.time(), 
+                                                            "estimated_time": estimated_time,
+                                                            "name": stage.name}
+                                                        })
 
         run_milling(
             microscope=microscope,

@@ -41,7 +41,7 @@ class MillingStrategy(ABC):
         pass
 
     @abstractmethod
-    def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False) -> None:
+    def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False, parent_ui = None) -> None:
         pass
 
 def get_strategy(name: str = "Standard", config: Dict[str, Any] = {}) -> MillingStrategy:

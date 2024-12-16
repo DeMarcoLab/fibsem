@@ -63,8 +63,6 @@ QPushButton {
     }
 """    
 
-GREEN_PROGRESSBAR_STYLE = """
-QProgressBar::chunk {
-    background-color: green;
-    }
-"""
+
+PROGRESS_BAR_GREEN_STYLE = "QProgressBar::chunk {background-color: green;}"
+PROGRESS_BAR_BLUE_STYLE = "QProgressBar::chunk {background-color: blue;}"

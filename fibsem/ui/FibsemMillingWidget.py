@@ -11,6 +11,7 @@ import numpy as np
 from napari.layers import Layer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import QTimer, QMetaObject, Qt
 
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
@@ -41,12 +42,10 @@ from fibsem.structures import (
     CrossSectionPattern,
     FibsemImage,
     FibsemMillingSettings,
-    MicroscopeSettings,
     Point,
     calculate_fiducial_area_v2,
 )
 from fibsem.ui import _stylesheets as stylesheets
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.napari.patterns import (
     convert_pattern_to_napari_circle,
     convert_pattern_to_napari_rect,
@@ -93,10 +92,7 @@ def get_default_milling_pattern(name: str) -> BasePattern:
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
-    _milling_finished = QtCore.pyqtSignal()
-    _progress_bar_update = QtCore.pyqtSignal(object)
     _progress_bar_start = QtCore.pyqtSignal(object)
-    _progress_bar_quit = QtCore.pyqtSignal()
 
     # TODO: consolidate these into a single signal
     milling_progress_signal = QtCore.pyqtSignal(dict) # TODO: replace with pysygnal (pure-python signal)
@@ -217,12 +213,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
         self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_stop_milling.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
-
+        self.pushButton_pause_milling.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
+        
+        self.progressBar_milling.setStyleSheet(stylesheets.PROGRESS_BAR_GREEN_STYLE)
+        self.progressBar_milling_stages.setStyleSheet(stylesheets.PROGRESS_BAR_BLUE_STYLE)
+        
         # progress bar # TODO: fix this (redo)
         self.progressBar_milling.setVisible(False)
-        self._progress_bar_update.connect(self.update_progress_bar)
-        self._progress_bar_start.connect(self.start_progress_thread)
-        self._progress_bar_quit.connect(self._quit_progress_bar)
+        self.progressBar_milling_stages.setVisible(False)
+        self.label_milling_information.setVisible(False)
 
         # last
         self.doubleSpinBox_centre_x.setKeyboardTracking(False)
@@ -434,9 +433,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         current_index = self.comboBox_milling_stage.currentIndex()
 
         if current_index == -1:
-            # msg = "No milling stages defined, cannot draw patterns."
-            # logging.warning(msg)
-            # napari.utils.notifications.show_warning(msg)
             return
 
         milling_stage: FibsemMillingStage = self.milling_stages[current_index]
@@ -832,7 +828,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
 
     def run_milling(self):
-        
+
         worker = self.run_milling_step()
         worker.finished.connect(self.run_milling_finished)
         worker.start()
@@ -841,68 +837,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         """Request milling stop."""
         self.STOP_MILLING = True
         self.microscope.stop_milling()
-        self._quit_progress_bar()
-        self.finish_progress_bar()
+        self.milling_progress_signal.emit({"finished": True, "msg": "Milling Stopped by User."})
     
-    def start_progress_thread(self,info):
-
-        est_time = info['estimated_time']  # TODO: add some extra time to this to account for changing currents etc
-        idx = info['idx']
-        total = info['total']
-
-        self.progressBar_milling.setVisible(True)
-        self.progressBar_milling.setValue(0)
-        self.progressBar_milling.setStyleSheet("QProgressBar::chunk "
-                          "{"
-                          "background-color: green;"
-                          "}")
-        self.progressBar_milling.setFormat(f"Milling stage {idx+1} of {total}: {est_time:.1f}s")
-
-        # info = [idx, total, est_time]
-
-        self.progress_bar_worker = self.start_progress_bar(info)
-        self.progress_bar_worker.finished.connect(self.finish_progress_bar)
-
-        self.progress_bar_worker.start()
-
-    @thread_worker
-    def start_progress_bar(self,info):
-        
-        est_time = info['estimated_time']
-        info['progress_percent'] = 0
- 
-        i = 0
-        # time.sleep(2)
-        inc = 0.5
-        while i < est_time:
-            time.sleep(inc)
-            progress_percent = (i+inc)/est_time
-            info['progress_percent'] = progress_percent
-            info['est_time'] = est_time - i
-            self._progress_bar_update.emit(info)
-            i += inc 
-            yield
-
-    def update_progress_bar(self, info):
-        
-        value = info['progress_percent']
-        idx = info['idx']
-        total = info['total']
-        est_time = info['est_time']
-        t_m = int(est_time // 60)
-        t_s = int(est_time % 60)
-
-        self.progressBar_milling.setVisible(True)
-        self.progressBar_milling.setValue(value*100)
-        self.progressBar_milling.setFormat(f"Milling Stage {idx+1}/{total}: {t_m:02d}:{t_s:02d} remaining...")
-
-    def finish_progress_bar(self):
-        self.progressBar_milling.setVisible(False)
-        self.progressBar_milling.setValue(0)
-
-    def _quit_progress_bar(self):
-        self.progress_bar_worker.quit()
-
     @thread_worker
     def run_milling_step(self):
 
@@ -915,19 +851,65 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
                             parent_ui=self)
         return
 
+    def update_progress_bar(self, progress_info: dict) -> None:
+        """Update the milling progress bar."""
+
+        state = progress_info.get('state', None)
+
+        # start milling stage progress bar
+        if state == "start":
+            current_stage = progress_info.get('current_stage', 0)
+            total_stages = progress_info.get('total_stages', 1)
+            self.progressBar_milling.setVisible(True)
+            self.progressBar_milling_stages.setVisible(True)
+            self.progressBar_milling.setValue(0)
+            self.progressBar_milling.setFormat("Preparing Milling Conditions...")
+            self.progressBar_milling_stages.setValue(int(current_stage+1)/total_stages*100)
+            self.progressBar_milling_stages.setFormat(f"Milling Stage: {current_stage+1}/{total_stages}")
+        
+        # update
+        if state == "update":
+            logging.debug(progress_info)
+
+            estimated_time = progress_info.get('estimated_time', None)
+            remaining_time = progress_info.get('remaining_time', None)
+            start_time = progress_info.get('start_time', None)
+            
+            if any([estimated_time is None, remaining_time is None]):
+                return
+            
+            # calculate the percent complete
+            percent_complete = 1 - (remaining_time / estimated_time)
+            t_m = int(remaining_time // 60)
+            t_s = int(remaining_time % 60)
+
+            self.progressBar_milling.setValue(percent_complete * 100)
+            self.progressBar_milling.setFormat(f"Current Stage: {t_m:02d}:{t_s:02d} remaining...")
+
+        # finished
+        if state == "finished":
+            self.progressBar_milling.setVisible(False)
+            self.progressBar_milling_stages.setVisible(False)
+
     def handle_milling_progress_update(self, ddict: Dict[str, Union[str, int, float]]) -> None:
         """Handler the milling update. Displays messages to user, updates progress bar, etc."""
 
+        logging.debug(f"Progress Update: {ddict}")
+
         msg = ddict.get("msg", None)
         if msg is not None:
-            logging.info(msg)
-            napari.utils.notifications.notification_manager.records.clear()
-            napari.utils.notifications.show_info(msg) # TODO: change this to update qtlabel not napari
+            logging.debug(msg)
+            self.label_milling_information.setVisible(True)
+            self.label_milling_information.setText(msg)
 
-        # progress bar
-        # two progress bars? overall and stage?
-        # we need proper estimates for milling
-
+        progress_info = ddict.get("progress", None)
+        if progress_info is not None:
+            self.update_progress_bar(progress_info)
+            
+        # finsihed milling
+        if ddict.get("finished", False):
+            self.MILLING_IS_FINISHED = True
+            self.update_progress_bar({"state": "finished"})
 
     def run_milling_finished(self):
 
@@ -935,24 +917,17 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self._toggle_interactions(enabled=True)
         self.image_widget.take_reference_images()
         self.update_ui()
-        self._milling_finished.emit()
-        self._quit_progress_bar()
-        self.finish_progress_bar()
+        self.milling_progress_signal.emit({"finished": True, "msg": "Milling Finished."})
         self.STOP_MILLING = False
 
 def valid_pattern_location(pattern: BasePattern, image: FibsemImage) -> bool:
     """Check if the pattern is within the image bounds."""
 
     if isinstance(pattern, FiducialPattern):
-        _,flag = calculate_fiducial_area_v2(image=image, 
+        _, is_valid_placement = calculate_fiducial_area_v2(image=image, 
                                             fiducial_centre = deepcopy(pattern.point), 
                                             fiducial_length = pattern.height)
-        
-        if flag:
-            napari.utils.notifications.show_warning("Fiducial reduce area is not within the image.")
-            return False
-        else:
-            return True    
+        return is_valid_placement
     
     for pattern_settings in pattern.define():
         if isinstance(pattern_settings, CirclePattern):
@@ -965,16 +940,3 @@ def valid_pattern_location(pattern: BasePattern, image: FibsemImage) -> bool:
             return False
     
     return True
-
-
-def main():
-    viewer = napari.Viewer(ndisplay=2)
-    milling_widget = FibsemMillingWidget()
-    viewer.window.add_dock_widget(
-        milling_widget, area="right", add_vertical_stretch=False
-    )
-    napari.run()
-
-
-if __name__ == "__main__":
-    main()
