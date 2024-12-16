@@ -21,7 +21,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     FibsemUser,
     ImageSettings,
-    PatterningState,
+    MillingState,
     Point,
     SystemSettings,
     BeamSettings,
@@ -1030,7 +1030,7 @@ class OdemisMicroscope(FibsemMicroscope):
         )
 
     def get_milling_state(self):
-        return PatterningState[self.connection.get_patterning_state().upper()]
+        return MillingState[self.connection.get_patterning_state().upper()]
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         self.connection.clear_patterns()
@@ -1047,7 +1047,7 @@ class OdemisMicroscope(FibsemMicroscope):
         )
 
     def stop_milling(self) -> None:
-        if self.get_milling_state() is PatterningState.RUNNING:
+        if self.get_milling_state() is MillingState.RUNNING:
             self.connection.stop_milling()
 
     def resume_milling(self) -> None:

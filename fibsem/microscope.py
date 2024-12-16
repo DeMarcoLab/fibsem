@@ -99,6 +99,7 @@ from fibsem.structures import (
     FibsemDetectorSettings,
     FibsemExperiment,
     FibsemGasInjectionSettings,
+    FibsemPatternSettings,
     FibsemImage,
     FibsemImageMetadata,
     FibsemLineSettings,
@@ -112,6 +113,7 @@ from fibsem.structures import (
     MicroscopeState,
     Point,
     SystemSettings,
+    MillingState,
 )
 
 
@@ -282,6 +284,18 @@ class FibsemMicroscope(ABC):
     def stop_milling(self) -> None:
         return 
     
+    @abstractmethod
+    def pause_milling(self) -> None:
+        return
+    
+    @abstractmethod
+    def resume_milling(self) -> None:
+        return
+    
+    @abstractmethod
+    def get_milling_state(self) -> MillingState:
+        pass 
+
     @abstractmethod
     def estimate_milling_time(self, patterns: list = None) -> float:
         pass
@@ -540,7 +554,17 @@ class FibsemMicroscope(ABC):
         logging.debug({"msg": "set_microscope_state", "state": microscope_state.to_dict()})
 
         return             
-        
+    
+    def set_milling_settings(self, mill_settings: FibsemMillingSettings) -> None:
+        self.set("active_view", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("active_device", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("default_patterning_beam_type", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("application_file", mill_settings.application_file, mill_settings.milling_channel)
+        self.set("patterning_mode", mill_settings.patterning_mode, mill_settings.milling_channel)
+        self.set("hfw", mill_settings.hfw, mill_settings.milling_channel)
+        self.set("current", mill_settings.milling_current, mill_settings.milling_channel)
+        self.set("voltage", mill_settings.milling_voltage, mill_settings.milling_channel)
+
     def is_available(self, system: str) -> bool:
 
         if system == "electron_beam":
@@ -1634,6 +1658,13 @@ class ThermoMicroscope(FibsemMicroscope):
         self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
+
+        # TODO: migrate to _set_milling_settings():
+        # self.milling_channel = mill_settings.milling_channel
+        # self._default_application_file = mill_settings.application_file
+        # _check_beam(self.milling_channel, self.system)
+        # self.set_milling_settings(mill_settings)
+        # self.clear_patterns()
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
@@ -1693,28 +1724,36 @@ class ThermoMicroscope(FibsemMicroscope):
 
     def stop_milling(self) -> None:
         """Stop the milling process."""
-        if self.connection.patterning.state == PatterningState.RUNNING:
+        if self.get_milling_state() in [MillingState.RUNNING, MillingState.PAUSED]:
             logging.info("Stopping milling...")
             self.connection.patterning.stop()
             logging.info("Milling stopped.")
 
     def pause_milling(self) -> None:
         """Pause the milling process."""
-        if self.connection.patterning.state == PatterningState.RUNNING:
+        if self.get_milling_state() == MillingState.RUNNING:
             logging.info("Pausing milling...")
             self.connection.patterning.pause()
             logging.info("Milling paused.")
 
     def resume_milling(self) -> None:
         """Resume the milling process."""
-        if self.connection.patterning.state == PatterningState.PAUSED:
+        if self.get_milling_state() == MillingState.PAUSED:
             logging.info("Resuming milling...")
             self.connection.patterning.resume()
-            logging.info("Milling resumed.")        
-        
-    def estimate_milling_time(self, patterns: list ) -> float:
-        """Calculates the estimated milling time for a list of patterns."""
+            logging.info("Milling resumed.")
+    
+    def get_milling_state(self):
+        """Get the current milling state."""
+        return MillingState[self.connection.get_patterning_state().upper()]
+    
+    def clear_patterns(self):
+        """Clear all currently drawn milling patterns."""
+        self.connection.patterning.clear_patterns()
 
+    def estimate_milling_time(self, patterns: list) -> float:
+        """Calculates the estimated milling time for a list of patterns."""
+        # TODO: use the internally stored patterns, don't require the user to pass them in
         total_time = 0
         for pattern in patterns:
             total_time += pattern.time
@@ -5177,6 +5216,11 @@ class DemoMicroscope(FibsemMicroscope):
                 self.opened = False
                 logging.debug("GIS closed")
 
+        @dataclass
+        class MillingSystem:
+            state: MillingState = MillingState.IDLE
+            patterns: List[FibsemPatternSettings] = None
+
         # initialise system
         self.connection = DemoMicroscopeClient()
         self.system = system_settings    
@@ -5240,7 +5284,7 @@ class DemoMicroscope(FibsemMicroscope):
             )
         )
         self.stage_is_compustage: bool = False
-        self._patterns: List = []
+        self.milling_system = MillingSystem(patterns=[])
             
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -5647,56 +5691,96 @@ class DemoMicroscope(FibsemMicroscope):
 
     def setup_milling(self, mill_settings: FibsemMillingSettings):
         """Setup the milling parameters."""
-        _check_beam(BeamType.ION, self.system)
-        self.set("current", mill_settings.milling_current, BeamType.ION)
-        self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
+
+        _check_beam(mill_settings.milling_channel, self.system)
+        self._default_application_file = mill_settings.application_file
+        self.milling_channel = mill_settings.milling_channel
+        self.set_milling_settings(mill_settings=mill_settings)
+        self.clear_patterns()
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
     def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
         """Run milling with the specified current and voltage."""
         _check_beam(BeamType.ION, self.system)
-        estimated_time = self.estimate_milling_time(self._patterns)
-        time.sleep(estimated_time)
+
+        # TODO: make this stop/pauseable
+
+        MILLING_ACTIVE_STATES = [MillingState.RUNNING, MillingState.PAUSED] 
+        MILLING_SLEEP_TIME = 2.5
+
+        # start milling
+        remaining_time = self.estimate_milling_time()
+        self.milling_system.state = MillingState.RUNNING
+
+        while remaining_time > 0 or self.get_milling_state() in MILLING_ACTIVE_STATES:
+            logging.info(f"Running milling: {remaining_time} s remaining.")
+            if self.get_milling_state() == MillingState.PAUSED:
+                logging.info("Milling paused.")
+                time.sleep(MILLING_SLEEP_TIME)
+                continue
+            if self.get_milling_state() == MillingState.IDLE:
+                logging.info("Milling stopped.")
+                break
+            time.sleep(MILLING_SLEEP_TIME)
+            remaining_time -= MILLING_SLEEP_TIME
+
+            if remaining_time <= 0: # milling complete
+                self.milling_system.state = MillingState.IDLE
+
+        self.milling_system.state = MillingState.IDLE
+        self.clear_patterns()
         logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         """Finish milling by restoring the imaging current and voltage."""
-        _check_beam(BeamType.ION, self.system)
+        _check_beam(self.milling_channel, self.system)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
-        self.set("current", imaging_current, BeamType.ION)
-        self.set("voltage", imaging_voltage, BeamType.ION)
-        self._patterns = []
+        self.set("current", imaging_current, self.milling_channel)
+        self.set("voltage", imaging_voltage, self.milling_channel)
+        self.clear_patterns()
+
+    def clear_patterns(self) -> None:
+        self.milling_system.patterns = []
 
     def stop_milling(self) -> None:
-        return
+        self.milling_system.state = MillingState.IDLE
+    
+    def pause_milling(self) -> None:
+        self.milling_system.state = MillingState.PAUSED
+    
+    def resume_milling(self) -> None:
+        self.milling_system.state = MillingState.RUNNING
+    
+    def get_milling_state(self) -> MillingState:
+        return self.milling_system.state
 
-    def estimate_milling_time(self, patterns: list) -> float:
+    def estimate_milling_time(self, patterns: List = None) -> float:
         """Estimate the milling time for the specified patterns."""
         PATTERN_SLEEP_TIME = 5
-        return PATTERN_SLEEP_TIME * len(self._patterns)
+        return PATTERN_SLEEP_TIME * len(self.milling_system.patterns)
 
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
         if pattern_settings.time != 0:
             logging.info(f"Setting pattern time to {pattern_settings.time}.")
-        self._patterns.append(pattern_settings)
+        self.milling_system.patterns.append(pattern_settings)
 
     def draw_line(self, pattern_settings: FibsemLineSettings) -> None:
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
-        self._patterns.append(pattern_settings)
-
+        self.milling_system.patterns.append(pattern_settings)
+    
     def draw_circle(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
-        self._patterns.append(pattern_settings)
-
+        self.milling_system.patterns.append(pattern_settings)
+    
     def draw_annulus(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
-        self._patterns.append(pattern_settings)
+        self.milling_system.patterns.append(pattern_settings)
 
-    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str):
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str) -> None:
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
-        return 
+        self.milling_system.patterns.append(pattern_settings)
 
     def setup_sputter(self, protocol: dict) -> None:
         _check_sputter(self.system)
@@ -5767,7 +5851,7 @@ class DemoMicroscope(FibsemMicroscope):
         
 
         if key == "application_file":
-            values = ["Si", "autolamella", "cryo_Pt_dep"]
+            values = ["Si", "Si-multipass", "Si-ccs", "autolamella", "cryo_Pt_dep"]
 
         if key == "detector_type":
             values = ["ETD", "TLD", "EDS"]

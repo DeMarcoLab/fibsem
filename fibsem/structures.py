@@ -126,7 +126,7 @@ class ImagingState(Enum):
     ERROR = 4
 
 
-class PatterningState(Enum):
+class MillingState(Enum):
     IDLE = 0
     RUNNING = 1
     STOPPING = 2
