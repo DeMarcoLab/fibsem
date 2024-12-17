@@ -58,6 +58,18 @@ CORRELATION_IMAGE_LAYER_PROPERTIES = {
     "opacity": 0.2,
 }
 
+OVERVIEW_POSITIONS_LAYER_PROPERTIES = {
+    "name": "overview-positions",
+    "size": 60,
+    "edge_width": 7,
+    "edge_width_is_relative": False,
+    "edge_color": "transparent",
+    "face_color": "lime",
+    "blending": "translucent",
+    "symbol": "cross",
+}
+
+
 def generate_gridbar_image(shape: Tuple[int, int], pixelsize: float, spacing: float, width: float) -> FibsemImage:
     """Generate an synthetic image of cryo gridbars."""
     arr = np.zeros(shape=shape, dtype=np.uint8)
@@ -100,7 +112,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.image: FibsemImage = None
         self.image_layer: NapariImageLayer  = None
         self.position_layer: NapariPointsLayer = None
-        self.correlation_image_layers: List[NapariImageLayer] = []
+        self.correlation_image_layers: List[str] = []
         self.milling_pattern_layers: List[str] = []
 
         self.positions = []
@@ -126,7 +138,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         # position buttons
         self.pushButton_move_to_position.clicked.connect(self.move_to_position_pressed)
         self.comboBox_tile_position.currentIndexChanged.connect(self._update_current_position_info)
-        self.pushButton_update_position.clicked.connect(self._update_position_pressed)
+        self.pushButton_update_position.clicked.connect(self._update_position_pressed) # TODO: disable updating name if from autolamella...
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
 
         # signals
@@ -261,8 +273,8 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         else:
             layer_name = GRIDBAR_IMAGE_LAYER_PROPERTIES["name"]
             if layer_name in self.viewer.layers:
-                self.viewer.layers.remove(layer_name)
                 self.correlation_image_layers.remove(layer_name)
+                self.viewer.layers.remove(layer_name)
 
             self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
             self.comboBox_correlation_selected_layer.clear()
@@ -608,16 +620,6 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
                 "translation": np.array([-50, 0]),
             }
 
-            OVERVIEW_POSITIONS_LAYER_PROPERTIES = {
-                "name": "overview-positions",
-                "size": 60,
-                "edge_width": 7,
-                "edge_width_is_relative": False,
-                "edge_color": "transparent",
-                "face_color": "lime",
-                "blending": "translucent",
-                "symbol": "cross",
-            }
 
             if self.position_layer is None:
             
@@ -644,7 +646,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
                                                                             self.image.data, 
                                                                             self.image.metadata.pixel_size.x ) for coords in data[:-1]]
-                
+
                 milling_stages = []
                 for point, pos in zip(points, drawn_positions[:-1]):
                     stage = deepcopy(self.selected_milling_stage)
@@ -681,20 +683,19 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             idx = 3
 
         COLOURS = ["green", "cyan", "magenta", "red", "yellow"]
-        correlation_layer = self.viewer.add_image(image.data, 
+        self.viewer.add_image(image.data, 
                         name=layer_name, 
                         colormap=COLOURS[idx%len(COLOURS)], 
                         blending="translucent", opacity=0.2)
         
-        self.correlation_image_layers.append(correlation_layer)
+        self.correlation_image_layers.append(layer_name)
         self.correlation_data[layer_name] = deepcopy([0, 0, 1.0, 1.0, 0])
 
         # update the combobox
         self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
         idx = self.comboBox_correlation_selected_layer.currentIndex()
         self.comboBox_correlation_selected_layer.clear()
-        correlation_layer_names = [layer.name for layer in self.correlation_image_layers]
-        self.comboBox_correlation_selected_layer.addItems(correlation_layer_names)
+        self.comboBox_correlation_selected_layer.addItems(self.correlation_image_layers)
         if idx != -1:
             self.comboBox_correlation_selected_layer.setCurrentIndex(idx)
         self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self.update_correlation_ui)
@@ -799,8 +800,6 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
 
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 
-
-
 
 def main():
 
