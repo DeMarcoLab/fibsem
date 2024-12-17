@@ -89,7 +89,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.viewer2.window.add_dock_widget(
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
-        self.minimap_widget._update_position_info()
+        self.minimap_widget.update_position_info()
         self.minimap_widget._update_viewer()
 
         napari.run(max_loop_level=2)

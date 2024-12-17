@@ -39,20 +39,38 @@
         <string>Collection</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_tile_beam_type">
+          <property name="text">
+           <string>Beam Type</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_tile_path">
+          <property name="text">
+           <string>Path</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_tile_resolution">
+          <property name="text">
+           <string>Resolution (px)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0" colspan="2">
+         <widget class="QProgressBar" name="progressBar_acquisition">
+          <property name="value">
+           <number>24</number>
+          </property>
+         </widget>
+        </item>
         <item row="4" column="0">
          <widget class="QLabel" name="label_tile_dwell_time">
           <property name="text">
            <string>Dwell Time (us)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QCheckBox" name="checkBox_tile_autocontrast">
-          <property name="text">
-           <string>AutoContrast</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -66,10 +84,64 @@
           </property>
          </widget>
         </item>
-        <item row="17" column="0">
-         <widget class="QLabel" name="label_translation_y">
+        <item row="10" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_tile_collection">
           <property name="text">
-           <string>Translation Y (mm)</string>
+           <string>Run Tile Collection</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_tile_tile_size">
+          <property name="text">
+           <string>Tile Size (um)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QCheckBox" name="checkBox_tile_autogamma">
+          <property name="text">
+           <string>AutoGamma</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_tile_filename">
+          <property name="text">
+           <string>Filename</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_cancel_acquisition">
+          <property name="text">
+           <string>Cancel Acquisition</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboBox_tile_beam_type"/>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_tile_overlap">
+          <property name="text">
+           <string>Overlap (%)</string>
           </property>
          </widget>
         </item>
@@ -86,70 +158,23 @@
           </property>
          </widget>
         </item>
-        <item row="20" column="0" colspan="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
+        <item row="4" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_dwell_time">
+          <property name="maximum">
+           <double>100.000000000000000</double>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="comboBox_tile_beam_type"/>
-        </item>
-        <item row="15" column="0">
-         <widget class="QCheckBox" name="checkBox_options_move_with_translation">
-          <property name="text">
-           <string>Move with Translated Position</string>
+          <property name="value">
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
-        <item row="13" column="0" colspan="2">
-         <widget class="QLabel" name="label_options_header">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Movement Options</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_tile_beam_type">
-          <property name="text">
-           <string>Beam Type</string>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="0">
-         <widget class="QLabel" name="label_translation_x">
-          <property name="text">
-           <string>Translation X (mm)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_translation_x"/>
-        </item>
-        <item row="8" column="0">
-         <widget class="QLabel" name="label_tile_filename">
-          <property name="text">
-           <string>Filename</string>
-          </property>
-         </widget>
-        </item>
-        <item row="15" column="1">
-         <widget class="QCheckBox" name="checkBox_options_acquire_after_movement">
-          <property name="text">
-           <string>Acquire Image After Movement</string>
+        <item row="7" column="1">
+         <widget class="QLineEdit" name="lineEdit_tile_path">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
          </widget>
         </item>
@@ -166,13 +191,6 @@
           </property>
          </widget>
         </item>
-        <item row="18" column="0">
-         <widget class="QLabel" name="label_translation_z">
-          <property name="text">
-           <string>Translation Z (mm)</string>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_tile_grid_size">
           <property name="text">
@@ -180,41 +198,15 @@
           </property>
          </widget>
         </item>
-        <item row="18" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_translation_z"/>
-        </item>
-        <item row="7" column="0">
-         <widget class="QLabel" name="label_tile_path">
+        <item row="6" column="0">
+         <widget class="QCheckBox" name="checkBox_tile_autocontrast">
           <property name="text">
-           <string>Path</string>
+           <string>AutoContrast</string>
           </property>
-         </widget>
-        </item>
-        <item row="19" column="0" colspan="2">
-         <widget class="QLabel" name="label_options_move_with_translate_info">
-          <property name="text">
-           <string>Move with Translated Position allows you to click on a position in the minimap, and move while translated away from the beams, e.g. under an integrated light microscope.</string>
-          </property>
-          <property name="wordWrap">
+          <property name="checked">
            <bool>true</bool>
           </property>
-          <property name="margin">
-           <number>10</number>
-          </property>
          </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_dwell_time">
-          <property name="maximum">
-           <double>100.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>1.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="17" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_translation_y"/>
         </item>
         <item row="2" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_tile_size">
@@ -223,68 +215,6 @@
           </property>
           <property name="value">
            <double>100.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_tile_resolution">
-          <property name="text">
-           <string>Resolution (px)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_tile_collection">
-          <property name="text">
-           <string>Run Tile Collection</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="1">
-         <widget class="QLineEdit" name="lineEdit_tile_path">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QCheckBox" name="checkBox_tile_autogamma">
-          <property name="text">
-           <string>AutoGamma</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_cancel_acquisition">
-          <property name="text">
-           <string>Cancel Acquisition</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_tile_tile_size">
-          <property name="text">
-           <string>Tile Size (um)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="label_tile_overlap">
-          <property name="text">
-           <string>Overlap (%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="12" column="0" colspan="2">
-         <widget class="QProgressBar" name="progressBar_acquisition">
-          <property name="value">
-           <number>24</number>
           </property>
          </widget>
         </item>
@@ -584,8 +514,6 @@
     </property>
     <addaction name="actionLoad_Image"/>
     <addaction name="actionLoad_Correlation_Image"/>
-    <addaction name="actionSave_Positions"/>
-    <addaction name="actionLoad_Positions"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>

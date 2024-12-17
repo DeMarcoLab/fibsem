@@ -445,10 +445,10 @@ def is_pattern_placement_valid(pattern: BasePattern, image: FibsemImage) -> bool
     """Check if the pattern is within the image bounds."""
 
     if isinstance(pattern, FiducialPattern):
-        _, is_valid_placement = calculate_fiducial_area_v2(image=image, 
+        _, is_not_valid_placement = calculate_fiducial_area_v2(image=image, 
                                             fiducial_centre = deepcopy(pattern.point), 
                                             fiducial_length = pattern.height)
-        return is_valid_placement
+        return not is_not_valid_placement
     
     for pattern_settings in pattern.define():
         draw_func = NAPARI_DRAWING_FUNCTIONS.get(type(pattern_settings), None)
@@ -466,7 +466,6 @@ def is_pattern_placement_valid(pattern: BasePattern, image: FibsemImage) -> bool
             return False
     
     return True
-
 
 def convert_reduced_area_to_napari_shape(reduced_area: FibsemRectangle, image_shape: Tuple[int, int]) -> np.ndarray:
     """Convert a reduced area to a napari shape."""
