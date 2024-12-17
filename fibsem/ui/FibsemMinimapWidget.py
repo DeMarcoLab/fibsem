@@ -127,6 +127,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         if self.parent:
             self.parent._minimap_signal.connect(self.update_positions_from_parent)
 
+            # update the parent when a position is moved
+            self._stage_position_moved.connect(
+                self.parent.movement_widget._stage_position_moved
+            )
 
         # pattern overlay
         milling_protocol = self.settings.protocol.get("milling", {})

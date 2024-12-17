@@ -63,7 +63,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def setup_connections(self):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
-        # self.actionCurrent_alignment.triggered.connect(self.align_currents)
         if self.manipulator_widget is not None:
             self.actionManipulator_Positions_Calibration.triggered.connect(self.manipulator_widget.calibrate_manipulator_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
@@ -90,11 +89,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.viewer2.window.add_dock_widget(
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
-        self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
-
-        self.minimap_widget._minimap_positions.connect(self.movement_widget.minimap_window_positions)
-
-        self.minimap_widget.positions = self.movement_widget.positions
         self.minimap_widget._update_position_info()
         self.minimap_widget._update_viewer()
 
@@ -123,7 +117,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setTabVisible(3, _microscope_connected)
         self.tabWidget.setTabVisible(4, _microscope_connected)
         self.actionOpen_Minimap.setVisible(_microscope_connected)
-        # self.actionCurrent_alignment.setVisible(_microscope_connected)
         self.actionManipulator_Positions_Calibration.setVisible(_microscope_connected)
 
 
@@ -188,7 +181,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.system_widget.milling_widget = self.milling_widget
         
             # connect movement widget signal
-            self.movement_widget.positions_signal.connect(self.minimap_connection)
+            # self.movement_widget.saved_positions_updated_signal.connect(self.minimap_connection)
 
         else:
             if self.image_widget is None:

@@ -138,8 +138,6 @@ def get_feature_color(feature: str) -> str:
 
 class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets.QMainWindow
 ):
-    _minimap_signal = pyqtSignal(object)
-
     def __init__(self, viewer: napari.Viewer):
         super(FibsemFeatureLabellingUI, self).__init__()
         self.setupUi(self)
