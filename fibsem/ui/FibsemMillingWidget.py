@@ -11,6 +11,8 @@ import numpy as np
 from napari.layers import Layer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QListWidgetItem
 
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
@@ -42,13 +44,13 @@ from fibsem.structures import (
     Point,
 )
 from fibsem.ui import _stylesheets as stylesheets
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.napari.patterns import (
     draw_milling_patterns_in_napari,
+    is_pattern_placement_valid,
     remove_all_napari_shapes_layers,
-    is_pattern_placement_valid
 )
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 
 _UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
                      "number", "passes", "n_rectangles", "overlap", "inverted", "use_side_patterns",
@@ -87,8 +89,6 @@ def get_default_milling_pattern(name: str) -> BasePattern:
 
 class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
-
-    # TODO: consolidate these into a single signal
     milling_progress_signal = QtCore.pyqtSignal(dict) # TODO: replace with pysygnal (pure-python signal)
 
     def __init__(
@@ -114,6 +114,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.milling_pattern_layers: List[Layer] = []
 
         self.setup_connections()
+        # TODO: migrate to MILLING_WORKFLOWS: Dict[str, List[FibsemMillingStage]]
 
     def setup_connections(self):
         """Setup the connections for the milling widget."""
@@ -190,7 +191,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_add_milling_stage.clicked.connect(self.add_milling_stage)
         self.pushButton_remove_milling_stage.clicked.connect(self.remove_milling_stage)
         self.comboBox_milling_stage.currentIndexChanged.connect(self.update_milling_stage_ui)
-
+        self.listWidget_active_milling_stages.itemSelectionChanged.connect(self.on_selection_changed)
+        self.listWidget_active_milling_stages.itemChanged.connect(self.on_stage_checked)
         # update ui
         self.milling_progress_signal.connect(self.handle_milling_progress_update)
 
@@ -208,7 +210,6 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_stop_milling.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
         self.pushButton_pause_milling.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
-        
         self.progressBar_milling.setStyleSheet(stylesheets.PROGRESS_BAR_GREEN_STYLE)
         self.progressBar_milling_stages.setStyleSheet(stylesheets.PROGRESS_BAR_BLUE_STYLE)
         
@@ -234,12 +235,28 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # external signals
         self.image_widget.viewer_update_signal.connect(self.update_ui) # update the ui when the image is updated
+    
+    def on_selection_changed(self):
+        """Selection changed callback for the milling stages list widget."""
+        selected_items = self.listWidget_active_milling_stages.selectedItems()
+        if selected_items:
+            # get the index of the selected item
+            index = self.listWidget_active_milling_stages.currentRow()
+            self.comboBox_milling_stage.setCurrentIndex(index)
+            # QUERY: remove combobox, just use list widget?
+    
+    def on_stage_checked(self, item: QListWidgetItem):
+        print(f"Item '{item.text()}' check state changed to: {item.checkState() == Qt.Checked}")
+        # TODO: add a check to see if to enable/disable milling
+        self.update_ui()
 
     def update_milling_settings_from_ui(self):
+        """Update the milling settings from the UI."""
         index = self.comboBox_milling_stage.currentIndex()
-        if index != -1:
-            settings = self.get_milling_settings_from_ui()
-            self.milling_stages[index].milling = settings
+        if index == -1:
+            return 
+        settings = self.get_milling_settings_from_ui()
+        self.milling_stages[index].milling = settings
 
     def add_milling_stage(self):
         logging.info("Adding milling stage")
@@ -256,6 +273,21 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.addItem(name)
         self.comboBox_milling_stage.setCurrentText(name)
         napari.utils.notifications.show_info(f"Added {name}.")
+        self.update_selected_milling_stages_ui()
+
+    def update_selected_milling_stages_ui(self):
+        # update the combobox and list widget
+        # TODO: sync with milling_stages
+        # TODO: convert to signal
+
+        # clear the list widget
+        self.listWidget_active_milling_stages.clear()
+
+        for stage in self.milling_stages:
+            item = QListWidgetItem(stage.name)
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(Qt.Checked)
+            self.listWidget_active_milling_stages.addItem(item)
 
     def remove_milling_stage(self):
         logging.info("Removing milling stage")
@@ -265,7 +297,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             return
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
-        napari.utils.notifications.show_info("Removed milling stage.")     
+        napari.utils.notifications.show_info("Removed milling stage.")
+        self.update_selected_milling_stages_ui()   
 
     def clear_all_milling_stages(self):
         """Remove all milling stages from the widget."""
@@ -273,6 +306,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.currentIndexChanged.disconnect()
         self.comboBox_milling_stage.clear()
         self.comboBox_milling_stage.currentIndexChanged.connect(self.update_milling_stage_ui)
+        self.update_selected_milling_stages_ui()
 
         remove_all_napari_shapes_layers(self.viewer) # remove all shape layers
 
@@ -293,7 +327,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         
         logging.debug(f"Set milling stages: {len(milling_stages)}")
         self.update_milling_stage_ui()
-        # self.update_ui()
+        self.update_selected_milling_stages_ui()
+        self.update_ui()
 
     def get_milling_stages(self):
         """Get the milling stages from the widget."""
@@ -310,7 +345,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         """Show / Enable the milling stage widgets if a milling stage is selected."""
         show = self.current_milling_stage is not None
         self.scrollArea_milling_stage.setVisible(show)
-        
+        self.listWidget_active_milling_stages.setVisible(show)
+
         # disable milling buttons if no milling stage
         self.pushButton_run_milling.setEnabled(show)
         self.pushButton_remove_milling_stage.setEnabled(show)
@@ -330,7 +366,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # update the milling stage UI
         self.set_milling_settings_ui()        
-        self.setup_pattern_ui()
+        self.set_pattern_settings_ui()
         self.set_milling_strategy_ui()
         self.set_drift_correction_ui()
     
@@ -420,7 +456,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         # refresh the pattern
         self.update_ui()
 
-    def update_milling_stage_from_ui(self):
+    def update_milling_stage_from_ui(self) -> None:
         """Get the updated milling stage from the UI."""
 
         # get current milling stage
@@ -431,20 +467,15 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         milling_stage: FibsemMillingStage = self.milling_stages[current_index]
 
-        # update milling settings
+        # update all milling stage settings from the UI
         milling_stage.milling = self.get_milling_settings_from_ui()
-
-        # update pattern and define
         milling_stage.pattern = self.get_pattern_from_ui_v2()
-
         milling_stage.drift_correction = self.get_drift_correction_from_ui()
-
         milling_stage.strategy = self.get_milling_strategy_from_ui()
 
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
-        return 
 
-    def clear_grid_layout(self, grid_layout: QtWidgets.QGridLayout):
+    def clear_grid_layout(self, grid_layout: QtWidgets.QGridLayout) -> None:
         # clear layout
         for i in reversed(range(grid_layout.count())):
             grid_layout.itemAt(i).widget().setParent(None)
@@ -466,12 +497,10 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         logging.info(f"selected pattern: {pattern_name}")
         pattern = get_default_milling_pattern(pattern_name)
         self.current_milling_stage.pattern = pattern
-        self.setup_pattern_ui()
+        self.set_pattern_settings_ui()
 
-    def setup_pattern_ui(self):
+    def set_pattern_settings_ui(self):
         """When the pattern is changed, setup the ui for the new pattern."""
-
-        self.UPDATING_PATTERN = True
 
         # if the pattern is change? what happens
         # get the new currently selected pattern
@@ -480,11 +509,19 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         milling_stage = self.current_milling_stage # the currently selected milling stage
         if milling_stage is None:
-            self.UPDATING_PATTERN = False
             return
+
+        self.UPDATING_PATTERN = True
         
         pattern: BasePattern = milling_stage.pattern
         point: Point = pattern.point
+
+        # check if the combo box is set to the correct pattern, if not, set it without triggering the event
+        current_pattern_name = self.comboBox_patterns.currentText()
+        if pattern.name != current_pattern_name:
+            self.comboBox_patterns.currentIndexChanged.disconnect()
+            self.comboBox_patterns.setCurrentText(pattern.name)
+            self.comboBox_patterns.currentIndexChanged.connect(self.update_current_selected_pattern)
 
         # clear the grid layout
         self.clear_grid_layout(self.gridLayout_patterns)
@@ -602,7 +639,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             return
 
         current_stage_index = self.comboBox_milling_stage.currentIndex()
-        
+
         # no milling stage selected
         if current_stage_index == -1:
             return
@@ -612,14 +649,14 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         # TODO: dimensions are mixed which makes this confusing to interpret... resolve
         coords, beam_type, image = self.image_widget.get_data_from_coord(coords)
-        
+
         if beam_type is not BeamType.ION:
             napari.utils.notifications.show_warning("Patterns can only be placed inside the FIB image.")
             return
         
         point = conversions.image_to_microscope_image_coordinates(
                 coord=Point(x=coords[1], y=coords[0]), # yx required
-                image=image.data, 
+                image=image.data,
                 pixelsize=image.metadata.pixel_size.x,
             )
         point_clicked = deepcopy(point)
@@ -736,116 +773,56 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
         return milling_settings
 
-    def update_ui(self):
-        """Update the milling stages from the UI and try to redraw the patterns."""
+    def get_selected_milling_stages(self) -> Optional[FibsemMillingStage]:
+        """Return the milling stages that are checked in the list widget."""
+        checked_stages = []
+        for i in range(self.listWidget_active_milling_stages.count()):
+            item = self.listWidget_active_milling_stages.item(i)
+            if item.checkState() == Qt.Checked:
+                checked_stages.append(item.text())
 
-        # force the milling hfw to match the current image hfw (TODO: do this more elegantly)
-        self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
-        
-        self.update_milling_stage_from_ui()         # update milling stage from ui
-        milling_stages = self.get_milling_stages()  # get the latest milling stages from the ui
+        checked_milling_stages = [stage for stage in self.milling_stages if stage.name in checked_stages]
 
-        # remove all patterns if there are no milling stages
-        if not milling_stages:
-            remove_all_napari_shapes_layers(self.viewer)
-            return
-
-        # make milling stage a list if it is not
-        if not isinstance(milling_stages, list):
-            milling_stages = [milling_stages]
-
-        # pprint(milling_stages[0].to_dict())
-
-        # # check hfw threshold # TODO: do this check more seriously, rather than rule of thumb
-
-        t1 = time.time()
-        try:
-            draw_crosshair = self.checkBox_show_milling_crosshair.isChecked()
-            if not isinstance(self.image_widget.ib_image, FibsemImage):
-                raise Exception("No FIB Image, cannot draw patterns. Please take an image.")
-            if self.image_widget.ib_layer is None:
-                raise Exception("No FIB Image Layer, cannot draw patterns. Please take an image.")
-
-            # TODO: upgrades. 
-            # Don't draw each pattern on a separate layer
-            # Don't redraw the patterns each time, only update the position if it has changed
-            # Only draw the patterns that are visible 
-             
-            # clear patterns then draw new ones 
-            self.milling_pattern_layers = draw_milling_patterns_in_napari(
-                viewer=self.viewer, 
-                image_layer=self.image_widget.ib_layer, 
-                milling_stages = milling_stages,
-                pixelsize=self.image_widget.ib_image.metadata.pixel_size.x,
-                draw_crosshair=draw_crosshair)  # TODO: add names and legend for this
-        
-        except Exception as e:
-            napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
-            logging.error(e)
-            return
-        t2 = time.time()
-        logging.debug(f"UPDATE_UI: DRAW: {t2-t1}")
-        self.image_widget.restore_active_layer_for_movement()
-
-    def toggle_pattern_visibility(self):
-        """Toggle the visibility of the milling patterns layers."""
-        is_visible = self.checkBox_show_milling_patterns.isChecked()
-        for layer in self.milling_pattern_layers:
-            if layer in self.viewer.layers:
-                self.viewer.layers[layer].visible = is_visible
-
-    def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
-        """Toggle microscope and pattern interactions."""
-
-        self.pushButton_add_milling_stage.setEnabled(enabled)
-        self.pushButton_remove_milling_stage.setEnabled(bool(enabled and self.milling_stages))
-        self.pushButton_run_milling.setEnabled(bool(enabled and self.milling_stages))
-        if enabled:
-            self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_run_milling.setText("Run Milling")
-            self.pushButton_add_milling_stage.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
-            self.pushButton_stop_milling.setVisible(False)
-        elif milling:
-            self.pushButton_run_milling.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
-            self.pushButton_run_milling.setText("Running...")
-            self.pushButton_stop_milling.setVisible(True)
-            self.pushButton_pause_milling.setVisible(True)
-        else:
-            self.pushButton_run_milling.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_add_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_stop_milling.setVisible(False)
-            self.pushButton_pause_milling.setVisible(False)
-
-        if caller is None:
-            self.image_widget._toggle_interactions(enabled, caller="milling")
-            self.parent.movement_widget._toggle_interactions(enabled, caller="milling")
-
+        return checked_milling_stages
 
     def run_milling(self):
+        """Run the selected milling stages."""
 
-        worker = self.run_milling_step()
+        # disable ui interactions
+        self._toggle_interactions(enabled=False, milling=True)
+
+        # get the selected milling stages
+        self.update_milling_stage_from_ui()
+        selected_milling_stages = self.get_selected_milling_stages()
+
+        # start milling
+        worker = self.run_milling_step(selected_milling_stages)
         worker.finished.connect(self.run_milling_finished)
         worker.start()
-    
-    def stop_milling(self):
-        """Request milling stop."""
-        self.STOP_MILLING = True
-        self.microscope.stop_milling()
-        self.milling_progress_signal.emit({"finished": True, "msg": "Milling Stopped by User."})
-    
+       
     @thread_worker
-    def run_milling_step(self):
-
-        milling_stages = self.get_milling_stages()
-        self._toggle_interactions(enabled=False, milling=True)
-        
+    def run_milling_step(self, milling_stages: List[FibsemMillingStage]) -> None:
+        """Threaded worker to run the milling stages."""
         # new milling interface
         mill_stages(microscope=self.microscope, 
                             stages=milling_stages, 
                             parent_ui=self)
         return
+
+    def run_milling_finished(self):
+
+        # take new images and update ui
+        self._toggle_interactions(enabled=True)
+        self.image_widget.acquire_reference_images()
+        self.update_ui() # TODO: convert to signal for image acquisition
+        self.milling_progress_signal.emit({"finished": True, "msg": "Milling Finished."})
+        self.STOP_MILLING = False
+
+    def stop_milling(self):
+        """Request milling stop."""
+        self.STOP_MILLING = True
+        self.microscope.stop_milling()
+        self.milling_progress_signal.emit({"finished": True, "msg": "Milling Stopped by User."})
 
     def update_progress_bar(self, progress_info: dict) -> None:
         """Update the milling progress bar."""
@@ -907,11 +884,85 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
             self.MILLING_IS_FINISHED = True
             self.update_progress_bar({"state": "finished"})
 
-    def run_milling_finished(self):
+    def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
+        """Toggle microscope and pattern interactions."""
 
-        # take new images and update ui
-        self._toggle_interactions(enabled=True)
-        self.image_widget.acquire_reference_images()
-        self.update_ui()
-        self.milling_progress_signal.emit({"finished": True, "msg": "Milling Finished."})
-        self.STOP_MILLING = False
+        self.pushButton_add_milling_stage.setEnabled(enabled)
+        self.pushButton_remove_milling_stage.setEnabled(bool(enabled and self.milling_stages))
+        self.pushButton_run_milling.setEnabled(bool(enabled and self.milling_stages))
+        if enabled:
+            self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setText("Run Milling")
+            self.pushButton_add_milling_stage.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
+            self.pushButton_stop_milling.setVisible(False)
+        elif milling:
+            self.pushButton_run_milling.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setText("Running...")
+            self.pushButton_stop_milling.setVisible(True)
+            self.pushButton_pause_milling.setVisible(True)
+        else:
+            self.pushButton_run_milling.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_add_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_stop_milling.setVisible(False)
+            self.pushButton_pause_milling.setVisible(False)
+
+        if caller is None:
+            self.image_widget._toggle_interactions(enabled, caller="milling")
+            self.parent.movement_widget._toggle_interactions(enabled, caller="milling")
+
+    def update_ui(self):
+        """Update the milling stages from the UI and try to redraw the patterns."""
+
+        # force the milling hfw to match the current image hfw (TODO: do this more elegantly)
+        self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
+
+        # get the selected milling stages
+        self.update_milling_stage_from_ui()                 # update milling stage from ui
+        milling_stages = self.get_selected_milling_stages() # get the selected milling stages from the ui
+
+        # remove all patterns if there are no milling stages
+        if not milling_stages:
+            remove_all_napari_shapes_layers(self.viewer)
+            return
+
+        # make milling stage a list if it is not
+        if not isinstance(milling_stages, list):
+            milling_stages = [milling_stages]
+
+        # pprint(milling_stages[0].to_dict())
+        # check hfw threshold # TODO: do this check more seriously, rather than rule of thumb
+        try:
+            draw_crosshair = self.checkBox_show_milling_crosshair.isChecked()
+            if not isinstance(self.image_widget.ib_image, FibsemImage):
+                raise Exception("No FIB Image, cannot draw patterns. Please take an image.")
+            if self.image_widget.ib_layer is None:
+                raise Exception("No FIB Image Layer, cannot draw patterns. Please take an image.")
+
+            # TODO: upgrades. 
+            # Don't redraw the patterns each time, only update the position if it has changed
+            # Only draw the patterns that are visible 
+            # add names and legends
+
+            # clear patterns then draw new ones
+            self.milling_pattern_layers = draw_milling_patterns_in_napari(
+                viewer=self.viewer,
+                image_layer=self.image_widget.ib_layer,
+                milling_stages=milling_stages,
+                pixelsize=self.image_widget.ib_image.metadata.pixel_size.x,
+                draw_crosshair=draw_crosshair,
+            )  
+
+        except Exception as e:
+            napari.utils.notifications.show_error(f"Error drawing patterns: {e}")
+            logging.error(e)
+
+        self.image_widget.restore_active_layer_for_movement()
+
+    def toggle_pattern_visibility(self):
+        """Toggle the visibility of the milling patterns layers."""
+        is_visible = self.checkBox_show_milling_patterns.isChecked()
+        for layer in self.milling_pattern_layers:
+            if layer in self.viewer.layers:
+                self.viewer.layers[layer].visible = is_visible

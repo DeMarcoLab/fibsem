@@ -245,7 +245,7 @@ def draw_milling_patterns_in_napari(
         milling_stages): list of milling stages
         draw_crosshair: draw crosshair on the image
     Returns:
-        List[str]: list of active layers
+        List[str]: list of milling pattern layers
     """
 
     # base image properties
@@ -253,10 +253,15 @@ def draw_milling_patterns_in_napari(
     translation = image_layer.translate
 
     t_1 = time.time()
-    active_layers: List[str] = []
+
+    all_napari_shapes: List[np.ndarray] = []
+    all_shape_types: List[np.ndarray] = []
+    all_shape_colours: List[str] = []
+
     # convert fibsem patterns to napari shapes
     for i, stage in enumerate(milling_stages):
         
+        # shapes for this milling stage
         napari_shapes: List[np.ndarray]  = []
         shape_types: List[str] = []
         t0 = time.time()
@@ -270,9 +275,6 @@ def draw_milling_patterns_in_napari(
         annulus_layer = f"{name}-annulus-layer"
         drawn_patterns = []
 
-        # active milling layers
-        active_layers.append(name)
-
         # TODO: QUERY  migrate to using label layers for everything??
         # TODO: re-enable annulus drawing, re-enable bitmaps
         for pattern_settings in patterns:
@@ -282,48 +284,54 @@ def draw_milling_patterns_in_napari(
                 logging.warning(f"Pattern type {type(pattern_settings)} not supported")
                 continue
 
-
             shape = napari_drawing_fn(pattern_settings=pattern_settings, 
                                       shape=image_shape, 
                                       pixelsize=pixelsize)
             stype = NAPARI_PATTERN_LAYER_TYPES.get(type(pattern_settings), None)     
             napari_shapes.append(shape)
             shape_types.append(stype)
-        
+
         t1 = time.time()
 
         # draw the patterns as a shape layer
         is_shape_layer = len(napari_shapes) > 0
+
         if is_shape_layer:
             
             if draw_crosshair:
                 crosshair_shapes = create_crosshair_shape(centre_point=point, shape=image_shape, pixelsize=pixelsize)
                 crosshair_shape_types = ["rectangle","rectangle"]
-                napari_shapes += crosshair_shapes
-                shape_types += crosshair_shape_types
+                napari_shapes.extend(crosshair_shapes)
+                shape_types.extend(crosshair_shape_types)
 
-            if name in viewer.layers:
-                viewer.layers[name].data = []
-                viewer.layers[name].data = napari_shapes
-                viewer.layers[name].shape_type = shape_types
-                viewer.layers[name].edge_color = COLOURS[i % len(COLOURS)]
-                viewer.layers[name].face_color = COLOURS[i % len(COLOURS)]
-            else:
-                viewer.add_shapes(
-                    data=napari_shapes,
-                    name=name,
-                    shape_type=shape_types,
-                    edge_width=SHAPES_LAYER_PROPERTIES["edge_width"],
-                    edge_color=COLOURS[i % len(COLOURS)],
-                    face_color=COLOURS[i % len(COLOURS)],
-                    opacity=SHAPES_LAYER_PROPERTIES["opacity"],
-                    blending=SHAPES_LAYER_PROPERTIES["blending"],
-                    translate=translation,
-                )
+            napari_colours = [COLOURS[i % len(COLOURS)]] * len(napari_shapes)
+
+            # if name in viewer.layers:
+            #     viewer.layers[name].data = []
+            #     viewer.layers[name].data = napari_shapes
+            #     viewer.layers[name].shape_type = shape_types
+            #     viewer.layers[name].edge_color = COLOURS[i % len(COLOURS)]
+            #     viewer.layers[name].face_color = COLOURS[i % len(COLOURS)]
+            # else:
+            #     viewer.add_shapes(
+            #         data=napari_shapes,
+            #         name=name,
+            #         shape_type=shape_types,
+            #         edge_width=SHAPES_LAYER_PROPERTIES["edge_width"],
+            #         edge_color=COLOURS[i % len(COLOURS)],
+            #         face_color=COLOURS[i % len(COLOURS)],
+            #         opacity=SHAPES_LAYER_PROPERTIES["opacity"],
+            #         blending=SHAPES_LAYER_PROPERTIES["blending"],
+            #         translate=translation,
+            #     )
+
             # TODO: properties dict for all parameters
+            all_napari_shapes.extend(napari_shapes)
+            all_shape_types.extend(shape_types)
+            all_shape_colours.extend(napari_colours)
 
-            if "line" in shape_types:
-                viewer.layers[name].edge_width = SHAPES_LAYER_PROPERTIES["line_edge_width"]
+            # if "line" in shape_types: # TODO: fix this
+                # viewer.layers[name].edge_width = SHAPES_LAYER_PROPERTIES["line_edge_width"]
 
         # if is_annulus:
         #     # draw all the annulus for the stage on the same image
@@ -348,24 +356,49 @@ def draw_milling_patterns_in_napari(
         #     active_layers.append(annulus_layer)
 
         t2 = time.time()
-        # remove all un-updated layers (assume they have been deleted)        
-        remove_all_napari_shapes_layers(viewer=viewer, 
-                                        layer_type=NapariShapesLayers, 
-                                        ignore=active_layers)
-        # TODO: annulus layers are not removed correctly
-        t3 = time.time()
-        logging.debug(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}, REMOVE: {t3-t2}")
-    t_2 = time.time()
-    logging.debug(f"_DRAW_SHAPES: total time: {t_2-t_1}")
 
-    return active_layers # list of milling pattern layers
+        # TODO: annulus layers are not removed correctly
+        logging.debug(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}")
+
+    name = "Milling Patterns"
+    if len(all_napari_shapes) > 0:
+        if name in viewer.layers:
+            viewer.layers[name].data = all_napari_shapes
+            viewer.layers[name].shape_type = all_shape_types
+            viewer.layers[name].edge_color = all_shape_colours
+            viewer.layers[name].face_color = all_shape_colours
+        else:
+            viewer.add_shapes(
+                data=all_napari_shapes,
+                name=name,
+                shape_type=all_shape_types,
+                edge_width=SHAPES_LAYER_PROPERTIES["edge_width"],
+                edge_color=all_shape_colours,
+                face_color=all_shape_colours,
+                opacity=SHAPES_LAYER_PROPERTIES["opacity"],
+                blending=SHAPES_LAYER_PROPERTIES["blending"],
+                translate=translation,
+            )
+
+    t3 = time.time()
+    # remove all un-updated layers (assume they have been deleted)        
+    remove_all_napari_shapes_layers(viewer=viewer, 
+                                    layer_type=NapariShapesLayers, 
+                                    ignore=[name])
+    t_2 = time.time()
+    logging.debug(f"_DRAW_SHAPES: REMOVE: {t3-t_2} total time: {t_2-t_1}")
+
+    return [name] # list of milling pattern layers
 
 
 def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: List[FibsemMillingStage], show: bool = True):
 
     viewer = napari.Viewer()
-    viewer.add_image(image.data, name='test_image')
-    draw_milling_patterns_in_napari(viewer=viewer, image=image, translation=None, milling_stages=milling_stages)
+    image_layer= viewer.add_image(image.data, name='test_image')
+    draw_milling_patterns_in_napari(viewer=viewer, 
+                                    image_layer=image_layer, 
+                                    pixelsize=image.metadata.pixel_size.x, 
+                                    milling_stages=milling_stages)
     screenshot = viewer.screenshot()
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(screenshot)
@@ -467,11 +500,6 @@ def convert_shape_to_image_area(shape: List[List[int]], image_shape: Tuple[int, 
 
     logging.debug(f"convert shape data: {x0}, {x1}, {y0}, {y1}, fib shape: {image_shape}")
         
-    # # subtract shape of eb image
-    # if offset_shape:
-    #     x0 -= offset_shape[1]
-    #     x1 -= offset_shape[1]
-    
     # convert to percentage of image
     x0 = x0 / image_shape[1]
     x1 = x1 / image_shape[1]
