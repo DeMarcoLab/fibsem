@@ -16,7 +16,7 @@ from fibsem.structures import (
     Point,
 )
 from fibsem import utils
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 from PyQt5.QtCore import pyqtSignal
 from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget
 import logging
@@ -73,7 +73,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.viewer.bind_key("L", self._toggle_labelling, overwrite=True)
         self.pushButton_enable_labelling.clicked.connect(self._toggle_labelling)
         self.checkBox_labelling_model_assist.stateChanged.connect(self._toggle_labelling)
-        self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
+        self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)  
 
         self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
         self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
@@ -108,12 +108,12 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             self.viewer.layers.selection.active = self._mask_layer
             self._mask_layer.mode = "paint"
             self.pushButton_enable_labelling.setText("Disable Labelling")
-            self.pushButton_enable_labelling.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)        
+            self.pushButton_enable_labelling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)        
         else:
             self.viewer.layers.selection.active = self._features_layer
             self._features_layer.mode = "select"
             self.pushButton_enable_labelling.setText("Enable Labelling")
-            self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
+            self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)  
 
     def confirm_button_clicked(self, reset_camera=False):
         """Confirm the detected features, save the data and and remove the layers from the viewer."""

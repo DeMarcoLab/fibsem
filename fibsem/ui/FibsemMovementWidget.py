@@ -20,10 +20,10 @@ from fibsem.structures import (
     MovementMode,
     Point,
 )
-from fibsem.ui._stylesheets import _GRAY_PUSHBUTTON_STYLE, _GREEN_PUSHBUTTON_STYLE, _ORANGE_PUSHBUTTON_STYLE, _RED_PUSHBUTTON_STYLE, _BLUE_PUSHBUTTON_STYLE, _DISABLED_PUSHBUTTON_STYLE
+from fibsem.ui.stylesheets import GRAY_PUSHBUTTON_STYLE, GREEN_PUSHBUTTON_STYLE, ORANGE_PUSHBUTTON_STYLE, RED_PUSHBUTTON_STYLE, BLUE_PUSHBUTTON_STYLE, DISABLED_PUSHBUTTON_STYLE
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-from fibsem.ui.qtdesigner_files import FibsemMovementWidget
-from fibsem.ui.utils import _get_file_ui, _get_save_file_ui, message_box_ui
+from fibsem.ui.qtdesigner_files import FibsemMovementWidget as FibsemMovementWidgetUI
+from fibsem.ui.utils import open_existing_file_dialog, open_save_file_dialog, message_box_ui
 
 def to_pretty_string(position: FibsemStagePosition) -> str:
     xstr = f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}"
@@ -33,7 +33,7 @@ def to_pretty_string(position: FibsemStagePosition) -> str:
     tstr = f"t={position.t*constants.RADIANS_TO_DEGREES:.1f}"
     return f"{xstr}, {ystr}, {zstr}, {rstr}, {tstr}"
 
-class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
     saved_positions_updated_signal = QtCore.pyqtSignal(object)  # TODO: investigate the use of this signal
     movement_progress_signal = QtCore.pyqtSignal(dict) # TODO: consolidate
 
@@ -43,7 +43,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         viewer: napari.Viewer,
         parent=None,
     ):
-        super(FibsemMovementWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
         self.parent = parent
         
@@ -107,17 +107,18 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
                 self.doubleSpinBox_movement_stage_y.setMaximum(377.8e-6 * constants.SI_TO_MILLI)
 
         # stylesheets
-        self.pushButton_move.setStyleSheet(_GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_move_flat_ion.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
-        self.pushButton_move_flat_electron.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
-        self.pushButton_refresh_stage_position_data.setStyleSheet(_GRAY_PUSHBUTTON_STYLE)
-        self.pushButton_save_position.setStyleSheet(_GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_remove_position.setStyleSheet(_RED_PUSHBUTTON_STYLE)
-        self.pushButton_go_to.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
-        self.pushButton_export.setStyleSheet(_GRAY_PUSHBUTTON_STYLE)
-        self.pushButton_import.setStyleSheet(_GRAY_PUSHBUTTON_STYLE)
-        self.pushButton_update_position.setStyleSheet(_ORANGE_PUSHBUTTON_STYLE)
+        self.pushButton_move.setStyleSheet(GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_move_flat_ion.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_move_flat_electron.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_refresh_stage_position_data.setStyleSheet(GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_save_position.setStyleSheet(GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_remove_position.setStyleSheet(RED_PUSHBUTTON_STYLE)
+        self.pushButton_go_to.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_export.setStyleSheet(GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_import.setStyleSheet(GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_update_position.setStyleSheet(ORANGE_PUSHBUTTON_STYLE)
 
+        # update the UI
         self.update_ui()
 
     def _toggle_interactions(self, enable: bool, caller: str = None):
@@ -130,15 +131,15 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             self.parent.milling_widget._toggle_interactions(enable, caller="movement")
             self.parent.image_widget._toggle_interactions(enable, caller="movement")
         if enable:
-            self.pushButton_move.setStyleSheet(_GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_ion.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_electron.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
-            self.pushButton_go_to.setStyleSheet(_BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_move.setStyleSheet(GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_ion.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_electron.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_go_to.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
         else:
-            self.pushButton_move.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_ion.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_move_flat_electron.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_go_to.setStyleSheet(_DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_move.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_ion.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_move_flat_electron.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_go_to.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
 
     def handle_movement_progress_update(self, ddict: dict) -> None:
         """Handle movement progress updates from the microscope"""
@@ -198,7 +199,9 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
             logging.warning("Acquiring ion image after movement has been disabled temporarily. Please only acquire both images after movement")
         else: 
             self.update_ui()
-    
+
+#### MOVEMENT
+
     def move_to_position(self, stage_position: Optional[FibsemStagePosition] = None):
         """Move the stage to the position specified in the UI"""
         if stage_position is None:
@@ -386,7 +389,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
 
     def export_positions(self):
 
-        path = _get_save_file_ui(msg="Select or create file", 
+        path = open_save_file_dialog(msg="Select or create file", 
             path=cfg.POSITION_PATH, 
             _filter="YAML Files (*.yaml)")
         
@@ -406,7 +409,7 @@ class FibsemMovementWidget(FibsemMovementWidget.Ui_Form, QtWidgets.QWidget):
         """Import saved positions from a file"""
         
         if path is None:
-            path = _get_file_ui(msg="Select a positions file", path=cfg.POSITION_PATH, _filter="YAML Files (*.yaml)")
+            path = open_existing_file_dialog(msg="Select a positions file", path=cfg.POSITION_PATH, _filter="YAML Files (*.yaml)")
         
         if path == "":
             napari.utils.notifications.show_info("No file selected, positions not loaded")

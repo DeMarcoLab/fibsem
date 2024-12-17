@@ -24,7 +24,7 @@ from fibsem.structures import (
     ImageSettings,
     Point,
 )
-from fibsem.ui import _stylesheets as stylesheets
+from fibsem.ui import stylesheets as stylesheets
 from fibsem.ui.napari.patterns import (
     convert_reduced_area_to_napari_shape,
     convert_shape_to_image_area,
@@ -37,10 +37,10 @@ from fibsem.ui.napari.properties import (
     RULER_VALUE_LAYER_NAME,
 )
 from fibsem.ui.napari.utilities import draw_crosshair_in_napari, draw_scalebar_in_napari
-from fibsem.ui.qtdesigner_files import ImageSettingsWidget
+from fibsem.ui.qtdesigner_files import ImageSettingsWidget as ImageSettingsWidgetUI
 
 
-class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget):
     viewer_update_signal = pyqtSignal()             # when the viewer is updated
     acquisition_progress_signal = pyqtSignal(dict)  # TODO: add progress indicator
 
@@ -51,7 +51,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         viewer: napari.Viewer = None,
         parent=None,
     ):
-        super(FibsemImageSettingsWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
         self.parent = parent
         self.microscope = microscope
@@ -119,10 +119,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         self.toggle_mode()
 
         # set ui stylesheets
-        self.pushButton_take_image.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_take_all_images.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.set_detector_button.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
-        self.button_set_beam_settings.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_take_image.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_take_all_images.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.set_detector_button.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+        self.button_set_beam_settings.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
 
         self.IS_TESCAN = isinstance(self.microscope, TescanMicroscope)
         if self.IS_TESCAN:
@@ -425,24 +425,24 @@ class FibsemImageSettingsWidget(ImageSettingsWidget.Ui_Form, QtWidgets.QWidget):
         if caller != "milling":
             self.parent.milling_widget._toggle_interactions(enable, caller="ui")
         if enable:
-            self.pushButton_take_all_images.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_take_image.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.set_detector_button.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
-            self.button_set_beam_settings.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_take_all_images.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+            self.set_detector_button.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+            self.button_set_beam_settings.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
             self.pushButton_take_all_images.setText("Acquire All Images")
         elif imaging:
-            self.pushButton_take_all_images.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
-            self.pushButton_take_image.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_take_all_images.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquiring Images...")
             self.pushButton_take_all_images.setText("Acquiring Images...")
-            self.set_detector_button.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.button_set_beam_settings.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.set_detector_button.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
+            self.button_set_beam_settings.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
         else:
-            self.pushButton_take_all_images.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_take_image.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.set_detector_button.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.button_set_beam_settings.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_take_all_images.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_take_image.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
+            self.set_detector_button.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
+            self.button_set_beam_settings.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
             self.pushButton_take_all_images.setText("Acquire All Images")
 

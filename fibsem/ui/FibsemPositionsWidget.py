@@ -11,7 +11,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import FibsemStagePosition
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemPositionsWidget, FibsemMovementWidget
-from fibsem.ui.utils import _get_save_file_ui, _get_file_ui
+from fibsem.ui.utils import open_save_file_dialog, open_existing_file_dialog
 
 
 class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
@@ -71,7 +71,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
 
     def export_positions(self):
-        protocol_path = _get_save_file_ui(msg="Select or create file")
+        protocol_path = open_save_file_dialog(msg="Select or create file")
         if protocol_path == '':
             return
         dict_position = []
@@ -84,7 +84,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
 
 
     def import_positions(self):
-        protocol_path = _get_file_ui(msg="Select or create file")
+        protocol_path = open_existing_file_dialog(msg="Select or create file")
         if protocol_path == '':
             napari.utils.notifications.show_info("No file selected, positions not loaded")
             return

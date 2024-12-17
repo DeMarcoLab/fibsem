@@ -10,10 +10,8 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from queue import Queue
 from typing import List, Union
-
+from psygnal import Signal
 import numpy as np
-
-import fibsem.constants as constants
 
 _TESCAN_API_AVAILABLE = False
 _THERMO_API_AVAILABLE = False
@@ -89,6 +87,7 @@ except Exception as e:
     if isinstance(e, NameError):
         raise e 
 
+import fibsem.constants as constants
 from fibsem.structures import (
     BeamSettings,
     BeamSystemSettings,
@@ -117,8 +116,6 @@ from fibsem.structures import (
     ACTIVE_MILLING_STATES,
 )
 
-
-from psygnal import Signal
 
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
@@ -5158,14 +5155,13 @@ class TescanMicroscope(FibsemMicroscope):
 class DemoMicroscope(FibsemMicroscope):
 
     def __init__(self, system_settings: SystemSettings):            
-        
-        
+
         # hack, do this properly @patrick
         from dataclasses import dataclass
 
         @dataclass
         class DemoMicroscopeClient:
-            self.connected: bool = False # type: ignore
+            connected: bool = False
 
             def connect(self, ip_address: str, port: int = 8080):
                 logging.debug(f"Connecting to microscope at {ip_address}:{port}")

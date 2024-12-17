@@ -43,20 +43,32 @@ from fibsem.structures import (
     FibsemMillingSettings,
     Point,
 )
-from fibsem.ui import _stylesheets as stylesheets
+from fibsem.ui import stylesheets as stylesheets
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.napari.patterns import (
     draw_milling_patterns_in_napari,
     is_pattern_placement_valid,
     remove_all_napari_shapes_layers,
 )
-from fibsem.ui.qtdesigner_files import FibsemMillingWidget
+from fibsem.ui.qtdesigner_files import FibsemMillingWidget as FibsemMillingWidgetUI
 
-_UNSCALED_VALUES  = ["rotation", "size_ratio", "scan_direction", "cleaning_cross_section", 
-                     "number", "passes", "n_rectangles", "overlap", "inverted", "use_side_patterns",
-                     "n_columns", "n_rows", "cross_section", "time"]
-_ANGLE_KEYS = ["rotation"]
-_LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
+UNSCALED_VALUES = [
+    "rotation",
+    "size_ratio",
+    "scan_direction",
+    "cleaning_cross_section",
+    "number",
+    "passes",
+    "n_rectangles",
+    "overlap",
+    "inverted",
+    "use_side_patterns",
+    "n_columns",
+    "n_rows",
+    "cross_section",
+    "time",
+]
+LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
 MILLING_WIDGET_INSTRUCTIONS = """Controls:
 Shift + Left Click to Move Selected Pattern
@@ -64,9 +76,12 @@ Ctrl + Shift + Left Click to Move All Patterns
 Press Run Milling to Start Milling"""
 
 def scale_value_for_display(key: str, value: Union[float, int], scale: float) -> Union[float, int]:
-    if key not in _UNSCALED_VALUES:
+    if key not in UNSCALED_VALUES:
         return value * scale    
     return value
+
+# default milling protocol
+DEFAULT_PROTOCOL = utils.load_yaml(cfg.PROTOCOL_PATH)
 
 # need to re-write
 # if no milling stage, dont show milling settings or pattern settings
@@ -80,14 +95,12 @@ def scale_value_for_display(key: str, value: Union[float, int], scale: float) ->
 # milling operations
 # run, pause/resume, stop
 
-# default milling protocol
-DEFAULT_PROTOCOL = utils.load_yaml(cfg.PROTOCOL_PATH)
 
 def get_default_milling_pattern(name: str) -> BasePattern:
     """Get the default milling pattern."""
     return get_pattern(name, config = DEFAULT_PROTOCOL["patterns"][name])
 
-class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
     milling_progress_signal = QtCore.pyqtSignal(dict) # TODO: replace with pysygnal (pure-python signal)
 
@@ -97,7 +110,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         viewer: napari.Viewer,
         parent: QtWidgets.QWidget = None,
     ):
-        super(FibsemMillingWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
         self.parent = parent
         self.microscope = microscope
@@ -205,11 +218,11 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_pause_milling.setVisible(False) # TODO: implement pause / resume
 
         # set styles
-        self.pushButton_add_milling_stage.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
-        self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_stop_milling.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
-        self.pushButton_pause_milling.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_add_milling_stage.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_remove_milling_stage.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
+        self.pushButton_run_milling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_stop_milling.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
+        self.pushButton_pause_milling.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
         self.progressBar_milling.setStyleSheet(stylesheets.PROGRESS_BAR_GREEN_STYLE)
         self.progressBar_milling_stages.setStyleSheet(stylesheets.PROGRESS_BAR_BLUE_STYLE)
         
@@ -274,6 +287,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.comboBox_milling_stage.setCurrentText(name)
         napari.utils.notifications.show_info(f"Added {name}.")
         self.update_selected_milling_stages_ui()
+        self.update_ui()
 
     def update_selected_milling_stages_ui(self):
         # update the combobox and list widget
@@ -298,7 +312,8 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.milling_stages.pop(current_index)
         self.comboBox_milling_stage.removeItem(current_index)
         napari.utils.notifications.show_info("Removed milling stage.")
-        self.update_selected_milling_stages_ui()   
+        self.update_selected_milling_stages_ui()
+        self.update_ui()
 
     def clear_all_milling_stages(self):
         """Remove all milling stages from the widget."""
@@ -391,7 +406,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
             if isinstance(val, (int, float)):
                 # limits
-                min_val = -1000 if key in _LINE_KEYS else 0
+                min_val = -1000 if key in LINE_KEYS else 0
 
                 control_widget = QtWidgets.QDoubleSpinBox()
                 control_widget.setDecimals(1)
@@ -538,7 +553,7 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
 
             if isinstance(val, (int, float)):
                 # limits
-                min_val = -1000 if key in _LINE_KEYS else 0
+                min_val = -1000 if key in LINE_KEYS else 0
 
                 control_widget = QtWidgets.QDoubleSpinBox()
                 control_widget.setDecimals(3)
@@ -891,20 +906,20 @@ class FibsemMillingWidget(FibsemMillingWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_remove_milling_stage.setEnabled(bool(enabled and self.milling_stages))
         self.pushButton_run_milling.setEnabled(bool(enabled and self.milling_stages))
         if enabled:
-            self.pushButton_run_milling.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Run Milling")
-            self.pushButton_add_milling_stage.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
+            self.pushButton_add_milling_stage.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
             self.pushButton_stop_milling.setVisible(False)
         elif milling:
-            self.pushButton_run_milling.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Running...")
             self.pushButton_stop_milling.setVisible(True)
             self.pushButton_pause_milling.setVisible(True)
         else:
-            self.pushButton_run_milling.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_add_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_add_milling_stage.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_remove_milling_stage.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_stop_milling.setVisible(False)
             self.pushButton_pause_milling.setVisible(False)
 

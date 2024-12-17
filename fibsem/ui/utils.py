@@ -83,41 +83,43 @@ def create_combobox_message_box(text: str, title: str, options: list, parent = N
 
 # TODO: add filters for file types
 
-def _get_directory_ui(
+def open_existing_directory_dialog(
     msg: str = "Select a directory", path: Path = cfg.LOG_PATH, parent=None
 ) -> Path:
-    path = QtWidgets.QFileDialog.getExistingDirectory(parent, msg, directory=path)
+    path = QtWidgets.QFileDialog.getExistingDirectory(parent=parent, caption=msg, directory=path)
     return path
 
 
-def _get_file_ui(
+def open_existing_file_dialog(
     msg: str = "Select a file",
     path: Path = cfg.LOG_PATH,
     _filter: str = "*yaml",
     parent=None,
 ) -> Path:
     path, _ = QtWidgets.QFileDialog.getOpenFileName(
-        parent, msg, directory=path, filter=_filter
+        parent=parent, 
+        caption=msg, 
+        directory=path, 
+        filter=_filter
     )
     return path
 
 
-def _get_save_file_ui(
+def open_save_file_dialog(
     msg: str = "Select a file",
     path: Path = cfg.LOG_PATH,
     _filter: str = "*yaml",
     parent=None,
 ) -> Path:
     path, _ = QtWidgets.QFileDialog.getSaveFileName(
-        parent,
-        msg,
+        parent=parent,
+        caption=msg,
         directory=path,
         filter=_filter,
     )
     return path
 
-
-def _get_text_ui(
+def open_text_input_dialog(
     msg: str = "Enter text",
     title: str = "Text Entry",
     default: str = "UserText",
@@ -130,10 +132,9 @@ def _get_text_ui(
         QtWidgets.QLineEdit.Normal,
         default,
     )
-
     return text, okPressed
 
-def show_information_dialog(microscope: FibsemMicroscope, parent=None):
+def open_information_dialog(microscope: FibsemMicroscope, parent=None):
     import fibsem
     
     fibsem_version = fibsem.__version__
@@ -141,10 +142,10 @@ def show_information_dialog(microscope: FibsemMicroscope, parent=None):
     try:
         import autolamella
         autolamella_version = autolamella.__version__
-    except:
+    except ImportError:
         pass
-    
-    info = microscope.system.info
+    from fibsem.structures import SystemInfo
+    info: SystemInfo = microscope.system.info
 
     text = f"""
     OpenFIBSEM Information:

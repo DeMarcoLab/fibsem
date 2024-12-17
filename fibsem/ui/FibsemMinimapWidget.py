@@ -22,7 +22,7 @@ from fibsem.structures import (
     MicroscopeSettings,
     Point,
 )
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 from fibsem.ui import utils as ui_utils
 from fibsem.ui.napari.patterns import draw_milling_patterns_in_napari, remove_all_napari_shapes_layers
 from fibsem.ui.napari.utilities import draw_crosshair_in_napari
@@ -92,12 +92,12 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def setup_connections(self):
 
         self.pushButton_run_tile_collection.clicked.connect(self.run_tile_collection)
-        self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_run_tile_collection.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
         self.pushButton_cancel_acquisition.clicked.connect(self.cancel_acquisition)
-        self.pushButton_cancel_acquisition.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_cancel_acquisition.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
         self.pushButton_cancel_acquisition.setVisible(False)
         self.progressBar_acquisition.setVisible(False)
-        self.progressBar_acquisition.setStyleSheet(_stylesheets.PROGRESS_BAR_GREEN_STYLE)
+        self.progressBar_acquisition.setStyleSheet(stylesheets.PROGRESS_BAR_GREEN_STYLE)
         self.actionLoad_Image.triggered.connect(self.load_image)
 
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
@@ -106,13 +106,13 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
         self.comboBox_tile_position.currentIndexChanged.connect(self._update_current_position_info)
         self.pushButton_update_position.clicked.connect(self._update_position_pressed)
-        self.pushButton_update_position.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_update_position.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
-        self.pushButton_remove_position.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_remove_position.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
 
         self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
-        self.pushButton_enable_correlation.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_enable_correlation.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
 
         # checkbox
         self.checkBox_options_move_with_translation.stateChanged.connect(self._update_ui)
@@ -304,10 +304,10 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.progressBar_acquisition.setValue(0)
 
         if enable:
-            self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_tile_collection.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
             self.pushButton_run_tile_collection.setText("Run Tile Collection")
         else:
-            self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_tile_collection.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_run_tile_collection.setText("Running Tile Collection...")
 
 
@@ -359,7 +359,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
 
     def load_image(self):
 
-        path = ui_utils._get_file_ui( msg="Select image to load", path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
+        path = ui_utils.open_existing_file_dialog( msg="Select image to load", path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
 
         if path == "":
             napari.utils.notifications.show_info(f"No file selected..")
@@ -617,7 +617,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _load_positions(self):
 
         logging.info(f"Loading Positions...")
-        path = ui_utils._get_file_ui( msg="Select a position file to load", 
+        path = ui_utils.open_existing_file_dialog( msg="Select a position file to load", 
             path=self.settings.image.path, 
             _filter= "*yaml", 
             parent=self)
@@ -641,7 +641,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         
         logging.info(f"Saving Positions...")
         
-        path = ui_utils._get_save_file_ui(msg = "Select a file to save the positions to",
+        path = ui_utils.open_save_file_dialog(msg = "Select a file to save the positions to",
             path = self.settings.image.path,
             _filter= "*yaml",
             parent=self,
@@ -749,7 +749,7 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
     def _load_correlation_image(self):
 
         # load another image
-        path = ui_utils._get_file_ui( msg="Select image to load", 
+        path = ui_utils.open_existing_file_dialog( msg="Select image to load", 
         path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
 
         if path == "":
@@ -867,11 +867,11 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self._correlation_mode = not self._correlation_mode
 
         if self._correlation_mode:
-            self.pushButton_enable_correlation.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_enable_correlation.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_enable_correlation.setText("Disable Correlation Mode")
             self.comboBox_correlation_selected_layer.setEnabled(False)
         else:
-            self.pushButton_enable_correlation.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_enable_correlation.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
             self.pushButton_enable_correlation.setText("Enable Correlation Mode")
             self.comboBox_correlation_selected_layer.setEnabled(True)
 
