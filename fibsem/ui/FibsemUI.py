@@ -75,15 +75,14 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             napari.utils.notifications.show_warning("Please connect to a microscope first... [No Movement Widget]")
             return
 
-        # TODO: need to register this with the main ui somehow
         self.viewer_minimap = napari.Viewer(ndisplay=2)
         self.minimap_widget = FibsemMinimapWidget(viewer=self.viewer_minimap, parent=self)
         self.viewer_minimap.window.add_dock_widget(
-            self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
+            widget=self.minimap_widget, 
+            area="right", 
+            add_vertical_stretch=True, 
+            name="OpenFIBSEM Minimap"
         )
-        self.minimap_widget.update_position_info()
-        self.minimap_widget.update_viewer()
-
         napari.run(max_loop_level=2)
 
     def align_currents(self):

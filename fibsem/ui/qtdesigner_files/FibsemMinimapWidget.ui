@@ -51,9 +51,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-260</y>
+         <y>0</y>
          <width>636</width>
-         <height>741</height>
+         <height>762</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
@@ -124,105 +124,30 @@
            <string>Acquisition</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_6">
-           <item row="0" column="1">
-            <widget class="QComboBox" name="comboBox_tile_beam_type"/>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_tile_beam_type">
+           <item row="9" column="0">
+            <widget class="QLabel" name="label_tile_filename">
              <property name="text">
-              <string>Beam Type</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_tile_tile_size">
-             <property name="text">
-              <string>Tile Size (um)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_tile_resolution">
-             <property name="text">
-              <string>Resolution (px)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QSpinBox" name="spinBox_tile_resolution">
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="maximum">
-              <number>10000</number>
-             </property>
-             <property name="value">
-              <number>1024</number>
+              <string>Filename</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_grid_size">
-             <property name="maximum">
-              <double>1000000.000000000000000</double>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_fov">
+             <property name="decimals">
+              <number>0</number>
              </property>
-             <property name="value">
-              <double>400.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_tile_size">
              <property name="maximum">
               <double>100000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>50.000000000000000</double>
              </property>
              <property name="value">
               <double>100.000000000000000</double>
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_tile_dwell_time">
-             <property name="text">
-              <string>Dwell Time (us)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="1">
-            <widget class="QCheckBox" name="checkBox_tile_autogamma">
-             <property name="text">
-              <string>AutoGamma</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="label_tile_path">
-             <property name="text">
-              <string>Path</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_tile_grid_size">
-             <property name="text">
-              <string>Grid Size (um)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="1">
-            <widget class="QLineEdit" name="lineEdit_tile_path">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
+           <item row="5" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_dwell_time">
              <property name="maximum">
               <double>100.000000000000000</double>
@@ -232,7 +157,7 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0">
+           <item row="7" column="0">
             <widget class="QCheckBox" name="checkBox_tile_autocontrast">
              <property name="text">
               <string>AutoContrast</string>
@@ -242,21 +167,58 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_tile_beam_type">
+             <property name="text">
+              <string>Beam Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_tile_fov">
+             <property name="text">
+              <string>Field of View (um)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="comboBox_tile_beam_type"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_tile_count">
+             <property name="text">
+              <string>Number of Tiles</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QCheckBox" name="checkBox_tile_autogamma">
+             <property name="text">
+              <string>AutoGamma</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QComboBox" name="comboBox_tile_resolution"/>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_tile_resolution">
+             <property name="text">
+              <string>Resolution (px)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
             <widget class="QLabel" name="label_tile_overlap">
              <property name="text">
               <string>Overlap (%)</string>
              </property>
             </widget>
            </item>
-           <item row="8" column="0">
-            <widget class="QLabel" name="label_tile_filename">
-             <property name="text">
-              <string>Filename</string>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="1">
+           <item row="9" column="1">
             <widget class="QLineEdit" name="lineEdit_tile_filename">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -266,6 +228,43 @@
              </property>
              <property name="text">
               <string>overview-image</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="comboBox_tile_count"/>
+           </item>
+           <item row="3" column="0" colspan="2">
+            <widget class="QLabel" name="label_tile_total_fov">
+             <property name="text">
+              <string>Total Field of View: </string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_tile_dwell_time">
+             <property name="text">
+              <string>Dwell Time (us)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="label_tile_path">
+             <property name="text">
+              <string>Path</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QLineEdit" name="lineEdit_tile_path">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
              </property>
             </widget>
            </item>

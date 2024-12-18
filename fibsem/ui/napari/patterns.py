@@ -47,6 +47,8 @@ IMAGE_LAYER_PROPERTIES = {
 
 IGNORE_SHAPES_LAYERS = ["ruler_line", "crosshair", "scalebar", "scalebar_value", "label", "alignment_area"] # ignore these layers when removing all shapes
 IMAGE_PATTERN_LAYERS = ["annulus-layer", "bmp_Image"]
+STAGE_POSTIION_SHAPE_LAYERS = ["saved-stage-positions", "current-stage-position"] # for minimap
+IGNORE_SHAPES_LAYERS.extend(STAGE_POSTIION_SHAPE_LAYERS)
 
 def get_image_pixel_centre(shape: Tuple[int, int]) -> Tuple[int, int]:
     """Get the centre of the image in pixel coordinates."""
@@ -306,25 +308,6 @@ def draw_milling_patterns_in_napari(
 
             napari_colours = [COLOURS[i % len(COLOURS)]] * len(napari_shapes)
 
-            # if name in viewer.layers:
-            #     viewer.layers[name].data = []
-            #     viewer.layers[name].data = napari_shapes
-            #     viewer.layers[name].shape_type = shape_types
-            #     viewer.layers[name].edge_color = COLOURS[i % len(COLOURS)]
-            #     viewer.layers[name].face_color = COLOURS[i % len(COLOURS)]
-            # else:
-            #     viewer.add_shapes(
-            #         data=napari_shapes,
-            #         name=name,
-            #         shape_type=shape_types,
-            #         edge_width=SHAPES_LAYER_PROPERTIES["edge_width"],
-            #         edge_color=COLOURS[i % len(COLOURS)],
-            #         face_color=COLOURS[i % len(COLOURS)],
-            #         opacity=SHAPES_LAYER_PROPERTIES["opacity"],
-            #         blending=SHAPES_LAYER_PROPERTIES["blending"],
-            #         translate=translation,
-            #     )
-
             # TODO: properties dict for all parameters
             all_napari_shapes.extend(napari_shapes)
             all_shape_types.extend(shape_types)
@@ -384,7 +367,7 @@ def draw_milling_patterns_in_napari(
     # remove all un-updated layers (assume they have been deleted)        
     remove_all_napari_shapes_layers(viewer=viewer, 
                                     layer_type=NapariShapesLayers, 
-                                    ignore=[name])
+                                    ignore=[name]) # TODO: make this more selective with what to remove?
     t_2 = time.time()
     logging.debug(f"_DRAW_SHAPES: REMOVE: {t3-t_2} total time: {t_2-t_1}")
 

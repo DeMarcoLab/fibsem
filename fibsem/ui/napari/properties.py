@@ -1,5 +1,4 @@
-
-
+import numpy as np
 
 # IMAGING
 RULER_LAYER_NAME = "ruler"
@@ -61,3 +60,44 @@ IMAGING_SCALEBAR_LAYER_PROPERTIES = {
 }
 
 # MILLING
+
+
+## MINIMAP
+
+OVERVIEW_IMAGE_LAYER_PROPERTIES = {
+    "name": "overview-image",
+    "colormap": "gray",
+    "blending": "additive",
+    "median_filter_size": 3,
+}
+
+GRIDBAR_IMAGE_LAYER_PROPERTIES = {
+    "name": "gridbar-image",
+    "spacing": 100,
+    "width": 20,
+}
+
+CORRELATION_IMAGE_LAYER_PROPERTIES = {
+    "name": "correlation-image",
+    "colormap": "green",
+    "blending": "translucent",
+    "opacity": 0.2,
+    "colours": ["green", "cyan", "magenta", "red", "yellow"],
+}
+
+STAGE_POSITION_SHAPE_LAYER_PROPERTIES = {
+    "name": "stage-positions",
+    "shape_type": "line",
+    "edge_width": 5,
+    "edge_color": "yellow",
+    "face_color": "yellow",
+    "opacity": 0.8,
+    "blending": "translucent",
+    "text": {
+        "string": [],
+        "color": "white",
+        "size": 15,
+        "translation": np.array([-50, 0]), # text shown 50px above the point
+    },
+    "saved_color": "lime",
+}
