@@ -197,6 +197,16 @@ class FibsemMicroscope(ABC):
     def vertical_move(self, dy: float, dx: float = 0, static_wd: bool = True) -> None:
         pass
 
+    @abstractmethod
+    def project_stable_move(
+        self,
+        dx: float,
+        dy: float,
+        beam_type: BeamType,
+        base_position: FibsemStagePosition,
+    ) -> FibsemStagePosition:
+        pass
+
     def move_flat_to_beam(self, beam_type: BeamType, _safe:bool = True) -> None:
         """Move the sample surface flat to the electron or ion beam."""
 

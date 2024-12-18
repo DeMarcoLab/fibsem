@@ -225,13 +225,10 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def move_stage_finished(self):
         """Handle the completion of a stage movement"""
+        self.movement_progress_signal.emit({"finished": True})
         if self.parent.image_widget.ACQUIRING_IMAGES:
             return
         self._toggle_interactions(enable=True)
-        self.movement_progress_signal.emit({"finished": True})
-
-    def _stage_position_moved(self, pos: FibsemStagePosition):
-        self.update_ui_after_movement(retake=False)
 
     def get_position_from_ui(self):
         """Get the stage position from the UI"""

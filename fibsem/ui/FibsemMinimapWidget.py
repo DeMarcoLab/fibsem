@@ -38,6 +38,8 @@ from fibsem.ui import FibsemMovementWidget, FibsemImageSettingsWidget
 PATH = os.path.join(cfg.DATA_PATH, "tile")
 os.makedirs(PATH, exist_ok=True)
 
+TRENCH_KEY, MILL_ROUGH_KEY = "trench", "mill_rough" # TODO: replace with autolamella.protocol.validation
+
 OVERVIEW_IMAGE_LAYER_PROPERTIES = {
     "name": "overview-image",
     "colormap": "gray",
@@ -57,6 +59,7 @@ CORRELATION_IMAGE_LAYER_PROPERTIES = {
     "blending": "translucent",
     "opacity": 0.2,
 }
+COLOURS = ["green", "cyan", "magenta", "red", "yellow"]
 
 OVERVIEW_POSITIONS_LAYER_PROPERTIES = {
     "name": "overview-positions",
@@ -86,10 +89,11 @@ def generate_gridbar_image(shape: Tuple[int, int], pixelsize: float, spacing: fl
 
 
 class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWindow):
-    _stage_position_moved = pyqtSignal(FibsemStagePosition)
-    _stage_position_added = pyqtSignal(FibsemStagePosition)
+    stage_position_added_signal = pyqtSignal(FibsemStagePosition)
+    stage_position_updated_signal = pyqtSignal(FibsemStagePosition)
+    stage_position_removed_signal = pyqtSignal(FibsemStagePosition)
     tile_acquisition_progress_signal = pyqtSignal(dict)
-    _minimap_positions = pyqtSignal(list)
+    # _minimap_positions = pyqtSignal(list)
     
     def __init__(
         self,
@@ -100,6 +104,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.setupUi(self)
         self.parent = parent
 
+        # TODO: allow using independently of parent
         self.microscope: FibsemMicroscope = self.parent.microscope
         self.protocol: Dict[str, Any] = deepcopy(self.parent.settings.protocol)
         self.movement_widget: FibsemMovementWidget = self.parent.movement_widget
@@ -115,8 +120,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.correlation_image_layers: List[str] = []
         self.milling_pattern_layers: List[str] = []
 
-        self.positions = []
-        self.correlation_data = {}
+        self.positions: List[FibsemStagePosition] = []
         self.correlation_mode_enabled: bool = False
 
         self.ADDING_POSITION: bool = False
@@ -138,27 +142,32 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         # position buttons
         self.pushButton_move_to_position.clicked.connect(self.move_to_position_pressed)
         self.comboBox_tile_position.currentIndexChanged.connect(self._update_current_position_info)
-        self.pushButton_update_position.clicked.connect(self._update_position_pressed) # TODO: disable updating name if from autolamella...
+        # self.pushButton_update_position.clicked.connect(self._update_position_pressed) # TODO: tmp disabled
         self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
+        
+        # disable updating position name:
+        self.label_position_name.setVisible(False)
+        self.lineEdit_tile_position_name.setVisible(False)
+        self.pushButton_update_position.setVisible(False)
 
         # signals
         self.tile_acquisition_progress_signal.connect(self.handle_tile_acquisition_progress)
 
         # update the positions from the parent   
-        if hasattr(self.parent, "_minimap_signal"):
-            self.parent._minimap_signal.connect(self.update_positions_from_parent)
+        if hasattr(self.parent, "sync_positions_to_minimap_signal"):
+            self.parent.sync_positions_to_minimap_signal.connect(self.update_positions_from_parent)
 
-        # update the parent when the stage position is moved
-        if  hasattr(self.movement_widget, "_stage_position_moved"):
-            self._stage_position_moved.connect(self.movement_widget._stage_position_moved)
+        # handle movement progress
+        self.movement_widget.movement_progress_signal.connect(self.handle_movement_progress)
 
         # pattern overlay
         AVAILABLE_MILLING_PATTERNS = [k for k in self.protocol.get("milling", {}).keys()]
         self.comboBox_pattern_overlay.addItems(AVAILABLE_MILLING_PATTERNS)
-        if "trench" in AVAILABLE_MILLING_PATTERNS:
-            self.comboBox_pattern_overlay.setCurrentText("trench")
-        elif "mill_rough" in AVAILABLE_MILLING_PATTERNS:
-            self.comboBox_pattern_overlay.setCurrentText("mill_rough")
+        
+        if TRENCH_KEY in AVAILABLE_MILLING_PATTERNS:
+            self.comboBox_pattern_overlay.setCurrentText(TRENCH_KEY)
+        elif MILL_ROUGH_KEY in AVAILABLE_MILLING_PATTERNS:
+            self.comboBox_pattern_overlay.setCurrentText(TRENCH_KEY)
         self.comboBox_pattern_overlay.currentIndexChanged.connect(self.redraw_pattern_overlay)
         self.checkBox_pattern_overlay.stateChanged.connect(self.redraw_pattern_overlay)
 
@@ -166,20 +175,8 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.actionLoad_Correlation_Image.triggered.connect(self.load_image)
         self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self.update_correlation_ui)
         self.pushButton_enable_correlation.clicked.connect(self._toggle_correlation_mode)
+        self.viewer.bind_key("C", self._toggle_correlation_mode)
         self.pushButton_enable_correlation.setEnabled(False) # disabled until correlation images added
-
-        # auto update correlation image
-        self.doubleSpinBox_correlation_translation_x.valueChanged.connect(self.update_correlation_data)
-        self.doubleSpinBox_correlation_translation_y.valueChanged.connect(self.update_correlation_data)
-        self.doubleSpinBox_correlation_scale_x.valueChanged.connect(self.update_correlation_data) 
-        self.doubleSpinBox_correlation_scale_y.valueChanged.connect(self.update_correlation_data)
-        self.doubleSpinBox_correlation_rotation.valueChanged.connect(self.update_correlation_data)
-
-        self.doubleSpinBox_correlation_translation_x.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_translation_y.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_scale_x.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_scale_y.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
 
         # gridbar controls
         self.checkBox_gridbar.stateChanged.connect(self.toggle_gridbar_display)
@@ -205,7 +202,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.toggle_interaction(enable=True)
 
     def update_positions_from_parent(self, positions):
-        
+        # it would be better to just draw experiment positions directly from the parent
         if positions is not None:
             self.positions = positions
 
@@ -220,7 +217,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         beam_type = BeamType[self.comboBox_tile_beam_type.currentText()]
         grid_size = self.doubleSpinBox_tile_grid_size.value() * constants.MICRO_TO_SI
         tile_size = self.doubleSpinBox_tile_tile_size.value() * constants.MICRO_TO_SI
-        resolution = int(self.spinBox_tile_resolution.value())
+        resolution = int(self.spinBox_tile_resolution.value()) # TODO: change to combo box
         dwell_time = self.doubleSpinBox_tile_dwell_time.value() * constants.MICRO_TO_SI
         cryo = self.checkBox_tile_autogamma.isChecked()
         autocontrast = self.checkBox_tile_autogamma.isChecked()
@@ -424,9 +421,9 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             # self.viewer.scale_bar.visible = True
             # self.viewer.scale_bar.unit = "um"
 
-        self._draw_positions() # draw the reprojected positions on the image
+        self.draw_stage_positions() # draw the reprojected positions on the image
 
-        self.viewer.layers.selection.active = self.image_layer
+        self.set_active_layer_for_movement()
 
         self.update_ui()
 
@@ -472,28 +469,38 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         if point is False: # clicked outside image
             return
 
-        _new_position = self.microscope.project_stable_move( 
+        stage_position = self.microscope.project_stable_move( 
                     dx=point.x, dy=point.y, 
                     beam_type=self.image.metadata.image_settings.beam_type, 
                     base_position=self.image.metadata.microscope_state.stage_position)            
        
-        self.ADDING_POSITION = True # flag prevent double drawing from circular update
-        if 'Shift' in event.modifiers:
-            idx = self.comboBox_tile_position.currentIndex()
-            _name = self.positions[idx].name
-            _new_position.name = _name
-            self.positions[idx] = _new_position
-        elif 'Alt' in event.modifiers:
-            _new_position.name = f"Position {len(self.positions)+1:02d}" 
-            self.positions.append(_new_position)
-            self._stage_position_added.emit(_new_position)
+        UPDATE_POSITION: bool = "Shift" in event.modifiers
+        ADD_NEW_POSITION: bool = "Alt" in event.modifiers
 
+        # TODO: handle case where multiple modifiers are pressed
+
+        if UPDATE_POSITION:
+            idx = self.comboBox_tile_position.currentIndex()
+            if idx == -1:
+                logging.debug("No position selected to update.")
+                return
+
+        self.ADDING_POSITION = True # flag prevent double drawing from circular update
+        
+        if UPDATE_POSITION:
+            stage_position.name = self.positions[idx].name
+            self.positions[idx] = stage_position
+            self.stage_position_updated_signal.emit(stage_position)
+        elif ADD_NEW_POSITION:
+            stage_position.name = f"Position {len(self.positions)+1:02d}" 
+            self.positions.append(stage_position)
+            self.stage_position_added_signal.emit(stage_position)
 
         # we could save this position as well, use it to pre-select a bunch of lamella positions?
         self.update_position_info()
         self.update_viewer()
 
-        self._minimap_positions.emit(self.positions)
+        # self._minimap_positions.emit(self.positions)
         self.ADDING_POSITION = False
 
     def _on_double_click(self, layer, event):
@@ -506,12 +513,12 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             return
         
         beam_type = self.image.metadata.image_settings.beam_type
-        _new_position = self.microscope.project_stable_move( 
+        stage_position = self.microscope.project_stable_move( 
             dx=point.x, dy=point.y, 
             beam_type=beam_type, 
             base_position=self.image.metadata.microscope_state.stage_position)   
 
-        self._move_to_position(_new_position)
+        self.move_to_stage_position(stage_position)
 
     def _update_current_position_info(self):
 
@@ -530,10 +537,11 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         if idx != -1:
             self.comboBox_tile_position.setCurrentIndex(idx)
 
-        _positions_added = len(self.positions) > 0
-        self.pushButton_move_to_position.setEnabled(_positions_added)
-        self.pushButton_remove_position.setEnabled(_positions_added)
-        self.pushButton_update_position.setEnabled(_positions_added)
+        HAS_POSITIONS = len(self.positions) > 0
+        self.pushButton_move_to_position.setEnabled(HAS_POSITIONS)
+        self.pushButton_remove_position.setEnabled(HAS_POSITIONS)
+        self.pushButton_update_position.setEnabled(HAS_POSITIONS)
+        self.groupBox_positions.setVisible(HAS_POSITIONS)
 
         msg = ""
         for pos in self.positions:
@@ -542,14 +550,16 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
 
     def _update_position_pressed(self):
 
+        return
+
         idx = self.comboBox_tile_position.currentIndex()
         if idx == -1:
-            logging.debug(f"No position selected to update.")
+            logging.debug("No position selected to update.")
             return
         
         name = self.lineEdit_tile_position_name.text()
         if name == "":
-            napari.utils.notifications.show_info(f"Please enter a name for the position")
+            napari.utils.notifications.show_info("Please enter a name for the position")
             return
 
         logging.info(f"Updating position at {idx} to {name}")
@@ -559,27 +569,32 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.update_viewer()
 
     def _remove_position_pressed(self):
+        """Remove the selected position from the list."""
         idx = self.comboBox_tile_position.currentIndex()
         if idx == -1:
-            logging.debug("No position selected to remove.")
             return
         logging.info("Removing position...")
-        stage__position = self.positions[idx]
-        self.positions.remove(stage__position)
-        self._minimap_positions.emit(self.positions)
+        stage_position = self.positions[idx]
+        self.positions.remove(stage_position)
+        self.stage_position_removed_signal.emit(stage_position)
         self.update_position_info()
         self.update_viewer()
 
-    def move_to_position_pressed(self):
-
+    def move_to_position_pressed(self) -> None:
+        """Move the stage to the selected position."""
         stage_position = self.positions[self.comboBox_tile_position.currentIndex()]
-        logging.info(f"Moving To: {stage_position}")
-        self._move_to_position(stage_position)
+        logging.info(f"Moving to selected position: {stage_position}")
+        self.move_to_stage_position(stage_position)
 
-    def _move_to_position(self, _position:FibsemStagePosition)->None:
-        self.microscope.safe_absolute_stage_movement(_position)
-        self._stage_position_moved.emit(_position)
-        self.update_viewer()
+    def move_to_stage_position(self, stage_position: FibsemStagePosition)->None:
+        """Move the stage to the selected position via movement widget."""
+        self.movement_widget.move_to_position(stage_position)
+
+    def handle_movement_progress(self, ddict: dict):
+        """Handle the movement progress signal from the movement widget."""
+        is_finished = ddict.get("finished", False)
+        if is_finished:
+            self.update_viewer()
 
     def redraw_pattern_overlay(self):
         """Redraw the milling patterns on the image."""
@@ -587,9 +602,9 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         selected_pattern = self.comboBox_pattern_overlay.currentText()
         self.selected_milling_stage = get_milling_stages(selected_pattern, 
                                                          protocol=self.protocol["milling"])[0]
-        self._draw_positions()
+        self.draw_stage_positions()
 
-    def _draw_positions(self):
+    def draw_stage_positions(self):
         
         logging.info("Drawing Reprojected Positions...")
         current_position = deepcopy(self.microscope.get_stage_position())
@@ -620,9 +635,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
                 "translation": np.array([-50, 0]),
             }
 
-
-            if self.position_layer is None:
-            
+            if self.position_layer is None or self.position_layer not in self.viewer.layers:
                  self.position_layer = self.viewer.add_points(
                     data=data,
                     name=OVERVIEW_POSITIONS_LAYER_PROPERTIES["name"],
@@ -646,7 +659,6 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
                 points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), 
                                                                             self.image.data, 
                                                                             self.image.metadata.pixel_size.x ) for coords in data[:-1]]
-
                 milling_stages = []
                 for point, pos in zip(points, drawn_positions[:-1]):
                     stage = deepcopy(self.selected_milling_stage)
@@ -664,7 +676,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             else:
                 remove_all_napari_shapes_layers(viewer=self.viewer)
 
-        self.viewer.layers.selection.active = self.image_layer
+        self.set_active_layer_for_movement()
 
     def update_correlation_image(self, image: FibsemImage = None, is_gridbar: bool = False):
             
@@ -682,14 +694,12 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             layer_name = basename
             idx = 3
 
-        COLOURS = ["green", "cyan", "magenta", "red", "yellow"]
         self.viewer.add_image(image.data, 
                         name=layer_name, 
                         colormap=COLOURS[idx%len(COLOURS)], 
                         blending="translucent", opacity=0.2)
         
         self.correlation_image_layers.append(layer_name)
-        self.correlation_data[layer_name] = deepcopy([0, 0, 1.0, 1.0, 0])
 
         # update the combobox
         self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
@@ -701,7 +711,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self.update_correlation_ui)
         
         # set the image layer as the active layer
-        self.viewer.layers.selection.active = self.image_layer
+        self.set_active_layer_for_movement()
         self.pushButton_enable_correlation.setEnabled(True)
 
     # do this when image selected is changed
@@ -714,60 +724,16 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             napari.utils.notifications.show_info("Please select a layer to correlate with update data...")
             return
 
-        tx, ty, sx, sy, r = self.correlation_data[layer_name]
-
-        self.doubleSpinBox_correlation_translation_x.setValue(tx)
-        self.doubleSpinBox_correlation_translation_y.setValue(ty)
-        self.doubleSpinBox_correlation_scale_x.setValue(sx)
-        self.doubleSpinBox_correlation_scale_y.setValue(sy)
-        self.doubleSpinBox_correlation_rotation.setValue(r)
-
-        self.update_correlation_data()
-
-    # do this when parameters change
-    def update_correlation_data(self):
-
-        # select layer
-        layer_name = self.comboBox_correlation_selected_layer.currentText()
-        if layer_name == "":
-            napari.utils.notifications.show_info("Please select a layer to correlate with update ui...")
+    def _toggle_correlation_mode(self, event = None):
+        """Toggle correlation mode on or off."""
+        if self.image is None:
+            napari.utils.notifications.show_warning("Please acquire an image first...")
+            return
+        
+        if not self.correlation_image_layers:
+            napari.utils.notifications.show_warning("Please load a correlation image first...")
             return
 
-        tx, ty = self.doubleSpinBox_correlation_translation_x.value(), self.doubleSpinBox_correlation_translation_y.value()
-        sx, sy = self.doubleSpinBox_correlation_scale_x.value(), self.doubleSpinBox_correlation_scale_y.value()
-        r = self.doubleSpinBox_correlation_rotation.value()
-
-        if sx == 0 or sy == 0:
-            sx =1
-            sy =1
-
-        angle = np.deg2rad(r)
-
-        rows = self.viewer.layers[layer_name].data.shape[0]*0.5 
-        cols = self.viewer.layers[layer_name].data.shape[1]*0.5
-
-        # the proof for this is marvelous but i dont have enough space in the comments
-
-        new_x = int(np.cos(angle) * rows - np.sin(angle) * cols) 
-        new_y =  int(np.sin(angle) * rows + np.cos(angle) * cols) 
-
-        trans_x = new_x -rows 
-        trans_y = new_y -cols 
-
-        # translation for central rotation + translation
-        corrected_tx = tx - trans_y
-        corrected_ty = -ty - trans_x
-
-
-        self.correlation_data[layer_name] = deepcopy([tx, ty, sx, sy, r])
-
-        # apply to selected layer
-        self.viewer.layers[layer_name].translate = [corrected_ty, corrected_tx]
-        self.viewer.layers[layer_name].scale = [sy, sx]
-        self.viewer.layers[layer_name].rotate = r
-
-    def _toggle_correlation_mode(self):
-        
         # toggle correlation mode
         self.correlation_mode_enabled = not self.correlation_mode_enabled
 
@@ -781,7 +747,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             self.comboBox_correlation_selected_layer.setEnabled(True)
 
         # if no correlation layer selected, disable the button
-        if self.comboBox_correlation_selected_layer.currentText() == "":
+        if self.comboBox_correlation_selected_layer.currentIndex() == -1:
             self.pushButton_enable_correlation.setEnabled(False)
             return
 
@@ -795,8 +761,12 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             self.viewer.layers.selection.active = correlation_layer
         else:
             correlation_layer.mode = 'pan_zoom'
-            self.viewer.layers.selection.active = self.image_layer
+            self.set_active_layer_for_movement()
 
+    def set_active_layer_for_movement(self) -> None:
+        """Set the active layer to the image layer for movement."""
+        if self.image_layer is not None and self.image_layer in self.viewer.layers:
+            self.viewer.layers.selection.active = self.image_layer
 
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 
