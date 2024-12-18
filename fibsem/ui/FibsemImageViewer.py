@@ -30,7 +30,7 @@ class FibsemImageViewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
             napari.utils.notifications.show_info("No image loaded")
             return
         
-        path = self._get_save_file_ui()
+        path = self.open_save_file_dialog()
 
         if path is None or path == "":
             napari.utils.notifications.show_info(f"No save location selected. Image not saved")
@@ -43,7 +43,7 @@ class FibsemImageViewer(image_viewer.Ui_MainWindow,QtWidgets.QMainWindow):
         napari.utils.notifications.show_info(f"Image Saved with metadata")
 
 
-    def _get_save_file_ui( msg: str = "Select a file",_filter: str = "*png",) -> Path:
+    def open_save_file_dialog( msg: str = "Select a file",_filter: str = "*png",) -> Path:
    
         path, _ = QtWidgets.QFileDialog.getSaveFileName(
             msg,

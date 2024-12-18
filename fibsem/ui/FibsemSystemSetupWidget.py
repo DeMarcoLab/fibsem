@@ -10,9 +10,9 @@ from fibsem import config as cfg
 from fibsem import utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, SystemSettings
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
-from fibsem.ui.utils import _get_file_ui
+from fibsem.ui.utils import open_existing_file_dialog
 
 
 def log_status_message(step: str):
@@ -79,7 +79,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     
     def import_configuration_from_file(self):
     
-        path = _get_file_ui(msg="Select microscope configuration file", 
+        path = open_existing_file_dialog(msg="Select microscope configuration file", 
             path=cfg.CONFIG_PATH, _filter="YAML (*.yaml *.yml)")
 
         if path == "":
@@ -177,12 +177,12 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         _microscope_connected = bool(self.microscope)
         self.pushButton_apply_configuration.setVisible(_microscope_connected)
-        self.pushButton_apply_configuration.setEnabled(_microscope_connected and cfg._APPLY_CONFIGURATION_ENABLED)
+        self.pushButton_apply_configuration.setEnabled(_microscope_connected and cfg.APPLY_CONFIGURATION_ENABLED)
 
         if _microscope_connected:
             self.pushButton_connect_to_microscope.setText("Microscope Connected")
-            self.pushButton_connect_to_microscope.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_apply_configuration.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_connect_to_microscope.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_apply_configuration.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
             self.connected_signal.emit()
             
             info = self.microscope.system.info
@@ -190,8 +190,8 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         else:
             self.pushButton_connect_to_microscope.setText("Connect To Microscope")
-            self.pushButton_connect_to_microscope.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
-            self.pushButton_apply_configuration.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
+            self.pushButton_connect_to_microscope.setStyleSheet(stylesheets.GRAY_PUSHBUTTON_STYLE)
+            self.pushButton_apply_configuration.setStyleSheet(stylesheets.GRAY_PUSHBUTTON_STYLE)
             self.disconnected_signal.emit()
             self.label_connection_information.setText("Not connected to microscope")
 

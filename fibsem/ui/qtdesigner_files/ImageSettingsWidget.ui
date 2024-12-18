@@ -14,13 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="29" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_take_image">
-     <property name="text">
-      <string>Acquire Image</string>
-     </property>
-    </widget>
-   </item>
    <item row="30" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_take_all_images">
      <property name="text">
@@ -43,9 +36,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-77</y>
+        <y>0</y>
         <width>501</width>
-        <height>842</height>
+        <height>841</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -377,19 +370,6 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QSpinBox" name="spinBox_resolution_x">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>999999999</number>
-         </property>
-         <property name="value">
-          <number>1536</number>
-         </property>
-        </widget>
-       </item>
        <item row="27" column="0" colspan="3">
         <widget class="QLabel" name="label_detector_header">
          <property name="font">
@@ -415,19 +395,6 @@
         <widget class="QPushButton" name="set_detector_button">
          <property name="text">
           <string>Set Detector Settings</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QSpinBox" name="spinBox_resolution_y">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>999999999</number>
-         </property>
-         <property name="value">
-          <number>1024</number>
          </property>
         </widget>
        </item>
@@ -510,14 +477,17 @@
          </property>
         </widget>
        </item>
+       <item row="3" column="1" colspan="2">
+        <widget class="QComboBox" name="comboBox_image_resolution"/>
+       </item>
       </layout>
      </widget>
     </widget>
    </item>
-   <item row="31" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_live_imaging">
+   <item row="29" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_take_image">
      <property name="text">
-      <string>Live Imaging</string>
+      <string>Acquire Image</string>
      </property>
     </widget>
    </item>

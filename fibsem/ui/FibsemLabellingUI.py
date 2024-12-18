@@ -15,8 +15,8 @@ from fibsem.segmentation.config import CLASS_COLORS, CLASS_LABELS, convert_color
 from fibsem.segmentation import utils as seg_utils
 
 from fibsem.ui.FibsemSegmentationModelWidget import FibsemSegmentationModelWidget
-from fibsem.ui import _stylesheets
-from fibsem.ui.utils import _get_directory_ui,_get_file_ui
+from fibsem.ui import stylesheets
+from fibsem.ui.utils import open_existing_directory_dialog,open_existing_file_dialog
 
 from napari.layers import Points
 from typing import Any, Generator, Optional
@@ -101,10 +101,10 @@ CONFIGURATION = {
     },
     "UI": {
         "INSTRUCTIONS": INSTRUCTIONS,
-        "LOAD_DATA_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
-        "LOAD_MODEL_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
-        "CONFIRM_BUTTON_COLOR": _stylesheets._GREEN_PUSHBUTTON_STYLE,
-        "CLEAR_BUTTON_COLOR": _stylesheets._RED_PUSHBUTTON_STYLE,
+        "LOAD_DATA_BUTTON_COLOR": stylesheets.BLUE_PUSHBUTTON_STYLE,
+        "LOAD_MODEL_BUTTON_COLOR": stylesheets.BLUE_PUSHBUTTON_STYLE,
+        "CONFIRM_BUTTON_COLOR": stylesheets.GREEN_PUSHBUTTON_STYLE,
+        "CLEAR_BUTTON_COLOR": stylesheets.RED_PUSHBUTTON_STYLE,
         "IMAGE_OPACITY": 0.7,
         "MASK_OPACITY": 0.3,
     },
@@ -198,20 +198,20 @@ class FibsemLabellingUI(FibsemLabellingUI.Ui_Dialog, QtWidgets.QDialog):
     def select_filepath(self):
 
         if self.sender() == self.pushButton_data_path:
-            path = _get_directory_ui(msg="Select Image Data Directory")
+            path = open_existing_directory_dialog(msg="Select Image Data Directory")
             if path is not None and path != "":
                 self.lineEdit_data_path.setText(path)
         elif self.sender() == self.pushButton_labels_path:
-            path = _get_directory_ui(msg="Select Labels Directory")
+            path = open_existing_directory_dialog(msg="Select Labels Directory")
             if path is not None and path != "":
                 self.lineEdit_labels_path.setText(path)
 
         elif self.sender() == self.model_widget.checkpoint_seg_button:
-            path = _get_file_ui(msg="Select Checkpoint File", _filter=None)
+            path = open_existing_file_dialog(msg="Select Checkpoint File", _filter=None)
             if path is not None and path != "":
                 self.model_widget.lineEdit_checkpoint.setText(path)
         elif self.sender() == self.pushButton_data_config:
-            path = _get_file_ui(msg="Select Configuration File", path=CLASS_CONFIG_PATH, _filter="*.yaml")
+            path = open_existing_file_dialog(msg="Select Configuration File", path=CLASS_CONFIG_PATH, _filter="*.yaml")
             if path is not None and path != "":
                 self.lineEdit_data_config.setText(path)
 

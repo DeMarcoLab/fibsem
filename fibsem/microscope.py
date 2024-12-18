@@ -10,10 +10,8 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from queue import Queue
 from typing import List, Union
-
+from psygnal import Signal
 import numpy as np
-
-import fibsem.constants as constants
 
 _TESCAN_API_AVAILABLE = False
 _THERMO_API_AVAILABLE = False
@@ -89,6 +87,7 @@ except Exception as e:
     if isinstance(e, NameError):
         raise e 
 
+import fibsem.constants as constants
 from fibsem.structures import (
     BeamSettings,
     BeamSystemSettings,
@@ -99,6 +98,7 @@ from fibsem.structures import (
     FibsemDetectorSettings,
     FibsemExperiment,
     FibsemGasInjectionSettings,
+    FibsemPatternSettings,
     FibsemImage,
     FibsemImageMetadata,
     FibsemLineSettings,
@@ -112,11 +112,14 @@ from fibsem.structures import (
     MicroscopeState,
     Point,
     SystemSettings,
+    MillingState,
+    ACTIVE_MILLING_STATES,
 )
 
 
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
+    milling_progress_signal = Signal(dict)
 
     @abstractmethod
     def connect_to_microscope(self, ip_address: str, port: int) -> None:
@@ -192,6 +195,16 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def vertical_move(self, dy: float, dx: float = 0, static_wd: bool = True) -> None:
+        pass
+
+    @abstractmethod
+    def project_stable_move(
+        self,
+        dx: float,
+        dy: float,
+        beam_type: BeamType,
+        base_position: FibsemStagePosition,
+    ) -> FibsemStagePosition:
         pass
 
     def move_flat_to_beam(self, beam_type: BeamType, _safe:bool = True) -> None:
@@ -275,15 +288,6 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def run_milling_drift_corrected(self, milling_current: float,  
-        image_settings: ImageSettings, 
-        ref_image: FibsemImage, 
-        reduced_area: FibsemRectangle = None,
-        asynch: bool = False
-        ):
-        pass
-
-    @abstractmethod
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         pass
 
@@ -291,6 +295,18 @@ class FibsemMicroscope(ABC):
     def stop_milling(self) -> None:
         return 
     
+    @abstractmethod
+    def pause_milling(self) -> None:
+        return
+    
+    @abstractmethod
+    def resume_milling(self) -> None:
+        return
+    
+    @abstractmethod
+    def get_milling_state(self) -> MillingState:
+        pass 
+
     @abstractmethod
     def estimate_milling_time(self, patterns: list = None) -> float:
         pass
@@ -549,7 +565,17 @@ class FibsemMicroscope(ABC):
         logging.debug({"msg": "set_microscope_state", "state": microscope_state.to_dict()})
 
         return             
-        
+    
+    def set_milling_settings(self, mill_settings: FibsemMillingSettings) -> None:
+        self.set("active_view", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("active_device", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("default_patterning_beam_type", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("application_file", mill_settings.application_file, mill_settings.milling_channel)
+        self.set("patterning_mode", mill_settings.patterning_mode, mill_settings.milling_channel)
+        self.set("hfw", mill_settings.hfw, mill_settings.milling_channel)
+        self.set("current", mill_settings.milling_current, mill_settings.milling_channel)
+        self.set("voltage", mill_settings.milling_voltage, mill_settings.milling_channel)
+
     def is_available(self, system: str) -> bool:
 
         if system == "electron_beam":
@@ -743,9 +769,6 @@ class ThermoMicroscope(FibsemMicroscope):
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
 
-        run_milling_drift_corrected(self, milling_current: float, milling_voltage: float, ref_image: FibsemImage):
-            Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
-        
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
 
@@ -787,6 +810,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # initialise system settings
         self.system: SystemSettings = system_settings
+        self._patterns: List = []
 
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -1642,10 +1666,17 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self._default_application_file = mill_settings.application_file
         self.connection.patterning.mode = mill_settings.patterning_mode
-        self.connection.patterning.clear_patterns()  # clear any existing patterns       
+        self.clear_patterns()  # clear any existing patterns       
         self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
+
+        # TODO: migrate to _set_milling_settings():
+        # self.milling_channel = mill_settings.milling_channel
+        # self._default_application_file = mill_settings.application_file
+        # _check_beam(self.milling_channel, self.system)
+        # self.set_milling_settings(mill_settings)
+        # self.clear_patterns()
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
@@ -1663,7 +1694,7 @@ class ThermoMicroscope(FibsemMicroscope):
             raise ValueError("Ion beam not available.")
         
         try:
-            # change to milling current, voltage
+            # change to milling current, voltage # TODO: do this in a more standard way (there are other settings)
             if self.get("voltage", self.milling_channel) != milling_voltage:
                 self.set("voltage", milling_voltage, self.milling_channel)
             if self.get("current", self.milling_channel) != milling_current:
@@ -1672,71 +1703,39 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.warning(f"Failed to set voltage or current: {e}, voltage={milling_voltage}, current={milling_current}")
 
         # run milling (asynchronously)
-        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
+        self.set("active_view", value=self.milling_channel)  # the ion beam view
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
+        self.start_milling()
+
+        start_time = time.time()
+        estimated_time = self.estimate_milling_time()
+        remaining_time = estimated_time
+        
         if asynch:
-            self.connection.patterning.start()
-        else:
-            self.connection.patterning.start()
-            while self.connection.patterning.state == PatterningState.IDLE: # giving time to start 
-                time.sleep(0.5)
-            while self.connection.patterning.state == PatterningState.RUNNING:
-                # logging.info(f"Patterning State: {self.connection.patterning.state}")
-                time.sleep(1)      
-            self.connection.patterning.clear_patterns()
-        # NOTE: Make tescan logs the same??
+            return # return immediately, up to the caller to handle the milling process
+        
+        MILLING_SLEEP_TIME = 1
+        while self.get_milling_state() is MillingState.IDLE: # giving time to start 
+            time.sleep(0.5)
+        while self.get_milling_state() in ACTIVE_MILLING_STATES:
+            # logging.info(f"Patterning State: {self.connection.patterning.state}")
+            # TODO: add drift correction support here... generically
+            if self.get_milling_state() is MillingState.RUNNING:
+                remaining_time -= MILLING_SLEEP_TIME # TODO: investigate if this is a good estimate
+            time.sleep(MILLING_SLEEP_TIME)
+
+            # update milling progress via signal
+            self.milling_progress_signal.emit({"progress": {
+                    "state": "update", 
+                    "start_time": start_time, 
+                    "estimated_time": estimated_time, 
+                    "remaining_time": remaining_time}
+                    })
+
+        # milling complete
+        self.clear_patterns()
                                     
         logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
-
-    def run_milling_drift_corrected(self, milling_current: float, 
-                                    milling_voltage: float,  
-                                    image_settings: ImageSettings, 
-                                    ref_image: FibsemImage, 
-                                    reduced_area: FibsemRectangle = None,
-                                    ):
-        """
-        Run ion beam milling using the specified milling current.
-
-        Args:
-            milling_current (float): The current to use for milling in amps.
-            asynch (bool, optional): If True, the milling will be run asynchronously. 
-                                     Defaults to False, in which case it will run synchronously.
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        _check_beam(self.milling_channel, self.system)
-        # change to milling current
-        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
-        if self.get("voltage", self.milling_channel) != milling_voltage:
-            self.set("voltage", milling_voltage, self.milling_channel)
-        if self.get("current", self.milling_channel) != milling_current:
-            self.set("current", milling_current, self.milling_channel)
-
-
-        # run milling (asynchronously)
-        logging.info("running ion beam milling now.")
-
-        self.connection.patterning.start()
-        # NOTE: Make tescan logs the same??
-        from fibsem import alignment
-        while self.connection.patterning.state == PatterningState.IDLE: # giving time to start 
-            time.sleep(0.5)
-        while self.connection.patterning.state == PatterningState.RUNNING:
-
-            self.connection.patterning.pause()
-            logging.info("Drift correction")
-            alignment.beam_shift_alignment_v2(microscope = self, ref_image=ref_image)
-            time.sleep(1) # need delay to switch back to patterning mode 
-            self.connection.imaging.set_active_view(self.milling_channel.value)
-            if self.connection.patterning.state == PatterningState.PAUSED: # check if finished 
-                self.connection.patterning.resume()
-                time.sleep(5)
-            logging.info(f"Patterning State: {self.connection.patterning.state}")
-
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float):
         """
@@ -1746,26 +1745,54 @@ class ThermoMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         """
         _check_beam(self.milling_channel, self.system)
-        self.connection.patterning.clear_patterns()
+        self.clear_patterns()
         self.set("current", imaging_current, self.milling_channel)
         self.set("voltage", imaging_voltage, self.milling_channel)
-        self.connection.patterning.mode = "Serial"
+        self.connection.patterning.mode = "Serial" # TODO: store initial imaging settings in setup_milling, restore here, rather than hybrid
 
         logging.debug({"msg": "finish_milling", "imaging_current": imaging_current, "imaging_voltage": imaging_voltage})
 
+    def start_milling(self) -> None:
+        """Start the milling process."""
+        if self.get_milling_state() is MillingState.IDLE:
+            self.connection.patterning.start()
+            logging.info("Starting milling...")
+
     def stop_milling(self) -> None:
         """Stop the milling process."""
-        if self.connection.patterning.state == PatterningState.RUNNING:
+        if self.get_milling_state() in ACTIVE_MILLING_STATES:
             logging.info("Stopping milling...")
             self.connection.patterning.stop()
             logging.info("Milling stopped.")
-        
-        
-    def estimate_milling_time(self, patterns: list ) -> float:
-        """Calculates the estimated milling time for a list of patterns."""
 
+    def pause_milling(self) -> None:
+        """Pause the milling process."""
+        if self.get_milling_state() == MillingState.RUNNING:
+            logging.info("Pausing milling...")
+            self.connection.patterning.pause()
+            logging.info("Milling paused.")
+
+    def resume_milling(self) -> None:
+        """Resume the milling process."""
+        if self.get_milling_state() == MillingState.PAUSED:
+            logging.info("Resuming milling...")
+            self.connection.patterning.resume()
+            logging.info("Milling resumed.")
+    
+    def get_milling_state(self) -> MillingState:
+        """Get the current milling state."""
+        return MillingState[self.connection.patterning.state.upper()]
+    
+    def clear_patterns(self):
+        """Clear all currently drawn milling patterns."""
+        self.connection.patterning.clear_patterns()
+        self._patterns = []
+
+    def estimate_milling_time(self, patterns: list) -> float:
+        """Calculates the estimated milling time for a list of patterns."""
+        # TODO: use the internally stored patterns, don't require the user to pass them in
         total_time = 0
-        for pattern in patterns:
+        for pattern in self._patterns:
             total_time += pattern.time
 
         return total_time
@@ -1792,13 +1819,13 @@ class ThermoMicroscope(FibsemMicroscope):
         if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
             create_pattern_function = patterning_api.create_regular_cross_section
             self.connection.patterning.mode = "Serial" # parallel mode not supported for regular cross section
+            self.connection.patterning.set_default_application_file("Si-multipass")
         elif pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
             create_pattern_function = patterning_api.create_cleaning_cross_section
             self.connection.patterning.mode = "Serial" # parallel mode not supported for cleaning cross section
+            self.connection.patterning.set_default_application_file("Si-ccs")
         else:
             create_pattern_function = patterning_api.create_rectangle
-        
-        
             
         # create pattern
         pattern = create_pattern_function(
@@ -1841,7 +1868,12 @@ class ThermoMicroscope(FibsemMicroscope):
                 # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
                 # NB: the current must be set before doing this, otherwise it will be out of range
 
+        # restore default application file
+        self.connection.patterning.set_default_application_file(self._default_application_file)
+
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
+
+        self._patterns.append(pattern)
 
         return pattern
 
@@ -1868,6 +1900,7 @@ class ThermoMicroscope(FibsemMicroscope):
             depth=pattern_settings.depth,
         )
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
+        self._patterns.append(pattern)
         return pattern
     
     def draw_circle(self, pattern_settings: FibsemCircleSettings):
@@ -1902,7 +1935,7 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
-
+        self._patterns.append(pattern)
         return pattern
 
     def draw_annulus(self, pattern_settings: FibsemCircleSettings):
@@ -1927,7 +1960,7 @@ class ThermoMicroscope(FibsemMicroscope):
         pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
-
+        self._patterns.append(pattern)
         return pattern
     
     
@@ -1949,33 +1982,8 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
-
+        self._patterns.append(pattern)
         return pattern
-
-    def get_scan_directions(self) -> list:
-        """
-        Returns the available scan directions of the microscope.
-
-        Returns:
-            list: The scan direction of the microscope.
-
-        Raises:
-            None
-        """
-        list = ["BottomToTop", 
-                "DynamicAllDirections", 
-                "DynamicInnerToOuter", 
-                "DynamicLeftToRight", 
-                "DynamicTopToBottom", 
-                "InnerToOuter", 	
-                "LeftToRight", 	
-                "OuterToInner", 
-                "RightToLeft", 	
-                "TopToBottom"]
-        
-        logging.debug({"msg": "get_scan_directions", "scan_directions": list})
-
-        return list 
 
     def get_gis(self, port: str = None):
         use_multichem = self.is_available("gis_multichem")
@@ -2562,7 +2570,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 "LeftToRight", 	
                 "OuterToInner", 
                 "RightToLeft", 	
-                "TopToBottom"]
+                "TopToBottom"] # TODO: store elsewhere...
         
         if key == "gis_ports":
             if self.is_available("gis"):
@@ -2725,6 +2733,11 @@ class ThermoMicroscope(FibsemMicroscope):
             beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
             _check_beam(beam_type, self.system)
         
+        if key == "active_view":
+            self.connection.imaging.set_active_view(value.value)  # the beam type is the active view (in ui)
+        if key == "active_device":
+            self.connection.imaging.set_active_device(value.value)
+
         # beam properties
         if key == "working_distance":
             beam.working_distance.value = value
@@ -3024,9 +3037,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
-
-        def run_milling_drift_corrected(self, milling_current: float, image_settings: ImageSettings, ref_image: FibsemImage, reduced_area: FibsemRectangle = None, asynch: bool = False):
-        Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
 
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
@@ -4284,78 +4294,6 @@ class TescanMicroscope(FibsemMicroscope):
         print()  # new line on complete
         self.connection.Progress.Hide()
 
-    def run_milling_drift_corrected(self, milling_current: float,  
-        image_settings: ImageSettings, 
-        ref_image: FibsemImage, 
-        reduced_area: FibsemRectangle = None,
-        asynch: bool = False
-        ):
-        """
-        Run ion beam milling using the specified milling current.
-
-        Args:
-            milling_current (float): The current to use for milling in amps.
-            asynch (bool, optional): If True, the milling will be run asynchronously. 
-                                     Defaults to False, in which case it will run synchronously.
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        _check_beam(BeamType.ION, self.system)
-        status = self.connection.FIB.Beam.GetStatus()
-        if status != Automation.FIB.Beam.Status.BeamOn:
-            self.connection.FIB.Beam.On()
-        self.connection.DrawBeam.LoadLayer(self.layer)
-        logging.info("running ion beam milling now...")
-        self.connection.DrawBeam.Start()
-        self.connection.Progress.Show(
-            "DrawBeam", "Layer 1 in progress", False, False, 0, 100
-        )
-        from fibsem import alignment
-        while True:
-            status = self.connection.DrawBeam.GetStatus()
-            running = status[0] == DBStatus.ProjectLoadedExpositionInProgress
-            if running:
-                progress = 0
-                if status[1] > 0:
-                    progress = min(100, status[2] / status[1] * 100)
-                printProgressBar(progress, 100)
-                self.connection.Progress.SetPercents(progress)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionInProgress:
-                    self.connection.DrawBeam.Pause()
-                elif status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
-                    break
-                logging.info("Drift correction in progress...")
-                image_settings.beam_type = BeamType.ION
-                alignment.beam_shift_alignment(
-                    self,
-                    image_settings,
-                    ref_image,
-                    reduced_area,
-                )
-                time.sleep(1)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionPaused :
-                    self.connection.DrawBeam.Resume()
-                logging.info("Drift correction complete.")
-                time.sleep(5)
-            else:
-                if status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
-                break
-
-        print()  # new line on complete
-        self.connection.Progress.Hide()
-
     def finish_milling(self, imaging_current: float):
         """
         Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
@@ -5227,14 +5165,13 @@ class TescanMicroscope(FibsemMicroscope):
 class DemoMicroscope(FibsemMicroscope):
 
     def __init__(self, system_settings: SystemSettings):            
-        
-        
+
         # hack, do this properly @patrick
         from dataclasses import dataclass
 
         @dataclass
         class DemoMicroscopeClient:
-            self.connected: bool = False # type: ignore
+            connected: bool = False
 
             def connect(self, ip_address: str, port: int = 8080):
                 logging.debug(f"Connecting to microscope at {ip_address}:{port}")
@@ -5301,6 +5238,11 @@ class DemoMicroscope(FibsemMicroscope):
                 self.opened = False
                 logging.debug("GIS closed")
 
+        @dataclass
+        class MillingSystem:
+            state: MillingState = MillingState.IDLE
+            patterns: List[FibsemPatternSettings] = None
+
         # initialise system
         self.connection = DemoMicroscopeClient()
         self.system = system_settings    
@@ -5364,6 +5306,7 @@ class DemoMicroscope(FibsemMicroscope):
             )
         )
         self.stage_is_compustage: bool = False
+        self.milling_system = MillingSystem(patterns=[])
             
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -5770,65 +5713,106 @@ class DemoMicroscope(FibsemMicroscope):
 
     def setup_milling(self, mill_settings: FibsemMillingSettings):
         """Setup the milling parameters."""
-        _check_beam(BeamType.ION, self.system)
-        self.set("current", mill_settings.milling_current, BeamType.ION)
-        self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
+
+        _check_beam(mill_settings.milling_channel, self.system)
+        self._default_application_file = mill_settings.application_file
+        self.milling_channel = mill_settings.milling_channel
+        self.set_milling_settings(mill_settings=mill_settings)
+        self.clear_patterns()
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
     def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
         """Run milling with the specified current and voltage."""
         _check_beam(BeamType.ION, self.system)
-        # import random
-        # time.sleep(random.randint(1, 5))
-        time.sleep(5)
+
+        # TODO: make this stop/pauseable
+
+        MILLING_SLEEP_TIME = 1
+
+        # start milling
+        start_time = time.time()
+        estimated_time = self.estimate_milling_time()
+        remaining_time = estimated_time
+        self.milling_system.state = MillingState.RUNNING
+
+        while remaining_time > 0 or self.get_milling_state() in ACTIVE_MILLING_STATES:
+            logging.debug(f"Running milling: {remaining_time} s remaining.")
+            if self.get_milling_state() == MillingState.PAUSED:
+                logging.info("Milling paused.")
+                time.sleep(MILLING_SLEEP_TIME)
+                continue
+            if self.get_milling_state() == MillingState.IDLE:
+                logging.info("Milling stopped.")
+                break
+            time.sleep(MILLING_SLEEP_TIME)
+            remaining_time -= MILLING_SLEEP_TIME
+
+            # update milling progress via signal
+            self.milling_progress_signal.emit({"progress": {
+                    "state": "update", 
+                    "start_time": start_time, 
+                    "estimated_time": estimated_time, 
+                    "remaining_time": remaining_time}
+                    })
+
+            if remaining_time <= 0: # milling complete
+                self.milling_system.state = MillingState.IDLE
+
+        # stop milling and clear patterns
+        self.milling_system.state = MillingState.IDLE
+        self.clear_patterns()
         logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         """Finish milling by restoring the imaging current and voltage."""
-        _check_beam(BeamType.ION, self.system)
+        _check_beam(self.milling_channel, self.system)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
-        self.set("current", imaging_current, BeamType.ION)
-        self.set("voltage", imaging_voltage, BeamType.ION)
+        self.set("current", imaging_current, self.milling_channel)
+        self.set("voltage", imaging_voltage, self.milling_channel)
+        self.clear_patterns()
+
+    def clear_patterns(self) -> None:
+        self.milling_system.patterns = []
 
     def stop_milling(self) -> None:
-        return
+        self.milling_system.state = MillingState.IDLE
+    
+    def pause_milling(self) -> None:
+        self.milling_system.state = MillingState.PAUSED
+    
+    def resume_milling(self) -> None:
+        self.milling_system.state = MillingState.RUNNING
+    
+    def get_milling_state(self) -> MillingState:
+        return self.milling_system.state
 
-    def estimate_milling_time(self, patterns: list) -> float:
+    def estimate_milling_time(self, patterns: List = None) -> float:
         """Estimate the milling time for the specified patterns."""
-        total_time = 0
-        for pattern in patterns:
-            total_time += 5
-        
-        return total_time
-        
+        PATTERN_SLEEP_TIME = 5
+        return PATTERN_SLEEP_TIME * len(self.milling_system.patterns)
 
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
-
-        if pattern_settings.cross_section in (CrossSectionPattern.CleaningCrossSection, CrossSectionPattern.RegularCrossSection):
-            logging.info("setting patterning mode to serial for cross section patterns.")
-
         if pattern_settings.time != 0:
             logging.info(f"Setting pattern time to {pattern_settings.time}.")
+        self.milling_system.patterns.append(pattern_settings)
 
     def draw_line(self, pattern_settings: FibsemLineSettings) -> None:
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
-
+        self.milling_system.patterns.append(pattern_settings)
+    
     def draw_circle(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
+        self.milling_system.patterns.append(pattern_settings)
     
     def draw_annulus(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
+        self.milling_system.patterns.append(pattern_settings)
 
-
-    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings,
-        path: str):
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str) -> None:
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
-        return 
-    def run_milling_drift_corrected(self):
-        _check_beam(BeamType.ION, self.system)
-        return
+        self.milling_system.patterns.append(pattern_settings)
 
     def setup_sputter(self, protocol: dict) -> None:
         _check_sputter(self.system)
@@ -5899,7 +5883,7 @@ class DemoMicroscope(FibsemMicroscope):
         
 
         if key == "application_file":
-            values = ["Si", "autolamella", "cryo_Pt_dep"]
+            values = ["Si", "Si-multipass", "Si-ccs", "autolamella", "cryo_Pt_dep"]
 
         if key == "detector_type":
             values = ["ETD", "TLD", "EDS"]

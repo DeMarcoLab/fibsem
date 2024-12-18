@@ -15,7 +15,7 @@ from fibsem.structures import (BeamType, FibsemManipulatorPosition,
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemManipulatorWidget
 from fibsem.ui.utils import message_box_ui
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 from fibsem import config as cfg
 
 
@@ -190,16 +190,16 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
     def setup_connections(self):
 
         self.insertManipulator_button.clicked.connect(self.insert_retract_manipulator)
-        self.insertManipulator_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.insertManipulator_button.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
         self.addSavedPosition_button.clicked.connect(self.add_saved_position)
-        self.addSavedPosition_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.addSavedPosition_button.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
         self.goToPosition_button.clicked.connect(self.move_to_saved_position)
-        self.goToPosition_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.goToPosition_button.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
         self.moveRelative_button.clicked.connect(self.move_relative)
-        self.moveRelative_button.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.moveRelative_button.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
 
         self.pushButton_refresh_data.clicked.connect(self.refresh_data)
-        self.pushButton_refresh_data.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_refresh_data.setStyleSheet(stylesheets.GRAY_PUSHBUTTON_STYLE)
 
 
     def refresh_data(self):
@@ -207,7 +207,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         
         self._hide_show_buttons(self.manipulator_inserted)
         self.insertManipulator_button.setText("Retract" if self.manipulator_inserted else "Insert")
-        self.insertManipulator_button.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE if self.manipulator_inserted else _stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.insertManipulator_button.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE if self.manipulator_inserted else stylesheets.GREEN_PUSHBUTTON_STYLE)
         self.manipulatorStatus_label.setText("Manipulator Status: Inserted" if self.manipulator_inserted else "Manipulator Status: Retracted")        
         
 
@@ -271,7 +271,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.microscope.retract_manipulator()
             self.insertManipulator_button.setText("Insert")
             self.manipulatorStatus_label.setText("Manipulator Status: Retracted")
-            self.insertManipulator_button.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.insertManipulator_button.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
             self.update_ui()
             self._hide_show_buttons(show=False)
         
@@ -280,7 +280,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.microscope.insert_manipulator()
             self.insertManipulator_button.setText("Retract")
             self.manipulatorStatus_label.setText("Manipulator Status: Inserted")
-            self.insertManipulator_button.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+            self.insertManipulator_button.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
             self.update_ui()
             self._hide_show_buttons(show=True)
 
