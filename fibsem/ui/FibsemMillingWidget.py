@@ -3,7 +3,7 @@ import logging
 import time
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 
 import napari
 import napari.utils.notifications
@@ -41,6 +41,7 @@ from fibsem.structures import (
     CrossSectionPattern,
     FibsemImage,
     FibsemMillingSettings,
+    MillingState,
     Point,
 )
 from fibsem.ui import stylesheets as stylesheets
@@ -214,6 +215,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         
         # stop milling
         self.pushButton_stop_milling.clicked.connect(self.stop_milling)
+        self.pushButton_pause_milling.clicked.connect(self.pause_resume_milling)
         self.pushButton_stop_milling.setVisible(False)
         self.pushButton_pause_milling.setVisible(False) # TODO: implement pause / resume
 
@@ -242,6 +244,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.checkBox_show_milling_crosshair.setChecked(True)
         self.checkBox_show_milling_crosshair.stateChanged.connect(self.redraw_patterns)
         self.checkBox_show_milling_patterns.stateChanged.connect(self.toggle_pattern_visibility)
+        self.checkBox_show_advanced.stateChanged.connect(self.show_advanced_settings)
             
         self.label_milling_instructions.setText(MILLING_WIDGET_INSTRUCTIONS)
         self.show_milling_stage_widgets()
@@ -424,7 +427,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.gridLayout_strategy.addWidget(control_widget, i, 1)
 
             # store the widget
-            self.strategy_config_widgets[key] = control_widget
+            self.strategy_config_widgets[key] = (label, control_widget)
 
     def get_milling_strategy_from_ui(self):
         """Get the milling strategy from the UI."""
@@ -432,7 +435,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         # get the updated pattern values from ui
         for i, key in enumerate(strategy.config.required_attributes):
-            widget = self.strategy_config_widgets[key]
+            label, widget = self.strategy_config_widgets[key]
 
             if isinstance(widget, QtWidgets.QDoubleSpinBox):
                 value = widget.value() 
@@ -541,7 +544,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         # clear the grid layout
         self.clear_grid_layout(self.gridLayout_patterns)
 
-        self.pattern_attribute_widgets: Dict[str, QtWidgets.QWidget] = {}
+        self.pattern_attribute_widgets: Dict[str, Tuple[QtWidgets.QLabel, QtWidgets.QWidget]] = {}
 
         # set widgets for each required key / value
         for i, key in enumerate(pattern.required_attributes):
@@ -553,7 +556,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
             if isinstance(val, (int, float)):
                 # limits
-                min_val = -1000 if key in LINE_KEYS else 0
+                min_val = -1000 # if key in LINE_KEYS else 0 # why not?
 
                 control_widget = QtWidgets.QDoubleSpinBox()
                 control_widget.setDecimals(3)
@@ -588,7 +591,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.gridLayout_patterns.addWidget(control_widget, i, 1)
 
             # store the widget
-            self.pattern_attribute_widgets[key] = control_widget
+            self.pattern_attribute_widgets[key] = (label, control_widget)
 
             # attr:
                 # float / int: QDoubleSpinBox
@@ -611,17 +614,28 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
         self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO)
 
+        self.show_advanced_settings()
         self.update_ui()
 
         self.UPDATING_PATTERN = False
     
+    def show_advanced_settings(self):
+        """Toggle the advanced settings visibility."""
+        show = self.checkBox_show_advanced.isChecked()
+        
+        pattern = self.current_milling_stage.pattern 
+        for i, key in enumerate(pattern.advanced_attributes):
+            label, widget = self.pattern_attribute_widgets[key]
+            label.setVisible(show)
+            widget.setVisible(show)
+
     def get_pattern_from_ui_v2(self):
 
         pattern = self.current_milling_stage.pattern
 
         # get the updated pattern values from ui
         for i, key in enumerate(pattern.required_attributes):
-            widget = self.pattern_attribute_widgets[key]
+            label, widget = self.pattern_attribute_widgets[key]
 
             if isinstance(widget, QtWidgets.QDoubleSpinBox):
                 value = scale_value_for_display(key, widget.value(), constants.MICRO_TO_SI)
@@ -839,6 +853,25 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.microscope.stop_milling()
         self.milling_progress_signal.emit({"finished": True, "msg": "Milling Stopped by User."})
 
+    def pause_resume_milling(self):
+        """Request milling pause / resume."""
+        milling_state = self.microscope.get_milling_state()
+        if milling_state is MillingState.RUNNING:
+            self.microscope.pause_milling()
+            self.pushButton_pause_milling.setText("Resume Milling")
+            self.pushButton_pause_milling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setStyleSheet(stylesheets.GRAY_PUSHBUTTON_STYLE)
+            self.pushButton_run_milling.setText("Milling Paused")
+            self.milling_progress_signal.emit({"msg": "Milling Paused by User."})
+        if milling_state is MillingState.PAUSED:
+            self.microscope.resume_milling()
+            # self.pushButton_pause_milling.setText("Pause Milling")
+            # self.pushButton_pause_milling.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+            # self.pushButton_run_milling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+            # self.pushButton_run_milling.setText("Running...")
+            self._toggle_interactions(enabled=False, milling=True)
+            self.milling_progress_signal.emit({"msg": "Milling Resumed by User."})
+
     def update_progress_bar(self, progress_info: dict) -> None:
         """Update the milling progress bar."""
 
@@ -912,10 +945,12 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.pushButton_remove_milling_stage.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
             self.pushButton_stop_milling.setVisible(False)
         elif milling:
-            self.pushButton_run_milling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
-            self.pushButton_run_milling.setText("Running...")
             self.pushButton_stop_milling.setVisible(True)
             self.pushButton_pause_milling.setVisible(True)
+            self.pushButton_run_milling.setText("Running...")
+            self.pushButton_pause_milling.setText("Pause Milling")
+            self.pushButton_run_milling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_pause_milling.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
         else:
             self.pushButton_run_milling.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_add_milling_stage.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)

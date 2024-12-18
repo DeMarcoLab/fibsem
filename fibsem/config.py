@@ -46,7 +46,7 @@ REFERENCE_RES_SUPER = [6144, 4096]
 
 # standard imaging resolutions
 STANDARD_RESOLUTIONS = [
-    "384x256"
+    "384x256",
     "768x512",
     "1536x1024",
     "3072x2048",

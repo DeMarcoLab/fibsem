@@ -16,6 +16,7 @@ from scipy import ndimage
 from scipy.spatial import distance
 from skimage import feature, measure
 
+from fibsem import config as cfg
 from fibsem import conversions
 from fibsem.imaging import tiled
 from fibsem.microscope import FibsemMicroscope
@@ -24,6 +25,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemStagePosition,
     MicroscopeSettings,
+    ImageSettings,
     Point,
 )
 
@@ -31,7 +33,7 @@ try:
     from fibsem.segmentation import config as segcfg
     from fibsem.segmentation.utils import decode_segmap_v2
 except ImportError as e:
-    logging.warning(f"Could not import segmentation util / config {e}")
+    logging.debug(f"Could not import segmentation util / config {e}")
 
 @dataclass
 class Feature(ABC):
@@ -853,30 +855,28 @@ def detect_features(
 
 def take_image_and_detect_features(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    image_settings: ImageSettings,
     features: Tuple[Feature],
     point: Point = None,
+    checkpoint: str = cfg.DEFAULT_CHECKPOINT
 ) -> DetectedFeatures:
     
     from fibsem import acquire, utils
-    from fibsem import config as cfg
     from fibsem.segmentation.model import load_model
 
-    if settings.image.reduced_area is not None:
+    if image_settings.reduced_area is not None:
         logging.info(
             "Reduced area is not compatible with model detection, disabling..."
         )
-        settings.image.reduced_area = None
+        image_settings.reduced_area = None
     
-    settings.image.filename = f"ml-{utils.current_timestamp_v2()}"
-    settings.image.save = True
+    image_settings.filename = f"ml-{utils.current_timestamp_v2()}"
+    image_settings.save = True
 
     # take new image
-    image = acquire.new_image(microscope, settings.image)
+    image = acquire.new_image(microscope, image_settings)
 
     # load model
-
-    checkpoint = settings.protocol["options"].get("checkpoint", cfg.DEFAULT_CHECKPOINT)
     model = load_model(checkpoint=checkpoint)
 
     if isinstance(point, FibsemStagePosition):

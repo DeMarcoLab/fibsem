@@ -90,6 +90,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         # set ui elements
         AVAILABLE_BEAMS = [beam.name for beam in BeamType] # TODO: convert to microscope method
         self.selected_beam.addItems(AVAILABLE_BEAMS)
+        self.comboBox_image_resolution.addItems(cfg.STANDARD_RESOLUTIONS)
+        self.comboBox_image_resolution.setCurrentText(cfg.DEFAULT_STANDARD_RESOLUTION)
 
         # buttons
         self.pushButton_take_image.clicked.connect(self.acquire_image)
@@ -301,9 +303,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
     def get_settings_from_ui(self):
         """Get the imaging, detector and beam settings from the UI"""
 
+        resolution = list(map(int, self.comboBox_image_resolution.currentText().split("x")))
+
         # imaging settings
         self.image_settings = ImageSettings(
-            resolution=[self.spinBox_resolution_x.value(), self.spinBox_resolution_y.value()],
+            resolution=resolution,
             dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
             hfw=self.doubleSpinBox_image_hfw.value() * constants.MICRO_TO_SI,
             beam_type=BeamType[self.selected_beam.currentText()],
@@ -330,7 +334,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             beam_current=self.beam_current.value()*constants.PICO_TO_SI,
             voltage=self.beam_voltage.value()*constants.KILO_TO_SI,
             hfw = self.doubleSpinBox_image_hfw.value() * constants.MICRO_TO_SI,
-            resolution=[self.spinBox_resolution_x.value(), self.spinBox_resolution_y.value()],
+            resolution=resolution,
             dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
             stigmation = Point(self.stigmation_x.value(), self.stigmation_y.value()),
             shift = Point(self.shift_x.value() * constants.MICRO_TO_SI, self.shift_y.value()*constants.MICRO_TO_SI),
@@ -356,8 +360,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             detector_settings = self.microscope.get_detector_settings(beam_type)
 
         # imaging settings
-        self.spinBox_resolution_x.setValue(image_settings.resolution[0])
-        self.spinBox_resolution_y.setValue(image_settings.resolution[1])
+        res = image_settings.resolution
+        res_str = f"{res[0]}x{res[1]}"
+        self.comboBox_image_resolution.setCurrentText(res_str) # TODO: handle when it doesn't match exactly?
 
         self.doubleSpinBox_image_dwell_time.setValue(image_settings.dwell_time * constants.SI_TO_MICRO)
         self.doubleSpinBox_image_hfw.setValue(image_settings.hfw * constants.SI_TO_MICRO)

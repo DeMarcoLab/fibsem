@@ -80,7 +80,7 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>-337</y>
+           <y>-403</y>
            <width>728</width>
            <height>809</height>
           </rect>
@@ -92,38 +92,72 @@
              <string>Milling Settings</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_3">
-             <item row="8" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_spacing">
-               <property name="value">
-                <double>1.000000000000000</double>
+             <item row="8" column="0">
+              <widget class="QLabel" name="label_dwell_time">
+               <property name="text">
+                <string>Dwell Time (us)</string>
                </property>
               </widget>
              </item>
-             <item row="9" column="0">
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_voltage">
+               <property name="text">
+                <string>Voltage (V)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="10" column="0">
+              <widget class="QLabel" name="label_spacing">
+               <property name="text">
+                <string>Spacing</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_patterning_mode">
+               <property name="text">
+                <string>Patterning Mode</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0">
               <widget class="QLabel" name="label_preset">
                <property name="text">
                 <string>Preset</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
-              <widget class="QComboBox" name="comboBox_application_file"/>
-             </item>
              <item row="3" column="0">
+              <widget class="QLabel" name="label_milling_current">
+               <property name="text">
+                <string>Current (nA)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="comboBox_patterning_mode"/>
+             </item>
+             <item row="6" column="1">
+              <widget class="QComboBox" name="comboBox_preset"/>
+             </item>
+             <item row="10" column="1">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_spacing">
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
               <widget class="QLabel" name="label_application_file">
                <property name="text">
                 <string>Application File</string>
                </property>
               </widget>
              </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="label_rate">
-               <property name="text">
-                <string>Rate (mm3/A/s)</string>
-               </property>
-              </widget>
+             <item row="3" column="1">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
              </item>
-             <item row="5" column="1">
+             <item row="7" column="1">
               <widget class="QDoubleSpinBox" name="doubleSpinBox_rate">
                <property name="decimals">
                 <number>4</number>
@@ -142,96 +176,7 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="1">
-              <widget class="QComboBox" name="comboBox_patterning_mode"/>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_voltage">
-               <property name="text">
-                <string>Voltage (V)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
-               <property name="minimum">
-                <double>10.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000000000.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>150.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="9" column="1">
-              <widget class="QComboBox" name="comboBox_preset"/>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_milling_current">
-               <property name="text">
-                <string>Current (nA)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_hfw">
-               <property name="text">
-                <string>Horizontal Field Width (um)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="label_patterning_mode">
-               <property name="text">
-                <string>Patterning Mode</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_spot_size">
-               <property name="decimals">
-                <number>4</number>
-               </property>
-               <property name="minimum">
-                <double>0.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>100000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.010000000000000</double>
-               </property>
-               <property name="value">
-                <double>0.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0">
-              <widget class="QLabel" name="label_spot_size">
-               <property name="text">
-                <string>Spot Size (um)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QSpinBox" name="spinBox_voltage">
-               <property name="maximum">
-                <number>1000000</number>
-               </property>
-               <property name="value">
-                <number>30000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
+             <item row="8" column="1">
               <widget class="QDoubleSpinBox" name="doubleSpinBox_dwell_time">
                <property name="decimals">
                 <number>4</number>
@@ -250,22 +195,77 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="0">
-              <widget class="QLabel" name="label_dwell_time">
+             <item row="5" column="1">
+              <widget class="QComboBox" name="comboBox_application_file"/>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="label_rate">
                <property name="text">
-                <string>Dwell Time (us)</string>
+                <string>Rate (mm3/A/s)</string>
                </property>
               </widget>
              </item>
-             <item row="8" column="0">
-              <widget class="QLabel" name="label_spacing">
+             <item row="9" column="1">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_spot_size">
+               <property name="decimals">
+                <number>4</number>
+               </property>
+               <property name="minimum">
+                <double>0.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>100000.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="9" column="0">
+              <widget class="QLabel" name="label_spot_size">
                <property name="text">
-                <string>Spacing</string>
+                <string>Spot Size (um)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QSpinBox" name="spinBox_voltage">
+               <property name="maximum">
+                <number>1000000</number>
+               </property>
+               <property name="value">
+                <number>30000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_hfw">
+               <property name="text">
+                <string>Field of View (um)</string>
                </property>
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current"/>
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_hfw">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="minimum">
+                <double>10.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1000000000.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>150.000000000000000</double>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -316,6 +316,19 @@
              <string>Pattern</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_5">
+             <item row="0" column="1" colspan="2">
+              <widget class="QComboBox" name="comboBox_patterns"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_centre_x">
+               <property name="text">
+                <string>Centre (um)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="3">
+              <layout class="QGridLayout" name="gridLayout_patterns"/>
+             </item>
              <item row="1" column="1">
               <widget class="QDoubleSpinBox" name="doubleSpinBox_centre_x">
                <property name="minimum">
@@ -348,19 +361,6 @@
                 <double>0.100000000000000</double>
                </property>
               </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_centre_x">
-               <property name="text">
-                <string>Centre (um)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1" colspan="2">
-              <widget class="QComboBox" name="comboBox_patterns"/>
-             </item>
-             <item row="2" column="0" colspan="3">
-              <layout class="QGridLayout" name="gridLayout_patterns"/>
              </item>
             </layout>
            </widget>
@@ -395,6 +395,13 @@
                </property>
                <property name="checked">
                 <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QCheckBox" name="checkBox_show_advanced">
+               <property name="text">
+                <string>Show Advanced</string>
                </property>
               </widget>
              </item>

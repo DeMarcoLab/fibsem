@@ -419,8 +419,8 @@ class FibsemRectangle:
 
     left: float = 0.0
     top: float = 0.0
-    width: float = 0.0
-    height: float = 0.0
+    width: float = 1.0
+    height: float = 1.0
 
     def __post_init__(self):
         assert isinstance(self.left, float) or isinstance(
@@ -2055,9 +2055,9 @@ def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiduc
     else:
         flag = False
 
-    fiducial_area = FibsemRectangle(left, top, width, height)
+    alignment_area = FibsemRectangle(left, top, width, height)
 
-    return fiducial_area, flag
+    return alignment_area, flag
 
 DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
 

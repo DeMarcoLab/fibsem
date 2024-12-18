@@ -18,96 +18,10 @@ from fibsem.structures import (
     Point,
 )
 
-
-def check_keys(protocol: dict, required_keys: List[str]) -> bool:
-    return all([k in protocol.keys() for k in required_keys])
-
 # TODO: define the configuration for each key,
 # e.g. 
 # "width": {"type": "float", "min": 0, "max": 1000, "default": 100, "description": "Width of the rectangle"}
 # "cross_section": {"type": "str", "options": [cs.name for cs in CrossSectionPattern], "default": "Rectangle", "description": "Cross section of the milling pattern"}
-
-    
-# REQUIRED_KEYS = {
-#     "Rectangle": ("width", "height", "depth", "rotation","passes", "scan_direction", "cross_section", "time"),
-#     "Line": ("start_x", "end_x", "start_y", "end_y", "depth"),
-#     "Circle": ("radius", "depth"),
-#     "Trench": (
-#         "lamella_width",
-#         "lamella_height",
-#         "trench_height",
-#         "size_ratio",
-#         "offset",
-#         "depth",
-#         "cross_section",
-#         "time", 
-#     ),
-#     "Horseshoe": (
-#         "lamella_width",
-#         "lamella_height",
-#         "trench_height",
-#         "size_ratio",
-#         "offset",
-#         "side_offset",
-#         "side_width",
-#         "depth",
-#         "scan_direction",
-#         "cross_section",
-#     ),
-#     "HorseshoeVertical": (
-#         "width",
-#         "height",
-#         "side_trench_width",
-#         "top_trench_height",
-#         "depth",
-#         "scan_direction",
-#         "inverted",
-#         "cross_section", 
-#     ),
-#     "SerialSection": (
-#         "section_thickness",
-#         "section_width",
-#         "section_depth",
-#         "side_width",
-#         "side_height",
-#         "side_depth",
-#         "inverted",
-#         "use_side_patterns",
-#     ),
-#     "RectangleOffset": ("width", "height", "depth", "scan_direction", "cross_section", "offset", "inverted"),
-#     "Fiducial": ("height", "width", "depth", "rotation", "cross_section"),
-#     "Undercut": (
-#         "height",
-#         "width",
-#         "depth",
-#         "trench_width",
-#         "rhs_height",
-#         "h_offset",
-#         "cross_section",
-#     ),
-#     "MicroExpansion": (
-#         "height",
-#         "width",
-#         "depth",
-#         "distance",
-#     ),
-#     "ArrayPattern": ("height", "width", "depth", "n_columns", "n_rows", 
-#                     "pitch_vertical", "pitch_horizontal", 
-#                     "passes", "scan_direction", "cross_section"),
-#     "WaffleNotch": (
-#         "vheight",
-#         "vwidth",
-#         "hheight",
-#         "hwidth",
-#         "depth",
-#         "distance",
-#         "inverted",
-#         "cross_section",
-#     ),
-#     "Clover": ("radius", "depth"),
-#     "TriForce": ("height", "width", "depth"),
-#     "Trapezoid": ("inner_width", "outer_width", "trench_height", "depth", "distance", "n_rectangles", "overlap"),
-# }
 
 DEFAULT_POINT_DDICT = {"x": 0.0, "y": 0.0}
 
@@ -138,6 +52,12 @@ class BasePattern(ABC):
     @property
     def required_attributes(self) -> Tuple[str]:
         return [field.name for field in fields(self) if field.name not in CORE_PATTERN_ATTRIBUTES]
+    
+    @property
+    def advanced_attributes(self) -> List[str]:
+        if hasattr(self, "_advanced_attributes"):
+            return self._advanced_attributes
+        return []
 
 @dataclass
 class BitmapPattern(BasePattern):
@@ -203,6 +123,7 @@ class RectanglePattern(BasePattern):
     point: Point = Point()
     shapes: List[FibsemPatternSettings] = None
     name: str = "Rectangle"
+    _advanced_attributes = ["time", "passes", "offset", "invert_offset"] # TODO: add for other patterns
 
     def define(self) -> List[FibsemRectangleSettings]:
 
