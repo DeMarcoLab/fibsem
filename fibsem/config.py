@@ -31,7 +31,6 @@ SUPPORTED_COORDINATE_SYSTEMS = [
     "stage",
 ]
 
-
 REFERENCE_HFW_WIDE = 2750e-6
 REFERENCE_HFW_LOW = 900e-6
 REFERENCE_HFW_MEDIUM = 400e-6
@@ -45,10 +44,27 @@ REFERENCE_RES_MEDIUM = [1536, 1024]
 REFERENCE_RES_HIGH = [3072, 2048]
 REFERENCE_RES_SUPER = [6144, 4096]
 
+# standard imaging resolutions
+STANDARD_RESOLUTIONS = [
+    "384x256"
+    "768x512",
+    "1536x1024",
+    "3072x2048",
+    "6144x4096",
+]
+SQUARE_RESOLUTIONS = [
+    "256x256",
+    "512x512",
+    "1024x1024",
+    "2048x2048",
+    "4096x4096",
+    "8192x8192",
+]
+AVAILABLE_RESOLUTIONS = SQUARE_RESOLUTIONS + STANDARD_RESOLUTIONS
+DEFAULT_STANDARD_RESOLUTION = "1536x1024"
+DEFAULT_SQUARE_RESOLUTION = "1024x1024"
+
 MILL_HFW_THRESHOLD = 0.01  # 1.0% of the image
-
-
-
 
 BASE_PATH = os.path.dirname(
     fibsem.__path__[0]
@@ -98,19 +114,17 @@ def load_yaml(fname):
 
     return config
 
-
-__SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
-__DEFAULT_MANUFACTURER__ = "Thermo"
-__DEFAULT_IP_ADDRESS__ = "192.168.0.1"
-__SUPPORTED_PLASMA_GASES__ = ["Argon", "Oxygen", "Nitrogen", "Xenon"]
-
+AVAILABLE_MANUFACTURERS = ["Thermo", "Tescan", "Demo"]
+DEFAULT_MANUFACTURER = "Thermo"
+DEFAULT_IP_ADDRESS = "192.168.0.1"
+SUPPORTED_PLASMA_GASES = ["Argon", "Oxygen", "Nitrogen", "Xenon"]
 
 def get_default_user_config() -> dict:
     """Return the default configuration."""
     return {
         "name":                           "default-configuration",       # a descriptive name for your configuration 
-        "ip_address":                     __DEFAULT_IP_ADDRESS__,        # the ip address of the microscope PC
-        "manufacturer":                   __DEFAULT_MANUFACTURER__,      # the microscope manufactuer, Thermo, Tescan or Demo                       
+        "ip_address":                     DEFAULT_IP_ADDRESS,            # the ip address of the microscope PC
+        "manufacturer":                   DEFAULT_MANUFACTURER,          # the microscope manufactuer, Thermo, Tescan or Demo                       
         "rotation-reference":             0,                             # the reference rotation value (rotation when loading)  [degrees]
         "shuttle-pre-tilt":               35,                            # the pre-tilt of the shuttle                           [degrees]
         "electron-beam-eucentric-height": 7.0e-3,                        # the eucentric height of the electron beam             [metres]
@@ -146,8 +160,7 @@ if not os.path.exists(DEFAULT_CONFIGURATION_PATH):
     ] = MICROSCOPE_CONFIGURATION_PATH
     DEFAULT_CONFIGURATION_PATH = MICROSCOPE_CONFIGURATION_PATH
         
-print(f"Default configuration: {DEFAULT_CONFIGURATION_NAME}")
-print(f"Default configuration path: {DEFAULT_CONFIGURATION_PATH}")
+print(f"Default configuration {DEFAULT_CONFIGURATION_NAME}. Configuration Path: {DEFAULT_CONFIGURATION_PATH}")
 
 def add_configuration(configuration_name: str, path: str):
     """Add a new configuration to the user configurations file."""
@@ -200,20 +213,10 @@ DEFAULT_CONFIGURATION_VALUES = {
 
 # machine learning
 HUGGINFACE_REPO = "patrickcleeve/autolamella"
-__DEFAULT_CHECKPOINT__ = "autolamella-mega-20240107.pt"
-
-
-
+DEFAULT_CHECKPOINT = "autolamella-mega-20240107.pt"
 
 # feature flags
-
-_LIVE_IMAGING_ENABLED = False
-_MINIMAP_VISUALISATION = False
-_MINIMAP_MOVE_WITH_TRANSLATION = False
-_MINIMAP_ACQUIRE_AFTER_MOVEMENT = False
-_APPLY_CONFIGURATION_ENABLED = True
-
-
+APPLY_CONFIGURATION_ENABLED = True
 
 # tescan manipulator
 

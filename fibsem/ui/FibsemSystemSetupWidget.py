@@ -177,7 +177,7 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
         _microscope_connected = bool(self.microscope)
         self.pushButton_apply_configuration.setVisible(_microscope_connected)
-        self.pushButton_apply_configuration.setEnabled(_microscope_connected and cfg._APPLY_CONFIGURATION_ENABLED)
+        self.pushButton_apply_configuration.setEnabled(_microscope_connected and cfg.APPLY_CONFIGURATION_ENABLED)
 
         if _microscope_connected:
             self.pushButton_connect_to_microscope.setText("Microscope Connected")

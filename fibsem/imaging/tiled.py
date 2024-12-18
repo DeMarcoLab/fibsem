@@ -3,12 +3,12 @@ import logging
 import os
 import time
 from copy import deepcopy
-from typing import List
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from fibsem import acquire, conversions, utils
+from fibsem import acquire, conversions
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
@@ -17,12 +17,31 @@ from fibsem.structures import (
     ImageSettings,
     Point,
 )
+from fibsem.ui.napari.utilities import is_inside_image_bounds
 
-def tiled_image_acquisition(microscope: FibsemMicroscope, 
-                           image_settings: ImageSettings, 
-                           grid_size:float, 
-                        tile_size:float, 
-                        overlap: float = 0.0, cryo: bool = True, parent_ui = None) -> dict: 
+POSITION_COLOURS = ["lime", "blue", "cyan", "magenta", "hotpink", "yellow", "orange", "red"]
+
+##### TILED ACQUISITION
+def tiled_image_acquisition(
+    microscope: FibsemMicroscope,
+    image_settings: ImageSettings,
+    grid_size: float,
+    tile_size: float,
+    overlap: float = 0.0,
+    cryo: bool = True,
+    parent_ui=None,
+) -> dict: 
+    """Tiled image acquisition. Currently only supports square grids with no overlap.
+    Args:
+        microscope: The microscope connection.
+        image_settings: The image settings.
+        grid_size: The size of the entire final image.
+        tile_size: The size of the tiles.
+        overlap: The overlap between tiles in pixels. Currently not supported.
+        cryo: Whether to use cryo mode (histogram equalisation).
+        parent_ui: The parent UI for progress updates.
+    Returns:
+        A dictionary containing the acquisition details for stitching."""
 
     # TODO: OVERLAP + STITCH
     n_rows, n_cols = int(grid_size // tile_size), int(grid_size // tile_size)
@@ -34,7 +53,7 @@ def tiled_image_acquisition(microscope: FibsemMicroscope,
     image_settings.autogamma = False
 
     logging.info(f"TILE COLLECTION: {image_settings.filename}")
-    logging.info(f"Taking n_rows={n_rows}, n_cols={n_cols} ({n_rows*n_cols}) images. Grid Size = {grid_size*1e6} um, Tile Size = {tile_size*1e6} um")
+    logging.info(f"Taking nrows={n_rows}, ncols={n_cols} ({n_rows*n_cols}) images. TotalFoV={grid_size*1e6} um, TileFoV={tile_size*1e6} um")
     logging.info(f"dx: {dx*1e6} um, dy: {dy*1e6} um")
 
     # start in the middle of the grid
@@ -61,17 +80,18 @@ def tiled_image_acquisition(microscope: FibsemMicroscope,
     dyg *= -1
 
     microscope.stable_move(dx=-dxg, dy=-dyg, beam_type=image_settings.beam_type, static_wd=True)
-    state = microscope.get_microscope_state()
+    start_position = microscope.get_stage_position()
     images = []
 
     # stitched image
     shape = image_settings.resolution
-    arr = np.zeros(shape=(n_rows*shape[0], n_cols*shape[1]), dtype=np.uint8)
-    _counter = 0
-    _total = n_rows*n_cols
+    full_shape = (shape[0]*n_rows, shape[1]*n_cols)
+    arr = np.zeros(shape=(full_shape), dtype=np.uint8)
+    n_tiles_acquired = 0
+    total_tiles = n_rows*n_cols
     for i in range(n_rows):
 
-        microscope.safe_absolute_stage_movement(state.stage_position)
+        microscope.safe_absolute_stage_movement(start_position)
         
         img_row = []
         microscope.stable_move(
@@ -88,16 +108,26 @@ def tiled_image_acquisition(microscope: FibsemMicroscope,
                 if parent_ui.STOP_ACQUISITION:
                     raise Exception("User Stopped Acquisition")
 
-            logging.info(f"ACQUIRING IMAGE {i}, {j}")
+            logging.info(f"Acquiring Tilet {i}, {j}")
             image = acquire.new_image(microscope, image_settings)
 
             # stitch image
             arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = image.data
             
             if parent_ui:
-                _counter+=1 
-                parent_ui.tile_acquisition_progress_signal.emit({"msg": "Tile Collected", "i": i, "j": j, 
-                    "n_rows": n_rows, "n_cols": n_cols, "image": arr, "counter": _counter, "total": _total })
+                n_tiles_acquired+=1
+                parent_ui.tile_acquisition_progress_signal.emit(
+                    {
+                        "msg": "Tile Collected",
+                        "i": i,
+                        "j": j,
+                        "n_rows": n_rows,
+                        "n_cols": n_cols,
+                        "image": arr,
+                        "counter": n_tiles_acquired,
+                        "total": total_tiles,
+                    }
+                )
                 time.sleep(1)
 
             img_row.append(image)
@@ -115,24 +145,14 @@ def tiled_image_acquisition(microscope: FibsemMicroscope,
 
     return ddict
 
-
 # TODO: stitch while collecting
-def stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemImage:
-
-    # arr = np.array(images)
-    # n_rows, n_cols = arr.shape[0], arr.shape[1]
-    # shape = arr[0, 0].data.shape
-
-    # arr = np.zeros(shape=(n_rows*shape[0], n_cols*shape[1]), dtype=np.uint8)
-
-    # for i in range(n_rows):
-    #     for j in range(n_cols):
-    #         arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = images[i][j].data
-            
-    #         if parent_ui:
-    #             parent_ui.tile_acquisition_progress_signal.emit({"msg": "Tile Stitched", "i": i, "j": j, 
-    #                 "n_rows": n_rows, "n_cols": n_cols, "image": arr })
-    
+def stitch_images(images: List[List[FibsemImage]], ddict: dict, parent_ui = None) -> FibsemImage:
+    """Stitch an array (2D) of images together. Assumes images are ordered in a grid with no overlap.
+    Args:
+        images: The images.
+        parent_ui: The parent UI for progress updates.
+    Returns:
+        The stitched image."""    
     if parent_ui:
         total = ddict["n_rows"] * ddict["n_cols"]
         parent_ui.tile_acquisition_progress_signal.emit({"msg": "Stitching Tiles", "counter": total, "total": total})
@@ -145,6 +165,8 @@ def stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemIma
     image.metadata.image_settings.hfw = deepcopy(float(ddict["grid_size"]))
     image.metadata.image_settings.resolution = deepcopy([arr.shape[0], arr.shape[1]])
 
+    # TODO: support overwrite protection here, very annoying to overwrite
+
     filename = os.path.join(image.metadata.image_settings.path, f'{ddict["prev-filename"]}')
     image.save(filename)
     # for cryo need to histogram equalise
@@ -154,68 +176,48 @@ def stitch_images(images, ddict: dict, overlap=0, parent_ui = None) -> FibsemIma
     filename = os.path.join(image.metadata.image_settings.path, f'{ddict["prev-filename"]}-autogamma')
     image.save(filename)
 
-    # save ddict as yaml
+    # for garbage collection
     del ddict["images"]
     del ddict["big_image"]
 
-    ddict["image_settings"] = ddict["image_settings"].to_dict()
-    ddict["start_state"] = ddict["start_state"].to_dict()
-    filename = os.path.join(filename, f'{ddict["prev-filename"]}') # subdir
-    utils.save_yaml(filename, ddict) 
-    # NOTE: saving the image / yaml is most time consuming
-
     return image
 
-
+# TODO: add support for overlap, nrows, ncols
 def tiled_image_acquisition_and_stitch(microscope: FibsemMicroscope, 
                                   image_settings: ImageSettings, 
                                   grid_size: float, 
                                   tile_size: float, 
                                   overlap: int = 0, cryo: bool = True, 
                                   parent_ui = None) -> FibsemImage:
-
-    ddict = tiled_image_acquisition(microscope, image_settings, grid_size, tile_size, cryo=cryo, parent_ui=parent_ui)
-    image = stitch_images(ddict["images"], ddict, overlap=overlap, parent_ui=parent_ui)
+    """Acquire a tiled image and stitch it together. Currently only supports square grids with no overlap.
+    Args:
+        microscope: The microscope connection.
+        image_settings: The image settings.
+        grid_size: The size of the entire final image.
+        tile_size: The size of the tiles.
+        overlap: The overlap between tiles in pixels. Currently not supported.
+        cryo: Whether to use cryo mode (histogram equalisation).
+        parent_ui: The parent UI for progress updates.
+    Returns:
+        The stitched image."""
+    
+    ddict = tiled_image_acquisition(microscope=microscope, 
+                                    image_settings=image_settings, 
+                                    grid_size=grid_size, tile_size=tile_size, 
+                                    cryo=cryo, parent_ui=parent_ui)
+    image = stitch_images(images=ddict["images"], ddict=ddict, parent_ui=parent_ui)
 
     return image
 
-
-def _stitch_arr(images:List[FibsemImage], dtype=np.uint8):
-
-    arr = np.array(images)
-    n_rows, n_cols = arr.shape[0], arr.shape[1]
-    shape = arr[0, 0].data.shape
-
-    arr = np.zeros(shape=(n_rows*shape[0], n_cols*shape[1]), dtype=dtype)
-
-    for i in range(n_rows):
-        for j in range(n_cols):
-            arr[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = images[i][j].data  
-
-    return arr
-
-
-
-def _create_tiles(image: np.ndarray, n_rows, n_cols, tile_size, overlap=0):
-    # create tiles
-    tiles = []
-    for i in range(n_rows):
-
-        for j in range(n_cols):
-
-            # get tile
-            tile = image[i*tile_size:(i+1)*tile_size, j*tile_size:(j+1)*tile_size]
-
-            # append to list
-            tiles.append(tile)
-
-    tiles = np.array(tiles)
-
-    return tiles
-
-
-
-def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
+##### REPROJECTION
+# TODO: move these to fibsem.imaging.reprojection?
+def calculate_reprojected_stage_position(image: FibsemImage, pos: FibsemStagePosition) -> Point:
+    """Calculate the reprojected stage position on an image.
+    Args:
+        image: The image.
+        pos: The stage position.
+    Returns:
+        The reprojected stage position on the image."""
 
     # difference between current position and image position
     delta = pos - image.metadata.microscope_state.stage_position
@@ -246,8 +248,18 @@ def _calculate_repojection(image: FibsemImage, pos: FibsemStagePosition):
 
     return point
 
+def reproject_stage_positions_onto_image(
+        image:FibsemImage, 
+        positions: List[FibsemStagePosition], 
+        bound: bool=False) -> List[Point]:
+    """Reproject stage positions onto an image. Assumes image is flat to beam.
+    Args:
+        image: The image.
+        positions: The positions.
+        bound: Whether to only return points inside the image.
+    Returns:
+        The reprojected stage positions on the image plane."""
 
-def _reproject_positions(image:FibsemImage, positions: List[FibsemStagePosition], _bound: bool=False):
     # reprojection of positions onto image coordinates
     points = []
     for pos in positions:
@@ -270,57 +282,50 @@ def _reproject_positions(image:FibsemImage, positions: List[FibsemStagePosition]
         # r needs to be 180 degrees different
         # currently only one way: Flat to Ion -> Flat to Electron
         dr = abs(np.rad2deg(image.metadata.microscope_state.stage_position.r - pos.r))
-        # print("dr: ", dr)
         if np.isclose(dr, 180, atol=2):     
-            # print("transforming position")
             pos = _transform_position(pos)
 
-        pt = _calculate_repojection(image, pos)
+        pt = calculate_reprojected_stage_position(image, pos)
         pt.name = pos.name
         
-        if _bound:
-            if pt.x<0 or pt.x>image.data.shape[1] or pt.y<0 or pt.y>image.data.shape[0]:
-                continue 
+        if bound and not is_inside_image_bounds([pt.y, pt.x], image.data.shape):
+            continue
         
         points.append(pt)
     
     return points
 
+def plot_stage_positions_on_image(
+        image: FibsemImage, 
+        positions: List[FibsemStagePosition], 
+        show: bool = False, 
+        bound: bool= True) -> plt.Figure:
+    """Plot stage positions reprojected on an image as matplotlib figure. Assumes image is flat to beam.
+    Args:
+        image: The image.
+        positions: The positions.
+        show: Whether to show the plot.
+        bound: Whether to only plot points inside the image.
+    Returns:
+        The matplotlib figure."""
 
+    # reproject stage positions onto image 
+    points = reproject_stage_positions_onto_image(image=image, positions=positions)
 
-
-def _plot_positions(image: FibsemImage, positions: List[FibsemStagePosition], show:bool=False, minimap: bool=False, 
-    _clip: bool=False, _bound: bool= True) -> plt.Figure:
-
-    points = _reproject_positions(image, positions)
-
-    # plot on matplotlib
+    # construct matplotlib figure
     fig = plt.figure(figsize=(15, 15))
     plt.imshow(image.data, cmap="gray")
 
-    COLOURS = ["lime", "blue", "cyan", "magenta", 
-        "hotpink", "yellow", "orange", "red"]
-    for i, (pos, pt) in enumerate(zip(positions, points)):
+    for i, pt in enumerate(points):
 
         # if points outside image, don't plot
-        if _bound:
-            if pt.x<0 or pt.x>image.data.shape[1] or pt.y<0 or pt.y>image.data.shape[0]:
-                continue          
-        
-        # clip points to image 
-        if _clip:
-            pt.x = np.clip(pt.x, 0, image.data.shape[1])
-            pt.y = np.clip(pt.y, 0, image.data.shape[0])
+        if bound and not is_inside_image_bounds([pt.y, pt.x], image.data.shape):
+            continue     
 
-
-        c =COLOURS[i%len(COLOURS)]
-        plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pos.name}")
-        if minimap:
-            fontsize = 30
-        else:
-            fontsize = 14
-        # draw filename next to point
-        plt.text(pt.x-225, pt.y-50, pos.name, fontsize=fontsize, color=c, alpha=0.75)
+        c = POSITION_COLOURS[i%len(POSITION_COLOURS)]
+        plt.plot(pt.x, pt.y, ms=20, c=c, marker="+", markeredgewidth=2, label=f"{pt.name}")
+        # draw position name next to point
+        plt.text(pt.x-225, pt.y-50, pt.name, fontsize=14, color=c, alpha=0.75)
 
     plt.axis("off")
     if show:
@@ -328,60 +333,52 @@ def _plot_positions(image: FibsemImage, positions: List[FibsemStagePosition], sh
 
     return fig
 
-
-# TODO: these probs should be somewhere else
-def _convert_image_coord_to_position(microscope, settings, image, coords) -> FibsemStagePosition:
-
-    # microscope coordinates
+def convert_image_coord_to_stage_position(
+    microscope: FibsemMicroscope, image: FibsemImage, coord: Tuple[float, float]
+) -> FibsemStagePosition:
+    """Convert a coordinate in the image to a stage position. Assume image is flat to beam.
+    Args:
+        microscope: The microscope connection.
+        image: The image
+        coord: The coordinate in the image (y,x).
+    Returns:
+        The stage position.
+    """
+    # convert image to microscope image coordinates
     point = conversions.image_to_microscope_image_coordinates(
-        Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x,
+        coord=Point(x=coord[1], y=coord[0]),
+        image=image.data,
+        pixelsize=image.metadata.pixel_size.x,
+    )
+    # project as stage position
+    stage_position = microscope.project_stable_move(
+        dx=point.x,
+        dy=point.y,
+        beam_type=image.metadata.image_settings.beam_type,
+        base_position=image.metadata.microscope_state.stage_position,
     )
 
-    _new_position = microscope.project_stable_move( 
-            dx=point.x, dy=point.y, 
-            beam_type=image.metadata.image_settings.beam_type, 
-            base_position=image.metadata.microscope_state.stage_position)
+    return stage_position
 
-    return _new_position
+def convert_image_coordinates_to_stage_positions(
+    microscope: FibsemMicroscope, image: FibsemImage, coords: List[Tuple[float, float]]
+) -> List[FibsemStagePosition]:
+    """Convert a list of coordinates in the image to a list of stage positions. Assume image is flat to beam.
+    Args:
+        microscope: The microscope connection.
+        image: The image
+        coords: The coordinates in the image (y,x).
+    Returns:
+        The stage positions."""
 
-
-def _convert_image_coords_to_positions(microscope, settings, image, coords) -> List[FibsemStagePosition]:
-
-    positions = []
+    stage_positions = []
     for i, coord in enumerate(coords):
-        positions.append(_convert_image_coord_to_position(microscope, settings, image, coord))
-        positions[i].name = f"Position {i:02d}"
-    return positions
-
-# deprecated
-# def _minimap(minimap_image: FibsemImage, positions: List[FibsemStagePosition]):
-#         import matplotlib.pyplot as plt
-#         from matplotlib.backends.backend_agg import FigureCanvasAgg
-#         from PIL import Image
-#         from PyQt5.QtGui import QImage, QPixmap
-#         pil_image = None
-
-#         plt.close("all")
-#         fig = _plot_positions(image=minimap_image, positions = positions, minimap=True)
-#         plt.tight_layout(pad=0)
-#         canvas = FigureCanvasAgg(fig)
-
-#         # Render the figure onto the canvas
-#         canvas.draw()
-
-#         # Get the RGBA buffer from the canvas
-#         buf = canvas.buffer_rgba()
-#         # Convert the buffer to a PIL Image
-#         pil_image = Image.frombuffer('RGBA', canvas.get_width_height(), buf, 'raw', 'RGBA', 0, 1)
-#         pil_image = pil_image.resize((300, 300), Image.ANTIALIAS)
-#         # Convert the PIL image to a QImage
-#         image_qt = QImage(pil_image.tobytes(), pil_image.width, pil_image.height, QImage.Format_RGBA8888)
-#         # Convert the QImage to a QPixmap 
-#         qpixmap = QPixmap.fromImage(image_qt)
-        
-#         return qpixmap
-
-
+        stage_position = convert_image_coord_to_stage_position(
+            microscope=microscope, image=image, coord=coord
+        )
+        stage_position.name = f"Position {i:02d}"
+        stage_positions.append(stage_position)
+    return stage_positions
 
 ##### THERMO ONLY
 
@@ -405,8 +402,12 @@ def _to_raw_coordinate_system(pos: FibsemStagePosition):
     return raw_position
 
 
-def _transform_position(pos: FibsemStagePosition):
-    """This function takes in a position flat to a beam, and outputs the position if stage was rotated / tilted flat to the other beam)"""
+def _transform_position(pos: FibsemStagePosition) -> FibsemStagePosition:
+    """This function takes in a position flat to a beam, and outputs the position if stage was rotated / tilted flat to the other beam).
+    Args:
+        pos: The position flat to the beam.
+    Returns:
+        The position flat to the other beam."""
 
     specimen_position = _to_specimen_coordinate_system(pos)
     # print("raw      pos: ", pos)
@@ -427,29 +428,6 @@ def _transform_position(pos: FibsemStagePosition):
     transformed_position.name = pos.name
 
     # print("trans   pos: ", transformed_position)
+    logging.info(f"Initial position {pos} was transformed to {transformed_position}")
 
     return transformed_position
-
-
-
-
-def _update_image_region(microscope: FibsemMicroscope, image_settings: ImageSettings, image: FibsemImage, position: FibsemStagePosition) -> FibsemImage:
-    
-    region_image = acquire.new_image(microscope, image_settings)
-    rows,cols = region_image.data.shape[0], region_image.data.shape[1]
-
-    position_point = _reproject_positions(image, [position])[0]
-
-    ymin = max(0, int(position_point.y)-rows//2)
-    xmin = max(0, int(position_point.x)-cols//2)
-
-    ymax = min(ymin+rows, image.data.shape[0])
-    xmax = min(xmin+cols, image.data.shape[1])
-
-    width = xmax - xmin
-    height = ymax - ymin
-
-    # overwrite the image with the region image, but only inside the image dimensions
-    image.data[ymin:ymax, xmin:xmax] = region_image.data[:height, :width]
-
-    return image

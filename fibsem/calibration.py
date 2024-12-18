@@ -289,7 +289,7 @@ def _calibrate_manipulator_thermo(microscope:FibsemMicroscope, settings:Microsco
     def align_manipulator_to_eucentric(microsscope: FibsemMicroscope, settings:MicroscopeSettings, parent_ui, validate: bool) -> None:
         return NotImplemented
 
-    settings.protocol["options"].get("checkpoint", cfg.__DEFAULT_CHECKPOINT__)
+    settings.protocol["options"].get("checkpoint", cfg.DEFAULT_CHECKPOINT)
     model = load_model(settings.protocol["options"]["checkpoint"])
     settings.image.autocontrast = True
 

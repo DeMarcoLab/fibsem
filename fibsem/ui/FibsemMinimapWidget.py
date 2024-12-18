@@ -1,5 +1,4 @@
 import logging
-import os
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
@@ -16,8 +15,8 @@ from PyQt5.QtCore import pyqtSignal
 from scipy.ndimage import median_filter
 
 from fibsem import config as cfg
-from fibsem import constants, conversions, utils
-from fibsem.imaging import _tile
+from fibsem import constants, conversions
+from fibsem.imaging import tiled
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import FibsemMillingStage, get_milling_stages
 from fibsem.structures import (
@@ -41,24 +40,13 @@ from fibsem.ui.napari.properties import (
 from fibsem.ui.napari.utilities import draw_positions_in_napari, is_inside_image_bounds
 from fibsem.ui.qtdesigner_files import FibsemMinimapWidget as FibsemMinimapWidgetUI
 
-PATH = os.path.join(cfg.DATA_PATH, "tile")
-os.makedirs(PATH, exist_ok=True)
-
 TRENCH_KEY, MILL_ROUGH_KEY = "trench", "mill_rough" # TODO: replace with autolamella.protocol.validation
 COLOURS = CORRELATION_IMAGE_LAYER_PROPERTIES["colours"]
 
-IMAGE_RESOLUTIONS = [
-    "256x256",
-    "512x512",
-    "1024x1024",
-    "2048x2048",
-    "4096x4096",
-    "8192x8192",
-]
-DEFAULT_RESOLUTION = "1024x1024"
-
 TILE_COUNTS = [f"{i}x{i}" for i in range(1, 16)]
 DEFAULT_TILE_COUNT = TILE_COUNTS[2] # 3x3 grid
+DEFAULT_FOV = 500 # um
+DEFAULT_DWELL_TIME = 1.0 # us
 
 def generate_gridbar_image(shape: Tuple[int, int], pixelsize: float, spacing: float, width: float) -> FibsemImage:
     """Generate an synthetic image of cryo gridbars."""
@@ -73,7 +61,6 @@ def generate_gridbar_image(shape: Tuple[int, int], pixelsize: float, spacing: fl
 
     # TODO: add metadata
     return FibsemImage(data=arr)
-
 
 def _get_total_fov(tile_count: int, fov: float) -> float:
     """Calculate the total field of view for the tile collection."""
@@ -130,8 +117,10 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
         self.lineEdit_tile_path.setText(str(self.image_widget.image_settings.path)) # set default path
-        self.comboBox_tile_resolution.addItems(IMAGE_RESOLUTIONS)
-        self.comboBox_tile_resolution.setCurrentText(DEFAULT_RESOLUTION)
+        self.doubleSpinBox_tile_fov.setValue(DEFAULT_FOV)
+        self.doubleSpinBox_tile_dwell_time.setValue(DEFAULT_DWELL_TIME)
+        self.comboBox_tile_resolution.addItems(cfg.SQUARE_RESOLUTIONS)
+        self.comboBox_tile_resolution.setCurrentText(cfg.DEFAULT_SQUARE_RESOLUTION)
         self.comboBox_tile_count.addItems(TILE_COUNTS)
         self.comboBox_tile_count.setCurrentText(DEFAULT_TILE_COUNT)
         self.comboBox_tile_count.currentIndexChanged.connect(self.update_imaging_display)
@@ -165,7 +154,6 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         
         if hasattr(self.parent, "lamella_created_signal"):
             self.parent.lamella_created_signal.connect(self.update_from_created_lamella)
-            logging.info(f"CONNECTED LAMELLA SIGNAL")
 
         # handle movement progress
         self.movement_widget.movement_progress_signal.connect(self.handle_movement_progress)
@@ -326,7 +314,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
                                     cryo: bool=True):
         """Threaded worker for tiled acquisition and stitching."""
         try:
-            self.image = _tile.tiled_image_acquisition_and_stitch(
+            self.image = tiled.tiled_image_acquisition_and_stitch(
                 microscope=microscope,
                 image_settings=image_settings,
                 grid_size=grid_size,
@@ -361,7 +349,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.STOP_ACQUISITION: bool = True
 
     def toggle_gridbar_display(self):
-
+        """Toggle the display of the synthetic grid bar overlay."""
         show_gridbar = self.checkBox_gridbar.isChecked()
         self.label_gb_spacing.setVisible(show_gridbar)
         self.label_gb_width.setVisible(show_gridbar)
@@ -385,7 +373,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
                 self.pushButton_enable_correlation.setEnabled(False)
 
     def update_gridbar_layer(self):
-        
+        """Update the synthetic grid bar overlay."""
         # update gridbars image
         spacing = self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI
         width = self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI
@@ -401,6 +389,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             self.add_correlation_image(gridbars_image, is_gridbar=True)
 
     def toggle_interaction(self, enable: bool = True):
+        """Toggle the interactivity of the UI elements."""
         self.pushButton_run_tile_collection.setEnabled(enable)
         self.pushButton_cancel_acquisition.setVisible(not enable)
         self.progressBar_acquisition.setVisible(not enable)
@@ -446,7 +435,9 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             if not tmp:
                 self.image = image
             
-            arr = median_filter(image.data, size=OVERVIEW_IMAGE_LAYER_PROPERTIES["median_filter_size"])
+            # apply a median filter to the image
+            arr = median_filter(image.data, 
+                                size=OVERVIEW_IMAGE_LAYER_PROPERTIES["median_filter_size"])
 
             try:
                 self.image_layer.data = arr
@@ -613,8 +604,8 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         idx = self.comboBox_tile_position.currentIndex()
         if idx == -1:
             return
-        logging.info("Removing position...")
         stage_position = self.positions[idx]
+        logging.info(f"Removing position...{stage_position.name}")
         self.positions.remove(stage_position)
         self.stage_position_removed_signal.emit(stage_position)
 
@@ -656,7 +647,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
     def draw_current_stage_position(self):
         """Draws the current stage position on the image."""
         current_stage_position = deepcopy(self.microscope.get_stage_position())
-        points = _tile._reproject_positions(self.image, [current_stage_position])
+        points = tiled.reproject_stage_positions_onto_image(self.image, [current_stage_position])
         points[0].name = "Current Position"
         
         draw_positions_in_napari(viewer=self.viewer, 
@@ -672,18 +663,16 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         # almost all the slow down comes from the linked callbacks from autolamella. probably saving and re-drawing milling patterns
         # we should delay that until the user requests it
 
-        logging.info("Drawing Reprojected Positions...")
-
         if self.image and self.positions:
+            logging.info("Drawing Reprojected Positions...")
 
-            points = _tile._reproject_positions(self.image, self.positions)
+            points = tiled.reproject_stage_positions_onto_image(self.image, self.positions)
 
             position_layer = draw_positions_in_napari(viewer=self.viewer, 
                                 points=points, 
                                 size_px=75,
                                 show_names=True, 
                                 layer_name="saved-stage-positions")
-            
 
             show_patterns: bool = self.checkBox_pattern_overlay.isChecked()
             if show_patterns: 
@@ -812,17 +801,3 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
 
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 
-
-def main():
-
-    viewer = napari.Viewer(ndisplay=2)
-    microscope, settings = utils.setup_session()
-    minimap_widget = FibsemMinimapWidget(microscope, settings, viewer=viewer)
-    viewer.window.add_dock_widget(
-        minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
-    )
-    napari.run()
-
-
-if __name__ == "__main__":
-    main()

@@ -17,7 +17,7 @@ from scipy.spatial import distance
 from skimage import feature, measure
 
 from fibsem import conversions
-from fibsem.imaging import _tile
+from fibsem.imaging import tiled
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
@@ -876,12 +876,12 @@ def take_image_and_detect_features(
 
     # load model
 
-    checkpoint = settings.protocol["options"].get("checkpoint", cfg.__DEFAULT_CHECKPOINT__)
+    checkpoint = settings.protocol["options"].get("checkpoint", cfg.DEFAULT_CHECKPOINT)
     model = load_model(checkpoint=checkpoint)
 
     if isinstance(point, FibsemStagePosition):
         logging.debug(f"Reprojecting point {point} to image coordinates...")
-        points = _tile._reproject_positions(image, [point], _bound=True)
+        points = tiled.reproject_stage_positions_onto_image(image=image, positions=[point], bound=True)
         point = points[0] if len(points) == 1 else None
         logging.debug(f"Reprojected point: {point}")
 
@@ -890,8 +890,6 @@ def take_image_and_detect_features(
         deepcopy(image), model, features=features, pixelsize=image.metadata.pixel_size.x, point = point
     )
     return det
-
-
 
 def plot_detection(det: DetectedFeatures):
 
@@ -1146,7 +1144,7 @@ def _detect_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings
                                 filter=False, point=None)
 
     # convert image coordinates to microscope coordinates # TODO: check why we reverse the points axis?
-    positions = _tile._convert_image_coords_to_positions(microscope, settings, image, [Point(f.px.y, f.px.x) for f in features])
+    positions = tiled.convert_image_coordinates_to_stage_positions(microscope, image, [Point(f.px.y, f.px.x) for f in features])
 
     return positions, features
 
