@@ -1,6 +1,5 @@
 
 import logging
-import time
 from copy import deepcopy
 from pprint import pprint
 from typing import Dict, List, Optional, Union, Tuple
@@ -409,7 +408,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
             if isinstance(val, (int, float)):
                 # limits
-                min_val = -1000 if key in LINE_KEYS else 0
+                min_val = -1000
 
                 control_widget = QtWidgets.QDoubleSpinBox()
                 control_widget.setDecimals(1)
@@ -418,7 +417,21 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                 control_widget.setValue(0)
                 control_widget.setKeyboardTracking(False)
 
+                # val = scale_value_for_display(key, val, constants.SI_TO_MICRO) # TODO: confirm
                 control_widget.setValue(val)
+            if isinstance(val, str):
+                control_widget = QtWidgets.QLineEdit()
+                control_widget.setText(val)
+            if isinstance(val, bool):
+                control_widget = QtWidgets.QCheckBox()
+                control_widget.setChecked(bool(val))
+            if isinstance(val, (tuple, list)):
+                # dont handle for now
+                if "resolution" in key:
+                    control_widget = QtWidgets.QComboBox()
+                    control_widget.addItems(cfg.STANDARD_RESOLUTIONS)
+                    control_widget.setCurrentText(f"{val[0]}x{val[1]}") # TODO: check if in list
+
             # TODO: add support for scaling, str, bool, etc.
             # TODO: attached events
 
@@ -435,10 +448,23 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         # get the updated pattern values from ui
         for i, key in enumerate(strategy.config.required_attributes):
+            
+            if key not in self.strategy_config_widgets:
+                continue
+
             label, widget = self.strategy_config_widgets[key]
 
             if isinstance(widget, QtWidgets.QDoubleSpinBox):
-                value = widget.value() 
+                # value = scale_value_for_display(key, widget.value(), constants.MICRO_TO_SI) 
+                value = widget.value()
+            if isinstance(widget, QtWidgets.QLineEdit):
+                value = widget.text()
+            if isinstance(widget, QtWidgets.QCheckBox):
+                value = widget.isChecked()
+            if isinstance(widget, QtWidgets.QComboBox):
+                value = widget.currentText()
+                if "resolution" in key:
+                    value = tuple(map(int, value.split("x")))
             # TODO: add support for scaling, str, bool, etc.
 
             setattr(strategy.config, key, value)
@@ -629,6 +655,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             label.setVisible(show)
             widget.setVisible(show)
 
+        # TODO: add advanced settings for strategy
     def get_pattern_from_ui_v2(self):
 
         pattern = self.current_milling_stage.pattern

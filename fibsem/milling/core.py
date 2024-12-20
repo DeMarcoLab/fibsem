@@ -170,7 +170,7 @@ def mill_stages(
         stages = [stages]
 
     try:
-        if hasattr(microscope, "milling_progress_signal"):
+        if parent_ui and hasattr(microscope, "milling_progress_signal"):
             # TODO: tmp ladder to handle progress indirectly
             def _handle_progress(ddict: dict) -> None:
                 parent_ui.milling_progress_signal.emit(ddict)

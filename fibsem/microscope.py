@@ -120,6 +120,7 @@ from fibsem.structures import (
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
     milling_progress_signal = Signal(dict)
+    _last_imaging_settings: ImageSettings
 
     @abstractmethod
     def connect_to_microscope(self, ip_address: str, port: int) -> None:
@@ -391,6 +392,8 @@ class FibsemMicroscope(ABC):
             resolution=self.get("resolution", beam_type),
             dwell_time=self.get("dwell_time", beam_type),
             hfw=self.get("hfw", beam_type),
+            path=self._last_imaging_settings.path,
+            filename=self._last_imaging_settings.filename,
         )
         logging.debug({"msg": "get_imaging_settings", "image_settings": image_settings.to_dict(), "beam_type": beam_type.name})
         return image_settings
@@ -894,6 +897,9 @@ class ThermoMicroscope(FibsemMicroscope):
         # TODO: set default move settings, is this dependent on the stage type?
         self._default_application_file = "Si"
 
+        self._last_imaging_settings: ImageSettings = ImageSettings()
+        self.milling_channel: BeamType.ION = BeamType.ION
+
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
@@ -963,6 +969,9 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image.metadata.user = self.user
         fibsem_image.metadata.experiment = self.experiment
         fibsem_image.metadata.system = self.system
+
+        # store last imaging settings
+        self._last_imaging_settings = image_settings
 
         logging.debug({"msg": "acquire_image", "metadata": fibsem_image.metadata.to_dict()})
 
@@ -3106,6 +3115,7 @@ class TescanMicroscope(FibsemMicroscope):
         # initialise last images
         self.last_image_eb: FibsemImage = None
         self.last_image_ib: FibsemImage = None
+        self._last_imaging_settings: ImageSettings = ImageSettings()
 
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
@@ -3179,6 +3189,9 @@ class TescanMicroscope(FibsemMicroscope):
         image.metadata.user = self.user
         image.metadata.experiment = self.experiment 
         image.metadata.system = self.system
+
+        # store last imaging settings
+        self._last_imaging_settings = image_settings
 
         return image
 
@@ -5313,6 +5326,8 @@ class DemoMicroscope(FibsemMicroscope):
         self.user = FibsemUser.from_environment()
         self.experiment = FibsemExperiment()
 
+        self._last_imaging_settings: ImageSettings = ImageSettings()
+        self.milling_channel: BeamType.ION = BeamType.ION
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
 
@@ -5371,6 +5386,10 @@ class DemoMicroscope(FibsemMicroscope):
             self._eb_image = image
         else:
             self._ib_image = image
+
+        self.milling_channel: BeamType.ION = BeamType.ION
+        # store last imaging settings
+        self._last_imaging_settings = image_settings
 
         logging.debug({"msg": "acquire_image", "metadata": image.metadata.to_dict()})
 
