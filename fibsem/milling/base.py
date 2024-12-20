@@ -21,6 +21,12 @@ class MillingStrategyConfig(ABC):
     @property
     def required_attributes(self) -> Tuple[str]:
         return [field.name for field in fields(self)]
+    
+    @property
+    def advanced_attributes(self) -> List[str]:
+        if hasattr(self, "_advanced_attributes"):
+            return self._advanced_attributes
+        return []
 
 @dataclass
 class MillingStrategy(ABC):

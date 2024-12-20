@@ -446,6 +446,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             # store the widget
             self.strategy_config_widgets[key] = (label, control_widget)
 
+        self.show_advanced_settings()
+
     def get_milling_strategy_from_ui(self):
         """Get the milling strategy from the UI."""
         strategy = self.current_milling_stage.strategy
@@ -657,8 +659,13 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             label, widget = self.pattern_attribute_widgets[key]
             label.setVisible(show)
             widget.setVisible(show)
+        
+        strategy_config = self.current_milling_stage.strategy.config 
+        for i, key in enumerate(strategy_config.advanced_attributes):
+            label, widget = self.strategy_config_widgets[key]
+            label.setVisible(show)
+            widget.setVisible(show)
 
-        # TODO: add advanced settings for strategy
     def get_pattern_from_ui_v2(self):
 
         pattern = self.current_milling_stage.pattern
