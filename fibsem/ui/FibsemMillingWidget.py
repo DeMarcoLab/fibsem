@@ -67,6 +67,10 @@ UNSCALED_VALUES = [
     "n_rows",
     "cross_section",
     "time",
+    "milling_interval", 
+    "max_milling_cycles",
+    "sem_frame_integration",
+    "fib_frame_integration",
 ]
 LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
@@ -406,7 +410,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             # default None
             val = getattr(strategy.config, key, None)
 
-            if isinstance(val, (int, float)):
+            if isinstance(val, (int, float)) and not isinstance(val, bool):
                 # limits
                 min_val = -1000
 
@@ -417,7 +421,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                 control_widget.setValue(0)
                 control_widget.setKeyboardTracking(False)
 
-                # val = scale_value_for_display(key, val, constants.SI_TO_MICRO) # TODO: confirm
+                val = scale_value_for_display(key, val, constants.SI_TO_MICRO) # TODO: confirm
                 control_widget.setValue(val)
             if isinstance(val, str):
                 control_widget = QtWidgets.QLineEdit()
@@ -455,8 +459,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             label, widget = self.strategy_config_widgets[key]
 
             if isinstance(widget, QtWidgets.QDoubleSpinBox):
-                # value = scale_value_for_display(key, widget.value(), constants.MICRO_TO_SI) 
-                value = widget.value()
+                value = scale_value_for_display(key, widget.value(), constants.MICRO_TO_SI) # TODO: support other scales
             if isinstance(widget, QtWidgets.QLineEdit):
                 value = widget.text()
             if isinstance(widget, QtWidgets.QCheckBox):

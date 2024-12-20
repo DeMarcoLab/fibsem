@@ -170,10 +170,13 @@ def mill_stages(
         stages = [stages]
 
     try:
-        if parent_ui and hasattr(microscope, "milling_progress_signal"):
-            # TODO: tmp ladder to handle progress indirectly
-            def _handle_progress(ddict: dict) -> None:
-                parent_ui.milling_progress_signal.emit(ddict)
+        if hasattr(microscope, "milling_progress_signal"):
+            if parent_ui: # TODO: tmp ladder to handle progress indirectly
+                def _handle_progress(ddict: dict) -> None:
+                    parent_ui.milling_progress_signal.emit(ddict)
+            else:
+                def _handle_progress(ddict: dict) -> None:
+                    logging.info(ddict)
             microscope.milling_progress_signal.connect(_handle_progress)
 
         for idx, stage in enumerate(stages):
@@ -197,6 +200,10 @@ def mill_stages(
                     parent_ui=parent_ui,
                 )
 
+                # performance logging
+                msgd = {"msg": "mill_stages", "idx": idx, "stage": stage.to_dict()}
+                logging.debug(f"{msgd}")
+
                 if parent_ui:
                     parent_ui.milling_progress_signal.emit({"msg": f"Finished: {stage.name}"})
             except Exception as e:
@@ -204,9 +211,6 @@ def mill_stages(
 
         if parent_ui:
             parent_ui.milling_progress_signal.emit({"msg": f"Finished {len(stages)} Milling Stages. Restoring Imaging Conditions..."})
-
-            if hasattr(microscope, "milling_progress_signal"):
-                microscope.milling_progress_signal.disconnect(_handle_progress)
 
     except Exception as e:
         if parent_ui:
@@ -219,6 +223,8 @@ def mill_stages(
             imaging_current=microscope.system.ion.beam.beam_current,
             imaging_voltage=microscope.system.ion.beam.voltage,
         )
+        if hasattr(microscope, "milling_progress_signal"):
+            microscope.milling_progress_signal.disconnect(_handle_progress)
 
 
 from dataclasses import dataclass

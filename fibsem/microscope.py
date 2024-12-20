@@ -5745,8 +5745,6 @@ class DemoMicroscope(FibsemMicroscope):
         """Run milling with the specified current and voltage."""
         _check_beam(BeamType.ION, self.system)
 
-        # TODO: make this stop/pauseable
-
         MILLING_SLEEP_TIME = 1
 
         # start milling
@@ -5754,6 +5752,9 @@ class DemoMicroscope(FibsemMicroscope):
         estimated_time = self.estimate_milling_time()
         remaining_time = estimated_time
         self.milling_system.state = MillingState.RUNNING
+
+        if asynch:
+            return # up to the caller to handle
 
         while remaining_time > 0 or self.get_milling_state() in ACTIVE_MILLING_STATES:
             logging.debug(f"Running milling: {remaining_time} s remaining.")
