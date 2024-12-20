@@ -16,7 +16,7 @@ from fibsem.segmentation import train as seg_train
 from fibsem.ui.qtdesigner_files import FibsemModelTrainingWidget
 import yaml
 from fibsem.segmentation.config import CLASS_COLORS
-from fibsem.ui.utils import _get_directory_ui,_get_file_ui
+from fibsem.ui.utils import open_existing_directory_dialog,open_existing_file_dialog
 
 
 # BASE_PATH = os.path.join(os.path.dirname(fibsem.__file__), "config")
@@ -96,15 +96,15 @@ class FibsemModelTrainingWidget(FibsemModelTrainingWidget.Ui_Form, QtWidgets.QWi
     def select_filepath(self):
 
         if self.sender() == self.dataPath_button:
-            path = _get_directory_ui(msg="Select Image Data Directory")
+            path = open_existing_directory_dialog(msg="Select Image Data Directory")
             if path is not None and path != "":
                 self.lineEdit_data_path.setText(path)
         elif self.sender() == self.labelPath_button:
-            path = _get_directory_ui(msg="Select Labels Directory")
+            path = open_existing_directory_dialog(msg="Select Labels Directory")
             if path is not None and path != "":
                 self.lineEdit_label_path.setText(path)
         elif self.sender() == self.outputPath_button:
-            path = _get_directory_ui(msg="Select Checkpoint Directory")
+            path = open_existing_directory_dialog(msg="Select Checkpoint Directory")
             if path is not None and path != "":
                 self.lineEdit_save_path.setText(path)
 

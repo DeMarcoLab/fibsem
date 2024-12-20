@@ -1,6 +1,6 @@
 # style sheets
 # TODO: TEMPLATE THIS CSS   
-_GREEN_PUSHBUTTON_STYLE = """
+GREEN_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: green;
     }
@@ -8,7 +8,7 @@ QPushButton:hover {
     background-color: rgba(0, 255, 0, 125);
     }"""
 
-_RED_PUSHBUTTON_STYLE = """
+RED_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: red;
     }
@@ -16,7 +16,7 @@ QPushButton:hover {
     background-color: rgba(255, 0, 0, 125);
     }"""
 
-_BLUE_PUSHBUTTON_STYLE = """
+BLUE_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: blue;
     }
@@ -24,7 +24,7 @@ QPushButton:hover {
     background-color: rgba(0, 0, 255, 125);
     }"""
 
-_YELLOW_PUSHBUTTON_STYLE = """
+YELLOW_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: yellow;
     }
@@ -32,15 +32,16 @@ QPushButton:hover {
     background-color: rgba(255, 255, 0, 125);
     }"""
 
-_WHITE_PUSHBUTTON_STYLE = """
+WHITE_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: white;
+    color: black;
     }
 QPushButton:hover {
     background-color: rgba(255, 255, 255, 125);
     }"""
 
-_GRAY_PUSHBUTTON_STYLE = """
+GRAY_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: gray;
     }
@@ -48,7 +49,7 @@ QPushButton:hover {
     background-color: rgba(125, 125, 125, 125);
     }"""
 
-_ORANGE_PUSHBUTTON_STYLE = """
+ORANGE_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: orange;
     color: black;
@@ -57,14 +58,11 @@ QPushButton:hover {
     background-color: rgba(255, 125, 0, 125);
 }"""
 
-_DISABLED_PUSHBUTTON_STYLE = """
+DISABLED_PUSHBUTTON_STYLE = """
 QPushButton {
     background-color: none;
     }
 """    
 
-GREEN_PROGRESSBAR_STYLE = """
-QProgressBar::chunk {
-    background-color: green;
-    }
-"""
+PROGRESS_BAR_GREEN_STYLE = "QProgressBar::chunk {background-color: green;}"
+PROGRESS_BAR_BLUE_STYLE = "QProgressBar::chunk {background-color: blue;}"

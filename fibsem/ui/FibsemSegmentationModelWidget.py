@@ -8,7 +8,7 @@ from fibsem.segmentation.model import load_model
 
 from napari.qt.threading import thread_worker
 from PyQt5.QtCore import pyqtSignal
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 from fibsem.ui.qtdesigner_files import FibsemSegmentationModelWidget
 from fibsem.segmentation.model import SegmentationModel
 
@@ -77,7 +77,7 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
 
         self.pushButton_load_model.setEnabled(False)
         self.pushButton_load_model.setText("Loading...")
-        self.pushButton_load_model.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+        self.pushButton_load_model.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
         self.pushButton_load_model.setToolTip("Downloading model... check terminal for progress...")
 
         worker = self.load_model_worker(model_type=model_type, checkpoint=checkpoint)
@@ -103,7 +103,7 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
 
         self.pushButton_load_model.setEnabled(True)
         self.pushButton_load_model.setText("Load Model")
-        self.pushButton_load_model.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_load_model.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
         self.pushButton_load_model.setToolTip("")
 
         if self.model is not None:

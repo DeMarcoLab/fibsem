@@ -126,12 +126,14 @@ class ImagingState(Enum):
     ERROR = 4
 
 
-class PatterningState(Enum):
+class MillingState(Enum):
     IDLE = 0
     RUNNING = 1
     STOPPING = 2
     PAUSED = 3
     ERROR = 4
+
+ACTIVE_MILLING_STATES = [MillingState.RUNNING, MillingState.STOPPING, MillingState.PAUSED]
 
 class ManipulatorState(Enum):
     RETRACTED = 0
@@ -417,8 +419,8 @@ class FibsemRectangle:
 
     left: float = 0.0
     top: float = 0.0
-    width: float = 0.0
-    height: float = 0.0
+    width: float = 1.0
+    height: float = 1.0
 
     def __post_init__(self):
         assert isinstance(self.left, float) or isinstance(
@@ -468,7 +470,24 @@ class FibsemRectangle:
         def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
             return cls(rect.left, rect.top, rect.width, rect.height)
 
+    @property
+    def is_valid_reduced_area(self) -> bool:
+        return _is_valid_reduced_area(self)
 
+def _is_valid_reduced_area(reduced_area: FibsemRectangle) -> bool:
+    """Check whether the reduced area is valid. 
+    Left and top must be between 0 and 1, and width and height must be between 0 and 1.
+    Must not exceed the boundaries of the image 0 - 1
+    """
+    # if left or top is less than 0, or width or height is greater than 1, return False
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width > 1 or reduced_area.height > 1:
+        return False
+    if reduced_area.left + reduced_area.width > 1 or reduced_area.top + reduced_area.height > 1:
+        return False
+    # no negative values
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width <= 0 or reduced_area.height <= 0:
+        return False
+    return True                           
 
 
 
@@ -919,7 +938,6 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             "rotation": self.rotation,
             "centre_x": self.centre_x,
             "centre_y": self.centre_y,
-            "cleaning_cross_section": self.cleaning_cross_section,
             "scan_direction": self.scan_direction,
             "cross_section": self.cross_section.name,
             "passes": self.passes,
@@ -935,7 +953,6 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             depth=data["depth"],
             centre_x=data["centre_x"],
             centre_y=data["centre_y"],
-            cleaning_cross_section=data.get("cleaning_cross_section", False),
             rotation=data.get("rotation", 0),
             scan_direction=data.get("scan_direction", "TopToBottom"),
             cross_section=CrossSectionPattern[data.get("cross_section", "Rectangle")],
@@ -1125,7 +1142,7 @@ class FibsemMillingSettings:
             spot_size=settings.get("spot_size", 5.0e-8),
             rate=settings.get("rate", 3.0e-11),
             dwell_time=settings.get("dwell_time", 1.0e-6),
-            hfw=settings.get("hfw", 150e-6),
+            hfw=float(settings.get("hfw", 150e-6)),
             patterning_mode=settings.get("patterning_mode", "Serial"),
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; 1nA"),
@@ -1891,6 +1908,37 @@ class FibsemImage:
             )
             return cls(data=data, metadata=metadata)
 
+    @staticmethod
+    def generate_blank_image(
+        resolution: List[int] = [1536, 1024],
+        hfw: float = 100e-6,
+        pixel_size: Point = None,
+    ) -> 'FibsemImage':
+        """Generate a blank image with a given resolution and field of view.
+        Args:
+            resolution: List[int]: Resolution of the image.
+            hfw: float: Horizontal field width of the image.
+            pixel_size: Point: Pixel size of the image.
+        Returns:
+            FibsemImage: Blank image with valid metadata from display.
+        """
+        # need at least one of hfw, pixelsize
+        if pixel_size is None and hfw is None:
+            raise ValueError("Need to specify either hfw or pixelsize")
+
+        if pixel_size is None:
+            vfw = hfw * resolution[1] / resolution[0]
+            pixel_size = Point(hfw / resolution[0], vfw / resolution[1])
+
+        image = FibsemImage(
+            data=np.zeros((resolution[1], resolution[0]), dtype=np.uint8),
+            metadata=FibsemImageMetadata(
+                image_settings=ImageSettings(hfw=hfw, resolution=resolution),
+                microscope_state=None,
+                pixel_size=pixel_size,
+            ),
+        )
+        return image
 
 @dataclass
 class ReferenceImages:
@@ -2007,6 +2055,32 @@ def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiduc
     else:
         flag = False
 
-    fiducial_area = FibsemRectangle(left, top, width, height)
+    alignment_area = FibsemRectangle(left, top, width, height)
 
-    return fiducial_area, flag
+    return alignment_area, flag
+
+DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
+
+# TODO: integrate this into the main fibsem.milling module
+@dataclass
+class MillingDriftCorrection:
+    """Drift correction settings for milling"""
+    enabled: bool = True
+    interval_enabled: bool = False
+    interval: int = 30 # seconds
+    rect: FibsemRectangle = FibsemRectangle.from_dict(DEFAULT_ALIGNMENT_AREA)
+
+    def to_dict(self):
+        return {"enabled": self.enabled, 
+                "interval_enabled": self.interval_enabled, 
+                "interval": self.interval, 
+                "rect": self.rect.to_dict()}
+    
+    @staticmethod
+    def from_dict(d: dict) -> "MillingDriftCorrection":
+        return MillingDriftCorrection(
+            enabled=d.get("enabled", False),
+            interval_enabled=d.get("interval_enabled", False),
+            interval=d.get("interval", 30),
+            rect=FibsemRectangle.from_dict(d.get("rect", DEFAULT_ALIGNMENT_AREA))
+        )

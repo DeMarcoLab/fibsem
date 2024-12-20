@@ -21,7 +21,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     FibsemUser,
     ImageSettings,
-    PatterningState,
+    MillingState,
     Point,
     SystemSettings,
     BeamSettings,
@@ -904,7 +904,7 @@ class OdemisMicroscope(FibsemMicroscope):
             self.connection.set_default_application_file("Si-ccs")
         if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
             create_pattern_function = self.connection.create_regular_cross_section
-            self.connection.set_default_application_file("Si-multi-pass")
+            self.connection.set_default_application_file("Si-multipass")
 
         # create the pattern (draw)
         pinfo = create_pattern_function(pdict)
@@ -1030,10 +1030,7 @@ class OdemisMicroscope(FibsemMicroscope):
         )
 
     def get_milling_state(self):
-        return PatterningState[self.connection.get_patterning_state().upper()]
-
-    def run_milling_drift_corrected(self):
-        pass
+        return MillingState[self.connection.get_patterning_state().upper()]
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         self.connection.clear_patterns()
@@ -1050,7 +1047,7 @@ class OdemisMicroscope(FibsemMicroscope):
         )
 
     def stop_milling(self) -> None:
-        if self.get_milling_state() is PatterningState.RUNNING:
+        if self.get_milling_state() is MillingState.RUNNING:
             self.connection.stop_milling()
 
     def resume_milling(self) -> None:
