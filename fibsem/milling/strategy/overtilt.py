@@ -66,7 +66,7 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
                                        dwell_time=1e-6, 
                                        resolution=[1536, 1024], 
                                        beam_type=stage.milling.milling_channel)
-        image_settings.reduced_area = stage.drift_correction.rect
+        image_settings.reduced_area = stage.alignment.rect
         image_settings.path = os.getcwd()
         image_settings.filename = f"ref_{stage.name}_overtilt_alignment"
         ref_image = acquire.acquire_image(microscope, image_settings)

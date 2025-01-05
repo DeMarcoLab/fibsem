@@ -2061,9 +2061,8 @@ def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiduc
 
 DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
 
-# TODO: integrate this into the main fibsem.milling module
 @dataclass
-class MillingDriftCorrection:
+class MillingAlignment:
     """Drift correction settings for milling"""
     enabled: bool = True
     interval_enabled: bool = False
@@ -2077,8 +2076,8 @@ class MillingDriftCorrection:
                 "rect": self.rect.to_dict()}
     
     @staticmethod
-    def from_dict(d: dict) -> "MillingDriftCorrection":
-        return MillingDriftCorrection(
+    def from_dict(d: dict) -> "MillingAlignment":
+        return MillingAlignment(
             enabled=d.get("enabled", False),
             interval_enabled=d.get("interval_enabled", False),
             interval=d.get("interval", 30),

@@ -1,7 +1,7 @@
 from fibsem.milling.base import (
     FibsemMillingStage,
     MillingStrategy,
-    MillingDriftCorrection,
+    MillingAlignment,
     get_milling_stages,
     get_protocol_from_stages,
     get_strategy,

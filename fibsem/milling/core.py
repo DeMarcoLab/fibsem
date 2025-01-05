@@ -30,13 +30,13 @@ def setup_milling(
     """
 
     # acquire reference image for drift correction
-    if milling_stage.drift_correction.enabled:
+    if milling_stage.alignment.enabled:
         image_settings = ImageSettings(
             hfw=milling_stage.milling.hfw,
             dwell_time=1e-6,
             resolution=[1536, 1024],
             beam_type=milling_stage.milling.milling_channel,
-            reduced_area=milling_stage.drift_correction.rect,
+            reduced_area=milling_stage.alignment.rect,
             path=fcfg.DATA_CC_PATH, 
             filename=f"ref_{milling_stage.name}_initial_alignment_{current_timestamp_v2()}"
         )
@@ -46,8 +46,9 @@ def setup_milling(
     microscope.setup_milling(mill_settings=milling_stage.milling)
 
     # align at the milling current to correct for shift
-    if milling_stage.drift_correction.enabled:
+    if milling_stage.alignment.enabled:
         from fibsem import alignment
+        logging.info(f"FIB Aligning at Milling Current: {milling_stage.milling.milling_current:.2e}")
         alignment.multi_step_alignment_v2(microscope=microscope, 
                                         ref_image=ref_image, 
                                         beam_type=milling_stage.milling.milling_channel, 

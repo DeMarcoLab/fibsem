@@ -23,7 +23,7 @@ from fibsem.microscope import (
 )
 from fibsem.milling import (
     FibsemMillingStage,
-    MillingDriftCorrection,
+    MillingAlignment,
     get_strategy,
     mill_stages,
 )
@@ -129,6 +129,9 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.current_milling_stage: Optional[FibsemMillingStage] = None
         self.milling_stages: List[FibsemMillingStage] = []
         self.milling_pattern_layers: List[Layer] = []
+
+        self.pattern_attribute_widgets: Dict[str, Tuple[QtWidgets.QLabel, QtWidgets.QWidget]] = {}
+        self.strategy_config_widgets: Dict[str, QtWidgets.QWidget] = {}
 
         self.setup_connections()
         # TODO: migrate to MILLING_WORKFLOWS: Dict[str, List[FibsemMillingStage]]
@@ -252,6 +255,9 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.label_milling_instructions.setText(MILLING_WIDGET_INSTRUCTIONS)
         self.show_milling_stage_widgets()
 
+        # feature flags
+        self.pushButton_alignment_edit_area.setVisible(False) # TODO: enable setting alignment area via ui
+
         # external signals
         self.image_widget.viewer_update_signal.connect(self.update_ui) # update the ui when the image is updated
     
@@ -288,7 +294,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                                            num=num, 
                                            pattern=pattern, 
                                            strategy=strategy)
-        self.milling_stages.append(milling_stage)
+        self.milling_stages.append(deepcopy(milling_stage))
         self.comboBox_milling_stage.addItem(name)
         self.comboBox_milling_stage.setCurrentText(name)
         napari.utils.notifications.show_info(f"Added {name}.")
@@ -387,9 +393,9 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         # update the milling stage UI
         self.set_milling_settings_ui()        
-        self.set_pattern_settings_ui()
         self.set_milling_strategy_ui()
-        self.set_drift_correction_ui()
+        self.set_milling_alignment_ui()
+        self.set_pattern_settings_ui()
     
         self.show_milling_stage_widgets()
 
@@ -398,8 +404,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         strategy = self.current_milling_stage.strategy
 
         self.comboBox_strategy_name.setCurrentText(strategy.name)
-
-        self.strategy_config_widgets: Dict[str, QtWidgets.QWidget] = {}
         
         # clear the grid layout
         self.clear_grid_layout(self.gridLayout_strategy)
@@ -479,23 +483,23 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         return strategy
 
-    def set_drift_correction_ui(self):
+    def set_milling_alignment_ui(self):
         """Set the drift correction UI from the current milling stage."""
-        drift_correction = self.current_milling_stage.drift_correction
+        milling_alignment = self.current_milling_stage.alignment
 
-        self.checkBox_drift_correction_enabled.setChecked(drift_correction.enabled)
-        self.checkBox_drift_correction_interval_enabled.setChecked(drift_correction.interval_enabled)
-        self.doubleSpinBox_drift_correction_interval.setValue(drift_correction.interval)
+        self.checkBox_alignment_enabled.setChecked(milling_alignment.enabled)
+        self.checkBox_alignment_interval_enabled.setChecked(milling_alignment.interval_enabled)
+        self.doubleSpinBox_alignment_interval.setValue(milling_alignment.interval)
 
-    def get_drift_correction_from_ui(self):
+    def get_milling_alignment_from_ui(self):
         """Get the drift correction settings from the UI."""
-        drift_correction = MillingDriftCorrection(
-            enabled=self.checkBox_drift_correction_enabled.isChecked(),
-            interval_enabled=self.checkBox_drift_correction_interval_enabled.isChecked(),
-            interval=self.doubleSpinBox_drift_correction_interval.value(),
-        )
+        milling_alignment = MillingAlignment(
+            enabled=self.checkBox_alignment_enabled.isChecked(),
+            interval_enabled=self.checkBox_alignment_interval_enabled.isChecked(),
+            interval=self.doubleSpinBox_alignment_interval.value(),
+        ) # TODO: maintain existing alignment area...
 
-        return drift_correction
+        return milling_alignment
 
     def redraw_patterns(self):
         """Redraw the patterns in the viewer."""
@@ -519,7 +523,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         # update all milling stage settings from the UI
         milling_stage.milling = self.get_milling_settings_from_ui()
         milling_stage.pattern = self.get_pattern_from_ui_v2()
-        milling_stage.drift_correction = self.get_drift_correction_from_ui()
+        milling_stage.alignment = self.get_milling_alignment_from_ui()
         milling_stage.strategy = self.get_milling_strategy_from_ui()
 
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
@@ -575,7 +579,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         # clear the grid layout
         self.clear_grid_layout(self.gridLayout_patterns)
 
-        self.pattern_attribute_widgets: Dict[str, Tuple[QtWidgets.QLabel, QtWidgets.QWidget]] = {}
 
         # set widgets for each required key / value
         for i, key in enumerate(pattern.required_attributes):
@@ -656,15 +659,17 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         
         pattern = self.current_milling_stage.pattern 
         for i, key in enumerate(pattern.advanced_attributes):
-            label, widget = self.pattern_attribute_widgets[key]
-            label.setVisible(show)
-            widget.setVisible(show)
+            if key in self.pattern_attribute_widgets:
+                label, widget = self.pattern_attribute_widgets[key]
+                label.setVisible(show)
+                widget.setVisible(show)
         
         strategy_config = self.current_milling_stage.strategy.config 
         for i, key in enumerate(strategy_config.advanced_attributes):
-            label, widget = self.strategy_config_widgets[key]
-            label.setVisible(show)
-            widget.setVisible(show)
+            if key in self.strategy_config_widgets:
+                label, widget = self.strategy_config_widgets[key]
+                label.setVisible(show)
+                widget.setVisible(show)
 
     def get_pattern_from_ui_v2(self):
 

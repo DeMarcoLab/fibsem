@@ -923,8 +923,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # set reduced area settings
         if image_settings.reduced_area is not None:
             reduced_area = image_settings.reduced_area.__to_FEI__()
-            logging.warning(f"----------- REDUCED AREA: {reduced_area} -----------")
-            logging.warning(f"----------- BEAM_TYPE {image_settings.beam_type} -----------")
+            logging.debug(f"Set reduced are: {reduced_area} for beam type {image_settings.beam_type}")
         else:
             reduced_area = None
             beam.scanning.mode.set_full_frame()
@@ -1030,45 +1029,44 @@ class ThermoMicroscope(FibsemMicroscope):
         return FibsemImage(data=image.data, metadata=None)   
     
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
-            self.image_queue = image_queue
-            self.stop_event = stop_event
-            _check_beam(image_settings.beam_type, self.system)
-            logging.info(f"Live imaging: {image_settings.beam_type}")
-            while not self.stop_event.is_set():
-                image = self.acquire_image(deepcopy(image_settings))
-                image_queue.put(image)
-
-
+        pass
+        # self.image_queue = image_queue
+        # self.stop_event = stop_event
+        # _check_beam(image_settings.beam_type, self.system)
+        # logging.info(f"Live imaging: {image_settings.beam_type}")
+        # while not self.stop_event.is_set():
+        #     image = self.acquire_image(deepcopy(image_settings))
+        #     image_queue.put(image)
 
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+        pass
+        # logging.info("Consuming image queue")
 
-        logging.info("Consuming image queue")
+        # while not self.stop_event.is_set():
+        #     try:
+        #         time.sleep(sleep)
+        #         if not self.image_queue.empty():
+        #             image = self.image_queue.get(timeout=1)f
+        #             if image.metadata.image_settings.save:
+        #                 image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
+        #                 filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
+        #                 image.save(path=filename)
+        #                 logging.info(f"Saved image to {filename}")
 
-        while not self.stop_event.is_set():
-            try:
-                time.sleep(sleep)
-                if not self.image_queue.empty():
-                    image = self.image_queue.get(timeout=1)
-                    if image.metadata.image_settings.save:
-                        image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
-                        filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
-                        image.save(path=filename)
-                        logging.info(f"Saved image to {filename}")
+        #             logging.info(f"Image: {image.data.shape}")
+        #             logging.info("-" * 50)
 
-                    logging.info(f"Image: {image.data.shape}")
-                    logging.info("-" * 50)
-
-                    if parent_ui is not None:
-                            parent_ui.live_imaging_signal.emit({"image": image})
+        #             if parent_ui is not None:
+        #                     parent_ui.live_imaging_signal.emit({"image": image})
 
 
-            except KeyboardInterrupt:
-                self.stop_event
-                logging.info("Keyboard interrupt, stopping live imaging")
-            except Exception as e:
-                self.stop_event.set()
-                import traceback
-                logging.error(traceback.format_exc())
+        #     except KeyboardInterrupt:
+        #         self.stop_event
+        #         logging.info("Keyboard interrupt, stopping live imaging")
+        #     except Exception as e:
+        #         self.stop_event.set()
+        #         import traceback
+        #         logging.error(traceback.format_exc())
 
     def autocontrast(self, beam_type: BeamType) -> None:
         """
@@ -3450,45 +3448,44 @@ class TescanMicroscope(FibsemMicroscope):
         return FibsemImage(data=np.array(image.Image), metadata=None)   
 
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
-        self.image_queue = image_queue
-        self.stop_event = stop_event
-        _check_beam(image_settings.beam_type, self.system)
-        logging.info(f"Live imaging: {image_settings.beam_type}")
-        while not self.stop_event.is_set():
-            image = self.acquire_image(deepcopy(image_settings))
-            image_queue.put(image)
-
-
+        pass
+        # self.image_queue = image_queue
+        # self.stop_event = stop_event
+        # _check_beam(image_settings.beam_type, self.system)
+        # logging.info(f"Live imaging: {image_settings.beam_type}")
+        # while not self.stop_event.is_set():
+        #     image = self.acquire_image(deepcopy(image_settings))
+        #     image_queue.put(image)
 
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+        pass
+        # logging.info("Consuming image queue")
 
-        logging.info("Consuming image queue")
+        # while not self.stop_event.is_set():
+        #     try:
+        #         time.sleep(sleep)
+        #         if not self.image_queue.empty():
+        #             image = self.image_queue.get(timeout=1)
+        #             if image.metadata.image_settings.save:
+        #                 image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"                        
+        #                 filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
+        #                 image.save(path=filename)
+        #                 logging.info(f"Saved image to {filename}")
 
-        while not self.stop_event.is_set():
-            try:
-                time.sleep(sleep)
-                if not self.image_queue.empty():
-                    image = self.image_queue.get(timeout=1)
-                    if image.metadata.image_settings.save:
-                        image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"                        
-                        filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
-                        image.save(path=filename)
-                        logging.info(f"Saved image to {filename}")
+        #             logging.info(f"Image: {image.data.shape}")
+        #             logging.info("-" * 50)
 
-                    logging.info(f"Image: {image.data.shape}")
-                    logging.info("-" * 50)
-
-                    if parent_ui is not None:
-                            parent_ui.live_imaging_signal.emit({"image": image})
+        #             if parent_ui is not None:
+        #                     parent_ui.live_imaging_signal.emit({"image": image})
 
 
-            except KeyboardInterrupt:
-                self.stop_event
-                logging.info("Keyboard interrupt, stopping live imaging")
-            except Exception as e:
-                self.stop_event.set()
-                import traceback
-                logging.error(traceback.format_exc())
+        #     except KeyboardInterrupt:
+        #         self.stop_event
+        #         logging.info("Keyboard interrupt, stopping live imaging")
+        #     except Exception as e:
+        #         self.stop_event.set()
+        #         import traceback
+        #         logging.error(traceback.format_exc())
         
     def autocontrast(self, beam_type: BeamType) -> None:
         """Automatically adjust the microscope image contrast for the specified beam type.
@@ -5413,44 +5410,45 @@ class DemoMicroscope(FibsemMicroscope):
         return image
 
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
-        self.image_queue = image_queue
-        self.stop_event = stop_event
-        _check_beam(image_settings.beam_type, self.system)
-        logging.info(f"Live imaging: {image_settings.beam_type}")
-        while not stop_event.is_set():
-            image = self.acquire_image(image_settings)
-            image_queue.put(image)
-            self.sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
-            time.sleep(self.sleep_time)
+        pass
+        # self.image_queue = image_queue
+        # self.stop_event = stop_event
+        # _check_beam(image_settings.beam_type, self.system)
+        # logging.info(f"Live imaging: {image_settings.beam_type}")
+        # while not stop_event.is_set():
+        #     image = self.acquire_image(image_settings)
+        #     image_queue.put(image)
+        #     self.sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
+        #     time.sleep(self.sleep_time)
 
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+        pass
+        # logging.info("Consuming image queue")
 
-        logging.info("Consuming image queue")
+        # try:
+        #     while not self.stop_event.is_set():
+        #         image = self.image_queue.get(timeout=1)
+        #         if image.metadata.image_settings.save:
+        #             image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
+        #             filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
+        #             image.save(path=filename)
+        #             logging.info(f"Saved image to {filename}")
 
-        try:
-            while not self.stop_event.is_set():
-                image = self.image_queue.get(timeout=1)
-                if image.metadata.image_settings.save:
-                    image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
-                    filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
-                    image.save(path=filename)
-                    logging.info(f"Saved image to {filename}")
+        #         logging.info(f"Image: {image.data.shape}")
+        #         logging.info("-" * 50)
 
-                logging.info(f"Image: {image.data.shape}")
-                logging.info("-" * 50)
-
-                if parent_ui is not None:
-                        parent_ui.live_imaging_signal.emit({"image": image})
-                time.sleep(sleep)
-        except KeyboardInterrupt:
-            self.stop_event
-            logging.info("Keyboard interrupt, stopping live imaging")
-        except Exception as e:
-            self.stop_event.set()
-            import traceback
-            logging.error(traceback.format_exc())
-        finally:
-            logging.info("Stopped thread image consumption")
+        #         if parent_ui is not None:
+        #                 parent_ui.live_imaging_signal.emit({"image": image})
+        #         time.sleep(sleep)
+        # except KeyboardInterrupt:
+        #     self.stop_event
+        #     logging.info("Keyboard interrupt, stopping live imaging")
+        # except Exception as e:
+        #     self.stop_event.set()
+        #     import traceback
+        #     logging.error(traceback.format_exc())
+        # finally:
+        #     logging.info("Stopped thread image consumption")
     
     def autocontrast(self, beam_type: BeamType) -> None:
         _check_beam(beam_type, self.system)

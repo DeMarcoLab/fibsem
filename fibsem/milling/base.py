@@ -5,7 +5,7 @@ from typing import List, Union, Dict, Any, Tuple
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
-from fibsem.structures import FibsemMillingSettings, Point, MillingDriftCorrection
+from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment
 
 @dataclass
 class MillingStrategyConfig(ABC):
@@ -63,7 +63,7 @@ class FibsemMillingStage:
     pattern: BasePattern = None
     patterns: List[BasePattern] = None # unused
     strategy: MillingStrategy = None
-    drift_correction: MillingDriftCorrection = MillingDriftCorrection()
+    alignment: MillingAlignment = MillingAlignment()
 
     def __post_init__(self):
         if self.pattern is None:
@@ -79,7 +79,7 @@ class FibsemMillingStage:
             "milling": self.milling.to_dict(),
             "pattern": self.pattern.to_dict(),
             "strategy": self.strategy.to_dict(),
-            "drift_correction": self.drift_correction.to_dict()
+            "alignment": self.alignment.to_dict()
         }
 
     @classmethod
@@ -87,14 +87,14 @@ class FibsemMillingStage:
         strategy_config = data.get("strategy", {})
         strategy_name = strategy_config.get("name", "Standard")
         pattern_name = data["pattern"]["name"]
-        drift_correction = data.get("drift_correction", {})
+        alignment = data.get("alignment", {})
         return cls(
             name=data["name"],
             num=data.get("num", 0),
             milling=FibsemMillingSettings.from_dict(data["milling"]),
             pattern=get_pattern(pattern_name, data["pattern"]),
             strategy=get_strategy(strategy_name, config=strategy_config),
-            drift_correction=MillingDriftCorrection.from_dict(drift_correction),
+            alignment=MillingAlignment.from_dict(alignment),
         )
 
 def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> List[FibsemMillingStage]:
