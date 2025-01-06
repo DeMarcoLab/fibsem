@@ -119,31 +119,21 @@ class RectanglePattern(BasePattern):
     rotation: float = 0
     time: float = 0
     passes: int = 0
-    offset: float = 0
-    invert_offset: bool = False
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     point: Point = Point()
     shapes: List[FibsemPatternSettings] = None
     name: str = "Rectangle"
-    _advanced_attributes = ["time", "passes", "offset", "invert_offset"] # TODO: add for other patterns
+    _advanced_attributes = ["time", "passes"] # TODO: add for other patterns
 
     def define(self) -> List[FibsemRectangleSettings]:
-
-        # allow for offsetting the rectangle from the point
-        offset = 0
-        if not np.isclose(self.offset, 0):
-            offset = self.offset + self.height / 2
-        if self.invert_offset:
-            offset = -offset
-        center_y = self.point.y + offset
 
         shape = FibsemRectangleSettings(
             width=self.width,
             height=self.height,
             depth=self.depth,
             centre_x=self.point.x,
-            centre_y=center_y,
+            centre_y=self.point.y,
             rotation=self.rotation * constants.DEGREES_TO_RADIANS,
             passes=self.passes,
             time=self.time,
@@ -164,8 +154,6 @@ class RectanglePattern(BasePattern):
             "rotation": self.rotation,
             "time": self.time,
             "passes": self.passes,
-            "offset": self.offset,
-            "invert_offset": self.invert_offset,
             "scan_direction": self.scan_direction,
             "cross_section": self.cross_section.name
         }
@@ -179,8 +167,6 @@ class RectanglePattern(BasePattern):
             rotation=ddict.get("rotation", 0),
             time=ddict.get("time", 0),
             passes=ddict.get("passes", 0),
-            # offset=ddict.get("offset", 0),
-            # invert_offset=bool(ddict.get("invert_offset", False)),
             scan_direction=ddict.get("scan_direction", "TopToBottom"),
             cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
@@ -281,6 +267,7 @@ class TrenchPattern(BasePattern):
     time: float = 0.0
     point: Point = Point()
     name: str = "Trench"
+    shapes: List[FibsemPatternSettings] = None
 
     def define(self) -> List[FibsemRectangleSettings]:
 
@@ -654,9 +641,6 @@ class SerialSectionPattern(BasePattern):
             use_side_patterns=ddict.get("use_side_patterns", True),
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
         )
-
-# TODO: deprecate this pattern, add offset to RectanglePattern
-# TODO: understand how this was used in the past 
 
 
 @dataclass
