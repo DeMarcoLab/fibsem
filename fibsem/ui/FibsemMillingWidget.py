@@ -2,7 +2,7 @@
 import logging
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import napari
 import napari.utils.notifications
@@ -24,6 +24,7 @@ from fibsem.microscope import (
 from fibsem.milling import (
     FibsemMillingStage,
     MillingAlignment,
+    estimate_total_milling_time,
     get_strategy,
     mill_stages,
 )
@@ -40,9 +41,9 @@ from fibsem.structures import (
     CrossSectionPattern,
     FibsemImage,
     FibsemMillingSettings,
+    ImageSettings,
     MillingState,
     Point,
-    ImageSettings,
 )
 from fibsem.ui import stylesheets as stylesheets
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
@@ -52,6 +53,7 @@ from fibsem.ui.napari.patterns import (
     remove_all_napari_shapes_layers,
 )
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget as FibsemMillingWidgetUI
+from fibsem.utils import format_duration
 
 UNSCALED_VALUES = [
     "rotation",
@@ -175,6 +177,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.comboBox_application_file.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.doubleSpinBox_milling_current.valueChanged.connect(self.update_milling_settings_from_ui)
             self.spinBox_voltage.valueChanged.connect(self.update_milling_settings_from_ui)
+            self.doubleSpinBox_milling_current.setKeyboardTracking(False)
 
         # Tescan Only
         AVAILABLE_PRESETS = self.microscope.get_available_values("presets")
@@ -292,6 +295,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             return 
         settings = self.get_milling_settings_from_ui()
         self.milling_stages[index].milling = settings
+        self.update_ui()
 
     def add_milling_stage(self):
         logging.info("Adding milling stage")
@@ -320,6 +324,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.listWidget_active_milling_stages.clear()
 
         for stage in self.milling_stages:
+            # txt = f"{stage.name} - {stage.pattern.name} ({format_duration(stage.estimated_time)})"
+            # NOTE: the above breaks the UI, need to fix this?
             item = QListWidgetItem(stage.name)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(Qt.Checked)
@@ -1063,6 +1069,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         # make milling stage a list if it is not
         if not isinstance(milling_stages, list):
             milling_stages = [milling_stages]
+
+        # estimate the total milling time
+        total_time = estimate_total_milling_time(milling_stages)
+        self.label_milling_estimated_time.setText(f"Estimated Milling Time: {format_duration(total_time)}")
 
         # pprint(milling_stages[0].to_dict())
         # check hfw threshold # TODO: do this check more seriously, rather than rule of thumb

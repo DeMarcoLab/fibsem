@@ -909,6 +909,10 @@ class FibsemPatternSettings(ABC):
     def from_dict(self, data: dict) -> "FibsemPatternSettings":
         pass
 
+    @property
+    @abstractmethod
+    def volume(self) -> float:
+        pass
 
 class CrossSectionPattern(Enum):
     Rectangle  = auto()
@@ -961,6 +965,10 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             is_exclusion=data.get("is_exclusion", False),
         )
 
+    @property
+    def volume(self) -> float:
+        return self.width * self.height * self.depth
+
 @dataclass
 class FibsemLineSettings(FibsemPatternSettings):
     start_x: float
@@ -987,6 +995,10 @@ class FibsemLineSettings(FibsemPatternSettings):
             end_y=data["end_y"],
             depth=data["depth"],
         )
+    
+    @property
+    def volume(self) -> float:
+        return np.sqrt((self.end_x - self.start_x)**2 + (self.end_y - self.start_y)**2) * self.depth
 
 @dataclass
 class FibsemCircleSettings(FibsemPatternSettings):
@@ -1027,6 +1039,9 @@ class FibsemCircleSettings(FibsemPatternSettings):
             is_exclusion=data.get("is_exclusion", False),
         )
 
+    @property
+    def volume(self) -> float:
+        return np.pi * self.radius**2 * self.depth
 
 @dataclass
 class FibsemBitmapSettings(FibsemPatternSettings):
@@ -1061,6 +1076,10 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             path=data["path"],
         )
 
+    @property
+    def volume(self) -> float:
+        # NOTE: this is a VERY rough estimate
+        return self.width * self.height * self.depth
 
 @dataclass
 class FibsemMillingSettings:

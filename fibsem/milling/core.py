@@ -1,13 +1,11 @@
 import logging
 import time
-import uuid
 from typing import List, Tuple
 
 from fibsem import config as fcfg
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
-    BeamType,
     FibsemBitmapSettings,
     FibsemCircleSettings,
     FibsemImage,
@@ -165,7 +163,6 @@ def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: 
 def mill_stages(
     microscope: FibsemMicroscope,
     stages: List[FibsemMillingStage],
-    asynch: bool = False,
     parent_ui=None,
 ):
     """Run a list of milling stages, with a progress bar and notifications."""

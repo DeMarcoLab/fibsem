@@ -5,6 +5,8 @@ from fibsem.milling.base import (
     get_milling_stages,
     get_protocol_from_stages,
     get_strategy,
+    estimate_milling_time,
+    estimate_total_milling_time,
 )
 from fibsem.milling.core import (
     draw_pattern,

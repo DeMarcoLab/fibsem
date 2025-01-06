@@ -4,6 +4,7 @@ from dataclasses import dataclass, fields
 from typing import List, Union, Dict, Any, Tuple
 
 from fibsem.microscope import FibsemMicroscope
+from fibsem.milling.config import MILLING_SPUTTER_RATE
 from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
 from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings
 
@@ -101,6 +102,10 @@ class FibsemMillingStage:
             imaging=ImageSettings.from_dict(imaging)
         )
 
+    @property
+    def estimated_time(self) -> float:
+        return estimate_milling_time(self.pattern, self.milling.milling_current)
+
 
 def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> List[FibsemMillingStage]:
     stages = []
@@ -115,3 +120,34 @@ def get_protocol_from_stages(stages: List[FibsemMillingStage]) -> List[Dict[str,
         stages = [stages]
     
     return deepcopy([stage.to_dict() for stage in stages])
+
+
+def estimate_milling_time(pattern: BasePattern, milling_current: float) -> float:
+    """Estimate the milling time for a given pattern and milling current. 
+    The time is calculated as the volume of the pattern divided by the sputter rate at the given current.
+    The sputter rate is taken from the microscope application files. 
+    This is a rough estimate, as the actual milling time is calculated at milling time.
+
+    Args:
+        pattern (BasePattern): the milling pattern
+        milling_current (float): the milling current in A
+
+    Returns:
+        float: the estimated milling time in seconds
+    """
+    # get the key that is closest to the milling current
+    sp_keys = list(MILLING_SPUTTER_RATE.keys())
+    sp_keys.sort(key=lambda x: abs(x - milling_current))
+
+    # get the sputter rate for the closest key
+    sputter_rate = MILLING_SPUTTER_RATE[sp_keys[0]] # um3/s 
+    volume = pattern.volume # m3
+
+    time = (volume *1e6**3) / sputter_rate
+    return time # QUERY: accuracy of this estimate?
+
+def estimate_total_milling_time(stages: List[FibsemMillingStage]) -> float:
+    """Estimate the total milling time for a list of milling stages"""
+    if not isinstance(stages, list):
+        stages = [stages]
+    return sum([estimate_milling_time(stage.pattern, stage.milling.milling_current) for stage in stages])

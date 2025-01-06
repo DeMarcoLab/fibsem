@@ -1,11 +1,9 @@
-import json
 from copy import deepcopy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
-import yaml
 
 from fibsem import constants
 from fibsem.structures import (
@@ -58,6 +56,11 @@ class BasePattern(ABC):
         if hasattr(self, "_advanced_attributes"):
             return self._advanced_attributes
         return []
+
+    @property
+    def volume(self) -> float:
+        # calculate the total volume of the milling pattern (sum of all shapes)
+        return sum([shape.volume for shape in self.define()])
 
 @dataclass
 class BitmapPattern(BasePattern):
