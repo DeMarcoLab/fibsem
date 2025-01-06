@@ -349,12 +349,13 @@ class TrenchPattern(BasePattern):
 @dataclass
 class HorseshoePattern(BasePattern):
     width: float
-    spacing: float
-    depth: float
     upper_trench_height: float
     lower_trench_height: float
+    spacing: float
+    depth: float
     side_width: float
-    side_offset: float
+    inverted: bool = False
+    scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     shapes: List[FibsemPatternSettings] = None
     point: Point = Point()
@@ -372,14 +373,19 @@ class HorseshoePattern(BasePattern):
         upper_trench_height = self.upper_trench_height
         cross_section = self.cross_section
         side_width = self.side_width
-        side_offset = self.side_offset
 
         # calculate the centre of the upper and lower trench
         centre_upper_y = point.y + (spacing / 2 + upper_trench_height / 2)
         centre_lower_y = point.y - (spacing / 2 + lower_trench_height / 2)
 
         # calculate the centre of the side trench
-        side_x = point.x - side_offset + (width / 2 - side_width / 2)
+        side_height = spacing + upper_trench_height + lower_trench_height
+        side_offset = (width / 2) + (side_width / 2)
+        if self.inverted:
+            side_offset = -side_offset
+        side_x = point.x + side_offset
+        # to account for assymetric trench heights
+        side_y = point.y + (upper_trench_height - lower_trench_height) / 2
 
         lower_pattern = FibsemRectangleSettings(
             width=width,
@@ -403,11 +409,11 @@ class HorseshoePattern(BasePattern):
 
         side_pattern = FibsemRectangleSettings(
             width=side_width,
-            height=width,
+            height=side_height,
             depth=depth,
             centre_x=side_x,
-            centre_y=point.y,
-            scan_direction="TopToBottom",
+            centre_y=side_y,
+            scan_direction=self.scan_direction,
             cross_section=cross_section
         )
 
@@ -424,7 +430,8 @@ class HorseshoePattern(BasePattern):
             "upper_trench_height": self.upper_trench_height,
             "lower_trench_height": self.lower_trench_height,
             "side_width": self.side_width,
-            "side_offset": self.side_offset,
+            "inverted": self.inverted,
+            "scan_direction": self.scan_direction,
             "cross_section": self.cross_section.name
         }
     
@@ -437,7 +444,8 @@ class HorseshoePattern(BasePattern):
             upper_trench_height=ddict["upper_trench_height"],
             lower_trench_height=ddict["lower_trench_height"],
             side_width=ddict["side_width"],
-            side_offset=ddict["side_offset"],
+            inverted=ddict.get("inverted", False),
+            scan_direction=ddict.get("scan_direction", "TopToBottom"),
             cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
         )
