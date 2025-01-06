@@ -181,13 +181,14 @@ def mill_stages(
             microscope.milling_progress_signal.connect(_handle_progress)
 
         for idx, stage in enumerate(stages):
+            start_time = time.time()
             if parent_ui:
                 if parent_ui.STOP_MILLING:
                     raise Exception("Milling stopped by user.")
 
                 msgd =  {"msg": f"Preparing: {stage.name}",
                         "progress": {"state": "start", 
-                                    "start_time": time.time(),
+                                    "start_time": start_time,
                                     "current_stage": idx, 
                                     "total_stages": len(stages),
                                     }}
@@ -202,7 +203,7 @@ def mill_stages(
                 )
 
                 # performance logging
-                msgd = {"msg": "mill_stages", "idx": idx, "stage": stage.to_dict()}
+                msgd = {"msg": "mill_stages", "idx": idx, "stage": stage.to_dict(), "start_time": start_time, "end_time": time.time()}
                 logging.debug(f"{msgd}")
 
                 if parent_ui:
@@ -228,13 +229,13 @@ def mill_stages(
             microscope.milling_progress_signal.disconnect(_handle_progress)
 
 
-from dataclasses import dataclass
-@dataclass
-class ProgressHandler:
-    parent_ui: None
-    def _progress_handler(self, ddict: dict) -> None:
-        if self.parent_ui:
-            self.parent_ui.milling_progress_signal.emit(ddict)
+# from dataclasses import dataclass
+# @dataclass
+# class ProgressHandler:
+#     parent_ui: None
+#     def _progress_handler(self, ddict: dict) -> None:
+#         if self.parent_ui:
+#             self.parent_ui.milling_progress_signal.emit(ddict)
 
 
 ############################# UTILS #############################
