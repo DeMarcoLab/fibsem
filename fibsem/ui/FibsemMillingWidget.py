@@ -128,6 +128,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.UPDATING_PATTERN: bool = False
         self.CAN_MOVE_PATTERN: bool = True
         self.STOP_MILLING: bool = False
+        self.MILLING_STAGES_INITIALISED: bool = False
 
         self.current_milling_stage: Optional[FibsemMillingStage] = None
         self.milling_stages: List[FibsemMillingStage] = []
@@ -407,14 +408,17 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         self.current_milling_stage: FibsemMillingStage = self.milling_stages[current_index]
 
+        self.MILLING_STAGES_INITIALISED = False
         # update the milling stage UI
         self.set_milling_settings_ui()        
         self.set_milling_strategy_ui()
         self.set_milling_alignment_ui()
         self.set_pattern_settings_ui()
         # self.set_imaging_settings_ui() # TODO: implement
-    
+        self.MILLING_STAGES_INITIALISED = True
         self.show_milling_stage_widgets()
+
+        self.update_ui()
 
     def set_milling_strategy_ui(self):
         """Set the milling strategy UI from the current milling stage."""
@@ -990,11 +994,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             
             # calculate the percent complete
             percent_complete = 1 - (remaining_time / estimated_time)
-            t_m = int(remaining_time // 60)
-            t_s = int(remaining_time % 60)
-
             self.progressBar_milling.setValue(percent_complete * 100)
-            self.progressBar_milling.setFormat(f"Current Stage: {t_m:02d}:{t_s:02d} remaining...")
+            self.progressBar_milling.setFormat(f"Current Stage: {format_duration(remaining_time)} remaining...")
 
         # finished
         if state == "finished":
@@ -1053,6 +1054,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def update_ui(self):
         """Update the milling stages from the UI and try to redraw the patterns."""
+        if not self.MILLING_STAGES_INITIALISED:
+            return
 
         # force the milling hfw to match the current image hfw (TODO: do this more elegantly)
         self.doubleSpinBox_hfw.setValue(self.image_widget.doubleSpinBox_image_hfw.value())
