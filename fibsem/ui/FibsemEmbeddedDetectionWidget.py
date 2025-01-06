@@ -1,30 +1,30 @@
+import logging
 import os
 from copy import deepcopy
+from typing import List
 
 import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 
+import fibsem
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.segmentation import model as fibsem_model
+from fibsem.segmentation.config import CLASS_COLORS
 from fibsem.segmentation.model import load_model
 from fibsem.structures import (
     FibsemImage,
     Point,
 )
-from fibsem import utils
 from fibsem.ui import stylesheets
-from PyQt5.QtCore import pyqtSignal
-from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget
-import logging
+from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget as FibsemEmbeddedDetectionWidgetUI
 
-from fibsem.segmentation.config import CLASS_COLORS
-from typing import List
 
-class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidgets.QWidget):
     continue_signal = pyqtSignal(DetectedFeatures)
 
     def __init__(
@@ -34,7 +34,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         model: fibsem_model.SegmentationModel = None,
         parent=None,
     ):
-        super(FibsemEmbeddedDetectionUI, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
 
         self.parent = parent
@@ -73,7 +73,9 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.viewer.bind_key("L", self._toggle_labelling, overwrite=True)
         self.pushButton_enable_labelling.clicked.connect(self._toggle_labelling)
         self.checkBox_labelling_model_assist.stateChanged.connect(self._toggle_labelling)
-        self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)  
+        self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_enable_labelling.setEnabled(False)
+
 
         self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
         self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
@@ -335,8 +337,6 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         return self.det
 
 
-from fibsem.detection.detection import Feature, DetectedFeatures
-import fibsem
 
 def main():
     # load model

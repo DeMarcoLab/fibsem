@@ -13,6 +13,7 @@ from fibsem.structures import (
     FibsemPatternSettings,
     FibsemRectangleSettings,
     ImageSettings,
+    BeamType,
 )
 from fibsem.utils import current_timestamp_v2
 
@@ -38,7 +39,7 @@ def setup_milling(
             resolution=[1536, 1024],
             beam_type=milling_stage.milling.milling_channel,
             reduced_area=milling_stage.alignment.rect,
-            path=fcfg.DATA_CC_PATH, 
+            path=fcfg.DATA_CC_PATH, # TODO: set this to the last-path?
             filename=f"ref_{milling_stage.name}_initial_alignment_{current_timestamp_v2()}"
         )
         ref_image = microscope.acquire_image(image_settings)
@@ -170,6 +171,9 @@ def mill_stages(
     if isinstance(stages, FibsemMillingStage):
         stages = [stages]
 
+    # TMP: store initial imaging path
+    imaging_path = microscope.get_imaging_settings(beam_type=BeamType.ION).path
+
     try:
         if hasattr(microscope, "milling_progress_signal"):
             if parent_ui: # TODO: tmp ladder to handle progress indirectly
@@ -208,7 +212,9 @@ def mill_stages(
 
                 # optionally acquire images after milling
                 if stage.milling.acquire_images:
-                    acquire_images_after_milling(microscope=microscope, milling_stage=stage, start_time=start_time)
+                    acquire_images_after_milling(microscope=microscope, milling_stage=stage, 
+                                                 start_time=start_time, 
+                                                 path=imaging_path)
 
                 if parent_ui:
                     parent_ui.milling_progress_signal.emit({"msg": f"Finished: {stage.name}"})
@@ -234,12 +240,18 @@ def mill_stages(
 
 ############################# UTILS #############################
 
-def acquire_images_after_milling(microscope: FibsemMicroscope, milling_stage: FibsemMillingStage, start_time: float) -> Tuple[FibsemImage, FibsemImage]:
+def acquire_images_after_milling(
+    microscope: FibsemMicroscope,
+    milling_stage: FibsemMillingStage,
+    start_time: float,
+    path: str,
+) -> Tuple[FibsemImage, FibsemImage]:
     """Acquire images after milling for reference.
-    Args: 
+    Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
         milling_stage (FibsemMillingStage): Milling Stage
         start_time (float): Start time of milling (used for filename / tracking)
+        path (str): Path to save images
     """
 
     # restore imaging conditions
@@ -251,11 +263,11 @@ def acquire_images_after_milling(microscope: FibsemMicroscope, milling_stage: Fi
 
     # set imaging parameters (filename, path, etc.)
     # imaging_settings = microscope.get_imaging_settings(beam_type=BeamType.ION) # TODO: give better control over these imaging settings.
-    # milling_stage.imaging.save = True 
+    milling_stage.imaging.path = path
     milling_stage.imaging.filename = f"ref_milling_{milling_stage.name.replace(' ', '-')}_finished_{str(start_time).replace('.', '_')}"
     
-    from pprint import pprint
-    pprint(milling_stage.imaging.to_dict())
+    # from pprint import pprint
+    # pprint(milling_stage.imaging.to_dict())
 
     # acquire images
     from fibsem import acquire
@@ -263,5 +275,9 @@ def acquire_images_after_milling(microscope: FibsemMicroscope, milling_stage: Fi
 
     # query: set the images to the UI?
     # query: add an id to the milling stage to track the images?
+    # QUERY: what is a better way to set the path?
 
     return images
+
+# QUERY: should List[FibsemMillingStage] be a class? that has it's own settings? 
+# E.G. should acquire images be set at that level, rather than at the stage level?

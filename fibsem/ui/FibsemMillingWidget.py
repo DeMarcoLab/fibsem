@@ -143,11 +143,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
     def setup_connections(self):
         """Setup the connections for the milling widget."""
 
-        IS_THERMO = isinstance(self.microscope, ThermoMicroscope)
-        IS_TESCAN = isinstance(self.microscope, TescanMicroscope)
+        is_thermo = isinstance(self.microscope, ThermoMicroscope)
+        is_tescan = isinstance(self.microscope, TescanMicroscope)
 
         if isinstance(self.microscope, DemoMicroscope):
-            IS_THERMO, IS_TESCAN = True, False
+            is_thermo, is_tescan = True, False
         
         # MILLING SETTINGS
         # general
@@ -160,13 +160,13 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.checkBox_milling_acquire_images.stateChanged.connect(self.toggle_imaging_visibility)
         
         # ThermoFisher Only 
-        self.label_application_file.setVisible(IS_THERMO)
-        self.comboBox_application_file.setVisible(IS_THERMO)
-        self.doubleSpinBox_milling_current.setVisible(IS_THERMO)
-        self.label_milling_current.setVisible(IS_THERMO)
-        self.label_voltage.setVisible(IS_THERMO)
-        self.spinBox_voltage.setVisible(IS_THERMO) # TODO: set this to the available voltages
-        if IS_THERMO:
+        self.label_application_file.setVisible(is_thermo)
+        self.comboBox_application_file.setVisible(is_thermo)
+        self.doubleSpinBox_milling_current.setVisible(is_thermo)
+        self.label_milling_current.setVisible(is_thermo)
+        self.label_voltage.setVisible(is_thermo)
+        self.spinBox_voltage.setVisible(is_thermo) # TODO: set this to the available voltages
+        if is_thermo:
             AVAILABLE_APPLICATION_FILES = self.microscope.get_available_values("application_file")
             self.comboBox_application_file.addItems(AVAILABLE_APPLICATION_FILES)
             # milling currents: TODO: make this a combobox with available values
@@ -182,17 +182,17 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         # Tescan Only
         AVAILABLE_PRESETS = self.microscope.get_available_values("presets")
-        self.label_rate.setVisible(IS_TESCAN)
-        self.label_spot_size.setVisible(IS_TESCAN)
-        self.label_dwell_time.setVisible(IS_TESCAN)
-        self.doubleSpinBox_rate.setVisible(IS_TESCAN)
-        self.doubleSpinBox_spot_size.setVisible(IS_TESCAN)
-        self.doubleSpinBox_dwell_time.setVisible(IS_TESCAN)   
-        self.comboBox_preset.setVisible(IS_TESCAN)
-        self.label_preset.setVisible(IS_TESCAN)
-        self.label_spacing.setVisible(IS_TESCAN)
-        self.doubleSpinBox_spacing.setVisible(IS_TESCAN)
-        if IS_TESCAN:   
+        self.label_rate.setVisible(is_tescan)
+        self.label_spot_size.setVisible(is_tescan)
+        self.label_dwell_time.setVisible(is_tescan)
+        self.doubleSpinBox_rate.setVisible(is_tescan)
+        self.doubleSpinBox_spot_size.setVisible(is_tescan)
+        self.doubleSpinBox_dwell_time.setVisible(is_tescan)   
+        self.comboBox_preset.setVisible(is_tescan)
+        self.label_preset.setVisible(is_tescan)
+        self.label_spacing.setVisible(is_tescan)
+        self.doubleSpinBox_spacing.setVisible(is_tescan)
+        if is_tescan:   
             self.comboBox_preset.addItems(AVAILABLE_PRESETS)
             self.doubleSpinBox_rate.valueChanged.connect(self.update_milling_settings_from_ui)
             self.doubleSpinBox_spot_size.valueChanged.connect(self.update_milling_settings_from_ui)
@@ -283,6 +283,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             index = self.listWidget_active_milling_stages.currentRow()
             self.comboBox_milling_stage.setCurrentIndex(index)
             # QUERY: remove combobox, just use list widget?
+            # QUERY: support renaming stages
     
     def on_stage_checked(self, item: QListWidgetItem):
         print(f"Item '{item.text()}' check state changed to: {item.checkState() == Qt.Checked}")
@@ -325,9 +326,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.listWidget_active_milling_stages.clear()
 
         for stage in self.milling_stages:
-            # txt = f"{stage.name} - {stage.pattern.name} ({format_duration(stage.estimated_time)})"
-            # NOTE: the above breaks the UI, need to fix this?
-            item = QListWidgetItem(stage.name)
+            txt = f"{stage.name} - {stage.pattern.name} ({format_duration(stage.estimated_time)})"
+            item = QListWidgetItem(txt)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(Qt.Checked)
             self.listWidget_active_milling_stages.addItem(item)
@@ -390,6 +390,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         show = self.current_milling_stage is not None
         self.scrollArea_milling_stage.setVisible(show)
         self.listWidget_active_milling_stages.setVisible(show)
+        self.label_milling_estimated_time.setVisible(show)
 
         # disable milling buttons if no milling stage
         self.pushButton_run_milling.setEnabled(show)
@@ -895,15 +896,28 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         return milling_settings
 
+    def update_estimated_time(self, milling_stages: List[FibsemMillingStage]) -> None:
+        # need to update the selectbox
+        for idx, st in enumerate(self.milling_stages):
+            txt = f"{st.name} - {st.pattern.name} ({format_duration(st.estimated_time)})"
+            if idx < self.listWidget_active_milling_stages.count():
+                self.listWidget_active_milling_stages.item(idx).setText(txt)
+
+        # estimate the total milling time
+        total_time = estimate_total_milling_time(milling_stages)
+        self.label_milling_estimated_time.setText(f"Estimated Milling Time: {format_duration(total_time)}")
+
     def get_selected_milling_stages(self) -> Optional[FibsemMillingStage]:
         """Return the milling stages that are checked in the list widget."""
-        checked_stages = []
+        checked_indexes = []
         for i in range(self.listWidget_active_milling_stages.count()):
             item = self.listWidget_active_milling_stages.item(i)
             if item.checkState() == Qt.Checked:
-                checked_stages.append(item.text())
+                checked_indexes.append(i)
 
-        checked_milling_stages = [stage for stage in self.milling_stages if stage.name in checked_stages]
+        # get the checked milling stages
+        checked_milling_stages = [self.milling_stages[idx] for idx in checked_indexes 
+                                  if idx < len(self.milling_stages)]
 
         return checked_milling_stages
 
@@ -1073,9 +1087,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         if not isinstance(milling_stages, list):
             milling_stages = [milling_stages]
 
-        # estimate the total milling time
-        total_time = estimate_total_milling_time(milling_stages)
-        self.label_milling_estimated_time.setText(f"Estimated Milling Time: {format_duration(total_time)}")
+        # update the estimated time
+        self.update_estimated_time(milling_stages)
 
         # pprint(milling_stages[0].to_dict())
         # check hfw threshold # TODO: do this check more seriously, rather than rule of thumb
