@@ -315,10 +315,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             autogamma=self.checkBox_image_use_autogamma.isChecked(),
             save=self.checkBox_image_save_image.isChecked(),
             path=Path(self.lineEdit_image_path.text()),
-            filename=self.lineEdit_image_label.text()
-            
+            filename=self.lineEdit_image_label.text()  
         )
-        
+
         # detector settings
         self.detector_settings = FibsemDetectorSettings(
             type=self.detector_type_combobox.currentText(),

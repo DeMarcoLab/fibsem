@@ -1,13 +1,16 @@
 import logging
 import time
-from typing import List
+import uuid
+from typing import List, Tuple
 
 from fibsem import config as fcfg
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
+    BeamType,
     FibsemBitmapSettings,
     FibsemCircleSettings,
+    FibsemImage,
     FibsemLineSettings,
     FibsemPatternSettings,
     FibsemRectangleSettings,
@@ -206,6 +209,10 @@ def mill_stages(
                 msgd = {"msg": "mill_stages", "idx": idx, "stage": stage.to_dict(), "start_time": start_time, "end_time": time.time()}
                 logging.debug(f"{msgd}")
 
+                # optionally acquire images after milling
+                if stage.milling.acquire_images:
+                    acquire_images_after_milling(microscope=microscope, milling_stage=stage, start_time=start_time)
+
                 if parent_ui:
                     parent_ui.milling_progress_signal.emit({"msg": f"Finished: {stage.name}"})
             except Exception as e:
@@ -228,14 +235,36 @@ def mill_stages(
         if hasattr(microscope, "milling_progress_signal"):
             microscope.milling_progress_signal.disconnect(_handle_progress)
 
-
-# from dataclasses import dataclass
-# @dataclass
-# class ProgressHandler:
-#     parent_ui: None
-#     def _progress_handler(self, ddict: dict) -> None:
-#         if self.parent_ui:
-#             self.parent_ui.milling_progress_signal.emit(ddict)
-
-
 ############################# UTILS #############################
+
+def acquire_images_after_milling(microscope: FibsemMicroscope, milling_stage: FibsemMillingStage, start_time: float) -> Tuple[FibsemImage, FibsemImage]:
+    """Acquire images after milling for reference.
+    Args: 
+        microscope (FibsemMicroscope): Fibsem microscope instance
+        milling_stage (FibsemMillingStage): Milling Stage
+        start_time (float): Start time of milling (used for filename / tracking)
+    """
+
+    # restore imaging conditions
+    finish_milling(
+        microscope=microscope,
+        imaging_current=microscope.system.ion.beam.beam_current,
+        imaging_voltage=microscope.system.ion.beam.voltage,
+    )
+
+    # set imaging parameters (filename, path, etc.)
+    # imaging_settings = microscope.get_imaging_settings(beam_type=BeamType.ION) # TODO: give better control over these imaging settings.
+    # milling_stage.imaging.save = True 
+    milling_stage.imaging.filename = f"ref_milling_{milling_stage.name.replace(' ', '-')}_finished_{str(start_time).replace('.', '_')}"
+    
+    from pprint import pprint
+    pprint(milling_stage.imaging.to_dict())
+
+    # acquire images
+    from fibsem import acquire
+    images = acquire.take_reference_images(microscope, milling_stage.imaging)
+
+    # query: set the images to the UI?
+    # query: add an id to the milling stage to track the images?
+
+    return images

@@ -1090,6 +1090,7 @@ class FibsemMillingSettings:
     spacing: float = 1.0
     milling_voltage: float = 30e3
     milling_channel: BeamType = BeamType.ION
+    acquire_images: bool = False
 
     def __post_init__(self):
         assert isinstance(
@@ -1131,6 +1132,7 @@ class FibsemMillingSettings:
             "spacing": self.spacing,
             "milling_voltage": self.milling_voltage,
             "milling_channel": self.milling_channel.name,
+            "acquire_images": self.acquire_images,
         }
 
         return settings_dict
@@ -1149,6 +1151,7 @@ class FibsemMillingSettings:
             spacing=settings.get("spacing", 1.0),
             milling_voltage=settings.get("milling_voltage", 30e3),
             milling_channel=BeamType[settings.get("milling_channel", "ION")],
+            acquire_images=settings.get("acquire_images", False),
         )
 
         return milling_settings

@@ -42,6 +42,7 @@ from fibsem.structures import (
     FibsemMillingSettings,
     MillingState,
     Point,
+    ImageSettings,
 )
 from fibsem.ui import stylesheets as stylesheets
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
@@ -152,6 +153,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.comboBox_patterning_mode.addItems(AVAILABLE_MILLING_MODES)
         self.comboBox_patterning_mode.currentIndexChanged.connect(self.update_milling_settings_from_ui)
         self.doubleSpinBox_hfw.valueChanged.connect(self.update_milling_settings_from_ui)
+        self.checkBox_milling_acquire_images.stateChanged.connect(self.update_milling_settings_from_ui)
+        self.checkBox_milling_acquire_images.stateChanged.connect(self.toggle_imaging_visibility)
         
         # ThermoFisher Only 
         self.label_application_file.setVisible(IS_THERMO)
@@ -206,6 +209,13 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.comboBox_strategy_name.setCurrentText(DEFAULT_STRATEGY)
         self.comboBox_strategy_name.currentIndexChanged.connect(self.update_current_selected_strategy) # TODO: connect event
         # TODO: auto-update drift correction and strategy on value changes
+
+        # image acquisition
+        self.comboBox_imaging_resolution.addItems(cfg.STANDARD_RESOLUTIONS)
+        self.comboBox_imaging_resolution.setCurrentText(cfg.DEFAULT_STANDARD_RESOLUTION)
+        self.checkBox_imaging_save.setChecked(True)
+        self.checkBox_imaging_use_autocontrast.setChecked(True)
+        self.groupBox_imaging.setVisible(False)
 
         # milling stages
         self.pushButton_add_milling_stage.clicked.connect(self.add_milling_stage)
@@ -396,6 +406,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.set_milling_strategy_ui()
         self.set_milling_alignment_ui()
         self.set_pattern_settings_ui()
+        # self.set_imaging_settings_ui() # TODO: implement
     
         self.show_milling_stage_widgets()
 
@@ -501,6 +512,34 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         return milling_alignment
 
+    def toggle_imaging_visibility(self):
+        """Toggle the visibility of the imaging settings."""
+        visible = self.checkBox_milling_acquire_images.isChecked()
+        self.groupBox_imaging.setVisible(visible)
+
+    def get_imaging_settings_from_ui(self):
+        """Get the imaging settings from the UI."""
+
+        # imaging settings
+        resolution = list(map(int, self.comboBox_imaging_resolution.currentText().split("x")))
+        imaging_settings = ImageSettings(
+            resolution=resolution,
+            dwell_time=self.doubleSpinBox_imaging_dwell_time.value() * constants.MICRO_TO_SI,
+            hfw=self.doubleSpinBox_imaging_fov.value() * constants.MICRO_TO_SI,
+            beam_type=BeamType.ELECTRON, # redundant, always both
+            autocontrast=self.checkBox_imaging_use_autocontrast.isChecked(),
+            save = self.checkBox_imaging_save.isChecked(),
+        )
+        return imaging_settings
+
+    def set_imaging_settings_ui(self):
+        """Set the imaging settings UI from the current milling stage."""
+        imaging_settings = self.current_milling_stage.imaging
+        res = imaging_settings.resolution
+        res_str = f"{res[0]}x{res[1]}"
+        self.comboBox_imaging_resolution.setCurrentText(res_str) # TODO: handle when it doesn't match exactly?
+        # TODO:
+
     def redraw_patterns(self):
         """Redraw the patterns in the viewer."""
         if self.UPDATING_PATTERN:
@@ -525,6 +564,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         milling_stage.pattern = self.get_pattern_from_ui_v2()
         milling_stage.alignment = self.get_milling_alignment_from_ui()
         milling_stage.strategy = self.get_milling_strategy_from_ui()
+        milling_stage.imaging = self.get_imaging_settings_from_ui()
 
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
 
@@ -839,7 +879,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             preset= self.comboBox_preset.currentText(),
             spacing=self.doubleSpinBox_spacing.value(),
             milling_voltage=self.spinBox_voltage.value(),
-            patterning_mode=self.comboBox_patterning_mode.currentText()
+            patterning_mode=self.comboBox_patterning_mode.currentText(),
+            acquire_images=self.checkBox_milling_acquire_images.isChecked(),
         )
 
         return milling_settings
@@ -919,7 +960,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         state = progress_info.get('state', None)
 
-        # start milling stage progress bar
+        # start milling stage progress barf
         if state == "start":
             current_stage = progress_info.get('current_stage', 0)
             total_stages = progress_info.get('total_stages', 1)

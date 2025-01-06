@@ -5,7 +5,7 @@ from typing import List, Union, Dict, Any, Tuple
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
-from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment
+from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings
 
 @dataclass
 class MillingStrategyConfig(ABC):
@@ -64,6 +64,7 @@ class FibsemMillingStage:
     patterns: List[BasePattern] = None # unused
     strategy: MillingStrategy = None
     alignment: MillingAlignment = MillingAlignment()
+    imaging: ImageSettings = ImageSettings() # settings for post-milling acquisition
 
     def __post_init__(self):
         if self.pattern is None:
@@ -79,7 +80,8 @@ class FibsemMillingStage:
             "milling": self.milling.to_dict(),
             "pattern": self.pattern.to_dict(),
             "strategy": self.strategy.to_dict(),
-            "alignment": self.alignment.to_dict()
+            "alignment": self.alignment.to_dict(),
+            "imaging": self.imaging.to_dict()
         }
 
     @classmethod
@@ -88,6 +90,7 @@ class FibsemMillingStage:
         strategy_name = strategy_config.get("name", "Standard")
         pattern_name = data["pattern"]["name"]
         alignment = data.get("alignment", {})
+        imaging = data.get("imaging", {})
         return cls(
             name=data["name"],
             num=data.get("num", 0),
@@ -95,7 +98,9 @@ class FibsemMillingStage:
             pattern=get_pattern(pattern_name, data["pattern"]),
             strategy=get_strategy(strategy_name, config=strategy_config),
             alignment=MillingAlignment.from_dict(alignment),
+            imaging=ImageSettings.from_dict(imaging)
         )
+
 
 def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> List[FibsemMillingStage]:
     stages = []
@@ -103,7 +108,6 @@ def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> L
         stage = FibsemMillingStage.from_dict(stage_config)
         stages.append(stage)
     return stages
-
 
 def get_protocol_from_stages(stages: List[FibsemMillingStage]) -> List[Dict[str, Any]]:
     
