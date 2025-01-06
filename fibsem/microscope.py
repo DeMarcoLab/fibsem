@@ -695,6 +695,10 @@ class FibsemMicroscope(ABC):
         "Turn off the specified beam type."
         self.set("on", False, beam_type)
         return self.get("on", beam_type)
+    
+    def is_on(self, beam_type: BeamType) -> bool:
+        """Check if the specified beam type is on."""
+        return self.get("on", beam_type)
 
 class ThermoMicroscope(FibsemMicroscope):
     """
