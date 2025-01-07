@@ -3,17 +3,18 @@
 import json
 import os
 import sys
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
-from typing import Optional, Union, List, Tuple
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 import tifffile as tff
+
 import fibsem
-from fibsem.config import METADATA_VERSION
-from abc import ABC, abstractmethod
+from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
 
 try:
     from tescanautomation.Common import Document
@@ -29,14 +30,14 @@ try:
     )
     sys.path.append("C:\Program Files\Python36\envs\AutoScript")
     sys.path.append("C:\Program Files\Python36\envs\AutoScript\Lib\site-packages")
+    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage,
+        CompustagePosition,
         ManipulatorPosition,
         Rectangle,
         StagePosition,
-        CompustagePosition,
     )
-    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 
     THERMO = True
 except ImportError:
@@ -628,8 +629,9 @@ class ImageSettings:
         Returns:
             ImageSettings: The image settings for the given FibsemImage object.
         """
-        from fibsem import utils
         from copy import deepcopy
+
+        from fibsem import utils
 
         image_settings = deepcopy(image.metadata.image_settings)
         image_settings.filename = utils.current_timestamp()
@@ -1724,6 +1726,129 @@ class FibsemImage:
             self.data,
             metadata=metadata_dict,
         )
+
+    ### EXPERIMENTAL START ####
+
+    def _save_ome_tiff(self, path: str, filename: str) -> None:
+        from ome_types import OME
+        from ome_types.model import (
+            Channel,
+            Image,
+            Instrument,
+            ManufacturerSpec,
+            MapAnnotation,
+            Pixels,
+            Plane,
+            StructuredAnnotations,
+            TiffData,
+            Microscope,
+        )
+        from ome_types.model.simple_types import UnitsLength
+
+
+        md = self.metadata
+        microscope = Microscope(
+            manufacturer=md.system.info.manufacturer,
+            model=md.system.info.model,
+            serial_number=md.system.info.serial_number,
+        )
+        instrument = Instrument(microscope=microscope)
+
+        size_y = self.data.shape[0]
+        size_x = self.data.shape[1]
+        # TODO: use sample plane projection position for this pos
+        stage_position = md.microscope_state.stage_position
+        pos_x = stage_position.x
+        pos_y = stage_position.y
+        pos_z = stage_position.z
+
+        plane = Plane(the_c=0, the_z=0, the_t=0,
+                    position_x=pos_x, position_y=pos_y, position_z=pos_z,
+                    position_x_unit=UnitsLength.METER, 
+                    position_y_unit=UnitsLength.METER, 
+                    position_z_unit=UnitsLength.METER)
+        tiff_data = TiffData(ifd=0)
+
+        ch = Channel(
+            id='Channel:0',
+            name="SEM" if md.image_settings.beam_type is BeamType.ELECTRON else "FIB",
+            samples_per_pixel=1,
+        )
+
+        pixels = Pixels(
+            id='Pixels:0',
+            dimension_order='XYZTC',
+            size_x=size_x,
+            size_y=size_y,
+            size_c=1,
+            size_t=1,
+            size_z=1,
+            type=self.data.dtype.name,
+            physical_size_x=md.pixel_size.x,
+            physical_size_y=md.pixel_size.y,
+            physical_size_x_unit=UnitsLength.METER,
+            physical_size_y_unit=UnitsLength.METER,
+            channels=[ch],
+            planes=[plane],
+            tiff_data_blocks=[tiff_data],
+        )
+
+        sa = StructuredAnnotations()
+        mapAnnotation=[MapAnnotation(id="Annotation:0", 
+                        value={"OpenFIBSEM": json.dumps(md.to_dict())}
+                )]
+        sa.map_annotations = mapAnnotation
+
+        ome_image = Image(
+            id='Image:0',
+            name=md.image_settings.filename,
+            acquisition_date=md.microscope_state.timestamp,
+            pixels=pixels,
+        )
+
+        ome = OME()
+        ome.images.append(ome_image)
+        ome.instruments.append(instrument)
+        ome.structured_annotations = sa
+
+        assert tff.OmeXml.validate(ome.to_xml()), "OME-XML validation failed"
+
+        # TODO: check for a unique filename
+        path = os.path.join(path, filename)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        
+        # add suffix if not present
+        OME_TIFF_SUFFIXES = ('.ome.tiff', ".ome.tif", ".tif", ".tiff")
+        if not path.endswith(OME_TIFF_SUFFIXES):
+            # Note: with_suffix doesn't work correctly with double extensions, .ome.tiff
+            path = Path(path).with_suffix(".ome.tiff")
+
+        with tff.TiffWriter(path) as tif:
+            tif.write(self.data, contiguous=True)
+            tif.overwrite_description(ome.to_xml())
+
+    @classmethod
+    def _load_from_ome_tiff(cls, path: str) -> 'FibsemImage':
+        import ome_types
+
+        # read ome-xml, extract openfibsem metadata
+        try:
+            ome = ome_types.from_tiff(path)
+            openfibsem_md = json.loads(ome.structured_annotations.map_annotations[0].value['OpenFIBSEM'])
+            
+            # parse metadata to struct
+            md = FibsemImageMetadata.from_dict(openfibsem_md)
+        except Exception as e:
+            import logging
+            logging.warning(f"Failing to load metadata from OME-TIFF: {e}")
+            md = None
+
+        # load image data
+        with tff.TiffFile(path) as tif:
+            data = tif.pages[0].asarray()
+        return cls(data=data, metadata=md)
+    
+    ### EXPERIMENTAL END ####
 
     if THERMO:
 
