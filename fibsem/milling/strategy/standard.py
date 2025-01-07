@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling import (draw_patterns, estimate_milling_time, run_milling,
+from fibsem.milling import (draw_patterns, run_milling,
                             setup_milling)
 from fibsem.milling.base import (FibsemMillingStage, MillingStrategy,
                                  MillingStrategyConfig)
@@ -42,9 +42,9 @@ class StandardMillingStrategy(MillingStrategy):
         logging.info(f"Running {self.name} Milling Strategy for {stage.name}")
         setup_milling(microscope, milling_stage=stage)
 
-        patterns = draw_patterns(microscope, stage.pattern.define())
+        draw_patterns(microscope, stage.pattern.define())
 
-        estimated_time = estimate_milling_time(microscope, patterns)
+        estimated_time = microscope.estimate_milling_time()
         logging.info(f"Estimated time for {stage.name}: {estimated_time:.2f} seconds")
 
         if parent_ui:

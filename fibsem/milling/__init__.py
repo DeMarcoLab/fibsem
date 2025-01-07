@@ -11,7 +11,6 @@ from fibsem.milling.base import (
 from fibsem.milling.core import (
     draw_pattern,
     draw_patterns,
-    estimate_milling_time,
     finish_milling,
     mill_stages,
     run_milling,

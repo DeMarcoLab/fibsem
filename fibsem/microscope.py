@@ -309,7 +309,7 @@ class FibsemMicroscope(ABC):
         pass 
 
     @abstractmethod
-    def estimate_milling_time(self, patterns: list = None) -> float:
+    def estimate_milling_time(self) -> float:
         pass
 
     @abstractmethod
@@ -902,7 +902,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self._default_application_file = "Si"
 
         self._last_imaging_settings: ImageSettings = ImageSettings()
-        self.milling_channel: BeamType.ION = BeamType.ION
+        self.milling_channel: BeamType = BeamType.ION
 
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
@@ -1759,7 +1759,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.clear_patterns()
         self.set("current", imaging_current, self.milling_channel)
         self.set("voltage", imaging_voltage, self.milling_channel)
-        self.connection.patterning.mode = "Serial" # TODO: store initial imaging settings in setup_milling, restore here, rather than hybrid
+        self.set("patterning_mode", value="Serial")
+         # TODO: store initial imaging settings in setup_milling, restore here, rather than hybrid
 
         logging.debug({"msg": "finish_milling", "imaging_current": imaging_current, "imaging_voltage": imaging_voltage})
 
@@ -1799,9 +1800,8 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.clear_patterns()
         self._patterns = []
 
-    def estimate_milling_time(self, patterns: list) -> float:
+    def estimate_milling_time(self) -> float:
         """Calculates the estimated milling time for a list of patterns."""
-        # TODO: use the internally stored patterns, don't require the user to pass them in
         total_time = 0
         for pattern in self._patterns:
             total_time += pattern.time
@@ -4323,7 +4323,7 @@ class TescanMicroscope(FibsemMicroscope):
             logging.debug(f"Error in finish_milling: {e}")
             pass
     
-    def estimate_milling_time(self,patterns):
+    def estimate_milling_time(self) -> float:
         
         # load and unload layer to check time
         self.connection.DrawBeam.LoadLayer(self.layer)
@@ -5809,7 +5809,7 @@ class DemoMicroscope(FibsemMicroscope):
     def get_milling_state(self) -> MillingState:
         return self.milling_system.state
 
-    def estimate_milling_time(self, patterns: List = None) -> float:
+    def estimate_milling_time(self) -> float:
         """Estimate the milling time for the specified patterns."""
         PATTERN_SLEEP_TIME = 5
         return PATTERN_SLEEP_TIME * len(self.milling_system.patterns)

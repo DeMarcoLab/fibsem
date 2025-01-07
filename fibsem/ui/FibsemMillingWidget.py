@@ -146,7 +146,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         is_thermo = isinstance(self.microscope, ThermoMicroscope)
         is_tescan = isinstance(self.microscope, TescanMicroscope)
 
-        if isinstance(self.microscope, DemoMicroscope):
+        if isinstance(self.microscope, DemoMicroscope) or (not is_thermo and not is_tescan):
             is_thermo, is_tescan = True, False
         
         # MILLING SETTINGS

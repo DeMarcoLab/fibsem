@@ -71,19 +71,6 @@ def run_milling(
     """
     microscope.run_milling(milling_current, milling_voltage, asynch)
 
-
-def estimate_milling_time(microscope: FibsemMicroscope, microscope_patterns) -> float:
-    """Get the milling status.
-
-    Args:
-        microscope (FibsemMicroscope): Fibsem microscope instance
-
-    """
-
-    total_time = microscope.estimate_milling_time(microscope_patterns)
-        
-    return total_time
-
 def finish_milling(
     microscope: FibsemMicroscope, imaging_current: float = 20e-12, imaging_voltage: float = 30e3
 ) -> None:
