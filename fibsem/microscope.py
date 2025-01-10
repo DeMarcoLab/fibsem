@@ -5256,6 +5256,14 @@ class DemoMicroscope(FibsemMicroscope):
         class MillingSystem:
             state: MillingState = MillingState.IDLE
             patterns: List[FibsemPatternSettings] = None
+            patterning_mode: str = "Serial"
+            default_beam_type: BeamType = BeamType.ION
+            default_application_file: str = "Si"
+
+        @dataclass
+        class ImagingSystem:
+            active_view: int = BeamType.ELECTRON.value
+            active_device: int = BeamType.ELECTRON.value
 
         # initialise system
         self.connection = DemoMicroscopeClient()
@@ -5321,6 +5329,7 @@ class DemoMicroscope(FibsemMicroscope):
         )
         self.stage_is_compustage: bool = False
         self.milling_system = MillingSystem(patterns=[])
+        self.imaging_system = ImagingSystem()
             
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -5388,7 +5397,6 @@ class DemoMicroscope(FibsemMicroscope):
         else:
             self._ib_image = image
 
-        self.milling_channel: BeamType.ION = BeamType.ION
         # store last imaging settings
         self._last_imaging_settings = image_settings
 
@@ -5526,7 +5534,7 @@ class DemoMicroscope(FibsemMicroscope):
         return self.get_stage_position()
 
     def stable_move(self, dx: float, dy:float, beam_type: BeamType, static_wd: bool=False) -> FibsemStagePosition:
-        
+        return ThermoMicroscope.stable_move(self, dx, dy, beam_type, static_wd)
         _check_stage_movement(self.system, FibsemStagePosition(x=dx, y=dy))
 
         wd = self.get("working_distance", BeamType.ELECTRON) 
@@ -5616,6 +5624,7 @@ class DemoMicroscope(FibsemMicroscope):
             beam_type (BeamType): beam type to move in
             static_wd (bool, optional): whether to fix the working distance. Defaults to False.
         """
+        return ThermoMicroscope._y_corrected_stage_movement(self, expected_y=expected_y, beam_type=beam_type)
         
         # all angles in radians
         stage_tilt_flat_to_electron = np.deg2rad(self.system.electron.column_tilt)
@@ -5736,7 +5745,7 @@ class DemoMicroscope(FibsemMicroscope):
         """Setup the milling parameters."""
 
         _check_beam(mill_settings.milling_channel, self.system)
-        self._default_application_file = mill_settings.application_file
+        self.milling_system.default_application_file = mill_settings.application_file
         self.milling_channel = mill_settings.milling_channel
         self.set_milling_settings(mill_settings=mill_settings)
         self.clear_patterns()
@@ -6161,6 +6170,27 @@ class DemoMicroscope(FibsemMicroscope):
                 logging.info(f"Plasma gas set to {value}.")
 
                 return
+
+        # imaging system
+        if key == "active_view":
+            self.imaging_system.active_view = value.value
+            return
+        if key == "active_device":
+            self.imaging_system.active_device = value.value
+
+        # milling
+        if key == "patterning_mode":
+            self.milling_system.patterning_mode = value
+            return
+        if key == "application_file":
+            self.milling_system.default_application_file = value
+            return
+        if key == "milling_channel":
+            self.milling_channel = value
+            return
+        if key == "default_patterning_beam_type":
+            self.milling_system.default_beam_type = value
+            return
 
         # stage properties
         if key == "stage_home":
