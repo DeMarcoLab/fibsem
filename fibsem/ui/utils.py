@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import numpy as np
 from PyQt5 import QtGui, QtWidgets
@@ -8,6 +8,7 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (
     QLabel,
     QMessageBox,
+    QWidget,
 )
 
 from fibsem import config as cfg
@@ -29,8 +30,11 @@ def set_arr_as_qlabel(
     return label
 
 
-def message_box_ui(title: str, text: str, buttons=QMessageBox.Yes | QMessageBox.No):
-    msg = QMessageBox()
+def message_box_ui(title: str, 
+                   text: str, 
+                   buttons=QMessageBox.Yes | QMessageBox.No, 
+                   parent: Optional[QWidget] = None) -> bool:
+    msg = QMessageBox(parent=parent)
     msg.setWindowTitle(title)
     msg.setText(text)
     msg.setStandardButtons(buttons)

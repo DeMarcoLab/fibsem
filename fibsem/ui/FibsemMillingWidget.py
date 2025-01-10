@@ -1062,6 +1062,13 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.pushButton_stop_milling.setVisible(False)
             self.pushButton_pause_milling.setVisible(False)
 
+        # disable the milling stage widgets while milling
+        self.groupBox_aligment.setEnabled(not milling)
+        self.groupBox_milling_settings.setEnabled(not milling)
+        self.groupBox_pattern_settings.setEnabled(not milling)
+        self.groupBox_strategy.setEnabled(not milling)
+        self.groupBox_imaging.setEnabled(not milling)
+
         if caller is None:
             self.image_widget._toggle_interactions(enabled, caller="milling")
             self.parent.movement_widget._toggle_interactions(enabled, caller="milling")
