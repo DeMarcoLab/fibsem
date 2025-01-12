@@ -135,6 +135,7 @@ def draw_milling_patterns(
     milling_stages: List[FibsemMillingStage],
     crosshair: bool = True,
     scalebar: bool = True,
+    title: str = "Milling Patterns",
 ) -> plt.Figure:
     """
     Draw milling patterns on an image.
@@ -190,6 +191,9 @@ def draw_milling_patterns(
             plt.gca().add_artist(scalebar)
         except ImportError:
             logging.debug("Scalebar not available, skipping")
+
+    # set title
+    ax.set_title(title)
 
     return fig, ax
 
