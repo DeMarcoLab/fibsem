@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import napari
 import napari.utils.notifications
@@ -63,7 +63,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.imaging_layers: Dict[str, NapariImageLayer] = {}
         self.imaging_layers[BeamType.ELECTRON] = None
         self.imaging_layers[BeamType.ION] = None
-        
+
         # generate initial blank images 
         self.eb_image = FibsemImage.generate_blank_image(resolution=image_settings.resolution, hfw=image_settings.hfw)
         self.ib_image = FibsemImage.generate_blank_image(resolution=image_settings.resolution, hfw=image_settings.hfw)
@@ -71,7 +71,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         # overlay layers
         self.ruler_layer: NapariShapesLayer = None
         self.alignment_layer: NapariShapesLayer = None
-        
+
         self.ACQUIRING_IMAGES:bool = False
 
         self.setup_connections()
@@ -95,6 +95,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
 
         # buttons
         self.pushButton_take_image.clicked.connect(self.acquire_image)
+        self.pushButton_acquire_sem_image.clicked.connect(self.acquire_sem_image)
+        self.pushButton_acquire_fib_image.clicked.connect(self.acquire_fib_image)
         self.pushButton_take_all_images.clicked.connect(self.acquire_reference_images)
                         
         # image / beam settings
@@ -122,6 +124,8 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
 
         # set ui stylesheets
         self.pushButton_take_image.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_acquire_sem_image.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_acquire_fib_image.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
         self.pushButton_take_all_images.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
         self.set_detector_button.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
         self.button_set_beam_settings.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
@@ -140,8 +144,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             self.comboBox_presets.hide()
             self.label_presets.hide()
 
+        # feature flags
         self.pushButton_show_alignment_area.setVisible(False)
         self.pushButton_show_alignment_area.clicked.connect(lambda: self.toggle_alignment_area(None))
+
+        self.pushButton_take_image.setVisible(False)
+        self.acquisition_buttons: list =[self.pushButton_take_all_images, 
+                                         self.pushButton_take_image, 
+                                         self.pushButton_acquire_sem_image, 
+                                         self.pushButton_acquire_fib_image]
 
     def toggle_mode(self):
         """Toggle the visibility of the advanced settings"""
@@ -189,7 +200,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             p1,p2 = data[0],data[1]
 
 
-            hfw_scale = self.eb_image.metadata.pixel_size.x if self.check_point_image_in_eb(p1) else self.ib_image.metadata.pixel_size.x
+            hfw_scale = self.eb_image.metadata.pixel_size.x if check_point_image_in_eb(p1) else self.ib_image.metadata.pixel_size.x
 
             midpoint = [np.mean([p1[0],p2[0]]),np.mean([p1[1],p2[1]])]
             dist_um = 500 * hfw_scale*constants.SI_TO_MICRO
@@ -220,9 +231,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             self.restore_active_layer_for_movement()
 
     def update_ruler_points(self,layer, event):
-        
+
         dragged = False
         yield
+
+        def check_point_image_in_eb(point: Tuple[int,int]) -> bool:
+            if point[1] >= 0 and point[1] <= self.eb_layer.data.shape[1]:
+                return True
+            else:
+                return False
 
         while event.type == 'mouse_move':
 
@@ -241,7 +258,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
                 self.viewer.layers['ruler_line'].data = [p1,p2]
                 self.viewer.layers['ruler_value'].data = midpoint
                 
-                hfw_scale = self.eb_image.metadata.pixel_size.x if self.check_point_image(p1) else self.ib_image.metadata.pixel_size.x
+                hfw_scale = self.eb_image.metadata.pixel_size.x if check_point_image_in_eb(p1) else self.ib_image.metadata.pixel_size.x
 
                 dist_um = dist_pix * hfw_scale*constants.SI_TO_MICRO
 
@@ -421,30 +438,31 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.set_ui_from_settings(self.image_settings, beam_type)
 
     def _toggle_interactions(self, enable: bool, caller: str = None, imaging: bool = False):
-        self.pushButton_take_image.setEnabled(enable)
-        self.pushButton_take_all_images.setEnabled(enable)
+        for btn in self.acquisition_buttons:
+            btn.setEnabled(enable)
         self.set_detector_button.setEnabled(enable)
         self.button_set_beam_settings.setEnabled(enable)
         self.parent.movement_widget._toggle_interactions(enable, caller="ui")
         if caller != "milling":
             self.parent.milling_widget._toggle_interactions(enable, caller="ui")
         if enable:
-            self.pushButton_take_all_images.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_take_image.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+            for btn in self.acquisition_buttons:
+                btn.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
             self.pushButton_take_all_images.setText("Acquire All Images")
+            self.pushButton_acquire_sem_image.setText("Acquire SEM Image")
+            self.pushButton_acquire_fib_image.setText("Acquire FIB Image")
         elif imaging:
-            self.pushButton_take_all_images.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
-            self.pushButton_take_image.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
-            self.pushButton_take_image.setText("Acquiring Images...")
-            self.pushButton_take_all_images.setText("Acquiring Images...")
+            for btn in self.acquisition_buttons:
+                btn.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+                btn.setText("Acquiring...")
             self.set_detector_button.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
         else:
-            self.pushButton_take_all_images.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_take_image.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
+            for btn in self.acquisition_buttons:
+                btn.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
             self.set_detector_button.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
             self.button_set_beam_settings.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_take_image.setText("Acquire Image")
@@ -471,6 +489,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self._toggle_interactions(True)
         self.ACQUIRING_IMAGES = False
 
+    def acquire_sem_image(self):
+        """Acquire an SEM image with the current settings"""
+        self.start_acquisition(both=False, beam_type=BeamType.ELECTRON)
+    
+    def acquire_fib_image(self):
+        """Acquire an FIB image with the current settings"""
+        self.start_acquisition(both=False, beam_type=BeamType.ION)
+
     def acquire_image(self):
         """Acquire a single image with the current settings"""
         self.start_acquisition(both=False)
@@ -479,7 +505,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         """Acquire both SEM and FIB images with the current settings."""
         self.start_acquisition(both=True)
 
-    def start_acquisition(self, both: bool = False):
+    def start_acquisition(self, both: bool = False, beam_type: Optional[BeamType] = None):
         """Start the image acquisition process"""
         # disable interactions
         self.ACQUIRING_IMAGES = True
@@ -487,7 +513,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         
         # get imaging settings from ui
         self.image_settings = self.get_settings_from_ui()[0] # TODO: QUERY why assigniong to image_settings?
-        
+        if beam_type is not None:
+            self.image_settings.beam_type = beam_type
+
         # start the acquisition worker
         worker = self.acquisition_worker(self.image_settings, both=both)
         worker.finished.connect(self.acquisition_finished)
@@ -530,13 +558,13 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
                 fib_shape=self.ib_image.data.shape,
                 is_checked=self.crosshair_checkbox.isChecked(),
             ) 
-            
+
     def update_viewer(self, arr: np.ndarray, beam_type: BeamType, set_ui_from_image: bool = False):
         """Update the viewer with the given image array"""
 
         # median filter for display
         arr = median_filter(arr, size=3)
-       
+
         try:
             self.viewer.layers[beam_type.name].data = arr
         except KeyError:    

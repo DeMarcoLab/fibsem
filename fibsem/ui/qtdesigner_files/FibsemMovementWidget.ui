@@ -24,7 +24,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>458</width>
+        <width>470</width>
         <height>596</height>
        </rect>
       </property>
@@ -183,6 +183,9 @@
           </item>
           <item row="2" column="1">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_y">
+            <property name="suffix">
+             <string> mm</string>
+            </property>
             <property name="decimals">
              <number>5</number>
             </property>
@@ -192,27 +195,37 @@
             <property name="maximum">
              <double>10000000000000000905969664.000000000000000</double>
             </property>
+            <property name="singleStep">
+             <double>0.001000000000000</double>
+            </property>
            </widget>
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_movement_stage_z">
             <property name="text">
-             <string>Z Coordinate (mm)</string>
+             <string>Z Coordinate</string>
             </property>
            </widget>
           </item>
           <item row="5" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_tilt"/>
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_tilt">
+            <property name="suffix">
+             <string> deg</string>
+            </property>
+           </widget>
           </item>
           <item row="0" column="0">
            <widget class="QLabel" name="label_movement_stage_x">
             <property name="text">
-             <string>X Coordinate (mm)</string>
+             <string>X Coordinate</string>
             </property>
            </widget>
           </item>
           <item row="4" column="1">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_rotation">
+            <property name="suffix">
+             <string> deg</string>
+            </property>
             <property name="minimum">
              <double>-360.000000000000000</double>
             </property>
@@ -230,6 +243,9 @@
           </item>
           <item row="0" column="1">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_x">
+            <property name="suffix">
+             <string> mm</string>
+            </property>
             <property name="decimals">
              <number>5</number>
             </property>
@@ -239,24 +255,30 @@
             <property name="maximum">
              <double>100000000000000000.000000000000000</double>
             </property>
+            <property name="singleStep">
+             <double>0.001000000000000</double>
+            </property>
            </widget>
           </item>
           <item row="4" column="0">
            <widget class="QLabel" name="label_movement_stage_rotation">
             <property name="text">
-             <string>Rotation (deg)</string>
+             <string>Rotation</string>
             </property>
            </widget>
           </item>
           <item row="5" column="0">
            <widget class="QLabel" name="label_movement_stage_tilt">
             <property name="text">
-             <string>Tilt (deg)</string>
+             <string>Tilt</string>
             </property>
            </widget>
           </item>
           <item row="3" column="1">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z">
+            <property name="suffix">
+             <string> mm</string>
+            </property>
             <property name="decimals">
              <number>5</number>
             </property>
@@ -266,12 +288,15 @@
             <property name="maximum">
              <double>99999999999999991611392.000000000000000</double>
             </property>
+            <property name="singleStep">
+             <double>0.001000000000000</double>
+            </property>
            </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_movement_stage_y">
             <property name="text">
-             <string>Y Coordinate (mm)</string>
+             <string>Y Coordinate</string>
             </property>
            </widget>
           </item>
