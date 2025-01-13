@@ -16,3 +16,4 @@ from fibsem.milling.core import (
     run_milling,
     setup_milling,
 )
+from fibsem.milling.patterning.plotting import draw_milling_patterns as plot_milling_patterns
