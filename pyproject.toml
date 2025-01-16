@@ -58,6 +58,11 @@ odemis = [
     "pylibtiff"
 ]
 
+reporting = [
+    "plotly>=5.14.1",
+    "reportlab"
+]
+
 [project.scripts]
 fibsem_ui = "fibsem.ui.FibsemUI:main"
 fibsem_label = "fibsem.ui.FibsemLabellingUI:main"

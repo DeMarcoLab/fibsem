@@ -1258,28 +1258,17 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # TODO: implement perspective correction
         PERSPECTIVE_CORRECTION = 0.9
-        z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy
+        if True: #use_perspective: 
+            z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
 
-        # TODO: do this manually without autoscript in raw coordinates
-        # TODO: test if this results in the same movement
         # manually calculate the dx, dy, dz 
-        # theta = self.get_stage_position().t # rad
-        # dy = z_move * np.sin(theta)
-        # dz = z_move / np.cos(theta)
-        # logging.debug(f"dx: {dx}, dy: {dy}, dz: {dz}")
-        # stage_position = FibsemStagePosition(x=dx, y=dy, z=z_move, coordinate_system="RAW")
-
-        stage_position = FibsemStagePosition(
-            x=dx,
-            z=z_move, 
-            coordinate_system="Specimen"
-        )
-
-        # move stage
-        move_settings = MoveSettings(link_z_y=True)
-        autoscript_position = stage_position.to_autoscript_position(self.stage_is_compustage)
-        autoscript_position.coordinate_system = CoordinateSystem.SPECIMEN 
-        self.stage.relative_move(autoscript_position, move_settings)
+        theta = self.get_stage_position().t # rad
+        dy = z_move * np.sin(theta)
+        dz = z_move / np.cos(theta)
+        stage_position = FibsemStagePosition(x=dx, y=dy, z=dz, coordinate_system="RAW")
+        logging.info(f"Vertical movement: {stage_position}")
+        self.move_stage_relative(stage_position) # NOTE: this seems to be a bit less than previous... -> perspective correction?
 
         # restore working distance to adjust for microscope compenstation
         if static_wd and not self.stage_is_compustage:
@@ -1677,7 +1666,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self._default_application_file = mill_settings.application_file
         self.connection.patterning.mode = mill_settings.patterning_mode
-        self.clear_patterns()  # clear any existing patterns       
+        self.clear_patterns()  # clear any existing patterns
         self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
@@ -1697,9 +1686,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         Args:
             milling_current (float): The current to use for milling in amps.
+            milling_voltage (float): The voltage to use for milling in volts.
             asynch (bool, optional): If True, the milling will be run asynchronously. 
                                      Defaults to False, in which case it will run synchronously.
-
         """
         if not self.is_available("ion_beam"):
             raise ValueError("Ion beam not available.")
@@ -2564,6 +2553,12 @@ class ThermoMicroscope(FibsemMicroscope):
                 values = self.connection.beams.ion_beam.beam_current.available_values
             elif beam_type is BeamType.ELECTRON and self.is_available("electron_beam"):
                 values = self.connection.beams.electron_beam.beam_current.available_values
+
+            # print(microscope.connection.beams.ion_beam.high_voltage.limits)
+            # print(microscope.connection.beams.electron_beam.high_voltage.limits)
+
+            # print(microscope.connection.beams.ion_beam.beam_current.available_values)
+            # print(microscope.connection.beams.electron_beam.beam_current.limits)
         
         if key == "detector_type":
             values = self.connection.detector.type.available_values
@@ -2602,6 +2597,11 @@ class ThermoMicroscope(FibsemMicroscope):
         if beam_type is not None:
             beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
             _check_beam(beam_type, self.system)
+
+        if key == "active_view":
+            return self.connection.imaging.get_active_view()
+        if key == "active_device":
+            return self.connection.imaging.get_active_device()
 
         # beam properties
         if key == "on": 
@@ -2746,17 +2746,14 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if key == "active_view":
             self.connection.imaging.set_active_view(value.value)  # the beam type is the active view (in ui)
+            return
         if key == "active_device":
             self.connection.imaging.set_active_device(value.value)
+            return
 
         # beam properties
         if key == "working_distance":
             beam.working_distance.value = value
-            try: # TODO: remove linking here once testing is done
-                if beam_type is BeamType.ELECTRON:
-                    self.set("stage_link", True)  # link the specimen stage for electron
-            except Exception as e:
-                logging.info(f"Could not link stage: {e}")
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return 
         if key == "current":

@@ -291,7 +291,7 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.movement_progress_signal.emit({"msg": "Moving stage..."})
         # eucentric is only supported for ION beam
         if beam_type is BeamType.ION and self.movement_mode is MovementMode.Vertical:
-            self.microscope.vertical_move(dx=point.x, dy=-point.y
+            self.microscope.vertical_move(dx=point.x, dy=point.y
             )
 
         else:

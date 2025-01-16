@@ -40,6 +40,11 @@ from fibsem.ui.napari.properties import (
 from fibsem.ui.napari.utilities import draw_positions_in_napari, is_inside_image_bounds
 from fibsem.ui.qtdesigner_files import FibsemMinimapWidget as FibsemMinimapWidgetUI
 
+try:
+    from autolamella.protocol import AutoLamellaProtocol
+except ImportError:
+    AutoLamellaProtocol = None
+
 TRENCH_KEY, MILL_ROUGH_KEY = "trench", "mill_rough" # TODO: replace with autolamella.protocol.validation
 COLOURS = CORRELATION_IMAGE_LAYER_PROPERTIES["colours"]
 
@@ -86,7 +91,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
 
         # TODO: allow using independently of parent
         self.microscope: FibsemMicroscope = self.parent.microscope
-        self.protocol: Dict[str, Any] = deepcopy(self.parent.settings.protocol)
+        self.protocol: 'AutoLamellaProtocol' = deepcopy(self.parent.settings.protocol)
         self.movement_widget: FibsemMovementWidget = self.parent.movement_widget
         self.image_widget: FibsemImageSettingsWidget = self.parent.image_widget
 
@@ -159,19 +164,20 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.movement_widget.movement_progress_signal.connect(self.handle_movement_progress)
 
         # pattern overlay
-        AVAILABLE_MILLING_PATTERNS = [k for k in self.protocol.get("milling", {}).keys()]
+        AVAILABLE_MILLING_PATTERNS = []
+        if hasattr(self.protocol, 'milling'):
+            AVAILABLE_MILLING_PATTERNS = [k for k in self.protocol.milling.keys()]
+            self.comboBox_pattern_overlay.addItems(AVAILABLE_MILLING_PATTERNS)
+            if TRENCH_KEY in AVAILABLE_MILLING_PATTERNS:
+                self.comboBox_pattern_overlay.setCurrentText(TRENCH_KEY)
+            elif MILL_ROUGH_KEY in AVAILABLE_MILLING_PATTERNS:
+                self.comboBox_pattern_overlay.setCurrentText(MILL_ROUGH_KEY)
+            self.comboBox_pattern_overlay.currentIndexChanged.connect(self.redraw_pattern_overlay)
+            self.checkBox_pattern_overlay.stateChanged.connect(self.redraw_pattern_overlay)
+
         if not AVAILABLE_MILLING_PATTERNS:
             self.checkBox_pattern_overlay.setEnabled(False)
-            self.comboBox_pattern_overlay.setEnabled(False)
             self.comboBox_pattern_overlay.setToolTip("No milling patterns available.")
-
-        self.comboBox_pattern_overlay.addItems(AVAILABLE_MILLING_PATTERNS)
-        if TRENCH_KEY in AVAILABLE_MILLING_PATTERNS:
-            self.comboBox_pattern_overlay.setCurrentText(TRENCH_KEY)
-        elif MILL_ROUGH_KEY in AVAILABLE_MILLING_PATTERNS:
-            self.comboBox_pattern_overlay.setCurrentText(TRENCH_KEY)
-        self.comboBox_pattern_overlay.currentIndexChanged.connect(self.redraw_pattern_overlay)
-        self.checkBox_pattern_overlay.stateChanged.connect(self.redraw_pattern_overlay)
 
         # correlation
         self.actionLoad_Correlation_Image.triggered.connect(self.load_image)

@@ -141,10 +141,13 @@ def estimate_milling_time(pattern: BasePattern, milling_current: float) -> float
 
     # get the sputter rate for the closest key
     sputter_rate = MILLING_SPUTTER_RATE[sp_keys[0]] # um3/s 
+
+    # scale the sputter rate based on the expected current
+    sputter_rate = sputter_rate * (milling_current / sp_keys[0])
     volume = pattern.volume # m3
 
     time = (volume *1e6**3) / sputter_rate
-    return time # QUERY: accuracy of this estimate?
+    return time * 2.0 # QUERY: accuracy of this estimate?
 
 def estimate_total_milling_time(stages: List[FibsemMillingStage]) -> float:
     """Estimate the total milling time for a list of milling stages"""
