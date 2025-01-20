@@ -133,6 +133,9 @@
            </item>
            <item row="1" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_fov">
+             <property name="suffix">
+              <string> um</string>
+             </property>
              <property name="decimals">
               <number>0</number>
              </property>
@@ -149,6 +152,9 @@
            </item>
            <item row="5" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_tile_dwell_time">
+             <property name="suffix">
+              <string> us</string>
+             </property>
              <property name="maximum">
               <double>100.000000000000000</double>
              </property>
@@ -177,7 +183,7 @@
            <item row="1" column="0">
             <widget class="QLabel" name="label_tile_fov">
              <property name="text">
-              <string>Field of View (um)</string>
+              <string>Field of View</string>
              </property>
             </widget>
            </item>
@@ -247,7 +253,7 @@
            <item row="5" column="0">
             <widget class="QLabel" name="label_tile_dwell_time">
              <property name="text">
-              <string>Dwell Time (us)</string>
+              <string>Dwell Time</string>
              </property>
             </widget>
            </item>

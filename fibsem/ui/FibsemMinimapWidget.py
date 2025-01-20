@@ -18,7 +18,7 @@ from fibsem import config as cfg
 from fibsem import constants, conversions
 from fibsem.imaging import tiled
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling import FibsemMillingStage, get_milling_stages
+from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -48,7 +48,7 @@ except ImportError:
 TRENCH_KEY, MILL_ROUGH_KEY = "trench", "mill_rough" # TODO: replace with autolamella.protocol.validation
 COLOURS = CORRELATION_IMAGE_LAYER_PROPERTIES["colours"]
 
-TILE_COUNTS = [f"{i}x{i}" for i in range(1, 16)]
+TILE_COUNTS = [f"{i}x{i}" for i in range(1, 8)]
 DEFAULT_TILE_COUNT = TILE_COUNTS[2] # 3x3 grid
 DEFAULT_FOV = 500 # um
 DEFAULT_DWELL_TIME = 1.0 # us
@@ -89,9 +89,10 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.setupUi(self)
         self.parent = parent
 
-        # TODO: allow using independently of parent
         self.microscope: FibsemMicroscope = self.parent.microscope
-        self.protocol: 'AutoLamellaProtocol' = deepcopy(self.parent.settings.protocol)
+        self.protocol = None
+        if hasattr(self.parent, "protocol"):
+            self.protocol: 'AutoLamellaProtocol' = deepcopy(self.parent.protocol)
         self.movement_widget: FibsemMovementWidget = self.parent.movement_widget
         self.image_widget: FibsemImageSettingsWidget = self.parent.image_widget
 
@@ -165,7 +166,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
 
         # pattern overlay
         AVAILABLE_MILLING_PATTERNS = []
-        if hasattr(self.protocol, 'milling'):
+        if self.protocol is not None:
             AVAILABLE_MILLING_PATTERNS = [k for k in self.protocol.milling.keys()]
             self.comboBox_pattern_overlay.addItems(AVAILABLE_MILLING_PATTERNS)
             if TRENCH_KEY in AVAILABLE_MILLING_PATTERNS:
@@ -473,7 +474,6 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
             self.label_instructions.setText("Alt+Click to Add a position, Shift+Click to Update a position \nor Double Click to Move the Stage...")
         self.set_active_layer_for_movement()
 
-
     def get_coordinate_in_microscope_coordinates(self, layer: NapariLayer, event: NapariEvent) -> Tuple[np.ndarray, Point]:
         """Validate if event position is inside image, and convert to microscope coords
         Args:
@@ -646,8 +646,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         """Redraw the selected milling patterns on the image for each saved position."""
 
         selected_pattern = self.comboBox_pattern_overlay.currentText()
-        self.selected_milling_stage = get_milling_stages(selected_pattern, 
-                                                         protocol=self.protocol["milling"])[0]
+        self.selected_milling_stage = self.protocol.milling[selected_pattern][0]
         self.draw_stage_positions()
 
     def draw_current_stage_position(self):
@@ -747,7 +746,7 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         
         # set the image layer as the active layer
         self.set_active_layer_for_movement()
-        self.groupBox_correlation.setEnabled(True)
+        self.groupBox_correlation.setEnabled(True) # TODO: allow enabling grid-bar overlay separately
         self.checkBox_gridbar.setEnabled(True)
         self.pushButton_enable_correlation.setEnabled(True)
 
