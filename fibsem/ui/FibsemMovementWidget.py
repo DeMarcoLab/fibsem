@@ -1,6 +1,7 @@
 
 import logging
 from copy import deepcopy
+from typing import Dict, List, Optional
 
 import napari
 import napari.utils.notifications
@@ -8,7 +9,6 @@ import numpy as np
 import yaml
 from napari.qt.threading import thread_worker
 from PyQt5 import QtCore, QtWidgets
-from typing import List, Dict, Optional
 
 import fibsem.utils as utils
 from fibsem import config as cfg
@@ -17,13 +17,24 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemStagePosition,
-    MovementMode,
     Point,
 )
-from fibsem.ui.stylesheets import GRAY_PUSHBUTTON_STYLE, GREEN_PUSHBUTTON_STYLE, ORANGE_PUSHBUTTON_STYLE, RED_PUSHBUTTON_STYLE, BLUE_PUSHBUTTON_STYLE, DISABLED_PUSHBUTTON_STYLE
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemMovementWidget as FibsemMovementWidgetUI
-from fibsem.ui.utils import open_existing_file_dialog, open_save_file_dialog, message_box_ui
+from fibsem.ui.stylesheets import (
+    BLUE_PUSHBUTTON_STYLE,
+    DISABLED_PUSHBUTTON_STYLE,
+    GRAY_PUSHBUTTON_STYLE,
+    GREEN_PUSHBUTTON_STYLE,
+    ORANGE_PUSHBUTTON_STYLE,
+    RED_PUSHBUTTON_STYLE,
+)
+from fibsem.ui.utils import (
+    message_box_ui,
+    open_existing_file_dialog,
+    open_save_file_dialog,
+)
+
 
 def to_pretty_string(position: FibsemStagePosition) -> str:
     xstr = f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}"
@@ -278,11 +289,12 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         )
 
         # move
-        self.movement_mode = MovementMode.Vertical if "Alt" in event.modifiers else MovementMode.Stable
+        vertical_move = True if "Alt" in event.modifiers else False
+        movement_mode = "Vertical" if vertical_move else "Stable"
 
         logging.debug({
             "msg": "stage_movement",                    # message type
-            "movement_mode": self.movement_mode.name,   # movement mode
+            "movement_mode": movement_mode,             # movement mode
             "beam_type": beam_type.name,                # beam type
             "dm": point.to_dict(),                      # shift in microscope coordinates
             "coords": {"x": coords[1], "y": coords[0]}, # coords in image coordinates
@@ -290,7 +302,7 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         
         self.movement_progress_signal.emit({"msg": "Moving stage..."})
         # eucentric is only supported for ION beam
-        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Vertical:
+        if beam_type is BeamType.ION and vertical_move:
             self.microscope.vertical_move(dx=point.x, dy=point.y
             )
 

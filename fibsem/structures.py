@@ -112,13 +112,6 @@ class BeamType(Enum):
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
-
-class MovementMode(Enum):
-    Stable = 1
-    Vertical = 2
-    # Needle = 3
-
-
 class ImagingState(Enum):
     IDLE = 0
     RUNNING = 1
