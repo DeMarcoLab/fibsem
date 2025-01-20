@@ -39,6 +39,8 @@ from fibsem.ui.napari.properties import (
 from fibsem.ui.napari.utilities import draw_crosshair_in_napari, draw_scalebar_in_napari
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget as ImageSettingsWidgetUI
 
+# feature flags
+ENABLE_ADVANCED_IMAGING_SETTINGS = True
 
 class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget):
     viewer_update_signal = pyqtSignal()             # when the viewer is updated
@@ -140,9 +142,28 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             available_presets = self.microscope.get_available_values("presets")
             self.comboBox_presets.addItems(available_presets)   
             self.comboBox_presets.currentTextChanged.connect(self.update_presets)
+            self.checkBox_image_line_integration.setVisible(False)
+            self.checkBox_image_scan_interlacing.setVisible(False)
+            self.checkBox_image_frame_integration.setVisible(False)
+            self.checkBox_image_drift_correction.setVisible(False)
+            self.spinBox_image_line_integration.setVisible(False)
+            self.spinBox_image_scan_interlacing.setVisible(False)
+            self.spinBox_image_frame_integration.setVisible(False)
         else:
             self.comboBox_presets.hide()
             self.label_presets.hide()
+
+        # advanced imaging settings
+        self.spinBox_image_line_integration.setRange(2, 255)
+        self.spinBox_image_frame_integration.setRange(2, 512)
+        self.spinBox_image_scan_interlacing.setRange(2, 8)
+        self.spinBox_image_line_integration.setEnabled(False)
+        self.spinBox_image_frame_integration.setEnabled(False)
+        self.spinBox_image_scan_interlacing.setEnabled(False)
+        self.checkBox_image_line_integration.toggled.connect(self.spinBox_image_line_integration.setEnabled)
+        self.checkBox_image_scan_interlacing.toggled.connect(self.spinBox_image_scan_interlacing.setEnabled)
+        self.checkBox_image_frame_integration.toggled.connect(self.spinBox_image_frame_integration.setEnabled)
+        self.checkBox_image_frame_integration.toggled.connect(self.checkBox_image_drift_correction.setEnabled)
 
         # feature flags
         self.pushButton_show_alignment_area.setVisible(False)
@@ -163,17 +184,26 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.label_detector_mode.setVisible(advanced_mode)
         self.detector_mode_combobox.setVisible(advanced_mode)
         self.label_stigmation.setVisible(advanced_mode)
-        self.stigmation_x.setVisible(advanced_mode)
-        self.stigmation_y.setVisible(advanced_mode)
-        self.shift_x.setVisible(advanced_mode)
-        self.shift_y.setVisible(advanced_mode)
+        self.doubleSpinBox_stigmation_x.setVisible(advanced_mode)
+        self.doubleSpinBox_stigmation_y.setVisible(advanced_mode)
+        self.doubleSpinBox_shift_x.setVisible(advanced_mode)
+        self.doubleSpinBox_shift_y.setVisible(advanced_mode)
         self.label_shift.setVisible(advanced_mode)
-        self.beam_voltage.setVisible(advanced_mode)
+        self.doubleSpinBox_beam_voltage.setVisible(advanced_mode)
         self.label_beam_voltage.setVisible(advanced_mode)
         self.label_beam_scan_rotation.setVisible(advanced_mode)
         self.spinBox_beam_scan_rotation.setVisible(advanced_mode)
         self.checkBox_image_use_autocontrast.setVisible(advanced_mode)
         self.checkBox_image_use_autogamma.setVisible(advanced_mode)
+
+        # advanced imaging
+        self.checkBox_image_line_integration.setVisible(advanced_mode and ENABLE_ADVANCED_IMAGING_SETTINGS)
+        self.checkBox_image_scan_interlacing.setVisible(advanced_mode and ENABLE_ADVANCED_IMAGING_SETTINGS)
+        self.checkBox_image_frame_integration.setVisible(advanced_mode and ENABLE_ADVANCED_IMAGING_SETTINGS)
+        self.checkBox_image_drift_correction.setVisible(advanced_mode and ENABLE_ADVANCED_IMAGING_SETTINGS)
+        self.spinBox_image_line_integration.setVisible(advanced_mode and ENABLE_ADVANCED_IMAGING_SETTINGS)
+        self.spinBox_image_scan_interlacing.setVisible(advanced_mode and ENABLE_ADVANCED_IMAGING_SETTINGS)
+        self.spinBox_image_frame_integration.setVisible(advanced_mode and ENABLE_ADVANCED_IMAGING_SETTINGS)
             
     def update_presets(self):
         beam_type = BeamType[self.selected_beam.currentText()]
@@ -322,6 +352,19 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
 
         resolution = list(map(int, self.comboBox_image_resolution.currentText().split("x")))
 
+        # advanced imaging settings
+        line_integration, scan_interlacing, frame_integration = None, None, None
+        image_drift_correction = False
+
+        if ENABLE_ADVANCED_IMAGING_SETTINGS:
+            if self.checkBox_image_line_integration.isChecked():
+                line_integration = self.spinBox_image_line_integration.value()
+            if self.checkBox_image_scan_interlacing.isChecked():
+                scan_interlacing = self.spinBox_image_scan_interlacing.value()
+            if self.checkBox_image_frame_integration.isChecked():
+                frame_integration = self.spinBox_image_frame_integration.value()
+                image_drift_correction = self.checkBox_image_drift_correction.isChecked()
+
         # imaging settings
         self.image_settings = ImageSettings(
             resolution=resolution,
@@ -332,7 +375,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             autogamma=self.checkBox_image_use_autogamma.isChecked(),
             save=self.checkBox_image_save_image.isChecked(),
             path=Path(self.lineEdit_image_path.text()),
-            filename=self.lineEdit_image_label.text()  
+            filename=self.lineEdit_image_label.text(),
+            line_integration=line_integration,
+            scan_interlacing=scan_interlacing,
+            frame_integration=frame_integration,
+            drift_correction=image_drift_correction,
         )
 
         # detector settings
@@ -346,14 +393,16 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         # beam settings
         self.beam_settings = BeamSettings(
             beam_type=BeamType[self.selected_beam.currentText()],
-            working_distance=self.working_distance.value()*constants.MILLI_TO_SI,
-            beam_current=self.beam_current.value()*constants.PICO_TO_SI,
-            voltage=self.beam_voltage.value()*constants.KILO_TO_SI,
+            working_distance=self.doubleSpinBox_working_distance.value()*constants.MILLI_TO_SI,
+            beam_current=self.doubleSpinBox_beam_current.value()*constants.PICO_TO_SI,
+            voltage=self.doubleSpinBox_beam_voltage.value()*constants.KILO_TO_SI,
             hfw = self.doubleSpinBox_image_hfw.value() * constants.MICRO_TO_SI,
             resolution=resolution,
             dwell_time=self.doubleSpinBox_image_dwell_time.value() * constants.MICRO_TO_SI,
-            stigmation = Point(self.stigmation_x.value(), self.stigmation_y.value()),
-            shift = Point(self.shift_x.value() * constants.MICRO_TO_SI, self.shift_y.value()*constants.MICRO_TO_SI),
+            stigmation = Point(x = self.doubleSpinBox_stigmation_x.value(), 
+                               y = self.doubleSpinBox_stigmation_y.value()),
+            shift = Point(self.doubleSpinBox_shift_x.value() * constants.MICRO_TO_SI, 
+                          self.doubleSpinBox_shift_y.value() * constants.MICRO_TO_SI),
             scan_rotation = np.deg2rad(self.spinBox_beam_scan_rotation.value())
         )
 
@@ -369,7 +418,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.selected_beam.currentIndexChanged.disconnect()
         self.selected_beam.setCurrentText(beam_type.name)
         self.selected_beam.currentIndexChanged.connect(self.update_detector_ui)
-        
+
         if beam_settings is None:
             beam_settings = self.microscope.get_beam_settings(beam_type)
         if detector_settings is None:
@@ -389,6 +438,17 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.lineEdit_image_path.setText(str(image_settings.path))
         self.lineEdit_image_label.setText(image_settings.filename)
 
+        if image_settings.line_integration is not None:
+            self.checkBox_image_line_integration.setChecked(True)
+            self.spinBox_image_line_integration.setValue(image_settings.line_integration)
+        if image_settings.scan_interlacing is not None:
+            self.checkBox_image_scan_interlacing.setChecked(True)
+            self.spinBox_image_scan_interlacing.setValue(image_settings.scan_interlacing)
+        if image_settings.frame_integration is not None:
+            self.checkBox_image_frame_integration.setChecked(True)
+            self.spinBox_image_frame_integration.setValue(image_settings.frame_integration)
+            self.checkBox_image_drift_correction.setChecked(image_settings.drift_correction)
+
         # detector settings
         self.detector_type_combobox.setCurrentText(detector_settings.type)
         self.detector_mode_combobox.setCurrentText(detector_settings.mode)
@@ -396,15 +456,15 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.detector_brightness_slider.setValue(int(detector_settings.brightness*100))
         
         # beam settings
-        self.beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
-        self.beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
+        self.doubleSpinBox_beam_current.setValue(beam_settings.beam_current*constants.SI_TO_PICO)
+        self.doubleSpinBox_beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
         self.spinBox_beam_scan_rotation.setValue(np.rad2deg(beam_settings.scan_rotation))
         
-        self.working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
-        self.shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
-        self.shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
-        self.stigmation_x.setValue(beam_settings.stigmation.x)
-        self.stigmation_y.setValue(beam_settings.stigmation.y)
+        self.doubleSpinBox_working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
+        self.doubleSpinBox_shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
+        self.doubleSpinBox_shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
+        self.doubleSpinBox_stigmation_x.setValue(beam_settings.stigmation.x)
+        self.doubleSpinBox_stigmation_y.setValue(beam_settings.stigmation.y)
         
         self.update_ui_saving_settings()
 

@@ -36,9 +36,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-311</y>
         <width>501</width>
-        <height>951</height>
+        <height>1076</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -89,10 +89,10 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="0" colspan="2">
+          <item row="0" column="0" colspan="3">
            <widget class="QCheckBox" name="checkBox_advanced_settings">
             <property name="text">
-             <string>Show Advanced Settings</string>
+             <string>Show Advanced</string>
             </property>
            </widget>
           </item>
@@ -105,22 +105,83 @@
           <string>Imaging</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
+          <item row="4" column="0">
+           <widget class="QCheckBox" name="checkBox_image_use_autocontrast">
+            <property name="text">
+             <string>AutoContrast</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="comboBox_presets"/>
+          </item>
+          <item row="4" column="1">
+           <widget class="QCheckBox" name="checkBox_image_use_autogamma">
+            <property name="text">
+             <string>AutoGamma</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_image_save_path">
+            <property name="text">
+             <string>Path</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0" colspan="2">
+           <widget class="QCheckBox" name="checkBox_image_save_image">
+            <property name="text">
+             <string>Save Image</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QSpinBox" name="spinBox_image_scan_interlacing"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_image_dwell_time">
+            <property name="text">
+             <string>Dwell Time</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="lineEdit_image_label"/>
+          </item>
+          <item row="11" column="1">
+           <widget class="QSpinBox" name="spinBox_image_frame_integration"/>
+          </item>
+          <item row="8" column="1">
+           <widget class="QSpinBox" name="spinBox_image_line_integration"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_presets">
+            <property name="text">
+             <string>Preset</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_image_label">
+            <property name="text">
+             <string>Filename</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="lineEdit_image_path"/>
+          </item>
           <item row="0" column="1">
            <widget class="QComboBox" name="comboBox_image_resolution"/>
           </item>
-          <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_image_dwell_time">
-            <property name="suffix">
-             <string> us</string>
-            </property>
-            <property name="maximum">
-             <double>10000000000000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.010000000000000</double>
-            </property>
-            <property name="value">
-             <double>1.000000000000000</double>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_image_resolution">
+            <property name="text">
+             <string>Resolution (px)</string>
             </property>
            </widget>
           </item>
@@ -140,20 +201,6 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_presets">
-            <property name="text">
-             <string>Preset</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QCheckBox" name="checkBox_image_use_autogamma">
-            <property name="text">
-             <string>AutoGamma</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_image_hfw">
             <property name="text">
@@ -161,57 +208,47 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QCheckBox" name="checkBox_image_use_autocontrast">
-            <property name="text">
-             <string>AutoContrast</string>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_image_dwell_time">
+            <property name="suffix">
+             <string> us</string>
             </property>
-            <property name="checked">
-             <bool>true</bool>
+            <property name="maximum">
+             <double>10000000000000.000000000000000</double>
             </property>
-           </widget>
-          </item>
-          <item row="6" column="0">
-           <widget class="QLabel" name="label_image_save_path">
-            <property name="text">
-             <string>Path</string>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
             </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QComboBox" name="comboBox_presets"/>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_image_resolution">
-            <property name="text">
-             <string>Resolution (px)</string>
+            <property name="value">
+             <double>1.000000000000000</double>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_image_dwell_time">
+          <item row="8" column="0">
+           <widget class="QCheckBox" name="checkBox_image_line_integration">
             <property name="text">
-             <string>Dwell Time</string>
+             <string>Line Integration</string>
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
-           <widget class="QLineEdit" name="lineEdit_image_path"/>
-          </item>
-          <item row="7" column="0">
-           <widget class="QLabel" name="label_image_label">
+          <item row="10" column="0">
+           <widget class="QCheckBox" name="checkBox_image_scan_interlacing">
             <property name="text">
-             <string>Filename</string>
+             <string>Scan Interlacing</string>
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
-           <widget class="QLineEdit" name="lineEdit_image_label"/>
-          </item>
-          <item row="5" column="0" colspan="2">
-           <widget class="QCheckBox" name="checkBox_image_save_image">
+          <item row="11" column="0">
+           <widget class="QCheckBox" name="checkBox_image_frame_integration">
             <property name="text">
-             <string>Save Image</string>
+             <string>Frame Integration</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="0" colspan="2">
+           <widget class="QCheckBox" name="checkBox_image_drift_correction">
+            <property name="text">
+             <string>Use Drift Correction</string>
             </property>
            </widget>
           </item>
@@ -350,7 +387,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="3" column="2">
-           <widget class="QDoubleSpinBox" name="stigmation_y">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_stigmation_y">
             <property name="maximum">
              <double>1000.000000000000000</double>
             </property>
@@ -370,7 +407,7 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QDoubleSpinBox" name="stigmation_x">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_stigmation_x">
             <property name="minimum">
              <double>-1000.000000000000000</double>
             </property>
@@ -397,7 +434,7 @@
            </widget>
           </item>
           <item row="0" column="1" colspan="2">
-           <widget class="QDoubleSpinBox" name="working_distance">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_working_distance">
             <property name="suffix">
              <string> mm</string>
             </property>
@@ -410,7 +447,7 @@
            </widget>
           </item>
           <item row="2" column="1" colspan="2">
-           <widget class="QDoubleSpinBox" name="beam_voltage">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_voltage">
             <property name="suffix">
              <string> kV</string>
             </property>
@@ -420,7 +457,7 @@
            </widget>
           </item>
           <item row="4" column="2">
-           <widget class="QDoubleSpinBox" name="shift_y">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_shift_y">
             <property name="suffix">
              <string> um</string>
             </property>
@@ -457,7 +494,7 @@
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QDoubleSpinBox" name="shift_x">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_shift_x">
             <property name="suffix">
              <string> um</string>
             </property>
@@ -473,7 +510,7 @@
            </widget>
           </item>
           <item row="1" column="1" colspan="2">
-           <widget class="QDoubleSpinBox" name="beam_current">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_current">
             <property name="suffix">
              <string> pA</string>
             </property>
