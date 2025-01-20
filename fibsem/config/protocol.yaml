@@ -102,12 +102,12 @@ patterns:
     depth: 5.0e-6
     distance: 10.0e-6
   WaffleNotch: 
-    vheight: 10.0e-6
-    vwidth: 1.0e-6
-    hwidth: 10.0e-6
-    hheight: 1.0e-6
-    depth: 5.0e-6
-    distance: 10.0e-6
+    vheight: 2.0e-6
+    vwidth: 0.5e-6
+    hwidth: 2.0e-6
+    hheight: 0.5e-6
+    depth: 1.0e-6
+    distance: 2.0e-6
   Clover:
     radius: 10.0e-6
     depth: 5.0e-6
