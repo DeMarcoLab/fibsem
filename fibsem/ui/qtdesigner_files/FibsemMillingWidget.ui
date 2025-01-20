@@ -124,7 +124,7 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>0</y>
+           <y>-518</y>
            <width>728</width>
            <height>1006</height>
           </rect>
@@ -418,7 +418,7 @@
              <item row="1" column="0">
               <widget class="QLabel" name="label_centre_x">
                <property name="text">
-                <string>Centre (um)</string>
+                <string>Centre</string>
                </property>
               </widget>
              </item>

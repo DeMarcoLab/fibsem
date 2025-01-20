@@ -90,19 +90,6 @@ def scale_value_for_display(key: str, value: Union[float, int], scale: float) ->
 # default milling protocol
 DEFAULT_PROTOCOL = utils.load_yaml(cfg.PROTOCOL_PATH)
 
-# need to re-write
-# if no milling stage, dont show milling settings or pattern settings
-# add groups for milling settings, pattern settings
-# add drift correction block
-# make everything into scollable
-
-# advanced settings/hidden by default
-# external events should stay the same
-
-# milling operations
-# run, pause/resume, stop
-
-
 def get_default_milling_pattern(name: str) -> BasePattern:
     """Get the default milling pattern."""
     return get_pattern(name, config = DEFAULT_PROTOCOL["patterns"][name])
@@ -237,7 +224,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.pushButton_stop_milling.clicked.connect(self.stop_milling)
         self.pushButton_pause_milling.clicked.connect(self.pause_resume_milling)
         self.pushButton_stop_milling.setVisible(False)
-        self.pushButton_pause_milling.setVisible(False) # TODO: implement pause / resume
+        self.pushButton_pause_milling.setVisible(False)
 
         # set styles
         self.pushButton_add_milling_stage.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
@@ -248,7 +235,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.progressBar_milling.setStyleSheet(stylesheets.PROGRESS_BAR_GREEN_STYLE)
         self.progressBar_milling_stages.setStyleSheet(stylesheets.PROGRESS_BAR_BLUE_STYLE)
         
-        # progress bar # TODO: fix this (redo)
+        # progress bar
         self.progressBar_milling.setVisible(False)
         self.progressBar_milling_stages.setVisible(False)
         self.label_milling_information.setVisible(False)
@@ -258,6 +245,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_centre_y.setKeyboardTracking(False)
         self.doubleSpinBox_centre_x.valueChanged.connect(self.redraw_patterns)
         self.doubleSpinBox_centre_y.valueChanged.connect(self.redraw_patterns)
+        self.doubleSpinBox_centre_x.setSuffix(" µm")
+        self.doubleSpinBox_centre_y.setSuffix(" µm")
 
         # options
         self.checkBox_show_milling_patterns.setChecked(True)
@@ -270,7 +259,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.show_milling_stage_widgets()
 
         # feature flags
+        DRIFT_CORRECTION_ENABLED = False
         self.pushButton_alignment_edit_area.setVisible(False) # TODO: enable setting alignment area via ui
+        self.checkBox_alignment_interval_enabled.setVisible(DRIFT_CORRECTION_ENABLED)
+        self.label_alignment_interval.setVisible(DRIFT_CORRECTION_ENABLED)
+        self.doubleSpinBox_alignment_interval.setVisible(DRIFT_CORRECTION_ENABLED)
 
         # external signals
         self.image_widget.viewer_update_signal.connect(self.update_ui) # update the ui when the image is updated
@@ -644,12 +637,21 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                 min_val = -1000 # if key in LINE_KEYS else 0 # why not?
 
                 control_widget = QtWidgets.QDoubleSpinBox()
-                control_widget.setDecimals(3)
+                control_widget.setDecimals(2)
                 control_widget.setSingleStep(0.001)
                 control_widget.setRange(min_val, 1000)
                 control_widget.setValue(0)
                 control_widget.setKeyboardTracking(False)
 
+                # set the suffix (unit)
+                # TODO: move to patterns2.py
+                units_map = {
+                             "time": " s", 
+                             "rotation": "°"}
+                
+                unit = units_map.get(key, " µm")
+                if key not in UNSCALED_VALUES or key in units_map:
+                    control_widget.setSuffix(unit)
                 value = scale_value_for_display(key, getattr(pattern, key), constants.SI_TO_MICRO)
                 control_widget.setValue(value)
                 control_widget.valueChanged.connect(self.redraw_patterns)
