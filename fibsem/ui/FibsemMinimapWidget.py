@@ -188,7 +188,8 @@ class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWi
         self.pushButton_enable_correlation.setEnabled(False) # disabled until correlation images added
 
         # gridbar controls
-        self.checkBox_gridbar.setEnabled(False) # disabled until correlation images added
+        self.groupBox_correlation.setEnabled(True) # only grid-bar overlay enabled
+        self.checkBox_gridbar.setEnabled(True)
         self.checkBox_gridbar.stateChanged.connect(self.toggle_gridbar_display)
         self.label_gb_spacing.setVisible(False)
         self.label_gb_width.setVisible(False)
