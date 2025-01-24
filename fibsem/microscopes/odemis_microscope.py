@@ -67,6 +67,7 @@ def stage_position_to_odemis_dict(position: FibsemStagePosition) -> dict:
     """Convert a FibsemStagePosition to a dict with the odemis keys"""
     pdict = position.to_dict()
     pdict.pop("name")
+    pdict.pop("coordinate_system") # no longer used in odemis
     pdict["rz"] = pdict.pop("r")
     pdict["rx"] = pdict.pop("t")
 
