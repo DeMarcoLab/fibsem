@@ -327,6 +327,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def remove_milling_stage(self):
         logging.info("Removing milling stage")
+        self.image_widget.clear_alignment_area()
 
         current_index = self.comboBox_milling_stage.currentIndex()
         if current_index == -1:
@@ -346,6 +347,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.update_selected_milling_stages_ui()
 
         remove_all_napari_shapes_layers(self.viewer) # remove all shape layers
+        self.image_widget.clear_alignment_area()
 
     def set_milling_stages(self, milling_stages: List[FibsemMillingStage]) -> None:
         """Set the milling stages in the widget and update the UI."""
@@ -505,6 +507,9 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.checkBox_alignment_enabled.setChecked(milling_alignment.enabled)
         self.checkBox_alignment_interval_enabled.setChecked(milling_alignment.interval_enabled)
         self.doubleSpinBox_alignment_interval.setValue(milling_alignment.interval)
+
+        # display the alignment area
+        # self.image_widget.toggle_alignment_area(milling_alignment.rect, editable=False)
 
     def get_milling_alignment_from_ui(self):
         """Get the drift correction settings from the UI."""

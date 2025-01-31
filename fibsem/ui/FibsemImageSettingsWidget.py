@@ -752,16 +752,17 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.alignment_layer.visible = False
         self.restore_active_layer_for_movement()
 
-    def toggle_alignment_area(self, reduced_area: FibsemRectangle = None):
+    def toggle_alignment_area(self, reduced_area: FibsemRectangle = None, editable: bool = True):
         """Toggle the alignment area layer to selection mode, and display the alignment area."""
         if self.viewer.layers.selection.active == self.eb_layer:
             logging.debug(f"Alignment area being set to: {reduced_area}")
-            self.set_alignment_layer(reduced_area)
+            self.set_alignment_layer(reduced_area, editable=editable)
             self.alignment_layer.visible = True
         else:
             self.clear_alignment_area()
 
-    def set_alignment_layer(self, reduced_area: FibsemRectangle = FibsemRectangle(0.25, 0.25, 0.5, 0.5)):
+    def set_alignment_layer(self, reduced_area: FibsemRectangle = FibsemRectangle(0.25, 0.25, 0.5, 0.5), 
+                            editable: bool = True):
         """Set the alignment area layer in napari."""
 
         # add alignment area to napari
@@ -781,8 +782,9 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         else:
             self.alignment_layer.data = data
 
-        self.viewer.layers.selection.active = self.alignment_layer
-        self.alignment_layer.mode = "select"
+        if editable:
+            self.viewer.layers.selection.active = self.alignment_layer
+            self.alignment_layer.mode = "select"
         # TODO: prevent rotation of rectangles?  
         self.alignment_layer.events.data.connect(self.update_alignment)
 
