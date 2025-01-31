@@ -998,7 +998,6 @@ _DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre, LandingGridCentre)
 
 def move_based_on_detection(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
     det: DetectedFeatures,
     beam_type: BeamType,
     move_x: bool = True,
