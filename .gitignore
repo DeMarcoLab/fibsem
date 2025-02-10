@@ -54,3 +54,4 @@ fibsem/config/*.yaml
 tests/notebook.ipynb
 fibsem/db/v2/notebook.ipynb
 scripts/segformer-*/*
+fibsem/ui/test_qt.py

@@ -34,7 +34,7 @@ Install dependencies and package
 cd fibsem
 conda create -n fibsem python=3.9 pip
 conda activate fibsem
-pip install -e .
+pip install -e .[ui]
 
 ```
 

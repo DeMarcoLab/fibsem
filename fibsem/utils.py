@@ -42,6 +42,17 @@ def _format_time_seconds(seconds: float) -> str:
     """Format a time delta in seconds to proper string format."""
     return str(datetime.timedelta(seconds=seconds)).split(".")[0]
 
+def format_duration(seconds: float) -> str:
+    """Format a duration given in seconds into a human-readable string (hours, minutes, seconds)."""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = seconds % 60
+    if hours > 0:
+        return f"{hours}h {minutes}m {seconds:.2f}s"
+    elif minutes > 0:
+        return f"{minutes}m {seconds:.2f}s"
+    else:
+        return f"{seconds:.2f}s"
 
 def make_logging_directory(path: Path = None, name="run"):
     """

@@ -1,339 +1,343 @@
 import logging
-import os
 from copy import deepcopy
+from typing import Any, Dict, List, Tuple
 
 import napari
 import napari.utils.notifications
 import numpy as np
+from napari.layers import Image as NapariImageLayer
+from napari.layers import Layer as NapariLayer
+from napari.layers import Points as NapariPointsLayer
 from napari.qt.threading import thread_worker
+from napari.utils.events import Event as NapariEvent
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from scipy.ndimage import median_filter
 
-from fibsem import constants, conversions, patterning, utils
 from fibsem import config as cfg
-from fibsem.imaging import _tile
+from fibsem import constants, conversions
+from fibsem.imaging import tiled
 from fibsem.microscope import FibsemMicroscope
+from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
     BeamType,
     FibsemImage,
     FibsemStagePosition,
-    MicroscopeSettings,
+    ImageSettings,
     Point,
 )
-from fibsem.ui import _stylesheets
+from fibsem.ui import FibsemImageSettingsWidget, FibsemMovementWidget, stylesheets
 from fibsem.ui import utils as ui_utils
-from fibsem.ui.qtdesigner_files import FibsemMinimapWidget
+from fibsem.ui.napari.patterns import (
+    draw_milling_patterns_in_napari,
+    remove_all_napari_shapes_layers,
+)
+from fibsem.ui.napari.properties import (
+    CORRELATION_IMAGE_LAYER_PROPERTIES,
+    GRIDBAR_IMAGE_LAYER_PROPERTIES,
+    OVERVIEW_IMAGE_LAYER_PROPERTIES,
+)
+from fibsem.ui.napari.utilities import draw_positions_in_napari, is_inside_image_bounds
+from fibsem.ui.qtdesigner_files import FibsemMinimapWidget as FibsemMinimapWidgetUI
 
-PATH = os.path.join(cfg.DATA_PATH, "tile")
-os.makedirs(PATH, exist_ok=True)
+try:
+    from autolamella.protocol import AutoLamellaProtocol
+except ImportError:
+    AutoLamellaProtocol = None
 
-def _create_gridbar_image(shape: tuple, pixelsize: float, spacing: float, width: float) -> FibsemImage:
+TRENCH_KEY, MILL_ROUGH_KEY = "trench", "mill_rough" # TODO: replace with autolamella.protocol.validation
+COLOURS = CORRELATION_IMAGE_LAYER_PROPERTIES["colours"]
 
+TILE_COUNTS = [f"{i}x{i}" for i in range(1, 8)]
+DEFAULT_TILE_COUNT = TILE_COUNTS[2] # 3x3 grid
+DEFAULT_FOV = 500 # um
+DEFAULT_DWELL_TIME = 1.0 # us
+
+def generate_gridbar_image(shape: Tuple[int, int], pixelsize: float, spacing: float, width: float) -> FibsemImage:
+    """Generate an synthetic image of cryo gridbars."""
     arr = np.zeros(shape=shape, dtype=np.uint8)
 
     # create grid, grid bars thickness = 10px
-    BAR_THICKNESS_PX = int(width / pixelsize)
-    BAR_SPACING_PX = int(spacing / pixelsize)   
-    for i in range(0, arr.shape[0], BAR_SPACING_PX):
-        arr[i:i+BAR_THICKNESS_PX, :] = 255
-        arr[:, i:i+BAR_THICKNESS_PX] = 255
+    thickness_px = int(width / pixelsize)
+    spacing_px = int(spacing / pixelsize)
+    for i in range(0, arr.shape[0], spacing_px):
+        arr[i:i+thickness_px, :] = 255
+        arr[:, i:i+thickness_px] = 255
 
     # TODO: add metadata
     return FibsemImage(data=arr)
 
+def _get_total_fov(tile_count: int, fov: float) -> float:
+    """Calculate the total field of view for the tile collection."""
+    return tile_count * fov
 
-class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWindow):
-    _stage_position_moved = pyqtSignal(FibsemStagePosition)
-    _stage_position_added = pyqtSignal(FibsemStagePosition)
-    _update_tile_collection = pyqtSignal(dict)
-    _minimap_positions = pyqtSignal(list)
+# TODO: migrate to properly scaled infinite canvas
+# TODO: allow acquiring multiple overview images
+# TODO: show stage orientation
+class FibsemMinimapWidget(FibsemMinimapWidgetUI.Ui_MainWindow, QtWidgets.QMainWindow):
+    stage_position_added_signal = pyqtSignal(FibsemStagePosition)
+    stage_position_updated_signal = pyqtSignal(FibsemStagePosition)
+    stage_position_removed_signal = pyqtSignal(FibsemStagePosition)
+    tile_acquisition_progress_signal = pyqtSignal(dict)
     
     def __init__(
         self,
-        microscope: FibsemMicroscope,
-        settings: MicroscopeSettings,
         viewer: napari.Viewer,
         parent=None,
     ):
-        super(FibsemMinimapWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
-
-        self.microscope = microscope
-        self.settings = settings
-
         self.parent = parent
+
+        self.microscope: FibsemMicroscope = self.parent.microscope
+        self.protocol = None
+        if hasattr(self.parent, "protocol"):
+            self.protocol: 'AutoLamellaProtocol' = deepcopy(self.parent.protocol)
+        self.movement_widget: FibsemMovementWidget = self.parent.movement_widget
+        self.image_widget: FibsemImageSettingsWidget = self.parent.image_widget
 
         self.viewer = viewer
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
-        self.image = None
-        self._image_layer = None
-        self._reprojection_layer = None
-        self._corr_image_layers = []
+        self.image: FibsemImage = None
+        self.image_layer: NapariImageLayer  = None
+        self.position_layer: NapariPointsLayer = None
+        self.correlation_image_layers: List[str] = []
+        self.milling_pattern_layers: List[str] = []
 
-        self.positions = []
-        self._correlation = {}
-        self._correlation_mode: bool = False
+        self.positions: List[FibsemStagePosition] = []
+        self.correlation_mode_enabled: bool = False
 
-        self._tile_info = {}
         self.ADDING_POSITION: bool = False
+        self.STOP_ACQUISITION: bool = False
 
         self.setup_connections()
 
-        self._update_ui()
-
-        self.STOP_ACQUISITION: bool = False
-
-
     def setup_connections(self):
-
+        
+        # acquisition buttons
         self.pushButton_run_tile_collection.clicked.connect(self.run_tile_collection)
-        self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_cancel_acquisition.clicked.connect(self.cancel_acquisition)
-        self.pushButton_cancel_acquisition.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
-        self.pushButton_cancel_acquisition.setVisible(False)
-        self.progressBar_acquisition.setVisible(False)
-        self.progressBar_acquisition.setStyleSheet(_stylesheets.GREEN_PROGRESSBAR_STYLE)
         self.actionLoad_Image.triggered.connect(self.load_image)
-
+        
         self.comboBox_tile_beam_type.addItems([beam_type.name for beam_type in BeamType])
+        self.lineEdit_tile_path.setText(str(self.image_widget.image_settings.path)) # set default path
+        self.doubleSpinBox_tile_fov.setValue(DEFAULT_FOV)
+        self.doubleSpinBox_tile_dwell_time.setValue(DEFAULT_DWELL_TIME)
+        self.comboBox_tile_resolution.addItems(cfg.SQUARE_RESOLUTIONS)
+        self.comboBox_tile_resolution.setCurrentText(cfg.DEFAULT_SQUARE_RESOLUTION)
+        self.comboBox_tile_count.addItems(TILE_COUNTS)
+        self.comboBox_tile_count.setCurrentText(DEFAULT_TILE_COUNT)
+        self.comboBox_tile_count.currentIndexChanged.connect(self.update_imaging_display)
+        self.doubleSpinBox_tile_fov.valueChanged.connect(self.update_imaging_display)
+        self.update_imaging_display() # update the total fov
 
-        self.pushButton_move_to_position.clicked.connect(self._move_position_pressed)
+        # TODO: connect event to calculate total fov and time, tile_count * fov
+        # TODO: calculate estimate time for acquisition
 
-        self.comboBox_tile_position.currentIndexChanged.connect(self._update_current_position_info)
-        self.pushButton_update_position.clicked.connect(self._update_position_pressed)
-        self.pushButton_update_position.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
-        self.pushButton_remove_position.clicked.connect(self._remove_position_pressed)
-        self.pushButton_remove_position.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
-
-        self.actionSave_Positions.triggered.connect(self._save_positions_pressed)
-        self.actionLoad_Positions.triggered.connect(self._load_positions)
-        self.pushButton_enable_correlation.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-
-        # checkbox
-        self.checkBox_options_move_with_translation.stateChanged.connect(self._update_ui)
-        self.checkBox_options_move_with_translation.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
-        self.label_options_move_with_translate_info.setVisible(cfg._MINIMAP_MOVE_WITH_TRANSLATION)
-        self.checkBox_options_acquire_after_movement.setVisible(cfg._MINIMAP_ACQUIRE_AFTER_MOVEMENT)
-        self.label_options_header.setVisible(cfg._MINIMAP_ACQUIRE_AFTER_MOVEMENT and cfg._MINIMAP_MOVE_WITH_TRANSLATION)
+        # position buttons
+        self.pushButton_move_to_position.clicked.connect(self.move_to_position_pressed)
+        self.comboBox_tile_position.currentIndexChanged.connect(self.update_current_selected_position)
+        self.pushButton_remove_position.clicked.connect(self.remove_selected_position_pressed)
+        
+        # disable updating position name:
+        self.label_position_name.setVisible(False)
+        self.lineEdit_tile_position_name.setVisible(False)
+        self.pushButton_update_position.setVisible(False)
 
         # signals
-        # self._stage_position_added.connect(self._position_added_callback)
-        self._update_tile_collection.connect(self._update_tile_collection_callback)
-        if self.parent:
-            self.parent._minimap_signal.connect(self.update_positions_from_parent)
+        self.tile_acquisition_progress_signal.connect(self.handle_tile_acquisition_progress)
+        
+        # refresh stage position ui, when added, updated or removed
+        self.stage_position_added_signal.connect(self.handle_stage_position_signals)
+        self.stage_position_updated_signal.connect(self.handle_stage_position_signals)
+        self.stage_position_removed_signal.connect(self.handle_stage_position_signals)
 
+        # update the positions from the parent   
+        if hasattr(self.parent, "sync_positions_to_minimap_signal"):
+            self.parent.sync_positions_to_minimap_signal.connect(self.update_positions_from_parent)
+        
+        if hasattr(self.parent, "lamella_created_signal"):
+            self.parent.lamella_created_signal.connect(self.update_from_created_lamella)
+
+        # handle movement progress
+        self.movement_widget.movement_progress_signal.connect(self.handle_movement_progress)
 
         # pattern overlay
-        milling_protocol = self.settings.protocol.get("milling", {})
-        milling_patterns = [k for k in milling_protocol if "stages" in milling_protocol[k] or "type" in milling_protocol[k]]
-        self.comboBox_pattern_overlay.addItems(milling_patterns)
-        if "trench" in milling_patterns:
-            self.comboBox_pattern_overlay.setCurrentText("trench")
-        elif "mill_rough" in milling_patterns:
-            self.comboBox_pattern_overlay.setCurrentText("mill_rough")
-        self.comboBox_pattern_overlay.currentIndexChanged.connect(self._update_pattern_overlay)
-        self.checkBox_pattern_overlay.stateChanged.connect(self._update_pattern_overlay)
+        AVAILABLE_MILLING_PATTERNS = []
+        if self.protocol is not None:
+            AVAILABLE_MILLING_PATTERNS = [k for k in self.protocol.milling.keys()]
+            self.comboBox_pattern_overlay.addItems(AVAILABLE_MILLING_PATTERNS)
+            if TRENCH_KEY in AVAILABLE_MILLING_PATTERNS:
+                self.comboBox_pattern_overlay.setCurrentText(TRENCH_KEY)
+            elif MILL_ROUGH_KEY in AVAILABLE_MILLING_PATTERNS:
+                self.comboBox_pattern_overlay.setCurrentText(MILL_ROUGH_KEY)
+            self.comboBox_pattern_overlay.currentIndexChanged.connect(self.redraw_pattern_overlay)
+            self.checkBox_pattern_overlay.stateChanged.connect(self.redraw_pattern_overlay)
+
+        if not AVAILABLE_MILLING_PATTERNS:
+            self.checkBox_pattern_overlay.setEnabled(False)
+            self.comboBox_pattern_overlay.setToolTip("No milling patterns available.")
 
         # correlation
-        self.actionLoad_Correlation_Image.triggered.connect(self._load_correlation_image)
-        self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
+        self.actionLoad_Correlation_Image.triggered.connect(self.load_image)
+        self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self.update_correlation_ui)
         self.pushButton_enable_correlation.clicked.connect(self._toggle_correlation_mode)
+        self.viewer.bind_key("C", self._toggle_correlation_mode)
         self.pushButton_enable_correlation.setEnabled(False) # disabled until correlation images added
 
-        # auto update correlation image
-        self.doubleSpinBox_correlation_translation_x.valueChanged.connect(self._update_correlation_data)
-        self.doubleSpinBox_correlation_translation_y.valueChanged.connect(self._update_correlation_data)
-        self.doubleSpinBox_correlation_scale_x.valueChanged.connect(self._update_correlation_data) 
-        self.doubleSpinBox_correlation_scale_y.valueChanged.connect(self._update_correlation_data)
-        self.doubleSpinBox_correlation_rotation.valueChanged.connect(self._update_correlation_data)
-
-        self.doubleSpinBox_correlation_translation_x.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_translation_y.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_scale_x.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_scale_y.setKeyboardTracking(False)
-        self.doubleSpinBox_correlation_rotation.setKeyboardTracking(False)
-
-        self.lineEdit_tile_path.setText(self.settings.image.path)
-
         # gridbar controls
-        self.checkBox_gridbar.stateChanged.connect(self._toggle_gridbars)
+        self.groupBox_correlation.setEnabled(True) # only grid-bar overlay enabled
+        self.checkBox_gridbar.setEnabled(True)
+        self.checkBox_gridbar.stateChanged.connect(self.toggle_gridbar_display)
         self.label_gb_spacing.setVisible(False)
         self.label_gb_width.setVisible(False)
         self.doubleSpinBox_gb_spacing.setVisible(False)
         self.doubleSpinBox_gb_width.setVisible(False)
-
-        # gridbar defaults
-        self.doubleSpinBox_gb_spacing.setValue(100)
-        self.doubleSpinBox_gb_width.setValue(20)
-
-        self.doubleSpinBox_gb_spacing.valueChanged.connect(self._update_gridbar)
-        self.doubleSpinBox_gb_width.valueChanged.connect(self._update_gridbar)
+        self.doubleSpinBox_gb_spacing.setValue(GRIDBAR_IMAGE_LAYER_PROPERTIES["spacing"])
+        self.doubleSpinBox_gb_width.setValue(GRIDBAR_IMAGE_LAYER_PROPERTIES["width"])
         self.doubleSpinBox_gb_spacing.setKeyboardTracking(False)
         self.doubleSpinBox_gb_width.setKeyboardTracking(False)
+        self.doubleSpinBox_gb_spacing.valueChanged.connect(self.update_gridbar_layer)
+        self.doubleSpinBox_gb_width.valueChanged.connect(self.update_gridbar_layer)
+        self.groupBox_correlation.setToolTip("Correlation Controls are disabled until an image is acquired or loaded.")
 
+        # set styles
+        self.pushButton_update_position.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_run_tile_collection.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_cancel_acquisition.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
+        self.progressBar_acquisition.setStyleSheet(stylesheets.PROGRESS_BAR_GREEN_STYLE)
+        self.pushButton_remove_position.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
+        self.pushButton_move_to_position.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_enable_correlation.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+
+        self.update_positions_combobox()
+        self.toggle_interaction(enable=True)
 
     def update_positions_from_parent(self, positions):
-        
+        # TODO: support proper shared data model
         if positions is not None:
             self.positions = positions
 
         if not self.ADDING_POSITION:
-            self._update_position_info()
-            self._update_viewer()
+            self.update_positions_combobox()
+            self.update_viewer()
 
+    def update_from_created_lamella(self, lamella: 'Lamella') -> None:
+        """Update the latest position name from the created lamella (via AutoLamella)."""
+        self.positions[-1].name = lamella.name
+        self.update_viewer()
+        self.update_positions_from_parent(None)
 
+    def get_imaging_parameters(self) -> Dict[str, Any]:
+        """Get the imaging parameters from the UI."""
+        return {
+            "fov": self.doubleSpinBox_tile_fov.value() * constants.MICRO_TO_SI,
+            "resolution": list(map(int, self.comboBox_tile_resolution.currentText().split("x"))),
+            "tile_count": list(self.comboBox_tile_count.currentText().split("x")),
+            "dwell_time": self.doubleSpinBox_tile_dwell_time.value() * constants.MICRO_TO_SI,
+            "beam_type": BeamType[self.comboBox_tile_beam_type.currentText()],
+            "cryo": self.checkBox_tile_autogamma.isChecked(),
+            "autocontrast": self.checkBox_tile_autogamma.isChecked(),
+            "path": self.lineEdit_tile_path.text(),
+            "filename": self.lineEdit_tile_filename.text(),
+        }
+
+    def update_imaging_display(self):
+        """Update the imaging parameters based on the field of view and tile count."""
+        # update imaging parameters based on fov and tile count
+        imaging_params = self.get_imaging_parameters()
+        fov = imaging_params["fov"] 
+        tile_count = int(imaging_params["tile_count"][0])
+        total_fov = int(_get_total_fov(tile_count, fov) * 1e6) # um
+        self.label_tile_total_fov.setText(f"Total Field of View: {total_fov} um")
+   
     def run_tile_collection(self):
-
+        """Run the tiled acquisition."""
         logging.info("running tile collection")
 
-        beam_type = BeamType[self.comboBox_tile_beam_type.currentText()]
-        grid_size = self.doubleSpinBox_tile_grid_size.value() * constants.MICRO_TO_SI
-        tile_size = self.doubleSpinBox_tile_tile_size.value() * constants.MICRO_TO_SI
-        resolution = int(self.spinBox_tile_resolution.value())
-        dwell_time = self.doubleSpinBox_tile_dwell_time.value() * constants.MICRO_TO_SI
-        cryo = self.checkBox_tile_autogamma.isChecked()
-        autocontrast = self.checkBox_tile_autogamma.isChecked()
-        path = self.lineEdit_tile_path.text()
-        filename = self.lineEdit_tile_filename.text()
+        imaging_params = self.get_imaging_parameters()
+        fov = imaging_params["fov"] 
+        resolution = imaging_params["resolution"]
+        dwell_time = imaging_params["dwell_time"]
+        beam_type = imaging_params["beam_type"]
+        cryo = imaging_params["cryo"]
+        autocontrast = imaging_params["autocontrast"]
+        path = imaging_params["path"]
+        filename = imaging_params["filename"]
+        tile_count = int(imaging_params["tile_count"][0])
 
-        self._tile_info["grid_size"] = grid_size
-        self._tile_info["tile_size"] = tile_size
-        self._tile_info["resolution"] = resolution
-        self._tile_info["beam_type"] = beam_type
-                
-        self.settings.image.dwell_time = dwell_time 
-        self.settings.image.hfw = tile_size
-        self.settings.image.beam_type = beam_type
-        self.settings.image.resolution = [resolution, resolution]
-        self.settings.image.autocontrast = autocontrast
-        self.settings.image.save = True
-        self.settings.image.path = path
-        self.settings.image.filename = filename
+        image_settings = ImageSettings(
+            hfw = fov,
+            resolution = resolution,
+            dwell_time = dwell_time,
+            beam_type = beam_type,
+            autocontrast = autocontrast,
+            save = True,
+            path = path,
+            filename = filename,
+        )
+        total_fov = _get_total_fov(tile_count, fov)
 
-        if self.settings.image.filename == "":
-            napari.utils.notifications.show_error(f"Please enter a filename for the image")
+        # TODO: support overlap, better stitching (non-existent)
+        if image_settings.filename == "":
+            napari.utils.notifications.show_error("Please enter a filename for the image")
             return
-        
+
         # ui feedback
         self.toggle_interaction(enable=False)
 
         self.STOP_ACQUISITION = False
-        worker = self._run_tile_collection_thread(
-            microscope=self.microscope, settings=self.settings, 
-            grid_size=grid_size, tile_size=tile_size, 
-            overlap=0, cryo=cryo)
+        worker = self.run_tile_collection_thread(
+            microscope=self.microscope, image_settings=image_settings, 
+            grid_size=total_fov,
+            tile_size=fov, 
+            overlap=0, 
+            cryo=cryo)
 
-        worker.finished.connect(self._tile_collection_finished)
-        worker.errored.connect(self._tile_collection_errored)
+        worker.finished.connect(self.tile_collection_finished)
+        worker.errored.connect(self.tile_collection_errored)
         worker.start()
 
-    def cancel_acquisition(self):
 
-        logging.info(f"Cancelling acquisition...")
-        self.STOP_ACQUISITION: bool = True
-
-    def _toggle_gridbars(self):
-
-        if self.checkBox_gridbar.isChecked():
-            
-            spacing = self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI
-            width = self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI
-            gridbars_image = _create_gridbar_image(shape=self.image.data.shape, 
-                                                   pixelsize=self.image.metadata.pixel_size.x, 
-                                                   spacing=spacing, width=width)
-
-            self._update_correlation_image(gridbars_image, gridbar=True)
-
-            self.label_gb_spacing.setVisible(True)
-            self.label_gb_width.setVisible(True)
-            self.doubleSpinBox_gb_spacing.setVisible(True)
-            self.doubleSpinBox_gb_width.setVisible(True)            
-
-        else:
-            
-            layer_to_remove = ""
-            for layer in self.viewer.layers:
-                if "gridbar" in layer.name:
-                    layer_to_remove = layer.name
-            
-            self.label_gb_spacing.setVisible(False)
-            self.label_gb_width.setVisible(False)
-            self.doubleSpinBox_gb_spacing.setVisible(False)
-            self.doubleSpinBox_gb_width.setVisible(False)
-
-            self.viewer.layers.remove(layer_to_remove)
-            self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
-            self.comboBox_correlation_selected_layer.clear()
-            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name ])
-            self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
-            # if no correlation layers left, disable enable correlation
-            if len(self.comboBox_correlation_selected_layer) == 0:
-                self.pushButton_enable_correlation.setEnabled(False)
-
-
-    def _update_gridbar(self):
-        
-        # update gridbars image
-        spacing = self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI
-        width = self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI
-        gridbars_image = _create_gridbar_image(shape=self.image.data.shape, 
-                                                pixelsize=self.image.metadata.pixel_size.x, 
-                                                spacing=spacing, width=width)
-
-        # update gridbar layer
-        for layer in self.viewer.layers:
-            if "gridbar" in layer.name:
-                gridbar_layer = layer.name
-                break
-        self.viewer.layers[gridbar_layer].data = gridbars_image.data
-
-    def toggle_interaction(self, enable: bool = True):
-        self.pushButton_run_tile_collection.setEnabled(enable)
-        self.pushButton_cancel_acquisition.setVisible(not enable)
-        self.progressBar_acquisition.setVisible(not enable)
-        # reset progress bar
-        self.progressBar_acquisition.setValue(0)
-
-        if enable:
-            self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_run_tile_collection.setText("Run Tile Collection")
-        else:
-            self.pushButton_run_tile_collection.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
-            self.pushButton_run_tile_collection.setText("Running Tile Collection...")
-
-
-    def _tile_collection_finished(self):
-
-        napari.utils.notifications.show_info(f"Tile collection finished.")
-        self._update_viewer(self.image)
+    def tile_collection_finished(self):
+        napari.utils.notifications.show_info("Tile collection finished.")
+        self.update_viewer(self.image)
         self.toggle_interaction(enable=True)
         self.STOP_ACQUISITION = False
 
-    def _tile_collection_errored(self):
-
-        logging.error(f"Tile collection errored.")
+    def tile_collection_errored(self):
+        logging.error("Tile collection errored.")
         self.STOP_ACQUISITION = False
+        # TODO: handle when acquisition is cancelled halfway, clear viewer, etc
 
-    
     @thread_worker
-    def _run_tile_collection_thread(self, microscope: FibsemMicroscope, settings:MicroscopeSettings, 
-        grid_size: float, tile_size:float, overlap:float=0, cryo: bool=True):
-
+    def run_tile_collection_thread(self, 
+                                   microscope: FibsemMicroscope, 
+                                   image_settings: ImageSettings,
+                                    grid_size: float, 
+                                    tile_size:float, 
+                                    overlap:float=0, 
+                                    cryo: bool=True):
+        """Threaded worker for tiled acquisition and stitching."""
         try:
-            self.image = _tile._tile_image_collection_stitch(
-                microscope=microscope, settings=settings, 
-                grid_size=grid_size, tile_size=tile_size, 
-                overlap=overlap, cryo=cryo, parent_ui=self)
+            self.image = tiled.tiled_image_acquisition_and_stitch(
+                microscope=microscope,
+                image_settings=image_settings,
+                grid_size=grid_size,
+                tile_size=tile_size,
+                overlap=overlap,
+                cryo=cryo,
+                parent_ui=self,
+            )
         except Exception as e:
             # TODO: specify the error, user cancelled, or error in acquisition
             logging.error(f"Error in tile collection: {e}")
 
+    def handle_tile_acquisition_progress(self, ddict: dict) -> None:
+        """Callback for handling the tile acquisition progress."""
 
-    def _update_tile_collection_callback(self, ddict):
-        
         msg = f"{ddict['msg']} ({ddict['counter']}/{ddict['total']})"
         logging.info(msg)
         napari.utils.notifications.show_info(msg)
@@ -343,521 +347,444 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         self.progressBar_acquisition.setMaximum(100)
         self.progressBar_acquisition.setValue(int(count/total*100))
 
-        if ddict.get("image", None) is not None:
+        image = ddict.get("image", None)
+        if image is not None:
+            self.update_viewer(FibsemImage(data=image), tmp=True) # TODO: this gets too slow when there are lots of tiles, update only the new tile
 
-            arr = median_filter(ddict["image"], size=3)
-            try:
-                self._image_layer.data = arr
-            except:
-                self._image_layer = self.viewer.add_image(arr, name="overview-image", colormap="gray", blending="additive")
+    def cancel_acquisition(self):
+        """Cancel the tiled acquisition."""
+        logging.info("Cancelling acquisition...")
+        self.STOP_ACQUISITION: bool = True
 
-    def load_image(self):
+    def toggle_gridbar_display(self):
+        """Toggle the display of the synthetic grid bar overlay."""
+        show_gridbar = self.checkBox_gridbar.isChecked()
+        self.label_gb_spacing.setVisible(show_gridbar)
+        self.label_gb_width.setVisible(show_gridbar)
+        self.doubleSpinBox_gb_spacing.setVisible(show_gridbar)
+        self.doubleSpinBox_gb_width.setVisible(show_gridbar)
 
-        path = ui_utils._get_file_ui( msg="Select image to load", path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
-
-        if path == "":
-            napari.utils.notifications.show_info(f"No file selected..")
-            return
-
-        image = FibsemImage.load(path)
-
-        self._tile_info["tile_size"] = image.metadata.image_settings.hfw
-        self._tile_info["resolution"] = image.metadata.image_settings.resolution[0]
-        self._tile_info["beam_type"] = image.metadata.image_settings.beam_type
-
-        self._update_viewer(image)
-
-    def _update_ui(self):
-
-        if self.image is not None:
-            self.label_instructions.setText("Alt+Click to Add a position, Shift+Click to Update a position \nor Double Click to Move the Stage...")
+        if show_gridbar:
+            self.update_gridbar_layer()
         else:
+            layer_name = GRIDBAR_IMAGE_LAYER_PROPERTIES["name"]
+            if layer_name in self.viewer.layers:
+                self.correlation_image_layers.remove(layer_name)
+                self.viewer.layers.remove(layer_name)
+
+            self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
+            self.comboBox_correlation_selected_layer.clear()
+            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name ])
+            self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self.update_correlation_ui)
+            # if no correlation layers left, disable enable correlation
+            if len(self.comboBox_correlation_selected_layer) == 0:
+                self.pushButton_enable_correlation.setEnabled(False)
+
+    def update_gridbar_layer(self):
+        """Update the synthetic grid bar overlay."""
+        # update gridbars image
+        spacing = self.doubleSpinBox_gb_spacing.value() * constants.MICRO_TO_SI
+        width = self.doubleSpinBox_gb_width.value() * constants.MICRO_TO_SI
+        gridbars_image = generate_gridbar_image(shape=self.image.data.shape, 
+                                                pixelsize=self.image.metadata.pixel_size.x, 
+                                                spacing=spacing, width=width)
+
+        # update gridbar layer
+        gridbar_layer = GRIDBAR_IMAGE_LAYER_PROPERTIES["name"]
+        if gridbar_layer in self.viewer.layers:
+            self.viewer.layers[gridbar_layer].data = gridbars_image.data
+        else:
+            self.add_correlation_image(gridbars_image, is_gridbar=True)
+
+    def toggle_interaction(self, enable: bool = True):
+        """Toggle the interactivity of the UI elements."""
+        self.pushButton_run_tile_collection.setEnabled(enable)
+        self.pushButton_cancel_acquisition.setVisible(not enable)
+        self.progressBar_acquisition.setVisible(not enable)
+        # reset progress bar
+        self.progressBar_acquisition.setValue(0)
+
+        if enable:
+            self.pushButton_run_tile_collection.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_tile_collection.setText("Run Tile Collection")
+        else:
+            self.pushButton_run_tile_collection.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+            self.pushButton_run_tile_collection.setText("Running Tile Collection...")
+
+        if self.image is None:
             self.label_instructions.setText("Please take or load an overview image...")
 
-        # TODO: why is this here?
-        _positions_loaded = len(self.positions) > 0
-        self.pushButton_move_to_position.setEnabled(_positions_loaded)
-        self.pushButton_update_position.setEnabled(_positions_loaded)
-        self.pushButton_remove_position.setEnabled(_positions_loaded)
+    def load_image(self):
+        """Ask the user to select a file to load an image as overview or correlation image."""
+        is_correlation = self.sender() == self.actionLoad_Correlation_Image
 
-        _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
-        self.label_translation_x.setVisible(_MOVE_WITH_TRANSLATION)
-        self.label_translation_y.setVisible(_MOVE_WITH_TRANSLATION)
-        self.label_translation_z.setVisible(_MOVE_WITH_TRANSLATION)
-        self.doubleSpinBox_translation_x.setVisible(_MOVE_WITH_TRANSLATION)
-        self.doubleSpinBox_translation_y.setVisible(_MOVE_WITH_TRANSLATION)
-        self.doubleSpinBox_translation_z.setVisible(_MOVE_WITH_TRANSLATION)
+        path = ui_utils.open_existing_file_dialog(
+            msg="Select image to load", 
+            path=self.lineEdit_tile_path.text(), 
+            _filter="Image Files (*.tif *.tiff)", 
+            parent=self)
 
-    def _update_viewer(self, image: FibsemImage =  None):
+        if path == "":
+            napari.utils.notifications.show_error("No file selected..")
+            return
 
-        if image is not None:
-            self.image = image
+        # load the image
+        image = FibsemImage.load(path)
         
-            arr = median_filter(self.image.data, size=3)
+        if is_correlation:
+            self.add_correlation_image(image)
+        else:
+            self.update_viewer(image)
+
+    def update_viewer(self, image: FibsemImage = None, tmp: bool = False):
+        """Update the viewer with the image and positions."""
+        if image is not None:
+    
+            if not tmp:
+                self.image = image
+            
+            # apply a median filter to the image
+            arr = median_filter(image.data, 
+                                size=OVERVIEW_IMAGE_LAYER_PROPERTIES["median_filter_size"])
+
             try:
-                self._image_layer.data = arr
-            except:
-                self._image_layer = self.viewer.add_image(arr, name="overview-image", colormap="gray", blending="additive")
+                self.image_layer.data = arr
+            except Exception as e:              
+                self.image_layer = self.viewer.add_image(arr, 
+                                                         name=OVERVIEW_IMAGE_LAYER_PROPERTIES["name"],
+                                                         colormap=OVERVIEW_IMAGE_LAYER_PROPERTIES["colormap"], 
+                                                         blending=OVERVIEW_IMAGE_LAYER_PROPERTIES["blending"])
 
-            # draw a point on the image at center
-            ui_utils._draw_crosshair(viewer=self.viewer,eb_image= self.image, ib_image= self.image,is_checked=True) 
+            if tmp:
+                return # don't update the rest of the UI, we are just updating the image
 
-            self._image_layer.mouse_drag_callbacks.clear()
-            self._image_layer.mouse_double_click_callbacks.clear()
-            self._image_layer.mouse_drag_callbacks.append(self._on_click)
-            self._image_layer.mouse_double_click_callbacks.append(self._on_double_click)
+            self.image_layer.mouse_drag_callbacks.clear()
+            self.image_layer.mouse_double_click_callbacks.clear()
+            self.image_layer.mouse_drag_callbacks.append(self.on_single_click)
+            self.image_layer.mouse_double_click_callbacks.append(self.on_double_click)
 
             # NOTE: how to do respace scaling, convert to infinite canvas
             # px = self.image.metadata.pixel_size.x
-            # self._image_layer.scale = [px*constants.SI_TO_MICRO, px*constants.SI_TO_MICRO]
+            # self.image_layer.scale = [px*constants.SI_TO_MICRO, px*constants.SI_TO_MICRO]
             # self.viewer.scale_bar.visible = True
             # self.viewer.scale_bar.unit = "um"
 
-        self._draw_positions() # draw the reprojected positions on the image
+        if self.image:
+            self.draw_current_stage_position()  # draw the current stage position on the image
+            self.draw_stage_positions()         # draw the reprojected positions on the image
+            self.label_instructions.setText("Alt+Click to Add a position, Shift+Click to Update a position \nor Double Click to Move the Stage...")
+        self.set_active_layer_for_movement()
 
-        self.viewer.layers.selection.active = self._image_layer
-
-        self._update_ui()
-
-
-    def _update_region(self, position:FibsemStagePosition):
-    
-
-        resolution = self._tile_info["resolution"]
-        self.settings.image.resolution = [resolution, resolution]
-        self.settings.image.beam_type = self._tile_info["beam_type"]
-        self.settings.image.hfw = self._tile_info["tile_size"]
-        self.settings.image.save = False
-
-        # TODO: this assumes the image is taken with the same settings as the tile collection
-        self.image = _tile._update_image_region(self.microscope, self.settings.image, self.image, position)
-
-        self._update_viewer(self.image)
-
-    def get_data_from_coord(self, coords: tuple) -> tuple:
-        # check inside image dimensions, (y, x)
-        shape = self.image.data.shape[0], self.image.data.shape[1]
-
-        if (coords[0] > 0 and coords[0] < shape[0]) and (
-            coords[1] > 0 and coords[1] < shape[1]
-        ):
-            return True
-        else:
-            return False
-
-
-    def _validate_mouse_click(self, layer, event):
-        """validate if click is inside image, and convert to microscope coords"""                
-        # get coords
+    def get_coordinate_in_microscope_coordinates(self, layer: NapariLayer, event: NapariEvent) -> Tuple[np.ndarray, Point]:
+        """Validate if event position is inside image, and convert to microscope coords
+        Args:
+            layer (NapariLayer): The image layer.
+            event (Event): The event object.
+        Returns:
+            Tuple[np.ndarray, Point]: The coordinates in image and microscope image coordinates.
+        """         
+        # get coords in image coordinates (adjusts for translation, etc)
         coords = layer.world_to_data(event.position)
 
-        _inside_image = self.get_data_from_coord(coords)
-
-        if _inside_image is False:
+        # check if clicked point is inside image
+        if not is_inside_image_bounds(coords=coords, shape=self.image.data.shape):
             napari.utils.notifications.show_warning(
-                f"Clicked outside image dimensions. Please click inside the image to move."
+                "Clicked outside image dimensions. Please click inside the image to move."
             )
             return False, False
 
         point = conversions.image_to_microscope_image_coordinates(
-            Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x,
+            coord=Point(x=coords[1], y=coords[0]), 
+            image=self.image.data, 
+            pixelsize=self.image.metadata.pixel_size.x,
         )
 
         return coords, point
 
-    def _on_click(self, layer, event):
+    def on_single_click(self, layer: NapariImageLayer, event: NapariEvent) -> None:
+        """Callback for single click on the image layer. 
+        Supports adding and updating positions with Shift and Alt modifiers.
+        Args:
+            layer: The image layer.
+            event: The event object.
+        """
+
+        UPDATE_POSITION: bool = "Shift" in event.modifiers
+        ADD_NEW_POSITION: bool = "Alt" in event.modifiers
         
         # left click + (alt or shift)
-        if event.button != 1 or ('Alt' not in event.modifiers and 'Shift' not in event.modifiers):
+        if event.button != 1 or not (ADD_NEW_POSITION or UPDATE_POSITION):
+            logging.warning(f"Invalid mouse click: {event.button} {event.modifiers}")
             return 
-
-        coords, point = self._validate_mouse_click(layer, event)
+        
+        coords, point = self.get_coordinate_in_microscope_coordinates(layer, event)
 
         if point is False: # clicked outside image
             return
 
-        _new_position = self.microscope.project_stable_move( 
+        # get the stage position (xyzrt) based on the clicked point and projection
+        stage_position = self.microscope.project_stable_move( 
                     dx=point.x, dy=point.y, 
                     beam_type=self.image.metadata.image_settings.beam_type, 
                     base_position=self.image.metadata.microscope_state.stage_position)            
-       
-        self.ADDING_POSITION = True # flag prevent double drawing from circular update
-        if 'Shift' in event.modifiers:
+
+        # TODO: handle case where multiple modifiers are pressed
+        if UPDATE_POSITION:
             idx = self.comboBox_tile_position.currentIndex()
-            _name = self.positions[idx].name
-            _new_position.name = _name
-            self.positions[idx] = _new_position
-        elif 'Alt' in event.modifiers:
-            _new_position.name = f"Position {len(self.positions)+1:02d}" 
-            self.positions.append(_new_position)
-            self._stage_position_added.emit(_new_position)
+            if idx == -1:
+                logging.debug("No position selected to update.")
+                return
 
+        self.ADDING_POSITION = True # flag prevent double drawing from circular update
 
-        # we could save this position as well, use it to pre-select a bunch of lamella positions?
-        self._update_position_info()
-        self._update_viewer()
+        if UPDATE_POSITION:
+            stage_position.name = self.positions[idx].name
+            self.positions[idx] = stage_position
+            self.stage_position_updated_signal.emit(stage_position)
+        elif ADD_NEW_POSITION:
+            stage_position.name = f"Position {len(self.positions)+1:02d}" 
+            self.positions.append(stage_position)
+            self.stage_position_added_signal.emit(stage_position)
 
-
-        self._minimap_positions.emit(self.positions)
         self.ADDING_POSITION = False
 
-    def _on_double_click(self, layer, event):
-        
-        if event.button !=1:
+    def on_double_click(self, layer: NapariImageLayer, event: NapariEvent) -> None:
+        """Callback for double click on the image layer.
+        Moves the stage to the clicked position.
+        Args:
+            layer: The image layer.
+            event: The event object.
+        """
+
+        if event.button != 1: # left click only
             return
-        coords, point = self._validate_mouse_click(layer, event)
+
+        coords, point = self.get_coordinate_in_microscope_coordinates(layer, event)
 
         if point is False: # clicked outside image
             return
         
         beam_type = self.image.metadata.image_settings.beam_type
-        _new_position = self.microscope.project_stable_move( 
+        stage_position = self.microscope.project_stable_move( 
             dx=point.x, dy=point.y, 
             beam_type=beam_type, 
             base_position=self.image.metadata.microscope_state.stage_position)   
 
+        self.move_to_stage_position(stage_position)
 
-        _MOVE_WITH_TRANSLATION = self.checkBox_options_move_with_translation.isChecked()
-        if _MOVE_WITH_TRANSLATION:
-            dx = self.doubleSpinBox_translation_x.value() * constants.MILLI_TO_SI
-            dy = self.doubleSpinBox_translation_y.value() * constants.MILLI_TO_SI
-            dz = self.doubleSpinBox_translation_z.value() * constants.MILLI_TO_SI
-            translation = FibsemStagePosition(x=dx, y=dy, z=dz)
-            logging.info(f"[NOT ENABLED] Moving to position with translation: {translation}")
-            napari.utils.notifications.show_warning(f" [NOT ENABLED] Moving to position with translation: {translation}")
-
-            if cfg._MINIMAP_MOVE_WITH_TRANSLATION:
-                _new_position += translation
-
-        self._move_to_position(_new_position)
-        self._minimap_positions.emit(self.positions)
-
-    def _update_current_position_info(self):
-
+    def update_current_selected_position(self):
+        """Update the currently selected position."""
         idx = self.comboBox_tile_position.currentIndex()
-        if idx != -1 and len(self.positions) > 0:
-            self.lineEdit_tile_position_name.setText(self.positions[idx].name)
-            self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
-        else:
+        if idx == -1 or len(self.positions) == 0:
             self.lineEdit_tile_position_name.setText("")
-        
+            return
 
-    def _update_position_info(self):
+        self.lineEdit_tile_position_name.setText(self.positions[idx].name)
+        self.pushButton_move_to_position.setText(f"Move to {self.positions[idx].name}")
+
+        # TODO: should this also update autolamella?
+        # TODO: migrate to shared data model, list-view
+
+    def update_positions_combobox(self):
+        """Update the positions combobox with the current positions."""
+
+        HAS_POSITIONS = len(self.positions) > 0
+        self.pushButton_move_to_position.setEnabled(HAS_POSITIONS)
+        self.pushButton_remove_position.setEnabled(HAS_POSITIONS)
+        self.pushButton_update_position.setEnabled(HAS_POSITIONS)
+        self.groupBox_positions.setVisible(HAS_POSITIONS)
+
         idx = self.comboBox_tile_position.currentIndex()
         self.comboBox_tile_position.clear()
         self.comboBox_tile_position.addItems([pos.name for pos in self.positions])
-        if idx != -1:
-            self.comboBox_tile_position.setCurrentIndex(idx)
-
-        _positions_added = len(self.positions) > 0
-        self.pushButton_move_to_position.setEnabled(_positions_added)
-        self.pushButton_remove_position.setEnabled(_positions_added)
-        self.pushButton_update_position.setEnabled(_positions_added)
+        if idx == -1:
+            return 
+        self.comboBox_tile_position.setCurrentIndex(idx)
 
         msg = ""
-        for pos in self.positions:
+        for pos in self.positions: # TODO: migrate to list-view
             msg += f"{pos.name}:\t x:{pos.x*1e3:.2f}mm, y:{pos.y*1e3:.2f}mm, z:{pos.z*1e3:.2f}m\n"
         self.label_position_info.setText(msg)
 
-    def _update_position_pressed(self):
-
+    def remove_selected_position_pressed(self):
+        """Remove the selected position from the list."""
         idx = self.comboBox_tile_position.currentIndex()
         if idx == -1:
-            logging.debug(f"No position selected to update.")
             return
+        stage_position = self.positions[idx]
+        logging.info(f"Removing position...{stage_position.name}")
+        self.positions.remove(stage_position)
+        self.stage_position_removed_signal.emit(stage_position)
 
-        logging.info(f"Updating position...")
-        _position = self.positions[idx]
-        
-        name = self.lineEdit_tile_position_name.text()
-        if name == "":
-            napari.utils.notifications.show_info(f"Please enter a name for the position")
-            return
+    def handle_stage_position_signals(self, stage_position: FibsemStagePosition):
+        """Handle the stage position signals."""
 
-        _position.name = name 
-        self._update_position_info()
-        self._update_viewer()
+        # TODO: if autolamella is the parent, this causes a double update. 
+        # we should only update the parent, and the parent should update the minimap
 
-    def _remove_position_pressed(self):
+        self.update_positions_combobox()
+        self.update_viewer()
+
+    def move_to_position_pressed(self) -> None:
+        """Move the stage to the selected position."""
         idx = self.comboBox_tile_position.currentIndex()
         if idx == -1:
-            logging.debug(f"No position selected to remove.")
             return
-        logging.info(f"Removing position...")
-        _position = self.positions[idx]
-        self.positions.remove(_position)
-        self._minimap_positions.emit(self.positions)
-        self._update_position_info()
-        self._update_viewer()
+        stage_position = self.positions[idx] # TODO: migrate to self.selected_stage_position
+        self.move_to_stage_position(stage_position)
+
+    def move_to_stage_position(self, stage_position: FibsemStagePosition)->None:
+        """Move the stage to the selected position via movement widget."""
+        self.movement_widget.move_to_position(stage_position)
+
+    def handle_movement_progress(self, ddict: dict):
+        """Handle the movement progress signal from the movement widget."""
+        is_finished = ddict.get("finished", False)
+        if is_finished:
+            self.update_viewer()
+
+    def redraw_pattern_overlay(self):
+        """Redraw the selected milling patterns on the image for each saved position."""
+
+        selected_pattern = self.comboBox_pattern_overlay.currentText()
+        self.selected_milling_stage = self.protocol.milling[selected_pattern][0]
+        self.draw_stage_positions()
+
+    def draw_current_stage_position(self):
+        """Draws the current stage position on the image."""
+        current_stage_position = deepcopy(self.microscope.get_stage_position())
+        points = tiled.reproject_stage_positions_onto_image(self.image, [current_stage_position])
+        points[0].name = "Current Position"
         
+        draw_positions_in_napari(viewer=self.viewer, 
+                                 points=points, 
+                                 show_names=True, 
+                                 layer_name="current-stage-position")
 
-
-    def _move_position_pressed(self):
-
-        logging.info(f"Moving to position...")
-        _position = self.positions[self.comboBox_tile_position.currentIndex()]
-        logging.info(f"Moving To: {_position}")
-        self._move_to_position(_position)
-
-    def _move_to_position(self, _position:FibsemStagePosition)->None:
-        self.microscope.safe_absolute_stage_movement(_position)
-        self._stage_position_moved.emit(_position)
-        self._update_viewer()
-
-
-    def _load_positions(self):
-
-        logging.info(f"Loading Positions...")
-        path = ui_utils._get_file_ui( msg="Select a position file to load", 
-            path=self.settings.image.path, 
-            _filter= "*yaml", 
-            parent=self)
-
-        if path == "":
-            napari.utils.notifications.show_info(f"No file selected..")
-            return
-
-        pdict = utils.load_yaml(path)
-        
-        positions = [FibsemStagePosition.from_dict(p) for p in pdict]
-        # self.positions = self.positions + positions # append? or overwrite
-        # overwrite 
-        self.positions = positions
-        self._minimap_positions.emit(self.positions)
-
-        self._update_position_info()
-        self._update_viewer()
-
-    def _save_positions_pressed(self):
-        
-        logging.info(f"Saving Positions...")
-        
-        path = ui_utils._get_save_file_ui(msg = "Select a file to save the positions to",
-            path = self.settings.image.path,
-            _filter= "*yaml",
-            parent=self,
-        )
-
-        if path == "":
-            napari.utils.notifications.show_info(f"No file selected, not saving.")
-            return
-
-        # save the positions
-        pdict = [p.to_dict() for p in self.positions]
-        utils.save_yaml(path, pdict)
-
-        napari.utils.notifications.show_info(f"Saved positions to {path}")
-
-    def _update_pattern_overlay(self):
-
-        self._draw_positions()
-
-
-    def _draw_positions(self):
-        
-        logging.info(f"Drawing Reprojected Positions...")
-        current_position = deepcopy(self.microscope.get_stage_position())
-        current_position.name = f"Current Position"
+    def draw_stage_positions(self):
+        """Draws the saved positions on the image. Optionally, draws milling patterns."""
 
         # Performance Note: the reason this is slow is because every time a new position is added, we re-draw every position
         # this is not necessary, we can just add the new position to the existing layer
         # almost all the slow down comes from the linked callbacks from autolamella. probably saving and re-drawing milling patterns
         # we should delay that until the user requests it
 
-        if self.image:
-            
-            drawn_positions = self.positions + [current_position]
-            points = _tile._reproject_positions(self.image, drawn_positions)
+        if self.image and self.positions:
+            logging.info("Drawing Reprojected Positions...")
 
-            data = []
-            for pt in points:
-                # reverse to list
-                data.append([pt.y, pt.x])
+            points = tiled.reproject_stage_positions_onto_image(self.image, self.positions)
 
-            colors = ["lime"] * (len(drawn_positions)-1)
-            colors.append("yellow")
+            position_layer = draw_positions_in_napari(viewer=self.viewer, 
+                                points=points, 
+                                size_px=75,
+                                show_names=True, 
+                                layer_name="saved-stage-positions")
 
-            colors_rgba = [[0,1,0,1] for _ in range(len(drawn_positions)-1)]
-            colors_rgba.append([1,1,0,1]) # yellow
+            show_patterns: bool = self.checkBox_pattern_overlay.isChecked()
+            if show_patterns: 
+                milling_stages = []
+                stage: FibsemMillingStage
+                for point in points:
+                    pt = conversions.image_to_microscope_image_coordinates(coord=point, 
+                                                                      image=self.image.data, 
+                                                                    pixelsize=self.image.metadata.pixel_size.x)
+                    stage = deepcopy(self.selected_milling_stage)
+                    stage.name = point.name
+                    stage.pattern.point = pt
+                    milling_stages.append(stage)
 
-            text = {
-                "string": [pos.name for pos in drawn_positions],
-                "color": colors, # TODO: separate colour for current position
-                "translation": np.array([-50, 0]),
-            }
-
-            if self._reprojection_layer is None:
-            
-                 self._reprojection_layer = self.viewer.add_points(
-                    data,
-                    name="Positions",
-                    text=text,
-                    size=60,
-                    edge_width=7,
-                    edge_width_is_relative=False,
-                    edge_color="transparent",
-                    face_color="lime",
-                    blending="translucent",
-                    symbol="cross",
-                )
+                self.milling_pattern_layers = draw_milling_patterns_in_napari(
+                    viewer=self.viewer, 
+                    image_layer=self.image_layer,
+                    pixelsize=self.image.metadata.pixel_size.x,
+                    milling_stages = milling_stages,
+                    draw_crosshair=False,
+                    )
             else:
-                self._reprojection_layer.data = data
-                self._reprojection_layer.text = text
+                # TODO: change this to only remove milling pattern layer now that they are all in a single layer
+                remove_all_napari_shapes_layers(viewer=self.viewer)
 
-            self._reprojection_layer.face_color= colors_rgba
+        # hide the layer if no positions
+        if "saved-stage-positions" in self.viewer.layers:
+            self.position_layer = self.viewer.layers["saved-stage-positions"]
+            self.position_layer.visible = bool(self.positions)
 
+        self.set_active_layer_for_movement()
 
-            _SHOW_PATTERNS: bool = self.checkBox_pattern_overlay.isChecked()
-            if _SHOW_PATTERNS: # TODO: this is very slow, need to speed up, too many pattern redraws
-                points = [conversions.image_to_microscope_image_coordinates(Point(x=coords[1], y=coords[0]), self.image.data, self.image.metadata.pixel_size.x ) for coords in data[:-1]]
-                pattern = self.comboBox_pattern_overlay.currentText() 
-                
-                milling_stages = [patterning.get_milling_stages(pattern, self.settings.protocol["milling"], Point(point.x, point.y))[0] for point in points]
-                
-                for stage, pos in zip(milling_stages, drawn_positions[:-1]):
-                    stage.name = pos.name
+    def add_correlation_image(self, image: FibsemImage, is_gridbar: bool = False):
+        """Add a correlation image to the viewer."""
 
-                ui_utils._draw_patterns_in_napari(self.viewer, 
-                    ib_image=self.image, 
-                    eb_image=None, 
-                    milling_stages = milling_stages)
-            else:
-                ui_utils._remove_all_layers(viewer=self.viewer)
+        basename = CORRELATION_IMAGE_LAYER_PROPERTIES["name"]
+        if is_gridbar:
+            basename = GRIDBAR_IMAGE_LAYER_PROPERTIES["name"]
+        idx = 1
+        layer_name = f"{basename}-{idx:02d}"
+        while layer_name in self.viewer.layers:
+            idx+=1
+            layer_name = f"{basename}-{idx:02d}"
 
-        self.viewer.layers.selection.active = self._image_layer
+        # if grid bar in _name, idx = 3
+        if is_gridbar:
+            layer_name = basename
+            idx = 3
 
+        # add the image layer
+        self.viewer.add_image(image.data, 
+                        name=layer_name, 
+                        colormap=COLOURS[idx%len(COLOURS)], 
+                        blending=CORRELATION_IMAGE_LAYER_PROPERTIES["blending"], 
+                        opacity=CORRELATION_IMAGE_LAYER_PROPERTIES["opacity"])
+        self.correlation_image_layers.append(layer_name)
 
-    def _load_correlation_image(self):
-
-        # load another image
-        path = ui_utils._get_file_ui( msg="Select image to load", 
-        path=cfg.DATA_TILE_PATH, _filter="Image Files (*.tif *.tiff)", parent=self)
-
-        if path == "":
-            napari.utils.notifications.show_info(f"No file selected..")
-            return
-
-        image = FibsemImage.load(path)    
-
-        self._update_correlation_image(image)
-
-
-    def _update_correlation_image(self, image: FibsemImage = None,gridbar:bool=False):
-
-        if image is not None:
-            
-            _basename = f"correlation-image" if not gridbar else f"gridbar-image"
-            idx = 1
-            _name = f"{_basename}-{idx:02d}"
-            while _name in self.viewer.layers:
-                idx+=1
-                _name = f"{_basename}-{idx:02d}"
-
-            # if grid bar in _name, idx = 3
-            if gridbar:
-                idx = 3
-
-            COLOURS = ["green", "cyan", "magenta", "red", "yellow"]
-
-            self._corr_image_layers.append(
-                self.viewer.add_image(image.data, 
-                name=_name, colormap=COLOURS[idx%len(COLOURS)], 
-                blending="translucent", opacity=0.2)
-            )
-
-            self._correlation[_name] = deepcopy([0, 0, 1.0, 1.0, 0])
-
-
-            self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
-            idx = self.comboBox_correlation_selected_layer.currentIndex()
-            self.comboBox_correlation_selected_layer.clear()
-            self.comboBox_correlation_selected_layer.addItems([layer.name for layer in self.viewer.layers if "correlation-image" in layer.name or "gridbar-image" in layer.name])
-            if idx != -1:
-                self.comboBox_correlation_selected_layer.setCurrentIndex(idx)
-            self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self._update_correlation_ui)
-            
-            self.viewer.layers.selection.active = self._image_layer
-            self.pushButton_enable_correlation.setEnabled(True)
+        # update the combobox
+        self.comboBox_correlation_selected_layer.currentIndexChanged.disconnect()
+        idx = self.comboBox_correlation_selected_layer.currentIndex()
+        self.comboBox_correlation_selected_layer.clear()
+        self.comboBox_correlation_selected_layer.addItems(self.correlation_image_layers)
+        if idx != -1:
+            self.comboBox_correlation_selected_layer.setCurrentIndex(idx)
+        self.comboBox_correlation_selected_layer.currentIndexChanged.connect(self.update_correlation_ui)
+        
+        # set the image layer as the active layer
+        self.set_active_layer_for_movement()
+        self.groupBox_correlation.setEnabled(True) # TODO: allow enabling grid-bar overlay separately
+        self.checkBox_gridbar.setEnabled(True)
+        self.pushButton_enable_correlation.setEnabled(True)
 
     # do this when image selected is changed
-    def _update_correlation_ui(self):
+    def update_correlation_ui(self):
 
         # set ui
         layer_name = self.comboBox_correlation_selected_layer.currentText()
         self.pushButton_enable_correlation.setEnabled(layer_name != "")
         if layer_name == "":
-            napari.utils.notifications.show_info(f"Please select a layer to correlate with  update data...")
+            napari.utils.notifications.show_info("Please select a layer to correlate with update data...")
             return
 
-        tx, ty, sx, sy, r = self._correlation[layer_name]
-
-        self.doubleSpinBox_correlation_translation_x.setValue(tx)
-        self.doubleSpinBox_correlation_translation_y.setValue(ty)
-        self.doubleSpinBox_correlation_scale_x.setValue(sx)
-        self.doubleSpinBox_correlation_scale_y.setValue(sy)
-        self.doubleSpinBox_correlation_rotation.setValue(r)
-
-        self._update_correlation_data()
-
-    # do this when parameters change
-    def _update_correlation_data(self):
-
-        # select layer
-        layer_name = self.comboBox_correlation_selected_layer.currentText()
-        if layer_name == "":
-            napari.utils.notifications.show_info(f"Please select a layer to correlate with update ui...")
+    def _toggle_correlation_mode(self, event: NapariEvent = None):
+        """Toggle correlation mode on or off."""
+        if self.image is None:
+            napari.utils.notifications.show_warning("Please acquire an image first...")
             return
-
-        tx, ty = self.doubleSpinBox_correlation_translation_x.value(), self.doubleSpinBox_correlation_translation_y.value()
-        sx, sy = self.doubleSpinBox_correlation_scale_x.value(), self.doubleSpinBox_correlation_scale_y.value()
-        r = self.doubleSpinBox_correlation_rotation.value()
-
-        if sx == 0 or sy == 0:
-            sx =1
-            sy =1
-
-        angle = np.deg2rad(r)
-
-        rows = self.viewer.layers[layer_name].data.shape[0]*0.5 
-        cols = self.viewer.layers[layer_name].data.shape[1]*0.5
-
-
-        # the proof for this is marvelous but i dont have enough space in the comments
-
-        new_x = int(np.cos(angle) * rows - np.sin(angle) * cols) 
-        new_y =  int(np.sin(angle) * rows + np.cos(angle) * cols) 
-
-        trans_x = new_x -rows 
-        trans_y = new_y -cols 
-
-        # translation for central rotation + translation
-        corrected_tx = tx - trans_y
-        corrected_ty = -ty - trans_x
-
-
-        self._correlation[layer_name] = deepcopy([tx, ty, sx, sy, r])
-
-        # apply to selected layer
-        self.viewer.layers[layer_name].translate = [corrected_ty, corrected_tx]
-        self.viewer.layers[layer_name].scale = [sy, sx]
-        self.viewer.layers[layer_name].rotate = r
-
-    def _toggle_correlation_mode(self):
         
-        # toggle correlation mode
-        self._correlation_mode = not self._correlation_mode
+        if not self.correlation_image_layers:
+            napari.utils.notifications.show_warning("Please load a correlation image first...")
+            return
 
-        if self._correlation_mode:
-            self.pushButton_enable_correlation.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+        # toggle correlation mode
+        self.correlation_mode_enabled = not self.correlation_mode_enabled
+
+        if self.correlation_mode_enabled:
+            self.pushButton_enable_correlation.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_enable_correlation.setText("Disable Correlation Mode")
             self.comboBox_correlation_selected_layer.setEnabled(False)
         else:
-            self.pushButton_enable_correlation.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_enable_correlation.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
             self.pushButton_enable_correlation.setText("Enable Correlation Mode")
             self.comboBox_correlation_selected_layer.setEnabled(True)
 
         # if no correlation layer selected, disable the button
-        if self.comboBox_correlation_selected_layer.currentText() == "":
+        if self.comboBox_correlation_selected_layer.currentIndex() == -1:
             self.pushButton_enable_correlation.setEnabled(False)
             return
 
@@ -866,29 +793,17 @@ class FibsemMinimapWidget(FibsemMinimapWidget.Ui_MainWindow, QtWidgets.QMainWind
         correlation_layer = self.viewer.layers[layer_name]
         
         # set transformation mode on
-        if self._correlation_mode:
+        if self.correlation_mode_enabled:
             correlation_layer.mode = 'transform'
             self.viewer.layers.selection.active = correlation_layer
         else:
             correlation_layer.mode = 'pan_zoom'
-            self.viewer.layers.selection.active = self._image_layer
+            self.set_active_layer_for_movement()
 
+    def set_active_layer_for_movement(self) -> None:
+        """Set the active layer to the image layer for movement."""
+        if self.image_layer is not None and self.image_layer in self.viewer.layers:
+            self.viewer.layers.selection.active = self.image_layer
 
 # TODO: update layer name, set from file?
 # TODO: set combobox to all images in viewer 
-
-
-
-def main():
-
-    viewer = napari.Viewer(ndisplay=2)
-    microscope, settings = utils.setup_session()
-    minimap_widget = FibsemMinimapWidget(microscope, settings, viewer=viewer)
-    viewer.window.add_dock_widget(
-        minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
-    )
-    napari.run()
-
-
-if __name__ == "__main__":
-    main()

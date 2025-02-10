@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>477</width>
+    <width>492</width>
     <height>698</height>
    </rect>
   </property>
@@ -15,100 +15,313 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="label_movement_header">
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
      </property>
-     <property name="text">
-      <string>Stage Movement</string>
-     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>470</width>
+        <height>596</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="2" column="0">
+        <widget class="QGroupBox" name="groupBox_saved_positions">
+         <property name="font">
+          <font>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="title">
+          <string>Saved Positions</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="4" column="0">
+           <widget class="QPushButton" name="pushButton_update_position">
+            <property name="text">
+             <string>Update Position</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="pushButton_go_to">
+            <property name="text">
+             <string>Go To Position</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="label_positions_header_info">
+            <property name="text">
+             <string>All positions in mm and degrees</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="comboBox_positions"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="pushButton_remove_position">
+            <property name="styleSheet">
+             <string notr="true">color: white; background-color: rgb(170, 0, 0)</string>
+            </property>
+            <property name="text">
+             <string>Remove Position</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_saved_positions">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Saved Positions</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="pushButton_save_position">
+            <property name="styleSheet">
+             <string notr="true">color: white; background-color: rgb(85, 170, 0)</string>
+            </property>
+            <property name="text">
+             <string>Add Position</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QPushButton" name="pushButton_import">
+            <property name="text">
+             <string>Import Positions</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QPushButton" name="pushButton_export">
+            <property name="text">
+             <string>Export Positions</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="lineEdit_position_name">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_current_position">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBox_movement_options">
+         <property name="title">
+          <string>Options</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="checkBox_movement_acquire_electron">
+            <property name="text">
+             <string>Electron Beam</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="checkBox_movement_acquire_ion">
+            <property name="text">
+             <string>Ion Beam</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="label_movement_images">
+            <property name="text">
+             <string>Acquire images after moving:</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBox_stage_position">
+         <property name="title">
+          <string>Stage Movement</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="6" column="1">
+           <widget class="QPushButton" name="pushButton_move">
+            <property name="text">
+             <string>Move to Position</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_y">
+            <property name="suffix">
+             <string> mm</string>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-100000000000000000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>10000000000000000905969664.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.001000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_movement_stage_z">
+            <property name="text">
+             <string>Z Coordinate</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_tilt">
+            <property name="suffix">
+             <string> deg</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_movement_stage_x">
+            <property name="text">
+             <string>X Coordinate</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_rotation">
+            <property name="suffix">
+             <string> deg</string>
+            </property>
+            <property name="minimum">
+             <double>-360.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>360.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QPushButton" name="pushButton_refresh_stage_position_data">
+            <property name="text">
+             <string>Refresh Stage Position Data</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_x">
+            <property name="suffix">
+             <string> mm</string>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-10000000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100000000000000000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.001000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_movement_stage_rotation">
+            <property name="text">
+             <string>Rotation</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_movement_stage_tilt">
+            <property name="text">
+             <string>Tilt</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z">
+            <property name="suffix">
+             <string> mm</string>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-100000000000000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>99999999999999991611392.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.001000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_movement_stage_y">
+            <property name="text">
+             <string>Y Coordinate</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QPushButton" name="pushButton_move_flat_electron">
+            <property name="text">
+             <string>Move Flat to ELECTRON Beam</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QPushButton" name="pushButton_move_flat_ion">
+            <property name="text">
+             <string>Move Flat to ION Beam</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
-   <item row="15" column="0">
-    <widget class="QPushButton" name="pushButton_save_position">
-     <property name="styleSheet">
-      <string notr="true">color: white; background-color: rgb(85, 170, 0)</string>
-     </property>
-     <property name="text">
-      <string>Add Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="16" column="1">
-    <widget class="QComboBox" name="comboBox_positions"/>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_movement_stage_z">
-     <property name="text">
-      <string>Z Coordinate (mm)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0">
-    <widget class="QPushButton" name="pushButton_refresh_stage_position_data">
-     <property name="text">
-      <string>Refresh Stage Position Data</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="1">
-    <widget class="QPushButton" name="pushButton_move_flat_ion">
-     <property name="text">
-      <string>Move Flat to ION Beam</string>
-     </property>
-    </widget>
-   </item>
-   <item row="13" column="0" colspan="2">
-    <widget class="QLabel" name="label_positions_header">
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Stage Positions</string>
-     </property>
-    </widget>
-   </item>
-   <item row="18" column="0">
-    <widget class="QPushButton" name="pushButton_go_to">
-     <property name="text">
-      <string>Go To Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="16" column="0">
-    <widget class="QLabel" name="label_saved_positions">
-     <property name="font">
-      <font>
-       <weight>50</weight>
-       <bold>false</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Saved Positions</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_movement_stage_x">
-     <property name="text">
-      <string>X Coordinate (mm)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QPushButton" name="pushButton_move_flat_electron">
-     <property name="text">
-      <string>Move Flat to ELECTRON Beam</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="0" colspan="2">
+   <item row="19" column="0" colspan="2">
     <widget class="QLabel" name="label_movement_instructions">
      <property name="minimumSize">
       <size>
@@ -124,193 +337,7 @@
      </property>
     </widget>
    </item>
-   <item row="24" column="0" colspan="2">
-    <widget class="QLabel" name="label_minimap">
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item row="23" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>Please load grid image to display minimap </string>
-     </property>
-    </widget>
-   </item>
-   <item row="19" column="1">
-    <widget class="QLineEdit" name="lineEdit_position_name">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-    </widget>
-   </item>
-   <item row="18" column="1">
-    <widget class="QLabel" name="label_current_position">
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item row="22" column="0">
-    <widget class="QPushButton" name="pushButton_import">
-     <property name="text">
-      <string>Import Positions</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="0">
-    <widget class="QCheckBox" name="checkBox_movement_acquire_electron">
-     <property name="text">
-      <string>Electron Beam</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_rotation">
-     <property name="minimum">
-      <double>-360.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>360.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_movement_stage_y">
-     <property name="text">
-      <string>Y Coordinate (mm)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="23" column="1">
-    <widget class="QPushButton" name="pushButton_load_image_minimap">
-     <property name="text">
-      <string>Load Minimap Image</string>
-     </property>
-    </widget>
-   </item>
-   <item row="22" column="1">
-    <widget class="QPushButton" name="pushButton_export">
-     <property name="text">
-      <string>Export Positions</string>
-     </property>
-    </widget>
-   </item>
-   <item row="15" column="1">
-    <widget class="QPushButton" name="pushButton_remove_position">
-     <property name="styleSheet">
-      <string notr="true">color: white; background-color: rgb(170, 0, 0)</string>
-     </property>
-     <property name="text">
-      <string>Remove Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_y">
-     <property name="decimals">
-      <number>5</number>
-     </property>
-     <property name="minimum">
-      <double>-100000000000000000000.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>10000000000000000905969664.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="14" column="0" colspan="2">
-    <widget class="QLabel" name="label_positions_header_info">
-     <property name="text">
-      <string>All positions in mm and degrees</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_movement_stage_tilt">
-     <property name="text">
-      <string>Tilt (deg)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="19" column="0">
-    <widget class="QPushButton" name="pushButton_update_position">
-     <property name="text">
-      <string>Update Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_x">
-     <property name="decimals">
-      <number>5</number>
-     </property>
-     <property name="minimum">
-      <double>-10000000000.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>100000000000000000.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_movement_stage_rotation">
-     <property name="text">
-      <string>Rotation (deg)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0" colspan="2">
-    <widget class="QLabel" name="label_movement_options_header">
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Movement Options</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="1">
-    <widget class="QCheckBox" name="checkBox_movement_acquire_ion">
-     <property name="text">
-      <string>Ion Beam</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="1">
-    <widget class="QPushButton" name="pushButton_move">
-     <property name="text">
-      <string>Move to Position</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_z">
-     <property name="decimals">
-      <number>5</number>
-     </property>
-     <property name="minimum">
-      <double>-100000000000000000.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>99999999999999991611392.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="25" column="0" colspan="2">
+   <item row="20" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -322,16 +349,6 @@
       </size>
      </property>
     </spacer>
-   </item>
-   <item row="5" column="1">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_movement_stage_tilt"/>
-   </item>
-   <item row="9" column="0" colspan="2">
-    <widget class="QLabel" name="label_movement_images">
-     <property name="text">
-      <string>Acquire images after moving:</string>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

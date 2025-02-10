@@ -5,10 +5,10 @@ import logging
 import fibsem
 from fibsem.ui.qtdesigner_files import FibsemFeatureDetectionUI as FibsemFeatureLabellingUI
 from fibsem.ui.utils import (
-    _get_directory_ui,
-    _get_file_ui,
-    _get_text_ui,
-    _get_save_file_ui,
+    open_existing_directory_dialog,
+    open_existing_file_dialog,
+    open_text_input_dialog,
+    open_save_file_dialog,
 )
 
 from PyQt5 import QtWidgets
@@ -28,7 +28,7 @@ import pandas as pd
 from typing import Optional, Any
 import copy
 from fibsem.structures import Point
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 from typing import List
 
 logging.basicConfig(level=logging.INFO)
@@ -112,8 +112,8 @@ CONFIGURATION = {
         "TEXT_COLOR": "white",
         "TEXT_TRANSLATION": np.array([-30, 0]),
         "FACE_COLOR": "white",
-        "ADD_BUTTON_COLOR": _stylesheets._GREEN_PUSHBUTTON_STYLE,
-        "EDIT_BUTTON_COLOR": _stylesheets._BLUE_PUSHBUTTON_STYLE,
+        "ADD_BUTTON_COLOR": stylesheets.GREEN_PUSHBUTTON_STYLE,
+        "EDIT_BUTTON_COLOR": stylesheets.BLUE_PUSHBUTTON_STYLE,
     },
 
 }
@@ -138,8 +138,6 @@ def get_feature_color(feature: str) -> str:
 
 class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets.QMainWindow
 ):
-    _minimap_signal = pyqtSignal(object)
-
     def __init__(self, viewer: napari.Viewer):
         super(FibsemFeatureLabellingUI, self).__init__()
         self.setupUi(self)
@@ -199,7 +197,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         """Load a directory of images into napari"""
         print(f"Loading image directory")
 
-        path = _get_directory_ui(
+        path = open_existing_directory_dialog(
             msg="Select image directory (*.tif)", parent=self, path=TEST_PATH_DEBUG
         )
 
@@ -214,7 +212,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
             )
             return
 
-        method, ret = _get_text_ui(
+        method, ret = open_text_input_dialog(
             msg="Enter method name",
             title="Dataset Method",
             default="autolamella",
@@ -229,7 +227,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         df = create_dataframe(filenames, method=method)
 
         # save dataframe
-        csv_path = _get_save_file_ui(
+        csv_path = open_save_file_dialog(
             msg="Save CSV file",
             path=os.path.join(path, "data.csv"),
             _filter="CSV (*.csv)",
@@ -248,7 +246,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         """Load a CSV file into napari"""
 
         # get csv path from user
-        csv_path = _get_file_ui(
+        csv_path = open_existing_file_dialog(
             msg="Select CSV file",
             _filter="CSV (*.csv)",
             path=TEST_PATH_DEBUG,
@@ -265,7 +263,7 @@ class FibsemFeatureLabellingUI(FibsemFeatureLabellingUI.Ui_MainWindow, QtWidgets
         df.sort_values(by=["filename"], inplace=True)
 
         # get image path from user
-        path = _get_directory_ui(
+        path = open_existing_directory_dialog(
             msg="Select image directory (*.tif)",
             parent=self,
             path=os.path.dirname(csv_path),
