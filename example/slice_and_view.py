@@ -59,7 +59,7 @@ def main():
 
         # align
         if ref_eb is not None:
-            alignment.align_using_reference_images(microscope, settings, ref_eb, eb_image)
+            alignment.align_using_reference_images(microscope, ref_eb, eb_image)
             ref_eb = eb_image
 
     

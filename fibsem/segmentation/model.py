@@ -185,6 +185,8 @@ def get_backend(checkpoint: str) -> str:
         return "onnx"
     elif "hf" in checkpoint or "transformers" in checkpoint or "segformer" in checkpoint:
         return "huggingface"
+    elif "gis_lamela" in checkpoint or "adaptive" in checkpoint:
+        return "adaptive-smp"
     else:
         return "smp"
 
@@ -202,11 +204,21 @@ def load_model(
         from fibsem.segmentation.nnunet_model import SegmentationModelNNUnet
         model = SegmentationModelNNUnet(checkpoint=checkpoint)
     elif backend == "onnx":
-        from fibsem.segmentation.onnx_model import SegmentationModelONNX
-        model = SegmentationModelONNX(checkpoint=checkpoint)
+        from fibsem.segmentation.onnx_model import SegmentationModelONNX, SegmentationModelWindowONNX
+        for onnx_model in [SegmentationModelWindowONNX, SegmentationModelONNX]:
+            try:
+                logging.debug(f"Trying to load {onnx_model}")
+                model = onnx_model(checkpoint=checkpoint)
+                break
+            except Exception as e:
+                logging.debug(f"Failed to load {type(onnx_model)} for {checkpoint}: {e}")
+
     elif backend == "huggingface":
         from fibsem.segmentation.hf_segmentation_model import SegmentationModelHuggingFace
         model = SegmentationModelHuggingFace(checkpoint=checkpoint)
+    elif backend == "adaptive-smp":
+        from fibsem.segmentation.adaptive_model import AdaptiveSegmentationModel
+        model = AdaptiveSegmentationModel(checkpoint=checkpoint)
     else:
         model = SegmentationModel(checkpoint=checkpoint, encoder=encoder, num_classes=nc, _fix_numeric_scaling=_fix_numeric_scaling)
 

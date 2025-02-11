@@ -11,7 +11,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import FibsemStagePosition
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.qtdesigner_files import FibsemPositionsWidget, FibsemMovementWidget
-from fibsem.ui.utils import _get_save_file_ui, _get_file_ui
+from fibsem.ui.utils import open_save_file_dialog, open_existing_file_dialog
 
 
 class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
@@ -39,7 +39,6 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
         self.pushButton_go_to.clicked.connect(self.go_to_position)
         self.pushButton_export.clicked.connect(self.export_positions)
         self.pushButton_import.clicked.connect(self.import_positions)
-        # self.movement_widget.move_signal.connect(self.minimap)
 
     def select_position(self):
         if self.comboBox_positions.currentIndex() != -1:
@@ -68,11 +67,11 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
     def go_to_position(self):
         self.microscope.move_stage_absolute(self.positions[self.comboBox_positions.currentIndex()])
         self.movement_widget.update_ui()
-        self.image_widget.take_reference_images()
+        self.image_widget.acquire_reference_images()
         logging.info(f"Moved to position {self.comboBox_positions.currentIndex()}")
 
     def export_positions(self):
-        protocol_path = _get_save_file_ui(msg="Select or create file")
+        protocol_path = open_save_file_dialog(msg="Select or create file")
         if protocol_path == '':
             return
         dict_position = []
@@ -85,7 +84,7 @@ class FibsemPositionsWidget(FibsemPositionsWidget.Ui_Form, QtWidgets.QWidget):
 
 
     def import_positions(self):
-        protocol_path = _get_file_ui(msg="Select or create file")
+        protocol_path = open_existing_file_dialog(msg="Select or create file")
         if protocol_path == '':
             napari.utils.notifications.show_info("No file selected, positions not loaded")
             return
