@@ -715,7 +715,6 @@ class OdemisMicroscope(FibsemMicroscope):
         f = self.stage.moveRel(pdict)
         f.result()
 
-    # TODO: consolidate methods from ThermoMicroscope
     def stable_move(
         self, dx: float, dy: float, beam_type: BeamType, static_wd: bool = False
     ) -> FibsemStagePosition:
@@ -725,58 +724,7 @@ class OdemisMicroscope(FibsemMicroscope):
         self, dy: float, dx: float = 0.0, static_wd: bool = True, use_perspective: bool = True
     ) -> FibsemStagePosition:
         """Move the stage vertically by the specified amount."""
-        # TODO: migrate once new vmove changes are implemented
-        # get current working distance, to be restored later
-        wd = self.get("working_distance", BeamType.ELECTRON)
-
-        # adjust for scan rotation
-        scan_rotation = self.get("scan_rotation", BeamType.ION)
-        if np.isclose(scan_rotation, np.pi):
-            dx *= -1.0
-            dy *= -1.0
-
-        # TODO: implement perspective correction
-        PERSPECTIVE_CORRECTION = 0.9
-        z_move = dy
-        if use_perspective:
-            z_move = (
-                dy
-                / np.cos(np.deg2rad(90 - self.system.ion.column_tilt))
-                * PERSPECTIVE_CORRECTION
-        )  # TODO: MAGIC NUMBER, 90 - fib tilt
-
-        # manually calculate the dx, dy, dz
-        theta = self.get_stage_position().t # rad
-        dy = z_move * np.sin(theta)
-        dz = z_move / np.cos(theta)
-        stage_position = FibsemStagePosition(x=dx, y=dy, z=dz)
-        self.move_stage_relative(stage_position)
-
-
-        if static_wd:
-            self.set(
-                "working_distance",
-                self.system.electron.eucentric_height,
-                BeamType.ELECTRON,
-            )
-            self.set("working_distance", self.system.ion.eucentric_height, BeamType.ION)
-        else:
-            self.set("working_distance", wd, BeamType.ELECTRON)
-
-        # logging
-        logging.debug(
-            {
-                "msg": "vertical_move",
-                "dy": dy,
-                "dx": dx,
-                "static_wd": static_wd,
-                "working_distance": wd,
-                "scan_rotation": scan_rotation,
-                "position": stage_position.to_dict(),
-            }
-        )
-
-        return self.get_stage_position()
+        return ThermoMicroscope.vertical_move(self, dy=dy, dx=dx, static_wd=static_wd, use_perspective=use_perspective)
 
     def _y_corrected_stage_movement(
         self, expected_y: float, beam_type: BeamType
