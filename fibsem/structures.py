@@ -14,7 +14,7 @@ import numpy as np
 import tifffile as tff
 
 import fibsem
-from fibsem.config import METADATA_VERSION
+from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
 from abc import ABC, abstractmethod
 
 try:
