@@ -64,7 +64,8 @@ from fibsem.structures import ( #noqa
     MicroscopeState,
     Point,
     SystemSettings,
-    PatterningState,
+    MillingState,
+    ACTIVE_MILLING_STATES,
 )
 
 def _get_beam_settings_from_tescan_md(md: dict, beam_type: BeamType) -> BeamSettings:
@@ -215,11 +216,11 @@ FibsemStagePosition.from_tescan_stage_position = from_tescan_stage_position
 FibsemImage.fromTescanImage = fromTescanImage
 
 DrawBeamStatusToPatterningState = {
-    DBStatus.ProjectNotLoaded: PatterningState.IDLE,
-    DBStatus.ProjectLoadedExpositionIdle: PatterningState.IDLE,
-    DBStatus.ProjectLoadedExpositionInProgress: PatterningState.RUNNING,
-    DBStatus.ProjectLoadedExpositionPaused: PatterningState.PAUSED,
-    DBStatus.Unknown: PatterningState.ERROR,
+    DBStatus.ProjectNotLoaded: MillingState.IDLE,
+    DBStatus.ProjectLoadedExpositionIdle: MillingState.IDLE,
+    DBStatus.ProjectLoadedExpositionInProgress: MillingState.RUNNING,
+    DBStatus.ProjectLoadedExpositionPaused: MillingState.PAUSED,
+    DBStatus.Unknown: MillingState.ERROR,
 }
 
 def printProgressBar(
@@ -278,6 +279,9 @@ class TescanMicroscope(FibsemMicroscope):
         self.last_image_eb: FibsemImage = None
         self.last_image_ib: FibsemImage = None
 
+        self._last_imaging_settings: ImageSettings = ImageSettings()
+        self.milling_channel: BeamType = BeamType.ION
+
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
     
@@ -318,7 +322,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         # reset beam shifts
         self.reset_beam_shifts()
-
         logging.debug({"msg": "connect_to_microscope", "ip_address": ip_address, "port": port, "system_info": self.system.info.to_dict()})
 
     def acquire_image(self, image_settings: ImageSettings ) -> FibsemImage:
@@ -872,7 +875,7 @@ class TescanMicroscope(FibsemMicroscope):
         """
         _check_manipulator(self.system)
 
-        if self.connection.Nanomanipulator.IsCalibrated(0) == False:
+        if self.connection.Nanomanipulator.IsCalibrated(0) is False:
             logging.info("Calibrating manipulator")
             self.connection.Nanomanipulator.Calibrate(0)
         stage_tilt = self.get_stage_position().t
@@ -916,18 +919,17 @@ class TescanMicroscope(FibsemMicroscope):
         Args:
             mill_settings (FibsemMillingSettings): Milling settings.
 
-        Note:
-            This method sets up the microscope imaging and patterning for milling using the ion beam.
-            It sets the active view and device to the ion beam, the default beam type to the ion beam,
-            the specified application file, and the specified patterning mode.
-            It also clears any existing patterns and sets the horizontal field width to the desired value.
-            The method does not start the milling process.
         """
         if mill_settings.milling_channel is not BeamType.ION:
             raise ValueError("Only FIB milling is currently supported.")
         
         _check_beam(mill_settings.milling_channel, self.system)
         self._prepare_beam(mill_settings.milling_channel)
+
+        try: # TODO: check if the layer is loaded?
+            self.connection.DrawBeam.UnloadLayer()
+        except Exception as e:
+            logging.debug(f"Error unloading layer: {e}")
 
         # spot_size =   # application_file
         # rate = ## in application file called Volume per Dose (m3/C)
@@ -953,26 +955,30 @@ class TescanMicroscope(FibsemMicroscope):
         self.layer = self.connection.DrawBeam.Layer("Layer1", layer_settings)
         
 
-    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False):
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
         """
-        Runs the ion beam milling process using the specified milling current.
+        Run ion beam milling using the specified milling current.
 
-        Args:
-            milling_current (float): The milling current to use, in amps.
-            asynch (bool, optional): Whether to run the milling asynchronously. Defaults to False.
-
-        Returns:
-            None
+        Args: 
+            milling_current: float (unused, use preset instead)
+            milling_voltage: float (unused, use preset instead)
+            asynch (bool, optional): If True, the milling will be run asynchronously. 
+                            Defaults to False, in which case it will run synchronously.
         """
         self._prepare_beam(self.milling_channel)
 
         self.connection.DrawBeam.LoadLayer(self.layer)
         logging.info("running ion beam milling now...")
+
+        # estimate milling time (must be done before starting milling, but after loading layer)
+        start_time = time.time()
+        estimated_time = self.estimate_milling_time()
+        remaining_time = estimated_time
+
+        # start milling
         self.connection.DrawBeam.Start()
 
-        if asynch:
-            return # up to the user to monitor the milling process/progress
-
+        # display progress bar in tescan ui
         self.connection.Progress.Show(
             Title="DrawBeam Milling (OpenFIBSEM)", 
             Text="Layer 1 in progress", 
@@ -981,103 +987,112 @@ class TescanMicroscope(FibsemMicroscope):
             ProgressMin=0, ProgressMax=100
         )
 
+        if asynch:
+            return # up to the user to monitor the milling process/progress
+
+        MILLING_SLEEP_TIME = 1
         err = None
         try:
-            while True:
+            while self.get_milling_state() in ACTIVE_MILLING_STATES:
                 status = self.connection.DrawBeam.GetStatus() # status, total, elapsed
-                running = status[0] == DBStatus.ProjectLoadedExpositionInProgress
-                if running:
+                milling_status, total_time, elapsed_time = status
+                if self.get_milling_state() is MillingState.RUNNING:
                     progress = 0
-                    if status[1] > 0:
-                        progress = min(100, status[2] / status[1] * 100)
-                    printProgressBar(progress, 100)
+                    if total_time > 0:
+                        progress = min(100, elapsed_time / total_time * 100)
                     self.connection.Progress.SetPercents(progress)
-                    time.sleep(1)
-                else:
-                    if status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                        printProgressBar(100, 100, suffix="Finished")
-                    break
+                    remaining_time -= MILLING_SLEEP_TIME
+                time.sleep(MILLING_SLEEP_TIME)
+
+                # update milling progress via signal
+                self.milling_progress_signal.emit({"progress": {
+                        "state": "update",
+                        "milling_state": self.get_milling_state(),
+                        "start_time": start_time, 
+                        "estimated_time": estimated_time, 
+                        "remaining_time": remaining_time}
+                        })
+
         except Exception as err:
             logging.error(f"Error in run_milling: {err}")
             pass
         finally:
-            print()  # new line on complete
             self.connection.Progress.Hide()
             if err:
                 self.connection.DrawBeam.Stop()
                 self.connection.DrawBeam.UnloadLayer()
 
-    def run_milling_drift_corrected(self, milling_current: float,  
-        image_settings: ImageSettings, 
-        ref_image: FibsemImage, 
-        reduced_area: FibsemRectangle = None,
-        asynch: bool = False
-        ):
-        """
-        Run ion beam milling using the specified milling current.
+    # def run_milling_drift_corrected(self, milling_current: float,  
+    #     image_settings: ImageSettings, 
+    #     ref_image: FibsemImage, 
+    #     reduced_area: FibsemRectangle = None,
+    #     asynch: bool = False
+    #     ):
+    #     """
+    #     Run ion beam milling using the specified milling current.
 
-        Args:
-            milling_current (float): The current to use for milling in amps.
-            asynch (bool, optional): If True, the milling will be run asynchronously. 
-                                     Defaults to False, in which case it will run synchronously.
+    #     Args:
+    #         milling_current (float): The current to use for milling in amps.
+    #         asynch (bool, optional): If True, the milling will be run asynchronously. 
+    #                                  Defaults to False, in which case it will run synchronously.
 
-        Returns:
-            None
+    #     Returns:
+    #         None
 
-        Raises:
-            None
-        """
-        _check_beam(BeamType.ION, self.system)
-        status = self.connection.FIB.Beam.GetStatus()
-        if status != Automation.FIB.Beam.Status.BeamOn:
-            self.connection.FIB.Beam.On()
-        self.connection.DrawBeam.LoadLayer(self.layer)
-        logging.info("running ion beam milling now...")
-        self.connection.DrawBeam.Start()
-        self.connection.Progress.Show(
-            "DrawBeam", "Layer 1 in progress", False, False, 0, 100
-        )
-        from fibsem import alignment
-        while True:
-            status = self.connection.DrawBeam.GetStatus()
-            running = status[0] == DBStatus.ProjectLoadedExpositionInProgress
-            if running:
-                progress = 0
-                if status[1] > 0:
-                    progress = min(100, status[2] / status[1] * 100)
-                printProgressBar(progress, 100)
-                self.connection.Progress.SetPercents(progress)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionInProgress:
-                    self.connection.DrawBeam.Pause()
-                elif status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
-                    break
-                logging.info("Drift correction in progress...")
-                image_settings.beam_type = BeamType.ION
-                alignment.beam_shift_alignment(
-                    self,
-                    image_settings,
-                    ref_image,
-                    reduced_area,
-                )
-                time.sleep(1)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionPaused :
-                    self.connection.DrawBeam.Resume()
-                logging.info("Drift correction complete.")
-                time.sleep(5)
-            else:
-                if status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
-                break
+    #     Raises:
+    #         None
+    #     """
+    #     _check_beam(BeamType.ION, self.system)
+    #     status = self.connection.FIB.Beam.GetStatus()
+    #     if status != Automation.FIB.Beam.Status.BeamOn:
+    #         self.connection.FIB.Beam.On()
+    #     self.connection.DrawBeam.LoadLayer(self.layer)
+    #     logging.info("running ion beam milling now...")
+    #     self.connection.DrawBeam.Start()
+    #     self.connection.Progress.Show(
+    #         "DrawBeam", "Layer 1 in progress", False, False, 0, 100
+    #     )
+    #     from fibsem import alignment
+    #     while True:
+    #         status = self.connection.DrawBeam.GetStatus()
+    #         running = status[0] == DBStatus.ProjectLoadedExpositionInProgress
+    #         if running:
+    #             progress = 0
+    #             if status[1] > 0:
+    #                 progress = min(100, status[2] / status[1] * 100)
+    #             printProgressBar(progress, 100)
+    #             self.connection.Progress.SetPercents(progress)
+    #             status = self.connection.DrawBeam.GetStatus()
+    #             if status[0] == DBStatus.ProjectLoadedExpositionInProgress:
+    #                 self.connection.DrawBeam.Pause()
+    #             elif status[0] == DBStatus.ProjectLoadedExpositionIdle:
+    #                 printProgressBar(100, 100, suffix="Finished")
+    #                 self.connection.DrawBeam.Stop()
+    #                 self.connection.DrawBeam.UnloadLayer()
+    #                 break
+    #             logging.info("Drift correction in progress...")
+    #             image_settings.beam_type = BeamType.ION
+    #             alignment.beam_shift_alignment(
+    #                 self,
+    #                 image_settings,
+    #                 ref_image,
+    #                 reduced_area,
+    #             )
+    #             time.sleep(1)
+    #             status = self.connection.DrawBeam.GetStatus()
+    #             if status[0] == DBStatus.ProjectLoadedExpositionPaused :
+    #                 self.connection.DrawBeam.Resume()
+    #             logging.info("Drift correction complete.")
+    #             time.sleep(5)
+    #         else:
+    #             if status[0] == DBStatus.ProjectLoadedExpositionIdle:
+    #                 printProgressBar(100, 100, suffix="Finished")
+    #                 self.connection.DrawBeam.Stop()
+    #                 self.connection.DrawBeam.UnloadLayer()
+    #             break
 
-        print()  # new line on complete
-        self.connection.Progress.Hide()
+    #     print()  # new line on complete
+    #     self.connection.Progress.Hide()
 
     def finish_milling(self, imaging_current: float = None, imaging_voltage: float = None):
         """
@@ -1121,12 +1136,18 @@ class TescanMicroscope(FibsemMicroscope):
     def cryo_deposition_v2(self, gis_settings: FibsemGasInjectionSettings):
         pass
 
-    def estimate_milling_time(self, patterns: List[str] = None):
+    def estimate_milling_time(self) -> float:
         
+        # NOTE: we cannot load the layer again
         # load and unload layer to check time
-        self.connection.DrawBeam.LoadLayer(self.layer)
-        est_time = self.connection.DrawBeam.EstimateTime() 
-        self.connection.DrawBeam.UnloadLayer()
+        # self.connection.DrawBeam.LoadLayer(self.layer)
+        est_time = 0
+        try:
+            est_time = self.connection.DrawBeam.EstimateTime()
+        except Exception as e:
+            logging.error("Error in estimating milling time")
+
+        # self.connection.DrawBeam.UnloadLayer()
 
         return est_time
 
@@ -1168,11 +1189,9 @@ class TescanMicroscope(FibsemMicroscope):
             scanning_path = pattern_settings.scan_direction
         else:
             scanning_path = "Flyback"
-            logging.info(f"Scan direction {pattern_settings.scan_direction} not supported. Using Flyback instead.")
-            logging.info(f"Supported scan directions are: {scan_directions}")
+            logging.warning(f"Scan direction {pattern_settings.scan_direction} not supported. Using Flyback instead.")
         self.connection.DrawBeam.ScanningPath = scanning_path
 
-        # TODO: replace with cross_section parameter
         if pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
             add_pattern_fn = self.layer.addRectanglePolish
         else:
