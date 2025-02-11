@@ -139,7 +139,7 @@ def beam_shift_alignment_v2(
     )
     dx, dy, _ = shift_from_crosscorrelation(
         ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
-    )    
+    )
 
     # adjust beamshift (reverse direction)
     microscope.beam_shift(-dx, -dy, image_settings.beam_type)
@@ -148,6 +148,78 @@ def beam_shift_alignment_v2(
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
     
+    # TODO: use structured logging format
+    msgd = {"msg": "beam_shift_alignment", "dx": dx, "dy": dy, "image_settings": image_settings.to_dict()}
+    logging.debug(msgd)
+
+def align_with_reference_image(
+    microscope: FibsemMicroscope,
+    ref_image: FibsemImage,
+    alignment_current: Optional[float] = None,
+    system: str = "beam_shift",
+):
+    """Aligns the microscope using cross-correlation between the reference image and a new image. The alignment
+    can be performed using either the beam shift or the stage. The alignment current can be set before alignment.
+    The beam shift alignment is more precise but has a lower range compared to stage movement.
+
+    Args:
+        microscope (FibsemMicroscope): An OpenFIBSEM microscope client.
+        ref_image (FibsemImage): The reference image to align to.
+        alignment_current (Optional[float], optional): The current to set before alignment. Defaults to None.
+        system (str, optional): The system to use for alignment. Can be either "beam_shift" or "stage". Defaults to "beam_shift".
+
+    Raises:
+        ValueError: If the system is not "beam_shift" or "stage".
+
+    """
+
+    if system not in ["beam_shift", "stage"]:
+        raise ValueError(f"Invalid system {system}. Must be either 'beam_shift' or 'stage'.")
+
+    import time
+    time.sleep(2) # threading is too fast?
+    image_settings = ImageSettings.fromFibsemImage(ref_image)
+    image_settings.autocontrast = False
+    image_settings.save = True
+    image_settings.filename = f"pre_{system}_alignment_{utils.current_timestamp_v2()}"
+
+    # set alignment current
+    if alignment_current is not None:
+        initial_current = microscope.get("current", image_settings.beam_type)
+        microscope.set("current", alignment_current, image_settings.beam_type)
+
+    new_image = acquire.new_image(
+        microscope, settings=image_settings
+    )
+    dx, dy, _ = shift_from_crosscorrelation(
+        ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
+    )
+
+    # adjust beamshift (reverse direction)
+    if system == "beam_shift":
+        microscope.beam_shift(-dx, -dy, image_settings.beam_type)
+    # adjust stage
+    if system == "stage":
+        microscope.stable_move(
+            dx=dx,
+            dy=-dy,
+            beam_type=image_settings.beam_type,
+        )
+
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, image_settings.beam_type)
+    
+    msgd = {
+        "msg": "align_with_reference_image",
+        "dx": dx,
+        "dy": dy,
+        "alignment_current": alignment_current,
+        "system": system,
+        "image_settings": image_settings.to_dict(),
+    }
+    logging.debug(msgd)
+
 
 def correct_stage_drift(
     microscope: FibsemMicroscope,
@@ -220,7 +292,6 @@ def correct_stage_drift(
         # crosscorrelation alignment
         ret = align_using_reference_images(
             microscope,
-            settings,
             ref_image,
             new_image,
             ref_mask=ref_mask,
@@ -237,7 +308,6 @@ def correct_stage_drift(
 
 def align_using_reference_images(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
     ref_image: FibsemImage,
     new_image: FibsemImage,
     ref_mask: np.ndarray = None,
@@ -250,7 +320,6 @@ def align_using_reference_images(
 
     Args:
         microscope: A FibsemMicroscope instance representing the microscope being used.
-        settings: A MicroscopeSettings instance representing the settings for the imaging session.
         ref_image: A FibsemImage instance representing the reference image to which the new image will be aligned.
         new_image: A FibsemImage instance representing the new image that will be aligned to the reference image.
         ref_mask: A numpy array representing a mask to apply to the reference image during alignment. Default is None.
@@ -564,6 +633,22 @@ def multi_step_alignment_v2(microscope: FibsemMicroscope,
     if alignment_current is not None:
         microscope.set("current", initial_current, beam_type)
 
+def multi_step_alignment_v3(microscope: FibsemMicroscope, 
+    ref_image: FibsemImage, beam_type: BeamType, 
+    alignment_current: float = None, steps:int = 3, 
+    system: str = "beam_shift") -> None:
+    """Runs the reference image alignment multiple times. Optionally sets the beam current before alignment."""
+    # set alignment current
+    if alignment_current is not None:
+        initial_current = microscope.get("current", beam_type)
+        microscope.set("current", alignment_current, beam_type)
+
+    for i in range(steps):
+        align_with_reference_image(microscope, ref_image=ref_image, system=system)
+    
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, beam_type)
 
 ### From AutoLamella v1
 

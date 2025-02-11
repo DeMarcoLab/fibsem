@@ -11,7 +11,7 @@ from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import (BeamType, MicroscopeSettings)
 from fibsem.ui.qtdesigner_files import CurrentAlignmentWidget
 from fibsem.ui import utils as ui_utils 
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 
 
 
@@ -60,9 +60,9 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         self.checkBox_overlay.stateChanged.connect(self.update_overlay)
         self.pushButton_align_beam.clicked.connect(self.align_beam)
         self.pushButton_take_images.clicked.connect(self.take_images)
-        self.pushButton_take_images.setStyleSheet(_stylesheets._GRAY_PUSHBUTTON_STYLE)
+        self.pushButton_take_images.setStyleSheet(stylesheets.GRAY_PUSHBUTTON_STYLE)
         self.pushButton_align_beam.setEnabled(False)
-        self.pushButton_align_beam.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_align_beam.setStyleSheet(stylesheets.DISABLED_PUSHBUTTON_STYLE)
 
     def update_overlay(self):
         if self.checkBox_overlay.isChecked():
@@ -100,7 +100,7 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         self.parent.ref_current = self.comboBox_ref_current.currentText()
         self.pushButton_align_beam.setEnabled(True)
         self.pushButton_align_beam.setText("Align Beam")
-        self.pushButton_align_beam.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_align_beam.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
 
     def take_images(self):
         if isinstance(self.microscope, ThermoMicroscope) or isinstance(self.microscope, DemoMicroscope):
@@ -118,11 +118,10 @@ class FibsemAlignmentWidget(CurrentAlignmentWidget.Ui_BeamAlignment, QtWidgets.Q
         self.aligned_image = self.microscope.acquire_image(self.settings.image)
         self.update_viewer(self.aligned_image.data, "Aligned")
         self.pushButton_align_beam.setEnabled(True)
-        self.pushButton_align_beam.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_align_beam.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
 
 
     def update_viewer(self, arr: np.ndarray, name: str = None):
-        # arr = ui_utils._draw_crosshair(arr)
 
         try:
             self.viewer.layers[name].data = arr

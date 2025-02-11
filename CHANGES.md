@@ -1,5 +1,124 @@
 # Changes
 
+## v0.4.0 (10/02/2025)
+
+Current Status: Pre-Release
+
+## Installation
+- The minimum required python version is now 3.8 (down from 3.9). This should enable installing fibsem on older systems that cannot be updated from Windows 7. 
+- Both fibsem and autolamella can now be run in 'headless' mode without the UI (or requiring it's dependencies). This is used for embedding openfibsem into other standalone applications. 
+ - The machine learning dependencies (used for more advanced methods) are now optional.
+- Instaling packages is now slightly different to reflect these optional dependencies:
+
+```
+pip install fibsem          # only install fibsem headless mode
+pip install fibsem[ui]      # install fibsem + ui dependencies
+pip install fibsem[ui,ml]   # install fibsem + ui and ml dependencies
+```
+
+## Milling
+- The milling code has been consolidated into the fibsem.milling module.
+
+```
+
+fibsem
+    milling
+        base.py             # base milling structures 
+        core.py             # core milling workflow
+        patterning/
+            patterns.py     # pattern definitions
+            plotting.py     # plotting utilities
+        strategy/
+            standard.py    # standard (default) milling strategy
+            ...            # additional strategy files
+```
+
+### Patterns
+- Milling patterns directly store parameters, instead of reading in a protocol dictionary.
+- Some patterns have had their parameter names adjusted for clarity and generality:
+
+
+#### Trench, HorseshoePattern, HorseshoeVertical
+- Trench based parameters have been adjusted:
+- lamella_width -> width
+- lamella_height -> height
+- size_ratio -> split into upper_trench_height, lower_trench_height
+- Loading an older protocol in autolamella should automatically convert to the new format. If older protocols are not read correctly, consider it a bug and please get in contact.
+
+#### RectangleOffset
+- RectangleOffset patterns have been removed, as their purpose was to position rectangle patterns via the protocol. The position of patterns can be directly specified in prootocol, using point: {x, y}
+
+### Milling Stage
+
+- Estimated milling time can now be calculated independently from the microscope. This will be less accurate than the real duration calculated during milling.
+- Milling stages now have additional configuration options:
+
+#### Milling Strategy
+-  Previously, openfibsem only supported a basic milling process; Set milling settings, draw patterns, mill patterns, restore imaging settings. Milling strategies enable customising the milling process. 
+- Currently only Standard and Overtilt milling are implemented, but more will be added in the future.
+- Developers can add additional strategies by implementing the spec in milling.base, and register them using a plugin-style registry:
+
+```
+from fibsem.milling.strategy import register_strategy
+from custom_strategy import CustomMillingStrategy
+
+register_strategy(CustomMillingStrategy)
+
+```
+
+#### Milling Alignment
+- Previously, aligning milling currents was only available via the autolamella option (align_at_milling_current). This was not straightforward to use or easily discoverable. 
+- Initial milling alignment is now available for each stage. This will acquire an image after changing to the milling current and re-align to the imaging current. By default it will use the alignment area (fiducial area) defined in autolamella.
+- Interval based drift correction will be enabled in the next version (v0.4.1)
+
+#### Milling Acquisition
+- You can now specify to acquire an image at the end of each milling stage. The acquisition settings can be adjusted per stage.
+
+### User Interface:
+- Parameters now display units directly on the control (rather than the label)
+- Tooltips are being added to UI elements to help explain different parameters and options. 
+- Acquire Image has been split into individual channels (Acquire SEM/ Acquire FIB)
+- You can now show/hide milling patterns in the UI.
+- You can now pause and resume milling from the UI.
+- You can now select individual stages to mill, rather than having to mill all at once.
+- Advanced options have been added to the imaging UI (e.g. line integration)
+
+
+### Developer Notes:
+- New tools are available for debugging milling patterns:
+
+```
+import matplotlib.pyplot as plt
+
+from fibsem import utils
+from fibsem.milling import get_milling_stages
+from fibsem.milling.patterning.plotting import draw_milling_patterns
+from fibsem.structures import FibsemImage
+
+# load protocol
+PROTOCOL_PATH = "/path/to/protocol/protocol-on-grid.yaml"
+protocol =  utils.load_protocol(PROTOCOL_PATH)
+
+# get the milling stages
+stages = get_milling_stages("mill_rough", settings.protocol["milling"]) 
+stages.extend(get_milling_stages("mill_polishing", settings.protocol["milling"]))
+stages.extend(get_milling_stages("microexpansion", settings.protocol["milling"]))
+
+# create a blank image
+image = FibsemImage.generate_blank_image(hfw=stages[0].milling.hfw)
+
+# plot the milling stages
+fig = draw_milling_patterns(image, stages)
+plt.show()
+```
+
+- More milling data is now logged at each stage, and can be exported to run analysis. The milling related data is exported in milling.csv (see AutoLamella v0.4.0)
+
+
+### Experimental Features
+- There is now an experimental writer for exporting openfibsem images in OME-TIFF format. This will be enabled as default in the next version (v0.4.1). This should enable other applications  (e.g. ImageJ) to open the images and read the metadata correctly.
+
+
 ## v0.2.2 - 31/07/2023
 
 ### Highlights

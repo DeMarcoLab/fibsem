@@ -16,14 +16,16 @@ from scipy import ndimage
 from scipy.spatial import distance
 from skimage import feature, measure
 
+from fibsem import config as cfg
 from fibsem import conversions
-from fibsem.imaging import _tile
+from fibsem.imaging import tiled
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemImage,
     FibsemStagePosition,
     MicroscopeSettings,
+    ImageSettings,
     Point,
 )
 
@@ -31,7 +33,7 @@ try:
     from fibsem.segmentation import config as segcfg
     from fibsem.segmentation.utils import decode_segmap_v2
 except ImportError as e:
-    logging.warning(f"Could not import segmentation util / config {e}")
+    logging.debug(f"Could not import segmentation util / config {e}")
 
 @dataclass
 class Feature(ABC):
@@ -364,6 +366,16 @@ class VolumeBlockBottomRightCorner(Feature):
         self.px = px
         return self.px  
 
+@dataclass
+class AdaptiveLamellaCentre(Feature):
+    feature_m: Point = None
+    px: Point = None
+    color = "green"
+    name: str = "AdaptiveLamellaCentre"
+    def detect(self, img: np.ndarray, mask: np.ndarray = None, point:Point=None) -> 'AdaptiveLamellaCentre':
+        self.px = detect_centre_point(mask == 2)
+        return self.px
+
 # TODO: we can probably consolidate this, rather than have so many classes
 # Feature(class_idx, name, keypoint)
                 
@@ -374,7 +386,7 @@ __FEATURES__ = [ImageCentre, NeedleTip,
     NeedleTipBottom, 
     CopperAdapterCentre, CopperAdapterTopEdge, CopperAdapterBottomEdge,
     VolumeBlockCentre, VolumeBlockTopEdge, VolumeBlockBottomEdge, 
-    VolumeBlockTopLeftCorner, VolumeBlockTopRightCorner, VolumeBlockBottomLeftCorner, VolumeBlockBottomRightCorner ]
+    VolumeBlockTopLeftCorner, VolumeBlockTopRightCorner, VolumeBlockBottomLeftCorner, VolumeBlockBottomRightCorner, AdaptiveLamellaCentre ]
  
 
 
@@ -778,7 +790,7 @@ def detect_features_v2(
 
     for feature in features:
         
-        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature)):
+        if isinstance(feature, (LamellaCentre, LamellaLeftEdge, LamellaRightEdge, LamellaTopEdge, LamellaBottomEdge, CoreFeature, AdaptiveLamellaCentre)):
             feature = detect_multi_features(img, mask, feature)
             if filter:
                 feature = filter_best_feature(mask, feature, 
@@ -853,45 +865,46 @@ def detect_features(
 
 def take_image_and_detect_features(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    image_settings: ImageSettings,
     features: Tuple[Feature],
     point: Point = None,
+    checkpoint: str = cfg.DEFAULT_CHECKPOINT
 ) -> DetectedFeatures:
     
     from fibsem import acquire, utils
-    from fibsem import config as cfg
     from fibsem.segmentation.model import load_model
 
-    if settings.image.reduced_area is not None:
+    if image_settings.reduced_area is not None:
         logging.info(
             "Reduced area is not compatible with model detection, disabling..."
         )
-        settings.image.reduced_area = None
+        image_settings.reduced_area = None
     
-    settings.image.filename = f"ml-{utils.current_timestamp_v2()}"
-    settings.image.save = True
+    image_settings.filename = f"ml-{utils.current_timestamp_v2()}"
+    image_settings.save = True
 
     # take new image
-    image = acquire.new_image(microscope, settings.image)
+    image = acquire.new_image(microscope, image_settings)
 
     # load model
-
-    checkpoint = settings.protocol["options"].get("checkpoint", cfg.__DEFAULT_CHECKPOINT__)
     model = load_model(checkpoint=checkpoint)
 
     if isinstance(point, FibsemStagePosition):
         logging.debug(f"Reprojecting point {point} to image coordinates...")
-        points = _tile._reproject_positions(image, [point], _bound=True)
+        points = tiled.reproject_stage_positions_onto_image(image=image, positions=[point], bound=True)
         point = points[0] if len(points) == 1 else None
         logging.debug(f"Reprojected point: {point}")
+
+#   bias the initial detection to the top third of the image
+    # TODO: remove this and use the external point correctly
+    if "gis_lamela" in checkpoint or "adaptive" in checkpoint:
+        point = Point(image.data.shape[1] // 2, image.data.shape[0] // 3)
 
     # detect features
     det = detect_features(
         deepcopy(image), model, features=features, pixelsize=image.metadata.pixel_size.x, point = point
     )
     return det
-
-
 
 def plot_detection(det: DetectedFeatures):
 
@@ -985,7 +998,6 @@ _DETECTIONS_THAT_MOVE_STAGE = (LamellaCentre, LandingGridCentre)
 
 def move_based_on_detection(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
     det: DetectedFeatures,
     beam_type: BeamType,
     move_x: bool = True,
@@ -1084,6 +1096,9 @@ def mask_contours(image):
 # TODO: need passthrough for the params
 def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature, class_idx: int = 1):
     
+    if isinstance(feature, AdaptiveLamellaCentre):
+        class_idx = 2
+
     mask = mask == class_idx # filter to class 
     mask = mask_contours(mask)
     idxs = np.unique(mask)
@@ -1095,7 +1110,7 @@ def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature,
 
         # create a new image
         feature_mask = np.zeros_like(mask)
-        feature_mask[mask==idx] = 1
+        feature_mask[mask==idx] = class_idx
 
         # detect features
         feature.detect(image, feature_mask)
@@ -1146,7 +1161,7 @@ def _detect_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings
                                 filter=False, point=None)
 
     # convert image coordinates to microscope coordinates # TODO: check why we reverse the points axis?
-    positions = _tile._convert_image_coords_to_positions(microscope, settings, image, [Point(f.px.y, f.px.x) for f in features])
+    positions = tiled.convert_image_coordinates_to_stage_positions(microscope, image, [Point(f.px.y, f.px.x) for f in features])
 
     return positions, features
 
