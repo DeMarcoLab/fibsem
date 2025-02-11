@@ -8,9 +8,9 @@ from PyQt5 import QtWidgets
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
 from fibsem.ui.qtdesigner_files import FibsemMicroscopeConfigurationWidgetBase
-from fibsem.ui import _stylesheets
+from fibsem.ui import stylesheets
 from fibsem.structures import BeamType
-from fibsem.ui.utils import _get_file_ui, _get_save_file_ui, message_box_ui
+from fibsem.ui.utils import open_existing_file_dialog, open_save_file_dialog, message_box_ui
 from pprint import pprint
 
 CONFIGURATION = {
@@ -112,7 +112,7 @@ class FibsemMicroscopeConfigurationWidgetBase(FibsemMicroscopeConfigurationWidge
         path = os.path.join(os.path.dirname(self.path), f"{configuration_name}.yaml")
 
         # select save file 
-        path = _get_save_file_ui(msg="Select microscope configuration file", 
+        path = open_save_file_dialog(msg="Select microscope configuration file", 
                                 path=path, 
                                 _filter="YAML (*.yaml)",
                                 parent=self)
@@ -141,7 +141,7 @@ class FibsemMicroscopeConfigurationWidgetBase(FibsemMicroscopeConfigurationWidge
 
     def load_configuration_from_file(self):
 
-        path = _get_file_ui(msg="Select microscope configuration file", 
+        path = open_existing_file_dialog(msg="Select microscope configuration file", 
                             path=cfg.DEFAULT_CONFIGURATION_PATH, 
                             _filter="YAML (*.yaml)", parent=self)
 

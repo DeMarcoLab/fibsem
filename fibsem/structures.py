@@ -3,23 +3,24 @@
 import json
 import os
 import sys
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from fibsem.config import SUPPORTED_COORDINATE_SYSTEMS
-from typing import Optional, Union
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 import tifffile as tff
+
 import fibsem
-from fibsem.config import METADATA_VERSION
-from abc import ABC, abstractmethod, abstractstaticmethod
+from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
 
 try:
     from tescanautomation.Common import Document
 
     TESCAN = True
-except:
+except ImportError:
     TESCAN = False
 
 try:
@@ -29,25 +30,19 @@ try:
     )
     sys.path.append("C:\Program Files\Python36\envs\AutoScript")
     sys.path.append("C:\Program Files\Python36\envs\AutoScript\Lib\site-packages")
+    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
     from autoscript_sdb_microscope_client.structures import (
         AdornedImage,
+        CompustagePosition,
         ManipulatorPosition,
         Rectangle,
         StagePosition,
-        CompustagePosition,
     )
-    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 
     THERMO = True
-except:
+except ImportError:
     THERMO = False
 
-
-
-# @patrickcleeve: dataclasses.asdict -> :(
-
-
-# TODO: overload constructors instead of from_dict...
 @dataclass
 class Point:
     x: float = 0.0
@@ -117,26 +112,22 @@ class BeamType(Enum):
     # CCD_CAM = 3
     # NavCam = 4 # see enumerations/ImagingDevice
 
-
-class MovementMode(Enum):
-    Stable = 1
-    Vertical = 2
-    # Needle = 3
-
-
-class ImagingState:
+class ImagingState(Enum):
     IDLE = 0
-    ACQUIRING = 1
+    RUNNING = 1
     STOPPING = 2
     PAUSED = 3
     ERROR = 4
 
-class PatterningState:
+
+class MillingState(Enum):
     IDLE = 0
-    PATTERNING = 1
+    RUNNING = 1
     STOPPING = 2
     PAUSED = 3
     ERROR = 4
+
+ACTIVE_MILLING_STATES = [MillingState.RUNNING, MillingState.STOPPING, MillingState.PAUSED]
 
 class ManipulatorState(Enum):
     RETRACTED = 0
@@ -422,8 +413,8 @@ class FibsemRectangle:
 
     left: float = 0.0
     top: float = 0.0
-    width: float = 0.0
-    height: float = 0.0
+    width: float = 1.0
+    height: float = 1.0
 
     def __post_init__(self):
         assert isinstance(self.left, float) or isinstance(
@@ -472,6 +463,26 @@ class FibsemRectangle:
         @classmethod
         def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
             return cls(rect.left, rect.top, rect.width, rect.height)
+
+    @property
+    def is_valid_reduced_area(self) -> bool:
+        return _is_valid_reduced_area(self)
+
+def _is_valid_reduced_area(reduced_area: FibsemRectangle) -> bool:
+    """Check whether the reduced area is valid. 
+    Left and top must be between 0 and 1, and width and height must be between 0 and 1.
+    Must not exceed the boundaries of the image 0 - 1
+    """
+    # if left or top is less than 0, or width or height is greater than 1, return False
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width > 1 or reduced_area.height > 1:
+        return False
+    if reduced_area.left + reduced_area.width > 1 or reduced_area.top + reduced_area.height > 1:
+        return False
+    # no negative values
+    if reduced_area.left < 0 or reduced_area.top < 0 or reduced_area.width <= 0 or reduced_area.height <= 0:
+        return False
+    return True                           
+
 
 
 @dataclass
@@ -611,8 +622,9 @@ class ImageSettings:
         Returns:
             ImageSettings: The image settings for the given FibsemImage object.
         """
-        from fibsem import utils
         from copy import deepcopy
+
+        from fibsem import utils
 
         image_settings = deepcopy(image.metadata.image_settings)
         image_settings.filename = utils.current_timestamp()
@@ -892,6 +904,10 @@ class FibsemPatternSettings(ABC):
     def from_dict(self, data: dict) -> "FibsemPatternSettings":
         pass
 
+    @property
+    @abstractmethod
+    def volume(self) -> float:
+        pass
 
 class CrossSectionPattern(Enum):
     Rectangle  = auto()
@@ -911,6 +927,7 @@ class FibsemRectangleSettings(FibsemPatternSettings):
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     passes: int = 0
     time: float = 0.0
+    is_exclusion: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -920,11 +937,11 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             "rotation": self.rotation,
             "centre_x": self.centre_x,
             "centre_y": self.centre_y,
-            "cleaning_cross_section": self.cleaning_cross_section,
             "scan_direction": self.scan_direction,
             "cross_section": self.cross_section.name,
             "passes": self.passes,
             "time": self.time,
+            "is_exclusion": self.is_exclusion,
         }
 
     @staticmethod
@@ -935,13 +952,17 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             depth=data["depth"],
             centre_x=data["centre_x"],
             centre_y=data["centre_y"],
-            cleaning_cross_section=data.get("cleaning_cross_section", False),
             rotation=data.get("rotation", 0),
             scan_direction=data.get("scan_direction", "TopToBottom"),
             cross_section=CrossSectionPattern[data.get("cross_section", "Rectangle")],
             passes=data.get("passes", 0),
             time=data.get("time", 0.0),
+            is_exclusion=data.get("is_exclusion", False),
         )
+
+    @property
+    def volume(self) -> float:
+        return self.width * self.height * self.depth
 
 @dataclass
 class FibsemLineSettings(FibsemPatternSettings):
@@ -969,6 +990,10 @@ class FibsemLineSettings(FibsemPatternSettings):
             end_y=data["end_y"],
             depth=data["depth"],
         )
+    
+    @property
+    def volume(self) -> float:
+        return np.sqrt((self.end_x - self.start_x)**2 + (self.end_y - self.start_y)**2) * self.depth
 
 @dataclass
 class FibsemCircleSettings(FibsemPatternSettings):
@@ -980,6 +1005,7 @@ class FibsemCircleSettings(FibsemPatternSettings):
     start_angle: float = 0.0
     end_angle: float = 360.0
     rotation: float = 0.0           # annulus -> thickness !=0
+    is_exclusion: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -991,6 +1017,7 @@ class FibsemCircleSettings(FibsemPatternSettings):
             "end_angle": self.end_angle,
             "rotation": self.rotation,
             "thickness": self.thickness,
+            "is_exclusion": self.is_exclusion,
         }
 
     @staticmethod
@@ -1004,8 +1031,12 @@ class FibsemCircleSettings(FibsemPatternSettings):
             end_angle=data.get("end_angle", 360),
             rotation=data.get("rotation", 0),
             thickness=data.get("thickness", 0),
+            is_exclusion=data.get("is_exclusion", False),
         )
 
+    @property
+    def volume(self) -> float:
+        return np.pi * self.radius**2 * self.depth
 
 @dataclass
 class FibsemBitmapSettings(FibsemPatternSettings):
@@ -1040,6 +1071,10 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             path=data["path"],
         )
 
+    @property
+    def volume(self) -> float:
+        # NOTE: this is a VERY rough estimate
+        return self.width * self.height * self.depth
 
 @dataclass
 class FibsemMillingSettings:
@@ -1068,6 +1103,8 @@ class FibsemMillingSettings:
     preset: str = "30 keV; UHR imaging"
     spacing: float = 1.0
     milling_voltage: float = 30e3
+    milling_channel: BeamType = BeamType.ION
+    acquire_images: bool = False
 
     def __post_init__(self):
         assert isinstance(
@@ -1108,6 +1145,8 @@ class FibsemMillingSettings:
             "preset": self.preset,
             "spacing": self.spacing,
             "milling_voltage": self.milling_voltage,
+            "milling_channel": self.milling_channel.name,
+            "acquire_images": self.acquire_images,
         }
 
         return settings_dict
@@ -1119,12 +1158,14 @@ class FibsemMillingSettings:
             spot_size=settings.get("spot_size", 5.0e-8),
             rate=settings.get("rate", 3.0e-11),
             dwell_time=settings.get("dwell_time", 1.0e-6),
-            hfw=settings.get("hfw", 150e-6),
+            hfw=float(settings.get("hfw", 150e-6)),
             patterning_mode=settings.get("patterning_mode", "Serial"),
             application_file=settings.get("application_file", "Si"),
             preset=settings.get("preset", "30 keV; 1nA"),
             spacing=settings.get("spacing", 1.0),
             milling_voltage=settings.get("milling_voltage", 30e3),
+            milling_channel=BeamType[settings.get("milling_channel", "ION")],
+            acquire_images=settings.get("acquire_images", False),
         )
 
         return milling_settings
@@ -1257,7 +1298,6 @@ class GISSystemSettings:
             sputter_coater=settings["sputter_coater"],
         )
 
-import fibsem
 
 @dataclass
 class SystemInfo:
@@ -1511,15 +1551,20 @@ class FibsemImageMetadata:
                 settings["microscope_state"]
             )
 
+        # the system settings are optional
+        system_dict = settings.get("system", {})
+        system_settings = None
+        if system_dict:
+            system_settings = SystemSettings.from_dict(system_dict)
+
         metadata = FibsemImageMetadata(
             image_settings=image_settings,
             version=version,
             pixel_size=pixel_size,
             microscope_state=microscope_state,
-            # detector_settings=detector_settings, # TODO: remove this
             user=FibsemUser.from_dict(settings.get("user", {})),
             experiment=FibsemExperiment.from_dict(settings.get("experiment", {})),
-            system=SystemSettings.from_dict(settings.get("system", {})),
+            system=system_settings
         )
         return metadata
 
@@ -1674,6 +1719,129 @@ class FibsemImage:
             self.data,
             metadata=metadata_dict,
         )
+
+    ### EXPERIMENTAL START ####
+
+    def _save_ome_tiff(self, path: str, filename: str) -> None:
+        from ome_types import OME
+        from ome_types.model import (
+            Channel,
+            Image,
+            Instrument,
+            ManufacturerSpec,
+            MapAnnotation,
+            Pixels,
+            Plane,
+            StructuredAnnotations,
+            TiffData,
+            Microscope,
+        )
+        from ome_types.model.simple_types import UnitsLength
+
+
+        md = self.metadata
+        microscope = Microscope(
+            manufacturer=md.system.info.manufacturer,
+            model=md.system.info.model,
+            serial_number=md.system.info.serial_number,
+        )
+        instrument = Instrument(microscope=microscope)
+
+        size_y = self.data.shape[0]
+        size_x = self.data.shape[1]
+        # TODO: use sample plane projection position for this pos
+        stage_position = md.microscope_state.stage_position
+        pos_x = stage_position.x
+        pos_y = stage_position.y
+        pos_z = stage_position.z
+
+        plane = Plane(the_c=0, the_z=0, the_t=0,
+                    position_x=pos_x, position_y=pos_y, position_z=pos_z,
+                    position_x_unit=UnitsLength.METER, 
+                    position_y_unit=UnitsLength.METER, 
+                    position_z_unit=UnitsLength.METER)
+        tiff_data = TiffData(ifd=0)
+
+        ch = Channel(
+            id='Channel:0',
+            name="SEM" if md.image_settings.beam_type is BeamType.ELECTRON else "FIB",
+            samples_per_pixel=1,
+        )
+
+        pixels = Pixels(
+            id='Pixels:0',
+            dimension_order='XYZTC',
+            size_x=size_x,
+            size_y=size_y,
+            size_c=1,
+            size_t=1,
+            size_z=1,
+            type=self.data.dtype.name,
+            physical_size_x=md.pixel_size.x,
+            physical_size_y=md.pixel_size.y,
+            physical_size_x_unit=UnitsLength.METER,
+            physical_size_y_unit=UnitsLength.METER,
+            channels=[ch],
+            planes=[plane],
+            tiff_data_blocks=[tiff_data],
+        )
+
+        sa = StructuredAnnotations()
+        mapAnnotation=[MapAnnotation(id="Annotation:0", 
+                        value={"OpenFIBSEM": json.dumps(md.to_dict())}
+                )]
+        sa.map_annotations = mapAnnotation
+
+        ome_image = Image(
+            id='Image:0',
+            name=md.image_settings.filename,
+            acquisition_date=md.microscope_state.timestamp,
+            pixels=pixels,
+        )
+
+        ome = OME()
+        ome.images.append(ome_image)
+        ome.instruments.append(instrument)
+        ome.structured_annotations = sa
+
+        assert tff.OmeXml.validate(ome.to_xml()), "OME-XML validation failed"
+
+        # TODO: check for a unique filename
+        path = os.path.join(path, filename)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        
+        # add suffix if not present
+        OME_TIFF_SUFFIXES = ('.ome.tiff', ".ome.tif", ".tif", ".tiff")
+        if not path.endswith(OME_TIFF_SUFFIXES):
+            # Note: with_suffix doesn't work correctly with double extensions, .ome.tiff
+            path = Path(path).with_suffix(".ome.tiff")
+
+        with tff.TiffWriter(path) as tif:
+            tif.write(self.data, contiguous=True)
+            tif.overwrite_description(ome.to_xml())
+
+    @classmethod
+    def _load_from_ome_tiff(cls, path: str) -> 'FibsemImage':
+        import ome_types
+
+        # read ome-xml, extract openfibsem metadata
+        try:
+            ome = ome_types.from_tiff(path)
+            openfibsem_md = json.loads(ome.structured_annotations.map_annotations[0].value['OpenFIBSEM'])
+            
+            # parse metadata to struct
+            md = FibsemImageMetadata.from_dict(openfibsem_md)
+        except Exception as e:
+            import logging
+            logging.warning(f"Failing to load metadata from OME-TIFF: {e}")
+            md = None
+
+        # load image data
+        with tff.TiffFile(path) as tif:
+            data = tif.pages[0].asarray()
+        return cls(data=data, metadata=md)
+    
+    ### EXPERIMENTAL END ####
 
     if THERMO:
 
@@ -1880,6 +2048,37 @@ class FibsemImage:
             )
             return cls(data=data, metadata=metadata)
 
+    @staticmethod
+    def generate_blank_image(
+        resolution: List[int] = [1536, 1024],
+        hfw: float = 100e-6,
+        pixel_size: Point = None,
+    ) -> 'FibsemImage':
+        """Generate a blank image with a given resolution and field of view.
+        Args:
+            resolution: List[int]: Resolution of the image.
+            hfw: float: Horizontal field width of the image.
+            pixel_size: Point: Pixel size of the image.
+        Returns:
+            FibsemImage: Blank image with valid metadata from display.
+        """
+        # need at least one of hfw, pixelsize
+        if pixel_size is None and hfw is None:
+            raise ValueError("Need to specify either hfw or pixelsize")
+
+        if pixel_size is None:
+            vfw = hfw * resolution[1] / resolution[0]
+            pixel_size = Point(hfw / resolution[0], vfw / resolution[1])
+
+        image = FibsemImage(
+            data=np.zeros((resolution[1], resolution[0]), dtype=np.uint8),
+            metadata=FibsemImageMetadata(
+                image_settings=ImageSettings(hfw=hfw, resolution=resolution),
+                microscope_state=None,
+                pixel_size=pixel_size,
+            ),
+        )
+        return image
 
 @dataclass
 class ReferenceImages:
@@ -1888,7 +2087,7 @@ class ReferenceImages:
     low_res_ib: FibsemImage
     high_res_ib: FibsemImage
 
-    def __iter__(self) -> list[FibsemImage]:
+    def __iter__(self) -> List[FibsemImage]:
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
 
@@ -1967,3 +2166,60 @@ class FibsemGasInjectionSettings:
             "insert_position": self.insert_position,
         }
 
+
+def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->Tuple[FibsemRectangle, bool]:
+    from fibsem import conversions
+    pixelsize = image.metadata.pixel_size.x
+    
+    fiducial_centre.y = -fiducial_centre.y
+    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
+        fiducial_centre, pixelsize
+    )
+
+    rcx = fiducial_centre_px.x / image.metadata.image_settings.resolution[0] + 0.5
+    rcy = fiducial_centre_px.y / image.metadata.image_settings.resolution[1] + 0.5
+
+    fiducial_length_px = (
+        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5 # SCALE_FACTOR
+    )
+    h_offset = fiducial_length_px / image.metadata.image_settings.resolution[0] / 2
+    v_offset = fiducial_length_px / image.metadata.image_settings.resolution[1] / 2
+
+    left = rcx - h_offset
+    top = rcy - v_offset
+    width = 2 * h_offset
+    height = 2 * v_offset
+
+    if left < 0 or (left + width) > 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+
+    alignment_area = FibsemRectangle(left, top, width, height)
+
+    return alignment_area, flag
+
+DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
+
+@dataclass
+class MillingAlignment:
+    """Drift correction settings for milling"""
+    enabled: bool = True
+    interval_enabled: bool = False
+    interval: int = 30 # seconds
+    rect: FibsemRectangle = FibsemRectangle.from_dict(DEFAULT_ALIGNMENT_AREA)
+
+    def to_dict(self):
+        return {"enabled": self.enabled, 
+                "interval_enabled": self.interval_enabled, 
+                "interval": self.interval, 
+                "rect": self.rect.to_dict()}
+    
+    @staticmethod
+    def from_dict(d: dict) -> "MillingAlignment":
+        return MillingAlignment(
+            enabled=d.get("enabled", False),
+            interval_enabled=d.get("interval_enabled", False),
+            interval=d.get("interval", 30),
+            rect=FibsemRectangle.from_dict(d.get("rect", DEFAULT_ALIGNMENT_AREA))
+        )

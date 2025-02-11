@@ -1,8 +1,10 @@
 
-import yaml
+import argparse
 import os
-from fibsem.config import CONFIG_PATH, DEFAULT_CONFIGURATION_VALUES
 
+import yaml
+
+from fibsem.config import CONFIG_PATH, DEFAULT_CONFIGURATION_VALUES
 
 
 def get_column_tilt(manufacturer: str, beam: str) -> int:
@@ -94,7 +96,7 @@ def save_configuration(config: dict, path: str):
 
     return filename
 
-import argparse
+
 def gen_config_cli(path: str = None):
     """Generate a configuration from the command line."""
     
@@ -109,7 +111,7 @@ def gen_config_cli(path: str = None):
     if not os.path.exists(path):
         raise ValueError(f"Path does not exist: {path}")
 
-    print(f"OpenFIBSEM Configuration Generator\n")
+    print("OpenFIBSEM Configuration Generator\n")
 
     user_config = get_user_config()
     

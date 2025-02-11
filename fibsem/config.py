@@ -1,17 +1,10 @@
-METADATA_VERSION = "v3"
+import os
 
-# sputtering rates, from microscope application files
-MILLING_SPUTTER_RATE = {
-    20e-12: 6.85e-3,  # 30kv
-    0.2e-9: 6.578e-2,  # 30kv
-    0.74e-9: 3.349e-1,  # 30kv
-    0.89e-9: 3.920e-1,  # 20kv
-    2.0e-9: 9.549e-1,  # 30kv
-    2.4e-9: 1.309,  # 20kv
-    6.2e-9: 2.907,  # 20kv
-    7.6e-9: 3.041,  # 30kv
-    28.0e-9: 1.18e1,  # 30 kv
-}
+import yaml
+
+import fibsem
+
+METADATA_VERSION = "v3"
 
 SUPPORTED_COORDINATE_SYSTEMS = [
     "RAW",
@@ -24,7 +17,6 @@ SUPPORTED_COORDINATE_SYSTEMS = [
     "Stage",
     "stage",
 ]
-
 
 REFERENCE_HFW_WIDE = 2750e-6
 REFERENCE_HFW_LOW = 900e-6
@@ -39,11 +31,27 @@ REFERENCE_RES_MEDIUM = [1536, 1024]
 REFERENCE_RES_HIGH = [3072, 2048]
 REFERENCE_RES_SUPER = [6144, 4096]
 
-MILL_HFW_THRESHOLD = 0.005  # 0.5% of the image
+# standard imaging resolutions
+STANDARD_RESOLUTIONS = [
+    "384x256",
+    "768x512",
+    "1536x1024",
+    "3072x2048",
+    "6144x4096",
+]
+SQUARE_RESOLUTIONS = [
+    "256x256",
+    "512x512",
+    "1024x1024",
+    "2048x2048",
+    "4096x4096",
+    "8192x8192",
+]
+AVAILABLE_RESOLUTIONS = SQUARE_RESOLUTIONS + STANDARD_RESOLUTIONS
+DEFAULT_STANDARD_RESOLUTION = "1536x1024"
+DEFAULT_SQUARE_RESOLUTION = "1024x1024"
 
-
-import os
-import fibsem
+MILL_HFW_THRESHOLD = 0.01  # 1.0% of the image
 
 BASE_PATH = os.path.dirname(
     fibsem.__path__[0]
@@ -71,7 +79,7 @@ os.makedirs(DATA_TILE_PATH, exist_ok=True)
 
 DATABASE_PATH = os.path.join(BASE_PATH, "fibsem", "db", "fibsem.db")
 os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-import yaml
+
 
 
 def load_yaml(fname):
@@ -93,19 +101,17 @@ def load_yaml(fname):
 
     return config
 
-
-__SUPPORTED_MANUFACTURERS__ = ["Thermo", "Tescan", "Demo"]
-__DEFAULT_MANUFACTURER__ = "Thermo"
-__DEFAULT_IP_ADDRESS__ = "192.168.0.1"
-__SUPPORTED_PLASMA_GASES__ = ["Argon", "Oxygen", "Nitrogen", "Xenon"]
-
+AVAILABLE_MANUFACTURERS = ["Thermo", "Tescan", "Demo"]
+DEFAULT_MANUFACTURER = "Thermo"
+DEFAULT_IP_ADDRESS = "192.168.0.1"
+SUPPORTED_PLASMA_GASES = ["Argon", "Oxygen", "Nitrogen", "Xenon"]
 
 def get_default_user_config() -> dict:
     """Return the default configuration."""
     return {
         "name":                           "default-configuration",       # a descriptive name for your configuration 
-        "ip_address":                     __DEFAULT_IP_ADDRESS__,        # the ip address of the microscope PC
-        "manufacturer":                   __DEFAULT_MANUFACTURER__,      # the microscope manufactuer, Thermo, Tescan or Demo                       
+        "ip_address":                     DEFAULT_IP_ADDRESS,            # the ip address of the microscope PC
+        "manufacturer":                   DEFAULT_MANUFACTURER,          # the microscope manufactuer, Thermo, Tescan or Demo                       
         "rotation-reference":             0,                             # the reference rotation value (rotation when loading)  [degrees]
         "shuttle-pre-tilt":               35,                            # the pre-tilt of the shuttle                           [degrees]
         "electron-beam-eucentric-height": 7.0e-3,                        # the eucentric height of the electron beam             [metres]
@@ -114,8 +120,15 @@ def get_default_user_config() -> dict:
 
 
 # user configurations -> move to fibsem.db eventually
+DEFAULT_USER_CONFIGURATION_YAML: dict = {
+    "configurations": {"default-configuration": {"path": None}},
+    "default": "default-configuration",
+}
 USER_CONFIGURATIONS_PATH = os.path.join(CONFIG_PATH, "user-configurations.yaml")
-USER_CONFIGURATIONS_YAML = load_yaml(USER_CONFIGURATIONS_PATH)
+if os.path.exists(USER_CONFIGURATIONS_PATH):
+    USER_CONFIGURATIONS_YAML = load_yaml(USER_CONFIGURATIONS_PATH)
+else:
+    USER_CONFIGURATIONS_YAML = DEFAULT_USER_CONFIGURATION_YAML
 USER_CONFIGURATIONS = USER_CONFIGURATIONS_YAML["configurations"]
 DEFAULT_CONFIGURATION_NAME = USER_CONFIGURATIONS_YAML["default"]
 DEFAULT_CONFIGURATION_PATH = USER_CONFIGURATIONS[DEFAULT_CONFIGURATION_NAME]["path"]
@@ -134,8 +147,7 @@ if not os.path.exists(DEFAULT_CONFIGURATION_PATH):
     ] = MICROSCOPE_CONFIGURATION_PATH
     DEFAULT_CONFIGURATION_PATH = MICROSCOPE_CONFIGURATION_PATH
         
-print(f"Default configuration: {DEFAULT_CONFIGURATION_NAME}")
-print(f"Default configuration path: {DEFAULT_CONFIGURATION_PATH}")
+print(f"Default configuration {DEFAULT_CONFIGURATION_NAME}. Configuration Path: {DEFAULT_CONFIGURATION_PATH}")
 
 def add_configuration(configuration_name: str, path: str):
     """Add a new configuration to the user configurations file."""
@@ -188,20 +200,10 @@ DEFAULT_CONFIGURATION_VALUES = {
 
 # machine learning
 HUGGINFACE_REPO = "patrickcleeve/autolamella"
-__DEFAULT_CHECKPOINT__ = "autolamella-mega-20240107.pt"
-
-
-
+DEFAULT_CHECKPOINT = "autolamella-mega-20240107.pt"
 
 # feature flags
-
-_LIVE_IMAGING_ENABLED = False
-_MINIMAP_VISUALISATION = False
-_MINIMAP_MOVE_WITH_TRANSLATION = False
-_MINIMAP_ACQUIRE_AFTER_MOVEMENT = False
-_APPLY_CONFIGURATION_ENABLED = True
-
-
+APPLY_CONFIGURATION_ENABLED = True
 
 # tescan manipulator
 
@@ -209,10 +211,12 @@ TESCAN_MANIPULATOR_CALIBRATION_PATH = os.path.join(CONFIG_PATH, "tescan_manipula
 
 def load_tescan_manipulator_calibration() -> dict:
     """Load the tescan manipulator calibration"""
-    config = utils.load_yaml(cfg.TESCAN_MANIPULATOR_CALIBRATION_PATH)
+    from fibsem.utils import load_yaml
+    config = load_yaml(TESCAN_MANIPULATOR_CALIBRATION_PATH)
     return config
 
 def save_tescan_manipulator_calibration(config: dict) -> None:
     """Save the tescan manipulator calibration"""
-    utils.save_yaml(cfg.TESCAN_MANIPULATOR_CALIBRATION_PATH, config)
+    from fibsem.utils import save_yaml
+    save_yaml(TESCAN_MANIPULATOR_CALIBRATION_PATH, config)
     return None

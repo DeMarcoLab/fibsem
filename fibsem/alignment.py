@@ -1,23 +1,20 @@
 import logging
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from scipy import fftpack
-
-from fibsem import acquire, calibration, utils, validation
+from fibsem import acquire, utils, validation
 from fibsem.imaging import masks
 from fibsem.imaging import utils as image_utils
+from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
+    FibsemImage,
+    FibsemRectangle,
     ImageSettings,
     MicroscopeSettings,
     ReferenceImages,
-    FibsemImage,
-    FibsemRectangle,
 )
-from fibsem.microscope import FibsemMicroscope
-from typing import Union, Optional
-
 
 def auto_eucentric_correction(
     microscope: FibsemMicroscope,
@@ -29,22 +26,22 @@ def auto_eucentric_correction(
 
     raise NotImplementedError
 
-    image_settings.save = False
-    image_settings.beam_type = BeamType.ELECTRON
-    calibration.auto_charge_neutralisation(
-        microscope.connection, image_settings
-    )  # TODO: need to change this function
+    # image_settings.save = False
+    # image_settings.beam_type = BeamType.ELECTRON
+    # calibration.auto_charge_neutralisation(
+    #     microscope.connection, image_settings
+    # )  # TODO: need to change this function
 
-    for hfw in [400e-6, 150e-6, 80e-6, 80e-6]:
-        image_settings.hfw = hfw
+    # for hfw in [400e-6, 150e-6, 80e-6, 80e-6]:
+    #     image_settings.hfw = hfw
 
-        correct_stage_eucentric_alignment(
-            microscope,
-            settings,
-            image_settings,
-            tilt_degrees=tilt_degrees,
-            xcorr_limit=xcorr_limit,
-        )
+    #     correct_stage_eucentric_alignment(
+    #         microscope,
+    #         settings,
+    #         image_settings,
+    #         tilt_degrees=tilt_degrees,
+    #         xcorr_limit=xcorr_limit,
+    #     )
 
 
 def beam_shift_alignment(
@@ -142,7 +139,7 @@ def beam_shift_alignment_v2(
     )
     dx, dy, _ = shift_from_crosscorrelation(
         ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
-    )    
+    )
 
     # adjust beamshift (reverse direction)
     microscope.beam_shift(-dx, -dy, image_settings.beam_type)
@@ -151,15 +148,87 @@ def beam_shift_alignment_v2(
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
     
+    # TODO: use structured logging format
+    msgd = {"msg": "beam_shift_alignment", "dx": dx, "dy": dy, "image_settings": image_settings.to_dict()}
+    logging.debug(msgd)
+
+def align_with_reference_image(
+    microscope: FibsemMicroscope,
+    ref_image: FibsemImage,
+    alignment_current: Optional[float] = None,
+    system: str = "beam_shift",
+):
+    """Aligns the microscope using cross-correlation between the reference image and a new image. The alignment
+    can be performed using either the beam shift or the stage. The alignment current can be set before alignment.
+    The beam shift alignment is more precise but has a lower range compared to stage movement.
+
+    Args:
+        microscope (FibsemMicroscope): An OpenFIBSEM microscope client.
+        ref_image (FibsemImage): The reference image to align to.
+        alignment_current (Optional[float], optional): The current to set before alignment. Defaults to None.
+        system (str, optional): The system to use for alignment. Can be either "beam_shift" or "stage". Defaults to "beam_shift".
+
+    Raises:
+        ValueError: If the system is not "beam_shift" or "stage".
+
+    """
+
+    if system not in ["beam_shift", "stage"]:
+        raise ValueError(f"Invalid system {system}. Must be either 'beam_shift' or 'stage'.")
+
+    import time
+    time.sleep(2) # threading is too fast?
+    image_settings = ImageSettings.fromFibsemImage(ref_image)
+    image_settings.autocontrast = False
+    image_settings.save = True
+    image_settings.filename = f"pre_{system}_alignment_{utils.current_timestamp_v2()}"
+
+    # set alignment current
+    if alignment_current is not None:
+        initial_current = microscope.get("current", image_settings.beam_type)
+        microscope.set("current", alignment_current, image_settings.beam_type)
+
+    new_image = acquire.new_image(
+        microscope, settings=image_settings
+    )
+    dx, dy, _ = shift_from_crosscorrelation(
+        ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
+    )
+
+    # adjust beamshift (reverse direction)
+    if system == "beam_shift":
+        microscope.beam_shift(-dx, -dy, image_settings.beam_type)
+    # adjust stage
+    if system == "stage":
+        microscope.stable_move(
+            dx=dx,
+            dy=-dy,
+            beam_type=image_settings.beam_type,
+        )
+
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, image_settings.beam_type)
+    
+    msgd = {
+        "msg": "align_with_reference_image",
+        "dx": dx,
+        "dy": dy,
+        "alignment_current": alignment_current,
+        "system": system,
+        "image_settings": image_settings.to_dict(),
+    }
+    logging.debug(msgd)
+
 
 def correct_stage_drift(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     reference_images: ReferenceImages,
-    alignment: tuple[BeamType, BeamType] = (BeamType.ELECTRON, BeamType.ELECTRON),
+    alignment: Tuple[BeamType, BeamType] = (BeamType.ELECTRON, BeamType.ELECTRON),
     rotate: bool = False,
     ref_mask_rad: int = 512,
-    xcorr_limit: Union[tuple[int, int], None] = None,
+    xcorr_limit: Union[Tuple[int, int], None] = None,
     constrain_vertical: bool = False,
     use_beam_shift: bool = False,
 ) -> bool:
@@ -171,14 +240,14 @@ def correct_stage_drift(
         settings (MicroscopeSettings): The settings used for image acquisition.
         reference_images (ReferenceImages): A container of low- and high-resolution
             reference images.
-        alignment (tuple[BeamType, BeamType], optional): A tuple of two `BeamType`
+        alignment (Tuple[BeamType, BeamType], optional): A tuple of two `BeamType`
             objects, specifying the beam types used for the alignment of low- and
             high-resolution images, respectively. Defaults to (BeamType.ELECTRON,
             BeamType.ELECTRON).
         rotate (bool, optional): Whether to rotate the reference images before
             alignment. Defaults to False.
         ref_mask_rad (int, optional): The radius of the circular mask used for reference
-        xcorr_limit (tuple[int, int] | None, optional): A tuple of two integers that
+        xcorr_limit (Tuple[int, int] | None, optional): A tuple of two integers that
             represent the minimum and maximum cross-correlation values allowed for the
             alignment. If not specified, the values are set to (None, None), which means
             there are no limits. Defaults to None.
@@ -223,7 +292,6 @@ def correct_stage_drift(
         # crosscorrelation alignment
         ret = align_using_reference_images(
             microscope,
-            settings,
             ref_image,
             new_image,
             ref_mask=ref_mask,
@@ -240,7 +308,6 @@ def correct_stage_drift(
 
 def align_using_reference_images(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
     ref_image: FibsemImage,
     new_image: FibsemImage,
     ref_mask: np.ndarray = None,
@@ -253,7 +320,6 @@ def align_using_reference_images(
 
     Args:
         microscope: A FibsemMicroscope instance representing the microscope being used.
-        settings: A MicroscopeSettings instance representing the settings for the imaging session.
         ref_image: A FibsemImage instance representing the reference image to which the new image will be aligned.
         new_image: A FibsemImage instance representing the new image that will be aligned to the reference image.
         ref_mask: A numpy array representing a mask to apply to the reference image during alignment. Default is None.
@@ -324,7 +390,7 @@ def shift_from_crosscorrelation(
     use_rect_mask: bool = False,
     ref_mask: np.ndarray = None,
     xcorr_limit: int = None,
-) -> tuple[float, float, np.ndarray]:
+) -> Tuple[float, float, np.ndarray]:
     """Calculates the shift between two images by cross-correlating them and finding the position of maximum correlation.
 
     Args:
@@ -490,10 +556,12 @@ def _save_alignment_data(
 ):
     """Save alignment data to disk."""
     
-    import pandas as pd
     import os
-    from fibsem import config as cfg
+
+    import pandas as pd
     import tifffile as tff
+
+    from fibsem import config as cfg
 
     ts = utils.current_timestamp_v2()
     fname = os.path.join(cfg.DATA_CC_PATH, str(ts))
@@ -526,7 +594,6 @@ def _save_alignment_data(
     
     df.to_csv(DATAFRAME_PATH, index=False)
 
-from fibsem.structures import ImageSettings
 def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSettings, 
     ref_image: FibsemImage, reduced_area: FibsemRectangle, alignment_current: float = None, steps:int = 3) -> None:
     
@@ -566,6 +633,22 @@ def multi_step_alignment_v2(microscope: FibsemMicroscope,
     if alignment_current is not None:
         microscope.set("current", initial_current, beam_type)
 
+def multi_step_alignment_v3(microscope: FibsemMicroscope, 
+    ref_image: FibsemImage, beam_type: BeamType, 
+    alignment_current: float = None, steps:int = 3, 
+    system: str = "beam_shift") -> None:
+    """Runs the reference image alignment multiple times. Optionally sets the beam current before alignment."""
+    # set alignment current
+    if alignment_current is not None:
+        initial_current = microscope.get("current", beam_type)
+        microscope.set("current", alignment_current, beam_type)
+
+    for i in range(steps):
+        align_with_reference_image(microscope, ref_image=ref_image, system=system)
+    
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, beam_type)
 
 ### From AutoLamella v1
 

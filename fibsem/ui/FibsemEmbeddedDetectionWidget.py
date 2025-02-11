@@ -1,29 +1,30 @@
+import logging
 import os
 from copy import deepcopy
+from typing import List
 
 import napari
 import napari.utils.notifications
 import numpy as np
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 
+import fibsem
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.segmentation import model as fibsem_model
+from fibsem.segmentation.config import CLASS_COLORS
 from fibsem.segmentation.model import load_model
 from fibsem.structures import (
     FibsemImage,
     Point,
 )
-from fibsem import utils
-from fibsem.ui import _stylesheets
-from PyQt5.QtCore import pyqtSignal
-from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget
-import logging
+from fibsem.ui import stylesheets
+from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget as FibsemEmbeddedDetectionWidgetUI
 
-from fibsem.segmentation.config import CLASS_COLORS
 
-class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidgets.QWidget):
     continue_signal = pyqtSignal(DetectedFeatures)
 
     def __init__(
@@ -33,7 +34,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         model: fibsem_model.SegmentationModel = None,
         parent=None,
     ):
-        super(FibsemEmbeddedDetectionUI, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
 
         self.parent = parent
@@ -72,7 +73,9 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         self.viewer.bind_key("L", self._toggle_labelling, overwrite=True)
         self.pushButton_enable_labelling.clicked.connect(self._toggle_labelling)
         self.checkBox_labelling_model_assist.stateChanged.connect(self._toggle_labelling)
-        self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
+        self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_enable_labelling.setEnabled(False)
+
 
         self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
         self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
@@ -107,44 +110,23 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
             self.viewer.layers.selection.active = self._mask_layer
             self._mask_layer.mode = "paint"
             self.pushButton_enable_labelling.setText("Disable Labelling")
-            self.pushButton_enable_labelling.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)        
+            self.pushButton_enable_labelling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)        
         else:
             self.viewer.layers.selection.active = self._features_layer
             self._features_layer.mode = "select"
             self.pushButton_enable_labelling.setText("Enable Labelling")
-            self.pushButton_enable_labelling.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)  
+            self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)  
 
     def confirm_button_clicked(self, reset_camera=False):
         """Confirm the detected features, save the data and and remove the layers from the viewer."""
         
-        # log the difference between initial and final detections
-        try:
-            fname = self.det.fibsem_image.metadata.image_settings.filename
-            beam_type = self.det.fibsem_image.metadata.image_settings.beam_type
-        except:
-            fname = f"ml-{utils.current_timestamp_v2()}"
-            beam_type = "NULL"
-        
-        fd = [] # feature detections
-        for f0, f1 in zip(self.det.features, self._intial_det.features):
-            px_diff = f1.px - f0.px
-            msgd = {"msg": "feature_detection",
-                    "fname": fname,                                             # filename
-                    "feature": f0.name,                                         # feature name
-                    "px": f0.px.to_dict(),                                      # pixel coordinates
-                    "dpx": px_diff.to_dict(),                                   # pixel difference
-                    "dm": px_diff._to_metres(self.det.pixelsize).to_dict(),     # metre difference
-                    "is_correct": not np.any(px_diff),                          # is the feature correct    
-                    "beam_type": beam_type.name,                                # beam type         
-                    "pixelsize": self.det.pixelsize,                            # pixelsize
-                    "checkpoint": self.det.checkpoint,                          # checkpoint
-            }
-            logging.debug(msgd)
-            fd.append(deepcopy(msgd))                                           # to write to disk
-
-        # save features data
+        # update the mask as the user may edit it
         self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
-        det_utils.save_feature_data_to_csv(self.det, features=fd, filename=fname)
+        
+        # log the difference between initial and final detections
+        # TODO: move this to outside the widget, into the same place as the non-supervised logging.
+        det_utils.save_ml_feature_data(det=self.det, 
+                                       initial_features=self._intial_det.features)
             
         # remove feature detection layers
         if self._image_layer is not None:
@@ -191,7 +173,11 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
                                                     name="mask", 
                                                     opacity=0.3,
                                                     blending="additive", 
-                                                    color=CLASS_COLORS)
+                                                    )
+        if hasattr(self._mask_layer, "colormap"):
+            self._mask_layer.colormap = CLASS_COLORS
+        else:
+            self._mask_layer.color = CLASS_COLORS
 
         # add points to viewer
         data = []
@@ -277,7 +263,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         data = layer.data
 
         # get which point was moved
-        index: list[int] = list(layer.selected_data)  
+        index: List[int] = list(layer.selected_data)  
                 
         if len(data) != len(self.det.features):
             # loop backwards to remove the features
@@ -351,8 +337,6 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidget.Ui_Form, QtWidgets
         return self.det
 
 
-from fibsem.detection.detection import Feature, DetectedFeatures
-import fibsem
 
 def main():
     # load model

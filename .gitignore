@@ -46,8 +46,9 @@ fibsem/segmentation/*config*.y*ml
 
 fibsem/config/*.yaml
 !fibsem/config/microscope-configuration.yaml
-!fibsem/config/user-configurations.yaml
 !fibsem/config/tescan_manipulator.yaml
+!fibsem/config/tfs*.yaml
+!fibsem/config/odemis*.yaml
 
 **/wandb/*
 tests/notebook.ipynb
@@ -56,3 +57,4 @@ scripts/segformer-*/*
 *.onnx
 scripts/**/*.jpeg
 scripts/**/*.png
+fibsem/ui/test_qt.py

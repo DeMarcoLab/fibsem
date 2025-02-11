@@ -1,26 +1,24 @@
 import datetime
 import glob
-import json
+
 import logging
 import os
-import numpy as np
+import sys
 import time
 from pathlib import Path
-import sys
+from typing import List, Tuple
+
 
 import yaml
-
 from PIL import Image
-from fibsem.structures import (
-    BeamType,
-    MicroscopeSettings,
-    ImageSettings,
-    SystemSettings,
-    FibsemImage,
-    FibsemMillingSettings,
-)
+
 from fibsem import config as cfg
 from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import (
+    BeamType,
+    FibsemImage,
+    MicroscopeSettings,
+)
 
 
 def current_timestamp():
@@ -44,6 +42,17 @@ def _format_time_seconds(seconds: float) -> str:
     """Format a time delta in seconds to proper string format."""
     return str(datetime.timedelta(seconds=seconds)).split(".")[0]
 
+def format_duration(seconds: float) -> str:
+    """Format a duration given in seconds into a human-readable string (hours, minutes, seconds)."""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = seconds % 60
+    if hours > 0:
+        return f"{hours}h {minutes}m {seconds:.2f}s"
+    elif minutes > 0:
+        return f"{minutes}m {seconds:.2f}s"
+    else:
+        return f"{seconds:.2f}s"
 
 def make_logging_directory(path: Path = None, name="run"):
     """
@@ -146,7 +155,7 @@ def setup_session(
     ip_address: str = None,
     manufacturer: str = None,
     debug: bool = False,
-) -> tuple[FibsemMicroscope, MicroscopeSettings]:
+) -> Tuple[FibsemMicroscope, MicroscopeSettings]:
     """Setup microscope session
 
     Args:
@@ -199,7 +208,10 @@ def setup_session(
         microscope.connect_to_microscope(
             ip_address=ip_address, port=8300
         )
-    
+    elif manufacturer in ["Odemis"]:
+        from fibsem.microscopes.odemis_microscope import OdemisMicroscope
+        microscope = OdemisMicroscope(settings.system)
+
     elif manufacturer == "Demo":
         microscope = fibsem_microscope.DemoMicroscope(settings.system)
         microscope.connect_to_microscope(ip_address, port=7520)
@@ -320,9 +332,10 @@ def get_params(main_str: str) -> list:
 
 def _get_position(name: str):
     
+    import os
+
     from fibsem import config as cfg
     from fibsem.structures import FibsemStagePosition
-    import os
 
     ddict = load_yaml(fname=os.path.join(cfg.CONFIG_PATH, "positions.yaml"))
     # get position from save positions?
@@ -331,11 +344,11 @@ def _get_position(name: str):
             return FibsemStagePosition.from_dict(d)
     return None
 
-def _get_positions(fname: str = None) -> list[str]:    
+def _get_positions(fname: str = None) -> List[str]:    
     
-    from fibsem import config as cfg
-    from fibsem.structures import FibsemStagePosition
     import os
+
+    from fibsem import config as cfg
 
     if fname is None:
         fname = os.path.join(cfg.CONFIG_PATH, "positions.yaml")
@@ -345,14 +358,9 @@ def _get_positions(fname: str = None) -> list[str]:
     return [d["name"] for d in ddict]
 
 
-import yaml
-
-
-
 def save_positions(positions: list, path: str = None, overwrite: bool = False) -> None:
     """save the list of positions to file"""
 
-    from fibsem.structures import FibsemStagePosition
     from fibsem import config as cfg
 
     # convert single position to list
@@ -378,9 +386,10 @@ def save_positions(positions: list, path: str = None, overwrite: bool = False) -
     
 
 def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show: bool = True):
+    import matplotlib.pyplot as plt
     import pytz
     from matplotlib_scalebar.scalebar import ScaleBar
-    import matplotlib.pyplot as plt
+
     import fibsem.constants as constants
     fig, ax = plt.subplots()
 
@@ -451,8 +460,8 @@ def _display_metadata(img: FibsemImage, timezone: str = 'Australia/Sydney', show
 
 # TODO: re-think this, dont like the pop ups
 def _register_metadata(microscope: FibsemMicroscope, application_software: str, application_software_version: str, experiment_name: str, experiment_method: str) -> None:
-    from fibsem.structures import FibsemUser, FibsemExperiment
     import fibsem
+    from fibsem.structures import FibsemExperiment, FibsemUser
 
     user = FibsemUser.from_environment()
 

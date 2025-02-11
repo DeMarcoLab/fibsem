@@ -7,6 +7,7 @@ import json
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import List
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -109,7 +110,44 @@ def parse_metadata(filename):
 # TODO: add experiment, method
 # TODO: migrate this to fibsem.db
 # filename should match the same filename that is used for feature detection logging -> can be associated
-def save_feature_data_to_csv(det: DetectedFeatures, features: list[dict], filename: str):
+
+def save_ml_feature_data(det: DetectedFeatures, initial_features: DetectedFeatures = None):
+    """Save the feature data to disk"""
+    
+    # if initial features are not provided, use the current features 
+    if initial_features is None:
+        initial_features = det.features
+        det.mask = det.mask.astype(np.uint8)
+    
+    try:
+        fname = det.fibsem_image.metadata.image_settings.filename
+        beam_type = det.fibsem_image.metadata.image_settings.beam_type
+    except AttributeError:
+        logging.warning("No image metadata found for ml images, saving with timestamp instead")
+        fname = f"ml-{utils.current_timestamp_v2()}"
+        beam_type = "NULL"
+
+    fd = [] # feature detections
+    for f0, f1 in zip(det.features, initial_features):
+        px_diff = f1.px - f0.px
+        msgd = {"msg": "feature_detection",
+                "fname": fname,                                             # filename
+                "feature": f0.name,                                         # feature name
+                "px": f0.px.to_dict(),                                      # pixel coordinates
+                "dpx": px_diff.to_dict(),                                   # pixel difference
+                "dm": px_diff._to_metres(det.pixelsize).to_dict(),          # metre difference
+                "is_correct": not np.any(px_diff),                          # is the feature correct    
+                "beam_type": beam_type.name,                                # beam type         
+                "pixelsize": det.pixelsize,                                 # pixelsize
+                "checkpoint": det.checkpoint,                               # checkpoint
+        }
+        logging.debug(msgd)
+        fd.append(deepcopy(msgd))                                           # to write to disk
+
+    # save features data csv
+    save_feature_data_to_csv(det, features=fd, filename=fname)
+
+def save_feature_data_to_csv(det: DetectedFeatures, features: List[dict], filename: str):
     """Save the feature data to a csv file. Includes saving the image and mask to disk. 
     All data is saved at the cfg.DATA_ML_PATH location. This can be configured in the config.py file."""
 

@@ -1,12 +1,17 @@
 import copy
 import datetime
 import logging
-import sys
-from napari.qt.threading import thread_worker
 import os
-
-# for easier usage
-import fibsem.constants as constants
+import sys
+import threading
+import time
+import warnings
+from abc import ABC, abstractmethod
+from copy import deepcopy
+from queue import Queue
+from typing import List, Union
+from psygnal import Signal
+import numpy as np
 
 _TESCAN_API_AVAILABLE = False
 _THERMO_API_AVAILABLE = False
@@ -18,7 +23,6 @@ if os.environ.get("COMPUTERNAME", "hostname") == "MU00190108":
     print("Overwriting autoscript version to 4.7, for Monash dev install")
 
 try:
-    import re
 
     from tescanautomation import Automation
     from tescanautomation.Common import Bpp
@@ -35,8 +39,8 @@ try:
     sys.modules.pop("tescanautomation.pyside6gui.workflow_private")
     sys.modules.pop("PySide6.QtCore")
     _TESCAN_API_AVAILABLE = True
-except:
-    logging.debug("Automation (TESCAN) not installed.")
+except Exception as e:
+    logging.debug(f"Automation (TESCAN) not installed. {e}")
 
 try:
     sys.path.append('C:\Program Files\Thermo Scientific AutoScript')
@@ -53,53 +57,70 @@ try:
     if _OVERWRITE_AUTOSCRIPT_VERSION:
         VERSION = 4.7
         
-    from autoscript_sdb_microscope_client.structures import (
-    BitmapPatternDefinition)
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
-        CleaningCrossSectionPattern, RectanglePattern, LinePattern, CirclePattern, RegularCrossSectionPattern )
+        CirclePattern,
+        CleaningCrossSectionPattern,
+        LinePattern,
+        RectanglePattern,
+        RegularCrossSectionPattern,
+    )
     from autoscript_sdb_microscope_client.enumerations import (
-        CoordinateSystem, ManipulatorCoordinateSystem,ManipulatorState,
-        ManipulatorSavedPosition, PatterningState,MultiChemInsertPosition)
+        CoordinateSystem,
+        ManipulatorCoordinateSystem,
+        ManipulatorSavedPosition,
+        ManipulatorState,
+        MultiChemInsertPosition,
+        PatterningState,
+        RegularCrossSectionScanMethod,
+    )
     from autoscript_sdb_microscope_client.structures import (
-        GrabFrameSettings, ManipulatorPosition, MoveSettings, StagePosition)
-    from autoscript_sdb_microscope_client.structures import AdornedImage
-
-    from autoscript_sdb_microscope_client.enumerations import ManipulatorCoordinateSystem, ManipulatorSavedPosition ,MultiChemInsertPosition
-    from autoscript_sdb_microscope_client.enumerations import RegularCrossSectionScanMethod
+        AdornedImage,
+        BitmapPatternDefinition,
+        GrabFrameSettings,
+        ManipulatorPosition,
+        MoveSettings,
+        StagePosition,
+    )
     _THERMO_API_AVAILABLE = True 
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
     if isinstance(e, NameError):
         raise e 
 
-import sys
-
-from fibsem.structures import (BeamSettings, BeamSystemSettings, BeamType,
-                               FibsemImage, FibsemImageMetadata,
-                               FibsemManipulatorPosition,
-                               FibsemMillingSettings, FibsemRectangle,
-                               FibsemStagePosition,
-                               ImageSettings, SystemSettings, 
-                               SystemInfo,
-                               MicroscopeState, Point, FibsemDetectorSettings,
-                               ThermoGISLine,ThermoMultiChemLine,
-                            FibsemUser, FibsemExperiment, 
-                            FibsemPatternSettings, FibsemRectangleSettings, 
-                            FibsemCircleSettings, FibsemLineSettings, FibsemBitmapSettings, 
-                            CrossSectionPattern, FibsemGasInjectionSettings)
-import threading
-import time
-from abc import ABC, abstractmethod
-from copy import deepcopy
-from queue import Queue
-from typing import Union
-import numpy as np
-    
-
+import fibsem.constants as constants
+from fibsem.structures import (
+    BeamSettings,
+    BeamSystemSettings,
+    BeamType,
+    CrossSectionPattern,
+    FibsemBitmapSettings,
+    FibsemCircleSettings,
+    FibsemDetectorSettings,
+    FibsemExperiment,
+    FibsemGasInjectionSettings,
+    FibsemPatternSettings,
+    FibsemImage,
+    FibsemImageMetadata,
+    FibsemLineSettings,
+    FibsemManipulatorPosition,
+    FibsemMillingSettings,
+    FibsemRectangle,
+    FibsemRectangleSettings,
+    FibsemStagePosition,
+    FibsemUser,
+    ImageSettings,
+    MicroscopeState,
+    Point,
+    SystemSettings,
+    MillingState,
+    ACTIVE_MILLING_STATES,
+)
 
 
 class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
+    milling_progress_signal = Signal(dict)
+    _last_imaging_settings: ImageSettings
 
     @abstractmethod
     def connect_to_microscope(self, ip_address: str, port: int) -> None:
@@ -126,7 +147,6 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep: float = 0.1):
         pass
     
@@ -176,6 +196,16 @@ class FibsemMicroscope(ABC):
 
     @abstractmethod
     def vertical_move(self, dy: float, dx: float = 0, static_wd: bool = True) -> None:
+        pass
+
+    @abstractmethod
+    def project_stable_move(
+        self,
+        dx: float,
+        dy: float,
+        beam_type: BeamType,
+        base_position: FibsemStagePosition,
+    ) -> FibsemStagePosition:
         pass
 
     def move_flat_to_beam(self, beam_type: BeamType, _safe:bool = True) -> None:
@@ -259,15 +289,6 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def run_milling_drift_corrected(self, milling_current: float,  
-        image_settings: ImageSettings, 
-        ref_image: FibsemImage, 
-        reduced_area: FibsemRectangle = None,
-        asynch: bool = False
-        ):
-        pass
-
-    @abstractmethod
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         pass
 
@@ -276,7 +297,19 @@ class FibsemMicroscope(ABC):
         return 
     
     @abstractmethod
-    def estimate_milling_time(self,patterns) -> float:
+    def pause_milling(self) -> None:
+        return
+    
+    @abstractmethod
+    def resume_milling(self) -> None:
+        return
+    
+    @abstractmethod
+    def get_milling_state(self) -> MillingState:
+        pass 
+
+    @abstractmethod
+    def estimate_milling_time(self) -> float:
         pass
 
     @abstractmethod
@@ -359,6 +392,8 @@ class FibsemMicroscope(ABC):
             resolution=self.get("resolution", beam_type),
             dwell_time=self.get("dwell_time", beam_type),
             hfw=self.get("hfw", beam_type),
+            path=self._last_imaging_settings.path,
+            filename=self._last_imaging_settings.filename,
         )
         logging.debug({"msg": "get_imaging_settings", "image_settings": image_settings.to_dict(), "beam_type": beam_type.name})
         return image_settings
@@ -533,7 +568,17 @@ class FibsemMicroscope(ABC):
         logging.debug({"msg": "set_microscope_state", "state": microscope_state.to_dict()})
 
         return             
-        
+    
+    def set_milling_settings(self, mill_settings: FibsemMillingSettings) -> None:
+        self.set("active_view", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("active_device", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("default_patterning_beam_type", mill_settings.milling_channel, mill_settings.milling_channel)
+        self.set("application_file", mill_settings.application_file, mill_settings.milling_channel)
+        self.set("patterning_mode", mill_settings.patterning_mode, mill_settings.milling_channel)
+        self.set("hfw", mill_settings.hfw, mill_settings.milling_channel)
+        self.set("current", mill_settings.milling_current, mill_settings.milling_channel)
+        self.set("voltage", mill_settings.milling_voltage, mill_settings.milling_channel)
+
     def is_available(self, system: str) -> bool:
 
         if system == "electron_beam":
@@ -592,11 +637,11 @@ class FibsemMicroscope(ABC):
     def apply_configuration(self, system_settings: SystemSettings = None) -> None:
         """Apply the system settings to the microscope."""
         
-        logging.info(f"Applying Microscope Configuration...")
+        logging.info("Applying Microscope Configuration...")
         
         if system_settings is None:
             system_settings = self.system
-            logging.info(f"Using current system settings.")
+            logging.info("Using current system settings.")
         
         # apply the system settings
         if self.is_available("electron_beam"):
@@ -614,7 +659,7 @@ class FibsemMicroscope(ABC):
             self.system.gis = system_settings.gis
         
         # dont update info -> read only
-        logging.info(f"Microscope configuration applied.")
+        logging.info("Microscope configuration applied.")
         logging.debug({"msg": "apply_configuration", "system_settings": system_settings.to_dict()})
 
     @abstractmethod
@@ -649,6 +694,10 @@ class FibsemMicroscope(ABC):
     def turn_off(self, beam_type: BeamType) -> bool:
         "Turn off the specified beam type."
         self.set("on", False, beam_type)
+        return self.get("on", beam_type)
+    
+    def is_on(self, beam_type: BeamType) -> bool:
+        """Check if the specified beam type is on."""
         return self.get("on", beam_type)
 
 class ThermoMicroscope(FibsemMicroscope):
@@ -727,9 +776,6 @@ class ThermoMicroscope(FibsemMicroscope):
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
 
-        run_milling_drift_corrected(self, milling_current: float, milling_voltage: float, ref_image: FibsemImage):
-            Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
-        
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
 
@@ -771,6 +817,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # initialise system settings
         self.system: SystemSettings = system_settings
+        self._patterns: List = []
 
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -847,11 +894,15 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             self.stage = None
             self.stage_is_compustage = False
-            logging.warning(f"No stage is installed on the microscope.")
+            logging.warning("No stage is installed on the microscope.")
 
         # set default coordinate system
         self.stage.set_default_coordinate_system(self._default_stage_coordinate_system)
         # TODO: set default move settings, is this dependent on the stage type?
+        self._default_application_file = "Si"
+
+        self._last_imaging_settings: ImageSettings = ImageSettings()
+        self.milling_channel: BeamType = BeamType.ION
 
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
@@ -876,8 +927,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # set reduced area settings
         if image_settings.reduced_area is not None:
             reduced_area = image_settings.reduced_area.__to_FEI__()
-            logging.warning(f"----------- REDUCED AREA: {reduced_area} -----------")
-            logging.warning(f"----------- BEAM_TYPE {image_settings.beam_type} -----------")
+            logging.debug(f"Set reduced are: {reduced_area} for beam type {image_settings.beam_type}")
         else:
             reduced_area = None
             beam.scanning.mode.set_full_frame()
@@ -922,6 +972,9 @@ class ThermoMicroscope(FibsemMicroscope):
         fibsem_image.metadata.user = self.user
         fibsem_image.metadata.experiment = self.experiment
         fibsem_image.metadata.system = self.system
+
+        # store last imaging settings
+        self._last_imaging_settings = image_settings
 
         logging.debug({"msg": "acquire_image", "metadata": fibsem_image.metadata.to_dict()})
 
@@ -980,46 +1033,44 @@ class ThermoMicroscope(FibsemMicroscope):
         return FibsemImage(data=image.data, metadata=None)   
     
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
-            self.image_queue = image_queue
-            self.stop_event = stop_event
-            _check_beam(image_settings.beam_type, self.system)
-            logging.info(f"Live imaging: {image_settings.beam_type}")
-            while not self.stop_event.is_set():
-                image = self.acquire_image(deepcopy(image_settings))
-                image_queue.put(image)
+        pass
+        # self.image_queue = image_queue
+        # self.stop_event = stop_event
+        # _check_beam(image_settings.beam_type, self.system)
+        # logging.info(f"Live imaging: {image_settings.beam_type}")
+        # while not self.stop_event.is_set():
+        #     image = self.acquire_image(deepcopy(image_settings))
+        #     image_queue.put(image)
 
-
-
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+        pass
+        # logging.info("Consuming image queue")
 
-        logging.info("Consuming image queue")
+        # while not self.stop_event.is_set():
+        #     try:
+        #         time.sleep(sleep)
+        #         if not self.image_queue.empty():
+        #             image = self.image_queue.get(timeout=1)f
+        #             if image.metadata.image_settings.save:
+        #                 image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
+        #                 filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
+        #                 image.save(path=filename)
+        #                 logging.info(f"Saved image to {filename}")
 
-        while not self.stop_event.is_set():
-            try:
-                time.sleep(sleep)
-                if not self.image_queue.empty():
-                    image = self.image_queue.get(timeout=1)
-                    if image.metadata.image_settings.save:
-                        image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
-                        filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
-                        image.save(path=filename)
-                        logging.info(f"Saved image to {filename}")
+        #             logging.info(f"Image: {image.data.shape}")
+        #             logging.info("-" * 50)
 
-                    logging.info(f"Image: {image.data.shape}")
-                    logging.info(f"-" * 50)
-
-                    if parent_ui is not None:
-                            parent_ui.live_imaging_signal.emit({"image": image})
+        #             if parent_ui is not None:
+        #                     parent_ui.live_imaging_signal.emit({"image": image})
 
 
-            except KeyboardInterrupt:
-                self.stop_event
-                logging.info("Keyboard interrupt, stopping live imaging")
-            except Exception as e:
-                self.stop_event.set()
-                import traceback
-                logging.error(traceback.format_exc())
+        #     except KeyboardInterrupt:
+        #         self.stop_event
+        #         logging.info("Keyboard interrupt, stopping live imaging")
+        #     except Exception as e:
+        #         self.stop_event.set()
+        #         import traceback
+        #         logging.error(traceback.format_exc())
 
     def autocontrast(self, beam_type: BeamType) -> None:
         """
@@ -1033,7 +1084,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.imaging.set_active_device(beam_type.value)
         self.connection.auto_functions.run_auto_cb()
-        logging.debug({f"msg": "autocontrast", "beam_type": beam_type.name})
+        logging.debug({"msg": "autocontrast", "beam_type": beam_type.name})
 
     def auto_focus(self, beam_type: BeamType) -> None:
         """Automatically focus the specified beam type.
@@ -1207,20 +1258,17 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # TODO: implement perspective correction
         PERSPECTIVE_CORRECTION = 0.9
-        z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
+        z_move = dy
+        if True: #use_perspective: 
+            z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
 
-        # TODO: do this manually without autoscript in raw coordinates
-        stage_position = FibsemStagePosition(
-            x=dx,
-            z=z_move, 
-            coordinate_system="Specimen"
-        )
-
-        # move stage
-        move_settings = MoveSettings(link_z_y=True)
-        autoscript_position = stage_position.to_autoscript_position(self.stage_is_compustage)
-        autoscript_position.coordinate_system = CoordinateSystem.SPECIMEN 
-        self.stage.relative_move(autoscript_position, move_settings)
+        # manually calculate the dx, dy, dz 
+        theta = self.get_stage_position().t # rad
+        dy = z_move * np.sin(theta)
+        dz = z_move / np.cos(theta)
+        stage_position = FibsemStagePosition(x=dx, y=dy, z=dz, coordinate_system="RAW")
+        logging.info(f"Vertical movement: {stage_position}")
+        self.move_stage_relative(stage_position) # NOTE: this seems to be a bit less than previous... -> perspective correction?
 
         # restore working distance to adjust for microscope compenstation
         if static_wd and not self.stage_is_compustage:
@@ -1314,15 +1362,13 @@ class ThermoMicroscope(FibsemMicroscope):
         # perspective tilt adjustment (difference between perspective view and sample coordinate system)
         if beam_type == BeamType.ELECTRON:
             perspective_tilt_adjustment = -corrected_pretilt_angle
-            SCALE_FACTOR = 1.0  # 0.78342  # patented technology
         elif beam_type == BeamType.ION:
             perspective_tilt_adjustment = (
                 -corrected_pretilt_angle - stage_tilt_flat_to_ion
             )
-            SCALE_FACTOR = 1.0
 
         # the amount the sample has to move in the y-axis
-        y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
+        y_sample_move = expected_y  / np.cos(
             stage_tilt + perspective_tilt_adjustment
         )
        
@@ -1347,7 +1393,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if movement.rotation_angle_is_larger(stage_position.r, current_position.r):
 
             self.move_stage_absolute(FibsemStagePosition(t=0))
-            logging.info(f"tilting to flat for large rotation.")
+            logging.info("tilting to flat for large rotation.")
 
         return
 
@@ -1370,7 +1416,7 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug(f"safe moving to {stage_position}")
         self.move_stage_absolute(stage_position)
 
-        logging.debug(f"safe movement complete.")
+        logging.debug("safe movement complete.")
 
         return
 
@@ -1415,9 +1461,9 @@ class ThermoMicroscope(FibsemMicroscope):
             saved_position, ManipulatorCoordinateSystem.RAW
         )
         # insert the manipulator
-        logging.info(f"inserting manipulator to {saved_position}: {insert_position}.")
+        logging.info("inserting manipulator to {saved_position}: {insert_position}.")
         self.connection.specimen.manipulator.insert(insert_position)
-        logging.info(f"insert manipulator complete.")
+        logging.info("insert manipulator complete.")
 
         # return the manipulator position
         manipulator_position = self.get_manipulator_position()
@@ -1442,9 +1488,9 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.info(f"retracting needle to {park_position}")
         needle.absolute_move(park_position)
         time.sleep(1)  # AutoScript sometimes throws errors if you retract too quick?
-        logging.info(f"retracting needle...")
+        logging.info("retracting needle...")
         needle.retract()
-        logging.info(f"retract needle complete")
+        logging.info("retract needle complete")
     
     def move_manipulator_relative(self, position: FibsemManipulatorPosition):
         _check_manipulator_movement(self.system, position)
@@ -1612,18 +1658,25 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             mill_settings (FibsemMillingSettings): Milling settings.
         """
-        self.milling_channel = BeamType.ION
+        self.milling_channel = mill_settings.milling_channel
         _check_beam(self.milling_channel, self.system)
         self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
         self.connection.imaging.set_active_device(self.milling_channel.value)
         self.connection.patterning.set_default_beam_type(self.milling_channel.value)
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
+        self._default_application_file = mill_settings.application_file
         self.connection.patterning.mode = mill_settings.patterning_mode
-        self.connection.patterning.clear_patterns()  # clear any existing patterns
-        
+        self.clear_patterns()  # clear any existing patterns
         self.set("hfw", mill_settings.hfw, self.milling_channel)
         self.set("current", mill_settings.milling_current, self.milling_channel)
         self.set("voltage", mill_settings.milling_voltage, self.milling_channel)
+
+        # TODO: migrate to _set_milling_settings():
+        # self.milling_channel = mill_settings.milling_channel
+        # self._default_application_file = mill_settings.application_file
+        # _check_beam(self.milling_channel, self.system)
+        # self.set_milling_settings(mill_settings)
+        # self.clear_patterns()
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
@@ -1633,15 +1686,15 @@ class ThermoMicroscope(FibsemMicroscope):
 
         Args:
             milling_current (float): The current to use for milling in amps.
+            milling_voltage (float): The voltage to use for milling in volts.
             asynch (bool, optional): If True, the milling will be run asynchronously. 
                                      Defaults to False, in which case it will run synchronously.
-
         """
         if not self.is_available("ion_beam"):
             raise ValueError("Ion beam not available.")
         
         try:
-            # change to milling current, voltage
+            # change to milling current, voltage # TODO: do this in a more standard way (there are other settings)
             if self.get("voltage", self.milling_channel) != milling_voltage:
                 self.set("voltage", milling_voltage, self.milling_channel)
             if self.get("current", self.milling_channel) != milling_current:
@@ -1650,71 +1703,39 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.warning(f"Failed to set voltage or current: {e}, voltage={milling_voltage}, current={milling_current}")
 
         # run milling (asynchronously)
-        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
+        self.set("active_view", value=self.milling_channel)  # the ion beam view
         logging.info(f"running ion beam milling now... asynchronous={asynch}")
+        self.start_milling()
+
+        start_time = time.time()
+        estimated_time = self.estimate_milling_time()
+        remaining_time = estimated_time
+        
         if asynch:
-            self.connection.patterning.start()
-        else:
-            self.connection.patterning.start()
-            while self.connection.patterning.state == PatterningState.IDLE: # giving time to start 
-                time.sleep(0.5)
-            while self.connection.patterning.state == PatterningState.RUNNING:
-                # logging.info(f"Patterning State: {self.connection.patterning.state}")
-                time.sleep(1)      
-            self.connection.patterning.clear_patterns()
-        # NOTE: Make tescan logs the same??
+            return # return immediately, up to the caller to handle the milling process
+        
+        MILLING_SLEEP_TIME = 1
+        while self.get_milling_state() is MillingState.IDLE: # giving time to start 
+            time.sleep(0.5)
+        while self.get_milling_state() in ACTIVE_MILLING_STATES:
+            # logging.info(f"Patterning State: {self.connection.patterning.state}")
+            # TODO: add drift correction support here... generically
+            if self.get_milling_state() is MillingState.RUNNING:
+                remaining_time -= MILLING_SLEEP_TIME # TODO: investigate if this is a good estimate
+            time.sleep(MILLING_SLEEP_TIME)
+
+            # update milling progress via signal
+            self.milling_progress_signal.emit({"progress": {
+                    "state": "update", 
+                    "start_time": start_time, 
+                    "estimated_time": estimated_time, 
+                    "remaining_time": remaining_time}
+                    })
+
+        # milling complete
+        self.clear_patterns()
                                     
         logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
-
-    def run_milling_drift_corrected(self, milling_current: float, 
-                                    milling_voltage: float,  
-                                    image_settings: ImageSettings, 
-                                    ref_image: FibsemImage, 
-                                    reduced_area: FibsemRectangle = None,
-                                    ):
-        """
-        Run ion beam milling using the specified milling current.
-
-        Args:
-            milling_current (float): The current to use for milling in amps.
-            asynch (bool, optional): If True, the milling will be run asynchronously. 
-                                     Defaults to False, in which case it will run synchronously.
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        _check_beam(self.milling_channel, self.system)
-        # change to milling current
-        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
-        if self.get("voltage", self.milling_channel) != milling_voltage:
-            self.set("voltage", milling_voltage, self.milling_channel)
-        if self.get("current", self.milling_channel) != milling_current:
-            self.set("current", milling_current, self.milling_channel)
-
-
-        # run milling (asynchronously)
-        logging.info(f"running ion beam milling now.")
-
-        self.connection.patterning.start()
-        # NOTE: Make tescan logs the same??
-        from fibsem import alignment
-        while self.connection.patterning.state == PatterningState.IDLE: # giving time to start 
-            time.sleep(0.5)
-        while self.connection.patterning.state == PatterningState.RUNNING:
-
-            self.connection.patterning.pause()
-            logging.info("Drift correction")
-            alignment.beam_shift_alignment_v2(microscope = self, ref_image=ref_image)
-            time.sleep(1) # need delay to switch back to patterning mode 
-            self.connection.imaging.set_active_view(self.milling_channel.value)
-            if self.connection.patterning.state == PatterningState.PAUSED: # check if finished 
-                self.connection.patterning.resume()
-                time.sleep(5)
-            logging.info(f"Patterning State: {self.connection.patterning.state}")
-
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float):
         """
@@ -1724,26 +1745,54 @@ class ThermoMicroscope(FibsemMicroscope):
             imaging_current (float): The current to use for imaging in amps.
         """
         _check_beam(self.milling_channel, self.system)
-        self.connection.patterning.clear_patterns()
+        self.clear_patterns()
         self.set("current", imaging_current, self.milling_channel)
         self.set("voltage", imaging_voltage, self.milling_channel)
-        self.connection.patterning.mode = "Serial"
+        self.set("patterning_mode", value="Serial")
+         # TODO: store initial imaging settings in setup_milling, restore here, rather than hybrid
 
         logging.debug({"msg": "finish_milling", "imaging_current": imaging_current, "imaging_voltage": imaging_voltage})
 
+    def start_milling(self) -> None:
+        """Start the milling process."""
+        if self.get_milling_state() is MillingState.IDLE:
+            self.connection.patterning.start()
+            logging.info("Starting milling...")
+
     def stop_milling(self) -> None:
         """Stop the milling process."""
-        if self.connection.patterning.state == PatterningState.RUNNING:
-            logging.info(f"Stopping milling...")
+        if self.get_milling_state() in ACTIVE_MILLING_STATES:
+            logging.info("Stopping milling...")
             self.connection.patterning.stop()
-            logging.info(f"Milling stopped.")
-        
-        
-    def estimate_milling_time(self, patterns: list ) -> float:
-        """Calculates the estimated milling time for a list of patterns."""
+            logging.info("Milling stopped.")
 
+    def pause_milling(self) -> None:
+        """Pause the milling process."""
+        if self.get_milling_state() == MillingState.RUNNING:
+            logging.info("Pausing milling...")
+            self.connection.patterning.pause()
+            logging.info("Milling paused.")
+
+    def resume_milling(self) -> None:
+        """Resume the milling process."""
+        if self.get_milling_state() == MillingState.PAUSED:
+            logging.info("Resuming milling...")
+            self.connection.patterning.resume()
+            logging.info("Milling resumed.")
+    
+    def get_milling_state(self) -> MillingState:
+        """Get the current milling state."""
+        return MillingState[self.connection.patterning.state.upper()]
+    
+    def clear_patterns(self):
+        """Clear all currently drawn milling patterns."""
+        self.connection.patterning.clear_patterns()
+        self._patterns = []
+
+    def estimate_milling_time(self) -> float:
+        """Calculates the estimated milling time for a list of patterns."""
         total_time = 0
-        for pattern in patterns:
+        for pattern in self._patterns:
             total_time += pattern.time
 
         return total_time
@@ -1769,16 +1818,14 @@ class ThermoMicroscope(FibsemMicroscope):
         patterning_api = self.connection.patterning
         if pattern_settings.cross_section is CrossSectionPattern.RegularCrossSection:
             create_pattern_function = patterning_api.create_regular_cross_section
+            self.connection.patterning.mode = "Serial" # parallel mode not supported for regular cross section
+            self.connection.patterning.set_default_application_file("Si-multipass")
         elif pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
             create_pattern_function = patterning_api.create_cleaning_cross_section
+            self.connection.patterning.mode = "Serial" # parallel mode not supported for cleaning cross section
+            self.connection.patterning.set_default_application_file("Si-ccs")
         else:
             create_pattern_function = patterning_api.create_rectangle
-        
-        # if pattern_settings.cleaning_cross_section:
-        #     logging.warning(f"Deprecated: cleaning_cross_section is deprecated. Use cross_section instead. This will be removed in a future release.")    
-        #     create_pattern_function = patterning_api.create_cleaning_cross_section
-
-        
             
         # create pattern
         pattern = create_pattern_function(
@@ -1795,6 +1842,9 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # set pattern rotation
         pattern.rotation = pattern_settings.rotation
+
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         # set scan direction
         available_scan_directions = self.get_available_values("scan_direction")        
@@ -1818,7 +1868,12 @@ class ThermoMicroscope(FibsemMicroscope):
                 # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
                 # NB: the current must be set before doing this, otherwise it will be out of range
 
+        # restore default application file
+        self.connection.patterning.set_default_application_file(self._default_application_file)
+
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
+
+        self._patterns.append(pattern)
 
         return pattern
 
@@ -1845,6 +1900,7 @@ class ThermoMicroscope(FibsemMicroscope):
             depth=pattern_settings.depth,
         )
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
+        self._patterns.append(pattern)
         return pattern
     
     def draw_circle(self, pattern_settings: FibsemCircleSettings):
@@ -1862,6 +1918,7 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
         """
+        self.connection.patterning.set_default_application_file("Si")
         pattern = self.connection.patterning.create_circle(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
@@ -1869,9 +1926,16 @@ class ThermoMicroscope(FibsemMicroscope):
             inner_diameter = 0,
             depth=pattern_settings.depth,
         )
+        pattern.application_file = "Si"
+        pattern.overlap_r = 0.8
+        pattern.overlap_t = 0.8
+        self.connection.patterning.set_default_application_file(self._default_application_file)
+
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
-
+        self._patterns.append(pattern)
         return pattern
 
     def draw_annulus(self, pattern_settings: FibsemCircleSettings):
@@ -1879,6 +1943,7 @@ class ThermoMicroscope(FibsemMicroscope):
         outer_diameter = 2*pattern_settings.radius
         inner_diameter = outer_diameter - 2*pattern_settings.thickness
 
+        self.connection.patterning.set_default_application_file("Si")
         pattern = self.connection.patterning.create_circle(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
@@ -1886,9 +1951,16 @@ class ThermoMicroscope(FibsemMicroscope):
             inner_diameter = inner_diameter,
             depth=pattern_settings.depth,
         )
+        pattern.application_file = "Si"
+        pattern.overlap_r = 0.8
+        pattern.overlap_t = 0.8
+        self.connection.patterning.set_default_application_file(self._default_application_file)
+
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
 
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
-
+        self._patterns.append(pattern)
         return pattern
     
     
@@ -1910,33 +1982,8 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
-
+        self._patterns.append(pattern)
         return pattern
-
-    def get_scan_directions(self) -> list:
-        """
-        Returns the available scan directions of the microscope.
-
-        Returns:
-            list: The scan direction of the microscope.
-
-        Raises:
-            None
-        """
-        list = ["BottomToTop", 
-                "DynamicAllDirections", 
-                "DynamicInnerToOuter", 
-                "DynamicLeftToRight", 
-                "DynamicTopToBottom", 
-                "InnerToOuter", 	
-                "LeftToRight", 	
-                "OuterToInner", 
-                "RightToLeft", 	
-                "TopToBottom"]
-        
-        logging.debug({"msg": "get_scan_directions", "scan_directions": list})
-
-        return list 
 
     def get_gis(self, port: str = None):
         use_multichem = self.is_available("gis_multichem")
@@ -1955,7 +2002,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info(f"Inserting Multichem GIS to {insert_position}")
             self.gis.insert(insert_position)
         else:
-            logging.info(f"Inserting Gas Injection System")
+            logging.info("Inserting Gas Injection System")
             self.gis.insert()
 
         logging.debug({"msg": "insert_gis", "insert_position": insert_position})
@@ -1974,7 +2021,7 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             self.gis.turn_heater_on()
         
-        logging.info(f"Waiting for heater to get to temperature...")
+        logging.info("Waiting for heater to get to temperature...")
         time.sleep(3) # we need to wait a bit
 
         wait_time = 0
@@ -1994,7 +2041,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
             wait_time += 1
             if wait_time > max_wait_time:
-                raise TimeoutError(f"Gas Injection Failed to heat within time...")
+                raise TimeoutError("Gas Injection Failed to heat within time...")
         
         logging.debug({"msg": "gis_turn_heater_on", "temp": temp, "target_temp": target_temp, 
                                 "wait_time": wait_time, "max_wait_time": max_wait_time})
@@ -2041,7 +2088,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.gis.turn_heater_off()
 
         # retract gis / multichem
-        logging.info(f"Retracting Gas Injection System")
+        logging.info("Retracting Gas Injection System")
         self.retract_gis()
             
         return
@@ -2294,7 +2341,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
 
 
-    # def GIS_available_lines(self) -> list[str]:
+    # def GIS_available_lines(self) -> List[str]:
     #     """
     #     Returns a list of available GIS lines.
     #     Args:
@@ -2321,10 +2368,10 @@ class ThermoMicroscope(FibsemMicroscope):
 
     #     return gis_list
 
-    # def GIS_available_positions(self) -> list[str]:
+    # def GIS_available_positions(self) -> List[str]:
     #     """Returns a list of available positions the GIS can move to.
     #     Returns:
-    #         list[str]: positions
+    #         List[str]: positions
     #     """
 
     #     _check_sputter(self.system)
@@ -2393,7 +2440,7 @@ class ThermoMicroscope(FibsemMicroscope):
     #     return port.temp_ready
 
 
-    # def multichem_available_lines(self)-> list[str]:
+    # def multichem_available_lines(self)-> List[str]:
 
     #     """
     #     Returns a list of available multichem lines.
@@ -2413,7 +2460,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
     #     return self.mc_lines
 
-    # def multichem_available_positions(self) -> list[str]:
+    # def multichem_available_positions(self) -> List[str]:
 
     #     """Available positions the multichem object can move to
     #     Returns:
@@ -2506,6 +2553,12 @@ class ThermoMicroscope(FibsemMicroscope):
                 values = self.connection.beams.ion_beam.beam_current.available_values
             elif beam_type is BeamType.ELECTRON and self.is_available("electron_beam"):
                 values = self.connection.beams.electron_beam.beam_current.available_values
+
+            # print(microscope.connection.beams.ion_beam.high_voltage.limits)
+            # print(microscope.connection.beams.electron_beam.high_voltage.limits)
+
+            # print(microscope.connection.beams.ion_beam.beam_current.available_values)
+            # print(microscope.connection.beams.electron_beam.beam_current.limits)
         
         if key == "detector_type":
             values = self.connection.detector.type.available_values
@@ -2523,7 +2576,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 "LeftToRight", 	
                 "OuterToInner", 
                 "RightToLeft", 	
-                "TopToBottom"]
+                "TopToBottom"] # TODO: store elsewhere...
         
         if key == "gis_ports":
             if self.is_available("gis"):
@@ -2544,6 +2597,11 @@ class ThermoMicroscope(FibsemMicroscope):
         if beam_type is not None:
             beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
             _check_beam(beam_type, self.system)
+
+        if key == "active_view":
+            return self.connection.imaging.get_active_view()
+        if key == "active_device":
+            return self.connection.imaging.get_active_device()
 
         # beam properties
         if key == "on": 
@@ -2686,11 +2744,16 @@ class ThermoMicroscope(FibsemMicroscope):
             beam = self.connection.beams.electron_beam if beam_type == BeamType.ELECTRON else self.connection.beams.ion_beam
             _check_beam(beam_type, self.system)
         
+        if key == "active_view":
+            self.connection.imaging.set_active_view(value.value)  # the beam type is the active view (in ui)
+            return
+        if key == "active_device":
+            self.connection.imaging.set_active_device(value.value)
+            return
+
         # beam properties
         if key == "working_distance":
             beam.working_distance.value = value
-            if beam_type is BeamType.ELECTRON:
-                self.set("stage_link", True)  # link the specimen stage for electron
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return 
         if key == "current":
@@ -2703,7 +2766,7 @@ class ThermoMicroscope(FibsemMicroscope):
             return
         if key == "hfw":
             limits = beam.horizontal_field_width.limits
-            value = np.clip(value, limits.min, limits.max)
+            value = np.clip(value, limits.min, limits.max-10e-6)
             beam.horizontal_field_width.value = value
             logging.info(f"{beam_type.name} HFW set to {value} m.")
             return 
@@ -2829,7 +2892,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
                 if not self.system.ion.plasma:
-                    logging.debug(f"Plasma gas cannot be set on this microscope.")
+                    logging.debug("Plasma gas cannot be set on this microscope.")
                     return
                 if not self.check_available_values("plasma_gas", [value], beam_type):
                     logging.warning(f"Plasma gas {value} not available. Available values: {self.get_available_values('plasma_gas', beam_type)}")
@@ -2843,19 +2906,19 @@ class ThermoMicroscope(FibsemMicroscope):
         # stage properties
         if key == "stage_home":
             _check_stage(self.system)
-            logging.info(f"Homing stage...")
+            logging.info("Homing stage...")
             self.stage.home()
-            logging.info(f"Stage homed.")
+            logging.info("Stage homed.")
             return
         
         if key == "stage_link":
             _check_stage(self.system)
             
             if self.stage_is_compustage:
-                logging.debug(f"Compustage does not support linking.")
+                logging.debug("Compustage does not support linking.")
                 return
             
-            logging.info(f"Linking stage...")
+            logging.info("Linking stage...")
             self.stage.link() if value else self.stage.unlink()
             logging.info(f"Stage {'linked' if value else 'unlinked'}.")    
             return
@@ -2863,9 +2926,9 @@ class ThermoMicroscope(FibsemMicroscope):
         # chamber properties
         if key == "pump_chamber":
             if value:
-                logging.info(f"Pumping chamber...")
+                logging.info("Pumping chamber...")
                 self.connection.vacuum.pump()
-                logging.info(f"Chamber pumped.") 
+                logging.info("Chamber pumped.") 
                 return
             else:
                 logging.warning(f"Invalid value for pump_chamber: {value}.")
@@ -2873,14 +2936,21 @@ class ThermoMicroscope(FibsemMicroscope):
             
         if key == "vent_chamber":
             if value:
-                logging.info(f"Venting chamber...")
+                logging.info("Venting chamber...")
                 self.connection.vacuum.vent()
-                logging.info(f"Chamber vented.") 
+                logging.info("Chamber vented.") 
                 return
             else:
                 logging.warning(f"Invalid value for vent_chamber: {value}.")
                 return
-            
+        
+        # patterning
+        if key == "patterning_mode":
+            if value in ["Serial", "Parallel"]:
+                self.connection.patterning.mode = value
+                logging.info(f"Patterning mode set to {value}.")
+                return
+
         logging.warning(f"Unknown key: {key} ({beam_type})")
 
         return
@@ -2976,9 +3046,6 @@ class TescanMicroscope(FibsemMicroscope):
         run_milling(self, milling_current: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
 
-        def run_milling_drift_corrected(self, milling_current: float, image_settings: ImageSettings, ref_image: FibsemImage, reduced_area: FibsemRectangle = None, asynch: bool = False):
-        Run ion beam milling using the specified milling current, and correct for drift using the provided reference image.
-
         finish_milling(self, imaging_current: float):
             Finalises the milling process by clearing the microscope of any patterns and returning the current to the imaging current.
 
@@ -3047,6 +3114,7 @@ class TescanMicroscope(FibsemMicroscope):
         # initialise last images
         self.last_image_eb: FibsemImage = None
         self.last_image_ib: FibsemImage = None
+        self._last_imaging_settings: ImageSettings = ImageSettings()
 
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
@@ -3120,6 +3188,9 @@ class TescanMicroscope(FibsemMicroscope):
         image.metadata.user = self.user
         image.metadata.experiment = self.experiment 
         image.metadata.system = self.system
+
+        # store last imaging settings
+        self._last_imaging_settings = image_settings
 
         return image
 
@@ -3378,46 +3449,44 @@ class TescanMicroscope(FibsemMicroscope):
         return FibsemImage(data=np.array(image.Image), metadata=None)   
 
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
-        self.image_queue = image_queue
-        self.stop_event = stop_event
-        _check_beam(image_settings.beam_type, self.system)
-        logging.info(f"Live imaging: {image_settings.beam_type}")
-        while not self.stop_event.is_set():
-            image = self.acquire_image(deepcopy(image_settings))
-            image_queue.put(image)
+        pass
+        # self.image_queue = image_queue
+        # self.stop_event = stop_event
+        # _check_beam(image_settings.beam_type, self.system)
+        # logging.info(f"Live imaging: {image_settings.beam_type}")
+        # while not self.stop_event.is_set():
+        #     image = self.acquire_image(deepcopy(image_settings))
+        #     image_queue.put(image)
 
-
-
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+        pass
+        # logging.info("Consuming image queue")
 
-        logging.info("Consuming image queue")
+        # while not self.stop_event.is_set():
+        #     try:
+        #         time.sleep(sleep)
+        #         if not self.image_queue.empty():
+        #             image = self.image_queue.get(timeout=1)
+        #             if image.metadata.image_settings.save:
+        #                 image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"                        
+        #                 filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
+        #                 image.save(path=filename)
+        #                 logging.info(f"Saved image to {filename}")
 
-        while not self.stop_event.is_set():
-            try:
-                time.sleep(sleep)
-                if not self.image_queue.empty():
-                    image = self.image_queue.get(timeout=1)
-                    if image.metadata.image_settings.save:
-                        image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"                        
-                        filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
-                        image.save(path=filename)
-                        logging.info(f"Saved image to {filename}")
+        #             logging.info(f"Image: {image.data.shape}")
+        #             logging.info("-" * 50)
 
-                    logging.info(f"Image: {image.data.shape}")
-                    logging.info(f"-" * 50)
-
-                    if parent_ui is not None:
-                            parent_ui.live_imaging_signal.emit({"image": image})
+        #             if parent_ui is not None:
+        #                     parent_ui.live_imaging_signal.emit({"image": image})
 
 
-            except KeyboardInterrupt:
-                self.stop_event
-                logging.info("Keyboard interrupt, stopping live imaging")
-            except Exception as e:
-                self.stop_event.set()
-                import traceback
-                logging.error(traceback.format_exc())
+        #     except KeyboardInterrupt:
+        #         self.stop_event
+        #         logging.info("Keyboard interrupt, stopping live imaging")
+        #     except Exception as e:
+        #         self.stop_event.set()
+        #         import traceback
+        #         logging.error(traceback.format_exc())
         
     def autocontrast(self, beam_type: BeamType) -> None:
         """Automatically adjust the microscope image contrast for the specified beam type.
@@ -3749,7 +3818,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         # adjust working distance to compensate for stage movement
         self.connection.SEM.Optics.SetWD(wd)
-        # self.connection.specimen.stage.link() # TODO how to link for TESCAN?
 
         return
 
@@ -4214,7 +4282,7 @@ class TescanMicroscope(FibsemMicroscope):
         if status != Automation.FIB.Beam.Status.BeamOn:
             self.connection.FIB.Beam.On()
         self.connection.DrawBeam.LoadLayer(self.layer)
-        logging.info(f"running ion beam milling now...")
+        logging.info("running ion beam milling now...")
         self.connection.DrawBeam.Start()
         self.connection.Progress.Show(
             "DrawBeam", "Layer 1 in progress", False, False, 0, 100
@@ -4232,78 +4300,6 @@ class TescanMicroscope(FibsemMicroscope):
             else:
                 if status[0] == DBStatus.ProjectLoadedExpositionIdle:
                     printProgressBar(100, 100, suffix="Finished")
-                break
-
-        print()  # new line on complete
-        self.connection.Progress.Hide()
-
-    def run_milling_drift_corrected(self, milling_current: float,  
-        image_settings: ImageSettings, 
-        ref_image: FibsemImage, 
-        reduced_area: FibsemRectangle = None,
-        asynch: bool = False
-        ):
-        """
-        Run ion beam milling using the specified milling current.
-
-        Args:
-            milling_current (float): The current to use for milling in amps.
-            asynch (bool, optional): If True, the milling will be run asynchronously. 
-                                     Defaults to False, in which case it will run synchronously.
-
-        Returns:
-            None
-
-        Raises:
-            None
-        """
-        _check_beam(BeamType.ION, self.system)
-        status = self.connection.FIB.Beam.GetStatus()
-        if status != Automation.FIB.Beam.Status.BeamOn:
-            self.connection.FIB.Beam.On()
-        self.connection.DrawBeam.LoadLayer(self.layer)
-        logging.info(f"running ion beam milling now...")
-        self.connection.DrawBeam.Start()
-        self.connection.Progress.Show(
-            "DrawBeam", "Layer 1 in progress", False, False, 0, 100
-        )
-        from fibsem import alignment
-        while True:
-            status = self.connection.DrawBeam.GetStatus()
-            running = status[0] == DBStatus.ProjectLoadedExpositionInProgress
-            if running:
-                progress = 0
-                if status[1] > 0:
-                    progress = min(100, status[2] / status[1] * 100)
-                printProgressBar(progress, 100)
-                self.connection.Progress.SetPercents(progress)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionInProgress:
-                    self.connection.DrawBeam.Pause()
-                elif status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
-                    break
-                logging.info("Drift correction in progress...")
-                image_settings.beam_type = BeamType.ION
-                alignment.beam_shift_alignment(
-                    self,
-                    image_settings,
-                    ref_image,
-                    reduced_area,
-                )
-                time.sleep(1)
-                status = self.connection.DrawBeam.GetStatus()
-                if status[0] == DBStatus.ProjectLoadedExpositionPaused :
-                    self.connection.DrawBeam.Resume()
-                logging.info("Drift correction complete.")
-                time.sleep(5)
-            else:
-                if status[0] == DBStatus.ProjectLoadedExpositionIdle:
-                    printProgressBar(100, 100, suffix="Finished")
-                    self.connection.DrawBeam.Stop()
-                    self.connection.DrawBeam.UnloadLayer()
                 break
 
         print()  # new line on complete
@@ -4320,10 +4316,11 @@ class TescanMicroscope(FibsemMicroscope):
             self.connection.FIB.Preset.Activate("30 keV; 150 pA")
             self.connection.DrawBeam.UnloadLayer()
             print("hello")
-        except:
+        except Exception as e:
+            logging.debug(f"Error in finish_milling: {e}")
             pass
     
-    def estimate_milling_time(self,patterns):
+    def estimate_milling_time(self) -> float:
         
         # load and unload layer to check time
         self.connection.DrawBeam.LoadLayer(self.layer)
@@ -4552,7 +4549,8 @@ class TescanMicroscope(FibsemMicroscope):
             self.layer = self.connection.DrawBeam.Layer("Layer1", layerSettings)
             self.connection.DrawBeam.LoadLayer(self.layer)
 
-        except:
+        except Exception as e:
+            logging.debug(f"Error setting up sputter: {e}")
             import fibsem
             base_path = os.path.dirname(fibsem.__path__[0])
             layer_path = os.path.join(base_path,"fibsem", "config", "deposition.dbp")
@@ -4769,7 +4767,7 @@ class TescanMicroscope(FibsemMicroscope):
     #     logging.info("process completed.")
 
 
-    # def GIS_available_lines(self) -> list[str]:
+    # def GIS_available_lines(self) -> List[str]:
     #     """
     #     Returns a list of available GIS lines.
     #     Args:
@@ -4796,7 +4794,7 @@ class TescanMicroscope(FibsemMicroscope):
 
     #     return position.name
 
-    # def GIS_available_positions(self) -> list[str]:
+    # def GIS_available_positions(self) -> List[str]:
 
     #     _check_sputter(self.system)
     #     self.GIS_positions = self.connection.GIS.Position
@@ -4848,11 +4846,11 @@ class TescanMicroscope(FibsemMicroscope):
             the state that cannot be set for the TESCAN microscope by the TESCAN Automation API.
         """
 
-        logging.info(f"restoring microscope state...")
+        logging.info("restoring microscope state...")
 
         # restore electron beam
         _check_beam(BeamType.ELECTRON, self.system)
-        logging.info(f"restoring electron beam settings...")
+        logging.info("restoring electron beam settings...")
         self.connection.SEM.Optics.SetWD(
             microscope_state.electron_beam.working_distance
             * constants.METRE_TO_MILLIMETRE
@@ -4892,7 +4890,7 @@ class TescanMicroscope(FibsemMicroscope):
         self.set_detector_settings(microscope_state.ion_detector, BeamType.ION)
 
         self.move_stage_absolute(microscope_state.stage_position)
-        logging.info(f"microscope state restored")
+        logging.info("microscope state restored")
         return
 
     def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
@@ -5079,21 +5077,21 @@ class TescanMicroscope(FibsemMicroscope):
                 beam.Optics.SetWD(value * constants.METRE_TO_MILLIMETRE)
                 logging.info(f"Electron beam working distance set to {value} m.")
             else: 
-                logging.info(f"Setting working distance for ion beam is not supported by Tescan API.")
+                logging.info("Setting working distance for ion beam is not supported by Tescan API.")
             return
         if key == "current":
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetCurrent(value * constants.SI_TO_PICO)
                 logging.info(f"Electron beam current set to {value} A.")
             else: 
-                logging.warning(f"Setting current for ion beam is not supported by Tescan API, please use the native microscope interface.")
+                logging.warning("Setting current for ion beam is not supported by Tescan API, please use the native microscope interface.")
             return
         if key == "voltage":
             if beam_type == BeamType.ELECTRON:
                 beam.Beam.SetVoltage(value)
                 logging.info(f"Electron beam voltage set to {value} V.")
             else:
-                logging.warning(f"Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
+                logging.warning("Setting voltage for ion beam is not supported by Tescan API, please use the native microscope interface.")
             return
         if key == "hfw":
             beam.Optics.SetViewfield(value * constants.METRE_TO_MILLIMETRE)
@@ -5171,21 +5169,20 @@ class TescanMicroscope(FibsemMicroscope):
         return False
     
     def home(self) -> None:
-        logging.warning(f"No homing available, please use native UI.")
+        logging.warning("No homing available, please use native UI.")
         return
 
 ########################
 class DemoMicroscope(FibsemMicroscope):
 
     def __init__(self, system_settings: SystemSettings):            
-        
-        
+
         # hack, do this properly @patrick
         from dataclasses import dataclass
 
         @dataclass
         class DemoMicroscopeClient:
-            self.connected: bool = False
+            connected: bool = False
 
             def connect(self, ip_address: str, port: int = 8080):
                 logging.debug(f"Connecting to microscope at {ip_address}:{port}")
@@ -5230,27 +5227,40 @@ class DemoMicroscope(FibsemMicroscope):
         
             def insert(self):
                 self.inserted = True
-                logging.debug(f"GIS inserted")
+                logging.debug("GIS inserted")
 
             def retract(self):
                 self.inserted = False
-                logging.debug(f"GIS retracted")
+                logging.debug("GIS retracted")
 
             def turn_heater_on(self):
                 self.heated = True
-                logging.debug(f"GIS heater on")
+                logging.debug("GIS heater on")
             
             def turn_heater_off(self):
                 self.heated = False
-                logging.debug(f"GIS heater off")
+                logging.debug("GIS heater off")
 
             def open(self):
                 self.opened = True
-                logging.debug(f"GIS opened")
+                logging.debug("GIS opened")
 
             def close(self):
                 self.opened = False
-                logging.debug(f"GIS closed")
+                logging.debug("GIS closed")
+
+        @dataclass
+        class MillingSystem:
+            state: MillingState = MillingState.IDLE
+            patterns: List[FibsemPatternSettings] = None
+            patterning_mode: str = "Serial"
+            default_beam_type: BeamType = BeamType.ION
+            default_application_file: str = "Si"
+
+        @dataclass
+        class ImagingSystem:
+            active_view: int = BeamType.ELECTRON.value
+            active_device: int = BeamType.ELECTRON.value
 
         # initialise system
         self.connection = DemoMicroscopeClient()
@@ -5314,13 +5324,17 @@ class DemoMicroscope(FibsemMicroscope):
                 contrast=0.5,
             )
         )
-        self.stage_is_compustage: bool = True
+        self.stage_is_compustage: bool = False
+        self.milling_system = MillingSystem(patterns=[])
+        self.imaging_system = ImagingSystem()
             
         # user, experiment metadata
         # TODO: remove once db integrated
         self.user = FibsemUser.from_environment()
         self.experiment = FibsemExperiment()
 
+        self._last_imaging_settings: ImageSettings = ImageSettings()
+        self.milling_channel: BeamType.ION = BeamType.ION
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
 
@@ -5351,7 +5365,7 @@ class DemoMicroscope(FibsemMicroscope):
 
     def disconnect(self):
         self.connection.disconnect()
-        logging.info(f"Disconnected from Demo Microscope")
+        logging.info("Disconnected from Demo Microscope")
 
     def acquire_image(self, image_settings: ImageSettings) -> FibsemImage:
         _check_beam(image_settings.beam_type, self.system)
@@ -5380,6 +5394,9 @@ class DemoMicroscope(FibsemMicroscope):
         else:
             self._ib_image = image
 
+        # store last imaging settings
+        self._last_imaging_settings = image_settings
+
         logging.debug({"msg": "acquire_image", "metadata": image.metadata.to_dict()})
 
         return image
@@ -5402,45 +5419,45 @@ class DemoMicroscope(FibsemMicroscope):
         return image
 
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
-        self.image_queue = image_queue
-        self.stop_event = stop_event
-        _check_beam(image_settings.beam_type, self.system)
-        logging.info(f"Live imaging: {image_settings.beam_type}")
-        while not stop_event.is_set():
-            image = self.acquire_image(image_settings)
-            image_queue.put(image)
-            self.sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
-            time.sleep(self.sleep_time)
+        pass
+        # self.image_queue = image_queue
+        # self.stop_event = stop_event
+        # _check_beam(image_settings.beam_type, self.system)
+        # logging.info(f"Live imaging: {image_settings.beam_type}")
+        # while not stop_event.is_set():
+        #     image = self.acquire_image(image_settings)
+        #     image_queue.put(image)
+        #     self.sleep_time = image_settings.dwell_time*image_settings.resolution[0]*image_settings.resolution[1]
+        #     time.sleep(self.sleep_time)
 
-    @thread_worker
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
+        pass
+        # logging.info("Consuming image queue")
 
-        logging.info("Consuming image queue")
+        # try:
+        #     while not self.stop_event.is_set():
+        #         image = self.image_queue.get(timeout=1)
+        #         if image.metadata.image_settings.save:
+        #             image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
+        #             filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
+        #             image.save(path=filename)
+        #             logging.info(f"Saved image to {filename}")
 
-        try:
-            while not self.stop_event.is_set():
-                image = self.image_queue.get(timeout=1)
-                if image.metadata.image_settings.save:
-                    image.metadata.image_settings.filename = f"{image.metadata.image_settings.filename}_{utils.current_timestamp()}"
-                    filename = os.path.join(image.metadata.image_settings.path, image.metadata.image_settings.filename)
-                    image.save(path=filename)
-                    logging.info(f"Saved image to {filename}")
+        #         logging.info(f"Image: {image.data.shape}")
+        #         logging.info("-" * 50)
 
-                logging.info(f"Image: {image.data.shape}")
-                logging.info(f"-" * 50)
-
-                if parent_ui is not None:
-                        parent_ui.live_imaging_signal.emit({"image": image})
-                time.sleep(sleep)
-        except KeyboardInterrupt:
-            self.stop_event
-            logging.info("Keyboard interrupt, stopping live imaging")
-        except Exception as e:
-            self.stop_event.set()
-            import traceback
-            logging.error(traceback.format_exc())
-        finally:
-            logging.info("Stopped thread image consumption")
+        #         if parent_ui is not None:
+        #                 parent_ui.live_imaging_signal.emit({"image": image})
+        #         time.sleep(sleep)
+        # except KeyboardInterrupt:
+        #     self.stop_event
+        #     logging.info("Keyboard interrupt, stopping live imaging")
+        # except Exception as e:
+        #     self.stop_event.set()
+        #     import traceback
+        #     logging.error(traceback.format_exc())
+        # finally:
+        #     logging.info("Stopped thread image consumption")
     
     def autocontrast(self, beam_type: BeamType) -> None:
         _check_beam(beam_type, self.system)
@@ -5467,7 +5484,22 @@ class DemoMicroscope(FibsemMicroscope):
 
     def project_stable_move(self, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
 
-        return base_position + FibsemStagePosition(x=dx, y=dy) # TODO: implement
+        scan_rotation = self.get("scan_rotation", beam_type)
+        if np.isclose(scan_rotation, np.pi):
+            dx *= -1.0
+            dy *= -1.0
+        
+        # stable-move-projection
+        point_yz = self._y_corrected_stage_movement(dy, beam_type)
+        dy, dz = point_yz.y, point_yz.z
+
+        # calculate the corrected move to reach that point from base-state?
+        _new_position = deepcopy(base_position)
+        _new_position.x += dx
+        _new_position.y += dy
+        _new_position.z += dz
+
+        return _new_position
 
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
         """Move the stage to the specified position."""
@@ -5499,7 +5531,7 @@ class DemoMicroscope(FibsemMicroscope):
         return self.get_stage_position()
 
     def stable_move(self, dx: float, dy:float, beam_type: BeamType, static_wd: bool=False) -> FibsemStagePosition:
-        
+        return ThermoMicroscope.stable_move(self, dx, dy, beam_type, static_wd)
         _check_stage_movement(self.system, FibsemStagePosition(x=dx, y=dy))
 
         wd = self.get("working_distance", BeamType.ELECTRON) 
@@ -5589,6 +5621,7 @@ class DemoMicroscope(FibsemMicroscope):
             beam_type (BeamType): beam type to move in
             static_wd (bool, optional): whether to fix the working distance. Defaults to False.
         """
+        return ThermoMicroscope._y_corrected_stage_movement(self, expected_y=expected_y, beam_type=beam_type)
         
         # all angles in radians
         stage_tilt_flat_to_electron = np.deg2rad(self.system.electron.column_tilt)
@@ -5656,7 +5689,7 @@ class DemoMicroscope(FibsemMicroscope):
     def retract_manipulator(self):
         """Retract the manipulator."""
         _check_manipulator(self.system)
-        logging.info(f"Retracting manipulator...")
+        logging.info("Retracting manipulator...")
         self.move_manipulator_absolute(FibsemManipulatorPosition(x=0, y=0, z=0, r=0, t=0))
         self.manipulator_system.inserted = False
         logging.debug({"msg": "retract_manipulator"})
@@ -5707,61 +5740,107 @@ class DemoMicroscope(FibsemMicroscope):
 
     def setup_milling(self, mill_settings: FibsemMillingSettings):
         """Setup the milling parameters."""
-        _check_beam(BeamType.ION, self.system)
-        self.set("current", mill_settings.milling_current, BeamType.ION)
-        self.set("voltage", mill_settings.milling_voltage, BeamType.ION)
+
+        _check_beam(mill_settings.milling_channel, self.system)
+        self.milling_system.default_application_file = mill_settings.application_file
+        self.milling_channel = mill_settings.milling_channel
+        self.set_milling_settings(mill_settings=mill_settings)
+        self.clear_patterns()
     
         logging.debug({"msg": "setup_milling", "mill_settings": mill_settings.to_dict()})
 
     def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False) -> None:
         """Run milling with the specified current and voltage."""
         _check_beam(BeamType.ION, self.system)
-        # import random
-        # time.sleep(random.randint(1, 5))
-        time.sleep(5)
+
+        MILLING_SLEEP_TIME = 1
+
+        # start milling
+        start_time = time.time()
+        estimated_time = self.estimate_milling_time()
+        remaining_time = estimated_time
+        self.milling_system.state = MillingState.RUNNING
+
+        if asynch:
+            return # up to the caller to handle
+
+        while remaining_time > 0 or self.get_milling_state() in ACTIVE_MILLING_STATES:
+            logging.debug(f"Running milling: {remaining_time} s remaining.")
+            if self.get_milling_state() == MillingState.PAUSED:
+                logging.info("Milling paused.")
+                time.sleep(MILLING_SLEEP_TIME)
+                continue
+            if self.get_milling_state() == MillingState.IDLE:
+                logging.info("Milling stopped.")
+                break
+            time.sleep(MILLING_SLEEP_TIME)
+            remaining_time -= MILLING_SLEEP_TIME
+
+            # update milling progress via signal
+            self.milling_progress_signal.emit({"progress": {
+                    "state": "update", 
+                    "start_time": start_time, 
+                    "estimated_time": estimated_time, 
+                    "remaining_time": remaining_time}
+                    })
+
+            if remaining_time <= 0: # milling complete
+                self.milling_system.state = MillingState.IDLE
+
+        # stop milling and clear patterns
+        self.milling_system.state = MillingState.IDLE
+        self.clear_patterns()
         logging.debug({"msg": "run_milling", "milling_current": milling_current, "milling_voltage": milling_voltage, "asynch": asynch})
 
     def finish_milling(self, imaging_current: float, imaging_voltage: float) -> None:
         """Finish milling by restoring the imaging current and voltage."""
-        _check_beam(BeamType.ION, self.system)
+        _check_beam(self.milling_channel, self.system)
         logging.info(f"Finishing milling: {imaging_current:.2e}")
-        self.set("current", imaging_current, BeamType.ION)
-        self.set("voltage", imaging_voltage, BeamType.ION)
+        self.set("current", imaging_current, self.milling_channel)
+        self.set("voltage", imaging_voltage, self.milling_channel)
+        self.clear_patterns()
+
+    def clear_patterns(self) -> None:
+        self.milling_system.patterns = []
 
     def stop_milling(self) -> None:
-        return
+        self.milling_system.state = MillingState.IDLE
+    
+    def pause_milling(self) -> None:
+        self.milling_system.state = MillingState.PAUSED
+    
+    def resume_milling(self) -> None:
+        self.milling_system.state = MillingState.RUNNING
+    
+    def get_milling_state(self) -> MillingState:
+        return self.milling_system.state
 
-    def estimate_milling_time(self, patterns: list) -> float:
+    def estimate_milling_time(self) -> float:
         """Estimate the milling time for the specified patterns."""
-        total_time = 0
-        for pattern in patterns:
-            total_time += 5
-        
-        return total_time
-        
+        PATTERN_SLEEP_TIME = 5
+        return PATTERN_SLEEP_TIME * len(self.milling_system.patterns)
 
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
         if pattern_settings.time != 0:
             logging.info(f"Setting pattern time to {pattern_settings.time}.")
+        self.milling_system.patterns.append(pattern_settings)
 
     def draw_line(self, pattern_settings: FibsemLineSettings) -> None:
         logging.debug({"msg": "draw_line", "pattern_settings": pattern_settings.to_dict()})
-
+        self.milling_system.patterns.append(pattern_settings)
+    
     def draw_circle(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
+        self.milling_system.patterns.append(pattern_settings)
     
     def draw_annulus(self, pattern_settings: FibsemCircleSettings) -> None:
         logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
+        self.milling_system.patterns.append(pattern_settings)
 
-
-    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings,
-        path: str):
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str) -> None:
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
-        return 
-    def run_milling_drift_corrected(self):
-        _check_beam(BeamType.ION, self.system)
-        return
+        self.milling_system.patterns.append(pattern_settings)
 
     def setup_sputter(self, protocol: dict) -> None:
         _check_sputter(self.system)
@@ -5807,7 +5886,7 @@ class DemoMicroscope(FibsemMicroscope):
         gis.turn_heater_off()
 
         # retract gis / multichem
-        logging.info(f"Retracting Gas Injection System")
+        logging.info("Retracting Gas Injection System")
         gis.retract()
             
         return
@@ -5820,7 +5899,7 @@ class DemoMicroscope(FibsemMicroscope):
         _check_sputter(self.system)
         logging.info(f"Finishing sputter: {kwargs}")
 
-    def get_available_values(self, key: str, beam_type: BeamType = None) -> list[float]:
+    def get_available_values(self, key: str, beam_type: BeamType = None) -> List[float]:
         
         values = []
         if key == "current":
@@ -5832,7 +5911,7 @@ class DemoMicroscope(FibsemMicroscope):
         
 
         if key == "application_file":
-            values = ["Si", "autolamella", "cryo_Pt_dep"]
+            values = ["Si", "Si-multipass", "Si-ccs", "autolamella", "cryo_Pt_dep"]
 
         if key == "detector_type":
             values = ["ETD", "TLD", "EDS"]
@@ -6078,7 +6157,7 @@ class DemoMicroscope(FibsemMicroscope):
         if beam_type is BeamType.ION:
             if key == "plasma_gas":
                 if not self.system.ion.plasma:
-                    logging.debug(f"Plasma gas cannot be set on this microscope.")
+                    logging.debug("Plasma gas cannot be set on this microscope.")
                     return
                 if not self.check_available_values("plasma_gas", value, beam_type):
                     logging.warning(f"Plasma gas {value} not available. Available values: {self.get_available_values('plasma_gas', beam_type)}")
@@ -6089,38 +6168,59 @@ class DemoMicroscope(FibsemMicroscope):
 
                 return
 
+        # imaging system
+        if key == "active_view":
+            self.imaging_system.active_view = value.value
+            return
+        if key == "active_device":
+            self.imaging_system.active_device = value.value
+
+        # milling
+        if key == "patterning_mode":
+            self.milling_system.patterning_mode = value
+            return
+        if key == "application_file":
+            self.milling_system.default_application_file = value
+            return
+        if key == "milling_channel":
+            self.milling_channel = value
+            return
+        if key == "default_patterning_beam_type":
+            self.milling_system.default_beam_type = value
+            return
+
         # stage properties
         if key == "stage_home":
-            logging.info(f"Homing stage...")
+            logging.info("Homing stage...")
             self.stage_system.is_homed = True
-            logging.info(f"Stage homed.")
+            logging.info("Stage homed.")
             return
         
         if key == "stage_link":
             if self.stage_is_compustage:
-                logging.debug(f"Compustage does not support linking.")
+                logging.debug("Compustage does not support linking.")
                 return
-            logging.info(f"Linking stage...")
+            logging.info("Linking stage...")
             self.stage_system.is_linked = True
-            logging.info(f"Stage linked.")
+            logging.info("Stage linked.")
             return
 
         # chamber properties
         if key == "pump_chamber":
             if value:
-                logging.info(f"Pumping chamber...")
+                logging.info("Pumping chamber...")
                 self.chamber.state = "Pumped"
                 self.chamber.pressure = 1e-6 # 1 uTorr
-                logging.info(f"Chamber pumped.")
+                logging.info("Chamber pumped.")
             else:
                 logging.info(f"Invalid value for pump_chamber: {value}")
             return
         if key == "vent_chamber":
             if value:
-                logging.info(f"Venting chamber...")
+                logging.info("Venting chamber...")
                 self.chamber.state = "Vented"
                 self.chamber.pressure = 1e5
-                logging.info(f"Chamber vented.")
+                logging.info("Chamber vented.")
             else:
                 logging.info(f"Invalid value for vent_chamber: {value}")
             return
@@ -6142,7 +6242,7 @@ class DemoMicroscope(FibsemMicroscope):
         _check_stage(self.system)
         logging.info("Homing Stage")
         self.stage_system.is_homed = True
-        logging.info(f"Stage homed.")
+        logging.info("Stage homed.")
         return
 
 
@@ -6161,7 +6261,6 @@ def printProgressBar(
     bar = fill * filled_length + "-" * (length - filled_length)
     print(f"\r{prefix} |{bar}| {percent}% {suffix}", end="\r")
 
-import warnings
 
 def _check_beam(beam_type: BeamType, settings: SystemSettings):
     """

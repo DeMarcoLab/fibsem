@@ -1,16 +1,15 @@
 
 import os
+from typing import Tuple
 
-
+from fibsem.imaging import autogamma
+from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
+    FibsemImage,
     ImageSettings,
     ReferenceImages,
-    FibsemImage,
-    FibsemRectangle,
 )
-from fibsem.microscope import FibsemMicroscope
-from fibsem.imaging import autogamma
 
 
 def new_image(
@@ -73,7 +72,7 @@ def last_image(microscope: FibsemMicroscope, beam_type: BeamType) -> FibsemImage
 
 def take_reference_images(
     microscope: FibsemMicroscope, image_settings: ImageSettings
-) -> tuple[FibsemImage, FibsemImage]:
+) -> Tuple[FibsemImage, FibsemImage]:
     """
     Acquires a pair of electron and ion reference images using the specified imaging settings and
     a FibsemMicroscope instance.
@@ -87,7 +86,8 @@ def take_reference_images(
         images acquired using the specified microscope and image settings.
 
     """
-    import time 
+    import time
+
     from fibsem.microscope import TescanMicroscope
 
     tmp_beam_type = image_settings.beam_type
@@ -109,7 +109,7 @@ def take_reference_images(
 def take_set_of_reference_images(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
-    hfws: tuple[float],
+    hfws: Tuple[float],
     filename: str = "ref_image",
 ) -> ReferenceImages:
     """

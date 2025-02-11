@@ -7,9 +7,10 @@ from pathlib import Path
 from pprint import pprint
 
 import numpy as np
-from fibsem import acquire, alignment, milling, patterning, utils
+from fibsem import acquire, alignment, milling, utils
+from fibsem.milling.base import get_milling_stages
 from fibsem.structures import BeamType, MicroscopeState,  FibsemImage, FibsemStagePosition
-
+from typing import List
 
 @dataclass
 class Lamella:
@@ -37,7 +38,7 @@ def main():
     acquire.take_reference_images(microscope, settings.image)
 
     # select positions
-    experiment: list[Lamella] = []
+    experiment: List[Lamella] = []
     lamella_no = 1
     settings.image.hfw = 80e-6
     base_path = settings.image.path
@@ -88,11 +89,11 @@ def main():
             alignment.beam_shift_alignment(microscope, settings.image, lamella.reference_image)
                        
             if stage_no == 0:
-                microexpansion_stage = patterning.get_milling_stages("microexpansion", settings.protocol)
+                microexpansion_stage = get_milling_stages("microexpansion", settings.protocol)
                 milling.mill_stage(microscope, microexpansion_stage[0])
 
             # get trench milling pattern, and mill
-            trench_stage = patterning.get_milling_stages("lamella", settings.protocol)[stage_no]
+            trench_stage = get_milling_stages("lamella", settings.protocol)[stage_no]
             milling.mill_stage(microscope, trench_stage)
 
             # retake reference image

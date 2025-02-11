@@ -2,12 +2,11 @@
 
 
 import os
-from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
-
+from typing import List
 from huggingface_hub import HfApi, hf_hub_download
 from fibsem import config as cfg
 
@@ -59,7 +58,7 @@ def decode_segmap(image, nc=5):
     rgb_mask = np.stack([r, g, b], axis=-1).squeeze()
     return rgb_mask
    
-def decode_segmap_v2(image, colormap: list[tuple] = None) -> np.ndarray:
+def decode_segmap_v2(image, colormap: List[tuple] = None) -> np.ndarray:
     """
     Decode segmentation class mask into an RGB image mask
     ref: https://learnopencv.com/pytorch-for-beginners-semantic-segmentation-using-torchvision/
@@ -243,7 +242,7 @@ unet_encoders = [
 ]
         
 
-def plot_segmentations(images: list[np.ndarray], masks: list[np.ndarray], 
+def plot_segmentations(images: List[np.ndarray], masks: List[np.ndarray], 
     alpha=0.5, legend: bool = True, show: bool = True) -> plt.Figure:
     """Plot the image and mask overlaid with a class legend."""
     

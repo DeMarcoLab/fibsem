@@ -1,32 +1,28 @@
 import napari
-
-import logging
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 
 import fibsem
-from fibsem import config as cfg
-from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,TescanMicroscope,
-                               ThermoMicroscope)
+from fibsem.microscope import (
+    DemoMicroscope,
+    FibsemMicroscope,
+    TescanMicroscope,
+    ThermoMicroscope,
+)
 from fibsem.structures import BeamType, MicroscopeSettings
 from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
-from fibsem.ui.FibsemImageViewer import FibsemImageViewer
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.FibsemImageViewer import FibsemImageViewer
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 from fibsem.ui.qtdesigner_files import FibsemUI
-from fibsem.ui.utils import message_box_ui
-
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import pyqtSignal
-
 
 # TODO: add calibrate manipulator procedure for thermo here
 
 class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
-    _minimap_signal = pyqtSignal(object)
 
     def __init__(self, viewer: napari.Viewer):
         super(FibsemUI, self).__init__()
@@ -64,47 +60,30 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def setup_connections(self):
-        from fibsem import utils
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
-        # self.actionCurrent_alignment.triggered.connect(self.align_currents)
         if self.manipulator_widget is not None:
             self.actionManipulator_Positions_Calibration.triggered.connect(self.manipulator_widget.calibrate_manipulator_positions)
-        self.actionOpen_Minimap.triggered.connect(self._open_minimap)
+        self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
 
-    def minimap_connection(self,positions=None):
-
-        if self.minimap_widget is None:
-            return
-        else:
-            self._minimap_signal.emit(positions)
-
-    def _open_minimap(self):
+    def open_minimap_widget(self):
         if self.microscope is None:
-            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Microscope Connected]")
+            napari.utils.notifications.show_warning("Please connect to a microscope first... [No Microscope Connected]")
             return
 
         if self.movement_widget is None:
-            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Movement Widget]")
+            napari.utils.notifications.show_warning("Please connect to a microscope first... [No Movement Widget]")
             return
 
-        # TODO: need to register this with the main ui somehow
-        self.viewer2 = napari.Viewer(ndisplay=2)
-        self.minimap_widget = FibsemMinimapWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
-        self.viewer2.window.add_dock_widget(
-            self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
+        self.viewer_minimap = napari.Viewer(ndisplay=2)
+        self.minimap_widget = FibsemMinimapWidget(viewer=self.viewer_minimap, parent=self)
+        self.viewer_minimap.window.add_dock_widget(
+            widget=self.minimap_widget, 
+            area="right", 
+            add_vertical_stretch=True, 
+            name="OpenFIBSEM Minimap"
         )
-        self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
-
-        self.minimap_widget._minimap_positions.connect(self.movement_widget.minimap_window_positions)
-
-        self.minimap_widget.positions = self.movement_widget.positions
-        self.minimap_widget._update_position_info()
-        self.minimap_widget._update_viewer()
-
         napari.run(max_loop_level=2)
-
-
 
     def align_currents(self):
         second_viewer = napari.Viewer()
@@ -127,7 +106,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setTabVisible(3, _microscope_connected)
         self.tabWidget.setTabVisible(4, _microscope_connected)
         self.actionOpen_Minimap.setVisible(_microscope_connected)
-        # self.actionCurrent_alignment.setVisible(_microscope_connected)
         self.actionManipulator_Positions_Calibration.setVisible(_microscope_connected)
 
 
@@ -159,16 +137,12 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
-                settings=self.settings,
                 viewer=self.viewer,
-                image_widget=self.image_widget,
                 parent=self,
             )
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
-                settings=self.settings,
                 viewer=self.viewer,
-                image_widget=self.image_widget,
                 parent=self,
             )
             if self.microscope.system.manipulator.enabled:
@@ -194,10 +168,6 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             self.system_widget.image_widget = self.image_widget
             self.system_widget.milling_widget = self.milling_widget
-        
-            # connect movement widget signal
-            self.movement_widget.positions_signal.connect(self.minimap_connection)
-            self.movement_widget.move_signal.connect(self.minimap_connection)
 
         else:
             if self.image_widget is None:
