@@ -1178,6 +1178,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return self.get_stage_position()
 
+    # TODO: migrate from stable_move vocab to sample_stage
     def stable_move(self, dx: float, dy: float, beam_type: BeamType, static_wd: bool = False) -> FibsemStagePosition:
         """
         Calculate the corrected stage movements based on the beam_type stage tilt, shuttle pre-tilt, 
@@ -1727,7 +1728,8 @@ class ThermoMicroscope(FibsemMicroscope):
             # update milling progress via signal
             self.milling_progress_signal.emit({"progress": {
                     "state": "update", 
-                    "start_time": start_time, 
+                    "start_time": start_time,
+                    "milling_state": self.get_milling_state(),
                     "estimated_time": estimated_time, 
                     "remaining_time": remaining_time}
                     })
@@ -5532,84 +5534,11 @@ class DemoMicroscope(FibsemMicroscope):
 
     def stable_move(self, dx: float, dy:float, beam_type: BeamType, static_wd: bool=False) -> FibsemStagePosition:
         return ThermoMicroscope.stable_move(self, dx, dy, beam_type, static_wd)
-        _check_stage_movement(self.system, FibsemStagePosition(x=dx, y=dy))
-
-        wd = self.get("working_distance", BeamType.ELECTRON) 
-
-        scan_rotation = self.get("scan_rotation", beam_type)
-        if np.isclose(scan_rotation, np.pi):
-            dx *= -1.0
-            dy *= -1.0
-        
-        # calculate stable movement
-        yz_move = self._y_corrected_stage_movement(
-            expected_y=dy,
-            beam_type=beam_type,
-        )
-        stage_position = FibsemStagePosition(
-            x=dx, y=yz_move.y, z=yz_move.z,
-            r=0, t=0, coordinate_system="RAW",
-        )
-
-        # move stage        
-        self.move_stage_relative(stage_position)
-
-        # adjust working distance to compensate for stage movement
-        if static_wd:
-            wd = self.system.electron.eucentric_height
-        
-        self.set("working_distance", wd, BeamType.ELECTRON)
-
-        # logging
-        logging.debug({"msg": "stable_move", "dx": dx, "dy": dy, 
-                "beam_type": beam_type.name, "static_wd": static_wd, 
-                "working_distance": wd, "scan_rotation": scan_rotation,
-                "position": stage_position.to_dict()})
-
-        return stage_position
 
 
     def vertical_move(self, dy: float, dx:float = 0.0, static_wd: bool=True) -> FibsemStagePosition:
         """Move the stage vertically by the specified amount."""
-        # confirm stage is enabled
-        _check_stage(self.system)
-
-        # get current working distance, to be restored later
-        wd = self.get("working_distance", BeamType.ELECTRON)
-
-        # adjust for scan rotation
-        scan_rotation = self.get("scan_rotation", BeamType.ION)
-        if np.isclose(scan_rotation, np.pi):
-            dx *= -1.0
-            dy *= -1.0
-
-        # TODO: implement perspective correction
-        PERSPECTIVE_CORRECTION = 0.9
-        z_move = dy / np.cos(np.deg2rad(90 - self.system.ion.column_tilt)) * PERSPECTIVE_CORRECTION  # TODO: MAGIC NUMBER, 90 - fib tilt
-
-        # TODO: do this manually without autoscript in raw coordinates
-        stage_position = FibsemStagePosition(
-            x=dx,
-            z=z_move, 
-            coordinate_system="Specimen"
-        )
-
-        # move stage
-        self.move_stage_relative(stage_position)
-
-        if static_wd:
-            self.set("working_distance", self.system.electron.eucentric_height, BeamType.ELECTRON)
-            self.set("working_distance", self.system.ion.eucentric_height, BeamType.ION)
-        else:
-            self.set("working_distance", wd, BeamType.ELECTRON)
-    
-        # logging
-        logging.debug({"msg": "vertical_move", "dy": dy, "dx": dx, 
-                "static_wd": static_wd, "working_distance": wd, 
-                "scan_rotation": scan_rotation, 
-                "position": stage_position.to_dict()})
-
-        return self.get_stage_position()
+        return ThermoMicroscope.vertical_move(self, dy, dx, static_wd)
 
     def _y_corrected_stage_movement(self, expected_y: float, beam_type: BeamType) -> FibsemStagePosition:
         """
@@ -5622,58 +5551,6 @@ class DemoMicroscope(FibsemMicroscope):
             static_wd (bool, optional): whether to fix the working distance. Defaults to False.
         """
         return ThermoMicroscope._y_corrected_stage_movement(self, expected_y=expected_y, beam_type=beam_type)
-        
-        # all angles in radians
-        stage_tilt_flat_to_electron = np.deg2rad(self.system.electron.column_tilt)
-        stage_tilt_flat_to_ion = np.deg2rad(self.system.ion.column_tilt)
-
-        stage_pretilt = np.deg2rad(self.system.stage.shuttle_pre_tilt)
-
-        stage_rotation_flat_to_eb = np.deg2rad(
-            self.system.stage.rotation_reference
-        ) % (2 * np.pi)
-        stage_rotation_flat_to_ion = np.deg2rad(
-            self.system.stage.rotation_180
-        ) % (2 * np.pi)
-
-        # current stage position
-        current_stage_position = self.get_stage_position()
-        stage_rotation = current_stage_position.r % (2 * np.pi)
-        stage_tilt = current_stage_position.t
-
-        PRETILT_SIGN = 1.0
-        # pretilt angle depends on rotation
-        from fibsem import movement
-        if movement.rotation_angle_is_smaller(stage_rotation, stage_rotation_flat_to_eb, atol=5):
-            PRETILT_SIGN = 1.0
-        if movement.rotation_angle_is_smaller(
-            stage_rotation, stage_rotation_flat_to_ion, atol=5
-        ):
-            PRETILT_SIGN = -1.0
-
-        # corrected_pretilt_angle = PRETILT_SIGN * stage_tilt_flat_to_electron
-        corrected_pretilt_angle = PRETILT_SIGN * (stage_pretilt + stage_tilt_flat_to_electron) # electron angle = 0, ion = 52
-
-        # perspective tilt adjustment (difference between perspective view and sample coordinate system)
-        if beam_type == BeamType.ELECTRON:
-            perspective_tilt_adjustment = -corrected_pretilt_angle
-            SCALE_FACTOR = 1.0  # 0.78342  # patented technology
-        elif beam_type == BeamType.ION:
-            perspective_tilt_adjustment = (
-                -corrected_pretilt_angle - stage_tilt_flat_to_ion
-            )
-            SCALE_FACTOR = 1.0
-
-        # the amount the sample has to move in the y-axis
-        y_sample_move = (expected_y * SCALE_FACTOR) / np.cos(
-            stage_tilt + perspective_tilt_adjustment
-        )
-       
-        # the amount the stage has to move in each axis
-        y_move = y_sample_move * np.cos(corrected_pretilt_angle)
-        z_move = -y_sample_move * np.sin(corrected_pretilt_angle) #TODO: investigate this
-
-        return FibsemStagePosition(x=0, y=y_move, z=z_move)
 
     def insert_manipulator(self, name: str = "PARK") -> FibsemManipulatorPosition:
         """Insert the manipulator to the specified position."""
@@ -5779,7 +5656,8 @@ class DemoMicroscope(FibsemMicroscope):
             # update milling progress via signal
             self.milling_progress_signal.emit({"progress": {
                     "state": "update", 
-                    "start_time": start_time, 
+                    "start_time": start_time,
+                    "milling_state": self.get_milling_state(),
                     "estimated_time": estimated_time, 
                     "remaining_time": remaining_time}
                     })
