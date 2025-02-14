@@ -409,7 +409,8 @@ class TrenchPattern(BasePattern):
             "upper_trench_height": self.upper_trench_height,
             "lower_trench_height": self.lower_trench_height,
             "cross_section": self.cross_section.name,
-            "time": self.time
+            "time": self.time,
+            "fillet": self.fillet,
         }
     
     @classmethod
@@ -420,6 +421,7 @@ class TrenchPattern(BasePattern):
             spacing=ddict["spacing"],
             upper_trench_height=ddict["upper_trench_height"],
             lower_trench_height=ddict["lower_trench_height"],
+            fillet=ddict.get("fillet", 0),
             cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
             time=ddict.get("time", 0),
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
