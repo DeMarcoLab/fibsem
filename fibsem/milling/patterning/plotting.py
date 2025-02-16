@@ -100,8 +100,8 @@ def _draw_rectangle_pattern(
     patches = []
     p: FibsemRectangleSettings
     for i, p in enumerate(pattern.define(), 1):
-        # TODO: support shapes other than rectanges
         if not isinstance(p, FibsemRectangleSettings):
+            logging.debug(f"Pattern {p} is not a rectangle, skipping")
             continue
         # convert from microscope image (real-space) to image pixel-space
         px, py, width, height = _rect_pattern_to_image_pixels(

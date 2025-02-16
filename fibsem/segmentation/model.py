@@ -204,8 +204,15 @@ def load_model(
         from fibsem.segmentation.nnunet_model import SegmentationModelNNUnet
         model = SegmentationModelNNUnet(checkpoint=checkpoint)
     elif backend == "onnx":
-        from fibsem.segmentation.onnx_model import SegmentationModelONNX
-        model = SegmentationModelONNX(checkpoint=checkpoint)
+        from fibsem.segmentation.onnx_model import SegmentationModelONNX, SegmentationModelWindowONNX
+        for onnx_model in [SegmentationModelWindowONNX, SegmentationModelONNX]:
+            try:
+                logging.debug(f"Trying to load {onnx_model}")
+                model = onnx_model(checkpoint=checkpoint)
+                break
+            except Exception as e:
+                logging.debug(f"Failed to load {type(onnx_model)} for {checkpoint}: {e}")
+
     elif backend == "huggingface":
         from fibsem.segmentation.hf_segmentation_model import SegmentationModelHuggingFace
         model = SegmentationModelHuggingFace(checkpoint=checkpoint)
