@@ -88,7 +88,7 @@ def take_reference_images(
     """
     import time
 
-    from fibsem.microscope import TescanMicroscope
+    from fibsem.microscopes.tescan import TescanMicroscope # TODO: handle this better
 
     tmp_beam_type = image_settings.beam_type
     
@@ -99,7 +99,7 @@ def take_reference_images(
     # acquire ion image
     image_settings.beam_type = BeamType.ION
     if isinstance(microscope, TescanMicroscope):
-        time.sleep(3)
+        time.sleep(1)
     ib_image = acquire_image(microscope, image_settings)
     image_settings.beam_type = tmp_beam_type  # reset to original beam type
 
