@@ -6,7 +6,7 @@ from typing import List, Union, Dict, Any, Tuple
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
 from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
-from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings
+from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings, CrossSectionPattern
 
 @dataclass
 class MillingStrategyConfig(ABC):
@@ -146,8 +146,11 @@ def estimate_milling_time(pattern: BasePattern, milling_current: float) -> float
     sputter_rate = sputter_rate * (milling_current / sp_keys[0])
     volume = pattern.volume # m3
 
+    if hasattr(pattern, "cross_section") and pattern.cross_section is CrossSectionPattern.CleaningCrossSection:
+        volume *= 0.66 # ccs is approx 2/3 of the volume of a rectangle
+
     time = (volume *1e6**3) / sputter_rate
-    return time * 2.0 # QUERY: accuracy of this estimate?
+    return time * 0.5 # QUERY: accuracy of this estimate?
 
 def estimate_total_milling_time(stages: List[FibsemMillingStage]) -> float:
     """Estimate the total milling time for a list of milling stages"""
