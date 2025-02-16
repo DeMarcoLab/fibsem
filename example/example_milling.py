@@ -1,7 +1,14 @@
-from fibsem import utils
-from fibsem.structures import FibsemMillingSettings, FibsemRectangleSettings, FibsemLineSettings
-from fibsem import milling
 import logging
+
+from fibsem import milling, utils
+from fibsem.structures import (
+    FibsemCircleSettings,
+    FibsemLineSettings,
+    FibsemMillingSettings,
+    FibsemRectangleSettings,
+)
+from fibsem.milling import FibsemMillingStage, MillingAlignment
+from fibsem.milling.patterning.patterns2 import RectanglePattern, Point
 
 """
 This script demonstrates how to use the milling module to mill a rectangle and two lines.
@@ -20,52 +27,79 @@ def main():
     # connect to microscope
     microscope, settings = utils.setup_session(manufacturer="Demo", ip_address="localhost")
 
-    # rectangle pattern
-    rectangle_pattern = FibsemRectangleSettings(
+
+    # setup milling stage (settings and alignment)
+    stage = FibsemMillingStage(
+        milling=FibsemMillingSettings(
+            milling_current=2.0e-9,
+            milling_voltage=30.0e3,
+            hfw=100e-6,
+            application_file="Si",
+            patterning_mode="Serial",
+        ),
+        alignment=MillingAlignment(
+            enabled=False
+        )
+    )
+
+    # rectangle
+    rectangle_shape = FibsemRectangleSettings(
         width = 10.0e-6,
         height = 10.0e-6,
         depth = 2.0e-6,
         rotation = 0.0,
-        center_x = 0.0,
-        center_y = 0.0,
+        centre_x = 0.0,
+        centre_y = 0.0,
     )
 
-    # line pattern one
-    line_pattern_01 = FibsemLineSettings(
+    # circle
+    circle_shape = FibsemCircleSettings(
+        radius = 10.0e-6,
+        depth = 2.0e-6,
+        centre_x = 10e-6,
+        centre_y = 10e-6,
+    )
+
+    # line pattern
+    line_shape = FibsemLineSettings(
         start_x = 0.0,
         start_y = 0.0,
         end_x = 10.0e-6,
         end_y = 10.0e-6,
-        depth = 2.0e-6,
+        depth = 1.0e-6,
     )
 
-    # line pattern two (mirror of line pattern one)
-    line_pattern_02 = line_pattern_01
-    line_pattern_02.end_y = -line_pattern_01.end_y
-
     logging.info(f"""\nMilling Pattern Example: """)
-
     logging.info(f"The current milling settings are: \n{settings.milling}")
-    logging.info(f"The current rectangle pattern is \n{rectangle_pattern}")
-    logging.info(f"The current line pattern one is \n{line_pattern_01}")
-    logging.info(f"The current line pattern two is \n{line_pattern_02}")
+    logging.info(f"The current rectangle pattern is \n{rectangle_shape}")
+    logging.info(f"The current circle pattern ins is \n{circle_shape}")
+    logging.info(f"The current line pattern is \n{line_shape}")
     logging.info("---------------------------------- Milling ----------------------------------\n")
     # setup patterns in a list
-    patterns = [rectangle_pattern, line_pattern_01, line_pattern_02]
+    patterns = [rectangle_shape, circle_shape, line_shape]
 
-    # setup milling
-    milling.setup_milling(microscope, settings.milling)
+    milling.setup_milling(microscope, stage)
 
     # draw patterns
-    for pattern in patterns:
-        milling.draw_pattern(microscope, pattern)
+    milling.draw_patterns(microscope, patterns)
 
     # run milling
-    milling.run_milling(microscope, settings.milling.milling_current, milling_voltage=settings.milling.milling_voltage)
+    milling.run_milling(microscope, stage.milling.milling_current, milling_voltage=stage.milling.milling_voltage)
 
     # finish milling
     milling.finish_milling(microscope, microscope.system.ion.beam.beam_current)
 
+
+    rect = RectanglePattern(
+        width=10e-6,
+        height=10e-6,
+        depth=2e-6,
+        rotation=0,
+        point=Point(0, 0)
+    )
+    stage.pattern = rect
+
+    milling.mill_stages(microscope, stage)
 
 if __name__ == "__main__":
     main()
