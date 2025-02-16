@@ -180,7 +180,7 @@ class FibsemMicroscope(ABC):
 
         stage_position = self.get("stage_position")
         logging.debug({"msg": "get_stage_position", "pos": stage_position.to_dict()})
-        return stage_position
+        return deepcopy(stage_position)
     
     @abstractmethod
     def move_stage_absolute(self, position: FibsemStagePosition) -> None:
@@ -547,7 +547,7 @@ class FibsemMicroscope(ABC):
         
         logging.debug({"msg": "get_microscope_state", "state": current_microscope_state.to_dict()})
 
-        return current_microscope_state
+        return deepcopy(current_microscope_state)
 
     def set_microscope_state(self, microscope_state: MicroscopeState) -> None:
         """Reset the microscope state to the provided state."""
