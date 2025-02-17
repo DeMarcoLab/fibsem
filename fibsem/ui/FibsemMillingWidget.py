@@ -74,6 +74,7 @@ UNSCALED_VALUES = [
     "max_milling_cycles",
     "sem_frame_integration",
     "fib_frame_integration",
+    "overtilt",
 ]
 LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
@@ -264,6 +265,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.checkBox_alignment_interval_enabled.setVisible(DRIFT_CORRECTION_ENABLED)
         self.label_alignment_interval.setVisible(DRIFT_CORRECTION_ENABLED)
         self.doubleSpinBox_alignment_interval.setVisible(DRIFT_CORRECTION_ENABLED)
+        self.checkBox_alignment_enabled.toggled.connect(self.update_milling_settings_from_ui)
 
         # external signals
         self.image_widget.viewer_update_signal.connect(self.update_ui) # update the ui when the image is updated
@@ -279,7 +281,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             # QUERY: support renaming stages
     
     def on_stage_checked(self, item: QListWidgetItem):
-        print(f"Item '{item.text()}' check state changed to: {item.checkState() == Qt.Checked}")
         # TODO: add a check to see if to enable/disable milling
         self.update_ui()
 
@@ -443,6 +444,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                 control_widget.setKeyboardTracking(False)
 
                 val = scale_value_for_display(key, val, constants.SI_TO_MICRO) # TODO: confirm
+                if key in ["overtilt"]:
+                    control_widget.setSuffix(" °")
                 control_widget.setValue(val)
             if isinstance(val, str):
                 control_widget = QtWidgets.QLineEdit()
@@ -494,9 +497,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             # TODO: add support for scaling, str, bool, etc.
 
             setattr(strategy.config, key, value)
-
-        # from pprint import pprint
-        # pprint(strategy.to_dict())
 
         return strategy
 
@@ -573,7 +573,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         milling_stage.pattern = self.get_pattern_from_ui_v2()
         milling_stage.alignment = self.get_milling_alignment_from_ui()
         milling_stage.strategy = self.get_milling_strategy_from_ui()
-        milling_stage.imaging = self.get_imaging_settings_from_ui()
+        milling_stage.imaging = self.get_imaging_settings_from_ui() # NOTE: this is shared across all stages?
 
         napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
 

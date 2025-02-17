@@ -123,7 +123,7 @@ def beam_shift_alignment_v2(
     """
 
     import time
-    time.sleep(3) # threading is too fast?
+    time.sleep(2) # threading is too fast?
     image_settings = ImageSettings.fromFibsemImage(ref_image)
     image_settings.autocontrast = False
     image_settings.save = True
@@ -148,7 +148,6 @@ def beam_shift_alignment_v2(
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
     
-    # TODO: use structured logging format
     msgd = {"msg": "beam_shift_alignment", "dx": dx, "dy": dy, "image_settings": image_settings.to_dict()}
     logging.debug(msgd)
 

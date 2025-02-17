@@ -56,6 +56,7 @@ def setup_milling(
                                         beam_type=milling_stage.milling.milling_channel, 
                                         steps=1)  # high current -> damaging
 
+# TODO: migrate run milling to take milling_stage argument, rather than current, voltage
 def run_milling(
     microscope: FibsemMicroscope,
     milling_current: float,
@@ -79,7 +80,7 @@ def finish_milling(
     Args:
         microscope (FIbsemMicroscope): Fibsem microscope instance
         imaging_current (float, optional): Imaging Current. Defaults to 20e-12.
-
+        imaging_voltage: Imaging Voltage. Defaults to 30e3.
     """
     # restore imaging current
     logging.info(f"Changing to Imaging Current: {imaging_current:.2e}")
@@ -87,14 +88,13 @@ def finish_milling(
     logging.info("Finished Ion Beam Milling.")
 
 def draw_patterns(microscope: FibsemMicroscope, patterns: List[FibsemPatternSettings]) -> None:
-    """Draw a milling pattern from settings
+    """Draw milling patterns on the microscope from the list of settings
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
+        patterns (List[FibsemPatternSettings]): List of milling patterns
     """
-    microscope_patterns = []
     for pattern in patterns:
-        microscope_patterns.append(draw_pattern(microscope, pattern))
-    return microscope_patterns
+        draw_pattern(microscope, pattern)
 
         
 def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
@@ -103,25 +103,18 @@ def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
         pattern_settings (FibsemPatternSettings): pattern settings
-        mill_settings (FibsemMillingSettings): milling settings
     """
     if isinstance(pattern, FibsemRectangleSettings):
-        microscope_pattern = microscope.draw_rectangle(pattern)
+        microscope.draw_rectangle(pattern)
 
     elif isinstance(pattern, FibsemLineSettings):
-        microscope_pattern = microscope.draw_line(pattern)
+        microscope.draw_line(pattern)
 
     elif isinstance(pattern, FibsemCircleSettings):
-        if pattern.thickness != 0:
-            microscope_pattern = microscope.draw_annulus(pattern)
-        else:
-            microscope_pattern = microscope.draw_circle(pattern)
+        microscope.draw_circle(pattern)
 
     elif isinstance(pattern, FibsemBitmapSettings):
-        microscope_pattern = microscope.draw_bitmap_pattern(pattern, pattern.path)
-        
-    return microscope_pattern
-
+        microscope.draw_bitmap_pattern(pattern, pattern.path)
 
 def convert_to_bitmap_format(path):
     import os
@@ -135,7 +128,7 @@ def convert_to_bitmap_format(path):
 
 
 def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: bool=False):
-
+    logging.warning("mill_stage will be deprecated in the next version. Use mill_stages instead.")
     # set up milling
     setup_milling(microscope, milling_stage=stage)
 
@@ -249,7 +242,6 @@ def acquire_images_after_milling(
     )
 
     # set imaging parameters (filename, path, etc.)
-    # imaging_settings = microscope.get_imaging_settings(beam_type=BeamType.ION) # TODO: give better control over these imaging settings.
     milling_stage.imaging.path = path
     milling_stage.imaging.filename = f"ref_milling_{milling_stage.name.replace(' ', '-')}_finished_{str(start_time).replace('.', '_')}"
     
