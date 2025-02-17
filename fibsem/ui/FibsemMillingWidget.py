@@ -575,8 +575,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         milling_stage.strategy = self.get_milling_strategy_from_ui()
         milling_stage.imaging = self.get_imaging_settings_from_ui() # NOTE: this is shared across all stages?
 
-        napari.utils.notifications.show_info(f"Updated {milling_stage.name}.")
-
     def clear_grid_layout(self, grid_layout: QtWidgets.QGridLayout) -> None:
         # clear layout
         for i in reversed(range(grid_layout.count())):
