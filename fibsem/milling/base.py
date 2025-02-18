@@ -150,7 +150,7 @@ def estimate_milling_time(pattern: BasePattern, milling_current: float) -> float
         volume *= 0.66 # ccs is approx 2/3 of the volume of a rectangle
 
     time = (volume *1e6**3) / sputter_rate
-    return time * 0.5 # QUERY: accuracy of this estimate?
+    return time * 0.75 # QUERY: accuracy of this estimate?
 
 def estimate_total_milling_time(stages: List[FibsemMillingStage]) -> float:
     """Estimate the total milling time for a list of milling stages"""

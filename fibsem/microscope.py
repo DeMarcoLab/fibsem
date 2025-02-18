@@ -151,7 +151,7 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def autocontrast(self, beam_type: BeamType) -> None:
+    def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
         pass
 
     @abstractmethod
@@ -1072,7 +1072,7 @@ class ThermoMicroscope(FibsemMicroscope):
         #         import traceback
         #         logging.error(traceback.format_exc())
 
-    def autocontrast(self, beam_type: BeamType) -> None:
+    def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
         """
         Automatically adjust the microscope image contrast for the specified beam type.
 
@@ -1083,7 +1083,21 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug(f"Running autocontrast on {beam_type.name}.")
         self.connection.imaging.set_active_view(beam_type.value)
         self.connection.imaging.set_active_device(beam_type.value)
+        if reduced_area is not None:
+            # TODO: migrate to set api
+            beam = (self.connection.beams.electron_beam
+                    if beam_type == BeamType.ELECTRON
+                    else self.connection.beams.ion_beam)
+            rect = reduced_area.__to_FEI__()
+            beam.scanning.mode.set_reduced_area(left=rect.left, 
+                                                top=rect.top, 
+                                                width=rect.width, 
+                                                height=rect.height)
+            
         self.connection.auto_functions.run_auto_cb()
+        if reduced_area is not None:
+            beam.scanning.mode.set_full_frame()
+        
         logging.debug({"msg": "autocontrast", "beam_type": beam_type.name})
 
     def auto_focus(self, beam_type: BeamType) -> None:
@@ -1920,12 +1934,18 @@ class ThermoMicroscope(FibsemMicroscope):
         Raises:
             autoscript.exceptions.InvalidArgumentException: if any of the pattern parameters are invalid.
         """
+
+        outer_diameter = 2 * pattern_settings.radius
+        inner_diameter = 0
+        if  pattern_settings.thickness != 0:       
+            inner_diameter = outer_diameter - 2*pattern_settings.thickness
+
         self.connection.patterning.set_default_application_file("Si")
         pattern = self.connection.patterning.create_circle(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
-            outer_diameter=2*pattern_settings.radius,
-            inner_diameter = 0,
+            outer_diameter = outer_diameter,
+            inner_diameter = inner_diameter,
             depth=pattern_settings.depth,
         )
         pattern.application_file = "Si"
@@ -1939,32 +1959,6 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
         self._patterns.append(pattern)
         return pattern
-
-    def draw_annulus(self, pattern_settings: FibsemCircleSettings):
-
-        outer_diameter = 2*pattern_settings.radius
-        inner_diameter = outer_diameter - 2*pattern_settings.thickness
-
-        self.connection.patterning.set_default_application_file("Si")
-        pattern = self.connection.patterning.create_circle(
-            center_x=pattern_settings.centre_x,
-            center_y=pattern_settings.centre_y,
-            outer_diameter=outer_diameter,
-            inner_diameter = inner_diameter,
-            depth=pattern_settings.depth,
-        )
-        pattern.application_file = "Si"
-        pattern.overlap_r = 0.8
-        pattern.overlap_t = 0.8
-        self.connection.patterning.set_default_application_file(self._default_application_file)
-
-        # set exclusion
-        pattern.is_exclusion_zone = pattern_settings.is_exclusion
-
-        logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
-        self._patterns.append(pattern)
-        return pattern
-    
     
     def draw_bitmap_pattern(
         self,
@@ -2794,6 +2788,19 @@ class ThermoMicroscope(FibsemMicroscope):
             beam.scanning.resolution.value = resolution
             return 
         
+        # scanning modes
+        if key == "reduced_area":
+            rect = value.__to_FEI__()
+            beam.scanning.mode.set_reduced_area(left=rect.left, 
+                                                top=rect.top, 
+                                                width=rect.width, 
+                                                height=rect.height)
+            return
+        
+        if key == "full_frame":
+            beam.scanning.mode.set_full_frame()
+            return
+
         # beam control
         if key == "on":
             _check_beam(beam_type, self.system)
@@ -4464,32 +4471,6 @@ class TescanMicroscope(FibsemMicroscope):
 
         return pattern
     
-    def draw_annulus(self,pattern_settings: FibsemCircleSettings):
-
-        """Draws an annulus (donut) pattern on the current imaging view of the microscope.
-
-        Args: 
-            pattern_settings (FibsemCircleSettings): A data class object specifying the pattern parameters,
-            including the centre point, outer radius and thickness of the annulus, and the depth of the pattern.
-
-        Returns:
-            annulus pattern object
-        """
-        outer_radius = pattern_settings.radius
-        inner_radius = pattern_settings.radius - pattern_settings.thickness
-
-
-        pattern = self.layer.addAnnulusFilled(
-            CenterX=pattern_settings.centre_x,
-            CenterY=pattern_settings.centre_y,
-            RadiusA=outer_radius,
-            RadiusB=inner_radius,
-            Depth=pattern_settings.depth,
-            DepthUnit='m',
-        )
-
-        return pattern
-    
     def draw_bitmap_pattern(
         self,
         pattern_settings: FibsemBitmapSettings,
@@ -5461,8 +5442,12 @@ class DemoMicroscope(FibsemMicroscope):
         # finally:
         #     logging.info("Stopped thread image consumption")
     
-    def autocontrast(self, beam_type: BeamType) -> None:
+    def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
         _check_beam(beam_type, self.system)
+        if reduced_area is not None:
+            self.set("reduced_area", reduced_area, beam_type=beam_type)
+        if reduced_area:
+            self.set("full_frame", None)
         logging.debug({"msg": "autocontrast", "beam_type": beam_type.name})
 
     def auto_focus(self, beam_type: BeamType) -> None:
@@ -5712,10 +5697,6 @@ class DemoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
         self.milling_system.patterns.append(pattern_settings)
     
-    def draw_annulus(self, pattern_settings: FibsemCircleSettings) -> None:
-        logging.debug({"msg": "draw_annulus", "pattern_settings": pattern_settings.to_dict()})
-        self.milling_system.patterns.append(pattern_settings)
-
     def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str) -> None:
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
         self.milling_system.patterns.append(pattern_settings)
@@ -5969,6 +5950,12 @@ class DemoMicroscope(FibsemMicroscope):
             return
         if key == "dwell_time":
             beam.dwell_time = value
+            return
+
+        if key == "reduced_area":
+            # TODO: add keys for sim
+            return
+        if key == "full_frame":
             return
 
         # beam control
