@@ -54,7 +54,7 @@ def setup_milling(
         alignment.multi_step_alignment_v2(microscope=microscope, 
                                         ref_image=ref_image, 
                                         beam_type=milling_stage.milling.milling_channel, 
-                                        steps=1)  # high current -> damaging
+                                        steps=1, use_autocontrast=True)  # high current -> damaging
 
 # TODO: migrate run milling to take milling_stage argument, rather than current, voltage
 def run_milling(

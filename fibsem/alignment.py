@@ -104,6 +104,7 @@ def beam_shift_alignment_v2(
     microscope: FibsemMicroscope,
     ref_image: FibsemImage,
     alignment_current: Optional[float] = None,
+    use_autocontrast: bool = False,
 ):
     """Aligns the images by adjusting the beam shift instead of moving the stage.
 
@@ -125,7 +126,7 @@ def beam_shift_alignment_v2(
     import time
     time.sleep(2) # threading is too fast?
     image_settings = ImageSettings.fromFibsemImage(ref_image)
-    image_settings.autocontrast = False
+    image_settings.autocontrast = use_autocontrast
     image_settings.save = True
     image_settings.filename = f"beam_shift_alignment_{utils.current_timestamp_v2()}"
 
@@ -618,7 +619,8 @@ def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSet
 
 def multi_step_alignment_v2(microscope: FibsemMicroscope, 
     ref_image: FibsemImage, beam_type: BeamType, 
-    alignment_current: float = None, steps:int = 3) -> None:
+    alignment_current: float = None, steps:int = 3, 
+    use_autocontrast: bool = False) -> None:
     """Runs the beam shift alignment multiple times. Optionally sets the beam current before alignment."""
     # set alignment current
     if alignment_current is not None:
@@ -626,7 +628,9 @@ def multi_step_alignment_v2(microscope: FibsemMicroscope,
         microscope.set("current", alignment_current, beam_type)
 
     for i in range(steps):
-        beam_shift_alignment_v2(microscope, ref_image=ref_image)
+        beam_shift_alignment_v2(microscope=microscope, 
+                                ref_image=ref_image, 
+                                use_autocontrast=use_autocontrast)
     
     # reset beam current
     if alignment_current is not None:
