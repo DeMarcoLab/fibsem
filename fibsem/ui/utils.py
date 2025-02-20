@@ -174,3 +174,101 @@ def open_information_dialog(microscope: FibsemMicroscope, parent=None):
 
     # exec
     msg.exec_()
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def create_nested_squares(array_size: int = 1000, 
+                          orange_size: int = 800, 
+                          green_size: int = 600) -> np.ndarray:
+    """
+    Create a 2D numpy array with nested squares.
+    
+    Colors:
+      white = 0 (background)
+      orange = 1 (outer square)
+      green = 2 (inner square)
+      
+    Args:
+        array_size (int): Size of the output square array (array_size x array_size).
+        orange_size (int): Side length of the orange square.
+        green_size (int): Side length of the green square.
+        
+    Returns:
+        np.ndarray: 2D array representing the nested squares.
+    """
+    if green_size > orange_size:
+        raise ValueError("green_size must be less than or equal to orange_size")
+        
+    # Create white background 
+    img = np.zeros((array_size, array_size), dtype=np.uint8)
+    
+    center = array_size // 2
+    
+    # Draw the orange square
+    half_orange = orange_size // 2
+    orange_top = center - half_orange
+    orange_bottom = orange_top + orange_size
+    img[orange_top:orange_bottom, orange_top:orange_bottom] = 1  # set orange square to 1
+    
+    # Draw the green square inside the orange square
+    half_green = green_size // 2
+    green_top = center - half_green
+    green_bottom = green_top + green_size
+    img[green_top:green_bottom, green_top:green_bottom] = 2  # set green square to 2
+    
+    return img
+
+def tile_nested_squares(tile_rows: int, tile_cols: int,
+                        array_size: int = 1000, 
+                        orange_size: int = 800, 
+                        green_size: int = 600) -> np.ndarray:
+    """
+    Create a large grid by tiling nested squares.
+    
+    Args:
+        tile_rows (int): Number of tiles vertically.
+        tile_cols (int): Number of tiles horizontally.
+        array_size (int): Size of each nested square array.
+        orange_size (int): Side length of the orange square.
+        green_size (int): Side length of the green square.
+    
+    Returns:
+        np.ndarray: Tiled grid of nested squares.
+    """
+    tile = create_nested_squares(array_size, orange_size, green_size)
+    # Use np.tile to replicate the tile
+    tiled_grid = np.tile(tile, (tile_rows, tile_cols))
+    return tiled_grid
+
+
+# Example usage:
+if __name__ == "__main__":
+
+    gridbar_thickness = 200
+    mesh_size = 700
+    keepout = 100
+    pixelsize = 1e-6
+
+    array_size = gridbar_thickness + mesh_size
+    orange_size = mesh_size
+    green_size = mesh_size - 2*keepout
+    # Create a 3x3 grid of nested squares
+    grid = tile_nested_squares(tile_rows=5,
+                               tile_cols=5,
+                               array_size=array_size,
+                               orange_size=orange_size,
+                               green_size=green_size)
+    import napari
+
+    cmap = {0: 'red', 1: 'orange', 2: 'green'}
+
+    viewer = napari.view_labels(grid,
+                                name="Grid Overlay",
+                                scale=(pixelsize, pixelsize),
+                                colormap=cmap)
+    viewer.scale_bar.visible = True
+    viewer.scale_bar.unit = "m"
+
+    napari.run()
