@@ -24,6 +24,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     FibsemUser,
     ImageSettings,
+    FibsemRectangle,
     MicroscopeState,
     MillingState,
     Point,
@@ -309,8 +310,13 @@ class OdemisMicroscope(FibsemMicroscope):
     def last_image(self, beam_type: BeamType) -> FibsemImage:
         pass
 
-    def autocontrast(self, beam_type: BeamType) -> None:
-        self.connection.run_auto_contrast_brightness(beam_type_to_odemis[beam_type])
+    def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
+        channel = beam_type_to_odemis[beam_type]
+        if reduced_area is not None:
+            self.connection.set_reduced_area_scan_mode(channel, **reduced_area.to_dict())
+        self.connection.run_auto_contrast_brightness(channel=channel)
+        if reduced_area is not None:
+            self.connection.set_full_frame_scan_mode(channel)
 
     def auto_focus(self, beam_type: BeamType) -> None:
         self.connection.run_auto_focus(beam_type_to_odemis[beam_type])
