@@ -1,19 +1,17 @@
 import numpy as np
 import torch
 from transformers import SamModel, SamProcessor
-from typing import List
+from typing import List, Tuple
 
 class SamModelWrapper:
     def __init__(self, checkpoint: str = "facebook/sam-vit-base", device: str = None):
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
-        model = SamModel.from_pretrained(checkpoint).to(self.device)
-        processor = SamProcessor.from_pretrained(checkpoint)
 
         self.checkpoint = checkpoint
-        self.model = model
-        self.processor = processor
+        self.model: SamModel =  SamModel.from_pretrained(checkpoint).to(self.device)
+        self.processor: SamProcessor = SamProcessor.from_pretrained(checkpoint)
 
     def __call__(
         self,
@@ -39,20 +37,20 @@ class SamModelWrapper:
     # to mimic the functionality of sam predictor
     def predict(
         self,
-        image,
+        image: np.ndarray,
         points: List[List[List[int]]] = None,
         labels: List[List[bool]] = None,
         input_masks: np.ndarray = None,
         multimask_output: bool = False,
-    ):
+    ) -> Tuple[np.ndarray, float, np.ndarray]:
         outputs, inputs = self(image, points, labels, input_masks, multimask_output)
-        masks = self.processor.image_processor.post_process_masks(
+        masks: torch.Tensor = self.processor.image_processor.post_process_masks(
             outputs.pred_masks.cpu(),
             inputs["original_sizes"].cpu(),
             inputs["reshaped_input_sizes"].cpu(),
         )
-        scores = outputs.iou_scores
-        logits = outputs.pred_masks
+        scores: torch.Tensor = outputs.iou_scores
+        logits: torch.Tensor = outputs.pred_masks
 
         # get best mask
         idx = np.argmax(scores.detach().cpu().numpy())
