@@ -18,9 +18,9 @@ from fibsem import constants, conversions, utils
 from fibsem.microscope import (
     DemoMicroscope,
     FibsemMicroscope,
-    TescanMicroscope,
     ThermoMicroscope,
 )
+from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.milling import (
     FibsemMillingStage,
     MillingAlignment,
@@ -169,7 +169,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.doubleSpinBox_milling_current.setKeyboardTracking(False)
 
         # Tescan Only
-        AVAILABLE_PRESETS = self.microscope.get_available_values("presets")
+        AVAILABLE_PRESETS = self.microscope.get_available_values("presets", BeamType.ION)
         self.label_rate.setVisible(is_tescan)
         self.label_spot_size.setVisible(is_tescan)
         self.label_dwell_time.setVisible(is_tescan)

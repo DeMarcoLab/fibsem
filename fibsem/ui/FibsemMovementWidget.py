@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtWidgets
 import fibsem.utils as utils
 from fibsem import config as cfg
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemStagePosition,
@@ -100,7 +100,7 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.saved_positions_updated_signal.connect(self.update_saved_positions_ui)
 
         # set custom tilt limits for the compustage # TODO: do this in the microscope class
-        if self.microscope is not None:
+        if self.microscope is not None and isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope)):
             if self.microscope.stage_is_compustage:
                 self.doubleSpinBox_movement_stage_tilt.setMinimum(-195.0)
                 self.doubleSpinBox_movement_stage_tilt.setMaximum(15)
