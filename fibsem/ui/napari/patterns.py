@@ -75,7 +75,7 @@ def convert_pattern_to_napari_circle(
 
     # create circle
     shape = [[ymin, xmin], [ymin, xmax], [ymax, xmax], [ymax, xmin]]  # ??
-    return shape
+    return np.array(shape)
 
 
 def convert_pattern_to_napari_line(
@@ -104,7 +104,7 @@ def convert_pattern_to_napari_line(
 
     # napari shape format [[y_start, x_start], [y_end, x_end]])
     shape = [[py0, px0], [py1, px1]]
-    return shape
+    return np.array(shape)
 
 def convert_pattern_to_napari_rect(
     pattern_settings: FibsemRectangleSettings, shape: Tuple[int, int], pixelsize: float
@@ -141,7 +141,7 @@ def convert_pattern_to_napari_rect(
     py3 = cy + (xmin * np.sin(r) + ymax * np.cos(r))
     # napari shape format
     shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
-    return shape
+    return np.array(shape)
 
 def create_crosshair_shape(centre_point: Point, 
                            shape: Tuple[int, int], 
@@ -175,7 +175,7 @@ def create_crosshair_shape(centre_point: Point,
         shape = [[py0, px0], [py1, px1], [py2, px2], [py3, px3]]
         crosshair_shapes.append(shape)
 
-    return crosshair_shapes
+    return np.array(crosshair_shapes)
 
 
 def convert_bitmap_pattern_to_napari_image(
@@ -346,6 +346,7 @@ def draw_milling_patterns_in_napari(
     name = "Milling Patterns"
     if len(all_napari_shapes) > 0:
         if name in viewer.layers:
+            viewer.layers[name].data = [] # need to clear data before updating, to account for different shapes.
             viewer.layers[name].data = all_napari_shapes
             viewer.layers[name].shape_type = all_shape_types
             viewer.layers[name].edge_color = all_shape_colours

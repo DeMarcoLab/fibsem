@@ -1,17 +1,16 @@
 
 import napari
 import napari.utils.notifications
+from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 
 from fibsem.detection.detection import DetectedFeatures
-from fibsem.segmentation.model import load_model
-
-from napari.qt.threading import thread_worker
-from PyQt5.QtCore import pyqtSignal
+from fibsem.segmentation.model import SegmentationModel, load_model
 from fibsem.ui import stylesheets
-from fibsem.ui.qtdesigner_files import FibsemSegmentationModelWidget
-from fibsem.segmentation.model import SegmentationModel
-
+from fibsem.ui.qtdesigner_files import (
+    FibsemSegmentationModelWidget as SegmentationUIWidget,
+)
 
 CHECKPOINT_PATH = "autolamella-mega-20240107.pt"
 SEGMENT_ANYTHING_AVAIABLE = False
@@ -28,7 +27,7 @@ if SEGMENT_ANYTHING_AVAIABLE:
     AVAILABLE_MODELS.append("SegmentAnythingModel")
 RECOMMENDED_SAM_CHECKPOINTS = ["facebook/sam-vit-base", "Zigeng/SlimSAM-uniform-50"]
 
-class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWidgets.QDialog):
+class FibsemSegmentationModelWidget(SegmentationUIWidget.Ui_Form, QtWidgets.QDialog):
     continue_signal = pyqtSignal(DetectedFeatures)
     model_loaded = pyqtSignal()
 
@@ -37,7 +36,7 @@ class FibsemSegmentationModelWidget(FibsemSegmentationModelWidget.Ui_Form, QtWid
         model: SegmentationModel = None,
         parent=None,
     ):
-        super(FibsemSegmentationModelWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
 
         self.model = model

@@ -268,6 +268,7 @@ class TrenchPattern(BasePattern):
     point: Point = Point()
     name: str = "Trench"
     shapes: List[FibsemPatternSettings] = None
+    _advanced_attributes = ["time"]
 
     def define(self) -> List[FibsemRectangleSettings]:
 

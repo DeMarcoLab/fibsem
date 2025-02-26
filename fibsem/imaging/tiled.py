@@ -2,6 +2,7 @@
 import logging
 import os
 import time
+import datetime
 from copy import deepcopy
 from typing import List, Tuple
 
@@ -69,12 +70,14 @@ def tiled_image_acquisition(
     # BIG_IMAGE FOR DEBUGGING ONLY
     image_settings.hfw = grid_size
     image_settings.filename = "big_image"
+    image_settings.save = False
     big_image = acquire.new_image(microscope, image_settings)
-    
+
     # TOP LEFT CORNER START
     image_settings.hfw = tile_size
     image_settings.filename = prev_label
     image_settings.autocontrast = False # required for cryo
+    image_settings.save = True
     start_move = grid_size / 2 - tile_size / 2
     dxg, dyg = start_move, start_move
     dyg *= -1
@@ -201,6 +204,11 @@ def tiled_image_acquisition_and_stitch(microscope: FibsemMicroscope,
     Returns:
         The stitched image."""
     
+    # add datetime to filename for uniqueness
+    filename = image_settings.filename
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    image_settings.filename = f"{filename}-{timestamp}"
+
     ddict = tiled_image_acquisition(microscope=microscope, 
                                     image_settings=image_settings, 
                                     grid_size=grid_size, tile_size=tile_size, 
