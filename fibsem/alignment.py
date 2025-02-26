@@ -143,7 +143,7 @@ def beam_shift_alignment_v2(
     )
 
     # adjust beamshift (reverse direction)
-    microscope.beam_shift(-dx, -dy, image_settings.beam_type)
+    microscope.beam_shift(-dx, dy, image_settings.beam_type) # NOTE: this works for non-scan rotation, QUERY for scan rotation
 
     # reset beam current
     if alignment_current is not None:
