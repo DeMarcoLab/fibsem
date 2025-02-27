@@ -14,7 +14,7 @@ from psygnal import Signal
 import numpy as np
 
 _TESCAN_API_AVAILABLE = False
-_THERMO_API_AVAILABLE = False
+THERMO_API_AVAILABLE = False
 
 # DEVELOPMENT
 _OVERWRITE_AUTOSCRIPT_VERSION = False
@@ -81,7 +81,7 @@ try:
         MoveSettings,
         StagePosition,
     )
-    _THERMO_API_AVAILABLE = True 
+    THERMO_API_AVAILABLE = True 
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
     if isinstance(e, NameError):
@@ -222,6 +222,11 @@ class FibsemMicroscope(ABC):
         if beam_type is BeamType.ION:
             rotation = np.deg2rad(stage_settings.rotation_180)
             tilt = np.deg2rad(self.system.ion.column_tilt - shuttle_pre_tilt)
+
+        # new style
+        # omap = {BeamType.ELECTRON: "SEM", BeamType.ION: "FIB"}
+        # pos = self.get_orientation(omap[beam_type])
+        # rotation, tilt = pos.r, pos.t
 
         # compustage is tilted by 180 degrees for flat to beam, because we image the backside fo the grid,
         # therefore, we need to offset the tilt by 180 degrees
@@ -809,7 +814,7 @@ class ThermoMicroscope(FibsemMicroscope):
     """
 
     def __init__(self, system_settings: SystemSettings = None):
-        if _THERMO_API_AVAILABLE == False:
+        if not THERMO_API_AVAILABLE:
             raise Exception("Autoscript (ThermoFisher) not installed. Please see the user guide for installation instructions.")            
         
         # create microscope client 
@@ -1030,7 +1035,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connection.imaging.set_active_device(3)
         image = self.connection.imaging.get_image()
         logging.debug({"msg": "acquire_chamber_image"})
-        return FibsemImage(data=image.data, metadata=None)   
+        return FibsemImage(data=image.data, metadata=None)
     
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
         pass
@@ -1393,6 +1398,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
     
+    # TODO: update this to an enum
     def get_stage_orientation(self) -> str:
 
         # current stage position
@@ -1406,12 +1412,12 @@ class ThermoMicroscope(FibsemMicroscope):
         sem = self.get_orientation("SEM")
         fib = self.get_orientation("FIB")
 
-        is_sem_rotation = movement.rotation_angle_is_smaller(stage_rotation, sem["r"], atol=5) # query: do we need rotation_angle_is_smaller, since we % 2pi the rotation?
-        is_fib_rotation = movement.rotation_angle_is_smaller(stage_rotation, fib["r"], atol=5)
+        is_sem_rotation = movement.rotation_angle_is_smaller(stage_rotation, sem.r, atol=5) # query: do we need rotation_angle_is_smaller, since we % 2pi the rotation?
+        is_fib_rotation = movement.rotation_angle_is_smaller(stage_rotation, fib.r, atol=5)
 
-        is_sem_tilt = np.isclose(stage_tilt, sem["t"], atol=0.1)
-        is_fib_tilt = np.isclose(stage_tilt, fib["t"], atol=0.1)
-        is_milling_tilt = stage_tilt < fib["t"]  # QUERY: explicitly support this?
+        is_sem_tilt = np.isclose(stage_tilt, sem.t, atol=0.1)
+        is_fib_tilt = np.isclose(stage_tilt, fib.t, atol=0.1)
+        is_milling_tilt = stage_tilt < sem.t  # QUERY: explicitly support this?
 
         if is_sem_rotation and is_sem_tilt:
             return "SEM"
@@ -1419,30 +1425,29 @@ class ThermoMicroscope(FibsemMicroscope):
             return "MILLING"
         if is_fib_rotation and is_fib_tilt:
             return "FIB"
-        
+
         return "UNKNOWN"
-    
-    def get_orientation(self, orientation: str) -> Tuple[float, float]:
+
+    def get_orientation(self, orientation: str) -> FibsemStagePosition:
 
         stage_settings = self.system.stage
         shuttle_pre_tilt = stage_settings.shuttle_pre_tilt  # deg
 
-        # SEM orientation
-        sem_stage_rotation = np.radians(stage_settings.rotation_reference)
-        sem_stage_tilt = np.radians(shuttle_pre_tilt)
-        
-        # FIB orientation
-        fib_stage_rotation = np.radians(stage_settings.rotation_180)
-        fib_stage_tilt = np.radians(self.system.ion.column_tilt - shuttle_pre_tilt)
+        self.orientations = {
+            "SEM": FibsemStagePosition(
+                r=np.radians(stage_settings.rotation_reference),
+                t=np.radians(shuttle_pre_tilt),
+            ),
+            "FIB": FibsemStagePosition(
+                r=np.radians(stage_settings.rotation_180),
+                t=np.radians(self.system.ion.column_tilt - shuttle_pre_tilt),
+            ),
+        }
 
-        self.orientations = {"SEM": {"r": sem_stage_rotation, "t": sem_stage_tilt},
-                             "FIB": {"r": fib_stage_rotation, "t": fib_stage_tilt}}
-        
         if orientation not in self.orientations:
             raise ValueError(f"Orientation {orientation} not supported.")
 
         return self.orientations[orientation]
-
 
     def _safe_rotation_movement(
         self, stage_position: FibsemStagePosition
@@ -1462,7 +1467,6 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info("tilting to flat for large rotation.")
 
         return
-
 
     def safe_absolute_stage_movement(self, stage_position: FibsemStagePosition
     ) -> None:
