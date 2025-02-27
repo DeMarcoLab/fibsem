@@ -9,7 +9,7 @@ import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from queue import Queue
-from typing import List, Union
+from typing import List, Union, Tuple
 from psygnal import Signal
 import numpy as np
 
@@ -1393,6 +1393,57 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
     
+    def get_stage_orientation(self) -> str:
+
+        # current stage position
+        current_stage_position = self.get_stage_position()
+        stage_rotation = current_stage_position.r % (2 * np.pi)
+        stage_tilt = current_stage_position.t
+
+        from fibsem import movement
+        # TODO: also check xyz ranges?
+
+        sem = self.get_orientation("SEM")
+        fib = self.get_orientation("FIB")
+
+        is_sem_rotation = movement.rotation_angle_is_smaller(stage_rotation, sem["r"], atol=5) # query: do we need rotation_angle_is_smaller, since we % 2pi the rotation?
+        is_fib_rotation = movement.rotation_angle_is_smaller(stage_rotation, fib["r"], atol=5)
+
+        is_sem_tilt = np.isclose(stage_tilt, sem["t"], atol=0.1)
+        is_fib_tilt = np.isclose(stage_tilt, fib["t"], atol=0.1)
+        is_milling_tilt = stage_tilt < fib["t"]  # QUERY: explicitly support this?
+
+        if is_sem_rotation and is_sem_tilt:
+            return "SEM"
+        if is_sem_rotation and is_milling_tilt:
+            return "MILLING"
+        if is_fib_rotation and is_fib_tilt:
+            return "FIB"
+        
+        return "UNKNOWN"
+    
+    def get_orientation(self, orientation: str) -> Tuple[float, float]:
+
+        stage_settings = self.system.stage
+        shuttle_pre_tilt = stage_settings.shuttle_pre_tilt  # deg
+
+        # SEM orientation
+        sem_stage_rotation = np.radians(stage_settings.rotation_reference)
+        sem_stage_tilt = np.radians(shuttle_pre_tilt)
+        
+        # FIB orientation
+        fib_stage_rotation = np.radians(stage_settings.rotation_180)
+        fib_stage_tilt = np.radians(self.system.ion.column_tilt - shuttle_pre_tilt)
+
+        self.orientations = {"SEM": {"r": sem_stage_rotation, "t": sem_stage_tilt},
+                             "FIB": {"r": fib_stage_rotation, "t": fib_stage_tilt}}
+        
+        if orientation not in self.orientations:
+            raise ValueError(f"Orientation {orientation} not supported.")
+
+        return self.orientations[orientation]
+
+
     def _safe_rotation_movement(
         self, stage_position: FibsemStagePosition
     ):
@@ -5465,6 +5516,11 @@ class DemoMicroscope(FibsemMicroscope):
         elif beam_type == BeamType.ION:
             self.ion_system.beam.shift += Point(float(dx), float(dy))
 
+    def get_stage_orientation(self) -> str:
+        return ThermoMicroscope.get_stage_orientation(self)
+    
+    def get_orientation(self, orientation: str) -> str:
+        return ThermoMicroscope.get_orientation(self, orientation)
    
     def safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
         """Move the stage to the specified position using safe strategy"""
