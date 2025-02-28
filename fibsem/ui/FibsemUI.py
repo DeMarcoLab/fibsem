@@ -31,8 +31,8 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.label_title.setText(f"OpenFIBSEM v{fibsem.__version__}")
 
         self.viewer = viewer
-        self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
-        self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
+        # self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
+        # self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
         self.microscope: FibsemMicroscope = None
         self.settings: MicroscopeSettings = None

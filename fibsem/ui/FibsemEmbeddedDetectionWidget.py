@@ -39,8 +39,8 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
 
         self.parent = parent
         self.viewer = viewer
-        self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
-        self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
+        # self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
+        # self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
         self.model = model
 
         self._USER_CORRECTED = False
