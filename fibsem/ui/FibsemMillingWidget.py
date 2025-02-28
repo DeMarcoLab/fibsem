@@ -1,4 +1,4 @@
-
+import os
 import logging
 from copy import deepcopy
 from pprint import pprint
@@ -54,6 +54,16 @@ from fibsem.ui.napari.patterns import (
 )
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget as FibsemMillingWidgetUI
 from fibsem.utils import format_duration
+
+# 3D Correlation Widget
+CORRELATION_THREEDCT_AVAILABLE = False
+try:
+    from tdct.app import CorrelationUI
+    logging.info("CorrelationUI imported from tdct.app")
+    CORRELATION_THREEDCT_AVAILABLE = True
+except ImportError as e:
+    logging.debug(f"Could not import CorrelationUI from tdct.app: {e}")
+    CorrelationUI = None
 
 UNSCALED_VALUES = [
     "rotation",
@@ -112,6 +122,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         self.viewer = viewer
         self.image_widget: FibsemImageSettingsWidget = parent.image_widget
+        
+        # correlation widget
+        self.correlation_viewer: napari.Viewer = None
+        self.correlation_widget: CorrelationUI = None
 
         self.UPDATING_PATTERN: bool = False
         self.CAN_MOVE_PATTERN: bool = True
@@ -269,7 +283,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         # external signals
         self.image_widget.viewer_update_signal.connect(self.update_ui) # update the ui when the image is updated
-    
+
+        self.pushButton_open_correlation.clicked.connect(self.open_3d_correlation_widget)
+        self.pushButton_open_correlation.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_open_correlation.setVisible(CORRELATION_THREEDCT_AVAILABLE)
+
     def on_selection_changed(self):
         """Selection changed callback for the milling stages list widget."""
         selected_items = self.listWidget_active_milling_stages.selectedItems()
@@ -1137,3 +1155,80 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         for layer in self.milling_pattern_layers:
             if layer in self.viewer.layers:
                 self.viewer.layers[layer].visible = is_visible
+
+
+#### CORRELATION
+
+    def open_3d_correlation_widget(self):
+        """Open the correlation widget, connect relevant signals."""
+        if not CORRELATION_THREEDCT_AVAILABLE:
+            napari.utils.notifications.show_warning(
+                "3D Correlation UI not available. Please install tdct."
+            )
+            return
+
+        # attempt to close the windows
+        try:
+            if self.correlation_widget is not None:
+                self.correlation_widget.close()
+                self.correlation_widget = None
+        except Exception as e:
+            logging.warning(f"Error closing correlation widget: {e}")
+        try:
+            if self.correlation_viewer is not None:
+                self.correlation_viewer.close()
+                self.correlation_viewer = None
+        except Exception as e:
+            logging.warning(f"Error closing correlation viewer: {e}")
+
+        self.correlation_viewer = napari.Viewer()
+        self.correlation_widget = CorrelationUI(self.correlation_viewer)
+        self.correlation_widget.continue_pressed_signal.connect(self.handle_correlation_continue_signal)
+
+        # load fib image, if available
+        fib_image: FibsemImage = self.image_widget.ib_image
+        if fib_image is not None:
+            md = fib_image.metadata.image_settings
+            filename = os.path.join(md.path, md.filename)
+            self.correlation_widget.set_project_path(str(md.path))
+            self.correlation_widget.load_fib_image(image=fib_image.data, 
+                                                    pixel_size=fib_image.metadata.pixel_size.x, 
+                                                    filename=filename)
+        # else:
+            # napari.utils.notifications.show_warning("No FIBSEM image available...")
+            # self.correlation_widget.set_project_path(self.experiment.path)
+
+        # create a button to run correlation
+        self.correlation_viewer.window.add_dock_widget(
+            self.correlation_widget,
+            area="right",
+            name="3DCT Correlation",
+            tabify=True
+        )
+
+        napari.run(max_loop_level=3)
+
+    def handle_correlation_continue_signal(self, data: dict):
+        """Handle the correlation signal from the correlation widget."""
+        logging.info(f"correlation-data: {data}")
+
+        poi = data.get("poi", None)
+        if poi is None:
+            return
+        point = Point(x=poi[0], y=poi[1])
+
+        for milling_stage in self.milling_stages:
+            milling_stage.pattern.point = point
+
+            # QUERY: ignore fiducials?
+
+        # update the ui
+        self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+        self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
+        logging.debug(f"Moved patterns to {point}")
+
+        self.update_ui()
+        self.milling_position_changed.emit()
+
+    # TODO: display milling patterns in correlation widget
+    # TODO: integrate correlation widget into main ui
