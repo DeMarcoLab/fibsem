@@ -1182,8 +1182,12 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         except Exception as e:
             logging.warning(f"Error closing correlation viewer: {e}")
 
-        self.correlation_viewer = napari.Viewer()
-        self.correlation_widget = CorrelationUI(self.correlation_viewer)
+        # snapshot existing layers
+        self.existing_layers = [layer.name for layer in self.viewer.layers]
+        for layer_name in self.existing_layers:
+            self.viewer.layers[layer_name].visible = False
+
+        self.correlation_widget = CorrelationUI(viewer=self.viewer, parent_ui=self)
         self.correlation_widget.continue_pressed_signal.connect(self.handle_correlation_continue_signal)
 
         # load fib image, if available
@@ -1200,14 +1204,12 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             # self.correlation_widget.set_project_path(self.experiment.path)
 
         # create a button to run correlation
-        self.correlation_viewer.window.add_dock_widget(
+        self.viewer.window.add_dock_widget(
             self.correlation_widget,
             area="right",
             name="3DCT Correlation",
             tabify=True
         )
-
-        napari.run(max_loop_level=3)
 
     def handle_correlation_continue_signal(self, data: dict):
         """Handle the correlation signal from the correlation widget."""
@@ -1223,14 +1225,21 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             if isinstance(milling_stage.pattern, FiducialPattern):
                 continue
             milling_stage.pattern.point = point
-
-        # update the ui
-        self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
-        self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
         logging.debug(f"Moved patterns to {point}")
+
+        # update the ui element correpsonding to the point, if not fiducial
+        if not isinstance(self.current_milling_stage.pattern, FiducialPattern):
+            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
 
         self.update_ui()
         self.milling_position_changed.emit()
 
-    # TODO: display milling patterns in correlation widget
-    # TODO: integrate correlation widget into main ui
+        # restore layers visibility
+        for layer_name in self.existing_layers:
+            self.viewer.layers[layer_name].visible = True
+
+        # remove tab widget, delete object
+        self.viewer.window.remove_dock_widget(self.correlation_widget)
+        self.correlation_widget = None
+        self.existing_layers = []
