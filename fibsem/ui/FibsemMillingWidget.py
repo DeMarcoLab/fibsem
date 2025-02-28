@@ -33,6 +33,7 @@ from fibsem.milling.patterning.patterns2 import (
     MILLING_PATTERN_NAMES,
     BasePattern,
     LinePattern,
+    FiducialPattern,
     get_pattern,
 )
 from fibsem.milling.strategy import DEFAULT_STRATEGY, MILLING_STRATEGY_NAMES
@@ -1218,9 +1219,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         point = Point(x=poi[0], y=poi[1])
 
         for milling_stage in self.milling_stages:
+            # don't move fiducial patterns
+            if isinstance(milling_stage.pattern, FiducialPattern):
+                continue
             milling_stage.pattern.point = point
-
-            # QUERY: ignore fiducials?
 
         # update the ui
         self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
