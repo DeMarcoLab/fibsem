@@ -35,6 +35,7 @@ from fibsem.ui.utils import (
     open_save_file_dialog,
 )
 
+DEGREE_SYMBOL = "°"
 
 def to_pretty_string(position: FibsemStagePosition) -> str:
     xstr = f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}"
@@ -128,6 +129,18 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.pushButton_export.setStyleSheet(GRAY_PUSHBUTTON_STYLE)
         self.pushButton_import.setStyleSheet(GRAY_PUSHBUTTON_STYLE)
         self.pushButton_update_position.setStyleSheet(ORANGE_PUSHBUTTON_STYLE)
+        
+        # display orientation values on tooltips
+        self.pushButton_move_flat_electron.setText("Move to SEM Orientation")
+        self.pushButton_move_flat_ion.setText("Move to FIB Orientation")
+        sem = self.microscope.get_orientation("SEM")
+        fib = self.microscope.get_orientation("FIB")
+        sem_str = f"R:{sem.r*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}, T:{sem.t*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}"
+        fib_str = f"R:{fib.r*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}, T:{fib.t*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}"
+        self.pushButton_move_flat_electron.setToolTip(sem_str)
+        self.pushButton_move_flat_ion.setToolTip(fib_str)
+
+        self.display_stage_position_overlay()
 
         # update the UI
         self.update_ui()
@@ -165,6 +178,34 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         if is_finished:
             logging.info("Movement finished")
             # TODO: handle the signals
+            self.display_stage_position_overlay()
+
+    def display_stage_position_overlay(self):
+        """Display the stage position as text overlay on the image widget"""
+        pos = self.microscope.get_stage_position()
+        orientation = self.microscope.get_stage_orientation()
+        
+        # add text layer, showing the stage position in cyan
+        points = np.array([[self.image_widget.eb_layer.data.shape[0] + 50, 400]]) # TODO: use translation property instead
+        text = {
+            "string": [to_pretty_string(pos) + f" [{orientation}]"],
+            "color": "cyan",
+            "font_size": 20,
+        }
+        try:
+            self.viewer.layers['stage_position'].data = points
+            self.viewer.layers['stage_position'].text = text
+        except KeyError:    
+            self.viewer.add_points(
+                data=points,
+                name="stage_position",
+                size=20,
+                text=text,
+                edge_width=7,
+                edge_width_is_relative=False,
+                edge_color="transparent",
+                face_color="transparent",
+            )   
 
     def handle_acquisition_update(self, ddict: dict):
         """Handle acquisition updates from the image widget"""
