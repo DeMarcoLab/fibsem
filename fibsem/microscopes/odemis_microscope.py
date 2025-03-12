@@ -715,6 +715,7 @@ class OdemisMicroscope(FibsemMicroscope):
         pdict = stage_position_to_odemis_dict(position)
         f = self.stage.moveAbs(pdict)
         f.result()
+        # TODO: implement compucentric rotation
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
         pdict = stage_position_to_odemis_dict(position)
@@ -749,8 +750,11 @@ class OdemisMicroscope(FibsemMicroscope):
                                                     beam_type=beam_type, 
                                                     base_position=base_position)
 
+    def _safe_rotation_movement(self, stage_position: FibsemStagePosition) -> None:
+        return ThermoMicroscope._safe_rotation_movement(self, stage_position)
+
     def safe_absolute_stage_movement(self, position: FibsemStagePosition) -> None:
-        self.move_stage_absolute(position)
+        return ThermoMicroscope.safe_absolute_stage_movement(self, position)
 
     def live_imaging(self, beam_type: BeamType) -> None:
         pass

@@ -1365,6 +1365,7 @@ class ThermoMicroscope(FibsemMicroscope):
                 expected_y *= -1.0
 
             stage_tilt += np.pi
+        # QUERY: for compustage, can we just return the expected y? there is no pre-tilt?
 
         PRETILT_SIGN = 1.0
         # pretilt angle depends on rotation
@@ -1421,8 +1422,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         if is_sem_rotation and is_sem_tilt:
             return "SEM"
-        if is_sem_rotation and is_milling_tilt:
-            return "MILLING"
+        # if is_sem_rotation and is_milling_tilt:
+            # return "MILLING"
         if is_fib_rotation and is_fib_tilt:
             return "FIB"
 
@@ -1468,8 +1469,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return
 
-    def safe_absolute_stage_movement(self, stage_position: FibsemStagePosition
-    ) -> None:
+    def safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
         """Move the stage to the desired position in a safe manner, using compucentric rotation.
         Supports movements in the stage_position coordinate system
 
@@ -1481,7 +1481,7 @@ class ThermoMicroscope(FibsemMicroscope):
             self._safe_rotation_movement(stage_position)
 
             # move to compucentric rotation
-            self.move_stage_absolute(FibsemStagePosition(r=stage_position.r, coordinate_system="RAW"))
+            self.move_stage_absolute(FibsemStagePosition(r=stage_position.r, coordinate_system="RAW")) # TODO: support compucentric rotation directly
 
         logging.debug(f"safe moving to {stage_position}")
         self.move_stage_absolute(stage_position)
@@ -5525,10 +5525,13 @@ class DemoMicroscope(FibsemMicroscope):
     
     def get_orientation(self, orientation: str) -> str:
         return ThermoMicroscope.get_orientation(self, orientation)
-   
+
+    def _safe_rotation_movement(self, stage_position: FibsemStagePosition) -> None:
+        return ThermoMicroscope._safe_rotation_movement(self, stage_position)
+
     def safe_absolute_stage_movement(self, stage_position: FibsemStagePosition) -> None:
         """Move the stage to the specified position using safe strategy"""
-        self.move_stage_absolute(stage_position)
+        return ThermoMicroscope.safe_absolute_stage_movement(self, stage_position)
 
     def project_stable_move(self, dx:float, dy:float, beam_type:BeamType, base_position:FibsemStagePosition) -> FibsemStagePosition:
         return ThermoMicroscope.project_stable_move(self, dx, dy, beam_type, base_position)
