@@ -552,6 +552,12 @@ class OdemisMicroscope(FibsemMicroscope):
                 )
             return
 
+        if key == "spot_mode":
+            self.connection.set_spot_mode(value, channel)
+
+        if key == "full_frame":
+            self.connection.set_full_frame_scan_mode(channel)
+
         # system properties
         if key == "beam_enabled":
             if beam_type is BeamType.ELECTRON:

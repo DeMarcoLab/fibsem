@@ -2853,6 +2853,10 @@ class ThermoMicroscope(FibsemMicroscope):
                                                 height=rect.height)
             return
         
+        if key == "spot_mode":
+            # value: Point, image pixels
+            beam.scanning.mode.set_spot(x=value.x, y=value.y)
+
         if key == "full_frame":
             beam.scanning.mode.set_full_frame()
             return
@@ -5238,7 +5242,8 @@ class DemoMicroscope(FibsemMicroscope):
             on: bool
             blanked: bool
             beam: BeamSettings
-            detector: FibsemDetectorSettings    
+            detector: FibsemDetectorSettings  
+            scanning_mode: str  
 
         @dataclass
         class ChamberSystem:
@@ -5338,7 +5343,8 @@ class DemoMicroscope(FibsemMicroscope):
                 mode="SecondaryElectrons",
                 brightness=0.5,
                 contrast=0.5,
-            )
+            ),
+            scanning_mode = "full_frame"
         )
             
         self.ion_system = BeamSystem(
@@ -5361,7 +5367,8 @@ class DemoMicroscope(FibsemMicroscope):
                 mode="SecondaryElectrons",
                 brightness=0.5,
                 contrast=0.5,
-            )
+            ),
+            scanning_mode="full_frame"
         )
         self.stage_is_compustage: bool = False
         self.milling_system = MillingSystem(patterns=[])
@@ -6080,6 +6087,15 @@ class DemoMicroscope(FibsemMicroscope):
                 logging.info(f"Plasma gas set to {value}.")
 
                 return
+
+        if key == "spot_mode":
+            # value: Point, image pixels
+            # beam.scanning.mode.set_spot(x=value.x, y=value.y)
+            beam.scanning_mode = "spot"
+
+        if key == "full_frame":
+            beam.scanning_mode = "full_frame"
+            return
 
         # imaging system
         if key == "active_view":
