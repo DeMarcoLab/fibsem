@@ -5,6 +5,7 @@ import time
 
 def let_it_burn(microscope: FibsemMicroscope, coordinates: List[Point], exposure_time: float, milling_current: float) -> None:
 
+    imaging_current = microscope.get("current", BeamType.ION)
     microscope.set("current", milling_current, BeamType.ION)
 
     for pt in coordinates:
@@ -15,3 +16,5 @@ def let_it_burn(microscope: FibsemMicroscope, coordinates: List[Point], exposure
         time.sleep(exposure_time)
         microscope.set("full_frame", True, BeamType.ION)
 
+    microscope.set("current", imaging_current, BeamType.ION)
+    return

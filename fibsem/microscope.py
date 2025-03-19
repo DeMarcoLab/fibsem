@@ -2856,6 +2856,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if key == "spot_mode":
             # value: Point, image pixels
             beam.scanning.mode.set_spot(x=value.x, y=value.y)
+            return
 
         if key == "full_frame":
             beam.scanning.mode.set_full_frame()
