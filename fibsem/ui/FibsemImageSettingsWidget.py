@@ -94,6 +94,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.selected_beam.addItems(AVAILABLE_BEAMS)
         self.comboBox_image_resolution.addItems(cfg.STANDARD_RESOLUTIONS)
         self.comboBox_image_resolution.setCurrentText(cfg.DEFAULT_STANDARD_RESOLUTION)
+        self.doubleSpinBox_beam_current.setRange(0.1, 10000.0) # TODO: convert to combobox
 
         # buttons
         self.pushButton_take_image.clicked.connect(self.acquire_image)

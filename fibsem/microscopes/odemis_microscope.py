@@ -258,6 +258,14 @@ class OdemisMicroscope(FibsemMicroscope):
     def disconnect(self):
         pass
 
+    def get_orientation(self, orientation: str) -> str:
+        """Get the current orientation of the microscope."""
+        return ThermoMicroscope.get_orientation(self, orientation)
+
+    def get_stage_orientation(self) -> str:
+        """Get the stage position for the specified orientation."""
+        return ThermoMicroscope.get_stage_orientation(self)
+
     def acquire_chamber_image(self) -> FibsemImage:
         pass
 
@@ -734,10 +742,10 @@ class OdemisMicroscope(FibsemMicroscope):
         return ThermoMicroscope.stable_move(self, dx=dx, dy=dy, beam_type=beam_type, static_wd=static_wd)
 
     def vertical_move(
-        self, dy: float, dx: float = 0.0, static_wd: bool = True, use_perspective: bool = True
+        self, dy: float, dx: float = 0.0, static_wd: bool = True
     ) -> FibsemStagePosition:
         """Move the stage vertically by the specified amount."""
-        return ThermoMicroscope.vertical_move(self, dy=dy, dx=dx, static_wd=static_wd, use_perspective=use_perspective)
+        return ThermoMicroscope.vertical_move(self, dy=dy, dx=dx, static_wd=static_wd)
 
     def _y_corrected_stage_movement(
         self, expected_y: float, beam_type: BeamType
