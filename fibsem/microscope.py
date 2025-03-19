@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 import warnings
+from packaging.version import parse
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from queue import Queue
@@ -50,12 +51,14 @@ try:
     import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
-    VERSION = float(version[:3])
+    VERSION = parse(version)
     if VERSION < 4.6:
-        raise NameError("Please update your AutoScript version to 4.6 or higher.")
-    
+        raise NameError(
+            f"AutoScript {version} found. Please update your AutoScript version to 4.6 or higher."
+        )
+
     if _OVERWRITE_AUTOSCRIPT_VERSION:
-        VERSION = 4.7
+        VERSION = parse("4.7")
         
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CirclePattern,
