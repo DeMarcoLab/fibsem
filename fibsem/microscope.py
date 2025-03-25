@@ -1425,8 +1425,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         if is_sem_rotation and is_sem_tilt:
             return "SEM"
-        # if is_sem_rotation and is_milling_tilt:
-            # return "MILLING"
+        if is_sem_rotation and is_milling_tilt:
+            return "MILLING"
         if is_fib_rotation and is_fib_tilt:
             return "FIB"
 
