@@ -1,20 +1,37 @@
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import Point, BeamType
-from typing import List
+import logging
 import time
+from typing import List
 
-def let_it_burn(microscope: FibsemMicroscope, coordinates: List[Point], exposure_time: float, milling_current: float) -> None:
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import BeamType, Point
 
-    imaging_current = microscope.get("current", BeamType.ION)
-    microscope.set("current", milling_current, BeamType.ION)
+def run_spot_burn(microscope: FibsemMicroscope,
+                  coordinates: List[Point],
+                  exposure_time: float,
+                  milling_current: float,
+                  beam_type: BeamType = BeamType.ION) -> None:
+    """Run a spot burner job on the microscope. Exposes the specified coordinates for a the specified
+    time at the specified current.
+    Args:
+        microscope: The microscope object.
+        coordinates: List of points to burn.
+        exposure_time: Time to expose each point in seconds.
+        milling_current: Current to use for the spot.
+        beam_type: The type of beam to use. (Default: BeamType.ION)
+    Returns:
+        None
+    """
+
+    imaging_current = microscope.get(key="current", beam_type=beam_type)
+    microscope.set(key="current", value=milling_current, beam_type=beam_type)
 
     for pt in coordinates:
-        print(f'burning spot: {pt}')
-        microscope.set("blanked", True, BeamType.ION)
-        microscope.set("spot_mode", pt, BeamType.ION)
-        microscope.set("blanked", False, BeamType.ION)
+        logging.info(f'burning spot: {pt}, exposure time: {exposure_time}, milling current: {milling_current}')
+        microscope.set(key="blanked", value=True, beam_type=beam_type)
+        microscope.set(key="spot_mode", value=pt, beam_type=beam_type)
+        microscope.set(key="blanked", value=False, beam_type=beam_type)
         time.sleep(exposure_time)
-        microscope.set("full_frame", True, BeamType.ION)
+        microscope.set(key="full_frame", value=True, beam_type=beam_type)
 
-    microscope.set("current", imaging_current, BeamType.ION)
+    microscope.set("current", imaging_current, beam_type=beam_type)
     return

@@ -6094,8 +6094,8 @@ class DemoMicroscope(FibsemMicroscope):
 
         if key == "spot_mode":
             # value: Point, image pixels
-            # beam.scanning.mode.set_spot(x=value.x, y=value.y)
             beam.scanning_mode = "spot"
+            return
 
         if key == "full_frame":
             beam.scanning_mode = "full_frame"
