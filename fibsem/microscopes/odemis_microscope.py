@@ -510,7 +510,7 @@ class OdemisMicroscope(FibsemMicroscope):
             logging.info(f"{beam_type.name} scan rotation set to {value} radians.")
             return
         if key == "shift":
-            self.connection.set_beam_shift(-value.x, value.y, channel)
+            self.connection.set_beam_shift(value.x, value.y, channel)
             logging.info(f"{beam_type.name} shift set to {value}.")
             return
         if key == "stigmation":

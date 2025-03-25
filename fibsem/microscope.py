@@ -2834,7 +2834,7 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.info(f"{beam_type.name} scan rotation set to {value} radians.")
             return
         if key == "shift":
-            beam.beam_shift.value = ThermoPoint(-value.x, value.y)
+            beam.beam_shift.value = ThermoPoint(value.x, value.y) # TODO: resolve this coordinate system
             logging.info(f"{beam_type.name} shift set to {value}.")
             return
         if key == "stigmation":
