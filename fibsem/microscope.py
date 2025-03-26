@@ -52,7 +52,7 @@ try:
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
     VERSION = parse(version)
-    if VERSION < 4.6:
+    if VERSION < parse("4.6"):
         raise NameError(
             f"AutoScript {version} found. Please update your AutoScript version to 4.6 or higher."
         )

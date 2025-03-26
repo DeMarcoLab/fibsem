@@ -2,7 +2,7 @@
 # configuration 
 info:
     name: tfs-arctis-configuration                          # a descriptive name for your configuration                     [SPECIFIED]
-    ip_address: 192.168.0.1                                 # the ip address of the microscope PC                           [SPECIFIED]
+    ip_address: localhost                                 # the ip address of the microscope PC                           [SPECIFIED]
     manufacturer: Thermo                                    # the microscope manufactuer                                    [SPECIFIED]        
 stage:
     enabled:                    true                        # the stage is enabled                                          [USER]
@@ -15,7 +15,7 @@ stage:
 electron:                                              
     enabled:                    true                        # the electron beam is enabled                                  [USER]
     column_tilt:                0                           # the column tilt of the electron beam                          [DERIVED - manufactuer]
-    eucentric_height:           4.0e-3                      # the eucentric height of the electron beam                     [SPECIFIED]
+    eucentric_height:           10.0e-3                      # the eucentric height of the electron beam                     [SPECIFIED]
     voltage:                    2000                        # the voltage of the electron beam                              [USER]
     current:                    50.0e-12                    # the current of the electron beam                              [USER]
     resolution:                 [1536, 1024]                # the default electron resolution                       [pixel] [USER]
