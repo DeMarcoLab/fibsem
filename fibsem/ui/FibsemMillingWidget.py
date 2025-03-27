@@ -200,18 +200,12 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         if is_thermo:
             AVAILABLE_APPLICATION_FILES = self.microscope.get_available_values("application_file")
             self.comboBox_application_file.addItems(AVAILABLE_APPLICATION_FILES)
-            # milling currents: TODO: make this a combobox with available values
             self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
-            # min_current = self.AVAILABLE_MILLING_CURRENTS[0] * constants.SI_TO_NANO
-            # max_current = self.AVAILABLE_MILLING_CURRENTS[-1] * constants.SI_TO_NANO
             beam_currents = [_format_beam_current_as_str(val) for val in self.AVAILABLE_MILLING_CURRENTS]
             self.comboBox_milling_current.addItems(beam_currents)
-            # self.doubleSpinBox_milling_current.setRange(min_current, max_current)
-            # self.doubleSpinBox_milling_current.setDecimals(4)
             self.comboBox_application_file.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.comboBox_milling_current.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.spinBox_voltage.valueChanged.connect(self.update_milling_settings_from_ui)
-            # self.doubleSpinBox_milling_current.setKeyboardTracking(False)
 
         # Tescan Only
         AVAILABLE_PRESETS = self.microscope.get_available_values("presets")
@@ -934,10 +928,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def get_milling_settings_from_ui(self):
         """Get the Milling Settings from the UI."""
-        # current_amps = float(self.doubleSpinBox_milling_current.value()) * constants.NANO_TO_SI
         current_str = self.comboBox_milling_current.currentText()# TODO: migrate to use CurrentData, rather than str converter
         current_amps = _parse_beam_current_str(current_str)
-        logging.info(f"CURRENT STR: {current_str}, CURRENT AMPS: {current_amps}")
 
         milling_settings = FibsemMillingSettings(
             milling_current=current_amps,

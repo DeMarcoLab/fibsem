@@ -589,10 +589,11 @@ class OdemisMicroscope(FibsemMicroscope):
 
         if key == "spot_mode":
             self.connection.set_spot_scan_mode(channel=channel, x=value.x, y=value.y)
+            return
 
         if key == "full_frame":
             self.connection.set_full_frame_scan_mode(channel)
-
+            return
         # system properties
         if key == "beam_enabled":
             if beam_type is BeamType.ELECTRON:
@@ -722,6 +723,10 @@ class OdemisMicroscope(FibsemMicroscope):
             )[
                 "range"
             ]  # TODO: we need the list of choices, not the range (this should be an list)
+            # xenon
+            # values = [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1e-9, 4e-9, 15e-9, 60e-9]
+            # argon
+            # values = [1.0e-12, 6.0e-12, 20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.4e-9, 28.0e-9, 120.0e-9]
         if key == "plasma_gas":
             values = ["Argon", "Oxygen", "Xenon"]
 
@@ -814,6 +819,7 @@ class OdemisMicroscope(FibsemMicroscope):
 
         # select the correct pattern function
         create_pattern_function = self.connection.create_rectangle
+        self.connection.set_default_application_file("Si")
         if pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
             create_pattern_function = self.connection.create_cleaning_cross_section
             self.connection.set_default_application_file("Si-ccs")
