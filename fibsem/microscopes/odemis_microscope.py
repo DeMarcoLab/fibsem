@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
-
+from typing import Optional
 import numpy as np
 from psygnal import Signal
 
@@ -262,7 +262,7 @@ class OdemisMicroscope(FibsemMicroscope):
         """Get the current orientation of the microscope."""
         return ThermoMicroscope.get_orientation(self, orientation)
 
-    def get_stage_orientation(self) -> str:
+    def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
         """Get the stage position for the specified orientation."""
         return ThermoMicroscope.get_stage_orientation(self)
 

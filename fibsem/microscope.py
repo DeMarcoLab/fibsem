@@ -10,7 +10,7 @@ from packaging.version import parse
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from queue import Queue
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 from psygnal import Signal
 import numpy as np
 
@@ -1403,12 +1403,13 @@ class ThermoMicroscope(FibsemMicroscope):
         return FibsemStagePosition(x=0, y=y_move, z=z_move)
     
     # TODO: update this to an enum
-    def get_stage_orientation(self) -> str:
+    def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
 
         # current stage position
-        current_stage_position = self.get_stage_position()
-        stage_rotation = current_stage_position.r % (2 * np.pi)
-        stage_tilt = current_stage_position.t
+        if stage_position is None:
+            stage_position = self.get_stage_position()
+        stage_rotation = stage_position.r % (2 * np.pi)
+        stage_tilt = stage_position.t
 
         from fibsem import movement
         # TODO: also check xyz ranges?
@@ -5531,7 +5532,7 @@ class DemoMicroscope(FibsemMicroscope):
         elif beam_type == BeamType.ION:
             self.ion_system.beam.shift += Point(float(dx), float(dy))
 
-    def get_stage_orientation(self) -> str:
+    def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
         return ThermoMicroscope.get_stage_orientation(self)
     
     def get_orientation(self, orientation: str) -> str:
