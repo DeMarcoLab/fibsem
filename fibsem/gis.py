@@ -109,3 +109,28 @@ def cryo_deposition_v2(microscope: FibsemMicroscope, gis_settings: FibsemGasInje
 
     # return to previous position
     microscope.safe_absolute_stage_movement(position)
+
+# # multi-chem dep
+# # move the stage to deposition position
+
+# # insert the multichem
+# # multichem.insert()
+
+# microscope.connection.patterning.set_default_beam_type(1) # SEM
+# microscope.connection.patterning.set_default_application_file("W_M e")
+# microscope.clear_patterns()
+# line_pattern = microscope.connection.patterning.create_line(0, 0, 10e-6, 0, 1e-6)
+
+# line_pattern.application_file = "W_M e"
+# line_pattern.gas_type = "CRYO Pt "
+# line_pattern.gas_flow = [80]
+# line_pattern.time = 30
+
+# microscope.connection.patterning.start()
+# # microscope.connection.patterning.start()
+
+# # retract
+# # multichem.retract()
+
+# microscope.connection.patterning.set_default_beam_type(2) # ION
+# microscope.connection.patterning.set_default_application_file("Si")
