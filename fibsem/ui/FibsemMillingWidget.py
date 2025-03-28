@@ -1088,21 +1088,21 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.update_progress_bar({"state": "finished"})
 
         ########## REMOVE
-        if ddict.get("confirm_alignment", False):
-            ref_image = ddict.get("ref_image", None)
-            last_image = ddict.get("last_image", None)
-            if ref_image is not None and last_image is not None:
-                import matplotlib.pyplot as plt
-                fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-                ax[0].imshow(ref_image.data, cmap="gray")
-                ax[0].set_title("Reference Image")
-                ax[0].axhline(ref_image.data.shape[0]//2, color="y", linestyle="--")
-                ax[0].axvline(ref_image.data.shape[1]//2, color="y", linestyle="--")
-                ax[1].imshow(last_image.data, cmap="gray")
-                ax[1].axhline(last_image.data.shape[0]//2, color="y", linestyle="--")
-                ax[1].axvline(last_image.data.shape[1]//2, color="y", linestyle="--")
-                ax[1].set_title("Last Image")
-                plt.show()
+        # if ddict.get("confirm_alignment", False):
+        #     ref_image = ddict.get("ref_image", None)
+        #     last_image = ddict.get("last_image", None)
+        #     if ref_image is not None and last_image is not None:
+        #         import matplotlib.pyplot as plt
+        #         fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        #         ax[0].imshow(ref_image.data, cmap="gray")
+        #         ax[0].set_title("Reference Image")
+        #         ax[0].axhline(ref_image.data.shape[0]//2, color="y", linestyle="--")
+        #         ax[0].axvline(ref_image.data.shape[1]//2, color="y", linestyle="--")
+        #         ax[1].imshow(last_image.data, cmap="gray")
+        #         ax[1].axhline(last_image.data.shape[0]//2, color="y", linestyle="--")
+        #         ax[1].axvline(last_image.data.shape[1]//2, color="y", linestyle="--")
+        #         ax[1].set_title("Last Image")
+        #         plt.show()
         ##########
 
     def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
@@ -1241,7 +1241,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             md = fib_image.metadata.image_settings
             filename = os.path.join(md.path, md.filename)
             self.correlation_widget.set_project_path(str(md.path))
-            self.correlation_widget.load_fib_image(image=fib_image.data, 
+            from scipy.ndimage import median_filter
+            self.correlation_widget.load_fib_image(image=median_filter(fib_image.data, size=3), 
                                                     pixel_size=fib_image.metadata.pixel_size.x, 
                                                     filename=filename)
         # else:
