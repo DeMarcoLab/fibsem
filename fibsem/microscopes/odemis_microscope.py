@@ -314,14 +314,28 @@ class OdemisMicroscope(FibsemMicroscope):
 
         # set imaging settings
         # TODO: this is a change in behaviour..., restore the previous conditions or use GrabFrameSettings?
+        # This is the source of the error with square resolutions. 
+        # can't set square resolution, but can acquire an image with square
+        frame_settings = None
+        tmp_resolution = None
+        resolution = image_settings.resolution
+        if resolution[0] == resolution[1]:
+            # can't set square resolution directly
+            frame_settings = {"resolution": f"{resolution[0]}x{resolution[1]}"}
+            tmp_resolution = resolution
+            image_settings.resolution = self.get("resolution", beam_type=beam_type)
         self.set_imaging_settings(image_settings)
 
         # acquire image
-        image, _md = self.connection.acquire_image(channel=channel)
+        image, _md = self.connection.acquire_image(channel=channel, frame_settings=frame_settings)
 
         # restore to full frame imaging
         if image_settings.reduced_area is not None:
             self.connection.set_scan_mode("full_frame", channel=channel, value=None)
+
+        # restore the previous resolution
+        if tmp_resolution is not None:
+            image_settings.resolution = tmp_resolution
 
         # create metadata
         # TODO: retrieve the full image metadata from image md, rather than reconstruct
@@ -482,11 +496,6 @@ class OdemisMicroscope(FibsemMicroscope):
         # beam properties
         if key == "working_distance":
             self.connection.set_working_distance(value, channel)
-            try: # TODO: remove linking once testing is done
-                if beam_type is BeamType.ELECTRON:
-                    self.set("stage_link", True)  # link the specimen stage for electron
-            except Exception as e:
-                logging.info(f"Failed to link stage: {e}")
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return
         if key == "current":
