@@ -23,6 +23,7 @@ from fibsem.utils import current_timestamp_v2
 def setup_milling(
     microscope: FibsemMicroscope,
     milling_stage: FibsemMillingStage,
+    ref_image: FibsemImage = None,
 ):
     """Setup Microscope for FIB Milling.
 
@@ -32,7 +33,7 @@ def setup_milling(
     """
 
     # acquire reference image for drift correction
-    if milling_stage.alignment.enabled:
+    if milling_stage.alignment.enabled and ref_image is None:
         image_settings = ImageSettings(
             hfw=milling_stage.milling.hfw,
             dwell_time=1e-6,
@@ -54,7 +55,7 @@ def setup_milling(
         alignment.multi_step_alignment_v2(microscope=microscope, 
                                         ref_image=ref_image, 
                                         beam_type=milling_stage.milling.milling_channel, 
-                                        steps=1, use_autocontrast=True)  # high current -> damaging
+                                        steps=3, use_autocontrast=True)  # high current -> damaging
 
 # TODO: migrate run milling to take milling_stage argument, rather than current, voltage
 def run_milling(
@@ -164,6 +165,23 @@ def mill_stages(
                     logging.info(ddict)
             microscope.milling_progress_signal.connect(_handle_progress)
 
+
+        # TODO: move into try, only do for stage ===0
+        image_settings = ImageSettings(
+            hfw=stages[0].milling.hfw,
+            dwell_time=1e-6,
+            resolution=[1536, 1024],
+            beam_type=stages[0].milling.milling_channel,
+            reduced_area=stages[0].alignment.rect,
+            path=fcfg.DATA_CC_PATH, # TODO: set this to the last-path?
+            filename=f"ref_{stages[0].name}_initial_alignment_{current_timestamp_v2()}"
+        )
+        ref_image = microscope.acquire_image(image_settings)
+        
+        initial_beam_shift = microscope.get("shift", beam_type=stages[0].milling.milling_channel)
+
+        # TODO: reset beam shift after aligning at milling current
+
         for idx, stage in enumerate(stages):
             start_time = time.time()
             if parent_ui:
@@ -179,6 +197,7 @@ def mill_stages(
                 parent_ui.milling_progress_signal.emit(msgd)
 
             try:
+                stage.ref_image = ref_image
                 stage.strategy.run(
                     microscope=microscope,
                     stage=stage,
@@ -215,6 +234,9 @@ def mill_stages(
             imaging_current=microscope.system.ion.beam.beam_current,
             imaging_voltage=microscope.system.ion.beam.voltage,
         )
+        # restore initial beam shift
+        if initial_beam_shift:
+            microscope.set(key="shift", value=initial_beam_shift, beam_type=BeamType.ION)
         if hasattr(microscope, "milling_progress_signal"):
             microscope.milling_progress_signal.disconnect(_handle_progress)
 

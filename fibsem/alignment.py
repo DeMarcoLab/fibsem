@@ -143,12 +143,15 @@ def beam_shift_alignment_v2(
     )
 
     # adjust beamshift (reverse direction)
+    scan_rotation = microscope.get("scan_rotation", image_settings.beam_type)
+    if np.isclose(scan_rotation, np.radians(180)):
+        dy = -dy
     microscope.beam_shift(-dx, -dy, image_settings.beam_type)
 
     # reset beam current
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
-    
+    logging.info(f"Beam Shift Alignment: dx: {dx}, dy: {dy}")
     msgd = {"msg": "beam_shift_alignment", "dx": dx, "dy": dy, "image_settings": image_settings.to_dict()}
     logging.debug(msgd)
 

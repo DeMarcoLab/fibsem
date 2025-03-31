@@ -14,7 +14,14 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="27" column="0">
+   <item row="31" column="0" colspan="2">
+    <widget class="QProgressBar" name="progressBar_milling">
+     <property name="value">
+      <number>24</number>
+     </property>
+    </widget>
+   </item>
+   <item row="28" column="0">
     <widget class="QPushButton" name="pushButton_pause_milling">
      <property name="text">
       <string>Pause Milling</string>
@@ -22,33 +29,20 @@
     </widget>
    </item>
    <item row="30" column="0" colspan="2">
-    <widget class="QProgressBar" name="progressBar_milling">
+    <widget class="QProgressBar" name="progressBar_milling_stages">
      <property name="value">
       <number>24</number>
      </property>
     </widget>
    </item>
-   <item row="27" column="1">
+   <item row="28" column="1">
     <widget class="QPushButton" name="pushButton_stop_milling">
      <property name="text">
       <string>Stop Milling</string>
      </property>
     </widget>
    </item>
-   <item row="31" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="26" column="0" colspan="2">
+   <item row="27" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_run_milling">
      <property name="text">
       <string>Run Milling</string>
@@ -71,17 +65,17 @@
      </property>
     </widget>
    </item>
-   <item row="28" column="0" colspan="2">
+   <item row="29" column="0" colspan="2">
     <widget class="QLabel" name="label_milling_information">
      <property name="text">
       <string>TextLabel</string>
      </property>
     </widget>
    </item>
-   <item row="29" column="0" colspan="2">
-    <widget class="QProgressBar" name="progressBar_milling_stages">
-     <property name="value">
-      <number>24</number>
+   <item row="25" column="0" colspan="2">
+    <widget class="QLabel" name="label_milling_estimated_time">
+     <property name="text">
+      <string>TextLabel</string>
      </property>
     </widget>
    </item>
@@ -124,9 +118,9 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>-518</y>
+           <y>0</y>
            <width>728</width>
-           <height>1006</height>
+           <height>947</height>
           </rect>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
@@ -323,19 +317,15 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_milling_current">
-               <property name="suffix">
-                <string> nA</string>
-               </property>
-              </widget>
-             </item>
              <item row="11" column="1">
               <widget class="QCheckBox" name="checkBox_milling_acquire_images">
                <property name="text">
                 <string>Acquire Images after Milling</string>
                </property>
               </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QComboBox" name="comboBox_milling_current"/>
              </item>
             </layout>
            </widget>
@@ -600,10 +590,23 @@
      </layout>
     </widget>
    </item>
-   <item row="25" column="0" colspan="2">
-    <widget class="QLabel" name="label_milling_estimated_time">
+   <item row="32" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="26" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_open_correlation">
      <property name="text">
-      <string>TextLabel</string>
+      <string>Open Correlation</string>
      </property>
     </widget>
    </item>

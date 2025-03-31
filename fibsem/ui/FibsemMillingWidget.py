@@ -1,4 +1,5 @@
-
+import math
+import os
 import logging
 from copy import deepcopy
 from pprint import pprint
@@ -33,6 +34,7 @@ from fibsem.milling.patterning.patterns2 import (
     MILLING_PATTERN_NAMES,
     BasePattern,
     LinePattern,
+    FiducialPattern,
     get_pattern,
 )
 from fibsem.milling.strategy import DEFAULT_STRATEGY, MILLING_STRATEGY_NAMES
@@ -54,6 +56,16 @@ from fibsem.ui.napari.patterns import (
 )
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget as FibsemMillingWidgetUI
 from fibsem.utils import format_duration
+
+# 3D Correlation Widget
+CORRELATION_THREEDCT_AVAILABLE = False
+try:
+    from tdct.app import CorrelationUI
+    logging.info("CorrelationUI imported from tdct.app")
+    CORRELATION_THREEDCT_AVAILABLE = True
+except ImportError as e:
+    logging.debug(f"Could not import CorrelationUI from tdct.app: {e}")
+    CorrelationUI = None
 
 UNSCALED_VALUES = [
     "rotation",
@@ -95,6 +107,33 @@ def get_default_milling_pattern(name: str) -> BasePattern:
     """Get the default milling pattern."""
     return get_pattern(name, config = DEFAULT_PROTOCOL["patterns"][name])
 
+# TODO: make these more generic for other units, or use pint
+def _format_beam_current_as_str(val: float):
+    scale = 1
+    unit = "A"
+    if val < 1e-9:
+        scale = 1e12
+        unit = "pA"
+    elif val < 1e-6:
+        scale = 1e9
+        unit = "nA"
+    elif val < 1e-3:
+        scale = 1e6
+        unit = "uA"
+
+    return f"{math.ceil(val*scale)} {unit}"
+    
+def _parse_beam_current_str(val: str) -> float:
+    scale = 1
+    unit = "A"
+    if "pA" in val:
+        scale = 1e-12
+    elif "nA" in val:
+        scale = 1e-9
+    elif "uA" in val:
+        scale = 1e-6
+    return float(val.split(" ")[0]) * scale
+
 class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
     milling_progress_signal = QtCore.pyqtSignal(dict) # TODO: replace with pysygnal (pure-python signal)
@@ -112,6 +151,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         self.viewer = viewer
         self.image_widget: FibsemImageSettingsWidget = parent.image_widget
+        
+        # correlation widget
+        self.correlation_viewer: napari.Viewer = None
+        self.correlation_widget: CorrelationUI = None
 
         self.UPDATING_PATTERN: bool = False
         self.CAN_MOVE_PATTERN: bool = True
@@ -150,23 +193,19 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         # ThermoFisher Only 
         self.label_application_file.setVisible(is_thermo)
         self.comboBox_application_file.setVisible(is_thermo)
-        self.doubleSpinBox_milling_current.setVisible(is_thermo)
+        self.comboBox_milling_current.setVisible(is_thermo)
         self.label_milling_current.setVisible(is_thermo)
         self.label_voltage.setVisible(is_thermo)
         self.spinBox_voltage.setVisible(is_thermo) # TODO: set this to the available voltages
         if is_thermo:
             AVAILABLE_APPLICATION_FILES = self.microscope.get_available_values("application_file")
             self.comboBox_application_file.addItems(AVAILABLE_APPLICATION_FILES)
-            # milling currents: TODO: make this a combobox with available values
             self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
-            min_current = self.AVAILABLE_MILLING_CURRENTS[0] * constants.SI_TO_NANO
-            max_current = self.AVAILABLE_MILLING_CURRENTS[-1] * constants.SI_TO_NANO
-            self.doubleSpinBox_milling_current.setRange(min_current, max_current)
-            self.doubleSpinBox_milling_current.setDecimals(4)
+            beam_currents = [_format_beam_current_as_str(val) for val in self.AVAILABLE_MILLING_CURRENTS]
+            self.comboBox_milling_current.addItems(beam_currents)
             self.comboBox_application_file.currentIndexChanged.connect(self.update_milling_settings_from_ui)
-            self.doubleSpinBox_milling_current.valueChanged.connect(self.update_milling_settings_from_ui)
+            self.comboBox_milling_current.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.spinBox_voltage.valueChanged.connect(self.update_milling_settings_from_ui)
-            self.doubleSpinBox_milling_current.setKeyboardTracking(False)
 
         # Tescan Only
         AVAILABLE_PRESETS = self.microscope.get_available_values("presets", BeamType.ION)
@@ -269,7 +308,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         # external signals
         self.image_widget.viewer_update_signal.connect(self.update_ui) # update the ui when the image is updated
-    
+
+        self.pushButton_open_correlation.clicked.connect(self.open_3d_correlation_widget)
+        self.pushButton_open_correlation.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_open_correlation.setVisible(CORRELATION_THREEDCT_AVAILABLE)
+
     def on_selection_changed(self):
         """Selection changed callback for the milling stages list widget."""
         selected_items = self.listWidget_active_milling_stages.selectedItems()
@@ -871,7 +914,9 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         """Set the milling settings ui from the current milling stage."""
         milling = self.current_milling_stage.milling
 
-        self.doubleSpinBox_milling_current.setValue(milling.milling_current * constants.SI_TO_NANO)
+        milling_current_str = _format_beam_current_as_str(milling.milling_current)
+        self.comboBox_milling_current.setCurrentText(milling_current_str) # TODO: check the current matches, get closest
+        # self.doubleSpinBox_milling_current.setValue(milling.milling_current * constants.SI_TO_NANO)
         self.comboBox_application_file.setCurrentText(milling.application_file)
         self.doubleSpinBox_rate.setValue(milling.rate*constants.SI_TO_NANO)
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)
@@ -883,7 +928,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def get_milling_settings_from_ui(self):
         """Get the Milling Settings from the UI."""
-        current_amps = float(self.doubleSpinBox_milling_current.value()) * constants.NANO_TO_SI
+        current_str = self.comboBox_milling_current.currentText()# TODO: migrate to use CurrentData, rather than str converter
+        current_amps = _parse_beam_current_str(current_str)
 
         milling_settings = FibsemMillingSettings(
             milling_current=current_amps,
@@ -1041,6 +1087,24 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.MILLING_IS_FINISHED = True
             self.update_progress_bar({"state": "finished"})
 
+        ########## REMOVE
+        # if ddict.get("confirm_alignment", False):
+        #     ref_image = ddict.get("ref_image", None)
+        #     last_image = ddict.get("last_image", None)
+        #     if ref_image is not None and last_image is not None:
+        #         import matplotlib.pyplot as plt
+        #         fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        #         ax[0].imshow(ref_image.data, cmap="gray")
+        #         ax[0].set_title("Reference Image")
+        #         ax[0].axhline(ref_image.data.shape[0]//2, color="y", linestyle="--")
+        #         ax[0].axvline(ref_image.data.shape[1]//2, color="y", linestyle="--")
+        #         ax[1].imshow(last_image.data, cmap="gray")
+        #         ax[1].axhline(last_image.data.shape[0]//2, color="y", linestyle="--")
+        #         ax[1].axvline(last_image.data.shape[1]//2, color="y", linestyle="--")
+        #         ax[1].set_title("Last Image")
+        #         plt.show()
+        ##########
+
     def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
         """Toggle microscope and pattern interactions."""
 
@@ -1137,3 +1201,91 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         for layer in self.milling_pattern_layers:
             if layer in self.viewer.layers:
                 self.viewer.layers[layer].visible = is_visible
+
+
+#### CORRELATION
+
+    def open_3d_correlation_widget(self):
+        """Open the correlation widget, connect relevant signals."""
+        if not CORRELATION_THREEDCT_AVAILABLE:
+            napari.utils.notifications.show_warning(
+                "3D Correlation UI not available. Please install tdct."
+            )
+            return
+
+        # attempt to close the windows
+        try:
+            if self.correlation_widget is not None:
+                self.correlation_widget.close()
+                self.correlation_widget = None
+        except Exception as e:
+            logging.warning(f"Error closing correlation widget: {e}")
+        try:
+            if self.correlation_viewer is not None:
+                self.correlation_viewer.close()
+                self.correlation_viewer = None
+        except Exception as e:
+            logging.warning(f"Error closing correlation viewer: {e}")
+
+        # snapshot existing layers
+        self.existing_layers = [layer.name for layer in self.viewer.layers]
+        for layer_name in self.existing_layers:
+            self.viewer.layers[layer_name].visible = False
+
+        self.correlation_widget = CorrelationUI(viewer=self.viewer, parent_ui=self)
+        self.correlation_widget.continue_pressed_signal.connect(self.handle_correlation_continue_signal)
+
+        # load fib image, if available
+        fib_image: FibsemImage = self.image_widget.ib_image
+        if fib_image is not None:
+            md = fib_image.metadata.image_settings
+            filename = os.path.join(md.path, md.filename)
+            self.correlation_widget.set_project_path(str(md.path))
+            from scipy.ndimage import median_filter
+            self.correlation_widget.load_fib_image(image=median_filter(fib_image.data, size=3), 
+                                                    pixel_size=fib_image.metadata.pixel_size.x, 
+                                                    filename=filename)
+        # else:
+            # napari.utils.notifications.show_warning("No FIBSEM image available...")
+            # self.correlation_widget.set_project_path(self.experiment.path)
+
+        # create a button to run correlation
+        self.viewer.window.add_dock_widget(
+            self.correlation_widget,
+            area="right",
+            name="3DCT Correlation",
+            tabify=True
+        )
+
+    def handle_correlation_continue_signal(self, data: dict):
+        """Handle the correlation signal from the correlation widget."""
+        logging.info(f"correlation-data: {data}")
+
+        poi = data.get("poi", None)
+        if poi is None:
+            return
+        point = Point(x=poi[0], y=poi[1])
+
+        for milling_stage in self.milling_stages:
+            # don't move fiducial patterns
+            if isinstance(milling_stage.pattern, FiducialPattern):
+                continue
+            milling_stage.pattern.point = point
+        logging.debug(f"Moved patterns to {point}")
+
+        # update the ui element correpsonding to the point, if not fiducial
+        if not isinstance(self.current_milling_stage.pattern, FiducialPattern):
+            self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
+
+        self.update_ui()
+        self.milling_position_changed.emit()
+
+        # restore layers visibility
+        for layer_name in self.existing_layers:
+            self.viewer.layers[layer_name].visible = True
+
+        # remove tab widget, delete object
+        self.viewer.window.remove_dock_widget(self.correlation_widget)
+        self.correlation_widget = None
+        self.existing_layers = []

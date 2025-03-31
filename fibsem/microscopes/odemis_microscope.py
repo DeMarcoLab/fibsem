@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
-
+from typing import Optional
 import numpy as np
 from psygnal import Signal
 
@@ -258,6 +258,41 @@ class OdemisMicroscope(FibsemMicroscope):
     def disconnect(self):
         pass
 
+    def get_orientation(self, orientation: str) -> str:
+        """Get the current orientation of the microscope."""
+        return ThermoMicroscope.get_orientation(self, orientation)
+
+    def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
+        """Get the stage position for the specified orientation."""
+        return ThermoMicroscope.get_stage_orientation(self)
+
+    def move_flat_to_beam(self, beam_type: BeamType, _safe: bool = True) -> None:
+        # new style
+        omap = {BeamType.ELECTRON: "SEM", BeamType.ION: "FIB"}
+        pos = self.get_orientation(omap[beam_type])
+        rotation, tilt = pos.r, pos.t
+        stage_orientation = self.get_stage_orientation()
+
+        # updated safe rotation move
+        logging.info(f"moving flat to {beam_type.name}")
+        stage_position = FibsemStagePosition(r=rotation, t=tilt, coordinate_system="Raw")
+
+        # imitate compucentric movements
+        if (stage_orientation in ["SEM", "MILLING"] and beam_type == BeamType.ION) or \
+           (stage_orientation == "FIB" and beam_type == BeamType.ELECTRON):
+
+            current_stage_position = self.get_stage_position()
+            stage_position.x = -current_stage_position.x
+            stage_position.y = -current_stage_position.y
+            stage_position.z =  current_stage_position.z
+
+        logging.debug({"msg": "move_flat_to_beam", "stage_position": stage_position.to_dict(), "beam_type": beam_type.name})
+
+        if _safe:
+            self.safe_absolute_stage_movement(stage_position)
+        else:
+            self.move_stage_absolute(stage_position)
+
     def acquire_chamber_image(self) -> FibsemImage:
         pass
 
@@ -279,14 +314,28 @@ class OdemisMicroscope(FibsemMicroscope):
 
         # set imaging settings
         # TODO: this is a change in behaviour..., restore the previous conditions or use GrabFrameSettings?
+        # This is the source of the error with square resolutions. 
+        # can't set square resolution, but can acquire an image with square
+        frame_settings = None
+        tmp_resolution = None
+        resolution = image_settings.resolution
+        if resolution[0] == resolution[1]:
+            # can't set square resolution directly
+            frame_settings = {"resolution": f"{resolution[0]}x{resolution[1]}"}
+            tmp_resolution = resolution
+            image_settings.resolution = self.get("resolution", beam_type=beam_type)
         self.set_imaging_settings(image_settings)
 
         # acquire image
-        image, _md = self.connection.acquire_image(channel=channel)
+        image, _md = self.connection.acquire_image(channel=channel, frame_settings=frame_settings)
 
         # restore to full frame imaging
         if image_settings.reduced_area is not None:
             self.connection.set_scan_mode("full_frame", channel=channel, value=None)
+
+        # restore the previous resolution
+        if tmp_resolution is not None:
+            image_settings.resolution = tmp_resolution
 
         # create metadata
         # TODO: retrieve the full image metadata from image md, rather than reconstruct
@@ -447,11 +496,6 @@ class OdemisMicroscope(FibsemMicroscope):
         # beam properties
         if key == "working_distance":
             self.connection.set_working_distance(value, channel)
-            try: # TODO: remove linking once testing is done
-                if beam_type is BeamType.ELECTRON:
-                    self.set("stage_link", True)  # link the specimen stage for electron
-            except Exception as e:
-                logging.info(f"Failed to link stage: {e}")
             logging.info(f"{beam_type.name} working distance set to {value} m.")
             return
         if key == "current":
@@ -475,7 +519,7 @@ class OdemisMicroscope(FibsemMicroscope):
             logging.info(f"{beam_type.name} scan rotation set to {value} radians.")
             return
         if key == "shift":
-            self.connection.set_beam_shift(-value.x, value.y, channel)
+            self.connection.set_beam_shift(value.x, value.y, channel)
             logging.info(f"{beam_type.name} shift set to {value}.")
             return
         if key == "stigmation":
@@ -510,9 +554,9 @@ class OdemisMicroscope(FibsemMicroscope):
             logging.info(f"{beam_type.name} beam turned {'on' if value else 'off'}.")
             return
         if key == "blanked":
-            self.connection.beam_blank(
+            self.connection.blank_beam(
                 channel
-            ) if value else self.connection.beam_unblank(channel)
+            ) if value else self.connection.unblank_beam(channel)
             logging.info(
                 f"{beam_type.name} beam {'blanked' if value else 'unblanked'}."
             )
@@ -552,6 +596,13 @@ class OdemisMicroscope(FibsemMicroscope):
                 )
             return
 
+        if key == "spot_mode":
+            self.connection.set_spot_scan_mode(channel=channel, x=value.x, y=value.y)
+            return
+
+        if key == "full_frame":
+            self.connection.set_full_frame_scan_mode(channel)
+            return
         # system properties
         if key == "beam_enabled":
             if beam_type is BeamType.ELECTRON:
@@ -681,6 +732,10 @@ class OdemisMicroscope(FibsemMicroscope):
             )[
                 "range"
             ]  # TODO: we need the list of choices, not the range (this should be an list)
+            # xenon
+            # values = [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1e-9, 4e-9, 15e-9, 60e-9]
+            # argon
+            # values = [1.0e-12, 6.0e-12, 20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.4e-9, 28.0e-9, 120.0e-9]
         if key == "plasma_gas":
             values = ["Argon", "Oxygen", "Xenon"]
 
@@ -715,6 +770,7 @@ class OdemisMicroscope(FibsemMicroscope):
         pdict = stage_position_to_odemis_dict(position)
         f = self.stage.moveAbs(pdict)
         f.result()
+        # TODO: implement compucentric rotation
 
     def move_stage_relative(self, position: FibsemStagePosition) -> None:
         pdict = stage_position_to_odemis_dict(position)
@@ -727,10 +783,10 @@ class OdemisMicroscope(FibsemMicroscope):
         return ThermoMicroscope.stable_move(self, dx=dx, dy=dy, beam_type=beam_type, static_wd=static_wd)
 
     def vertical_move(
-        self, dy: float, dx: float = 0.0, static_wd: bool = True, use_perspective: bool = True
+        self, dy: float, dx: float = 0.0, static_wd: bool = True
     ) -> FibsemStagePosition:
         """Move the stage vertically by the specified amount."""
-        return ThermoMicroscope.vertical_move(self, dy=dy, dx=dx, static_wd=static_wd, use_perspective=use_perspective)
+        return ThermoMicroscope.vertical_move(self, dy=dy, dx=dx, static_wd=static_wd)
 
     def _y_corrected_stage_movement(
         self, expected_y: float, beam_type: BeamType
@@ -749,8 +805,11 @@ class OdemisMicroscope(FibsemMicroscope):
                                                     beam_type=beam_type, 
                                                     base_position=base_position)
 
+    def _safe_rotation_movement(self, stage_position: FibsemStagePosition) -> None:
+        return ThermoMicroscope._safe_rotation_movement(self, stage_position)
+
     def safe_absolute_stage_movement(self, position: FibsemStagePosition) -> None:
-        self.move_stage_absolute(position)
+        return ThermoMicroscope.safe_absolute_stage_movement(self, position)
 
     def live_imaging(self, beam_type: BeamType) -> None:
         pass
@@ -769,6 +828,7 @@ class OdemisMicroscope(FibsemMicroscope):
 
         # select the correct pattern function
         create_pattern_function = self.connection.create_rectangle
+        self.connection.set_default_application_file("Si")
         if pattern_settings.cross_section is CrossSectionPattern.CleaningCrossSection:
             create_pattern_function = self.connection.create_cleaning_cross_section
             self.connection.set_default_application_file("Si-ccs")

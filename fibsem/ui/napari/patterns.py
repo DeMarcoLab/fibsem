@@ -351,6 +351,7 @@ def draw_milling_patterns_in_napari(
             viewer.layers[name].shape_type = all_shape_types
             viewer.layers[name].edge_color = all_shape_colours
             viewer.layers[name].face_color = all_shape_colours
+            viewer.layers[name].translate = translation
         else:
             viewer.add_shapes(
                 data=all_napari_shapes,
