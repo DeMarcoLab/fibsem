@@ -178,13 +178,18 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         if is_finished:
             logging.info("Movement finished")
             # TODO: handle the signals
-            self.display_stage_position_overlay()
+            # self.display_stage_position_overlay()
 
     def display_stage_position_overlay(self):
         """Display the stage position as text overlay on the image widget"""
-        pos = self.microscope.get_stage_position()
-        orientation = self.microscope.get_stage_orientation()
-        
+        try:
+            # NOTE: this crashes for tescan systems?
+            pos = self.microscope.get_stage_position()
+            orientation = self.microscope.get_stage_orientation()
+        except Exception as e:
+            logging.warning(f"Error getting stage position: {e}")
+            return
+
         # add text layer, showing the stage position in cyan
         points = np.array([[self.image_widget.eb_layer.data.shape[0] + 50, 400]]) # TODO: use translation property instead
         text = {

@@ -928,8 +928,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def get_milling_settings_from_ui(self):
         """Get the Milling Settings from the UI."""
-        current_str = self.comboBox_milling_current.currentText()# TODO: migrate to use CurrentData, rather than str converter
-        current_amps = _parse_beam_current_str(current_str)
+        current_amps = 20e-12 # default value
+        if isinstance(self.microscope, ThermoMicroscope):
+            current_str = self.comboBox_milling_current.currentText()# TODO: migrate to use CurrentData, rather than str converter
+            current_amps = _parse_beam_current_str(current_str)
 
         milling_settings = FibsemMillingSettings(
             milling_current=current_amps,

@@ -6,7 +6,7 @@ import threading
 import time
 from copy import deepcopy
 from queue import Queue
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Optional
 
 import numpy as np
 
@@ -416,7 +416,7 @@ class TescanMicroscope(FibsemMicroscope):
     def consume_image_queue(self, parent_ui = None, sleep = 0.1):
         return NotImplemented
         
-    def autocontrast(self, beam_type: BeamType) -> None:
+    def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
         """Automatically adjust the microscope image contrast for the specified beam type.
 
         Args:
@@ -580,6 +580,58 @@ class TescanMicroscope(FibsemMicroscope):
         # calculate vertical stage movement (not required for Tescan)
         z_move = FibsemStagePosition(x=dx, y=0, z=dy, r=0, t=0)
         self.move_stage_relative(z_move)
+
+    # TODO: update this to an enum
+    def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
+
+        # current stage position
+        if stage_position is None:
+            stage_position = self.get_stage_position()
+        stage_rotation = stage_position.r % (2 * np.pi)
+        stage_tilt = stage_position.t
+
+        from fibsem import movement
+        # TODO: also check xyz ranges?
+
+        sem = self.get_orientation("SEM")
+        fib = self.get_orientation("FIB")
+
+        is_sem_rotation = movement.rotation_angle_is_smaller(stage_rotation, sem.r, atol=5) # query: do we need rotation_angle_is_smaller, since we % 2pi the rotation?
+        is_fib_rotation = movement.rotation_angle_is_smaller(stage_rotation, fib.r, atol=5)
+
+        is_sem_tilt = np.isclose(stage_tilt, sem.t, atol=0.1)
+        is_fib_tilt = np.isclose(stage_tilt, fib.t, atol=0.1)
+        is_milling_tilt = stage_tilt < sem.t  # QUERY: explicitly support this?
+
+        if is_sem_rotation and is_sem_tilt:
+            return "SEM"
+        if is_sem_rotation and is_milling_tilt:
+            return "MILLING"
+        if is_fib_rotation and is_fib_tilt:
+            return "FIB"
+
+        return "UNKNOWN"
+
+    def get_orientation(self, orientation: str) -> FibsemStagePosition:
+
+        stage_settings = self.system.stage
+        shuttle_pre_tilt = stage_settings.shuttle_pre_tilt  # deg
+
+        self.orientations = {
+            "SEM": FibsemStagePosition(
+                r=np.radians(stage_settings.rotation_reference),
+                t=np.radians(shuttle_pre_tilt),
+            ),
+            "FIB": FibsemStagePosition(
+                r=np.radians(stage_settings.rotation_180),
+                t=np.radians(self.system.ion.column_tilt - shuttle_pre_tilt),
+            ),
+        }
+
+        if orientation not in self.orientations:
+            raise ValueError(f"Orientation {orientation} not supported.")
+
+        return self.orientations[orientation]
 
     def _y_corrected_stage_movement(
         self,
