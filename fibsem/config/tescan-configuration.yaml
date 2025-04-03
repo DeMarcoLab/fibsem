@@ -1,4 +1,4 @@
-# Please don't edit or delet this file, it is the default configuration for the microscope
+# Please don't edit or delete this file, it is the default configuration for the microscope
 # configuration 
 info:
     name: tescan-microscope-configuration               # a descriptive name for your configuration                     [SPECIFIED]
