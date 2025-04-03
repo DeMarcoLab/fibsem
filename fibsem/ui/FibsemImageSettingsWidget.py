@@ -14,7 +14,8 @@ from scipy.ndimage import median_filter
 
 from fibsem import acquire, constants
 from fibsem import config as cfg
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.microscope import FibsemMicroscope
+from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.structures import (
     BeamSettings,
     BeamType,
@@ -136,11 +137,11 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.IS_TESCAN = isinstance(self.microscope, TescanMicroscope)
         if self.IS_TESCAN:
             self.label_stigmation.hide()
-            self.stigmation_x.hide()
-            self.stigmation_y.hide()
-            self.stigmation_x.setEnabled(False)
-            self.stigmation_y.setEnabled(False)
-            available_presets = self.microscope.get_available_values("presets")
+            self.doubleSpinBox_stigmation_x.hide()
+            self.doubleSpinBox_stigmation_y.hide()
+            self.doubleSpinBox_stigmation_x.setEnabled(False)
+            self.doubleSpinBox_stigmation_y.setEnabled(False)
+            available_presets = self.microscope.get_available_values("presets", beam_type=BeamType.ION)
             self.comboBox_presets.addItems(available_presets)   
             self.comboBox_presets.currentTextChanged.connect(self.update_presets)
             self.checkBox_image_line_integration.setVisible(False)
@@ -461,11 +462,14 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.doubleSpinBox_beam_voltage.setValue(beam_settings.voltage*constants.SI_TO_KILO)
         self.spinBox_beam_scan_rotation.setValue(np.rad2deg(beam_settings.scan_rotation))
         
-        self.doubleSpinBox_working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
-        self.doubleSpinBox_shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
-        self.doubleSpinBox_shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
-        self.doubleSpinBox_stigmation_x.setValue(beam_settings.stigmation.x)
-        self.doubleSpinBox_stigmation_y.setValue(beam_settings.stigmation.y)
+        if beam_settings.working_distance is not None:
+            self.doubleSpinBox_working_distance.setValue(beam_settings.working_distance*constants.METRE_TO_MILLIMETRE)
+        if beam_settings.shift is not None:
+            self.doubleSpinBox_shift_x.setValue(beam_settings.shift.x * constants.SI_TO_MICRO)
+            self.doubleSpinBox_shift_y.setValue(beam_settings.shift.y * constants.SI_TO_MICRO)
+        if beam_settings.stigmation is not None:
+            self.doubleSpinBox_stigmation_x.setValue(beam_settings.stigmation.x)
+            self.doubleSpinBox_stigmation_y.setValue(beam_settings.stigmation.y)
         
         self.update_ui_saving_settings()
 

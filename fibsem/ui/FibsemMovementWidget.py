@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtWidgets
 import fibsem.utils as utils
 from fibsem import config as cfg
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemStagePosition,
@@ -101,7 +101,7 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.saved_positions_updated_signal.connect(self.update_saved_positions_ui)
 
         # set custom tilt limits for the compustage # TODO: do this in the microscope class
-        if self.microscope is not None:
+        if self.microscope is not None and isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope)):
             if self.microscope.stage_is_compustage:
                 self.doubleSpinBox_movement_stage_tilt.setMinimum(-195.0)
                 self.doubleSpinBox_movement_stage_tilt.setMaximum(15)
@@ -178,13 +178,18 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         if is_finished:
             logging.info("Movement finished")
             # TODO: handle the signals
-            self.display_stage_position_overlay()
+            # self.display_stage_position_overlay()
 
     def display_stage_position_overlay(self):
         """Display the stage position as text overlay on the image widget"""
-        pos = self.microscope.get_stage_position()
-        orientation = self.microscope.get_stage_orientation()
-        
+        try:
+            # NOTE: this crashes for tescan systems?
+            pos = self.microscope.get_stage_position()
+            orientation = self.microscope.get_stage_orientation()
+        except Exception as e:
+            logging.warning(f"Error getting stage position: {e}")
+            return
+
         # add text layer, showing the stage position in cyan
         points = np.array([[self.image_widget.eb_layer.data.shape[0] + 50, 400]]) # TODO: use translation property instead
         text = {
