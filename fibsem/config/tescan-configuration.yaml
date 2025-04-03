@@ -57,6 +57,6 @@ milling:
     milling_voltage:            30000                       # the default milling voltage       (Thermo)            [volt]  [USER]
     milling_current:            2.0e-09                     # the default milling current       (Thermo)            [amp]   [USER]   
     dwell_time:                 1.0e-06                     # the default milling dwell time    (TESCAN)            [second][USER]
-    rate:                       3.4e-09                     # the default milling spuuter rate  (TESCAN)            [um3/s] [USER]
+    rate:                       3.4e-09                     # the default milling sputter rate  (TESCAN)            [um3/s] [USER]
     spot_size:                  5.4e-08                     # the default milling spot size     (TESCAN)            [metres][USER]
     preset:                     "30 keV; 20 nA"             # the default milling preset        (TESCAN)                    [USER]
