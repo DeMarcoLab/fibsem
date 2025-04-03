@@ -11,10 +11,10 @@ stage:
     rotation_reference:         180                         # the reference rotation value                                  [SPECIFIED] 
     rotation_180:               0                           # the reference rotation + 180 degrees                          [DERIVED - rotation-reference]
     shuttle_pre_tilt:           0                           # the pre-tilt of the shuttle                                   [SPECIFIED]
-    manipulator_height_limit:   0.0037                      # the linked height limit for manipulator (Thermo Only)         [DERIVED - manufactuer]
+    manipulator_height_limit:   0.0037                      # the linked height limit for manipulator (Thermo Only)         [DERIVED - manufacturer]
 electron:                                              
     enabled:                    true                        # the electron beam is enabled                                  [USER]
-    column_tilt:                0                           # the column tilt of the electron beam                          [DERIVED - manufactuer]
+    column_tilt:                0                           # the column tilt of the electron beam                          [DERIVED - manufacturer]
     eucentric_height:           7.0e-3                      # the eucentric height of the electron beam                     [SPECIFIED]
     voltage:                    2000                        # the voltage of the electron beam                              [USER]
     current:                    50.0e-12                    # the current of the electron beam                              [USER]
