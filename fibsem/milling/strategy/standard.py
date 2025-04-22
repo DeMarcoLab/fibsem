@@ -44,16 +44,6 @@ class StandardMillingStrategy(MillingStrategy):
 
         draw_patterns(microscope, stage.pattern.define())
 
-        ######### REMOVE
-        if parent_ui:
-            parent_ui.milling_progress_signal.emit({"msg": f"Confirm milling alignment", 
-                                                    "confirm_alignment": True,
-                                                    "ref_image": stage.ref_image, 
-                                                    "last_image": microscope.last_image(beam_type=stage.milling.milling_channel)})
-            logging.info("WAITING_FOR_MILLING_CONFIRMATION...")
-            time.sleep(5)
-        ######### REMOVE
-
         estimated_time = microscope.estimate_milling_time()
         logging.info(f"Estimated time for {stage.name}: {estimated_time:.2f} seconds")
 

@@ -1087,24 +1087,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.MILLING_IS_FINISHED = True
             self.update_progress_bar({"state": "finished"})
 
-        ########## REMOVE
-        # if ddict.get("confirm_alignment", False):
-        #     ref_image = ddict.get("ref_image", None)
-        #     last_image = ddict.get("last_image", None)
-        #     if ref_image is not None and last_image is not None:
-        #         import matplotlib.pyplot as plt
-        #         fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-        #         ax[0].imshow(ref_image.data, cmap="gray")
-        #         ax[0].set_title("Reference Image")
-        #         ax[0].axhline(ref_image.data.shape[0]//2, color="y", linestyle="--")
-        #         ax[0].axvline(ref_image.data.shape[1]//2, color="y", linestyle="--")
-        #         ax[1].imshow(last_image.data, cmap="gray")
-        #         ax[1].axhline(last_image.data.shape[0]//2, color="y", linestyle="--")
-        #         ax[1].axvline(last_image.data.shape[1]//2, color="y", linestyle="--")
-        #         ax[1].set_title("Last Image")
-        #         plt.show()
-        ##########
-
     def _toggle_interactions(self, enabled: bool = True, caller: str = None, milling: bool = False):
         """Toggle microscope and pattern interactions."""
 
