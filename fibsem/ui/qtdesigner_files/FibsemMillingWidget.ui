@@ -120,10 +120,89 @@
            <x>0</x>
            <y>0</y>
            <width>728</width>
-           <height>947</height>
+           <height>1005</height>
           </rect>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
+          <item row="1" column="0">
+           <widget class="QGroupBox" name="groupBox_imaging">
+            <property name="title">
+             <string>Acquisition</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_9">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_imagining_resolution">
+               <property name="text">
+                <string>Resolution (px)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_imaging_fov">
+               <property name="text">
+                <string>Field of View</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QCheckBox" name="checkBox_imaging_use_autocontrast">
+               <property name="text">
+                <string>Use AutoContrast</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_imaging_dwell_time">
+               <property name="text">
+                <string>Dwell Time</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QCheckBox" name="checkBox_imaging_save">
+               <property name="text">
+                <string>Save Images</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="comboBox_imaging_resolution"/>
+             </item>
+             <item row="1" column="1">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_dwell_time">
+               <property name="suffix">
+                <string> us</string>
+               </property>
+               <property name="maximum">
+                <double>10000.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_fov">
+               <property name="suffix">
+                <string> um</string>
+               </property>
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <double>10000.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>150.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
           <item row="0" column="0">
            <widget class="QGroupBox" name="groupBox_milling_settings">
             <property name="title">
@@ -330,7 +409,29 @@
             </layout>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="4" column="0">
+           <widget class="QGroupBox" name="groupBox_strategy">
+            <property name="title">
+             <string>Strategy</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_8">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_strategy_name">
+               <property name="text">
+                <string>Strategy Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="comboBox_strategy_name"/>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <layout class="QGridLayout" name="gridLayout_strategy"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="3" column="0">
            <widget class="QGroupBox" name="groupBox_aligment">
             <property name="title">
              <string>Alignment</string>
@@ -374,29 +475,50 @@
             </layout>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QGroupBox" name="groupBox_strategy">
+          <item row="6" column="0">
+           <widget class="QGroupBox" name="groupBox_options">
             <property name="title">
-             <string>Strategy</string>
+             <string>Options</string>
             </property>
-            <layout class="QGridLayout" name="gridLayout_8">
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_strategy_name">
+            <layout class="QGridLayout" name="gridLayout_6">
+             <item row="1" column="0">
+              <widget class="QCheckBox" name="checkBox_show_milling_patterns">
                <property name="text">
-                <string>Strategy Name</string>
+                <string>Show Milling Patterns</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QCheckBox" name="checkBox_relative_move">
+               <property name="text">
+                <string>Keep Relative Orientation</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QCheckBox" name="checkBox_show_milling_crosshair">
+               <property name="text">
+                <string>Show Milling Crosshair</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QComboBox" name="comboBox_strategy_name"/>
-             </item>
-             <item row="1" column="0" colspan="2">
-              <layout class="QGridLayout" name="gridLayout_strategy"/>
+              <widget class="QCheckBox" name="checkBox_show_advanced">
+               <property name="text">
+                <string>Show Advanced</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="2" column="0">
            <widget class="QGroupBox" name="groupBox_pattern_settings">
             <property name="title">
              <string>Pattern</string>
@@ -445,128 +567,6 @@
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QGroupBox" name="groupBox_options">
-            <property name="title">
-             <string>Options</string>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_6">
-             <item row="1" column="0">
-              <widget class="QCheckBox" name="checkBox_show_milling_patterns">
-               <property name="text">
-                <string>Show Milling Patterns</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QCheckBox" name="checkBox_relative_move">
-               <property name="text">
-                <string>Keep Relative Orientation</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QCheckBox" name="checkBox_show_milling_crosshair">
-               <property name="text">
-                <string>Show Milling Crosshair</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QCheckBox" name="checkBox_show_advanced">
-               <property name="text">
-                <string>Show Advanced</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QGroupBox" name="groupBox_imaging">
-            <property name="title">
-             <string>Acquisition</string>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_9">
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_imagining_resolution">
-               <property name="text">
-                <string>Resolution (px)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_imaging_fov">
-               <property name="text">
-                <string>Field of View</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QCheckBox" name="checkBox_imaging_use_autocontrast">
-               <property name="text">
-                <string>Use AutoContrast</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_imaging_dwell_time">
-               <property name="text">
-                <string>Dwell Time</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QCheckBox" name="checkBox_imaging_save">
-               <property name="text">
-                <string>Save Images</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QComboBox" name="comboBox_imaging_resolution"/>
-             </item>
-             <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_dwell_time">
-               <property name="suffix">
-                <string> us</string>
-               </property>
-               <property name="maximum">
-                <double>10000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>1.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_imaging_fov">
-               <property name="suffix">
-                <string> um</string>
-               </property>
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <double>10000.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>150.000000000000000</double>
                </property>
               </widget>
              </item>
