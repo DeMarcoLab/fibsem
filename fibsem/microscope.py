@@ -124,6 +124,8 @@ class FibsemMicroscope(ABC):
     """Abstract class containing all the core microscope functionalities"""
     milling_progress_signal = Signal(dict)
     _last_imaging_settings: ImageSettings
+    system: SystemSettings
+    _patterns: List
 
     @abstractmethod
     def connect_to_microscope(self, ip_address: str, port: int) -> None:
@@ -1160,8 +1162,6 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # convert to autoscript position
         autoscript_position = position.to_autoscript_position(compustage=self.stage_is_compustage)
-        if not self.stage_is_compustage:
-            autoscript_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
         
         logging.info(f"Moving stage to {position}.")
         self.stage.absolute_move(autoscript_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
@@ -1190,8 +1190,6 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # convert to autoscript position
         thermo_position = position.to_autoscript_position(self.stage_is_compustage)
-        if not self.stage_is_compustage:
-            thermo_position.coordinate_system = CoordinateSystem.RAW # TODO: check if this is necessary
 
         # move stage
         self.stage.relative_move(thermo_position)
@@ -1509,12 +1507,12 @@ class ThermoMicroscope(FibsemMicroscope):
         dy, dz = point_yz.y, point_yz.z
 
         # calculate the corrected move to reach that point from base-state?
-        _new_position = deepcopy(base_position)
-        _new_position.x += dx
-        _new_position.y += dy
-        _new_position.z += dz
+        new_position = deepcopy(base_position)
+        new_position.x += dx
+        new_position.y += dy
+        new_position.z += dz
 
-        return _new_position
+        return new_position
     
     def insert_manipulator(self, name: str = "PARK"):
         """Insert the manipulator to the specified position"""
@@ -5533,7 +5531,7 @@ class DemoMicroscope(FibsemMicroscope):
             self.ion_system.beam.shift += Point(float(dx), float(dy))
 
     def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
-        return ThermoMicroscope.get_stage_orientation(self)
+        return ThermoMicroscope.get_stage_orientation(self, stage_position)
     
     def get_orientation(self, orientation: str) -> str:
         return ThermoMicroscope.get_orientation(self, orientation)
@@ -6095,11 +6093,11 @@ class DemoMicroscope(FibsemMicroscope):
 
         if key == "spot_mode":
             # value: Point, image pixels
-            beam.scanning_mode = "spot"
+            beam_system.scanning_mode = "spot"
             return
 
         if key == "full_frame":
-            beam.scanning_mode = "full_frame"
+            beam_system.scanning_mode = "full_frame"
             return
 
         # imaging system

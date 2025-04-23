@@ -1,6 +1,6 @@
+import logging
 import math
 import os
-import logging
 from copy import deepcopy
 from pprint import pprint
 from typing import Dict, List, Optional, Tuple, Union
@@ -13,6 +13,7 @@ from napari.qt.threading import thread_worker
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListWidgetItem
+from scipy.ndimage import median_filter
 
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
@@ -33,8 +34,8 @@ from fibsem.milling.patterning.patterns2 import (
     DEFAULT_MILLING_PATTERN,
     MILLING_PATTERN_NAMES,
     BasePattern,
-    LinePattern,
     FiducialPattern,
+    LinePattern,
     get_pattern,
 )
 from fibsem.milling.strategy import DEFAULT_STRATEGY, MILLING_STRATEGY_NAMES
@@ -153,7 +154,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.image_widget: FibsemImageSettingsWidget = parent.image_widget
         
         # correlation widget
-        self.correlation_viewer: napari.Viewer = None
         self.correlation_widget: CorrelationUI = None
 
         self.UPDATING_PATTERN: bool = False
@@ -560,6 +560,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             enabled=self.checkBox_alignment_enabled.isChecked(),
             interval_enabled=self.checkBox_alignment_interval_enabled.isChecked(),
             interval=self.doubleSpinBox_alignment_interval.value(),
+            # rect=self.image_widget.get_alignment_area(), # TODO: get the alignment area from the image widget
         ) # TODO: maintain existing alignment area...
 
         return milling_alignment
@@ -1202,12 +1203,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                 self.correlation_widget = None
         except Exception as e:
             logging.warning(f"Error closing correlation widget: {e}")
-        try:
-            if self.correlation_viewer is not None:
-                self.correlation_viewer.close()
-                self.correlation_viewer = None
-        except Exception as e:
-            logging.warning(f"Error closing correlation viewer: {e}")
 
         # snapshot existing layers
         self.existing_layers = [layer.name for layer in self.viewer.layers]
@@ -1223,7 +1218,6 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             md = fib_image.metadata.image_settings
             filename = os.path.join(md.path, md.filename)
             self.correlation_widget.set_project_path(str(md.path))
-            from scipy.ndimage import median_filter
             self.correlation_widget.load_fib_image(image=median_filter(fib_image.data, size=3), 
                                                     pixel_size=fib_image.metadata.pixel_size.x, 
                                                     filename=filename)

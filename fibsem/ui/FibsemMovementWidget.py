@@ -45,6 +45,14 @@ def to_pretty_string(position: FibsemStagePosition) -> str:
     tstr = f"t={position.t*constants.RADIANS_TO_DEGREES:.1f}"
     return f"{xstr}, {ystr}, {zstr}, {rstr}, {tstr}"
 
+def to_pretty_string_short(position: FibsemStagePosition) -> str:
+    xstr = f"X:{position.x*constants.METRE_TO_MILLIMETRE:.2f}"
+    ystr = f"Y:{position.y*constants.METRE_TO_MILLIMETRE:.2f}"
+    zstr = f"Z:{position.z*constants.METRE_TO_MILLIMETRE:.2f}"
+    rstr = f"R:{position.r*constants.RADIANS_TO_DEGREES:.1f}"
+    tstr = f"T:{position.t*constants.RADIANS_TO_DEGREES:.1f}"
+    return f"{xstr}, {ystr}, {zstr}, {rstr}, {tstr}"
+
 class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
     saved_positions_updated_signal = QtCore.pyqtSignal(object)  # TODO: investigate the use of this signal
     movement_progress_signal = QtCore.pyqtSignal(dict) # TODO: consolidate
@@ -186,9 +194,9 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         orientation = self.microscope.get_stage_orientation()
         
         # add text layer, showing the stage position in cyan
-        points = np.array([[self.image_widget.eb_layer.data.shape[0] + 50, 400]]) # TODO: use translation property instead
+        points = np.array([[self.image_widget.eb_layer.data.shape[0] + 50, 500]]) # TODO: use translation property instead
         text = {
-            "string": [to_pretty_string(pos) + f" [{orientation}]"],
+            "string": [to_pretty_string_short(pos) + f" [{orientation}]"],
             "color": "cyan",
             "font_size": 20,
         }
@@ -220,8 +228,8 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_movement_stage_x.setValue(stage_position.x * constants.SI_TO_MILLI)
         self.doubleSpinBox_movement_stage_y.setValue(stage_position.y * constants.SI_TO_MILLI)
         self.doubleSpinBox_movement_stage_z.setValue(stage_position.z * constants.SI_TO_MILLI)
-        self.doubleSpinBox_movement_stage_rotation.setValue(np.rad2deg(stage_position.r))
-        self.doubleSpinBox_movement_stage_tilt.setValue(np.rad2deg(stage_position.t))
+        self.doubleSpinBox_movement_stage_rotation.setValue(np.degrees(stage_position.r))
+        self.doubleSpinBox_movement_stage_tilt.setValue(np.degrees(stage_position.t))
 
         HAS_SAVED_POSITIONS = bool(len(self.positions))
         # self.pushButton_save_position.setVisible(HAS_SAVED_POSITIONS) # always visible
@@ -278,7 +286,7 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
     def move_stage_finished(self):
         """Handle the completion of a stage movement"""
         self.movement_progress_signal.emit({"finished": True})
-        if self.parent.image_widget.ACQUIRING_IMAGES:
+        if self.image_widget.is_acquiring:
             return
         self._toggle_interactions(enable=True)
 
@@ -289,8 +297,8 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
             x=self.doubleSpinBox_movement_stage_x.value() * constants.MILLI_TO_SI,
             y=self.doubleSpinBox_movement_stage_y.value() * constants.MILLI_TO_SI,
             z=self.doubleSpinBox_movement_stage_z.value() * constants.MILLI_TO_SI,
-            r=np.deg2rad(self.doubleSpinBox_movement_stage_rotation.value()),
-            t=np.deg2rad(self.doubleSpinBox_movement_stage_tilt.value()),
+            r=np.radians(self.doubleSpinBox_movement_stage_rotation.value()),
+            t=np.radians(self.doubleSpinBox_movement_stage_tilt.value()),
             coordinate_system="RAW",
         )
 

@@ -74,7 +74,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.ruler_layer: NapariShapesLayer = None
         self.alignment_layer: NapariShapesLayer = None
 
-        self.ACQUIRING_IMAGES:bool = False
+        self.is_acquiring: bool = False
 
         self.setup_connections()
 
@@ -548,7 +548,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         if self.eb_image is not None:
             self.update_viewer(self.eb_image.data, BeamType.ELECTRON)
         self._toggle_interactions(True)
-        self.ACQUIRING_IMAGES = False
+        self.is_acquiring = False
 
     def acquire_sem_image(self):
         """Acquire an SEM image with the current settings"""
@@ -569,7 +569,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
     def start_acquisition(self, both: bool = False, beam_type: Optional[BeamType] = None):
         """Start the image acquisition process"""
         # disable interactions
-        self.ACQUIRING_IMAGES = True
+        self.is_acquiring = True
         self._toggle_interactions(enable=False, imaging=True)
         
         # get imaging settings from ui
@@ -639,13 +639,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
 
         # centre the camera
         if self.eb_layer:
-            self.viewer.camera.center = [
-                0.0,
-                self.eb_layer.data.shape[0] / 2,
-                self.eb_layer.data.shape[1],
-            ]
-            self.viewer.camera.zoom = 0.45
-            # TODO: fit image to window?
+            self.viewer.reset_view()
 
         if self.ib_layer:
             translation = (
