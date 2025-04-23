@@ -264,7 +264,7 @@ class OdemisMicroscope(FibsemMicroscope):
 
     def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
         """Get the stage position for the specified orientation."""
-        return ThermoMicroscope.get_stage_orientation(self)
+        return ThermoMicroscope.get_stage_orientation(self, stage_position)
 
     def move_flat_to_beam(self, beam_type: BeamType, _safe: bool = True) -> None:
         # new style
