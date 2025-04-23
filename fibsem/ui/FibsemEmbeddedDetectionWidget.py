@@ -1,11 +1,15 @@
 import logging
 import os
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 import napari
 import napari.utils.notifications
 import numpy as np
+from napari.layers import Image as NapariImageLayer
+from napari.layers import Labels as NapariLabelsLayer
+from napari.layers import Points as NapariPointsLayer
+from napari.layers import Shapes as NapariShapesLayer
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
@@ -13,15 +17,15 @@ import fibsem
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
-from fibsem.segmentation import model as fibsem_model
 from fibsem.segmentation.config import CLASS_COLORS
 from fibsem.segmentation.model import load_model
 from fibsem.structures import (
     FibsemImage,
     Point,
 )
-from fibsem.ui import stylesheets
-from fibsem.ui.qtdesigner_files import FibsemEmbeddedDetectionWidget as FibsemEmbeddedDetectionWidgetUI
+from fibsem.ui.qtdesigner_files import (
+    FibsemEmbeddedDetectionWidget as FibsemEmbeddedDetectionWidgetUI,
+)
 
 
 class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidgets.QWidget):
@@ -29,99 +33,37 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
 
     def __init__(
         self,
-        viewer: napari.Viewer,
-        det: DetectedFeatures = None,
-        model: fibsem_model.SegmentationModel = None,
-        parent=None,
+        parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent=parent)
         self.setupUi(self)
 
         self.parent = parent
-        self.viewer = viewer
-        # self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
-        # self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
-        self.model = model
+        if parent is not None:
+            viewer = parent.viewer
+        else:
+            viewer = napari.current_viewer()
+        self.viewer: napari.Viewer = viewer
 
-        self._USER_CORRECTED = False
-        self._LABELLING_ENABLED = False
-        self._MODEL_ASSIST = False
+        self.has_user_corrected: bool = False
 
-        self._image_layer = None
-        self._mask_layer = None
-        self._features_layer = None
-        self._cross_hair_layer = None
+        self.image_layer: NapariImageLayer = None
+        self.mask_layer: NapariLabelsLayer = None
+        self.features_layer: NapariPointsLayer = None
+        self.cross_hair_layer: NapariShapesLayer = None
 
         self.setup_connections()
-
-        # set detected features
-        if det is not None:
-            self.set_detected_features(det)
-
-        if model is not None:
-            self._set_model(model)
 
     def setup_connections(self):
         self.label_instructions.setText(
             """Drag the detected feature positions to move them. Press Continue when finished."""
         )
-        self.pushButton_continue.clicked.connect(self.confirm_button_clicked)
-        self.pushButton_continue.setVisible(False)
 
-
-        # labelling
-        self.viewer.bind_key("L", self._toggle_labelling, overwrite=True)
-        self.pushButton_enable_labelling.clicked.connect(self._toggle_labelling)
-        self.checkBox_labelling_model_assist.stateChanged.connect(self._toggle_labelling)
-        self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_enable_labelling.setEnabled(False)
-
-
-        self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
-        self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
-        self.pushButton_labelling_cancel.setVisible(self._MODEL_ASSIST)       
-        self.label_labelling_class_index.setVisible(self._MODEL_ASSIST)
-        self.label_labelling_instructions.setVisible(self._MODEL_ASSIST)
-        self.label_labelling_model.setVisible(self._MODEL_ASSIST)
-        self.comboBox_labelling_class_index.setVisible(self._MODEL_ASSIST)
-
-
-    def _toggle_labelling(self, event=None):
-        """Toggle labelling mode on/off"""
-        if self.sender() != self.checkBox_labelling_model_assist:
-            self._LABELLING_ENABLED = not self._LABELLING_ENABLED
-
-        self.checkBox_labelling_model_assist.setVisible(False) # TODO: add model assist
-        # self._MODEL_ASSIST = self.checkBox_labelling_model_assist.isChecked()
-        self._MODEL_ASSIST = False
-
-        self.pushButton_labelling_confirm.setVisible(self._MODEL_ASSIST)
-        self.pushButton_labelling_cancel.setVisible(self._MODEL_ASSIST)       
-        self.label_labelling_class_index.setVisible(self._MODEL_ASSIST)
-        self.label_labelling_instructions.setVisible(self._MODEL_ASSIST)
-        self.label_labelling_model.setVisible(self._MODEL_ASSIST)
-        self.comboBox_labelling_class_index.setVisible(self._MODEL_ASSIST)
-
-        # show layer controls
-        self.viewer.window._qt_viewer.dockLayerList.setVisible(self._LABELLING_ENABLED)
-        self.viewer.window._qt_viewer.dockLayerControls.setVisible(self._LABELLING_ENABLED)
-
-        if self._LABELLING_ENABLED:
-            self.viewer.layers.selection.active = self._mask_layer
-            self._mask_layer.mode = "paint"
-            self.pushButton_enable_labelling.setText("Disable Labelling")
-            self.pushButton_enable_labelling.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)        
-        else:
-            self.viewer.layers.selection.active = self._features_layer
-            self._features_layer.mode = "select"
-            self.pushButton_enable_labelling.setText("Enable Labelling")
-            self.pushButton_enable_labelling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)  
-
-    def confirm_button_clicked(self, reset_camera=False):
+    def confirm_button_clicked(self):
         """Confirm the detected features, save the data and and remove the layers from the viewer."""
         
         # update the mask as the user may edit it
-        self.det.mask = self._mask_layer.data.astype(np.uint8) # type: ignore
+        self.det.mask = self.mask_layer.data.astype(np.uint8) # type: ignore
         
         # log the difference between initial and final detections
         # TODO: move this to outside the widget, into the same place as the non-supervised logging.
@@ -129,15 +71,15 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
                                        initial_features=self._intial_det.features)
             
         # remove feature detection layers
-        if self._image_layer is not None:
-            if self._image_layer in self.viewer.layers:
-                self.viewer.layers.remove(self._image_layer)
-            if self._mask_layer in self.viewer.layers:
-                self.viewer.layers.remove(self._mask_layer)
-            if self._features_layer in self.viewer.layers:
-                self.viewer.layers.remove(self._features_layer)
-            if self._cross_hair_layer in self.viewer.layers:
-                self.viewer.layers.remove(self._cross_hair_layer)
+        if self.image_layer is not None:
+            if self.image_layer in self.viewer.layers:
+                self.viewer.layers.remove(self.image_layer)
+            if self.mask_layer in self.viewer.layers:
+                self.viewer.layers.remove(self.mask_layer)
+            if self.features_layer in self.viewer.layers:
+                self.viewer.layers.remove(self.features_layer)
+            if self.cross_hair_layer in self.viewer.layers:
+                self.viewer.layers.remove(self.cross_hair_layer)
 
         # reshow all other layers
         excluded_layers = ["alignment_area"]
@@ -147,14 +89,13 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
             layer.visible = True
         
         # reset camera
-        self.viewer.camera.center = self.prev_camera.center
-        self.viewer.camera.zoom = self.prev_camera.zoom
+        self.viewer.reset_view()
 
     def set_detected_features(self, det_features: DetectedFeatures):
         """Set the detected features and update the UI"""
         self.det = det_features
         self._intial_det = deepcopy(det_features)
-        self._USER_CORRECTED = False
+        self.has_user_corrected = False
 
         self.update_features_ui()
 
@@ -164,20 +105,20 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
         for layer in self.viewer.layers:
             layer.visible = False
 
-        self._image_layer = self.viewer.add_image(
+        self.image_layer = self.viewer.add_image(
             self.det.image, name="image", opacity=0.7, blending="additive",
         )
 
         # add mask to viewer
-        self._mask_layer = self.viewer.add_labels(self.det.mask, 
+        self.mask_layer = self.viewer.add_labels(self.det.mask, 
                                                     name="mask", 
                                                     opacity=0.3,
                                                     blending="additive", 
                                                     )
-        if hasattr(self._mask_layer, "colormap"):
-            self._mask_layer.colormap = CLASS_COLORS
+        if hasattr(self.mask_layer, "colormap"):
+            self.mask_layer.colormap = CLASS_COLORS
         else:
-            self._mask_layer.color = CLASS_COLORS
+            self.mask_layer.color = CLASS_COLORS
 
         # add points to viewer
         data = []
@@ -191,7 +132,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
             "translation": np.array([-30, 0]),
         }
 
-        self._features_layer = self.viewer.add_points(
+        self.features_layer = self.viewer.add_points(
             data,
             name="features",
             text=text,
@@ -204,23 +145,22 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
         )
 
         # draw cross hairs
-        self._cross_hair_layer = None
-        self._draw_crosshairs()
+        self.cross_hair_layer = None
+        self.draw_feature_crosshairs()
 
         # set points layer to select mode and active
-        self.viewer.layers.selection.active = self._features_layer
-        self._features_layer.mode = "select"
+        self.viewer.layers.selection.active = self.features_layer
+        self.features_layer.mode = "select"
         
         # when the point is moved update the feature
-        self._features_layer.events.data.connect(self.update_point)
+        self.features_layer.events.data.connect(self.update_point)
         self.update_info()
             
         # set camera
-        self.prev_camera = deepcopy(self.viewer.camera)
         self.viewer.camera.center = [
             0.0,
-            self._image_layer.data.shape[0] / 2,
-            self._image_layer.data.shape[1] / 2,
+            self.image_layer.data.shape[0] / 2,
+            self.image_layer.data.shape[1] / 2,
         ]
         self.viewer.camera.zoom = 0.7
 
@@ -238,7 +178,7 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
         if len(self.det.features) == 1:
             self.label_info.setText(
             f"""{self.det.features[0].name}: {self.det.features[0].px}
-            User Corrected: {self._USER_CORRECTED}
+            User Corrected: {self.has_user_corrected}
             """)
             return
         if len(self.det.features) == 2:
@@ -248,13 +188,14 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
                 to 
                 {self.det.features[1].name}: {self.det.features[1].px}
                 dx={self.det.distance.x*1e6:.2f}um, dy={self.det.distance.y*1e6:.2f}um
-                User Corrected: {self._USER_CORRECTED}
+                User Corrected: {self.has_user_corrected}
                 """
                 )
             return
 
     def update_point(self, event):
         """Update the feature when the point is moved"""
+        # TODO: events have been updated so we can tell which point was deleted/moved/etc. Update this function to use that.
         logging.debug(f"{event.source.name} changed its data!")
 
         layer = self.viewer.layers[f"{event.source.name}"]  # type: ignore
@@ -284,15 +225,14 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
                     x=data[idx][1], y=data[idx][0]
                 )
 
-        self._draw_crosshairs()
-        self._USER_CORRECTED = True
+        self.draw_feature_crosshairs()
+        self.has_user_corrected = True
         self.update_info()
 
+    def draw_feature_crosshairs(self):
+        """Draw crosshairs for each feature on the image"""
 
-    def _draw_crosshairs(self):
-        """Draw crosshairs on the image"""
-
-        data = self._features_layer.data
+        data = self.features_layer.data
 
         # for each data point draw two lines from the edge of the image to the point
         line_data, line_colors = [], []
@@ -305,10 +245,10 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
             color = self.det.features[idx].color
             line_colors += [color, color]
         try:
-            self._cross_hair_layer.data = line_data
-            self._cross_hair_layer.edge_color = line_colors
-        except:
-            self._cross_hair_layer = self.viewer.add_shapes(
+            self.cross_hair_layer.data = line_data
+            self.cross_hair_layer.edge_color = line_colors
+        except Exception as e:
+            self.cross_hair_layer = self.viewer.add_shapes(
                 data=line_data,
                 shape_type="line",
                 edge_width=3,
@@ -318,11 +258,6 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
                 blending="additive",
             )    
     
-    def _set_model(self, model: fibsem_model.SegmentationModel):
-        self.model = model
-        # update model info
-        self.label_model.setText(f"Model: {self.model.model.name} \nCheckpont: {os.path.basename(self.model.checkpoint)}")
-
     def _get_detected_features(self):
 
         from fibsem import conversions
@@ -335,7 +270,6 @@ class FibsemEmbeddedDetectionUI(FibsemEmbeddedDetectionWidgetUI.Ui_Form, QtWidge
         logging.debug({"msg": "get_detected_features", "detected_features": self.det.to_dict()})
 
         return self.det
-
 
 
 def main():
@@ -355,11 +289,7 @@ def main():
     )
 
     viewer = napari.Viewer(ndisplay=2)
-    det_widget_ui = FibsemEmbeddedDetectionUI(
-        viewer=viewer, 
-        model=model,
-        )
-    
+    det_widget_ui = FibsemEmbeddedDetectionUI()
     det_widget_ui.set_detected_features(det)
 
     viewer.window.add_dock_widget(
