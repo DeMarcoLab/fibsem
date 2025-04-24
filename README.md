@@ -38,6 +38,22 @@ pip install -e .[ui]
 
 ```
 
+### Offline Installation
+For computers with no internet connection, you can download the dependencies on a separate internet connected computer and transfer it to the Support PC (e.g. via USB).
+
+On internet connected PC (Environment should match python version): 
+```bash
+mkdir pkg
+cd pkg
+pip download fibsem[ui] autolamella
+```
+On Support PC:
+Transfer the pkg directory to the support pc, and then change to the pkg directory
+```bash
+cd pkg
+pip install --no-index --find-links . fibsem[ui] autolamella
+```
+
 #### Napari Plugin
 
 The OpenFIBSEM tools and user interface are also available as a napari plugin:
