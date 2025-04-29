@@ -290,7 +290,7 @@ class TrenchPattern(BasePattern):
         # fillet radius on the corners
         fillet = np.clip(fillet, 0, upper_trench_height / 2)
         if fillet > 0:
-            width = width - 2 * fillet # reduce the width by the fillet size
+            width = max(0, width - 2 * fillet) # ensure width is not negative
 
         # mill settings
         lower_trench_settings = FibsemRectangleSettings(
