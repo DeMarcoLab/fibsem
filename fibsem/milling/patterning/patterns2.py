@@ -265,10 +265,11 @@ class TrenchPattern(BasePattern):
     lower_trench_height: float
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     time: float = 0.0
+    fillet: float = 0.0
     point: Point = Point()
     name: str = "Trench"
     shapes: List[FibsemPatternSettings] = None
-    _advanced_attributes = ["time"]
+    _advanced_attributes = ["time", "fillet"]
 
     def define(self) -> List[FibsemRectangleSettings]:
 
@@ -280,10 +281,16 @@ class TrenchPattern(BasePattern):
         depth = self.depth
         cross_section = self.cross_section
         time = self.time
+        fillet = self.fillet
 
         # calculate the centre of the upper and lower trench
         centre_lower_y = point.y - (spacing / 2 + lower_trench_height / 2)
         centre_upper_y = point.y + (spacing / 2 + upper_trench_height / 2)
+
+        # fillet radius on the corners
+        fillet = np.clip(fillet, 0, upper_trench_height / 2)
+        if fillet > 0:
+            width = width - 2 * fillet # reduce the width by the fillet size
 
         # mill settings
         lower_trench_settings = FibsemRectangleSettings(
@@ -309,6 +316,87 @@ class TrenchPattern(BasePattern):
         )
 
         self.shapes = [lower_trench_settings, upper_trench_settings]
+
+        # add fillet to the corners
+        if fillet > 0:            
+            left_x_pos = point.x - width / 2
+            right_x_pos = point.x + width / 2
+
+            fillet_offset = 1.5
+            lower_y_pos = centre_lower_y + lower_trench_height / 2 - fillet * fillet_offset
+            top_y_pos = centre_upper_y - upper_trench_height / 2 + fillet * fillet_offset
+
+            lower_left_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth/2,
+                centre_x=point.x - width / 2,
+                centre_y=lower_y_pos,
+            )
+            lower_right_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth/2,
+                centre_x=point.x + width / 2,
+                centre_y=lower_y_pos,
+            )
+
+            # fill the remaining space with rectangles
+            lower_left_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=lower_trench_height - fillet,
+                depth=depth,
+                centre_x=left_x_pos - fillet / 2,
+                centre_y=centre_lower_y - fillet / 2,
+                cross_section = cross_section,
+                scan_direction="BottomToTop",
+
+            )
+            lower_right_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=lower_trench_height - fillet,
+                depth=depth,
+                centre_x=right_x_pos + fillet / 2,
+                centre_y=centre_lower_y - fillet / 2,
+                cross_section = cross_section,
+                scan_direction="BottomToTop",
+            )
+
+            top_left_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth,
+                centre_x=point.x - width / 2,
+                centre_y=top_y_pos,
+            )
+            top_right_fillet = FibsemCircleSettings(
+                radius=fillet,
+                depth=depth,
+                centre_x=point.x + width / 2,
+                centre_y=top_y_pos,
+            )
+
+            top_left_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=upper_trench_height - fillet,
+                depth=depth,
+                centre_x=left_x_pos - fillet / 2,
+                centre_y=centre_upper_y + fillet / 2,
+                cross_section = cross_section,
+                scan_direction="TopToBottom",
+            )
+            top_right_fill = FibsemRectangleSettings(
+                width=fillet,
+                height=upper_trench_height - fillet,
+                depth=depth,
+                centre_x=right_x_pos + fillet / 2,
+                centre_y=centre_upper_y + fillet / 2,
+                cross_section = cross_section,
+                scan_direction="TopToBottom",
+            )
+
+            self.shapes.extend([lower_left_fill, lower_right_fill, 
+                                top_left_fill, top_right_fill, 
+                                lower_left_fillet, lower_right_fillet, 
+                                top_left_fillet, top_right_fillet])
+
         return self.shapes
 
     def to_dict(self):
@@ -321,7 +409,8 @@ class TrenchPattern(BasePattern):
             "upper_trench_height": self.upper_trench_height,
             "lower_trench_height": self.lower_trench_height,
             "cross_section": self.cross_section.name,
-            "time": self.time
+            "time": self.time,
+            "fillet": self.fillet,
         }
     
     @classmethod
@@ -332,6 +421,7 @@ class TrenchPattern(BasePattern):
             spacing=ddict["spacing"],
             upper_trench_height=ddict["upper_trench_height"],
             lower_trench_height=ddict["lower_trench_height"],
+            fillet=ddict.get("fillet", 0),
             cross_section=CrossSectionPattern[ddict.get("cross_section", "Rectangle")],
             time=ddict.get("time", 0),
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))

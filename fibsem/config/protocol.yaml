@@ -39,7 +39,8 @@ patterns:
     upper_trench_height: 5.0e-6
     lower_trench_height: 5.0e-6
     depth: 2.0e-6
-    time: 0 # means auto
+    time: 0     # means auto
+    fillet: 0   # no fillet radius
   Horseshoe:
     width: 40.0e-6
     spacing: 10.0e-6
