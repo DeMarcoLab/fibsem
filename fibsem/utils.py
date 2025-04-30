@@ -204,7 +204,8 @@ def setup_session(
         )
 
     elif manufacturer in VALID_TESCAN:
-        microscope = fibsem_microscope.TescanMicroscope(settings.system)
+        from fibsem.microscopes.tescan import TescanMicroscope
+        microscope = TescanMicroscope(settings.system)
         microscope.connect_to_microscope(
             ip_address=ip_address, port=8300
         )

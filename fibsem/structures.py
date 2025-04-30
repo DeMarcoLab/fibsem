@@ -15,13 +15,7 @@ import tifffile as tff
 
 import fibsem
 from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
-
-try:
-    from tescanautomation.Common import Document
-
-    TESCAN = True
-except ImportError:
-    TESCAN = False
+from abc import ABC, abstractmethod
 
 try:
     sys.path.append("C:\Program Files\Thermo Scientific AutoScript")
@@ -152,8 +146,6 @@ class FibsemStagePosition:
         from_dict(data: dict): Create a new stage position object from a dictionary.
         to_autoscript_position(compustage: bool) -> StagePosition: Convert the stage position to a StagePosition object that is compatible with Autoscript.
         from_autoscript_position(position: StagePosition) -> None: Create a new FibsemStagePosition object from a StagePosition object that is compatible with Autoscript.
-        to_tescan_position(stage_tilt: float = 0.0): Convert the stage position to a format that is compatible with Tescan.
-        from_tescan_position(): Create a new FibsemStagePosition object from a Tescan-compatible stage position.
     """
 
     name: str = None
@@ -252,15 +244,6 @@ class FibsemStagePosition:
                 t=position.t,
                 coordinate_system=position.coordinate_system.upper(),
             )
-
-    if TESCAN:
-
-        def to_tescan_position(self, stage_tilt: float = 0.0):
-            self.y = self.y  # / np.cos(stage_tilt),
-
-        @classmethod
-        def from_tescan_position(self, stage_tilt: float = 0.0):
-            self.y = self.y  # * np.cos(stage_tilt)
 
     def __add__(self, other: "FibsemStagePosition") -> "FibsemStagePosition":
         return FibsemStagePosition(
@@ -384,15 +367,6 @@ class FibsemManipulatorPosition:
                 z=position.z,
                 coordinate_system=position.coordinate_system.upper(),
             )
-
-    if TESCAN:
-
-        def to_tescan_position(self):
-            pass
-
-        @classmethod
-        def from_tescan_position(self):
-            pass
 
     def __add__(
         self, other: "FibsemManipulatorPosition"
@@ -664,6 +638,7 @@ class BeamSettings:
     stigmation: Point = None
     shift: Point = None
     scan_rotation: float = None
+    preset: str = None
 
     def __post_init__(self):
         assert (
@@ -695,7 +670,12 @@ class BeamSettings:
         assert (
             isinstance(self.shift, Point) or self.shift is None
         ), f"shift must be a Point instance, currently is {type(self.shift)}"
-
+        assert (
+            isinstance(self.scan_rotation, (float, int)) or self.scan_rotation is None
+        ), f"scan rotation must be float or int, currently is {type(self.scan_rotation)}"
+        assert (
+            isinstance(self.preset, str) or self.preset is None
+        ), f"preset must be str, currently is {type(self.preset)}"
 
     def to_dict(self) -> dict:
         state_dict = {
@@ -711,6 +691,7 @@ class BeamSettings:
             else None,
             "shift": self.shift.to_dict() if self.shift is not None else None,
             "scan_rotation": self.scan_rotation,
+            "preset": self.preset,
         }
 
         return state_dict
@@ -740,6 +721,7 @@ class BeamSettings:
             stigmation=stigmation,
             shift=shift,
             scan_rotation=state_dict.get("scan_rotation", 0.0),
+            preset=state_dict.get("preset", None),
         )
 
         return beam_settings
@@ -765,14 +747,6 @@ class FibsemDetectorSettings:
         assert (
             isinstance(self.contrast, (float, int)) or self.contrast is None
         ), f"contrast must be int or float value, currently is {type(self.contrast)}"
-
-    if TESCAN:
-
-        def to_tescan(self):
-            """Converts to tescan format."""
-            tescan_brightness = self.brightness * 100
-            tescan_contrast = self.contrast * 100
-            return tescan_brightness, tescan_contrast
 
     def to_dict(self) -> dict:
         """Converts to a dictionary."""
@@ -1889,164 +1863,6 @@ class FibsemImage:
             )
             return cls(data=adorned.data, metadata=metadata)
 
-    if TESCAN:
-
-        @classmethod
-        def fromTescanImage(
-            cls,
-            image: Document,
-            image_settings: ImageSettings,
-            state: MicroscopeState,
-            detector: FibsemDetectorSettings,
-        ) -> "FibsemImage":
-            """Creates FibsemImage from a tescan (microscope output format).
-
-            Args:
-                image (Tescan): Adorned Image from microscope
-                metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
-
-            Returns:
-                FibsemImage: instance of FibsemImage from AdornedImage
-            """
-
-            pixel_size = Point(
-                float(image.Header["MAIN"]["PixelSizeX"]),
-                float(image.Header["MAIN"]["PixelSizeY"]),
-            )
-            metadata = FibsemImageMetadata(
-                image_settings=image_settings,
-                pixel_size=pixel_size,
-                microscope_state=state,
-                # detector_settings=detector,
-            )
-
-            return cls(data=np.array(image.Image), metadata=metadata)
-
-        @classmethod
-        def fromTescanFile(
-            cls,
-            image_path: str,
-            metadata_path: str,
-            beam_type: BeamType,
-        ) -> "FibsemImage":
-            with tff.TiffFile(image_path) as tiff_image:
-                data = tiff_image.asarray()
-
-            stage = 0
-            dictionary = {"MAIN": {}, "SEM": {}, "FIB": {}}
-            with open(metadata_path, "r") as file:
-                for line in file:
-                    if line.startswith("["):
-                        stage += 1
-                        continue
-
-                    line = line.strip()
-                    if not line:
-                        continue  # Skip empty lines
-
-                    key, value = line.split("=")
-                    key = key.strip()
-                    value = value.strip()
-                    if stage == 1:
-                        dictionary["MAIN"][key] = value
-                    if stage == 2 and beam_type.name == "ELECTRON":
-                        dictionary["SEM"][key] = value
-                    if stage == 2 and beam_type.name == "ION":
-                        dictionary["FIB"][key] = value
-
-            if beam_type.name == "ELECTRON":
-                image_settings = ImageSettings(
-                    resolution=[data.shape[0], data.shape[1]],
-                    dwell_time=float(dictionary["SEM"]["DwellTime"]),
-                    hfw=data.shape[0] * float(dictionary["MAIN"]["PixelSizeX"]),
-                    beam_type=BeamType.ELECTRON,
-                    filename=Path(image_path).stem,
-                    path=Path(image_path).parent,
-                )
-                pixel_size = Point(
-                    float(dictionary["MAIN"]["PixelSizeX"]),
-                    float(dictionary["MAIN"]["PixelSizeY"]),
-                )
-                microscope_state = MicroscopeState(
-                    timestamp=datetime.strptime(
-                        dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"],
-                        "%Y-%m-%d %H:%M:%S",
-                    ),
-                    electron_beam=BeamSettings(
-                        beam_type=BeamType.ELECTRON,
-                        working_distance=float(dictionary["SEM"]["WD"]),
-                        beam_current=float(dictionary["SEM"]["PredictedBeamCurrent"]),
-                        voltage=float(dictionary["SEM"]["TubeVoltage"]),
-                        hfw=data.shape[0] * float(dictionary["MAIN"]["PixelSizeX"]),
-                        resolution=[data.shape[0], data.shape[1]],
-                        dwell_time=float(dictionary["SEM"]["DwellTime"]),
-                        shift=Point(
-                            float(dictionary["SEM"]["ImageShiftX"]),
-                            float(dictionary["SEM"]["ImageShiftY"]),
-                        ),
-                        stigmation=Point(
-                            float(dictionary["SEM"]["StigmatorX"]),
-                            float(dictionary["SEM"]["StigmatorY"]),
-                        ),
-                    ),
-                    ion_beam=BeamSettings(beam_type=BeamType.ION),
-                )
-                detector_settings = FibsemDetectorSettings(
-                    type=dictionary["SEM"]["Detector"],
-                    brightness=float(dictionary["SEM"]["Detector0Offset"]),
-                    contrast=float(dictionary["SEM"]["Detector0Gain"]),
-                )
-
-            if beam_type.name == "ION":
-                image_settings = ImageSettings(
-                    resolution=[data.shape[0], data.shape[1]],
-                    dwell_time=float(dictionary["FIB"]["DwellTime"]),
-                    hfw=data.shape[0] * float(dictionary["MAIN"]["PixelSizeX"]),
-                    beam_type=BeamType.ELECTRON,
-                    filename=Path(image_path).stem,
-                    path=Path(image_path).parent,
-                )
-                pixel_size = Point(
-                    float(dictionary["MAIN"]["PixelSizeX"]),
-                    float(dictionary["MAIN"]["PixelSizeY"]),
-                )
-                microscope_state = MicroscopeState(
-                    timestamp=datetime.strptime(
-                        dictionary["MAIN"]["Date"] + " " + dictionary["MAIN"]["Time"],
-                        "%Y-%m-%d %H:%M:%S",
-                    ),
-                    electron_beam=BeamSettings(beam_type=BeamType.ELECTRON),
-                    ion_beam=BeamSettings(
-                        beam_type=BeamType.ION,
-                        working_distance=float(dictionary["FIB"]["WD"]),
-                        beam_current=float(dictionary["FIB"]["PredictedBeamCurrent"]),
-                        hfw=data.shape[0] * float(dictionary["MAIN"]["PixelSizeX"]),
-                        resolution=[data.shape[0], data.shape[1]],
-                        dwell_time=float(dictionary["FIB"]["DwellTime"]),
-                        shift=Point(
-                            float(dictionary["FIB"]["ImageShiftX"]),
-                            float(dictionary["FIB"]["ImageShiftY"]),
-                        ),
-                        stigmation=Point(
-                            float(dictionary["FIB"]["StigmatorX"]),
-                            float(dictionary["FIB"]["StigmatorY"]),
-                        ),
-                    ),
-                )
-                detector_settings = FibsemDetectorSettings(
-                    type=dictionary["FIB"]["Detector"],
-                    brightness=float(dictionary["FIB"]["Detector0Offset"]) / 100,
-                    contrast=float(dictionary["FIB"]["Detector0Gain"]) / 100,
-                )
-
-            metadata = FibsemImageMetadata(
-                image_settings=image_settings,
-                pixel_size=pixel_size,
-                microscope_state=microscope_state,
-                # detector_settings=detector_settings,
-                version=METADATA_VERSION,
-            )
-            return cls(data=data, metadata=metadata)
 
     @staticmethod
     def generate_blank_image(
