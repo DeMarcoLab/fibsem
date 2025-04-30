@@ -163,7 +163,7 @@ def _get_microscope_state_from_tescan_md(md: dict, image_shape: Tuple[int, int])
     )
     return ms
 
-def fromTescanImage(image: Document, image_settings: ImageSettings = None) -> FibsemImage:
+def fromTescanImage(image: 'Document', image_settings: ImageSettings = None) -> FibsemImage:
     """Create a FibsemImage object from a Tescan image document."""
     image_data = np.array(image.Image)
     pixelsize = _get_pixel_size_from_tescan_md(image.Header)
@@ -215,13 +215,16 @@ def to_tescan_stage_position(position: FibsemStagePosition) -> Tuple[float]:
 FibsemStagePosition.from_tescan_stage_position = from_tescan_stage_position
 FibsemImage.fromTescanImage = fromTescanImage
 
-DrawBeamStatusToPatterningState = {
-    DBStatus.ProjectNotLoaded: MillingState.IDLE,
-    DBStatus.ProjectLoadedExpositionIdle: MillingState.IDLE,
-    DBStatus.ProjectLoadedExpositionInProgress: MillingState.RUNNING,
-    DBStatus.ProjectLoadedExpositionPaused: MillingState.PAUSED,
-    DBStatus.Unknown: MillingState.ERROR,
-}
+try:
+    DrawBeamStatusToPatterningState = {
+        DBStatus.ProjectNotLoaded: MillingState.IDLE,
+        DBStatus.ProjectLoadedExpositionIdle: MillingState.IDLE,
+        DBStatus.ProjectLoadedExpositionInProgress: MillingState.RUNNING,
+        DBStatus.ProjectLoadedExpositionPaused: MillingState.PAUSED,
+        DBStatus.Unknown: MillingState.ERROR,
+    }
+except Exception as e:
+    pass
 
 def printProgressBar(
     value, total, prefix="", suffix="", decimals=0, length=100, fill="█"
@@ -1361,7 +1364,7 @@ class TescanMicroscope(FibsemMicroscope):
     def finish_sputter(self, *args, **kwargs):
         pass
 
-    def _get_beam(self, beam_type: BeamType) -> Union[Automation.SEM, Automation.FIB]:
+    def _get_beam(self, beam_type: BeamType) -> Union['Automation.SEM', 'Automation.FIB']:
         """Get the beam object for the given beam type."""
         if not isinstance(beam_type, BeamType):
             raise ValueError(f"Invalid beam type: {beam_type}")
@@ -1372,7 +1375,7 @@ class TescanMicroscope(FibsemMicroscope):
         if beam_type is BeamType.ION:
             return self.connection.FIB
 
-    def _prepare_beam(self, beam_type: BeamType) -> Union[Automation.SEM, Automation.FIB]:
+    def _prepare_beam(self, beam_type: BeamType) -> Union['Automation.SEM', 'Automation.FIB']:
         """Prepare the beam for imaging, milling, or other operations."""
         beam = self._get_beam(beam_type)
         
@@ -1399,7 +1402,7 @@ class TescanMicroscope(FibsemMicroscope):
             detectors = self.connection.FIB.Detector.Enum()
         return detectors
 
-    def _get_detector(self, detector_type: Union[Detector, str], beam_type: BeamType) -> str:
+    def _get_detector(self, detector_type: Union['Detector', str], beam_type: BeamType) -> str:
         """Get the detector object for the given detector type and beam type."""
         if isinstance(detector_type, Detector):
             detector_type = detector_type.name
