@@ -4,7 +4,8 @@ import napari.utils.notifications
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope
+from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.structures import MicroscopeSettings, FibsemGasInjectionSettings
 
 from fibsem.ui.qtdesigner_files import FibsemCryoDepositionWidget

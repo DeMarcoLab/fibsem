@@ -1,6 +1,5 @@
-from fibsem.microscope import _THERMO_API_AVAILABLE, _TESCAN_API_AVAILABLE
-
-
+from fibsem.microscope import _THERMO_API_AVAILABLE
+from fibsem.microscopes.tescan import TESCAN_API_AVAILABLE
 
 def main():
 
@@ -48,9 +47,9 @@ def main():
     print(f"-" * 80)
 
     # Tescan API
-    print(f"Tescan API {'Available' if _TESCAN_API_AVAILABLE else 'Not Available'}")
-    if _TESCAN_API_AVAILABLE:
-        from fibsem.microscope import tescanautomation
+    print(f"Tescan API {'Available' if TESCAN_API_AVAILABLE else 'Not Available'}")
+    if TESCAN_API_AVAILABLE:
+        from fibsem.microscopes.tescan import tescanautomation
         print(f"TescanAutomation v{tescanautomation.__version__}")
 
 if __name__ == "__main__":

@@ -20,9 +20,9 @@ from fibsem import constants, conversions, utils
 from fibsem.microscope import (
     DemoMicroscope,
     FibsemMicroscope,
-    TescanMicroscope,
     ThermoMicroscope,
 )
+from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.milling import (
     FibsemMillingStage,
     MillingAlignment,
@@ -208,7 +208,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.spinBox_voltage.valueChanged.connect(self.update_milling_settings_from_ui)
 
         # Tescan Only
-        AVAILABLE_PRESETS = self.microscope.get_available_values("presets")
+        AVAILABLE_PRESETS = self.microscope.get_available_values("presets", BeamType.ION)
         self.label_rate.setVisible(is_tescan)
         self.label_spot_size.setVisible(is_tescan)
         self.label_dwell_time.setVisible(is_tescan)
@@ -929,8 +929,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def get_milling_settings_from_ui(self):
         """Get the Milling Settings from the UI."""
-        current_str = self.comboBox_milling_current.currentText()# TODO: migrate to use CurrentData, rather than str converter
-        current_amps = _parse_beam_current_str(current_str)
+        current_amps = 20e-12 # default value
+        if isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope)):
+            current_str = self.comboBox_milling_current.currentText()# TODO: migrate to use CurrentData, rather than str converter
+            current_amps = _parse_beam_current_str(current_str)
 
         milling_settings = FibsemMillingSettings(
             milling_current=current_amps,
