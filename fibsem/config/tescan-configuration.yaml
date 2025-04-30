@@ -3,7 +3,7 @@
 info:
     name: tescan-microscope-configuration               # a descriptive name for your configuration                     [SPECIFIED]
     ip_address: localhost                                 # the ip address of the microscope PC                           [SPECIFIED]
-    manufacturer: Tescan                                      # the microscope manufactuer                                    [SPECIFIED]        
+    manufacturer: Tescan                                      # the microscope manufacturer                                    [SPECIFIED]        
 stage:
     enabled:                    true                        # the stage is enabled                                          [USER]
     rotation:                   true                        # the stage is able to rotate                                   [USER]
