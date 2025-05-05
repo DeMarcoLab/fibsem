@@ -11,7 +11,7 @@ import numpy as np
 from napari.layers import Layer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QEvent, QObject, Qt
 from PyQt5.QtWidgets import QListWidgetItem
 from scipy.ndimage import median_filter
 
@@ -134,6 +134,14 @@ def _parse_beam_current_str(val: str) -> float:
     elif "uA" in val:
         scale = 1e-6
     return float(val.split(" ")[0]) * scale
+
+class WheelBlocker(QObject):
+    """Event filter that blocks wheel events"""
+    
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Wheel:
+            return True  # Block the wheel event
+        return super().eventFilter(watched, event)
 
 class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
     milling_position_changed = QtCore.pyqtSignal()
@@ -312,6 +320,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.pushButton_open_correlation.clicked.connect(self.open_3d_correlation_widget)
         self.pushButton_open_correlation.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
         self.pushButton_open_correlation.setVisible(CORRELATION_THREEDCT_AVAILABLE)
+
+        # block scroll wheel events for pattern combobox. 
+        # QUERY: implement for other comboboxes?
+        self.wheel_blocker = WheelBlocker()
+        self.comboBox_patterns.installEventFilter(self.wheel_blocker)
 
     def on_selection_changed(self):
         """Selection changed callback for the milling stages list widget."""
