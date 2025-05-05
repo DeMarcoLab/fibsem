@@ -7,23 +7,20 @@ import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
-from fibsem import constants, conversions
-from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
-                               ThermoMicroscope)
-from fibsem.microscopes.tescan import TescanMicroscope
-from fibsem.structures import (BeamType, FibsemManipulatorPosition,
-                               MicroscopeSettings)
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-from fibsem.ui.qtdesigner_files import FibsemManipulatorWidget
-from fibsem.ui.utils import message_box_ui
-from fibsem.ui import stylesheets
 from fibsem import config as cfg
+from fibsem import constants, conversions
+from fibsem.microscope import DemoMicroscope, FibsemMicroscope, ThermoMicroscope
+from fibsem.microscopes.tescan import TescanMicroscope
+from fibsem.structures import BeamType, FibsemManipulatorPosition, MicroscopeSettings
+from fibsem.ui import stylesheets
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.qtdesigner_files import (
+    FibsemManipulatorWidget as FibsemManipulatorWidgetUI,
+)
+from fibsem.ui.utils import message_box_ui
 
 
-
-
-
-class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemManipulatorWidget(FibsemManipulatorWidgetUI.Ui_Form, QtWidgets.QWidget):
     def __init__(
         self,
         microscope: FibsemMicroscope = None,
@@ -32,7 +29,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         image_widget: FibsemImageSettingsWidget = None, 
         parent=None,
     ):
-        super(FibsemManipulatorWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
 
         self.microscope = microscope
@@ -45,29 +42,28 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
         self.update_ui()
 
-        _THERMO = isinstance(self.microscope, (ThermoMicroscope,DemoMicroscope))
-        _TESCAN = isinstance(self.microscope, (TescanMicroscope))
+        is_thermo = isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope))
+        is_tescan = isinstance(self.microscope, (TescanMicroscope))
 
+        if is_thermo:
 
-        if _THERMO:
-            
             try:
                 self.microscope._get_saved_manipulator_position("PARK")
                 self.microscope._get_saved_manipulator_position("EUCENTRIC")
                 self.savedPosition_combobox.addItems(["PARK", "EUCENTRIC"])
              
-            except :
-                napari.utils.notifications.show_warning("Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed.")
+            except Exception as e:
+                napari.utils.notifications.show_warning(f"Error loading PARK and EUCENTRIC positions, calibration of manipulator is possibly needed. {e}")
                             
             self.move_type_comboBox.currentIndexChanged.connect(self.change_move_type)
             self.move_type_comboBox.setCurrentIndex(0)
             self.change_move_type()
             self.dR_spinbox.setEnabled(False)
-            self.dR_spinbox.hide()
-            self.dr_label.hide()
-            self.calibrated_status_label.hide()
+            self.dR_spinbox.setVisible(False)
+            self.dr_label.setVisible(False)
+            self.calibrated_status_label.setVisible(False)
 
-        if _TESCAN:
+        if is_tescan:
 
             self.tescan_calibration = cfg.load_tescan_manipulator_calibration()
 
@@ -100,18 +96,17 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
 
         is_calibrated = self.tescan_calibration["calibrated"]
 
+        response = False
         if is_calibrated:
             response = message_box_ui(title="Manipulator Positions Already Calibrated", text="Manipulator Positions are already calibrated, would you like to recalibrate?")
             response = not response
-        else:
-            response = False
 
         return response
 
 
     def calibrate_manipulator_positions(self):
 
-        if not isinstance(self.microscope,TescanMicroscope):
+        if not isinstance(self.microscope, TescanMicroscope):
             message_box_ui(title="Not Available", text="Manipulator Position Calibration is only available for Tescan Microscopes", buttons=QMessageBox.Ok)
             return
 
@@ -133,7 +128,7 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                     calibration[position]["x"] = manipulator_loc.x
                     calibration[position]["y"] = manipulator_loc.y
                     calibration[position]["z"] = manipulator_loc.z
-                
+
                 calibration["calibrated"] = True
                 cfg.save_tescan_manipulator_calibration(calibration)
                 self.tescan_calibration = cfg.load_tescan_manipulator_calibration()
@@ -143,8 +138,6 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
                                buttons=QMessageBox.Ok)
 
                 self.update_ui_state()
-                
-
 
     def change_move_type(self):
 
@@ -185,8 +178,6 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.dY_spinbox.setValue(0)
         self.dZ_spinbox.setValue(0)
         self.dR_spinbox.setValue(0)
-
-
         
     def setup_connections(self):
 
@@ -262,9 +253,6 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
         self.savedPositionName_lineEdit.setVisible(show)
         self.savedPosition_combobox.setVisible(show)
 
-
-
-
     def insert_retract_manipulator(self):
         
         if self.microscope.get_manipulator_state():
@@ -284,8 +272,6 @@ class FibsemManipulatorWidget(FibsemManipulatorWidget.Ui_Form, QtWidgets.QWidget
             self.insertManipulator_button.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
             self.update_ui()
             self._hide_show_buttons(show=True)
-
-
 
     def add_saved_position(self):
 

@@ -4,18 +4,18 @@ import napari.utils.notifications
 import fibsem
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
-from fibsem.ui.qtdesigner_files import FibsemMicroscopeConfigurationWidget
+from fibsem.ui.qtdesigner_files import FibsemMicroscopeConfigurationWidget as FibsemMicroscopeConfigurationWidgetUI
 from fibsem.ui.FibsemMicroscopeConfigurationWidgetBase import FibsemMicroscopeConfigurationWidgetBase
 
 
-class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidget.Ui_MainWindow, QtWidgets.QMainWindow):
+class FibsemMicroscopeConfigurationWidget(FibsemMicroscopeConfigurationWidgetUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def __init__(
         self,
         path: str = None,
         viewer: napari.Viewer = None,
         parent=None,
     ):
-        super(FibsemMicroscopeConfigurationWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
         self.setWindowTitle("Microscope Configuration")
 

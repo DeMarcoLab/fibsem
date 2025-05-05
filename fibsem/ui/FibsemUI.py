@@ -3,36 +3,26 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
 import fibsem
-from fibsem.microscope import (
-    DemoMicroscope,
-    FibsemMicroscope,
-    TescanMicroscope,
-    ThermoMicroscope,
-)
+from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import BeamType, MicroscopeSettings
-from fibsem.ui.FibsemAlignmentWidget import FibsemAlignmentWidget
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-from fibsem.ui.FibsemImageViewer import FibsemImageViewer
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
-from fibsem.ui.qtdesigner_files import FibsemUI
+from fibsem.ui.qtdesigner_files import FibsemUI as FibsemUIMainWindow
 
-# TODO: add calibrate manipulator procedure for thermo here
 
-class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
+class FibsemUI(FibsemUIMainWindow.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def __init__(self, viewer: napari.Viewer):
-        super(FibsemUI, self).__init__()
+        super().__init__()
         self.setupUi(self)
 
         self.label_title.setText(f"OpenFIBSEM v{fibsem.__version__}")
 
         self.viewer = viewer
-        # self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
-        # self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
         self.microscope: FibsemMicroscope = None
         self.settings: MicroscopeSettings = None
@@ -40,24 +30,14 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.image_widget: FibsemImageSettingsWidget = None
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
-        self.alignment_widget: FibsemAlignmentWidget = None
         self.manipulator_widget: FibsemManipulatorWidget = None
-        self.image_viewer: FibsemImageViewer = None
 
         self.minimap_widget: FibsemMinimapWidget = None
 
-        self.system_widget = FibsemSystemSetupWidget(
-                microscope=self.microscope,
-                settings=self.settings,
-                viewer=self.viewer,
-                parent=self,
-            )
-        
+        self.system_widget = FibsemSystemSetupWidget(parent=self)
         self.tabWidget.addTab(self.system_widget, "Connection")
         self.setup_connections()
-        self.ref_current = None
         self.update_ui()
-
 
     def setup_connections(self):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
@@ -85,29 +65,15 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         )
         napari.run(max_loop_level=2)
 
-    def align_currents(self):
-        second_viewer = napari.Viewer()
-        self.alignment_widget = FibsemAlignmentWidget(settings=self.settings, microscope=self.microscope, viewer=second_viewer, parent = self)
-        second_viewer.window.add_dock_widget(self.alignment_widget, name='Beam Alignment', area='right')
-        self.alignment_widget.destroyed.connect(self.reset_currents)
-
-    def reset_currents(self):
-        if isinstance(self.microscope, ThermoMicroscope)or isinstance(self.microscope, DemoMicroscope):
-            self.microscope.set("current", float(self.ref_current), BeamType.ION)
-        if isinstance(self.microscope, TescanMicroscope):
-            self.microscope.set("preset", self.ref_current, BeamType.ION)
-
-
     def update_ui(self):
 
-        _microscope_connected = bool(self.microscope is not None)
-        self.tabWidget.setTabVisible(1, _microscope_connected)
-        self.tabWidget.setTabVisible(2, _microscope_connected)
-        self.tabWidget.setTabVisible(3, _microscope_connected)
-        self.tabWidget.setTabVisible(4, _microscope_connected)
-        self.actionOpen_Minimap.setVisible(_microscope_connected)
-        self.actionManipulator_Positions_Calibration.setVisible(_microscope_connected)
-
+        is_microscope_connected = bool(self.microscope is not None)
+        self.tabWidget.setTabVisible(1, is_microscope_connected)
+        self.tabWidget.setTabVisible(2, is_microscope_connected)
+        self.tabWidget.setTabVisible(3, is_microscope_connected)
+        self.tabWidget.setTabVisible(4, is_microscope_connected)
+        self.actionOpen_Minimap.setVisible(is_microscope_connected)
+        self.actionManipulator_Positions_Calibration.setVisible(is_microscope_connected)
 
     def connect_to_microscope(self):
         self.microscope = self.system_widget.microscope
@@ -116,7 +82,7 @@ class FibsemUI(FibsemUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.update_ui()
 
     def disconnect_from_microscope(self):
-        
+    
         self.microscope = None
         self.settings = None
         self.update_microscope_ui()

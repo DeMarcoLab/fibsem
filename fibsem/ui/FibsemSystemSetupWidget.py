@@ -1,5 +1,6 @@
 import logging
 import os
+from pprint import pprint
 
 import napari
 import napari.utils.notifications
@@ -11,37 +12,27 @@ from fibsem import utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, SystemSettings
 from fibsem.ui import stylesheets
-from fibsem.ui.qtdesigner_files import FibsemSystemSetupWidget
+from fibsem.ui.qtdesigner_files import (
+    FibsemSystemSetupWidget as FibsemSystemSetupWidgetUI,
+)
 from fibsem.ui.utils import open_existing_file_dialog
 
 
-def log_status_message(step: str):
-    logging.debug(
-        f"STATUS | System Widget | {step}"
-    )
-
-
-class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget):
+class FibsemSystemSetupWidget(FibsemSystemSetupWidgetUI.Ui_Form, QtWidgets.QWidget):
     connected_signal = pyqtSignal()
     disconnected_signal = pyqtSignal()
 
     def __init__(
-        self,
-        microscope: FibsemMicroscope = None,
-        settings: MicroscopeSettings = None,
-        viewer: napari.Viewer = None,
-        parent=None,
+        self, parent=None,
     ):
-        super(FibsemSystemSetupWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
 
         self.parent = parent
-        self.microscope = microscope
-        self.settings = settings
-        self.viewer = viewer
+        self.microscope: FibsemMicroscope = None
+        self.settings: MicroscopeSettings = None
 
         self.setup_connections()
-        
         self.update_ui()
 
     def setup_connections(self):
@@ -70,8 +61,6 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
     
         # load the configuration
         self.settings = utils.load_microscope_configuration(configuration_path)
-
-        from pprint import pprint
 
         pprint(self.settings.to_dict()["info"])
 
@@ -116,9 +105,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def connect_to_microscope(self):
                 
-        _microscope_connected = bool(self.microscope)
+        is_microscope_connected = bool(self.microscope)
 
-        if _microscope_connected:
+        if is_microscope_connected:
             self.microscope.disconnect()
             self.microscope, self.settings = None, None
         else:
@@ -175,11 +164,11 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 
     def update_ui(self):
 
-        _microscope_connected = bool(self.microscope)
-        self.pushButton_apply_configuration.setVisible(_microscope_connected)
-        self.pushButton_apply_configuration.setEnabled(_microscope_connected and cfg.APPLY_CONFIGURATION_ENABLED)
+        is_microscope_connected = bool(self.microscope)
+        self.pushButton_apply_configuration.setVisible(is_microscope_connected)
+        self.pushButton_apply_configuration.setEnabled(is_microscope_connected and cfg.APPLY_CONFIGURATION_ENABLED)
 
-        if _microscope_connected:
+        if is_microscope_connected:
             self.pushButton_connect_to_microscope.setText("Microscope Connected")
             self.pushButton_connect_to_microscope.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
             self.pushButton_apply_configuration.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
@@ -199,9 +188,9 @@ class FibsemSystemSetupWidget(FibsemSystemSetupWidget.Ui_Form, QtWidgets.QWidget
 def main():
 
     viewer = napari.Viewer(ndisplay=2)
-    movement_widget = FibsemSystemSetupWidget()
+    system_widget = FibsemSystemSetupWidget()
     viewer.window.add_dock_widget(
-        movement_widget, area="right", add_vertical_stretch=False
+        system_widget, area="right", add_vertical_stretch=False
     )
     napari.run()
 

@@ -7,7 +7,7 @@ import fibsem
 from PyQt5 import QtWidgets
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
-from fibsem.ui.qtdesigner_files import FibsemMicroscopeConfigurationWidgetBase
+from fibsem.ui.qtdesigner_files import FibsemMicroscopeConfigurationWidgetBase as FibsemMicroscopeConfigurationWidgetBaseUI
 from fibsem.ui import stylesheets
 from fibsem.structures import BeamType
 from fibsem.ui.utils import open_existing_file_dialog, open_save_file_dialog, message_box_ui
@@ -21,18 +21,15 @@ CONFIGURATION = {
 }
 
 
-class FibsemMicroscopeConfigurationWidgetBase(FibsemMicroscopeConfigurationWidgetBase.Ui_Form, QtWidgets.QWidget):
+class FibsemMicroscopeConfigurationWidgetBase(FibsemMicroscopeConfigurationWidgetBaseUI.Ui_Form, QtWidgets.QWidget):
     def __init__(
         self,
         path: str = None,
-        viewer: napari.Viewer = None,
         parent=None,
     ):
-        super(FibsemMicroscopeConfigurationWidgetBase, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setupUi(self)
         self.setWindowTitle("Microscope Configuration")
-
-        self.viewer = viewer
 
         self.setup_connections()
 
@@ -44,7 +41,7 @@ class FibsemMicroscopeConfigurationWidgetBase(FibsemMicroscopeConfigurationWidge
     def setup_connections(self):
 
         # combo boxes
-        self.comboBox_configuration_manufacturer.addItems(cfg.__SUPPORTED_MANUFACTURERS__)
+        self.comboBox_configuration_manufacturer.addItems(cfg.AVAILABLE_MANUFACTURERS)
         self.comboBox_imaging_beam_type.addItems([b.name for b in BeamType])
         self.comboBox_configuration_manufacturer.currentTextChanged.connect(self.update_configuration_ui)
 
