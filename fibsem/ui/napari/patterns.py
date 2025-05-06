@@ -45,7 +45,7 @@ IMAGE_LAYER_PROPERTIES = {
 }
 
 
-IGNORE_SHAPES_LAYERS = ["ruler_line", "crosshair", "scalebar", "scalebar_value", "label", "alignment_area"] # ignore these layers when removing all shapes
+IGNORE_SHAPES_LAYERS = ["ruler_line", "crosshair", "scalebar", "label", "alignment_area"] # ignore these layers when removing all shapes
 IMAGE_PATTERN_LAYERS = ["annulus-layer", "bmp_Image"]
 STAGE_POSTIION_SHAPE_LAYERS = ["saved-stage-positions", "current-stage-position"] # for minimap
 IGNORE_SHAPES_LAYERS.extend(STAGE_POSTIION_SHAPE_LAYERS)

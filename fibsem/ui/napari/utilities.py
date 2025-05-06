@@ -17,9 +17,6 @@ from fibsem.ui.napari.properties import (
 
 CROSSHAIR_LAYER_NAME = IMAGING_CROSSHAIR_LAYER_PROPERTIES["name"]
 SCALEBAR_LAYER_NAME = IMAGING_SCALEBAR_LAYER_PROPERTIES["name"]
-SCALEBAR_VALUE_PROPERTIES = IMAGING_SCALEBAR_LAYER_PROPERTIES["value"]
-SCALEBAR_VALUE_LAYER_NAME = SCALEBAR_VALUE_PROPERTIES["name"]
-
 
 def draw_crosshair_in_napari(
     viewer: napari.Viewer,
@@ -108,83 +105,75 @@ def draw_scalebar_in_napari(
         logging.debug("No metadata available for scalebar")
         return
 
-    if is_checked:
-        sem_shape = eb_image.data.shape
-        fib_shape = ib_image.data.shape
-        h, w = 0.9, 0.15
-        location_points = [
-            [int(sem_shape[0] * h), int(sem_shape[1] * w)],
-            [int(fib_shape[0] * h), int(sem_shape[1] + fib_shape[1] * w)],
-        ]
-
-        if is_checked:
-            # making the scale bar line
-            scale_bar_shape = []
-
-            for i, pt in enumerate(location_points):
-                if i == 0:
-                    scale_ratio, eb_scale = _scale_length_value(
-                        eb_image.metadata.image_settings.hfw
-                    )
-                    length = scale_ratio * eb_image.data.shape[1]
-                else:
-                    scale_ratio, ib_scale = _scale_length_value(
-                        ib_image.metadata.image_settings.hfw
-                    )
-                    length = scale_ratio * ib_image.data.shape[1]
-
-                hwidth = 0.5 * length
-                main_line = [
-                    [pt[0] + 25, int(pt[1] - hwidth)],
-                    [pt[0] + 25, int(pt[1] + hwidth)],
-                ]
-                left_line = [
-                    [pt[0] + 50, int(pt[1] - hwidth)],
-                    [pt[0], int(pt[1] - hwidth)],
-                ]
-                right_line = [
-                    [pt[0] + 50, int(pt[1] + hwidth)],
-                    [pt[0], int(pt[1] + hwidth)],
-                ]
-                scale_bar_shape.extend([main_line, left_line, right_line])
-
-            if SCALEBAR_LAYER_NAME not in layers_in_napari:
-                viewer.add_shapes(
-                    data=scale_bar_shape,
-                    shape_type=IMAGING_SCALEBAR_LAYER_PROPERTIES["shape_type"],
-                    edge_width=IMAGING_SCALEBAR_LAYER_PROPERTIES["edge_width"],
-                    edge_color=IMAGING_SCALEBAR_LAYER_PROPERTIES["edge_color"],
-                    name=SCALEBAR_LAYER_NAME,
-                )
-            else:
-                viewer.layers[SCALEBAR_LAYER_NAME].data = scale_bar_shape
-                viewer.layers[SCALEBAR_LAYER_NAME].opacity = 1
-
-            ## making the scale bar value
-
-            text = {
-                "string": [f"{eb_scale} um", f"{ib_scale} um"],
-                "color": SCALEBAR_VALUE_PROPERTIES["text"]["color"],
-            }
-
-            if SCALEBAR_LAYER_NAME not in layers_in_napari:
-                viewer.add_points(
-                    data=location_points,
-                    text=text,
-                    name=SCALEBAR_VALUE_LAYER_NAME,
-                    size=SCALEBAR_VALUE_PROPERTIES["size"],
-                    edge_color=SCALEBAR_VALUE_PROPERTIES["edge_color"],
-                    face_color=SCALEBAR_VALUE_PROPERTIES["face_color"],
-                )
-            else:
-                viewer.layers[SCALEBAR_VALUE_LAYER_NAME].data = location_points
-                viewer.layers[SCALEBAR_VALUE_LAYER_NAME].text = text
-                viewer.layers[SCALEBAR_VALUE_LAYER_NAME].opacity = 1
-
-    else:
+    # if not showing the scalebar, hide the layer and return
+    if not is_checked:
         if SCALEBAR_LAYER_NAME in layers_in_napari:
             viewer.layers[SCALEBAR_LAYER_NAME].opacity = 0
-            viewer.layers[SCALEBAR_VALUE_LAYER_NAME].opacity = 0
+        return
+
+    sem_shape = eb_image.data.shape
+    fib_shape = ib_image.data.shape
+    h, w = 0.9, 0.15
+    location_points = [
+        [int(sem_shape[0] * h), int(sem_shape[1] * w)],
+        [int(fib_shape[0] * h), int(sem_shape[1] + fib_shape[1] * w)],
+    ]
+
+    # making the scale bar line
+    scale_bar_shape = []
+    scale_bar_txt = []
+    h1 = 25
+    h2 = 50
+
+    for i, pt in enumerate(location_points):
+        if i == 0:
+            scale_ratio, scale_value = _scale_length_value(
+                eb_image.metadata.image_settings.hfw
+            )
+            length = scale_ratio * sem_shape[1]
+        else:
+            scale_ratio, scale_value = _scale_length_value(
+                ib_image.metadata.image_settings.hfw
+            )
+            length = scale_ratio * fib_shape[1]
+
+        hwidth = 0.5 * length
+        main_line = [
+            [pt[0] + h1, int(pt[1] - hwidth)],
+            [pt[0] + h1, int(pt[1] + hwidth)],
+        ]
+        left_line = [
+            [pt[0] + h2, int(pt[1] - hwidth)],
+            [pt[0], int(pt[1] - hwidth)],
+        ]
+        right_line = [
+            [pt[0] + h2, int(pt[1] + hwidth)],
+            [pt[0], int(pt[1] + hwidth)],
+        ]
+        scale_bar_shape.extend([main_line, left_line, right_line])
+        scale_bar_txt.extend([f"{scale_value} um", "", ""])
+
+    scale_bar_txt = {
+        "string": scale_bar_txt,
+        "color": IMAGING_SCALEBAR_LAYER_PROPERTIES["text"]["color"],
+        "translation": IMAGING_SCALEBAR_LAYER_PROPERTIES["text"]["translation"],
+    }
+
+    if SCALEBAR_LAYER_NAME not in layers_in_napari:
+        viewer.add_shapes(
+            data=scale_bar_shape,
+            shape_type=IMAGING_SCALEBAR_LAYER_PROPERTIES["shape_type"],
+            edge_width=IMAGING_SCALEBAR_LAYER_PROPERTIES["edge_width"],
+            edge_color=IMAGING_SCALEBAR_LAYER_PROPERTIES["edge_color"],
+            name=SCALEBAR_LAYER_NAME,
+            text=scale_bar_txt,
+            opacity=1,
+        )
+    else:
+        viewer.layers[SCALEBAR_LAYER_NAME].data = scale_bar_shape
+        viewer.layers[SCALEBAR_LAYER_NAME].opacity = 1
+        viewer.layers[SCALEBAR_LAYER_NAME].text = scale_bar_txt
+
 
 def is_inside_image_bounds(coords: Tuple[float, float], shape: Tuple[int, int]) -> bool:
     """Check if the coordinates are inside the image bounds.

@@ -671,7 +671,10 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
                 sem_shape=self.eb_image.data.shape,
                 fib_shape=self.ib_image.data.shape,
                 is_checked=self.crosshair_checkbox.isChecked(),
-            ) 
+            )
+
+        # restore active layer for movement
+        self.restore_active_layer_for_movement()
 
     def update_viewer(self, arr: np.ndarray, beam_type: BeamType, set_ui_from_image: bool = False):
         """Update the viewer with the given image array"""

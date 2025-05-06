@@ -46,17 +46,12 @@ IMAGING_SCALEBAR_LAYER_PROPERTIES = {
     "face_color": "yellow",
     "opacity": 0.8,
     "blending": "translucent",
-    "value": {
-        "name": "scalebar_value",
-        "text": {   
-            "color":"white"
-        },
-        "size": 20,
-        "edge_width": 7,
-        "edge_width_is_relative": False,
-        "edge_color": "transparent",
-        "face_color": "transparent",
-    }
+    "text": {   
+        "color":"white",
+        "translation": np.array([-20, 0]),
+        "opacity": 1,
+        "sze": 20,
+    },
 }
 
 # MILLING
