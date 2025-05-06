@@ -2940,8 +2940,8 @@ class DemoMicroscope(FibsemMicroscope):
         
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
         image = FibsemImage(
-            data=np.random.randint(low=0, high=256, 
-                size=(image_settings.resolution[1],image_settings.resolution[0]), 
+            data=np.random.randint(low=0, high=256,
+                size=(image_settings.resolution[1], image_settings.resolution[0]), 
                 dtype=np.uint8),
             metadata=FibsemImageMetadata(image_settings=image_settings, 
                                         pixel_size=pixelsize,
@@ -2949,6 +2949,18 @@ class DemoMicroscope(FibsemMicroscope):
                                         system=self.system
                                         )
         )
+
+        # crop the image data if reduced area is set
+        if image_settings.reduced_area is not None:
+            rect = image_settings.reduced_area
+            width = int(rect.width * image.data.shape[1])
+            height = int(rect.height * image.data.shape[0])
+
+            x0 = int(rect.left * image.data.shape[1])
+            y0 = int(rect.top * image.data.shape[0])
+            x1 = x0 + width
+            y1 = y0 + height
+            image.data =  image.data[y0:y1, x0:x1]
 
         image.metadata.user = self.user
         image.metadata.experiment = self.experiment
