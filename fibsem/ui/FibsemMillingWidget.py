@@ -208,9 +208,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         if is_thermo:
             AVAILABLE_APPLICATION_FILES = self.microscope.get_available_values("application_file")
             self.comboBox_application_file.addItems(AVAILABLE_APPLICATION_FILES)
+
             self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
-            beam_currents = [_format_beam_current_as_str(val) for val in self.AVAILABLE_MILLING_CURRENTS]
-            self.comboBox_milling_current.addItems(beam_currents)
+            for current in self.AVAILABLE_MILLING_CURRENTS:
+                label = _format_beam_current_as_str(current)
+                self.comboBox_milling_current.addItem(label, current)
             self.comboBox_application_file.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.comboBox_milling_current.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.spinBox_voltage.valueChanged.connect(self.update_milling_settings_from_ui)
@@ -928,11 +930,12 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         """Set the milling settings ui from the current milling stage."""
         milling = self.current_milling_stage.milling
 
-        milling_current_str = _format_beam_current_as_str(milling.milling_current)
-        self.comboBox_milling_current.setCurrentText(milling_current_str) # TODO: check the current matches, get closest
-        # self.doubleSpinBox_milling_current.setValue(milling.milling_current * constants.SI_TO_NANO)
+        idx = self.comboBox_milling_current.findData(milling.milling_current)
+        if idx == -1:
+            idx = 0
+        self.comboBox_milling_current.setCurrentIndex(idx)
         self.comboBox_application_file.setCurrentText(milling.application_file)
-        self.doubleSpinBox_rate.setValue(milling.rate*constants.SI_TO_NANO)
+        self.doubleSpinBox_rate.setValue(milling.rate * constants.SI_TO_NANO)
         self.doubleSpinBox_dwell_time.setValue(milling.dwell_time * constants.SI_TO_MICRO)
         self.doubleSpinBox_spot_size.setValue(milling.spot_size * constants.SI_TO_MICRO)
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
@@ -942,10 +945,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def get_milling_settings_from_ui(self):
         """Get the Milling Settings from the UI."""
+
+        # get the milling current
         current_amps = 20e-12 # default value
         if isinstance(self.microscope, (ThermoMicroscope, DemoMicroscope)):
-            current_str = self.comboBox_milling_current.currentText()# TODO: migrate to use CurrentData, rather than str converter
-            current_amps = _parse_beam_current_str(current_str)
+            current_amps = self.comboBox_milling_current.currentData()
 
         milling_settings = FibsemMillingSettings(
             milling_current=current_amps,
