@@ -430,7 +430,7 @@ class TescanMicroscope(FibsemMicroscope):
         beam.Detector.AutoSignal(Detector=self._active_detector[beam_type])
         return
 
-    def auto_focus(self, beam_type: BeamType) -> None:
+    def auto_focus(self, beam_type: BeamType, reduced_area: Optional[FibsemRectangle] = None) -> None:        
         if beam_type is BeamType.ION:
             logging.warning(f"Auto focus is not supported for {beam_type.name} in Tescan API")
             return

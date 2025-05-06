@@ -135,11 +135,11 @@ class FibsemMicroscope(ABC):
         pass
     
     @abstractmethod
-    def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
+    def autocontrast(self, beam_type: BeamType, reduced_area: Optional[FibsemRectangle] = None) -> None:
         pass
 
     @abstractmethod
-    def auto_focus(self, beam_type: BeamType) -> None:
+    def auto_focus(self, beam_type: BeamType, reduced_area: Optional[FibsemRectangle] = None) -> None:
         pass
 
     def reset_beam_shifts(self) -> None:
@@ -714,6 +714,21 @@ class FibsemMicroscope(ABC):
             available_beams.append(BeamType.ION)
         return available_beams
 
+    def set_spot_scanning_mode(self, point: Point, beam_type: BeamType) -> None:
+        """Set the spot scanning mode for the specified beam type."""
+        self.set("spot_mode", point, beam_type)
+        return
+
+    def set_reduced_area_scanning_mode(self, reduced_area: FibsemRectangle, beam_type: BeamType) -> None:
+        """Set the reduced area scanning mode for the specified beam type."""
+        self.set("reduced_area", reduced_area, beam_type)
+        return
+    
+    def set_full_frame_scanning_mode(self, beam_type: BeamType) -> None:
+        """Set the full frame scanning mode for the specified beam type."""
+        self.set("full_frame", None, beam_type)
+        return
+
 class ThermoMicroscope(FibsemMicroscope):
     """
     A class representing a Thermo Fisher FIB-SEM microscope.
@@ -901,7 +916,7 @@ class ThermoMicroscope(FibsemMicroscope):
             self.stage = self.connection.specimen.compustage
             self.stage_is_compustage = True
             self._default_stage_coordinate_system = CoordinateSystem.SPECIMEN
-        elif self.connection.specimen.stage.is_installed:          
+        elif self.connection.specimen.stage.is_installed:
             self.stage = self.connection.specimen.stage
             self.stage_is_compustage = False
             self._default_stage_coordinate_system = CoordinateSystem.RAW
@@ -918,6 +933,17 @@ class ThermoMicroscope(FibsemMicroscope):
         self._last_imaging_settings: ImageSettings = ImageSettings()
         self.milling_channel: BeamType = BeamType.ION
 
+    def set_channel(self, channel: BeamType) -> None:
+        """
+        Set the active channel for the microscope.
+
+        Args:
+            channel (BeamType): The beam type to set as the active channel.
+        """
+        # TODO: create mapping for the other channels/devices
+        self.connection.imaging.set_active_view(channel.value)
+        self.connection.imaging.set_active_device(channel.value)
+        logging.debug(f"Set active channel to {channel.name}")
         
     def acquire_image(self, image_settings:ImageSettings) -> FibsemImage:
         """
@@ -944,14 +970,13 @@ class ThermoMicroscope(FibsemMicroscope):
             logging.debug(f"Set reduced are: {reduced_area} for beam type {image_settings.beam_type}")
         else:
             reduced_area = None
-            beam.scanning.mode.set_full_frame()
+            self.set_full_frame_scanning_mode(image_settings.beam_type)
 
         # set the imaging hfw
         self.set("hfw", image_settings.hfw, image_settings.beam_type)
 
         logging.info(f"acquiring new {image_settings.beam_type.name} image.")
-        self.connection.imaging.set_active_view(image_settings.beam_type.value)
-        self.connection.imaging.set_active_device(image_settings.beam_type.value)
+        self.set_channel(image_settings.beam_type)
 
         # set the imaging frame settings
         frame_settings = GrabFrameSettings(
@@ -965,10 +990,10 @@ class ThermoMicroscope(FibsemMicroscope):
         )
 
         image = self.connection.imaging.grab_frame(frame_settings)
-        
+
         # restore to full frame imaging
         if image_settings.reduced_area is not None:
-            beam.scanning.mode.set_full_frame() 
+            self.set_full_frame_scanning_mode(image_settings.beam_type)
 
         # get the microscope state (for metadata)
         # TODO: convert to using fromAdornedImage, we dont need to full state
@@ -1011,8 +1036,7 @@ class ThermoMicroscope(FibsemMicroscope):
         _check_beam(beam_type = beam_type, settings = self.system)        
         
         # set active view and device
-        self.connection.imaging.set_active_view(beam_type.value)
-        self.connection.imaging.set_active_device(beam_type.value)
+        self.set_channel(beam_type)
 
         # get the last image
         image = self.connection.imaging.get_image()
@@ -1093,39 +1117,35 @@ class ThermoMicroscope(FibsemMicroscope):
         Args:
             beam_type (BeamType) The imaging beam type for which to adjust the contrast.
         """
-        _check_beam(beam_type = beam_type, settings = self.system)
         logging.debug(f"Running autocontrast on {beam_type.name}.")
-        self.connection.imaging.set_active_view(beam_type.value)
-        self.connection.imaging.set_active_device(beam_type.value)
+        self.set_channel(beam_type)
         if reduced_area is not None:
-            # TODO: migrate to set api
-            beam = (self.connection.beams.electron_beam
-                    if beam_type == BeamType.ELECTRON
-                    else self.connection.beams.ion_beam)
-            rect = reduced_area.__to_FEI__()
-            beam.scanning.mode.set_reduced_area(left=rect.left, 
-                                                top=rect.top, 
-                                                width=rect.width, 
-                                                height=rect.height)
+            self.set_reduced_area_scanning_mode(reduced_area, beam_type)
 
         self.connection.auto_functions.run_auto_cb()
         if reduced_area is not None:
-            beam.scanning.mode.set_full_frame()
+            self.set_full_frame_scanning_mode(beam_type)
         
         logging.debug({"msg": "autocontrast", "beam_type": beam_type.name})
 
-    def auto_focus(self, beam_type: BeamType) -> None:
+    def auto_focus(self, beam_type: BeamType, reduced_area: Optional[FibsemRectangle] = None) -> None:
         """Automatically focus the specified beam type.
 
         Args:
             beam_type (BeamType): The imaging beam type for which to focus.
         """
-        _check_beam(beam_type = beam_type, settings = self.system)
         logging.debug(f"Running auto-focus on {beam_type.name}.")
-        self.connection.imaging.set_active_view(beam_type.value)  
-        self.connection.imaging.set_active_device(beam_type.value)
+        self.set_channel(beam_type)
+        if reduced_area is not None:
+            self.set_reduced_area_scanning_mode(reduced_area, beam_type)
+
+        # run the auto focus
         self.connection.auto_functions.run_auto_focus()
-        logging.debug({"msg": "auto_focus", "beam_type": beam_type.name})       
+
+        # restore the full frame scanning mode
+        if reduced_area is not None:
+            self.set_full_frame_scanning_mode(beam_type)
+        logging.debug({"msg": "auto_focus", "beam_type": beam_type.name})
 
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType = BeamType.ION) -> None:
         """
@@ -1146,7 +1166,6 @@ class ThermoMicroscope(FibsemMicroscope):
             self.connection.beams.ion_beam.beam_shift.value += (dx, dy)
     
         logging.debug({"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name}) 
-
     
     def move_stage_absolute(self, position: FibsemStagePosition) -> FibsemStagePosition:
         """
@@ -1730,8 +1749,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         self.milling_channel = mill_settings.milling_channel
         _check_beam(self.milling_channel, self.system)
-        self.connection.imaging.set_active_view(self.milling_channel.value)  # the ion beam view
-        self.connection.imaging.set_active_device(self.milling_channel.value)
+        self.set_channel(self.milling_channel)
         self.connection.patterning.set_default_beam_type(self.milling_channel.value)
         self.connection.patterning.set_default_application_file(mill_settings.application_file)
         self._default_application_file = mill_settings.application_file
@@ -2167,7 +2185,7 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         _check_sputter(self.system)
         self.original_active_view = self.connection.imaging.get_active_view()
-        self.connection.imaging.set_active_view(BeamType.ELECTRON.value)
+        self.set_channel(BeamType.ELECTRON)
         self.connection.patterning.clear_patterns()
         self.connection.patterning.set_default_application_file(protocol["application_file"])
         self.connection.patterning.set_default_beam_type(BeamType.ELECTRON.value)
@@ -2436,8 +2454,7 @@ class ThermoMicroscope(FibsemMicroscope):
         if key in ["detector_mode", "detector_type", "detector_brightness", "detector_contrast"]:
             
             # set beam active view and device
-            self.connection.imaging.set_active_view(beam_type.value)
-            self.connection.imaging.set_active_device(beam_type.value)
+            self.set_channel(beam_type)
 
             if key == "detector_type":
                 return self.connection.detector.type.value
@@ -2535,11 +2552,10 @@ class ThermoMicroscope(FibsemMicroscope):
         
         # scanning modes
         if key == "reduced_area":
-            rect = value.__to_FEI__()
-            beam.scanning.mode.set_reduced_area(left=rect.left, 
-                                                top=rect.top, 
-                                                width=rect.width, 
-                                                height=rect.height)
+            beam.scanning.mode.set_reduced_area(left=value.left, 
+                                                top=value.top, 
+                                                width=value.width, 
+                                                height=value.height)
             return
         
         if key == "spot_mode":
@@ -2565,9 +2581,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # detector properties
         if key in ["detector_mode", "detector_type", "detector_brightness", "detector_contrast"]:
-            # set beam active view and device
-            self.connection.imaging.set_active_view(beam_type.value)
-            self.connection.imaging.set_active_device(beam_type.value)
+            self.set_channel(beam_type)
 
             if key == "detector_mode":
                 if value in self.connection.detector.mode.available_values:
@@ -2762,7 +2776,8 @@ class DemoMicroscope(FibsemMicroscope):
             blanked: bool
             beam: BeamSettings
             detector: FibsemDetectorSettings  
-            scanning_mode: str  
+            scanning_mode: str
+            scanning_mode_value: Union[None, Point, FibsemRectangle] = None
 
         @dataclass
         class ChamberSystem:
@@ -2887,7 +2902,8 @@ class DemoMicroscope(FibsemMicroscope):
                 brightness=0.5,
                 contrast=0.5,
             ),
-            scanning_mode="full_frame"
+            scanning_mode="full_frame",
+            scanning_mode_value = None,
         )
         self.stage_is_compustage: bool = False
         self.milling_system = MillingSystem(patterns=[])
@@ -2902,7 +2918,6 @@ class DemoMicroscope(FibsemMicroscope):
         self.milling_channel: BeamType.ION = BeamType.ION
         # logging
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
-
 
     def connect_to_microscope(self, ip_address: str, port: int = 8080):
         
@@ -3037,19 +3052,22 @@ class DemoMicroscope(FibsemMicroscope):
         #     logging.info("Stopped thread image consumption")
     
     def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
-        _check_beam(beam_type, self.system)
         if reduced_area is not None:
-            self.set("reduced_area", reduced_area, beam_type=beam_type)
+            self.set_reduced_area_scanning_mode(reduced_area, beam_type)
+        # TODO: implement auto-contrast
         if reduced_area:
-            self.set("full_frame", None)
+            self.set_full_frame_scanning_mode(beam_type)
         logging.debug({"msg": "autocontrast", "beam_type": beam_type.name})
 
-    def auto_focus(self, beam_type: BeamType) -> None:
-        _check_beam(beam_type, self.system)
+    def auto_focus(self, beam_type: BeamType, reduced_area: Optional[FibsemRectangle] = None) -> None:        
+        if reduced_area is not None:
+            self.set_reduced_area_scanning_mode(reduced_area, beam_type)
+        # TODO: implement auto-focus
+        if reduced_area:
+            self.set_full_frame_scanning_mode(beam_type)
         logging.debug({"msg": "auto_focus", "beam_type": beam_type.name})
         
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
-        _check_beam(beam_type, self.system)
 
         logging.debug({"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name})         
 
@@ -3412,7 +3430,6 @@ class DemoMicroscope(FibsemMicroscope):
             return beam.scan_rotation
         
         # system properties
-            
         if key == "beam_enabled":
             if beam_type is BeamType.ELECTRON:
                 return self.system.electron.enabled
@@ -3448,7 +3465,7 @@ class DemoMicroscope(FibsemMicroscope):
             if beam_type is BeamType.ION and self.system.ion.plasma:
                 return self.system.ion.plasma_gas # might need to check if this is available?
             else:
-                return None     
+                return None
     
         # stage 
         if key == "stage_position":
@@ -3492,6 +3509,10 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "chamber_pressure":
             return self.chamber.pressure
 
+        # scanning mode
+        if key == "scanning_mode":
+            return beam_system.scanning_mode
+
         if key in SIMULATOR_KNOWN_UNKNOWN_KEYS:
             logging.debug(f"Skipping unknown key: {key} for {beam_type}")
             return None
@@ -3508,7 +3529,6 @@ class DemoMicroscope(FibsemMicroscope):
             beam = beam_system.beam
             detector = beam_system.detector
             _check_beam(beam_type, self.system)
-
 
         # voltage
         if key == "voltage":
@@ -3540,12 +3560,6 @@ class DemoMicroscope(FibsemMicroscope):
             return
         if key == "dwell_time":
             beam.dwell_time = value
-            return
-
-        if key == "reduced_area":
-            # TODO: add keys for sim
-            return
-        if key == "full_frame":
             return
 
         # beam control
@@ -3626,10 +3640,17 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "spot_mode":
             # value: Point, image pixels
             beam_system.scanning_mode = "spot"
+            beam_system.scanning_mode_value = value
+            return
+
+        if key == "reduced_area":
+            beam_system.scanning_mode = "reduced_area"
+            beam_system.scanning_mode_value = value
             return
 
         if key == "full_frame":
             beam_system.scanning_mode = "full_frame"
+            beam_system.scanning_mode_value = value
             return
 
         # imaging system

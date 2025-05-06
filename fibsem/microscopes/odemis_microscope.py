@@ -367,7 +367,7 @@ class OdemisMicroscope(FibsemMicroscope):
         if reduced_area is not None:
             self.connection.set_full_frame_scan_mode(channel)
 
-    def auto_focus(self, beam_type: BeamType) -> None:
+    def auto_focus(self, beam_type: BeamType, reduced_area: Optional[FibsemRectangle] = None) -> None:        
         self.connection.run_auto_focus(beam_type_to_odemis[beam_type])
 
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
