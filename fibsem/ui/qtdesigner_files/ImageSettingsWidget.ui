@@ -36,9 +36,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-311</y>
+        <y>0</y>
         <width>501</width>
-        <height>1076</height>
+        <height>1042</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -386,67 +386,7 @@
           <string>Beam</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
-          <item row="3" column="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_stigmation_y">
-            <property name="maximum">
-             <double>1000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.010000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1" colspan="2">
-           <widget class="QSpinBox" name="spinBox_beam_scan_rotation">
-            <property name="suffix">
-             <string> deg</string>
-            </property>
-            <property name="maximum">
-             <number>360</number>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_stigmation_x">
-            <property name="minimum">
-             <double>-1000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>1000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.010000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_beam_voltage">
-            <property name="text">
-             <string>Voltage</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_beam_working_distance">
-            <property name="text">
-             <string>Working Distance</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" colspan="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_working_distance">
-            <property name="suffix">
-             <string> mm</string>
-            </property>
-            <property name="maximum">
-             <double>1000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.010000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1" colspan="2">
+          <item row="3" column="1" colspan="2">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_voltage">
             <property name="suffix">
              <string> kV</string>
@@ -456,7 +396,14 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="2">
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_beam_voltage">
+            <property name="text">
+             <string>Voltage</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_shift_y">
             <property name="suffix">
              <string> um</string>
@@ -472,28 +419,105 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="label_beam_scan_rotation">
-            <property name="text">
-             <string>Scan Rotation</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
+          <item row="2" column="0">
            <widget class="QLabel" name="label_beam_current">
             <property name="text">
              <string>Beam Current</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="6" column="1" colspan="2">
+           <widget class="QSpinBox" name="spinBox_beam_scan_rotation">
+            <property name="suffix">
+             <string> deg</string>
+            </property>
+            <property name="maximum">
+             <number>360</number>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_stigmation_x">
+            <property name="minimum">
+             <double>-1000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_beam_working_distance">
+            <property name="text">
+             <string>Working Distance</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0" colspan="3">
+           <widget class="QPushButton" name="button_set_beam_settings">
+            <property name="text">
+             <string>Set Beam Settings</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" colspan="2">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_working_distance">
+            <property name="suffix">
+             <string> mm</string>
+            </property>
+            <property name="maximum">
+             <double>1000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_beam_scan_rotation">
+            <property name="text">
+             <string>Scan Rotation</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
            <widget class="QLabel" name="label_shift">
             <property name="text">
              <string>Shift (x,y)</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
+          <item row="2" column="1" colspan="2">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_current">
+            <property name="suffix">
+             <string> pA</string>
+            </property>
+            <property name="maximum">
+             <double>1000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_stigmation">
+            <property name="text">
+             <string>Stigmation (x,y)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_stigmation_y">
+            <property name="maximum">
+             <double>1000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
            <widget class="QDoubleSpinBox" name="doubleSpinBox_shift_x">
             <property name="suffix">
              <string> um</string>
@@ -509,27 +533,24 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1" colspan="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_beam_current">
-            <property name="suffix">
-             <string> pA</string>
-            </property>
-            <property name="maximum">
-             <double>1000.000000000000000</double>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="pushButton_beam_blanked">
+            <property name="text">
+             <string>Blank Beam</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_stigmation">
+          <item row="0" column="1">
+           <widget class="QPushButton" name="pushButton_beam_is_on">
             <property name="text">
-             <string>Stigmation (x,y)</string>
+             <string>Beam On</string>
             </property>
            </widget>
           </item>
-          <item row="6" column="0" colspan="3">
-           <widget class="QPushButton" name="button_set_beam_settings">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_beam_status">
             <property name="text">
-             <string>Set Beam Settings</string>
+             <string>Beam ON</string>
             </property>
            </widget>
           </item>

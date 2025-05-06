@@ -690,6 +690,29 @@ class FibsemMicroscope(ABC):
     def is_on(self, beam_type: BeamType) -> bool:
         """Check if the specified beam type is on."""
         return self.get("on", beam_type)
+    
+    def blank(self, beam_type: BeamType) -> bool:
+        """Blank the specified beam type."""
+        self.set("blanked", True, beam_type)
+        return self.get("blanked", beam_type)
+    
+    def unblank(self, beam_type: BeamType) -> bool:
+        """Unblank the specified beam type."""
+        self.set("blanked", False, beam_type)
+        return self.get("blanked", beam_type)
+    
+    def is_blanked(self, beam_type: BeamType) -> bool:
+        """Check if the specified beam type is blanked."""
+        return self.get("blanked", beam_type)
+    
+    def get_available_beams(self) -> List[BeamType]:
+        """Get the available beams for the microscope."""
+        available_beams = []
+        if self.is_available("electron_beam"):
+            available_beams.append(BeamType.ELECTRON)
+        if self.is_available("ion_beam"):
+            available_beams.append(BeamType.ION)
+        return available_beams
 
 class ThermoMicroscope(FibsemMicroscope):
     """
@@ -1022,7 +1045,7 @@ class ThermoMicroscope(FibsemMicroscope):
         image = self.connection.imaging.get_image()
         logging.debug({"msg": "acquire_chamber_image"})
         return FibsemImage(data=image.data, metadata=None)
-    
+
     def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
         pass
         # self.image_queue = image_queue
@@ -1084,7 +1107,7 @@ class ThermoMicroscope(FibsemMicroscope):
                                                 top=rect.top, 
                                                 width=rect.width, 
                                                 height=rect.height)
-            
+
         self.connection.auto_functions.run_auto_cb()
         if reduced_area is not None:
             beam.scanning.mode.set_full_frame()
@@ -2820,8 +2843,8 @@ class DemoMicroscope(FibsemMicroscope):
         self.gis_system = GasInjectionSystem(gas="Pt dep")
 
         self.electron_system = BeamSystem(
-            on=False,
-            blanked=True,
+            on=True,
+            blanked=False,
             beam=BeamSettings(
                 beam_type=BeamType.ELECTRON,
                 working_distance=4.0e-3,
@@ -2844,8 +2867,8 @@ class DemoMicroscope(FibsemMicroscope):
         )
             
         self.ion_system = BeamSystem(
-            on=False,
-            blanked=True,
+            on=True,
+            blanked=False,
             beam=BeamSettings(
                 beam_type=BeamType.ION,
                 working_distance=16.5e-3,
