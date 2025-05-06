@@ -36,7 +36,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-271</y>
         <width>501</width>
         <height>1042</height>
        </rect>
@@ -62,7 +62,7 @@
            </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QCheckBox" name="ion_ruler_checkBox">
+           <widget class="QCheckBox" name="checkBox_enable_ruler">
             <property name="text">
              <string>Ruler </string>
             </property>
@@ -76,7 +76,7 @@
            </widget>
           </item>
           <item row="2" column="0" colspan="3">
-           <widget class="QLabel" name="ion_ruler_label">
+           <widget class="QLabel" name="label_ruler_value">
             <property name="text">
              <string/>
             </property>

@@ -7,6 +7,7 @@ import napari.utils.notifications
 import numpy as np
 from napari.layers import Image as NapariImageLayer
 from napari.layers import Shapes as NapariShapesLayer
+from napari.layers import Points as NapariPointLayer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEvent
@@ -36,7 +37,7 @@ from fibsem.ui.napari.properties import (
     IMAGE_TEXT_LAYER_PROPERTIES,
     RULER_LAYER_NAME,
     RULER_LINE_LAYER_NAME,
-    RULER_VALUE_LAYER_NAME,
+    IMAGING_RULER_LAYER_PROPERTIES,
 )
 from fibsem.ui.napari.utilities import draw_crosshair_in_napari, draw_scalebar_in_napari
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget as ImageSettingsWidgetUI
@@ -119,7 +120,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.detector_brightness_slider.valueChanged.connect(self.update_labels)
         
         # util
-        self.ion_ruler_checkBox.toggled.connect(self.update_ruler)
+        self.checkBox_enable_ruler.toggled.connect(self.update_ruler)
         self.scalebar_checkbox.toggled.connect(self.update_ui_tools)
         self.crosshair_checkbox.toggled.connect(self.update_ui_tools)
         
@@ -219,57 +220,63 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         self.microscope.set("preset", self.comboBox_presets.currentText(), beam_type)
     
     def update_ruler(self):
+        """Initialise the ruler in the viewer"""
 
-        def check_point_image_in_eb(point: Tuple[int,int]) -> bool:
-            
-            if point[1] >= 0 and point[1] <= self.eb_layer.data.shape[1]:
-                return True
-            else:
-                return False
-
+        # TODO: migrate to using a line layer for everything, and enable 'select vertices' mode to move it.
+        # TODO: allow multiple rulers
         # TODO: re-do this and consolidate into napari.utilities
-        # TODO: add properties config
-        if self.ion_ruler_checkBox.isChecked():
-            self.ion_ruler_label.setText("Ruler: is on")
-            self.ion_ruler_label.setVisible(True)
 
-            # create initial ruler
-
-            data = [[500,500],[500,1000]]
-            p1,p2 = data[0],data[1]
-
-
-            hfw_scale = self.eb_image.metadata.pixel_size.x if check_point_image_in_eb(p1) else self.ib_image.metadata.pixel_size.x
-
-            midpoint = [np.mean([p1[0],p2[0]]),np.mean([p1[1],p2[1]])]
-            dist_um = 500 * hfw_scale*constants.SI_TO_MICRO
-            text = {
-                "string": [f"{dist_um:.2f} um"],
-                "color": "white"
-            }
-
-            # creating initial layers 
-
-            self.ruler_layer = self.viewer.add_points(data, size=20, face_color='lime', edge_color='white', name=RULER_LAYER_NAME)
-            self.viewer.add_shapes(data, shape_type='line', edge_color='lime', name=RULER_LINE_LAYER_NAME,edge_width=5)
-            self.viewer.add_points(midpoint,text=text, size=20, face_color='transparent', edge_color='transparent', name=RULER_VALUE_LAYER_NAME)
-            self.ruler_layer.mode = 'select'
-
-
-            self.viewer.layers.selection.active = self.ruler_layer
-            self.ruler_layer.mouse_drag_callbacks.append(self.update_ruler_points)
-
-
-        else:
-            self.ion_ruler_label.setText("Ruler: is off")
-            self.ion_ruler_label.setVisible(False)
-            self.viewer.layers.remove(self.ruler_layer)
-            self.viewer.layers.remove(RULER_LINE_LAYER_NAME)
-            self.viewer.layers.remove(RULER_VALUE_LAYER_NAME)
+        if not self.checkBox_enable_ruler.isChecked():
+            self.label_ruler_value.setText("Ruler: is off")
+            self.label_ruler_value.setVisible(False)
+            # remove the ruler layers
+            try:
+                self.viewer.layers.remove(self.ruler_layer)
+                self.viewer.layers.remove(RULER_LINE_LAYER_NAME)
+            except Exception as e:
+                logging.debug(f"Error removing ruler layers: {e}")
             self.ruler_layer = None
             self.restore_active_layer_for_movement()
+            return
+        
+        # enable the ruler
+        self.label_ruler_value.setText("Ruler: is on")
+        self.label_ruler_value.setVisible(True)
 
-    def update_ruler_points(self,layer, event):
+        # create an initial ruler in SEM image
+        sem_shape = self.eb_image.data.shape
+        pixelsize = self.eb_image.metadata.pixel_size.x
+        cy, cx = sem_shape[0] // 2, sem_shape[1] // 2
+        length = 400
+        data = [[cy, cx - length/2], [cy, cx + length]]
+        
+        # create text label
+        dist_um = length * pixelsize * constants.SI_TO_MICRO
+        text = {
+            "string": [f"{dist_um:.2f} um", ""],
+            "color": IMAGING_RULER_LAYER_PROPERTIES["text"]["color"],
+            "translation": IMAGING_RULER_LAYER_PROPERTIES["text"]["translation"],
+            "size": IMAGING_RULER_LAYER_PROPERTIES["text"]["size"],
+            }
+
+        # create initial layers, and select the ruler layer for interaction 
+        self.ruler_layer = self.viewer.add_points(data=data, 
+                                                    name=RULER_LAYER_NAME,
+                                                    size=IMAGING_RULER_LAYER_PROPERTIES["size"], 
+                                                    face_color=IMAGING_RULER_LAYER_PROPERTIES["face_color"], 
+                                                    edge_color=IMAGING_RULER_LAYER_PROPERTIES["edge_color"], 
+                                                    text=text)
+        self.viewer.add_shapes(data, shape_type='line', edge_color='lime', name=RULER_LINE_LAYER_NAME,edge_width=5)
+        self.ruler_layer.mouse_drag_callbacks.append(self.update_ruler_points)
+        self.ruler_layer.mode = 'select'
+        self.viewer.layers.selection.active = self.ruler_layer
+
+    def update_ruler_points(self, layer: NapariPointLayer, event):
+        """Update the ruler line and value when the mouse is dragged"""
+
+        # TODO: update this to use the new data changed api in napari
+        # self.ruler_layer.events.data.connect(self._update_ruler)
+        # event.action == "changing", "changed", "added", "removed"...
 
         dragged = False
         yield
@@ -282,42 +289,46 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
 
         while event.type == 'mouse_move':
 
-
-            if self.ruler_layer.selected_data is not None:
-                data = self.ruler_layer.data
-
-
-                p1, p2 = data[0], data[1]
-                dist_pix = np.linalg.norm(p1-p2)
-                
-                midpoint = [(np.mean([p1[0],p2[0]])),(np.mean([p1[1],p2[1]]))]
-                
-                self.viewer.layers['ruler_line'].data = [p1,p2]
-                self.viewer.layers['ruler_value'].data = midpoint
-                
-                hfw_scale = self.eb_image.metadata.pixel_size.x if check_point_image_in_eb(p1) else self.ib_image.metadata.pixel_size.x
-
-                dist_um = dist_pix * hfw_scale*constants.SI_TO_MICRO
-
-                text = {
-                "string": [f"{dist_um:.2f} um"],
-                "color": "white"
-                }
-
-                self.viewer.layers['ruler_value'].text = text
-                dist_dx = abs(p2[1]-p1[1]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
-                dist_dy = abs(p2[0]-p1[0]) * self.image_settings.hfw/self.image_settings.resolution[0]*constants.SI_TO_MICRO
-
-
-                self.ion_ruler_label.setText(f"Ruler: {dist_um:.2f} um  dx: {dist_dx:.2f} um  dy: {dist_dy:.2f} um")
-                self.viewer.layers.selection.active = self.ruler_layer
-                self.viewer.layers['ruler_line'].refresh()
-
-                
-                dragged = True
+            # if no points are selected, do nothing
+            if self.ruler_layer.selected_data is None:
                 yield
 
-    def update_labels(self):
+            data = self.ruler_layer.data
+
+            p1, p2 = data[0], data[1]
+            dist_px = np.linalg.norm(p1-p2)
+            dx_px = abs(p2[1]-p1[1])
+            dy_px = abs(p2[0]-p1[0])
+            
+            if check_point_image_in_eb(p1):
+                pixelsize = self.eb_image.metadata.pixel_size.x
+            else: 
+                pixelsize = self.ib_image.metadata.pixel_size.x
+
+            dist_um = dist_px * pixelsize * constants.SI_TO_MICRO
+
+            # update the text labels
+            dx_um = dx_px * pixelsize * constants.SI_TO_MICRO
+            dy_um = dy_px * pixelsize * constants.SI_TO_MICRO
+            self.label_ruler_value.setText(f"Ruler: {dist_um:.2f} um  dx: {dx_um:.2f} um  dy: {dy_um:.2f} um")
+
+            text = {
+                "string": [f"{dist_um:.2f} um", ""],
+                "color": IMAGING_RULER_LAYER_PROPERTIES["text"]["color"],
+                "translation": IMAGING_RULER_LAYER_PROPERTIES["text"]["translation"],
+                "size": IMAGING_RULER_LAYER_PROPERTIES["text"]["size"],
+                }
+
+            self.viewer.layers[RULER_LAYER_NAME].text = text
+            self.viewer.layers.selection.active = self.ruler_layer
+            self.viewer.layers[RULER_LINE_LAYER_NAME].data = [p1, p2]
+            self.viewer.layers[RULER_LINE_LAYER_NAME].refresh()
+            
+            dragged = True
+            yield
+
+    def update_labels(self) -> None:
+        """"Update the labels for the detector contrast and brightness"""
         self.detector_contrast_label.setText(f"{self.detector_contrast_slider.value()}%")
         self.detector_brightness_label.setText(f"{self.detector_brightness_slider.value()}%")
 
@@ -348,8 +359,6 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         beam_is_blanked = self.microscope.is_blanked(beam_type)
 
         self.label_beam_status.setVisible(False) # disabled until testing
-
-        print(beam_type, beam_is_on, beam_is_blanked)
 
         if beam_is_on:
             self.pushButton_beam_is_on.setText("Beam is ON")

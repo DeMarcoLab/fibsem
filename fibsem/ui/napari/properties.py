@@ -1,9 +1,7 @@
 import numpy as np
 
 # IMAGING
-RULER_LAYER_NAME = "ruler"
-RULER_LINE_LAYER_NAME = "ruler_line"
-RULER_VALUE_LAYER_NAME = "ruler_value"
+
 
 ALIGNMENT_LAYER_PROPERTIES = {
     "name": "alignment_area",
@@ -53,6 +51,27 @@ IMAGING_SCALEBAR_LAYER_PROPERTIES = {
         "sze": 20,
     },
 }
+
+IMAGING_RULER_LAYER_PROPERTIES = {
+    "name": "ruler",
+    "size": 20,
+    "face_color": "lime",
+    "edge_color": "white",
+    "text": {
+        "color": "white",
+        "translation": np.array([-20, 0]),
+        "size": 10,
+    },
+    "line-layer": {
+         "name": "ruler_line",
+         "shape_type": "line",
+         "edge_width": 5,
+         "edge_color": "lime",
+    },
+}
+
+RULER_LAYER_NAME = IMAGING_RULER_LAYER_PROPERTIES["name"]
+RULER_LINE_LAYER_NAME = IMAGING_RULER_LAYER_PROPERTIES["line-layer"]["name"]
 
 # MILLING
 
