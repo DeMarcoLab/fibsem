@@ -29,7 +29,6 @@ try:
         AdornedImage,
         CompustagePosition,
         ManipulatorPosition,
-        Rectangle,
         StagePosition,
     )
 
@@ -428,15 +427,6 @@ class FibsemRectangle:
             "width": float(self.width),
             "height": float(self.height),
         }
-
-    if THERMO:
-
-        def __to_FEI__(self) -> Rectangle:
-            return Rectangle(self.left, self.top, self.width, self.height)
-
-        @classmethod
-        def __from_FEI__(cls, rect: Rectangle) -> "FibsemRectangle":
-            return cls(rect.left, rect.top, rect.width, rect.height)
 
     @property
     def is_valid_reduced_area(self) -> bool:
@@ -1157,6 +1147,7 @@ class StageSystemSettings:
     enabled: bool = True
     rotation: bool = True
     tilt: bool  = True
+    milling_angle: float = 15
 
     def to_dict(self):
         return {
@@ -1167,6 +1158,7 @@ class StageSystemSettings:
             "enabled": self.enabled,
             "rotation": self.rotation,
             "tilt": self.tilt,
+            "milling_angle": self.milling_angle,
         }
     
     @staticmethod
@@ -1179,6 +1171,7 @@ class StageSystemSettings:
             enabled=settings.get("enabled", True),
             rotation=settings.get("rotation", True),
             tilt=settings.get("tilt", True),
+            milling_angle=settings.get("milling_angle", 15.0),
         )
 
 
@@ -1868,13 +1861,17 @@ class FibsemImage:
     def generate_blank_image(
         resolution: List[int] = [1536, 1024],
         hfw: float = 100e-6,
-        pixel_size: Point = None,
+        pixel_size: Optional[Point] = None,
+        random: bool = False,
+        dtype: np.dtype = np.uint8,
     ) -> 'FibsemImage':
         """Generate a blank image with a given resolution and field of view.
         Args:
             resolution: List[int]: Resolution of the image.
             hfw: float: Horizontal field width of the image.
             pixel_size: Point: Pixel size of the image.
+            random: bool: If True, generate a random (noise) image.
+            dtype: np.dtype: Data type of the image. Defaults to np.uint8.
         Returns:
             FibsemImage: Blank image with valid metadata from display.
         """
@@ -1886,8 +1883,14 @@ class FibsemImage:
             vfw = hfw * resolution[1] / resolution[0]
             pixel_size = Point(hfw / resolution[0], vfw / resolution[1])
 
+        shape = (resolution[1], resolution[0])
+        if random:
+            arr = np.random.randint(0, 255, size=shape, dtype=dtype)
+        else:
+            arr = np.zeros(shape=shape, dtype=dtype)
+
         image = FibsemImage(
-            data=np.zeros((resolution[1], resolution[0]), dtype=np.uint8),
+            data=arr,
             metadata=FibsemImageMetadata(
                 image_settings=ImageSettings(hfw=hfw, resolution=resolution),
                 microscope_state=None,

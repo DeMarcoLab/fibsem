@@ -811,12 +811,6 @@ class OdemisMicroscope(FibsemMicroscope):
     def safe_absolute_stage_movement(self, position: FibsemStagePosition) -> None:
         return ThermoMicroscope.safe_absolute_stage_movement(self, position)
 
-    def live_imaging(self, beam_type: BeamType) -> None:
-        pass
-
-    def consume_image_queue(self):
-        pass
-
     def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str):
         pass
 

@@ -412,13 +412,7 @@ class TescanMicroscope(FibsemMicroscope):
         image = self.connection.Camera.AcquireImage()
         logging.debug({"msg": "acquire_chamber_image"})
         return FibsemImage(data=np.array(image.Image), metadata=None)   
-
-    def live_imaging(self, image_settings: ImageSettings, image_queue: Queue, stop_event: threading.Event):
-        return NotImplemented
-
-    def consume_image_queue(self, parent_ui = None, sleep = 0.1):
-        return NotImplemented
-        
+       
     def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
         """Automatically adjust the microscope image contrast for the specified beam type.
 
