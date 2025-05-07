@@ -214,7 +214,8 @@ def setup_session(
         microscope = OdemisMicroscope(settings.system)
 
     elif manufacturer == "Demo":
-        microscope = fibsem_microscope.DemoMicroscope(settings.system)
+        from fibsem.microscopes.simulator import DemoMicroscope
+        microscope = DemoMicroscope(settings.system)
         microscope.connect_to_microscope(ip_address, port=7520)
 
     else:

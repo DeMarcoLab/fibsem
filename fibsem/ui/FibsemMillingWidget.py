@@ -18,10 +18,10 @@ from scipy.ndimage import median_filter
 from fibsem import config as cfg
 from fibsem import constants, conversions, utils
 from fibsem.microscope import (
-    DemoMicroscope,
     FibsemMicroscope,
     ThermoMicroscope,
 )
+from fibsem.microscopes.simulator import DemoMicroscope
 from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.milling import (
     FibsemMillingStage,

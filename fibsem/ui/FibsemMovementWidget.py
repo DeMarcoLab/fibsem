@@ -13,7 +13,8 @@ from PyQt5 import QtCore, QtWidgets
 import fibsem.utils as utils
 from fibsem import config as cfg
 from fibsem import constants, conversions
-from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope
+from fibsem.microscopes.simulator import DemoMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemStagePosition,
