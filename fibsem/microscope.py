@@ -2896,7 +2896,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return
     
-    def check_available_values(self, key:str, values: list, beam_type: BeamType = None) -> bool:
+    def check_available_values(self, key:str, values: list, beam_type: Optional[BeamType] = None) -> bool:
+        """Check if the given values are available for the given key."""
 
         available_values = self.get_available_values(key, beam_type)
 
@@ -2911,11 +2912,22 @@ class ThermoMicroscope(FibsemMicroscope):
                 if value < min(available_values) or value > max(available_values):
                     return False
         return True
-    
 
 
-########################
+######################## SIMULATOR ########################
 SIMULATOR_KNOWN_UNKNOWN_KEYS = ["preset"]
+
+# simulator constants
+SIMULATOR_PLASMA_GASES = ["Oxygen", "Argon", "Nitrogen", "Xenon"]
+SIMULATOR_SCAN_DIRECTIONS = ["BottomToTop", "LeftToRight", "RightToLeft", "TopToBottom"]
+SIMULATOR_APPLICATION_FILES =  ["Si", "Si-multipass", "Si-ccs", "autolamella", "cryo_Pt_dep"]
+SIMULATOR_BEAM_CURRENTS: Dict[BeamType: Union[List[float], Dict[str, List[float]]]] = {
+    BeamType.ELECTRON: [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1e-9, 4e-9, 15e-9, 60e-9],
+    BeamType.ION: {
+        "Xenon": [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1e-9, 4e-9, 15e-9, 60e-9],
+        "Argon": [1.0e-12, 6.0e-12, 20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.4e-9, 28.0e-9, 120.0e-9],
+        None: [1.0e-12, 3.0e-12, 20e-12, 41e-12, 90e-12, 0.2e-9, 0.4e-9, 1.0e-9, 2.0e-9, 4.0e-9, 15e-9], # None = Gallium
+    }}
 
 
 # hack, do this properly @patrick
@@ -3539,37 +3551,36 @@ class DemoMicroscope(FibsemMicroscope):
         _check_sputter(self.system)
         logging.info(f"Finishing sputter: {kwargs}")
 
-    def get_available_values(self, key: str, beam_type: BeamType = None) -> List[float]:
-        
+    def get_available_values(self, key: str, beam_type: Optional[BeamType] = None) -> List[Union[str, int, float]]:
+        """Get the available values for a given key."""
         values = []
         if key == "current":
-            _check_beam(beam_type, self.system)
-            if beam_type == BeamType.ELECTRON:
-                values = [1.0e-12]
-            if beam_type == BeamType.ION:
-                values = [20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.6e-9, 28.0e-9, 120e-9]
-        
+
+
+            # return values based on beam type, and plasma gas
+            if beam_type is BeamType.ION:
+                plasma_gas = self.get("plasma_gas", beam_type)
+                values = SIMULATOR_BEAM_CURRENTS[beam_type][plasma_gas]
+            else:
+                values = SIMULATOR_BEAM_CURRENTS[beam_type]       
 
         if key == "application_file":
-            values = ["Si", "Si-multipass", "Si-ccs", "autolamella", "cryo_Pt_dep"]
+            values = SIMULATOR_APPLICATION_FILES
 
         if key == "detector_type":
             values = ["ETD", "TLD", "EDS"]
         if key == "detector_mode":
             values = ["SecondaryElectrons", "BackscatteredElectrons", "EDS"]
-        
+
         if key == "scan_direction":
-            values = ["BottomToTop", 
-                "LeftToRight", 	
-                "RightToLeft", 	
-                "TopToBottom"]
-            
+            values = SIMULATOR_SCAN_DIRECTIONS
+
         if key == "plasma_gas":
-            values = ["Oxygen", "Argon", "Nitrogen", "Xenon"]
-         
+            values = SIMULATOR_PLASMA_GASES
+
         if key == "gis_ports":
             values = ["Pt Dep", "Pt Dep Cryo2"]
-                
+
         return values
 
     def _get(self, key, beam_type: BeamType = None) -> Union[float, int, bool, str, list]:
@@ -3899,7 +3910,6 @@ class DemoMicroscope(FibsemMicroscope):
         if key == "plasma_gas":
             return value in self.get_available_values(key, beam_type)
         
-
         return False
     
     def home(self):
