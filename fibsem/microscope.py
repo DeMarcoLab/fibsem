@@ -184,8 +184,8 @@ class FibsemMicroscope(ABC):
 
     def reset_beam_shifts(self) -> None:
         """Set the beam shift to zero for the electron and ion beams."""
-        self.set("shift", Point(0, 0), BeamType.ELECTRON)
-        self.set("shift", Point(0, 0), BeamType.ION)
+        self.set_beam_shift(Point(0, 0), BeamType.ELECTRON)
+        self.set_beam_shift(Point(0, 0), BeamType.ION)
 
     @abstractmethod
     def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
@@ -1013,6 +1013,7 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "create_microscope_client", "system_settings": system_settings.to_dict()})
 
     def reconnect(self):
+        """Attempt to reconnect to the microscope client."""
         if not hasattr(self, "system"):
             raise Exception("Please connect to the microscope first")
         
@@ -1020,6 +1021,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.connect_to_microscope(self.system.info.ip_address)
 
     def disconnect(self):
+        """Disconnect from the microscope client."""
         self.connection.disconnect()
         del self.connection
         self.connection = None
@@ -3922,7 +3924,7 @@ class DemoMicroscope(FibsemMicroscope):
 
 ######################################## Helper functions ########################################
 
-
+# TODO: remove these, and use integrated class checks
 def _check_beam(beam_type: BeamType, settings: SystemSettings):
     """
     Checks if beam is available.
