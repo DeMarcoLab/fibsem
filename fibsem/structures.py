@@ -1481,6 +1481,14 @@ class FibsemImageMetadata:
     user: FibsemUser = FibsemUser()
     experiment: FibsemExperiment = FibsemExperiment()
 
+    @property
+    def beam_type(self) -> BeamType:
+        return self.image_settings.beam_type
+    
+    @property
+    def stage_position(self) -> FibsemStagePosition:
+        return self.microscope_state.stage_position
+
     def to_dict(self) -> dict:
         """Converts metadata to a dictionary.
 
