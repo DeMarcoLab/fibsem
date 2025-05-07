@@ -968,6 +968,7 @@ class DemoMicroscope(FibsemMicroscope):
             return
         if key == "active_device":
             self.imaging_system.active_device = value.value
+            return
 
         # milling
         if key == "patterning_mode":
