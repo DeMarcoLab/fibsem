@@ -14,13 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="31" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_take_all_images">
-     <property name="text">
-      <string>Acquire All Images</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0" colspan="2">
     <widget class="QScrollArea" name="scrollArea">
      <property name="minimumSize">
@@ -561,6 +554,20 @@
      </widget>
     </widget>
    </item>
+   <item row="31" column="0" colspan="2">
+    <widget class="QPushButton" name="pushButton_take_all_images">
+     <property name="text">
+      <string>Acquire All Images</string>
+     </property>
+    </widget>
+   </item>
+   <item row="30" column="1">
+    <widget class="QPushButton" name="pushButton_acquire_fib_image">
+     <property name="text">
+      <string>Acquire FIB Image</string>
+     </property>
+    </widget>
+   </item>
    <item row="29" column="0" colspan="2">
     <widget class="QPushButton" name="pushButton_take_image">
      <property name="text">
@@ -575,10 +582,17 @@
      </property>
     </widget>
    </item>
-   <item row="30" column="1">
-    <widget class="QPushButton" name="pushButton_acquire_fib_image">
+   <item row="32" column="0">
+    <widget class="QPushButton" name="pushButton_start_acquisition">
      <property name="text">
-      <string>Acquire FIB Image</string>
+      <string>Start Acquisition</string>
+     </property>
+    </widget>
+   </item>
+   <item row="32" column="1">
+    <widget class="QPushButton" name="pushButton_stop_acquisition">
+     <property name="text">
+      <string>Stop Acquisition</string>
      </property>
     </widget>
    </item>

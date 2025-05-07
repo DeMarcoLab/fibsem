@@ -1,17 +1,16 @@
 import logging
 from pathlib import Path
-from typing import List, Tuple, Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 import napari
 import napari.utils.notifications
 import numpy as np
 from napari.layers import Image as NapariImageLayer
-from napari.layers import Shapes as NapariShapesLayer
 from napari.layers import Points as NapariPointLayer
+from napari.layers import Shapes as NapariShapesLayer
 from napari.qt.threading import thread_worker
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QEvent
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import QEvent, pyqtSignal, pyqtSlot
 from scipy.ndimage import median_filter
 
 from fibsem import acquire, constants
@@ -35,9 +34,9 @@ from fibsem.ui.napari.patterns import (
 from fibsem.ui.napari.properties import (
     ALIGNMENT_LAYER_PROPERTIES,
     IMAGE_TEXT_LAYER_PROPERTIES,
+    IMAGING_RULER_LAYER_PROPERTIES,
     RULER_LAYER_NAME,
     RULER_LINE_LAYER_NAME,
-    IMAGING_RULER_LAYER_PROPERTIES,
 )
 from fibsem.ui.napari.utilities import draw_crosshair_in_napari, draw_scalebar_in_napari
 from fibsem.ui.qtdesigner_files import ImageSettingsWidget as ImageSettingsWidgetUI
@@ -48,6 +47,7 @@ ENABLE_ADVANCED_IMAGING_SETTINGS = True
 class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget):
     viewer_update_signal = pyqtSignal()             # when the viewer is updated
     acquisition_progress_signal = pyqtSignal(dict)  # TODO: add progress indicator
+    image_received = pyqtSignal(object)
 
     def __init__(
         self,
@@ -184,6 +184,51 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
             self.pushButton_acquire_sem_image,
             self.pushButton_acquire_fib_image,
         ]
+
+########### Live Acquisition
+        # live acquisition
+        LIVE_ACQUISITION_ENABLED = False
+        self.pushButton_start_acquisition.setVisible(LIVE_ACQUISITION_ENABLED)
+        self.pushButton_stop_acquisition.setVisible(LIVE_ACQUISITION_ENABLED)
+        self.image_received.connect(self._update_viewer)
+        self.microscope.sem_acquisition_signal.connect(self._on_acquire)
+        self.microscope.fib_acquisition_signal.connect(self._on_acquire)
+        self.pushButton_start_acquisition.clicked.connect(self.start_live_acquisition)
+        self.pushButton_stop_acquisition.clicked.connect(self.stop_acquisition)
+
+        # TODO: properly support movement while live-acquisition
+
+    def _on_acquire(self, image: FibsemImage):
+        """Safely emit the received data to the main thread"""
+        # Emit to our Qt signal (crosses thread boundary safely)
+        self.image_received.emit(image)
+
+    @pyqtSlot(object)
+    def _update_viewer(self, image: FibsemImage):
+        """Update the viewer from the main thread"""
+        try:
+            # Update existing layer
+            layer = self.viewer.layers[image.metadata.image_settings.beam_type.name]
+            layer.data = median_filter(image.data, size=3)
+        except Exception as e:
+            logging.error(f"Error updating image layer: {e}")
+
+    def start_live_acquisition(self, event=None):
+        # Start acquisition logic
+        self.pushButton_start_acquisition.setEnabled(False)
+        self.pushButton_stop_acquisition.setEnabled(True)
+
+        # Start acquisition in the microscope
+        beam_type = BeamType[self.selected_beam.currentText()]
+        self.microscope.start_acquisition(beam_type)
+
+    def stop_acquisition(self):
+        # Stop acquisition logic
+        self.pushButton_start_acquisition.setEnabled(True)
+        self.pushButton_stop_acquisition.setEnabled(False)
+        self.microscope.stop_acquisition()
+
+###########
 
     def toggle_mode(self) -> None:
         """Toggle the visibility of the advanced settings"""
