@@ -1134,10 +1134,7 @@ class FibsemMillingSettings:
 
         return milling_settings
 
-# migrate to this
-# v3
 
-# TODO: start here
 @dataclass
 class StageSystemSettings:
     rotation_reference: float
