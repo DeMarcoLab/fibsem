@@ -768,6 +768,123 @@ class FibsemMicroscope(ABC):
         self.set("full_frame", None, beam_type)
         return
 
+    def get_beam_current(self, beam_type: BeamType) -> float:
+        """Get the beam current for the specified beam type."""
+        return self.get("current", beam_type)
+
+    def set_beam_current(self, current: float, beam_type: BeamType) -> float:
+        """Set the beam current for the specified beam type."""
+        self.set("current", current, beam_type)
+        return self.get("current", beam_type)
+
+    def get_beam_voltage(self, beam_type: BeamType) -> float:
+        """Get the beam voltage for the specified beam type."""
+        return self.get("voltage", beam_type)
+
+    def set_beam_voltage(self, voltage: float, beam_type: BeamType) -> float:
+        """Set the beam voltage for the specified beam type."""
+        self.set("voltage", voltage, beam_type)
+        return self.get("voltage", beam_type)
+
+    def set_resolution(self, resolution: List[int], beam_type: BeamType) -> List[int]:
+        """Set the resolution for the specified beam type."""
+        self.set("resolution", resolution, beam_type)
+        return self.get("resolution", beam_type)
+
+    def get_resolution(self, beam_type: BeamType) -> List[int]:
+        """Get the resolution for the specified beam type."""
+        return self.get("resolution", beam_type)
+
+    def get_field_of_view(self, beam_type: BeamType) -> float:
+        """Get the field of view for the specified beam type."""
+        return self.get("hfw", beam_type)
+
+    def set_field_of_view(self, hfw: float, beam_type: BeamType) -> float:
+        """Set the field of view for the specified beam type."""
+        self.set("hfw", hfw, beam_type)
+        return self.get("hfw", beam_type)
+
+    def get_working_distance(self, beam_type: BeamType) -> float:
+        """Get the working distance for the specified beam type."""
+        return self.get("working_distance", beam_type)
+
+    def set_working_distance(self, wd: float, beam_type: BeamType) -> float:
+        """Set the working distance for the specified beam type."""
+        self.set("working_distance", wd, beam_type)
+        return self.get("working_distance", beam_type)
+
+    def get_dwell_time(self, beam_type: BeamType) -> float:
+        """Get the dwell time for the specified beam type."""
+        return self.get("dwell_time", beam_type)
+
+    def set_dwell_time(self, dwell_time: float, beam_type: BeamType) -> float:
+        """Set the dwell time for the specified beam type."""
+        self.set("dwell_time", dwell_time, beam_type)
+        return self.get("dwell_time", beam_type)
+
+    def get_stigmation(self, beam_type: BeamType) -> Point:
+        """Get the stigmation for the specified beam type."""
+        return self.get("stigmation", beam_type)
+
+    def set_stigmation(self, stigmation: Point, beam_type: BeamType) -> Point:
+        """Set the stigmation for the specified beam type."""
+        self.set("stigmation", stigmation, beam_type)
+        return self.get("stigmation", beam_type)
+
+    def get_beam_shift(self, beam_type: BeamType) -> Point:
+        """Get the beam shift for the specified beam type."""
+        return self.get("shift", beam_type)
+
+    def set_beam_shift(self, shift: Point, beam_type: BeamType) -> Point:
+        """Set the beam shift for the specified beam type."""
+        self.set("shift", shift, beam_type)
+
+    def get_scan_rotation(self, beam_type: BeamType) -> float:
+        """Get the scan rotation for the specified beam type."""
+        return self.get("scan_rotation", beam_type)
+
+    def set_scan_rotation(self, rotation: float, beam_type: BeamType) -> float:
+        """Set the scan rotation for the specified beam type."""
+        self.set("scan_rotation", rotation, beam_type)
+        return self.get("scan_rotation", beam_type)
+    
+    def get_detector_type(self, beam_type: BeamType) -> str:
+        """Get the detector type for the specified beam type."""
+        return self.get("detector_type", beam_type)
+    
+    def set_detector_type(self, detector_type: str, beam_type: BeamType) -> str:
+        """Set the detector type for the specified beam type."""
+        self.set("detector_type", detector_type, beam_type)
+        return self.get("detector_type", beam_type)
+    
+    def get_detector_mode(self, beam_type: BeamType) -> str:
+        """Get the detector mode for the specified beam type."""
+        return self.get("detector_mode", beam_type)
+    
+    def set_detector_mode(self, mode: str, beam_type: BeamType) -> str:
+        """Set the detector mode for the specified beam type."""
+        self.set("detector_mode", mode, beam_type)
+        return self.get("detector_mode", beam_type)
+
+    def get_detector_contrast(self, beam_type: BeamType) -> float:
+        """Get the detector contrast for the specified beam type."""
+        return self.get("detector_contrast", beam_type)
+    
+    def set_detector_contrast(self, contrast: float, beam_type: BeamType) -> float:
+        """Set the detector contrast for the specified beam type."""
+        self.set("detector_contrast", contrast, beam_type)
+        return self.get("detector_contrast", beam_type)
+    
+    def get_detector_brightness(self, beam_type: BeamType) -> float:
+        """Get the detector brightness for the specified beam type."""
+        return self.get("detector_brightness", beam_type)
+    
+    def set_detector_brightness(self, brightness: float, beam_type: BeamType) -> float:
+        """Set the detector brightness for the specified beam type."""
+        self.set("detector_brightness", brightness, beam_type)
+        return self.get("detector_brightness", beam_type)
+
+
 class ThermoMicroscope(FibsemMicroscope):
     """
     A class representing a Thermo Fisher FIB-SEM microscope.
