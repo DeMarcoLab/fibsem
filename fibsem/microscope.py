@@ -162,8 +162,8 @@ class FibsemMicroscope(ABC):
             if self._acquisition_thread:
                 self._acquisition_thread.join(timeout=2)
             # Disconnect signal handler
-            self.sem_acquisition_signal.disconnect()
-            self.fib_acquisition_signal.disconnect()
+            # self.sem_acquisition_signal.disconnect()
+            # self.fib_acquisition_signal.disconnect()
 
     def _acquisition_worker(self, beam_type: BeamType) -> None:
         """The worker function for the acquisition thread. 
@@ -1051,6 +1051,41 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return fibsem_image
 
+    def _acquire_image2(self, beam_type: BeamType, frame_settings: Optional['GrabFrameSettings'] = None) -> FibsemImage:
+        """
+        Acquire an image with the specified beam type and frame settings, and return it as a FibsemImage.
+        NOTE: this method is used for the acquisition worker thread, don't use it directly.
+
+        Args:
+            beam_type: The beam type to use for acquisition.
+            frame_settings: The frame settings for the acquisition (Optional).
+
+        Returns:
+            FibsemImage: The acquired image.
+        """
+        # set the active view and device
+        self.set_channel(beam_type)
+        
+        # acquire the frame
+        adorned_image: AdornedImage = self.connection.imaging.grab_frame(frame_settings=frame_settings)
+
+        # get the required metadata, convert to FibsemImage
+        state = self.get_microscope_state(beam_type=beam_type)
+        image_settings = self.get_imaging_settings(beam_type=beam_type)
+
+        image = FibsemImage.fromAdornedImage(
+            copy.deepcopy(adorned_image), 
+            copy.deepcopy(image_settings), 
+            copy.deepcopy(state),
+        )
+
+        # set additional metadata
+        image.metadata.user = self.user
+        image.metadata.experiment = self.experiment
+        image.metadata.system = self.system
+
+        return image
+
     def last_image(self, beam_type: BeamType = BeamType.ELECTRON) -> FibsemImage:
         """
         Get the last previously acquired image.
@@ -1102,8 +1137,30 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "acquire_chamber_image"})
         return FibsemImage(data=image.data, metadata=None)
 
-    def _acquisition_worker(self, beam_type):
-        return super()._acquisition_worker(beam_type)
+    def _acquisition_worker(self, beam_type: BeamType):
+        """Worker thread for image acquisition."""
+
+        # TODO: add lock
+
+        self.set_channel(beam_type)
+
+        try:
+            while True:
+                if self._stop_acquisition_event.is_set():
+                    break
+
+                # acquire image using current beam settings
+                image = self._acquire_image2(beam_type=beam_type, frame_settings=None)
+
+                # emit the acquired image
+                if beam_type is BeamType.ELECTRON:
+                    self.sem_acquisition_signal.emit(image)
+                if beam_type is BeamType.ION:
+                    self.fib_acquisition_signal.emit(image)
+
+        except Exception as e:
+            logging.error(f"Error in acquisition worker: {e}")
+
     def autocontrast(self, beam_type: BeamType, reduced_area: FibsemRectangle = None) -> None:
         """
         Automatically adjust the microscope image contrast for the specified beam type.
