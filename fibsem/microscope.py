@@ -1329,6 +1329,23 @@ class ThermoMicroscope(FibsemMicroscope):
         # TODO: change this to use the set api    
         _check_beam(beam_type, self.system)
 
+        # TODO: TEST
+        # # beam shift limits
+        # beam = self._get_beam(beam_type=beam_type)
+        # limits = beam.beam_shift.limits
+
+        # current_shift = self.get("shift", beam_type)
+        # new_shift = Point(x=current_shift.x + dx, y=current_shift.y + dy)
+        # if new_shift.x < limits.limits_x.min or new_shift.x > limits.limits_x.max:
+        #     logging.warning(f"Beam shift x value {new_shift.x} is out of bounds: {limits.limits_x}")
+        # if new_shift.y < limits.limits_y.min or new_shift.y > limits.limits_y.max:
+        #     logging.warning(f"Beam shift y value {new_shift.y} is out of bounds: {limits.limits_y}")
+
+        # # clip the requested shift to the limits
+        # new_shift.x = np.clip(new_shift.x, limits.limits_x.min, limits.limits_x.max)
+        # new_shift.y = np.clip(new_shift.y, limits.limits_y.min, limits.limits_y.max)
+        # self.set("shift", new_shift, beam_type)
+
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
         if beam_type == BeamType.ELECTRON:
             self.connection.beams.electron_beam.beam_shift.value += (dx, dy)
@@ -2914,6 +2931,19 @@ class ThermoMicroscope(FibsemMicroscope):
                 if value < min(available_values) or value > max(available_values):
                     return False
         return True
+
+    def _get_beam(self, beam_type: BeamType) -> Union['ElectronBeam', 'IonBeam']:
+        """Get the beam connection api for the given beam type.
+        Args:
+            beam_type (BeamType): The type of beam to get (ELECTRON or ION).
+        Returns:
+            Union['ElectronBeam', 'IonBeam']: The autoscript beam connection object for the given beam type."""
+        if beam_type is BeamType.ELECTRON:
+            return self.connection.beams.electron_beam
+        elif beam_type is BeamType.ION:
+            return self.connection.beams.ion_beam
+        else:
+            raise ValueError(f"Unknown beam type: {beam_type}")
 
 ######################################## Helper functions ########################################
 
