@@ -1,17 +1,19 @@
 
 
 
+import logging
 import os
-import numpy as np
-import matplotlib.pyplot as plt
-import torch
-import torch.nn.functional as F
+from pathlib import Path
 from typing import List
-from huggingface_hub import HfApi, hf_hub_download
-from fibsem import config as cfg
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn.functional as F
+from huggingface_hub import HfApi, hf_hub_download, scan_cache_dir
+
+from fibsem import config as cfg
 from fibsem.segmentation.config import CLASS_COLORS, CLASS_COLORS_RGB, CLASS_LABELS
 
 
@@ -293,6 +295,7 @@ def plot_segmentations(images: List[np.ndarray], masks: List[np.ndarray],
 ## Huggingface Utils
 
 def list_available_checkpoints():
+    logging.warning(DeprecationWarning("list_available_checkpoints is deprecated. Please update to v2 to supported cached checkpoints..."))
     api = HfApi()
     files = api.list_repo_files(cfg.HUGGINFACE_REPO)
     checkpoints = []
@@ -308,3 +311,68 @@ def download_checkpoint(checkpoint: str):
     else:
         checkpoint = hf_hub_download(repo_id=cfg.HUGGINFACE_REPO, filename=checkpoint)
     return checkpoint
+
+def list_available_checkpoints_v2():
+    """List available model checkpoints from either Hugging Face API or local cache if offline."""
+    
+    # try to use the API if we have internet access
+    try:
+        api = HfApi()
+        files = api.list_repo_files(cfg.HUGGINFACE_REPO)
+        checkpoints = [file for file in files if file.endswith(".pt") and "archive" not in file]
+        return checkpoints
+    except Exception as e:
+        # if api fails, fall back to local cache
+        logging.warning(f"Couldn't connect to Hugging Face API: {e}")
+        logging.debug("Searching local cache for available checkpoints...")
+        
+        checkpoints = _get_cached_huggingface_checkpoints()
+
+        if not checkpoints:
+            logging.warning("No cached checkpoints found. You might need to download models first when online.")
+
+        return checkpoints
+    
+def _get_cached_huggingface_checkpoints() -> List[str]:
+    """Get cached huggingface model checkpoints"""
+    # TODO: de-duplicate checkpoints from the cache
+    checkpoints = []
+
+    # get cached repositories    
+    cache_dir = os.environ.get("HF_HUB_CACHE", os.path.expanduser("~/.cache/huggingface/hub"))
+    cached_repos = scan_cache_dir(cache_dir)
+    
+    latest_revision_date = None
+    latest_revision_hash = None
+
+    # find specify repo in cache
+    selected_repo = None
+    for repo_info in cached_repos.repos:
+        if cfg.HUGGINFACE_REPO in repo_info.repo_id:
+            selected_repo = repo_info
+
+    if selected_repo is None:
+        logging.warning(f"Cannot find repoistory {cfg.HUGGINFACE_REPO} in cache.")
+        return checkpoints
+    
+    # get info about each revision
+    for revision in selected_repo.revisions:
+
+        # get datetime of last modified
+        revision_date = revision.last_modified
+        if latest_revision_date is None:
+            latest_revision_date = revision_date
+            latest_revision_hash = revision.commit_hash
+
+        if revision_date < latest_revision_date:
+            logging.debug(f"Skipping revision {revision.commit_hash} as it is older than the latest revision {latest_revision_hash}.")
+            continue
+
+        snapshot_path = Path(revision.snapshot_path)
+        # Find all .pt files that don't have "archive" in their name
+        for file_path in snapshot_path.glob("**/*.pt"):
+            if "archive" not in str(file_path):
+                # Get the basename of the file (e.g., "model.pt")
+                checkpoints.append(str(file_path))
+    
+    return checkpoints
