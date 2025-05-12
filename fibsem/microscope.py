@@ -64,6 +64,8 @@ try:
         MoveSettings,
         StagePosition,
         Rectangle,
+        Limits,
+        Limits2d
     )
     THERMO_API_AVAILABLE = True 
 except Exception as e:
@@ -188,7 +190,7 @@ class FibsemMicroscope(ABC):
         self.set_beam_shift(Point(0, 0), BeamType.ION)
 
     @abstractmethod
-    def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> None:
+    def beam_shift(self, dx: float, dy: float, beam_type: BeamType) -> Point:
         pass
 
     def get_stage_position(self) -> FibsemStagePosition:
@@ -1317,34 +1319,39 @@ class ThermoMicroscope(FibsemMicroscope):
             self.set_full_frame_scanning_mode(beam_type)
         logging.debug({"msg": "auto_focus", "beam_type": beam_type.name})
 
-    def beam_shift(self, dx: float, dy: float, beam_type: BeamType = BeamType.ION) -> None:
+    def beam_shift(self, dx: float, dy: float, beam_type: BeamType = BeamType.ION) -> Point:
         """
         Adjusts the beam shift based on relative values that are provided.
         
         Args:
-            self (FibsemMicroscope): Fibsem microscope object
-            dx (float): the relative x term
-            dy (float): the relative y term
+            dx: the relative x term
+            dy: the relative y term
+            beam_type: the beam to shift
+        Return:
+            Point: the current beam shift of the requested beam_type, as this can now be clipped.
         """
-        # TODO: change this to use the set api    
         _check_beam(beam_type, self.system)
 
-        # TODO: TEST
-        # # beam shift limits
-        # beam = self._get_beam(beam_type=beam_type)
-        # limits = beam.beam_shift.limits
+        # beam shift limits
+        beam= self._get_beam(beam_type=beam_type)
+        limits: Limits2d = beam.beam_shift.limits
 
-        # current_shift = self.get("shift", beam_type)
-        # new_shift = Point(x=current_shift.x + dx, y=current_shift.y + dy)
-        # if new_shift.x < limits.limits_x.min or new_shift.x > limits.limits_x.max:
-        #     logging.warning(f"Beam shift x value {new_shift.x} is out of bounds: {limits.limits_x}")
-        # if new_shift.y < limits.limits_y.min or new_shift.y > limits.limits_y.max:
-        #     logging.warning(f"Beam shift y value {new_shift.y} is out of bounds: {limits.limits_y}")
+        # check if requested shift is outside limits
+        current_shift = self.get_beam_shift(beam_type=beam_type)
+        new_shift = Point(x=current_shift.x + dx, y=current_shift.y + dy)
+        if new_shift.x < limits.limits_x.min or new_shift.x > limits.limits_x.max:
+            logging.warning(f"Beam shift x value {new_shift.x} is out of bounds: {limits.limits_x}")
+        if new_shift.y < limits.limits_y.min or new_shift.y > limits.limits_y.max:
+            logging.warning(f"Beam shift y value {new_shift.y} is out of bounds: {limits.limits_y}")
 
-        # # clip the requested shift to the limits
-        # new_shift.x = np.clip(new_shift.x, limits.limits_x.min, limits.limits_x.max)
-        # new_shift.y = np.clip(new_shift.y, limits.limits_y.min, limits.limits_y.max)
-        # self.set("shift", new_shift, beam_type)
+        # clip the requested shift to the limits
+        new_shift.x = np.clip(new_shift.x, limits.limits_x.min, limits.limits_x.max)
+        new_shift.y = np.clip(new_shift.y, limits.limits_y.min, limits.limits_y.max)
+        self.set_beam_shift(shift=new_shift, beam_type=beam_type)
+
+        logging.debug({"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name})
+
+        return self.get_beam_shift(beam_type=beam_type)
 
         logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
         if beam_type == BeamType.ELECTRON:
@@ -1352,7 +1359,7 @@ class ThermoMicroscope(FibsemMicroscope):
         else:
             self.connection.beams.ion_beam.beam_shift.value += (dx, dy)
     
-        logging.debug({"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name}) 
+        logging.debug({"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name})
     
     def move_stage_absolute(self, position: FibsemStagePosition) -> FibsemStagePosition:
         """
