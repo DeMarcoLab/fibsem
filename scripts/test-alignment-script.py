@@ -7,33 +7,38 @@ import matplotlib.pyplot as plt
 
 def main():
     microscope, settings = utils.setup_session()
+    
+    # parameters
+    beam_type = BeamType.ION
+    scan_rotation = 180 # deg
 
     # set scan rotation
-    microscope.set("scan_rotation", np.radians(180), beam_type=BeamType.ION)
+    microscope.set("scan_rotation", np.radians(scan_rotation), beam_type=beam_type)
 
     # reset beam shifts
     microscope.reset_beam_shifts()
 
     # acquire FIB Image
     settings.image.hfw = 150e-6
-    settings.image.beam_type = BeamType.ION
+    settings.image.beam_type = beam_type
     settings.image.reduced_area = FibsemRectangle(0.25, 0.25, 0.5, 0.5)
     image1 = acquire.acquire_image(microscope=microscope, settings=settings.image)
 
     # shift beam shift
-    microscope.beam_shift(dx=5e-6, dy=2.5e-6, beam_type=BeamType.ION)
+    microscope.beam_shift(dx=10e-6, dy=5e-6, beam_type=beam_type)
 
     # acquire FIB image
     image2 = acquire.acquire_image(microscope=microscope, settings=settings.image)
 
     # align beam shift
-    alignment.multi_step_alignment_v2(microscope, ref_image=image1, beam_type=BeamType.ION, use_autocontrast=True)
+    alignment.multi_step_alignment_v2(microscope, ref_image=image1, beam_type=beam_type, use_autocontrast=True)
 
     # acquire FIB Image
     image3 = acquire.acquire_image(microscope=microscope, settings=settings.image)
 
     # plot
     fig, ax = plt.subplots(1, 3, figsize=(15, 7))
+    fig.suptitle(f"Test Alignment: {beam_type.name} - Scan Rotation: {scan_rotation}deg")
     ax[0].imshow(image1.data, cmap='gray')
     ax[0].set_title('Previous Image')
     ax[0].axis('off')
