@@ -2488,7 +2488,8 @@ class ThermoMicroscope(FibsemMicroscope):
 
         # Log that the sputtering process has finished
         logging.info("Platinum sputtering process completed.")
-    def get_available_values(self, key: str, beam_type: BeamType = None)-> list:
+
+    def get_available_values(self, key: str, beam_type: BeamType = None)-> Tuple:
         """Get a list of available values for a given key.
         Keys: application_file, plasma_gas, current, detector_type, detector_mode
         """
@@ -2505,13 +2506,21 @@ class ThermoMicroscope(FibsemMicroscope):
             if beam_type is BeamType.ION and self.is_available("ion_beam"):
                 values = self.connection.beams.ion_beam.beam_current.available_values
             elif beam_type is BeamType.ELECTRON and self.is_available("electron_beam"):
-                values = self.connection.beams.electron_beam.beam_current.available_values
+                # loop through the beam current range, to match the available choices on microscope
+                limits: Limits = self.connection.beams.electron_beam.beam_current.limits
+                beam_current = limits.min
+                while beam_current <= limits.max:
+                    values.append(beam_current)
+                    beam_current *= 2.0
 
-            # print(microscope.connection.beams.ion_beam.high_voltage.limits)
-            # print(microscope.connection.beams.electron_beam.high_voltage.limits)
-
-            # print(microscope.connection.beams.ion_beam.beam_current.available_values)
-            # print(microscope.connection.beams.electron_beam.beam_current.limits)
+        if key == "voltage":
+            beam = self._get_beam(beam_type)
+            limits: Limits = beam.high_voltage.limits
+            # QUERY: match what is displayed on microscope, as list[float], or keep as range?
+            # technically we can set any value, but primarily people would use what is on microscope
+            # SEM: [1000, 2000, 3000, 5000, 10000, 20000, 30000]
+            # FIB: [500, 1000, 2000, 8000, 1600, 30000]
+            return (limits.min, limits.max) 
         
         if key == "detector_type":
             values = self.connection.detector.type.available_values
