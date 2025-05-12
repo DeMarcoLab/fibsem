@@ -1188,7 +1188,7 @@ class ThermoMicroscope(FibsemMicroscope):
         self.set_channel(beam_type)
         
         # acquire the frame
-        adorned_image: AdornedImage = self.connection.imaging.grab_frame(frame_settings=frame_settings)
+        adorned_image: AdornedImage = self.connection.imaging.grab_frame(settings=frame_settings)
 
         # get the required metadata, convert to FibsemImage
         state = self.get_microscope_state(beam_type=beam_type)
