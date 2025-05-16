@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from packaging.version import parse
 from psygnal import Signal
 
 THERMO_API_AVAILABLE = False
@@ -31,14 +30,14 @@ try:
     import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
-    VERSION = parse(version)
-    if VERSION < parse("4.6"):
+    VERSION = tuple(int(_) for _ in version.split(".")[:2])
+    if VERSION < (4, 6):
         raise NameError(
             f"AutoScript {version} found. Please update your AutoScript version to 4.6 or higher."
         )
 
     if _OVERWRITE_AUTOSCRIPT_VERSION:
-        VERSION = parse("4.7")
+        VERSION = (4, 7)
         
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CirclePattern,
@@ -1797,7 +1796,7 @@ class ThermoMicroscope(FibsemMicroscope):
          
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
-        if VERSION < 4.7:
+        if VERSION < (4, 7):
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         # get the saved position name
@@ -1820,7 +1819,7 @@ class ThermoMicroscope(FibsemMicroscope):
     def retract_manipulator(self):
         """Retract the manipulator"""        
 
-        if VERSION < 4.7:
+        if VERSION < (4, 7):
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
 
         if not self.is_available("manipulator"):
@@ -1980,7 +1979,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"saved position {name} not supported.")
-        if VERSION < 4.7:
+        if VERSION < (4, 7):
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
