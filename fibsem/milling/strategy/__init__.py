@@ -13,21 +13,25 @@ BUILTIN_STRATEGIES: typing.Dict[str, type[MillingStrategy]] = {
     StandardMillingStrategy.name: StandardMillingStrategy,
     OvertiltTrenchMillingStrategy.name: OvertiltTrenchMillingStrategy,
 }
+REGISTERED_STRATEGIES: typing.Dict[str, type[MillingStrategy]] = {}
 
 
-@cache
 def get_strategies() -> typing.Dict[str, type[MillingStrategy]]:
-    strategies = BUILTIN_STRATEGIES.copy()
-    for strategy in _get_additional_strategies():
-        strategies[strategy.name] = strategy
-    return strategies
+    # This order means that builtins > registered > plugins if there are any name clashes
+    return {**_get_plugin_strategies(), **REGISTERED_STRATEGIES, **BUILTIN_STRATEGIES}
 
 
 def get_strategy_names() -> typing.List[str]:
     return list(get_strategies().keys())
 
 
-def _get_additional_strategies() -> typing.Generator[type[MillingStrategy], None, None]:
+def register_strategy(strategy_cls: type[MillingStrategy]) -> None:
+    global REGISTERED_STRATEGIES
+    REGISTERED_STRATEGIES[strategy_cls.name] = strategy_cls
+
+
+@cache
+def _get_plugin_strategies() -> typing.Dict[str, type[MillingStrategy]]:
     """
     Import new strategies and append them to the list here
 
@@ -41,6 +45,7 @@ def _get_additional_strategies() -> typing.Generator[type[MillingStrategy], None
     else:
         from importlib.metadata import entry_points
 
+    strategies: typing.Dict[str, type[MillingStrategy]] = {}
     for strategy_entry_point in entry_points(group="fibsem.strategies"):
         try:
             strategy = strategy_entry_point.load()
@@ -49,7 +54,7 @@ def _get_additional_strategies() -> typing.Generator[type[MillingStrategy], None
                     f"'{strategy_entry_point.value}' is not a subclass of MillingStrategy"
                 )
             logging.info("Loaded strategy '%s'", strategy.name)
-            yield strategy
+            strategies[strategy.name] = strategy
         except TypeError as e:
             logging.warning("Invalid strategy found: %s", str(e))
         except Exception:
@@ -58,3 +63,4 @@ def _get_additional_strategies() -> typing.Generator[type[MillingStrategy], None
                 strategy_entry_point.value,
                 exc_info=True,
             )
+    return strategies
