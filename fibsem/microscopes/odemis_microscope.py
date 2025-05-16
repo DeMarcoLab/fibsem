@@ -820,7 +820,7 @@ class OdemisMicroscope(FibsemMicroscope):
     def safe_absolute_stage_movement(self, position: FibsemStagePosition) -> None:
         return ThermoMicroscope.safe_absolute_stage_movement(self, position)
 
-    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str):
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings):
         pass
 
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings):

@@ -112,7 +112,7 @@ def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
         microscope.draw_circle(pattern)
 
     elif isinstance(pattern, FibsemBitmapSettings):
-        microscope.draw_bitmap_pattern(pattern, pattern.path)
+        microscope.draw_bitmap_pattern(pattern)
 
 def convert_to_bitmap_format(path):
     import os

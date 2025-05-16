@@ -9,12 +9,13 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
 
 import numpy as np
 from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
 from psygnal import Signal
+from numpy.typing import NDArray
 
 THERMO_API_AVAILABLE = False
 MINIMUM_AUTOSCRIPT_VERSION_4_7 = parse_version("4.7")
@@ -370,11 +371,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def draw_bitmap_pattern(
-        self,
-        pattern_settings: FibsemBitmapSettings,
-        path: str,
-    ):
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings):
         pass
 
     @abstractmethod
@@ -2514,13 +2511,32 @@ class ThermoMicroscope(FibsemMicroscope):
         self._patterns.append(pattern)
         return pattern
     
-    def draw_bitmap_pattern(
-        self,
-        pattern_settings: FibsemBitmapSettings,
-        path: str,
-    ):
+    @staticmethod
+    def _bitmap_to_points(
+        bitmap_image: NDArray[np.uint8],
+    ) -> NDArray[Any]:
+        points_array = np.empty((*bitmap_image.shape[:2], 2), dtype=object)
+        points_array[:, :, 0] = np.interp(bitmap_image[:, :, 2], (0, 255), (0, 1))
+        points_array[:, :, 1] = 1 - bitmap_image[:, :, 1]
+        return points_array
 
-        bitmap_pattern = BitmapPatternDefinition.load(path)
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings):
+        bitmap = pattern_settings.bitmap
+        if isinstance(bitmap, np.ndarray):
+            bitmap_pattern = BitmapPatternDefinition()
+            if bitmap.dtype == np.uint8:
+                logging.debug("Converting bitmap array to points array")
+                points = ThermoMicroscope._bitmap_to_points(
+                    bitmap
+                )
+            else:
+                # Assume bitmap is already a point array
+                points = bitmap
+            logging.debug("Creating bitmap pattern from array")
+            bitmap_pattern.points = points
+        else:
+            logging.debug("Creating bitmap pattern from '%s'", str(bitmap))
+            bitmap_pattern = BitmapPatternDefinition.load(bitmap)
 
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,
@@ -2531,9 +2547,10 @@ class ThermoMicroscope(FibsemMicroscope):
             bitmap_pattern_definition=bitmap_pattern,
         )
 
-        logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
+        logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict()})
         self._patterns.append(pattern)
         return pattern
+
 
     def get_gis(self, port: str = None):
         use_multichem = self.is_available("gis_multichem")

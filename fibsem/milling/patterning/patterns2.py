@@ -77,6 +77,7 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
         # calculate the total volume of the milling pattern (sum of all shapes)
         return sum([shape.volume for shape in self.define()])
 
+
 @dataclass
 class BitmapPattern(BasePattern[FibsemBitmapSettings]):
     width: float = 10.0e-6
@@ -88,17 +89,15 @@ class BitmapPattern(BasePattern[FibsemBitmapSettings]):
     name: ClassVar[str] = "Bitmap"
 
     def define(self) -> List[FibsemBitmapSettings]:
-
         shape = FibsemBitmapSettings(
             width=self.width,
             height=self.height,
             depth=self.depth,
-            rotation=self.rotation,
-            path=self.path,
+            rotation=self.rotation * constants.DEGREES_TO_RADIANS,
             centre_x=self.point.x,
             centre_y=self.point.y,
-        )
-
+            bitmap=self.bitmap
+            )
         self.shapes = [shape]
         return self.shapes
 

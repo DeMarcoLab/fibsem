@@ -775,8 +775,8 @@ class DemoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
         self.milling_system.patterns.append(pattern_settings)
     
-    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings, path: str) -> None:
-        logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings) -> None:
+        logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict()})
         self.milling_system.patterns.append(pattern_settings)
 
     def setup_sputter(self, protocol: dict) -> None:
