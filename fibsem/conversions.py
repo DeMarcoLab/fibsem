@@ -6,7 +6,7 @@ from fibsem.structures import FibsemImage, Point
 
 
 def image_to_microscope_image_coordinates(
-    coord: Point, image: np.ndarray, pixelsize: float
+    coord: Point, image: np.ndarray, pixelsize: float, subpixel_precision: bool = False
 ) -> Point:
     """
     Convert an image pixel coordinate to a microscope image coordinate.
@@ -17,6 +17,7 @@ def image_to_microscope_image_coordinates(
         coord (Point): A Point object representing the pixel coordinates in the original image.
         image (np.ndarray): A numpy array representing the image.
         pixelsize (float): The pixel size in meters.
+        subpixel_precision (bool): Rounds to the nearest pixel if False (default)
 
     Returns:
         Point: A Point object representing the corresponding microscope image coordinates in meters.
@@ -24,7 +25,10 @@ def image_to_microscope_image_coordinates(
     # convert from image pixel coord (0, 0) top left to microscope image (0, 0) mid
 
     # shape
-    cy, cx = np.asarray(image.shape) // 2
+    centre_px = np.asarray(image.shape) / 2
+    if not subpixel_precision:
+        centre_px = np.round(centre_px).astype(np.int_)
+    cy, cx = centre_px
 
     # distance from centre?
     dy = float(-(coord.y - cy))  # neg = down
