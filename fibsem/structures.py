@@ -12,6 +12,7 @@ from typing import List, Optional, Tuple, Union, Set, Any, Dict
 
 import numpy as np
 import tifffile as tff
+from numpy.typing import NDArray
 
 import fibsem
 from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
@@ -1014,7 +1015,7 @@ class FibsemBitmapSettings(FibsemPatternSettings):
     rotation: float
     centre_x: float
     centre_y: float
-    path: str = None
+    bitmap: Optional[Union[NDArray[Any], Union[str, os.PathLike]]] = None
 
     def to_dict(self) -> dict:
         return {
@@ -1024,7 +1025,7 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             "rotation": self.rotation,
             "centre_x": self.centre_x,
             "centre_y": self.centre_y,
-            "path": self.path,
+            "bitmap": self.bitmap,
         }
 
     @staticmethod
@@ -1036,7 +1037,7 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             rotation=data["rotation"],
             centre_x=data["centre_x"],
             centre_y=data["centre_y"],
-            path=data["path"],
+            bitmap=data["bitmap"],
         )
 
     @property
