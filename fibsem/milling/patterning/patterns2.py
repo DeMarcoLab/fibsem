@@ -1,9 +1,11 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Any
+from os import PathLike
 
 import numpy as np
+from numpy.typing import NDArray
 
 from fibsem import constants
 from fibsem.structures import (
@@ -62,32 +64,32 @@ class BasePattern(ABC):
         # calculate the total volume of the milling pattern (sum of all shapes)
         return sum([shape.volume for shape in self.define()])
 
+
 @dataclass
 class BitmapPattern(BasePattern):
     width: float
     height: float
     depth: float
+    bitmap: Union[NDArray[Any], Union[str, PathLike]]
     rotation: float = 0
-    path: str = ""
     shapes: List[FibsemPatternSettings] = None
     point: Point = Point()
     name: str = "Bitmap"
 
-    def define(self) -> List[FibsemPatternSettings]:
 
+    def define(self) -> List[FibsemBitmapSettings]:
         shape = FibsemBitmapSettings(
             width=self.width,
             height=self.height,
             depth=self.depth,
-            rotation=self.rotation,
-            path=self.path,
+            rotation=self.rotation * constants.DEGREES_TO_RADIANS,
             centre_x=self.point.x,
             centre_y=self.point.y,
-        )
-
+            bitmap=self.bitmap
+            )
         self.shapes = [shape]
         return self.shapes
-    
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -96,9 +98,9 @@ class BitmapPattern(BasePattern):
             "height": self.height,
             "depth": self.depth,
             "rotation": self.rotation,
-            "path": self.path
+            "bitmap": self.bitmap
         }
-    
+
     @classmethod
     def from_dict(cls, ddict: dict) -> "BitmapPattern":
         return cls(
@@ -106,7 +108,7 @@ class BitmapPattern(BasePattern):
             height=ddict["height"],
             depth=ddict["depth"],
             rotation=ddict.get("rotation", 0),
-            path=ddict.get("path", ""),
+            bitmap=ddict["bitmap"],
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
         )
 
