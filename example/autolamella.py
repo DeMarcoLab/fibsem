@@ -86,7 +86,7 @@ def main():
             microscope.set_microscope_state(lamella.state)
 
             # realign
-            alignment.beam_shift_alignment(microscope, settings.image, lamella.reference_image)
+            alignment.beam_shift_alignment_v2(microscope, lamella.reference_image)
                        
             if stage_no == 0:
                 microexpansion_stage = get_milling_stages("microexpansion", settings.protocol)

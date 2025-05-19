@@ -44,67 +44,13 @@ def auto_eucentric_correction(
     #     )
 
 
-def beam_shift_alignment(
-    microscope: FibsemMicroscope,
-    image_settings: ImageSettings,
-    ref_image: FibsemImage,
-    reduced_area: Optional[FibsemRectangle] = None,
-    alignment_current: Optional[float] = None,
-):
-    """Aligns the images by adjusting the beam shift instead of moving the stage.
-
-    This method uses cross-correlation between the reference image and a new image to calculate the
-    optimal beam shift for alignment. This approach offers increased precision, but a lower range
-    compared to stage movement.
-
-    NOTE: Only shift the ion beam, never the electron beam.
-
-    Args:
-        microscope (FibsemMicroscope): An OpenFIBSEM microscope client.
-        image_settings (acquire.ImageSettings): Settings for taking the image.
-        ref_image (FibsemImage): The reference image to align to.
-        reduced_area (FibseRectangle): The reduced area to image with.
-
-    Raises:
-        ValueError: If `image_settings.beam_type` is not set to `BeamType.ION`.
-
-    """
-    if alignment_current is not None:
-        initial_current = microscope.get("current", image_settings.beam_type)
-        microscope.set("current", alignment_current, image_settings.beam_type)
-
-    # TODO: we should just use the same settings as the reference image, no need to pass in image_settings?
-    
-    import time
-    time.sleep(3) # threading is too fast?
-    ref_image_settings = ImageSettings.fromFibsemImage(ref_image)
-    ref_image_settings.beam_type = BeamType.ION
-    ref_image_settings.reduced_area = reduced_area
-    ref_image_settings.autocontrast = False
-    ref_image_settings.save = True
-    ref_image_settings.filename = image_settings.filename
-    new_image = acquire.new_image(
-        microscope, settings=ref_image_settings
-    )
-    dx, dy, _ = shift_from_crosscorrelation(
-        ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
-    )
-    image_settings.autocontrast = True
-    
-
-    # adjust beamshift (reverse direction for x)
-    microscope.beam_shift(-dx, dy, image_settings.beam_type)
-
-    # reset beam current
-    if alignment_current is not None:
-        microscope.set("current", initial_current, image_settings.beam_type)
-
-
+# TODO: rename to align_with_reference_image as it is not specific to beam shift
 def beam_shift_alignment_v2(
     microscope: FibsemMicroscope,
     ref_image: FibsemImage,
     alignment_current: Optional[float] = None,
     use_autocontrast: bool = False,
+    subsystem: Optional[str] = None,
 ):
     """Aligns the images by adjusting the beam shift instead of moving the stage.
 
@@ -112,11 +58,13 @@ def beam_shift_alignment_v2(
     optimal beam shift for alignment. This approach offers increased precision, but a lower range
     compared to stage movement.
 
-    NOTE: Only shift the ion beam, never the electron beam.
-
-    Args:
+        Args:
         microscope (FibsemMicroscope): An OpenFIBSEM microscope client.
         ref_image (FibsemImage): The reference image to align to.
+        alignment_current: The beam current to set before alignment. Defaults to None (no change).
+        use_autocontrast (bool): Whether to use autocontrast for the new image. Defaults to False.
+        subsystem (Optional[str]): The subsystem to use for alignment. Can be either "stage" or None.
+            If "stage", the stage will be moved instead of adjusting the beam shift. Defaults to None.
 
     Raises:
         ValueError: If `image_settings.beam_type` is not set to `BeamType.ION`.
@@ -143,63 +91,9 @@ def beam_shift_alignment_v2(
     )
 
     # adjust beamshift
-    microscope.beam_shift(-dx, dy, image_settings.beam_type)
-
-    # reset beam current
-    if alignment_current is not None:
-        microscope.set("current", initial_current, image_settings.beam_type)
-    logging.info(f"Beam Shift Alignment: dx: {dx}, dy: {dy}")
-    msgd = {"msg": "beam_shift_alignment", "dx": dx, "dy": dy, "image_settings": image_settings.to_dict()}
-    logging.debug(msgd)
-
-def align_with_reference_image(
-    microscope: FibsemMicroscope,
-    ref_image: FibsemImage,
-    alignment_current: Optional[float] = None,
-    system: str = "beam_shift",
-):
-    """Aligns the microscope using cross-correlation between the reference image and a new image. The alignment
-    can be performed using either the beam shift or the stage. The alignment current can be set before alignment.
-    The beam shift alignment is more precise but has a lower range compared to stage movement.
-
-    Args:
-        microscope (FibsemMicroscope): An OpenFIBSEM microscope client.
-        ref_image (FibsemImage): The reference image to align to.
-        alignment_current (Optional[float], optional): The current to set before alignment. Defaults to None.
-        system (str, optional): The system to use for alignment. Can be either "beam_shift" or "stage". Defaults to "beam_shift".
-
-    Raises:
-        ValueError: If the system is not "beam_shift" or "stage".
-
-    """
-
-    if system not in ["beam_shift", "stage"]:
-        raise ValueError(f"Invalid system {system}. Must be either 'beam_shift' or 'stage'.")
-
-    import time
-    time.sleep(2) # threading is too fast?
-    image_settings = ImageSettings.fromFibsemImage(ref_image)
-    image_settings.autocontrast = False
-    image_settings.save = True
-    image_settings.filename = f"pre_{system}_alignment_{utils.current_timestamp_v2()}"
-
-    # set alignment current
-    if alignment_current is not None:
-        initial_current = microscope.get("current", image_settings.beam_type)
-        microscope.set("current", alignment_current, image_settings.beam_type)
-
-    new_image = acquire.new_image(
-        microscope, settings=image_settings
-    )
-    dx, dy, _ = shift_from_crosscorrelation(
-        ref_image, new_image, lowpass=50, highpass=4, sigma=5, use_rect_mask=True
-    )
-
-    # adjust beamshift (reverse direction)
-    if system == "beam_shift":
-        microscope.beam_shift(-dx, -dy, image_settings.beam_type)
-    # adjust stage
-    if system == "stage":
+    if subsystem is None:
+        microscope.beam_shift(-dx, dy, image_settings.beam_type)
+    elif subsystem == "stage":
         microscope.stable_move(
             dx=dx,
             dy=-dy,
@@ -209,15 +103,8 @@ def align_with_reference_image(
     # reset beam current
     if alignment_current is not None:
         microscope.set("current", initial_current, image_settings.beam_type)
-    
-    msgd = {
-        "msg": "align_with_reference_image",
-        "dx": dx,
-        "dy": dy,
-        "alignment_current": alignment_current,
-        "system": system,
-        "image_settings": image_settings.to_dict(),
-    }
+    logging.info(f"Beam Shift Alignment: dx: {dx}, dy: {dy}")
+    msgd = {"msg": "beam_shift_alignment", "dx": dx, "dy": dy, "image_settings": image_settings.to_dict()}
     logging.debug(msgd)
 
 
@@ -594,33 +481,15 @@ def _save_alignment_data(
     
     df.to_csv(DATAFRAME_PATH, index=False)
 
-def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSettings, 
-    ref_image: FibsemImage, reduced_area: FibsemRectangle, alignment_current: float = None, steps:int = 3) -> None:
-    
-    # set alignment current
-    if alignment_current is not None:
-        initial_current = microscope.get("current", image_settings.beam_type)
-        microscope.set("current", alignment_current, image_settings.beam_type)
-        autocontrast = image_settings.autocontrast
-        image_settings.autocontrast = False
-
-    base_label = image_settings.filename
-    for i in range(steps):
-        image_settings.filename = f"{base_label}_{i:02d}"
-        image_settings.beam_type = BeamType.ION
-        beam_shift_alignment(microscope, image_settings, 
-                                        ref_image=ref_image,
-                                            reduced_area=reduced_area)
-    # reset beam current
-    if alignment_current is not None:
-        microscope.set("current", initial_current, image_settings.beam_type)
-        image_settings.autocontrast = autocontrast
-
-
-def multi_step_alignment_v2(microscope: FibsemMicroscope, 
-    ref_image: FibsemImage, beam_type: BeamType, 
-    alignment_current: float = None, steps:int = 3, 
-    use_autocontrast: bool = False) -> None:
+def multi_step_alignment_v2(
+    microscope: FibsemMicroscope,
+    ref_image: FibsemImage,
+    beam_type: BeamType,
+    alignment_current: float = None,
+    steps: int = 3,
+    use_autocontrast: bool = False,
+    subsystem: Optional[str] = None,
+) -> None:
     """Runs the beam shift alignment multiple times. Optionally sets the beam current before alignment."""
     # set alignment current
     if alignment_current is not None:
@@ -630,257 +499,9 @@ def multi_step_alignment_v2(microscope: FibsemMicroscope,
     for i in range(steps):
         beam_shift_alignment_v2(microscope=microscope, 
                                 ref_image=ref_image, 
-                                use_autocontrast=use_autocontrast)
+                                use_autocontrast=use_autocontrast, 
+                                subsystem=subsystem)
     
     # reset beam current
     if alignment_current is not None:
         microscope.set("current", initial_current, beam_type)
-
-def multi_step_alignment_v3(microscope: FibsemMicroscope, 
-    ref_image: FibsemImage, beam_type: BeamType, 
-    alignment_current: float = None, steps:int = 3, 
-    system: str = "beam_shift") -> None:
-    """Runs the reference image alignment multiple times. Optionally sets the beam current before alignment."""
-    # set alignment current
-    if alignment_current is not None:
-        initial_current = microscope.get("current", beam_type)
-        microscope.set("current", alignment_current, beam_type)
-
-    for i in range(steps):
-        align_with_reference_image(microscope, ref_image=ref_image, system=system)
-    
-    # reset beam current
-    if alignment_current is not None:
-        microscope.set("current", initial_current, beam_type)
-
-### From AutoLamella v1
-
-# def realign(microscope, new_image, reference_image):
-#     """Realign to reference image using beam shift.
-
-#     Parameters
-#     ----------
-#     microscope : Autoscript microscope object
-#     new_image : The most recent image acquired.
-#         Must have the same dimensions and relative position as the reference.
-#     reference_image : The reference image to align with.
-#         Muast have the same dimensions and relative position as the new image
-#     Returns
-#     -------
-#     microscope.beams.ion_beam.beam_shift.value
-#         The current beam shift position (after any realignment)
-#     """
-#     from autoscript_core.common import ApplicationServerException
-
-#     shift_in_meters = _calculate_beam_shift(new_image, reference_image)
-#     try:
-#         microscope.beams.ion_beam.beam_shift.value += shift_in_meters
-#     except ApplicationServerException:
-#         logging.warning(
-#             "Cannot move beam shift beyond limits, "
-#             "will continue with no beam shift applied."
-#         )
-#     return microscope.beams.ion_beam.beam_shift.value
-    
-# def _calculate_beam_shift(image_1, image_2):
-#     """Cross correlation to find shift between two images.
-
-#     Parameters
-#     ----------
-#     image_1 : AdornedImage
-#         Original image to use as reference point.
-#     image_2 : AdornedImage
-#         Possibly shifted image to align with original.
-
-#     Returns
-#     -------
-#     realspace_beam_shift
-#         Beam shift in x, y format (meters), list of floats.
-
-#     Raises
-#     ------
-#     ValueError
-#         If images are not the same dimensions, raise a ValueError.
-#     """
-#     if image_1.data.shape != image_2.data.shape:
-#         raise ValueError("Images must be the same shape for cross correlation.")
-#     mask_image_1 = _mask_circular(image_1.data.shape)
-#     mask_image_2 = _mask_rectangular(image_2.data.shape)
-#     norm_image_1 = _normalize_image(image_1.data) * mask_image_1
-#     norm_image_2 = _normalize_image(image_2.data) * mask_image_2
-#     pixel_shift = _simple_register_translation(norm_image_2, norm_image_1)
-#     # Autoscript y-axis has an inverted positive direction
-#     pixel_shift[1] = -pixel_shift[1]
-#     pixelsize_x = image_1.metadata.binary_result.pixel_size.x
-#     realspace_beam_shift = pixel_shift * pixelsize_x
-#     logging.info("pixel_shift calculated = {}".format(pixel_shift))
-#     logging.info("realspace_beam_shift calculated = {}".format(realspace_beam_shift))
-#     return realspace_beam_shift
-
-
-# def _simple_register_translation(src_image, target_image, max_shift_mask=None):
-#     """Calculate pixel shift between two input images.
-
-#     This function runs with numpy or cupy for GPU acceleration.
-
-#     Parameters
-#     ----------
-#     src_image : array
-#         Reference image.
-#     target_image : array
-#         Image to register.  Must be same dimensionality as ``src_image``.
-#     max_shift_mask : array
-#         The fourier mask restricting the maximum allowable pixel shift.
-
-#     Returns
-#     -------
-#     shifts : ndarray
-#         Pixel shift in x, y order between target and source image.
-
-#     References
-#     ----------
-#     scikit-image register_translation function in the skimage.feature module.
-#     """
-#     src_freq = np.fft.fftn(src_image)
-#     target_freq = np.fft.fftn(target_image)
-#     print('using bp mask')
-#     bp_mask = _bandpass_mask(target_image.data.shape, target_image.data.shape[0] / 3, inner_radius=2, sigma=3)
-#     bp_target_freq = bp_mask * target_freq
-
-#     # Whole-pixel shift - Compute cross-correlation by an IFFT
-#     shape = src_freq.shape
-#     image_product = src_freq * bp_target_freq.conj()
-#     cross_correlation = np.fft.ifftn(image_product)
-#     # Locate maximum
-#     maxima = np.unravel_index(
-#         np.argmax(np.abs(cross_correlation)), cross_correlation.shape
-#     )
-#     midpoints = np.array([float(np.round(axis_size / 2)) for axis_size in shape])
-#     shifts = np.array(maxima, dtype=np.float64)
-#     shifts[shifts > midpoints] -= np.array(shape)[shifts > midpoints]
-#     shifts = np.flip(shifts, axis=0).astype(int)  # x, y order
-#     return shifts
-
-
-# def _normalize_image(image, mask=None):
-#     """Ensure the image mean is zero and the standard deviation is one.
-
-#     Parameters
-#     ----------
-#     image : ndarray
-#         The input image array.
-#     mask : ndarray, optional
-#         A mask image containing values between zero and one.
-#         Dimensions must match the input image.
-
-#     Returns
-#     -------
-#     ndarray
-#         The normalized image.
-#         The mean intensity is equal to zero and standard deviation equals one.
-#     """
-#     image = image - np.mean(image)
-#     image = image / np.std(image)
-#     if mask:
-#         image = image * mask
-#     return image
-
-
-# def _mask_circular(image_shape, sigma=5.0, *, radius=None):
-#     """Make a circular mask with soft edges for image normalization.
-
-#     Parameters
-#     ----------
-#     image_shape : tuple
-#         Shape of the original image array
-#     sigma : float, optional
-#         Sigma value (in pixels) for gaussian blur function, by default 5.
-#     radius : int, optional
-#         Radius of circle, by default None which will create a circle that fills
-#         90% of the smallest image dimension.
-
-#     Returns
-#     -------
-#     ndarray
-#         Circular mask with soft edges in array matching the input image_shape
-#     """
-#     if radius is None:
-#         # leave at least a 5% gap on each edge
-#         radius = 0.45 * min(image_shape)
-#     center = np.divide(image_shape, 2)
-#     rr, cc = skimage.draw.disk(center, radius=radius, shape=image_shape)
-#     mask = np.zeros(image_shape)
-#     mask[rr, cc] = 1.0
-#     mask = ndi.gaussian_filter(mask, sigma=sigma)
-#     return mask
-
-
-# def _mask_rectangular(image_shape, sigma=5.0, *, start=None, extent=None):
-#     """Make a rectangular mask with soft edges for image normalization.
-
-#     Parameters
-#     ----------
-#     image_shape : tuple
-#         Shape of the original image array
-#     sigma : float, optional
-#         Sigma value (in pixels) for gaussian blur function, by default 5.
-#     start : tuple, optional
-#         Origin point of the rectangle, e.g., ([plane,] row, column).
-#         Default start is 5% of the total image width and height.
-#     extent : int, optional
-#         The extent (size) of the drawn rectangle.
-#         E.g., ([num_planes,] num_rows, num_cols).
-#         Default is for the rectangle to cover 95% of the image width & height.
-
-#     Returns
-#     -------
-#     ndarray
-#         Rectangular mask with soft edges in array matching input image_shape.
-#     """
-#     if extent is None:
-#         # leave at least a 5% gap on each edge
-#         start = np.round(np.array(image_shape) * 0.05)
-#         extent = np.round(np.array(image_shape) * 0.90)
-#     rr, cc = skimage.draw.rectangle(start, extent=extent, shape=image_shape)
-#     mask = np.zeros(image_shape)
-#     mask[rr.astype(int), cc.astype(int)] = 1.0
-#     mask = ndi.gaussian_filter(mask, sigma=sigma)
-#     return mask
-
-
-# def _bandpass_mask(image_shape, outer_radius, inner_radius=0, sigma=5):
-#     """Create a fourier bandpass mask.
-
-#     Parameters
-#     ----------
-#     image_shape : tuple
-#         Shape of the original image array
-#     outer_radius : int
-#         Outer radius for bandpass filter array.
-#     inner_radius : int, optional
-#         Inner radius for bandpass filter array, by default 0
-#     sigma : int, optional
-#         Sigma value for edge blending, by default 5 pixels.
-
-#     Returns
-#     -------
-#     _bandpass_mask : ndarray
-#         The bandpass image mask.
-#     """
-#     _bandpass_mask = np.zeros(image_shape)
-#     center = np.divide(image_shape, 2)
-#     inner_circle_rr, inner_circle_cc = skimage.draw.disk(
-#         center, inner_radius, shape=image_shape
-#     )
-#     outer_circle_rr, outer_circle_cc = skimage.draw.disk(
-#         center, outer_radius, shape=image_shape
-#     )
-#     _bandpass_mask[outer_circle_rr, outer_circle_cc] = 1.0
-#     _bandpass_mask[inner_circle_rr, inner_circle_cc] = 0.0
-#     _bandpass_mask = ndi.gaussian_filter(_bandpass_mask, sigma)
-#     _bandpass_mask = np.array(_bandpass_mask)
-#     # fourier space origin should be in the corner
-#     _bandpass_mask = np.roll(
-#         _bandpass_mask, (np.array(image_shape) / 2).astype(int), axis=(0, 1)
-#     )
-#     return _bandpass_mask
