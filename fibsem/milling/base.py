@@ -52,8 +52,8 @@ class MillingStrategy(ABC):
         pass
 
 def get_strategy(name: str = "Standard", config: Dict[str, Any] = {}) -> MillingStrategy:
-    from fibsem.milling.strategy import strategies, DEFAULT_STRATEGY
-    return strategies.get(name, DEFAULT_STRATEGY).from_dict(config)
+    from fibsem.milling.strategy import strategies, StandardMillingStrategy
+    return strategies.get(name, StandardMillingStrategy).from_dict(config)
 
 
 @dataclass
