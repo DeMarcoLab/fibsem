@@ -886,6 +886,89 @@ class FibsemMicroscope(ABC):
         self.set("detector_brightness", brightness, beam_type)
         return self.get("detector_brightness", beam_type)
 
+    def _get_compucentric_rotation_offset(self) -> FibsemStagePosition:
+        return FibsemStagePosition(x=0, y=0) # assume no offset to rotation centre
+
+    def _get_compucentric_rotation_position(self, position: FibsemStagePosition) -> FibsemStagePosition:
+        """Get the compucentric rotation position for the given stage position. 
+        Assumes 180deg rotation. TFS only"""
+
+        # get the compucentric rotation offset
+        offset = self._get_compucentric_rotation_offset()
+    
+        # convert the raw stage position to specimen coordinates
+        specimen_position = deepcopy(position)
+        specimen_position.x += offset.x
+        specimen_position.y += offset.y
+
+        # apply "compucentric" rotation offset (invert x,y)
+        target_position = deepcopy(specimen_position)
+        target_position.r += np.radians(180)
+        target_position.x = -specimen_position.x
+        target_position.y = -specimen_position.y
+
+        # convert the target position to raw coordinates
+        target_position.x -= offset.x
+        target_position.y -= offset.y
+
+        return target_position
+
+    def get_target_position(self, stage_position: FibsemStagePosition, target_orientation: str) -> FibsemStagePosition:
+        """Convert the stage position to the target position for the given orientation."""
+        
+        currrent_orientation = self.get_stage_orientation(stage_position)
+        print(f"Getting target position for {target_orientation} from {currrent_orientation}")
+
+        if currrent_orientation == target_orientation:
+            return stage_position
+
+        if currrent_orientation == "UNKNOWN":
+            raise ValueError("Unknown orientation. Cannot convert stage position.")
+
+        orientation = self.get_orientation(target_orientation)
+
+        if currrent_orientation in ["SEM", "MILLING"] and target_orientation == "FIB":
+            # Convert from SEM/MILLING to FIB
+            target_position = self._get_compucentric_rotation_position(stage_position)
+            target_position.r = orientation.r
+            target_position.t = orientation.t
+    
+        elif currrent_orientation == "FIB" and target_orientation in ["SEM", "MILLING"]:
+            # Convert from FIB to SEM/MILLING
+            target_position = self._get_compucentric_rotation_position(stage_position)
+            target_position.r = orientation.r
+            target_position.t = orientation.t
+        else:
+            raise ValueError(f"Cannot convert from {currrent_orientation} to {target_orientation}")
+
+        return target_position
+
+    def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
+        """Get the orientation of the stage position."""
+        return NotImplemented
+
+    def get_orientation(self, orientation: str) -> FibsemStagePosition:
+        """Get the orientation (r,t) for the given orientation string."""
+
+        stage_settings = self.system.stage
+        shuttle_pre_tilt = stage_settings.shuttle_pre_tilt  # deg
+
+        self.orientations = {
+            "SEM": FibsemStagePosition(
+                r=np.radians(stage_settings.rotation_reference),
+                t=np.radians(shuttle_pre_tilt),
+            ),
+            "FIB": FibsemStagePosition(
+                r=np.radians(stage_settings.rotation_180),
+                t=np.radians(self.system.ion.column_tilt - shuttle_pre_tilt),
+            ),
+        }
+
+        if orientation not in self.orientations:
+            raise ValueError(f"Orientation {orientation} not supported.")
+
+        return self.orientations[orientation]
+
 
 class ThermoMicroscope(FibsemMicroscope):
     """
@@ -1642,26 +1725,7 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return "UNKNOWN"
 
-    def get_orientation(self, orientation: str) -> FibsemStagePosition:
 
-        stage_settings = self.system.stage
-        shuttle_pre_tilt = stage_settings.shuttle_pre_tilt  # deg
-
-        self.orientations = {
-            "SEM": FibsemStagePosition(
-                r=np.radians(stage_settings.rotation_reference),
-                t=np.radians(shuttle_pre_tilt),
-            ),
-            "FIB": FibsemStagePosition(
-                r=np.radians(stage_settings.rotation_180),
-                t=np.radians(self.system.ion.column_tilt - shuttle_pre_tilt),
-            ),
-        }
-
-        if orientation not in self.orientations:
-            raise ValueError(f"Orientation {orientation} not supported.")
-
-        return self.orientations[orientation]
 
     def _safe_rotation_movement(
         self, stage_position: FibsemStagePosition
@@ -2529,16 +2593,19 @@ class ThermoMicroscope(FibsemMicroscope):
             values = self.connection.detector.mode.available_values
         
         if key == "scan_direction":
-            values = ["BottomToTop", 
-                "DynamicAllDirections", 
-                "DynamicInnerToOuter", 
-                "DynamicLeftToRight", 
-                "DynamicTopToBottom", 
-                "InnerToOuter", 	
-                "LeftToRight", 	
-                "OuterToInner", 
-                "RightToLeft", 	
-                "TopToBottom"] # TODO: store elsewhere...
+            TFS_SCAN_DIRECTIONS = [
+                "BottomToTop",
+                "DynamicAllDirections",
+                "DynamicInnerToOuter",
+                "DynamicLeftToRight",
+                "DynamicTopToBottom",
+                "InnerToOuter",
+                "LeftToRight",
+                "OuterToInner",
+                "RightToLeft",
+                "TopToBottom",
+            ]
+            values = TFS_SCAN_DIRECTIONS
         
         if key == "gis_ports":
             if self.is_available("gis"):
@@ -2960,6 +3027,26 @@ class ThermoMicroscope(FibsemMicroscope):
             return self.connection.beams.ion_beam
         else:
             raise ValueError(f"Unknown beam type: {beam_type}")
+
+    def _get_compucentric_rotation_offset(self) -> FibsemStagePosition:
+        """Get the difference between the stage position in specimen coordinates and raw coordinates."""
+        # get stage position in speciemn coordinates 
+        self.stage.set_default_coordinate_system(CoordinateSystem.SPECIMEN)
+        specimen_stage_position = FibsemStagePosition.from_autoscript_position(self.stage.current_position)
+
+        # get stage position in raw coordinates 
+        self.stage.set_default_coordinate_system(CoordinateSystem.RAW)
+        raw_stage_position = FibsemStagePosition.from_autoscript_position(self.stage.current_position)
+
+        # calculate the offset
+        offset = specimen_stage_position - raw_stage_position # XY only
+
+        # restore stage coordinate system
+        self.stage.set_default_coordinate_system(self._default_stage_coordinate_system)
+
+        return offset
+
+
 
 ######################################## Helper functions ########################################
 

@@ -390,9 +390,6 @@ class DemoMicroscope(FibsemMicroscope):
 
     def get_stage_orientation(self, stage_position: Optional[FibsemStagePosition] = None) -> str:
         return ThermoMicroscope.get_stage_orientation(self, stage_position)
-    
-    def get_orientation(self, orientation: str) -> str:
-        return ThermoMicroscope.get_orientation(self, orientation)
 
     def _safe_rotation_movement(self, stage_position: FibsemStagePosition) -> None:
         return ThermoMicroscope._safe_rotation_movement(self, stage_position)
