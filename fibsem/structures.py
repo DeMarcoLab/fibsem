@@ -1015,7 +1015,12 @@ class FibsemBitmapSettings(FibsemPatternSettings):
     rotation: float
     centre_x: float
     centre_y: float
-    bitmap: Optional[Union[NDArray[Any], Union[str, os.PathLike]]] = None
+    bitmap: Optional[NDArray[Any]] = None
+    path: Optional[Union[str, os.PathLike]] = None
+
+    def __post_init__(self):
+        if self.bitmap is None and self.path is None:
+            raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
 
     def to_dict(self) -> dict:
         return {
@@ -1025,6 +1030,7 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             "rotation": self.rotation,
             "centre_x": self.centre_x,
             "centre_y": self.centre_y,
+            "path": self.path,
             "bitmap": self.bitmap,
         }
 
@@ -1037,7 +1043,8 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             rotation=data["rotation"],
             centre_x=data["centre_x"],
             centre_y=data["centre_y"],
-            bitmap=data["bitmap"],
+            path=data.get("path"),
+            bitmap=data.get("bitmap"),
         )
 
     @property
