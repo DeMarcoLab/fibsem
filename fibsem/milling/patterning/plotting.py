@@ -3,9 +3,12 @@ import math
 from dataclasses import dataclass
 from typing import Callable, List, Tuple, Optional
 
+import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
+from skimage.transform import resize
+from PIL import Image
 import numpy as np
 
 from fibsem.milling.base import FibsemMillingStage
@@ -17,6 +20,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemImageMetadata,
     FibsemRectangleSettings,
+    FibsemBitmapSettings,
     ImageSettings,
     Point,
 )
@@ -131,6 +135,154 @@ def _draw_rectangle_pattern(
 
     return patch_collections
 
+
+def _draw_bitmap_pattern(
+    image: FibsemImage,
+    pattern: BasePattern,
+    colour: str = "yellow",
+    name: str = "Bitmap",
+) -> List[PatchCollection]:
+    """Draw a rectangle pattern on an image.
+    Args:
+        image: FibsemImage: Image to draw pattern on.
+        pattern: BitmapPattern: Rectangle pattern to draw.
+        colour: str: Colour of bitmap patches (blanked regions are inverted).
+        name: str: Name of the bitmap patches.
+    Returns:
+        List[PatchCollection]: List of patch collections to draw.
+    """
+    # common image properties
+    pixel_size = image.metadata.pixel_size.x  # assume isotropic
+    image_shape = image.data.shape
+
+    colour_array = mcolors.to_rgb(colour)
+    inverted_colour_array = tuple(1.0 - _ for _ in colour_array)
+
+    patch_collections = []
+    p: FibsemBitmapSettings
+    for i, p in enumerate(pattern.define(), 1):
+        if not isinstance(p, FibsemBitmapSettings):
+            logging.debug(f"Pattern {p} is not a bitmap, skipping")
+            continue
+        # convert from microscope image (real-space) to image pixel-space
+        px, py, width, height = _rect_pattern_to_image_pixels(
+            p, pixel_size, image_shape
+        )
+        if isinstance(p.bitmap, np.ndarray):
+            array = p.bitmap.copy()  # Don't modify the pattern array!
+            dwell_time_index = 0
+            blanking_flag = 1
+        elif p.path is not None:
+            with Image.open(p.path, formats=("BMP",)) as im:
+                array = np.asarray(im)
+            dwell_time_index = 2
+            blanking_flag = 0
+        else:
+            raise ValueError(
+                "Unable to draw bitmap pattern from FibsemBitmapSettings as bitmap and path are both None"
+            )
+
+        dwell_time_array = array[:, :, dwell_time_index]
+        blanking_array = array[:, :, 1] == blanking_flag  # blanking index is 1 for both
+        del array
+
+        if np.issubdtype(dwell_time_array.dtype, np.integer):
+            # Scale to dtype range
+            dwell_minmax = (
+                np.iinfo(dwell_time_array.dtype).min,
+                np.iinfo(dwell_time_array.dtype).max,
+            )
+        else:
+            # Assume float scaled between 0 and 1
+            dwell_minmax = (0, 1)
+
+        # Ensure no rectangles will be subpixel (these are not displayed)
+        target_shape = list(dwell_time_array.shape)
+        resize_array = False
+        if height < dwell_time_array.shape[0]:
+            resize_array = True
+            target_shape[0] = round(height)
+        if width < dwell_time_array.shape[1]:
+            resize_array = True
+            target_shape[1] = round(width)
+
+        if resize_array:
+            dwell_time_array = resize(
+                dwell_time_array,
+                output_shape=target_shape,
+                preserve_range=True,
+                order=1,  # bi-linear interpolation
+            )
+            blanking_array = resize(
+                blanking_array, output_shape=target_shape, preserve_range=True, order=0
+            )
+
+        dwell_time_array = dwell_time_array.astype(np.float64)
+        # Cast dwell time multiplier to range 0-1
+        dwell_time_array -= dwell_minmax[0]
+        dwell_time_array /= dwell_minmax[1] - dwell_minmax[0]
+
+        rectangle_height = (
+            1
+            if round(height) == dwell_time_array.shape[0]
+            else height / dwell_time_array.shape[0]
+        )
+        rectangle_width = (
+            1
+            if round(width) == dwell_time_array.shape[1]
+            else width / dwell_time_array.shape[1]
+        )
+
+        bitmap_rects = []
+        for j in range(dwell_time_array.shape[0]):
+            for k in range(dwell_time_array.shape[1]):
+                # Draw a small rectangle for each (resized) bitmap pixel
+                alpha_multiplier = 1 if blanking_array[j, k] else dwell_time_array[j, k]
+                bitmap_rects.append(
+                    mpatches.Rectangle(
+                        (
+                            px - (width / 2) + k,
+                            py - (height / 2) + j,
+                        ),  # bottom left corner
+                        width=rectangle_width,
+                        height=rectangle_height,
+                        angle=math.degrees(p.rotation),
+                        rotation_point=PROPERTIES["rotation_point"],
+                        linewidth=0,
+                        edgecolor="none",
+                        facecolor=inverted_colour_array
+                        if blanking_array[j, k]
+                        else colour,
+                        alpha=PROPERTIES["opacity"] * alpha_multiplier,
+                    )
+                )
+
+        # Draw the edges
+        bitmap_rects.append(
+            mpatches.Rectangle(
+                (
+                    px - width / 2,
+                    py - height / 2,
+                ),  # bottom left corner
+                width=width,
+                height=height,
+                angle=math.degrees(p.rotation),
+                rotation_point=PROPERTIES["rotation_point"],
+                linewidth=PROPERTIES["line_width"],
+                edgecolor=colour_array,
+                facecolor="none",
+                alpha=PROPERTIES["opacity"],
+            )
+        )
+
+        # Store all the rectangles as a patch collection
+        patch_collection = PatchCollection(bitmap_rects, match_original=True)
+
+        if i == 1:
+            patch_collection.set_label(f"{name}")
+        patch_collections.append(patch_collection)
+
+    return patch_collections
 
 def get_drawing_function(name: str) -> Callable:
     
