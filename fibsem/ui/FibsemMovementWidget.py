@@ -248,7 +248,10 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.label_saved_positions.setVisible(HAS_SAVED_POSITIONS)
         self.label_current_position.setVisible(HAS_SAVED_POSITIONS)
         self.lineEdit_position_name.setVisible(HAS_SAVED_POSITIONS)
-    
+
+        # update the current position label
+        self.display_stage_position_overlay()
+
     def update_ui_after_movement(self, retake: bool = True): # TODO: PPP Refactor
         # disable taking images after movement here
         if retake is False:
