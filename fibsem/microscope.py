@@ -917,7 +917,7 @@ class FibsemMicroscope(ABC):
         """Convert the stage position to the target position for the given orientation."""
         
         currrent_orientation = self.get_stage_orientation(stage_position)
-        print(f"Getting target position for {target_orientation} from {currrent_orientation}")
+        logging.info(f"Getting target position for {target_orientation} from {currrent_orientation}")
 
         if currrent_orientation == target_orientation:
             return stage_position
