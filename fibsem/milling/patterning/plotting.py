@@ -284,11 +284,17 @@ def _draw_bitmap_pattern(
 
     return patch_collections
 
-def get_drawing_function(name: str) -> Callable:
-    
-    if name in ["Circle", "Bitmap", "Line", "SerialSection"]:
-        return None
-    return _draw_rectangle_pattern
+
+_drawing_functions = {
+    "Circle": None,
+    "Line": None,
+    "SerialSection": None,
+    "Bitmap": _draw_bitmap_pattern,
+    "TrenchBitmap": _draw_bitmap_pattern,
+}
+
+def get_drawing_function(name: str) -> Optional[Callable]:
+    return _drawing_functions.get(name, _draw_rectangle_pattern)
 
 
 def draw_milling_patterns(
