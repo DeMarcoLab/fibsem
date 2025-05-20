@@ -932,7 +932,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         idx = self.comboBox_milling_current.findData(milling.milling_current)
         if idx == -1:
-            idx = 0
+            # get the closest value
+            milling_currents = [self.comboBox_milling_current.itemData(i) for i in range(self.comboBox_milling_current.count())]
+            closest_value = min(milling_currents,key=lambda x: abs(x - milling.milling_current))
+            idx = self.comboBox_milling_current.findData(closest_value)
         self.comboBox_milling_current.setCurrentIndex(idx)
         self.comboBox_application_file.setCurrentText(milling.application_file)
         self.doubleSpinBox_rate.setValue(milling.rate * constants.SI_TO_NANO)
