@@ -5,7 +5,7 @@ from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
-
+from fibsem.ui.FibsemSpotBurnWidget import FibsemSpotBurnWidget
 try:
     from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
     DETECTION_AVAILABLE = True
