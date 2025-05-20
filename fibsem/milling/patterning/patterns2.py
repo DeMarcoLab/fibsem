@@ -1538,7 +1538,8 @@ MILLING_PATTERNS: Dict[str, BasePattern] = {
     CloverPattern.name.lower(): CloverPattern,
     TriForcePattern.name.lower(): TriForcePattern,
     # TrapezoidPattern.name.lower(): TrapezoidPattern,
-    # BitmapPattern.name.lower(): BitmapPattern,
+    BitmapPattern.name.lower(): BitmapPattern,
+    TrenchBitmapPattern.name.lower(): TrenchBitmapPattern,
 }
 MILLING_PATTERN_NAMES = [p.name for p in MILLING_PATTERNS.values()]
 DEFAULT_MILLING_PATTERN = RectanglePattern.name
@@ -1574,6 +1575,8 @@ PROTOCOL_MILL_MAP = {
     "MillPolishing": TrenchPattern,
     "mill_rough": TrenchPattern,
     "mill_polishing": TrenchPattern,
+    "mill_bitmap": TrenchBitmapPattern,
+    "bitmap": BitmapPattern,
 }
 
 def get_pattern(name: str, config: dict) -> BasePattern:
