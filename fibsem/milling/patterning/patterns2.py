@@ -1,7 +1,7 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields
-from typing import Dict, List, Tuple, Union, Any
+from typing import Dict, List, Tuple, Union, Any, Optional
 from os import PathLike
 
 import numpy as np
@@ -70,12 +70,17 @@ class BitmapPattern(BasePattern):
     width: float
     height: float
     depth: float
-    bitmap: Union[NDArray[Any], Union[str, PathLike]]
+    bitmap: Optional[NDArray[Any]] = None
+    path: Optional[Union[str, PathLike]] = None
     rotation: float = 0
-    shapes: List[FibsemPatternSettings] = None
+    shapes: Optional[List[FibsemPatternSettings]] = None
     point: Point = Point()
     name: str = "Bitmap"
 
+
+    def __post_init__(self):
+        if self.bitmap is None and self.path is None:
+            raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
 
     def define(self) -> List[FibsemBitmapSettings]:
         shape = FibsemBitmapSettings(
@@ -85,7 +90,8 @@ class BitmapPattern(BasePattern):
             rotation=self.rotation * constants.DEGREES_TO_RADIANS,
             centre_x=self.point.x,
             centre_y=self.point.y,
-            bitmap=self.bitmap
+            path=self.path,
+            bitmap=self.bitmap,
             )
         self.shapes = [shape]
         return self.shapes
@@ -98,7 +104,9 @@ class BitmapPattern(BasePattern):
             "height": self.height,
             "depth": self.depth,
             "rotation": self.rotation,
-            "bitmap": self.bitmap
+            "path": self.path,
+            "bitmap": self.bitmap,
+            
         }
 
     @classmethod
@@ -108,8 +116,9 @@ class BitmapPattern(BasePattern):
             height=ddict["height"],
             depth=ddict["depth"],
             rotation=ddict.get("rotation", 0),
-            bitmap=ddict["bitmap"],
-            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+            path=ddict.get("path"),
+            bitmap=ddict.get("bitmap"),
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT)),
         )
 
 
