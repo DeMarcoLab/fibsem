@@ -1,10 +1,11 @@
 import logging
 import math
 from dataclasses import dataclass
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Optional
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.collections import PatchCollection
 import numpy as np
 
 from fibsem.milling.base import FibsemMillingStage
@@ -83,7 +84,7 @@ def _draw_rectangle_pattern(
     pattern: BasePattern,
     colour: str = "yellow",
     name: str = "Rectangle",
-) -> List[mpatches.Rectangle]:
+) -> List[PatchCollection]:
     """Draw a rectangle pattern on an image.
     Args:
         image: FibsemImage: Image to draw pattern on.
@@ -91,13 +92,13 @@ def _draw_rectangle_pattern(
         colour: str: Colour of rectangle patches.
         name: str: Name of the rectangle patches.
     Returns:
-        List[mpatches.Rectangle]: List of patches to draw.
+        List[PatchCollection]: List of patch collections to draw.
     """
     # common image properties
     pixel_size = image.metadata.pixel_size.x  # assume isotropic
     image_shape = image.data.shape
 
-    patches = []
+    patch_collections = []
     p: FibsemRectangleSettings
     for i, p in enumerate(pattern.define(), 1):
         if not isinstance(p, FibsemRectangleSettings):
@@ -108,22 +109,27 @@ def _draw_rectangle_pattern(
             p, pixel_size, image_shape
         )
 
-        rect = mpatches.Rectangle(
-            (px - width / 2, py - height / 2),  # bottom left corner
-            width=width,
-            height=height,
-            angle=math.degrees(p.rotation),
-            rotation_point=PROPERTIES["rotation_point"],
-            linewidth=PROPERTIES["line_width"],
-            edgecolor=colour,
-            facecolor=colour,
-            alpha=PROPERTIES["opacity"],
+        patch_collection = PatchCollection(
+            [
+                mpatches.Rectangle(
+                    (px - width / 2, py - height / 2),  # bottom left corner
+                    width=width,
+                    height=height,
+                    angle=math.degrees(p.rotation),
+                    rotation_point=PROPERTIES["rotation_point"],
+                    linewidth=PROPERTIES["line_width"],
+                    edgecolor=colour,
+                    facecolor=colour,
+                    alpha=PROPERTIES["opacity"],
+                )
+            ],
+            match_original=True,
         )
         if i == 1:
-            rect.set_label(f"{name}")
-        patches.append(rect)
+            patch_collection.set_label(f"{name}")
+        patch_collections.append(patch_collection)
 
-    return patches
+    return patch_collections
 
 
 def get_drawing_function(name: str) -> Callable:
@@ -155,7 +161,7 @@ def draw_milling_patterns(
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.imshow(image.data, cmap="gray")
 
-    patches = []
+    patch_collections: List[PatchCollection] = []
     for i, stage in enumerate(milling_stages):
         colour = COLOURS[i % len(COLOURS)]
         p = stage.pattern
@@ -165,12 +171,12 @@ def draw_milling_patterns(
             logging.debug(f"Drawing Pattern {p.name} not currently supported, skipping")
             continue
 
-        patches.extend(
+        patch_collections.extend(
             drawing_func(image, p, colour=colour, name=stage.name)
         )
 
-    for patch in patches:
-        ax.add_patch(patch)
+    for pc in patch_collections:
+        ax.add_collection(pc)
     ax.legend()
 
     # draw crosshair at centre of image
