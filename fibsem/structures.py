@@ -1023,10 +1023,15 @@ class FibsemBitmapSettings(FibsemPatternSettings):
     rotation: float
     centre_x: float
     centre_y: float
+    scan_direction: str = "TopToBottom"
+    passes: int = 0
+    time: float = 0.0
+    is_exclusion: bool = False
+    flip_y: bool = False
     bitmap: Optional[NDArray[Any]] = None
     path: Optional[Union[str, os.PathLike]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.bitmap is None and self.path is None:
             raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
 

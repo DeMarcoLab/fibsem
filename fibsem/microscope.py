@@ -2521,6 +2521,7 @@ class ThermoMicroscope(FibsemMicroscope):
         return points_array
 
     def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings):
+        # Get bitmap from pattern settings (from file or array)
         bitmap = pattern_settings.bitmap
         if isinstance(bitmap, np.ndarray):
             bitmap_pattern = BitmapPatternDefinition()
@@ -2542,6 +2543,9 @@ class ThermoMicroscope(FibsemMicroscope):
                 "Unable to draw bitmap pattern from FibsemBitmapSettings as bitmap and path are both None"
             )
 
+        if pattern_settings.flip_y:
+            bitmap_pattern.points = np.flip(bitmap_pattern.points, axis=0)
+
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,
             center_y=pattern_settings.centre_y,
@@ -2550,6 +2554,38 @@ class ThermoMicroscope(FibsemMicroscope):
             depth=pattern_settings.depth,
             bitmap_pattern_definition=bitmap_pattern,
         )
+
+        if not np.isclose(pattern_settings.time, 0.0):
+            logging.debug(f"Setting pattern time to {pattern_settings.time}.")
+            pattern.time = pattern_settings.time
+
+        # set pattern rotation
+        pattern.rotation = pattern_settings.rotation
+
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
+
+        # set scan direction
+        available_scan_directions = self.get_available_values("scan_direction")
+
+        if pattern_settings.scan_direction in available_scan_directions:
+            pattern.scan_direction = pattern_settings.scan_direction
+        else:
+            pattern.scan_direction = "TopToBottom"
+            logging.warning(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
+            logging.warning(f"Supported scan directions are: {available_scan_directions}")
+
+        # set passes
+        if pattern_settings.passes: # not zero
+            pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
+
+            # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
+            # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
+            # NB: the current must be set before doing this, otherwise it will be out of range
+
+        # restore default application file
+        self.connection.patterning.set_default_application_file(self._default_application_file)
+
 
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict()})
         self._patterns.append(pattern)
