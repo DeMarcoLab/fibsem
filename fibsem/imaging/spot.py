@@ -14,7 +14,7 @@ def run_spot_burn(microscope: FibsemMicroscope,
     time at the specified current.
     Args:
         microscope: The microscope object.
-        coordinates: List of points to burn.
+        coordinates: List of points to burn. (0 - 1 in image coordinates)
         exposure_time: Time to expose each point in seconds.
         milling_current: Current to use for the spot.
         beam_type: The type of beam to use. (Default: BeamType.ION)
@@ -22,16 +22,16 @@ def run_spot_burn(microscope: FibsemMicroscope,
         None
     """
 
-    imaging_current = microscope.get(key="current", beam_type=beam_type)
-    microscope.set(key="current", value=milling_current, beam_type=beam_type)
+    imaging_current = microscope.get_beam_current(beam_type=beam_type)
+    microscope.set_beam_current(current=milling_current, beam_type=beam_type)
 
     for pt in coordinates:
         logging.info(f'burning spot: {pt}, exposure time: {exposure_time}, milling current: {milling_current}')
-        microscope.set(key="blanked", value=True, beam_type=beam_type)
-        microscope.set(key="spot_mode", value=pt, beam_type=beam_type)
-        microscope.set(key="blanked", value=False, beam_type=beam_type)
+        microscope.blank(beam_type=beam_type)
+        microscope.set_spot_scanning_mode(point=pt, beam_type=beam_type)
+        microscope.unblank(beam_type=beam_type)
         time.sleep(exposure_time)
-        microscope.set(key="full_frame", value=True, beam_type=beam_type)
+        microscope.set_full_frame_scanning_mode(beam_type=beam_type) # QUERY: do we need to set this each time, or only at the end?
 
-    microscope.set("current", imaging_current, beam_type=beam_type)
+    microscope.set_beam_current(current=imaging_current, beam_type=beam_type)
     return
