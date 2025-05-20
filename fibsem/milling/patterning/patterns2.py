@@ -70,9 +70,12 @@ class BitmapPattern(BasePattern):
     width: float
     height: float
     depth: float
+    rotation: float = 0
+    time: float = 0
+    passes: int = 0
+    scan_direction: str = "TopToBottom"
     bitmap: Optional[NDArray[Any]] = None
     path: Optional[Union[str, PathLike]] = None
-    rotation: float = 0
     shapes: Optional[List[FibsemPatternSettings]] = None
     point: Point = field(default_factory=Point) 
     name: str = "Bitmap"
@@ -80,16 +83,19 @@ class BitmapPattern(BasePattern):
 
     def __post_init__(self):
         if self.bitmap is None and self.path is None:
-            raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
+            raise AttributeError("BitmapPattern requires bitmap or path must be set")
 
     def define(self) -> List[FibsemBitmapSettings]:
         shape = FibsemBitmapSettings(
             width=self.width,
             height=self.height,
             depth=self.depth,
-            rotation=self.rotation * constants.DEGREES_TO_RADIANS,
             centre_x=self.point.x,
             centre_y=self.point.y,
+            rotation=self.rotation * constants.DEGREES_TO_RADIANS,
+            scan_direction=self.scan_direction,
+            passes=self.passes,
+            time=self.time,
             path=self.path,
             bitmap=self.bitmap,
             )
@@ -104,9 +110,12 @@ class BitmapPattern(BasePattern):
             "height": self.height,
             "depth": self.depth,
             "rotation": self.rotation,
+            "time": self.time,
+            "passes": self.passes,
+            "scan_direction": self.scan_direction,
             "path": self.path,
             "bitmap": self.bitmap,
-            
+
         }
 
     @classmethod
@@ -116,9 +125,104 @@ class BitmapPattern(BasePattern):
             height=ddict["height"],
             depth=ddict["depth"],
             rotation=ddict.get("rotation", 0),
+            time=ddict.get("time", 0),
+            passes=ddict.get("passes", 0),
+            scan_direction=ddict.get("scan_direction", "TopToBottom"),
             path=ddict.get("path"),
             bitmap=ddict.get("bitmap"),
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT)),
+        )
+
+
+@dataclass
+class TrenchBitmapPattern(BasePattern):
+    width: float
+    depth: float
+    spacing: float
+    upper_trench_height: float
+    lower_trench_height: float
+    time: float = 0
+    point: Point = Point()
+    name: str = "TrenchBitmap"
+    flip_lower_pattern: bool = True
+    path: Optional[Union[str, PathLike]] = None
+    bitmap: Optional[NDArray[Any]] = None
+    shapes: Optional[List[FibsemPatternSettings]] = None
+    _advanced_attributes = ["time",]
+
+    def define(
+        self, protocol: dict, point: Point = Point()
+    ) -> list[FibsemBitmapSettings]:
+        point = self.point
+        width = self.width
+        spacing = self.spacing
+        upper_trench_height = self.upper_trench_height
+        lower_trench_height = self.lower_trench_height
+        depth = self.depth
+        time = self.time
+        path = self.path
+        bitmap = self.bitmap
+
+        # calculate the centre of the upper and lower trench
+        centre_lower_y = point.y - (spacing / 2 + lower_trench_height / 2)
+        centre_upper_y = point.y + (spacing / 2 + upper_trench_height / 2)
+
+        # mill settings
+        lower_pattern_settings = FibsemBitmapSettings(
+            width=width,
+            height=lower_trench_height,
+            depth=depth,
+            # Allows flipping of lower pattern without first loading the bitmap
+            rotation=np.pi if self.flip_lower_pattern else 0,
+            centre_x=point.x,
+            centre_y=centre_lower_y,
+            # TODO: check if rotation considered before or after scan direction
+            scan_direction="TopToBottom" if self.flip_lower_pattern else "BottomToTop",
+            time=time,
+            path=path,
+            bitmap=bitmap,
+        )
+
+        upper_pattern_settings = FibsemBitmapSettings(
+            width=width,
+            height=upper_trench_height,
+            depth=depth,
+            rotation=0,
+            centre_x=point.x,
+            centre_y=centre_upper_y,
+            scan_direction="TopToBottom",
+            time=time,
+            path=protocol.get("path"),
+            bitmap=protocol.get("bitmap"),
+        )
+
+        self.shapes = [lower_pattern_settings, upper_pattern_settings]
+        self.protocol = protocol
+        self.point = point
+        return self.shapes
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "width": self.width,
+            "depth": self.depth,
+            "spacing": self.spacing,
+            "upper_trench_height": self.upper_trench_height,
+            "lower_trench_height": self.lower_trench_height,
+            "time": self.time,
+        }
+
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "TrenchBitmapPattern":
+        return cls(
+            width=ddict["width"],
+            depth=ddict["depth"],
+            spacing=ddict["spacing"],
+            upper_trench_height=ddict["upper_trench_height"],
+            lower_trench_height=ddict["lower_trench_height"],
+            time=ddict.get("time", 0),
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
         )
 
 
