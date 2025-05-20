@@ -1522,7 +1522,7 @@ def create_triangle_patterns(
     return [left_pattern, right_pattern, bottom_pattern]
 
 
-MILLING_PATTERNS: Dict[str, BasePattern] = {
+MILLING_PATTERNS: Dict[str, type[BasePattern]] = {
     RectanglePattern.name.lower(): RectanglePattern,
     LinePattern.name.lower(): LinePattern,
     CirclePattern.name.lower(): CirclePattern,
@@ -1545,7 +1545,7 @@ MILLING_PATTERN_NAMES = [p.name for p in MILLING_PATTERNS.values()]
 DEFAULT_MILLING_PATTERN = RectanglePattern.name
 
 # legacy mapping
-PROTOCOL_MILL_MAP = {
+PROTOCOL_MILL_MAP: Dict[str, type[BasePattern]] = {
     "cut": RectanglePattern,
     "fiducial": FiducialPattern,
     "flatten": RectanglePattern,
