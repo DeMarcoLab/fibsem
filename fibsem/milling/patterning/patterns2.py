@@ -2,8 +2,10 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, field, fields, asdict
 from typing import Dict, List, Tuple, Union, Any, Optional, Type, ClassVar, TypeVar, Generic
+from os import PathLike
 
 import numpy as np
+from numpy.typing import NDArray
 
 from fibsem import constants
 from fibsem.structures import (
@@ -84,9 +86,14 @@ class BitmapPattern(BasePattern[FibsemBitmapSettings]):
     height: float = 10.0e-6
     depth: float = 1.0e-6
     rotation: float = 0
-    path: str = ""
+    bitmap: Optional[NDArray[Any]] = None
+    path: Optional[Union[str, PathLike]] = None
 
     name: ClassVar[str] = "Bitmap"
+
+    def __post_init__(self):
+        if self.bitmap is None and self.path is None:
+            raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
 
     def define(self) -> List[FibsemBitmapSettings]:
         shape = FibsemBitmapSettings(
@@ -96,7 +103,8 @@ class BitmapPattern(BasePattern[FibsemBitmapSettings]):
             rotation=self.rotation * constants.DEGREES_TO_RADIANS,
             centre_x=self.point.x,
             centre_y=self.point.y,
-            bitmap=self.bitmap
+            path=self.path,
+            bitmap=self.bitmap,
             )
         self.shapes = [shape]
         return self.shapes

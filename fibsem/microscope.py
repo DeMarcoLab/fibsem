@@ -2526,17 +2526,21 @@ class ThermoMicroscope(FibsemMicroscope):
             bitmap_pattern = BitmapPatternDefinition()
             if bitmap.dtype == np.uint8:
                 logging.debug("Converting bitmap array to points array")
-                points = ThermoMicroscope._bitmap_to_points(
-                    bitmap
-                )
+                points = ThermoMicroscope._bitmap_to_points(bitmap)
             else:
                 # Assume bitmap is already a point array
                 points = bitmap
             logging.debug("Creating bitmap pattern from array")
             bitmap_pattern.points = points
+        elif pattern_settings.path is not None:
+            logging.debug(
+                "Creating bitmap pattern from '%s'", str(pattern_settings.path)
+            )
+            bitmap_pattern = BitmapPatternDefinition.load(pattern_settings.path)
         else:
-            logging.debug("Creating bitmap pattern from '%s'", str(bitmap))
-            bitmap_pattern = BitmapPatternDefinition.load(bitmap)
+            raise ValueError(
+                "Unable to draw bitmap pattern from FibsemBitmapSettings as bitmap and path are both None"
+            )
 
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,

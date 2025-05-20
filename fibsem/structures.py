@@ -1023,7 +1023,12 @@ class FibsemBitmapSettings(FibsemPatternSettings):
     rotation: float
     centre_x: float
     centre_y: float
-    bitmap: Optional[Union[NDArray[Any], Union[str, os.PathLike]]] = None
+    bitmap: Optional[NDArray[Any]] = None
+    path: Optional[Union[str, os.PathLike]] = None
+
+    def __post_init__(self):
+        if self.bitmap is None and self.path is None:
+            raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
 
     @property
     def volume(self) -> float:
