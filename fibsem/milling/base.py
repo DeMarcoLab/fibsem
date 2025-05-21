@@ -91,7 +91,9 @@ class FibsemMillingStage:
         strategy_name = strategy_config.get("name", "Standard")
         pattern_name = data["pattern"]["name"]
         alignment = data.get("alignment", {})
-        imaging = data.get("imaging", {})
+        imaging: dict = data.get("imaging", {})
+        # if imaging == {} or imaging.get("path", None) is None:
+            # imaging["path"] = None # TODO: enable once autolamella path is updated
         return cls(
             name=data["name"],
             num=data.get("num", 0),
@@ -106,8 +108,21 @@ class FibsemMillingStage:
     def estimated_time(self) -> float:
         return estimate_milling_time(self.pattern, self.milling.milling_current)
 
+    def run(self, microscope: FibsemMicroscope, asynch: bool = False, parent_ui = None) -> None:
+        """Run the milling stage strategy on the given microscope."""
+        self.strategy.run(microscope=microscope, stage=self, asynch=asynch, parent_ui=parent_ui)
+
 
 def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> List[FibsemMillingStage]:
+    """Get the milling stages for specific key from the protocol.
+    Args:
+        key: the key to get the milling stages for
+        protocol: the protocol to get the milling stages from
+    Returns:
+        List[FibsemMillingStage]: the milling stages for the given key"""
+    if key not in protocol:
+        raise ValueError(f"Key {key} not found in protocol. Available keys: {list(protocol.keys())}")
+    
     stages = []
     for stage_config in protocol[key]:
         stage = FibsemMillingStage.from_dict(stage_config)
@@ -115,7 +130,11 @@ def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> L
     return stages
 
 def get_protocol_from_stages(stages: List[FibsemMillingStage]) -> List[Dict[str, Any]]:
-    
+    """Convert a list of milling stages to a protocol dictionary.
+    Args:
+        stages: the list of milling stages to convert
+    Returns:
+        List[Dict[str, Any]]: the protocol dictionary"""
     if not isinstance(stages, list):
         stages = [stages]
     
