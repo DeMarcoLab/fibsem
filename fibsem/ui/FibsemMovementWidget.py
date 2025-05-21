@@ -131,6 +131,7 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.pushButton_move.setStyleSheet(GREEN_PUSHBUTTON_STYLE)
         self.pushButton_move_flat_ion.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
         self.pushButton_move_flat_electron.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_move_to_milling_angle.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
         self.pushButton_refresh_stage_position_data.setStyleSheet(GRAY_PUSHBUTTON_STYLE)
         self.pushButton_save_position.setStyleSheet(GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_position.setStyleSheet(RED_PUSHBUTTON_STYLE)
@@ -144,10 +145,24 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.pushButton_move_flat_ion.setText("Move to FIB Orientation")
         sem = self.microscope.get_orientation("SEM")
         fib = self.microscope.get_orientation("FIB")
+        milling = self.microscope.get_orientation("MILLING")
         sem_str = f"R:{sem.r*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}, T:{sem.t*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}"
         fib_str = f"R:{fib.r*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}, T:{fib.t*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}"
+        milling_str = f"R:{milling.r*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}, T:{milling.t*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}"
         self.pushButton_move_flat_electron.setToolTip(sem_str)
         self.pushButton_move_flat_ion.setToolTip(fib_str)
+        self.pushButton_move_to_milling_angle.setToolTip(milling_str)
+
+        # milling angle controls
+        self.doubleSpinBox_milling_angle.setValue(self.microscope.system.stage.milling_angle) # deg
+        self.doubleSpinBox_milling_angle.setSuffix(DEGREE_SYMBOL)
+        self.doubleSpinBox_milling_angle.setSingleStep(1.0)
+        self.doubleSpinBox_milling_angle.setDecimals(1)
+        self.doubleSpinBox_milling_angle.setRange(0, 45)
+        self.doubleSpinBox_milling_angle.setToolTip("The milling angle is the difference between the stage and the fib viewing angle.")
+        self.doubleSpinBox_milling_angle.setKeyboardTracking(False)
+        self.doubleSpinBox_milling_angle.valueChanged.connect(self._update_milling_angle)
+        self.pushButton_move_to_milling_angle.clicked.connect(lambda: self.move_to_orientation("MILLING"))
 
         self.display_stage_position_overlay()
 
@@ -159,6 +174,8 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.pushButton_move.setEnabled(enable)
         self.pushButton_move_flat_ion.setEnabled(enable)
         self.pushButton_move_flat_electron.setEnabled(enable)
+        self.pushButton_move_to_milling_angle.setEnabled(enable)
+        self.doubleSpinBox_milling_angle.setEnabled(enable)
         self.pushButton_go_to.setEnabled(enable)
         if caller is None:
             self.parent.milling_widget._toggle_interactions(enable, caller="movement")
@@ -167,11 +184,13 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
             self.pushButton_move.setStyleSheet(GREEN_PUSHBUTTON_STYLE)
             self.pushButton_move_flat_ion.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
             self.pushButton_move_flat_electron.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_move_to_milling_angle.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
             self.pushButton_go_to.setStyleSheet(BLUE_PUSHBUTTON_STYLE)
         else:
             self.pushButton_move.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_move_flat_ion.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_move_flat_electron.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_move_to_milling_angle.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_go_to.setStyleSheet(DISABLED_PUSHBUTTON_STYLE)
 
     def handle_movement_progress_update(self, ddict: dict) -> None:
@@ -268,6 +287,19 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
             logging.warning("Acquiring ion image after movement has been disabled temporarily. Please only acquire both images after movement")
         else: 
             self.update_ui()
+
+    def _update_milling_angle(self):
+        """Update the milling angle in the microscope and the UI"""
+        milling_angle = self.doubleSpinBox_milling_angle.value() # deg
+        self.microscope.system.stage.milling_angle = milling_angle
+
+        # set tooltip (dynamically)
+        milling = self.microscope.get_orientation("MILLING")
+        milling_str = f"R:{milling.r*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}, T:{milling.t*constants.RADIANS_TO_DEGREES:.1f} {DEGREE_SYMBOL}"
+        self.pushButton_move_to_milling_angle.setToolTip(milling_str)
+
+        # refresh stage display
+        self.display_stage_position_overlay()
 
 #### MOVEMENT
 
@@ -387,6 +419,24 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
         """Threaded worker function to move the stage to the specified beam"""
         self.movement_progress_signal.emit({"msg": f"Moving flat to {beam_type.name} beam"})
         self.microscope.move_flat_to_beam(beam_type=beam_type)
+        self.update_ui_after_movement()
+
+    # TODO: migrate to this from move_flat_to_beam
+    def move_to_orientation(self, orientation: str)-> None:
+        """Move to the specifed orientation"""
+        if orientation not in ["SEM", "FIB", "MILLING"]:
+            raise ValueError(f"Invalid orientation: {orientation}")
+        self._toggle_interactions(False)
+        worker = self.move_to_orientation_worker(orientation)
+        worker.finished.connect(self.move_stage_finished)
+        worker.start()
+
+    @thread_worker
+    def move_to_orientation_worker(self, orientation: str) -> None:
+        """Threaded worker function to move the stage to the specified orientation"""
+        self.movement_progress_signal.emit({"msg": f"Moving flat to {orientation}"})
+        stage_orientation = self.microscope.get_orientation(orientation)
+        self.microscope.safe_absolute_stage_movement(stage_orientation)
         self.update_ui_after_movement()
 
 #### SAVED POSITIONS

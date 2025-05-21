@@ -952,6 +952,11 @@ class FibsemMicroscope(ABC):
 
         stage_settings = self.system.stage
         shuttle_pre_tilt = stage_settings.shuttle_pre_tilt  # deg
+        milling_angle = stage_settings.milling_angle        # deg
+
+        # needs to be dynmaically updated as it can change.
+        from fibsem.transformations import get_stage_tilt_from_milling_angle
+        milling_stage_tilt = get_stage_tilt_from_milling_angle(self, np.radians(milling_angle))
 
         self.orientations = {
             "SEM": FibsemStagePosition(
@@ -961,6 +966,10 @@ class FibsemMicroscope(ABC):
             "FIB": FibsemStagePosition(
                 r=np.radians(stage_settings.rotation_180),
                 t=np.radians(self.system.ion.column_tilt - shuttle_pre_tilt),
+            ),
+            "MILLING": FibsemStagePosition(
+                r=np.radians(stage_settings.rotation_reference),
+                t=milling_stage_tilt
             ),
         }
 
@@ -1708,13 +1717,14 @@ class ThermoMicroscope(FibsemMicroscope):
 
         sem = self.get_orientation("SEM")
         fib = self.get_orientation("FIB")
+        milling = self.get_orientation("MILLING")
 
         is_sem_rotation = movement.rotation_angle_is_smaller(stage_rotation, sem.r, atol=5) # query: do we need rotation_angle_is_smaller, since we % 2pi the rotation?
         is_fib_rotation = movement.rotation_angle_is_smaller(stage_rotation, fib.r, atol=5)
 
         is_sem_tilt = np.isclose(stage_tilt, sem.t, atol=0.1)
         is_fib_tilt = np.isclose(stage_tilt, fib.t, atol=0.1)
-        is_milling_tilt = stage_tilt < sem.t  # QUERY: explicitly support this?
+        is_milling_tilt = np.isclose(stage_tilt, milling.t, atol=0.1)
 
         if is_sem_rotation and is_sem_tilt:
             return "SEM"
