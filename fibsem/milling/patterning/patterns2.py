@@ -176,8 +176,7 @@ class TrenchBitmapPattern(BasePattern):
             rotation=np.pi if self.flip_lower_pattern else 0,
             centre_x=point.x,
             centre_y=centre_lower_y,
-            # TODO: check if rotation considered before or after scan direction
-            scan_direction="TopToBottom" if self.flip_lower_pattern else "BottomToTop",
+            scan_direction="TopToBottom",  # Essentially BottomToTop due to rotation
             time=time,
             path=path,
             bitmap=bitmap,
