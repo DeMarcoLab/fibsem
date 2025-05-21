@@ -1,3 +1,4 @@
+import re
 import copy
 import datetime
 import logging
@@ -30,7 +31,13 @@ try:
     import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
     version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
-    VERSION = tuple(int(_) for _ in version.split(".")[:2])
+    try:
+        m = re.match(r"^(\d+)\.(\d+)", version)
+        if m is None:
+            raise TypeError("No regex match found")
+        VERSION = (int(m.group(1)), int(m.group(2)))
+    except Exception as e:
+        raise NameError(f"Failed to parse AutoScript version '{version}': {e}")
     if VERSION < (4, 6):
         raise NameError(
             f"AutoScript {version} found. Please update your AutoScript version to 4.6 or higher."
