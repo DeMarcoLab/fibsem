@@ -9,6 +9,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from packaging.version import InvalidVersion, parse as parse_version
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -16,6 +17,11 @@ import numpy as np
 from psygnal import Signal
 
 THERMO_API_AVAILABLE = False
+
+
+class AutoScriptException(Exception):
+    pass
+
 
 # DEVELOPMENT
 _OVERWRITE_AUTOSCRIPT_VERSION = False
@@ -30,21 +36,22 @@ try:
     sys.path.append(r'C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
     version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
     try:
-        m = re.match(r"^(\d+)\.(\d+)", version)
-        if m is None:
-            raise TypeError("No regex match found")
-        VERSION = (int(m.group(1)), int(m.group(2)))
-    except Exception as e:
-        raise NameError(f"Failed to parse AutoScript version '{version}': {e}")
-    if VERSION < (4, 6):
-        raise NameError(
+        VERSION = parse_version(version)
+    except InvalidVersion:
+        raise AutoScriptException(f"Failed to parse AutoScript version '{version}'")
+
+    # Parse once rather than for each check
+    _VERSION_4_7 = parse_version("4.7")
+
+    if VERSION < parse_version("4.6"):
+        raise AutoScriptException(
             f"AutoScript {version} found. Please update your AutoScript version to 4.6 or higher."
         )
-
     if _OVERWRITE_AUTOSCRIPT_VERSION:
-        VERSION = (4, 7)
+        VERSION = _VERSION_4_7
         
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CirclePattern,
@@ -76,7 +83,7 @@ try:
     THERMO_API_AVAILABLE = True 
 except Exception as e:
     logging.debug("Autoscript (ThermoFisher) not installed.")
-    if isinstance(e, NameError):
+    if isinstance(e, AutoScriptException):
         raise e 
 
 import fibsem.constants as constants
@@ -1803,7 +1810,7 @@ class ThermoMicroscope(FibsemMicroscope):
          
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
-        if VERSION < (4, 7):
+        if VERSION < _VERSION_4_7:
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         # get the saved position name
@@ -1826,7 +1833,7 @@ class ThermoMicroscope(FibsemMicroscope):
     def retract_manipulator(self):
         """Retract the manipulator"""        
 
-        if VERSION < (4, 7):
+        if VERSION < _VERSION_4_7:
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
 
         if not self.is_available("manipulator"):
@@ -1986,7 +1993,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"saved position {name} not supported.")
-        if VERSION < (4, 7):
+        if VERSION < _VERSION_4_7:
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC
