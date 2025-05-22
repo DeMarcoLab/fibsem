@@ -264,7 +264,8 @@ def acquire_images_after_milling(
     )
 
     # set imaging parameters (filename, path, etc.)
-    milling_stage.imaging.path = path
+    if milling_stage.imaging.path is None:
+        milling_stage.imaging.path = path
     milling_stage.imaging.filename = f"ref_milling_{milling_stage.name.replace(' ', '-')}_finished_{str(start_time).replace('.', '_')}"
     
     # from pprint import pprint
