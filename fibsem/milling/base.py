@@ -92,8 +92,8 @@ class FibsemMillingStage:
         pattern_name = data["pattern"]["name"]
         alignment = data.get("alignment", {})
         imaging: dict = data.get("imaging", {})
-        # if imaging == {} or imaging.get("path", None) is None:
-            # imaging["path"] = None # TODO: enable once autolamella path is updated
+        if imaging == {} or imaging.get("path", None) is None:
+            imaging["path"] = None # set to None if not explicitly set
         return cls(
             name=data["name"],
             num=data.get("num", 0),
