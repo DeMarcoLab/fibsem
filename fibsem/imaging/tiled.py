@@ -18,7 +18,6 @@ from fibsem.structures import (
     ImageSettings,
     Point,
 )
-from fibsem.ui.napari.utilities import is_inside_image_bounds
 
 POSITION_COLOURS = ["lime", "blue", "cyan", "magenta", "hotpink", "yellow", "orange", "red"]
 
@@ -267,6 +266,7 @@ def reproject_stage_positions_onto_image(
         bound: Whether to only return points inside the image.
     Returns:
         The reprojected stage positions on the image plane."""
+    from fibsem.ui.napari.utilities import is_inside_image_bounds
 
     # reprojection of positions onto image coordinates
     points = []
@@ -316,6 +316,7 @@ def plot_stage_positions_on_image(
         bound: Whether to only plot points inside the image.
     Returns:
         The matplotlib figure."""
+    from fibsem.ui.napari.utilities import is_inside_image_bounds
 
     # reproject stage positions onto image 
     points = reproject_stage_positions_onto_image(image=image, positions=positions)
