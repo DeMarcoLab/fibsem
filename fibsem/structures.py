@@ -8,10 +8,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Any
 
 import numpy as np
 import tifffile as tff
+from numpy.typing import NDArray
 
 import fibsem
 from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
@@ -1010,7 +1011,16 @@ class FibsemBitmapSettings(FibsemPatternSettings):
     rotation: float
     centre_x: float
     centre_y: float
-    path: str = None
+    scan_direction: str = "TopToBottom"
+    passes: int = 0
+    time: float = 0.0
+    is_exclusion: bool = False
+    bitmap: Optional[NDArray[Any]] = None
+    path: Optional[Union[str, os.PathLike]] = None
+
+    def __post_init__(self) -> None:
+        if self.bitmap is None and self.path is None:
+            raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
 
     def to_dict(self) -> dict:
         return {
@@ -1020,7 +1030,12 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             "rotation": self.rotation,
             "centre_x": self.centre_x,
             "centre_y": self.centre_y,
+            "scan_direction": self.scan_direction,
+            "passes": self.passes,
+            "time": self.time,
+            "is_exclusion": self.is_exclusion,
             "path": self.path,
+            "bitmap": self.bitmap,
         }
 
     @staticmethod
@@ -1029,10 +1044,15 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             width=data["width"],
             height=data["height"],
             depth=data["depth"],
-            rotation=data["rotation"],
+            rotation=data.get("rotation", 0),
             centre_x=data["centre_x"],
             centre_y=data["centre_y"],
-            path=data["path"],
+            scan_direction=data.get("scan_direction", "TopToBottom"),
+            passes=data.get("passes", 0),
+            time=data.get("time", 0.0),
+            is_exclusion=data.get("is_exclusion", False),
+            path=data.get("path"),
+            bitmap=data.get("bitmap"),
         )
 
     @property
