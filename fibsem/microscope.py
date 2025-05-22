@@ -80,11 +80,14 @@ try:
         Limits,
         Limits2d
     )
-    THERMO_API_AVAILABLE = True 
-except Exception as e:
-    logging.debug("Autoscript (ThermoFisher) not installed.")
-    if isinstance(e, AutoScriptException):
-        raise e 
+    THERMO_API_AVAILABLE = True
+except AutoScriptException as e:
+    logging.warning("Failed to load AutoScript (ThermoFisher): %s", str(e))
+    raise
+except Exception:
+    logging.error("Failed to load AutoScript (ThermoFisher) due to unexpected error", exc_info=True)
+    raise
+
 
 import fibsem.constants as constants
 from fibsem.structures import (
