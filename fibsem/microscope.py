@@ -83,10 +83,13 @@ try:
     THERMO_API_AVAILABLE = True
 except AutoScriptException as e:
     logging.warning("Failed to load AutoScript (ThermoFisher): %s", str(e))
-    raise
+    pass
+except ImportError as e:
+    logging.debug("AutoScript (ThermoFisher) not found: %s", str(e))
+    pass
 except Exception:
     logging.error("Failed to load AutoScript (ThermoFisher) due to unexpected error", exc_info=True)
-    raise
+    pass
 
 
 import fibsem.constants as constants
