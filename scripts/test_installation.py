@@ -1,4 +1,4 @@
-from fibsem.microscope import _THERMO_API_AVAILABLE
+from fibsem.microscope import THERMO_API_AVAILABLE
 from fibsem.microscopes.tescan import TESCAN_API_AVAILABLE
 
 def main():
@@ -40,8 +40,8 @@ def main():
     print(f"Hardware APIs:\n")
     
     # Thermo Fisher API
-    print(f"ThermoFisher API {'Available' if _THERMO_API_AVAILABLE else 'Not Available'}")
-    if _THERMO_API_AVAILABLE:
+    print(f"ThermoFisher API {'Available' if THERMO_API_AVAILABLE else 'Not Available'}")
+    if THERMO_API_AVAILABLE:
         from fibsem.microscope import version as autoscript_version
         print(f"AutoScript v{autoscript_version}")
     print(f"-" * 80)

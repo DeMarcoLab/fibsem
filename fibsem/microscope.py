@@ -1,3 +1,4 @@
+import re
 import copy
 import datetime
 import logging
@@ -8,14 +9,19 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from packaging.version import InvalidVersion, parse as parse_version
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from packaging.version import parse
 from psygnal import Signal
 
 THERMO_API_AVAILABLE = False
+
+
+class AutoScriptException(Exception):
+    pass
+
 
 # DEVELOPMENT
 _OVERWRITE_AUTOSCRIPT_VERSION = False
@@ -24,21 +30,28 @@ if os.environ.get("COMPUTERNAME", "hostname") == "MU00190108":
     print("Overwriting autoscript version to 4.7, for Monash dev install")
 
 try:
-    sys.path.append('C:\Program Files\Thermo Scientific AutoScript')
-    sys.path.append('C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages')
-    sys.path.append('C:\Program Files\Python36\envs\AutoScript')
-    sys.path.append('C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
+    sys.path.append(r'C:\Program Files\Thermo Scientific AutoScript')
+    sys.path.append(r'C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages')
+    sys.path.append(r'C:\Program Files\Python36\envs\AutoScript')
+    sys.path.append(r'C:\Program Files\Python36\envs\AutoScript\Lib\site-packages')
     import autoscript_sdb_microscope_client
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
     version = autoscript_sdb_microscope_client.build_information.INFO_VERSIONSHORT
-    VERSION = parse(version)
-    if VERSION < parse("4.6"):
-        raise NameError(
+    try:
+        VERSION = parse_version(version)
+    except InvalidVersion:
+        raise AutoScriptException(f"Failed to parse AutoScript version '{version}'")
+
+    # Parse once rather than for each check
+    _VERSION_4_7 = parse_version("4.7")
+
+    if VERSION < parse_version("4.6"):
+        raise AutoScriptException(
             f"AutoScript {version} found. Please update your AutoScript version to 4.6 or higher."
         )
-
     if _OVERWRITE_AUTOSCRIPT_VERSION:
-        VERSION = parse("4.7")
+        VERSION = _VERSION_4_7
         
     from autoscript_sdb_microscope_client._dynamic_object_proxies import (
         CirclePattern,
@@ -67,11 +80,14 @@ try:
         Limits,
         Limits2d
     )
-    THERMO_API_AVAILABLE = True 
-except Exception as e:
-    logging.debug("Autoscript (ThermoFisher) not installed.")
-    if isinstance(e, NameError):
-        raise e 
+    THERMO_API_AVAILABLE = True
+except AutoScriptException as e:
+    logging.warning("Failed to load AutoScript (ThermoFisher): %s", str(e))
+    raise
+except Exception:
+    logging.error("Failed to load AutoScript (ThermoFisher) due to unexpected error", exc_info=True)
+    raise
+
 
 import fibsem.constants as constants
 from fibsem.structures import (
@@ -1807,7 +1823,7 @@ class ThermoMicroscope(FibsemMicroscope):
          
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"insert position {name} not supported.")
-        if VERSION < 4.7:
+        if VERSION < _VERSION_4_7:
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         # get the saved position name
@@ -1830,7 +1846,7 @@ class ThermoMicroscope(FibsemMicroscope):
     def retract_manipulator(self):
         """Retract the manipulator"""        
 
-        if VERSION < 4.7:
+        if VERSION < _VERSION_4_7:
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
 
         if not self.is_available("manipulator"):
@@ -1990,7 +2006,7 @@ class ThermoMicroscope(FibsemMicroscope):
         
         if name not in ["PARK", "EUCENTRIC"]:
             raise ValueError(f"saved position {name} not supported.")
-        if VERSION < 4.7:
+        if VERSION < _VERSION_4_7:
             raise NotImplementedError("Manipulator saved positions not supported in this version. Please upgrade to 4.7 or higher")
         
         named_position = ManipulatorSavedPosition.PARK if name == "PARK" else ManipulatorSavedPosition.EUCENTRIC

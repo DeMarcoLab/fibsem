@@ -56,15 +56,25 @@ fibsem
 #### Milling Strategy
 -  Previously, openfibsem only supported a basic milling process; Set milling settings, draw patterns, mill patterns, restore imaging settings. Milling strategies enable customising the milling process. 
 - Currently only Standard and Overtilt milling are implemented, but more will be added in the future.
-- Developers can add additional strategies by implementing the spec in milling.base, and register them using a plugin-style registry:
+- Developers can add additional strategies by implementing the spec in milling.base. Additional strategies can be registered by:
+  - Registering them using a plugin-style registry
+    ```
+    from fibsem.milling.strategy import register_strategy
+    from custom_strategy import CustomMillingStrategy
 
-```
-from fibsem.milling.strategy import register_strategy
-from custom_strategy import CustomMillingStrategy
+    register_strategy(CustomMillingStrategy)
 
-register_strategy(CustomMillingStrategy)
+    ```
+  - Creating a `fibsem.strategies` entrypoint that points to the strategy class and installing the package in the same environment as fibsem, e.g. in pyproject.toml:
+    ```
+    [project.entry-points.'fibsem.strategies']
 
-```
+    # Make the strategy discoverable by fibsem
+    # The class CustomMillingStrategy is in my_pkg/strategy.py
+
+    strategy = "my_pkg.strategy:CustomMillingStrategy"
+
+    ```
 
 #### Milling Alignment
 - Previously, aligning milling currents was only available via the autolamella option (align_at_milling_current). This was not straightforward to use or easily discoverable. 
