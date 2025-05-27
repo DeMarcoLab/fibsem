@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Set, Any, Dict
 
 import numpy as np
 import tifffile as tff
@@ -1064,11 +1064,20 @@ class FibsemMillingSettings:
     hfw: float = 150e-6
     patterning_mode: str = "Serial"
     application_file: str = "Si"
-    preset: str = "30 keV; UHR imaging"
+    preset: str = "30 keV; 2nA"
     spacing: float = 1.0
     milling_voltage: float = 30e3
     milling_channel: BeamType = BeamType.ION
     acquire_images: bool = False
+
+    # Parameter mapping for different manufacturers
+    _PARAMETERS = {
+        "COMMON": {"hfw", "patterning_mode", "milling_channel", "acquire_images"},
+        "TFS": {"milling_current", "milling_voltage", "application_file"},
+        "TESCAN": {"dwell_time", "preset", "rate", "spacing", "spot_size"}
+    }
+
+    _SUPPORTED_MANUFACTURERS = {"TFS", "TESCAN"}
 
     def __post_init__(self):
         assert isinstance(
@@ -1133,6 +1142,20 @@ class FibsemMillingSettings:
         )
 
         return milling_settings
+
+    @classmethod
+    def get_parameters_for_manufacturer(cls, manufacturer: str) -> Set[str]:
+        """Get all parameter names for a specific manufacturer."""
+        if manufacturer not in cls._SUPPORTED_MANUFACTURERS:
+            raise ValueError(f"Manufacturer must be one of: {', '.join(cls._SUPPORTED_MANUFACTURERS)}")
+        
+        # TODO: ensure this returns in the canonical order
+        return cls._PARAMETERS["COMMON"] | cls._PARAMETERS[manufacturer]
+
+    def get_parameters(self, manufacturer: str) -> Dict[str, Any]:
+        """Get parameter values for a specific manufacturer."""
+        required_params = self.get_parameters_for_manufacturer(manufacturer)
+        return {param: getattr(self, param) for param in required_params}
 
 
 @dataclass
