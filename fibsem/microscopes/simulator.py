@@ -683,6 +683,14 @@ class DemoMicroscope(FibsemMicroscope):
             else:
                 values = SIMULATOR_BEAM_CURRENTS[beam_type]       
 
+        if key == "voltage":
+            if beam_type is BeamType.ELECTRON:
+                # SEM: [1000, 2000, 3000, 5000, 10000, 20000, 30000]
+                values = [2000, 5000, 10000, 20000, 30000]
+            elif beam_type is BeamType.ION:
+                values = [500, 1000, 2000, 8000, 16000, 30000]
+                # FIB: [500, 1000, 2000, 8000, 1600, 30000]
+
         if key == "application_file":
             values = SIMULATOR_APPLICATION_FILES
 
