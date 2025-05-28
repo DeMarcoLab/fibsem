@@ -32,6 +32,7 @@ from fibsem.milling.patterning.patterns2 import (
     MILLING_PATTERN_NAMES,
     BasePattern,
     LinePattern,
+    TrenchPattern,
 )
 from fibsem.milling.strategy import (
     MillingStrategy,
@@ -819,7 +820,8 @@ class FibsemMillingStageEditorWidget(QWidget):
         button_layout.addWidget(self.pushButton_remove)
 
         # clear/set milling stages buttons (for development mode)
-        if DEVELOPMENT_MODE := True:
+        DEVELOPMENT_MODE = False
+        if DEVELOPMENT_MODE:
             self._tmp_milling_stages = copy.deepcopy(milling_stages)
             pushButton_add = QPushButton("Set Milling Stages", self)
             pushButton_add.clicked.connect(lambda: self.set_milling_stages(self._tmp_milling_stages))
@@ -1201,10 +1203,11 @@ class FibsemMillingStageEditorWidget(QWidget):
         self._milling_stages_updated.emit(milling_stages)
 
 
-from autolamella.structures import Lamella, Experiment, AutoLamellaProtocol
-from fibsem.milling import get_milling_stages, get_protocol_from_stages
 import os
+from autolamella.structures import AutoLamellaProtocol, Experiment, Lamella
+from fibsem.milling import get_milling_stages, get_protocol_from_stages
 
+# TODO: move to autolamella
 class AutoLamellaProtocolEditorWidget(QWidget):
     """A widget to edit the AutoLamella protocol."""
     
@@ -1246,6 +1249,11 @@ class AutoLamellaProtocolEditorWidget(QWidget):
         self.grid_layout.addWidget(self.comboBox_selected_lamella, 0, 1)
         self.grid_layout.addWidget(self.label_selected_milling, 1, 0)
         self.grid_layout.addWidget(self.comboBox_selected_milling, 1, 1)
+        self.checkbox_sync_positions = QCheckBox("Sync Trench Position for Rough Milling and Polishing")
+        self.checkbox_sync_positions.setToolTip("If checked, the trench position will be synchronized for rough milling and polishing stages.")
+        self.checkbox_sync_positions.setObjectName("checkbox-sync-positions")
+        self.checkbox_sync_positions.setChecked(True)
+        self.grid_layout.addWidget(self.checkbox_sync_positions, 2, 0, 1, 2)
 
         if self.experiment is not None:
             for pos in self.experiment.positions:
@@ -1258,7 +1266,7 @@ class AutoLamellaProtocolEditorWidget(QWidget):
         self.comboBox_selected_milling.currentIndexChanged.connect(self._on_selected_milling_stage_changed)
         self.milling_stage_editor._milling_stages_updated.connect(self._on_milling_stages_updated)
         self.milling_stage_editor.scroll_area.setMinimumHeight(550)
-        
+
         if self.experiment is not None:
             self._on_selected_lamella_changed(None)
         else:
@@ -1314,22 +1322,45 @@ class AutoLamellaProtocolEditorWidget(QWidget):
             self.protocol.milling[selected_stage_name] = copy.deepcopy(milling_stages)
             return
 
-        idx = self.comboBox_selected_lamella.currentIndex()
+        # idx = self.comboBox_selected_lamella.currentIndex()
         selected_lamella: Lamella = self.comboBox_selected_lamella.currentData()
         selected_lamella.protocol[selected_stage_name] = copy.deepcopy(pprotocol)
 
+        # NOTE: this sync is awful, but it is a quick fix to sync the trench position
+        # ideally, we want to display both rough/polsihing at the same time, and allow the user to edit them both
+        # but need to migrate to tree-widget or similar to allow for multi-stage editing
+        # leaving this for now
+        point = None
+        for ms in milling_stages:
+            if isinstance(ms.pattern, TrenchPattern):
+                point = ms.pattern.point
+                break
+
+        if point is None:
+            logging.warning("No trench pattern found in the milling stages. Cannot sync positions.")
+
+        # DONT SYNC POLISHING -> ROUGH, ONLY ROUGH -> POLISHING?        
+        sync_positions = self.checkbox_sync_positions.isChecked()
+        if sync_positions and point is not None:
+            if selected_stage_name == "mill_rough":
+                for ms in selected_lamella.protocol["mill_polishing"]:
+                    if ms["pattern"]["name"] == TrenchPattern.name:
+                        ms["pattern"]["point"] = copy.deepcopy(point.to_dict())
+                        logging.info(f"Syncing polishing pattern {ms['name']} point to {point}")
+
         # QUERY does exp.positions need to be updated?
-
-        print(f"NEW: ", pprotocol[0]["pattern"]["point"])
-        print(f"EXP: ", self.experiment.positions[idx].protocol[selected_stage_name][0]["pattern"]["point"])
-
+        # print(f"NEW: ", pprotocol[0]["pattern"]["point"])
+        # print(f"EXP: ", self.experiment.positions[idx].protocol[selected_stage_name][0]["pattern"]["point"])
 
         # save the experiment
         self.experiment.save() # MULTI_UPDATES, VERY SLOW
 
         # update the main ui??? DO WE NEED TO DO THIS?
         # reference seems to go through?, maybe just refresh ui?
-        if self.parent is not None and not self.parent.WORKFLOW_IS_RUNNING:
+        # NOTE: this causes a de-sync if the workflow is running, 
+        # we need to save the experiment to disk, then reload in the main ui / workflow thread
+        # otherwise we get these weird desync issues
+        if self.parent is not None and not self.parent.WORKFLOW_IS_RUNNING: 
             self.parent.update_experiment_signal.emit(self.experiment)
 
 
@@ -1374,8 +1405,9 @@ if __name__ == "__main__":
 
     # main_widget.set_milling_stages(_milling_stages)
 
-    EXPERIMENT_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-05-26-11-08/experiment.yaml"
-    PROTOCOL_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-05-26-11-08/protocol.yaml"
+    BASE_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-05-28-17-22/"
+    EXPERIMENT_PATH = os.path.join(BASE_PATH, "experiment.yaml")
+    PROTOCOL_PATH = os.path.join(BASE_PATH, "protocol.yaml")
     exp = Experiment.load(EXPERIMENT_PATH)
     protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
 
@@ -1396,7 +1428,7 @@ if __name__ == "__main__":
 # TODO: re-fresh lamella list when lamella added/removed
 # TODO: allow 'live' edits of the protocol while workflow is running? SCARY
 # TODO: allow editing the 'master' protocol, so we can change the default milling stages
-# QUERY: WHY ISN"T PROTOCOL PART OF EXPERIMENT?????
 # TODO: show multiple-stage milling patterns in the viewer?
 # TODO: what to do when we want to move multi-stages to the same position, e.g. rough-milling and polishing?
 # - This may be breaking, and we need a way to handle it rather than moving them individually.
+# QUERY: WHY ISN"T PROTOCOL PART OF EXPERIMENT?????
