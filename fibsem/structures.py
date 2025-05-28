@@ -525,12 +525,17 @@ class ImageSettings:
         else:
             reduced_area = None
 
+        # default to Electron if not specified
+        beam_name = settings.get("beam_type", "Electron")
+        if beam_name is None:
+            beam_name = "Electron"
+
         image_settings = ImageSettings(
             resolution=settings.get("resolution", (1536, 1024)),
             dwell_time=settings.get("dwell_time", 1.0e-6),
             hfw=settings.get("hfw", 150e-6),
             autocontrast=settings.get("autocontrast", False),
-            beam_type=BeamType[settings.get("beam_type", "Electron").upper()],
+            beam_type=BeamType[beam_name.upper()],
             autogamma=settings.get("autogamma", False),
             save=settings.get("save", False),
             path=settings.get("path", os.getcwd()),
