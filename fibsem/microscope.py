@@ -951,6 +951,16 @@ class FibsemMicroscope(ABC):
             target_position = self._get_compucentric_rotation_position(stage_position)
             target_position.r = orientation.r
             target_position.t = orientation.t
+        elif currrent_orientation == "SEM" and target_orientation == "MILLING":
+            # Convert from SEM to MILLING
+            target_position = stage_position
+            target_position.r = orientation.r
+            target_position.t = orientation.t
+        elif currrent_orientation == "MILLING" and target_orientation == "SEM":
+            # Convert from MILLING to SEM
+            target_position = stage_position
+            target_position.r = orientation.r
+            target_position.t = orientation.t
         else:
             raise ValueError(f"Cannot convert from {currrent_orientation} to {target_orientation}")
 
