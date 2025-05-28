@@ -249,3 +249,43 @@ def draw_positions_in_napari(
         viewer.layers[layer_name].shape_type = STAGE_POSITION_SHAPE_LAYER_PROPERTIES["shape_type"]
 
     return layer_name 
+
+
+def is_position_inside_layer(position: Tuple[float, float], target_layer) -> bool:
+    """Check if the position of the event is inside the bounds of the target layer.
+    Args:
+        event: napari event object containing the position
+        target_layer: the layer to check against
+    Returns:
+        bool: True if the position is inside the layer bounds, False otherwise.
+    """
+    coords = target_layer.world_to_data(position)
+
+    extent_min = target_layer.extent.data[0]  # (z, y, x)
+    extent_max = target_layer.extent.data[1]
+
+    # if they are 4d, remove the first dimension
+    if len(coords) == 4:
+        logging.warning(f"4D coordinates detected: {coords}, removing first dimension")
+        coords = coords[1:]
+        extent_min = extent_min[1:]
+        extent_max = extent_max[1:]
+
+    # convert the above logs into a json msg
+    msgd = {
+        "target_layer": target_layer.name,
+        "event_position": position,
+        "coords": coords,
+        "extent_min": extent_min,
+        "extent_max": extent_max,
+    }
+    logging.info(msgd)
+
+    for i, coord in enumerate(coords):
+        if coord < extent_min[i] or coord > extent_max[i]:
+            logging.debug(
+                f"Coordinate {coord} is out of bounds ({extent_min[i]}, {extent_max[i]})"
+            )
+            return False
+
+    return True
