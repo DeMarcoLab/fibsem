@@ -2,7 +2,7 @@
 import logging
 import os
 from dataclasses import dataclass
-
+from typing import Tuple, List
 import numpy as np
 
 from fibsem import acquire, alignment
@@ -18,13 +18,18 @@ from fibsem.structures import (BeamType, FibsemImage, FibsemRectangle,
 @dataclass
 class OvertiltTrenchMillingConfig(MillingStrategyConfig):
     overtilt: float = 1
+    resolution: List[int] = None
+
+    def __post_init__(self):
+        if self.resolution is None:
+            self.resolution = [1536, 1024]
 
     @staticmethod
     def from_dict(d: dict) -> "OvertiltTrenchMillingConfig":
         return OvertiltTrenchMillingConfig(**d)
 
     def to_dict(self):
-        return {"overtilt": self.overtilt}
+        return {"overtilt": self.overtilt, }
 
 @dataclass
 class OvertiltTrenchMillingStrategy(MillingStrategy):
