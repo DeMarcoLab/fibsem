@@ -81,6 +81,9 @@ class FibsemMillingStage:
                                        config={"width": 10e-6, "height": 5e-6, "depth": 1e-6})
         if self.strategy is None:
             self.strategy = get_strategy("Standard")
+        
+        if self.imaging.resolution is None:
+            self.imaging.resolution = [1536, 1024]  # default resolution for imaging
 
     def to_dict(self):
         return {

@@ -96,7 +96,7 @@ patterns:
     pitch_horizontal: 5.0e-6
     rotation: 0.0
     passes: 1
-    scan_direction: "ToptoBottom"
+    scan_direction: "TopToBottom"
   MicroExpansion:
     height: 10.0e-6
     width: 2.0e-6
@@ -135,6 +135,6 @@ patterns:
     distance: 1.0e-6
     n_rectangles: 10
     overlap: 0.0
-    scan_direction: "ToptoBottom"
+    scan_direction: "TopToBottom"
     type: "Trapezoid"
   

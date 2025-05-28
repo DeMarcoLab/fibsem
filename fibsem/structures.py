@@ -15,7 +15,6 @@ import tifffile as tff
 
 import fibsem
 from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
-from abc import ABC, abstractmethod
 
 try:
     sys.path.append(r"C:\Program Files\Thermo Scientific AutoScript")
@@ -1078,6 +1077,7 @@ class FibsemMillingSettings:
     }
 
     _SUPPORTED_MANUFACTURERS = {"TFS", "TESCAN"}
+    advanced_attributes = {"milling_voltage", "application_file", "dwell_time", "spacing", "spot_size"}
 
     def __post_init__(self):
         assert isinstance(

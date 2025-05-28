@@ -27,7 +27,7 @@ def image_to_microscope_image_coordinates(
     # shape
     centre_px = np.asarray(image.shape) / 2
     if not subpixel_precision:
-        centre_px = np.round(centre_px).astype(np.int_)
+        centre_px = np.asarray(image.shape) // 2
     cy, cx = centre_px
 
     # distance from centre?
@@ -35,6 +35,7 @@ def image_to_microscope_image_coordinates(
     dx = float(coord.x - cx)  # neg = left
 
     point_m = convert_point_from_pixel_to_metres(Point(dx, dy), pixelsize)
+    # point_m = Point(dx, dy)._to_metres(pixel_size=pixelsize)
 
     return point_m
 
