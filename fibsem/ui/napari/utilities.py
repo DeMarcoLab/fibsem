@@ -279,7 +279,7 @@ def is_position_inside_layer(position: Tuple[float, float], target_layer) -> boo
         "extent_min": extent_min,
         "extent_max": extent_max,
     }
-    logging.info(msgd)
+    logging.debug(msgd)
 
     for i, coord in enumerate(coords):
         if coord < extent_min[i] or coord > extent_max[i]:
