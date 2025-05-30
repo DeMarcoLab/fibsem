@@ -54,6 +54,47 @@ def format_duration(seconds: float) -> str:
     else:
         return f"{seconds:.2f}s"
 
+def format_value(val: float, unit: str = None, precision: int = 2) -> str:
+    """Format a numerical value as a string with nearest SI unit.
+    Args:
+        val: The value to format.
+        unit (str, optional): The unit of the value. Defaults to None.
+        precision (int, optional): The number of decimal places to include. Defaults to 2.
+    Returns:
+        str: The formatted value with the appropriate SI prefix.
+    """
+    if val < 1e-9:
+        scale = 1e12
+        prefix = "p"
+    elif val < 1e-6:
+        scale = 1e9
+        prefix = "n"
+    elif val < 1e-3:
+        scale = 1e6
+        prefix = "u"
+    elif val < 1:
+        scale = 1e3
+        prefix = "m"
+    elif val < 1e3:
+        scale = 1
+        prefix = ""
+    elif val < 1e6:
+        scale = 1e-3
+        prefix = "k"
+    elif val < 1e9:
+        scale = 1e-6
+        prefix = "M"
+    elif val < 1e12:
+        scale = 1e-9
+        prefix = "G"
+    else:
+        scale = 1e-12
+        prefix = "T"
+
+    if unit is None:
+        unit = ""
+    return f"{val*scale:.{precision}f} {prefix}{unit}"
+
 def make_logging_directory(path: Path = None, name="run"):
     """
     Create a logging directory with the specified name at the specified file path. 

@@ -43,9 +43,6 @@ from fibsem.structures import (
     CrossSectionPattern,
     Enum,
     FibsemImage,
-    FibsemMillingSettings,
-    ImageSettings,
-    MillingAlignment,
     Point,
 )
 from fibsem.ui import stylesheets
@@ -55,6 +52,7 @@ from fibsem.ui.napari.patterns import (
     is_pattern_placement_valid,
 )
 from fibsem.ui.napari.utilities import is_position_inside_layer
+from fibsem.utils import format_value
 
 MILLING_SETTINGS_GUI_CONFIG = {
     "patterning_mode": {
@@ -304,39 +302,7 @@ PARAMETER_MAPPING = {
     "milling_voltage": "voltage",
 }
 
-def format_value(val: float, unit: str = None, precision: int = 2) -> str:
-    """Format a numerical value as a string with nearest SI unit."""
-    if val < 1e-9:
-        scale = 1e12
-        prefix = "p"
-    elif val < 1e-6:
-        scale = 1e9
-        prefix = "n"
-    elif val < 1e-3:
-        scale = 1e6
-        prefix = "u"
-    elif val < 1:
-        scale = 1e3
-        prefix = "m"
-    elif val < 1e3:
-        scale = 1
-        prefix = ""
-    elif val < 1e6:
-        scale = 1e-3
-        prefix = "k"
-    elif val < 1e9:
-        scale = 1e-6
-        prefix = "M"
-    elif val < 1e12:
-        scale = 1e-9
-        prefix = "G"
-    else:
-        scale = 1e-12
-        prefix = "T"
 
-    if unit is None:
-        unit = ""
-    return f"{val*scale:.{precision}f} {prefix}{unit}"
 
 
 # MILLING_STAGE_1:
@@ -1204,8 +1170,11 @@ class FibsemMillingStageEditorWidget(QWidget):
 
 
 import os
+
 from autolamella.structures import AutoLamellaProtocol, Experiment, Lamella
+
 from fibsem.milling import get_milling_stages, get_protocol_from_stages
+
 
 # TODO: move to autolamella
 class AutoLamellaProtocolEditorWidget(QWidget):
