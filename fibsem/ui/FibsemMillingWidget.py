@@ -943,7 +943,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.doubleSpinBox_spot_size.setValue(milling.spot_size * constants.SI_TO_MICRO)
         self.doubleSpinBox_hfw.setValue(milling.hfw * constants.SI_TO_MICRO)
         self.comboBox_preset.setCurrentText(str(milling.preset))
-        self.spinBox_voltage.setValue(milling.milling_voltage)
+        self.spinBox_voltage.setValue(int(milling.milling_voltage))
         self.comboBox_patterning_mode.setCurrentText(milling.patterning_mode)
 
     def get_milling_settings_from_ui(self):
@@ -1058,15 +1058,17 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         state = progress_info.get('state', None)
 
-        # start milling stage progress barf
+        # start milling stage progress bar
         if state == "start":
             current_stage = progress_info.get('current_stage', 0)
             total_stages = progress_info.get('total_stages', 1)
             self.progressBar_milling.setVisible(True)
             self.progressBar_milling_stages.setVisible(True)
             self.progressBar_milling.setValue(0)
+            self.progressBar_milling.setRange(0, 100)
             self.progressBar_milling.setFormat("Preparing Milling Conditions...")
-            self.progressBar_milling_stages.setValue(int(current_stage+1)/total_stages*100)
+            self.progressBar_milling_stages.setRange(0, 100)
+            self.progressBar_milling_stages.setValue(int((current_stage+1)/total_stages*100))
             self.progressBar_milling_stages.setFormat(f"Milling Stage: {current_stage+1}/{total_stages}")
         
         # update
@@ -1081,8 +1083,8 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                 return
             
             # calculate the percent complete
-            percent_complete = 1 - (remaining_time / estimated_time)
-            self.progressBar_milling.setValue(percent_complete * 100)
+            percent_complete = int((1 - (remaining_time / estimated_time)) * 100)
+            self.progressBar_milling.setValue(percent_complete)
             self.progressBar_milling.setFormat(f"Current Stage: {format_duration(remaining_time)} remaining...")
 
         # finished
@@ -1116,6 +1118,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         self.pushButton_add_milling_stage.setEnabled(enabled)
         self.pushButton_remove_milling_stage.setEnabled(bool(enabled and self.milling_stages))
         self.pushButton_run_milling.setEnabled(bool(enabled and self.milling_stages))
+        self.pushButton_open_correlation.setEnabled(enabled)
         if enabled:
             self.pushButton_run_milling.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
             self.pushButton_run_milling.setText("Run Milling")

@@ -563,7 +563,7 @@ class FibsemImageSettingsWidget(ImageSettingsWidgetUI.Ui_Form, QtWidgets.QWidget
         # beam settings
         self.doubleSpinBox_beam_current.setValue(beam_settings.beam_current * constants.SI_TO_PICO)
         self.doubleSpinBox_beam_voltage.setValue(beam_settings.voltage * constants.SI_TO_KILO)
-        self.spinBox_beam_scan_rotation.setValue(np.degrees(beam_settings.scan_rotation))
+        self.spinBox_beam_scan_rotation.setValue(int(np.degrees(beam_settings.scan_rotation)))
         
         if beam_settings.working_distance is not None:
             self.doubleSpinBox_working_distance.setValue(beam_settings.working_distance * constants.METRE_TO_MILLIMETRE)

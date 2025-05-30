@@ -5,7 +5,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Tuple, Union
 
 import matplotlib.patches as patches
@@ -757,7 +757,7 @@ class DetectedFeatures:
     rgb: np.ndarray # rgb mask
     pixelsize: float
     _distance: Point = None
-    _offset: Point = Point(0, 0)
+    _offset: Point = field(default_factory=Point)
     fibsem_image: FibsemImage = None
     checkpoint: str = None
 

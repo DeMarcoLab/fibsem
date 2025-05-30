@@ -1,6 +1,6 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -30,7 +30,7 @@ CORE_PATTERN_ATTRIBUTES = ["name", "point", "shapes"]
 @dataclass
 class BasePattern(ABC):
     # name: str = "BasePattern"
-    # point: Point = Point() 
+    # point: Point = field(default_factory=Point) 
     # shapes: List[FibsemPatternSettings] = None
     # TODO: investigate TypeError: non-default argument 'width' follows default argument when uncommenting the above lines
 
@@ -70,7 +70,7 @@ class BitmapPattern(BasePattern):
     rotation: float = 0
     path: str = ""
     shapes: List[FibsemPatternSettings] = None
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     name: str = "Bitmap"
 
     def define(self) -> List[FibsemPatternSettings]:
@@ -121,7 +121,7 @@ class RectanglePattern(BasePattern):
     passes: int = 0
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     name: str = "Rectangle"
     _advanced_attributes = ["time", "passes"] # TODO: add for other patterns
@@ -180,7 +180,7 @@ class LinePattern(BasePattern):
     start_y: float
     end_y: float
     depth: float
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     name: str = "Line"
 
@@ -224,7 +224,7 @@ class CirclePattern(BasePattern):
     thickness: float = 0
     name: str = "Circle"
     shapes: List[FibsemPatternSettings] = None
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
 
     def define(self) -> List[FibsemCircleSettings]:
         
@@ -266,7 +266,7 @@ class TrenchPattern(BasePattern):
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     time: float = 0.0
     fillet: float = 0.0
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     name: str = "Trench"
     shapes: List[FibsemPatternSettings] = None
     _advanced_attributes = ["time", "fillet"]
@@ -439,7 +439,7 @@ class HorseshoePattern(BasePattern):
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     shapes: List[FibsemPatternSettings] = None
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     name: str = "Horseshoe"
     # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
@@ -542,7 +542,7 @@ class HorseshoePatternVertical(BasePattern):
     scan_direction: str = "TopToBottom"
     inverted: bool = False
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     name: str = "HorseshoeVertical"
     # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
@@ -633,7 +633,7 @@ class SerialSectionPattern(BasePattern):
     inverted: bool = False
     use_side_patterns: bool = True
     name: str = "SerialSection"
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     # ref: "serial-liftout section" https://www.nature.com/articles/s41592-023-02113-5
 
@@ -741,7 +741,7 @@ class FiducialPattern(BasePattern):
     depth: float
     rotation: float = 0
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     name: str = "Fiducial"
 
@@ -812,7 +812,7 @@ class UndercutPattern(BasePattern):
     h_offset: float
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     name: str = "Undercut"
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
 
     def define(self) -> List[FibsemRectangleSettings]:
@@ -895,7 +895,7 @@ class MicroExpansionPattern(BasePattern):
     depth: float
     distance: float
     name: str = "MicroExpansion"
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
 
     # ref: https://www.nature.com/articles/s41467-022-29501-3
@@ -963,7 +963,7 @@ class ArrayPattern(BasePattern):
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     name: str = "ArrayPattern"
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
     # ref: weld cross-section/ passes: https://www.nature.com/articles/s41592-023-02113-5
@@ -1057,7 +1057,7 @@ class WaffleNotchPattern(BasePattern):
     inverted: bool = False
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     name: str = "WaffleNotch"
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     # ref: https://www.nature.com/articles/s41467-022-29501-3
 
@@ -1166,7 +1166,7 @@ class WaffleNotchPattern(BasePattern):
 class CloverPattern(BasePattern):
     radius: float
     depth: float
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     name: str = "Clover"
 
@@ -1234,7 +1234,7 @@ class TriForcePattern(BasePattern):
     width: float
     height: float
     depth: float
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
     name: str = "TriForce"
 
@@ -1294,7 +1294,7 @@ class TrapezoidPattern(BasePattern):
     n_rectangles: int
     overlap: float
     name: str = "Trapezoid"
-    point: Point = Point()
+    point: Point = field(default_factory=Point) 
     shapes: List[FibsemPatternSettings] = None
 
     def define(self) -> List[FibsemPatternSettings]:

@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -781,11 +781,11 @@ class MicroscopeState:
     """
 
     timestamp: float = datetime.timestamp(datetime.now())
-    stage_position: FibsemStagePosition = FibsemStagePosition()
-    electron_beam: BeamSettings = BeamSettings(beam_type=BeamType.ELECTRON)
-    ion_beam: BeamSettings = BeamSettings(beam_type=BeamType.ION)
-    electron_detector: FibsemDetectorSettings = FibsemDetectorSettings()
-    ion_detector: FibsemDetectorSettings = FibsemDetectorSettings()
+    stage_position: FibsemStagePosition = field(default_factory=FibsemStagePosition)
+    electron_beam: BeamSettings = field(default_factory=lambda: BeamSettings(beam_type=BeamType.ELECTRON))
+    ion_beam: BeamSettings = field(default_factory=lambda: BeamSettings(beam_type=BeamType.ION))
+    electron_detector: FibsemDetectorSettings = field(default_factory=FibsemDetectorSettings)
+    ion_detector: FibsemDetectorSettings = field(default_factory=FibsemDetectorSettings)
 
     def __post_init__(self):
         assert (
@@ -1506,8 +1506,8 @@ class FibsemImageMetadata:
     microscope_state: MicroscopeState
     system: SystemSettings = None
     version: str = METADATA_VERSION
-    user: FibsemUser = FibsemUser()
-    experiment: FibsemExperiment = FibsemExperiment()
+    user: FibsemUser = field(default_factory=FibsemUser)
+    experiment: FibsemExperiment = field(default_factory=FibsemExperiment)
 
     @property
     def beam_type(self) -> BeamType:
@@ -2059,7 +2059,7 @@ class MillingAlignment:
     enabled: bool = True
     interval_enabled: bool = False
     interval: int = 30 # seconds
-    rect: FibsemRectangle = FibsemRectangle.from_dict(DEFAULT_ALIGNMENT_AREA)
+    rect: FibsemRectangle = field(default_factory=lambda: FibsemRectangle.from_dict(DEFAULT_ALIGNMENT_AREA))
 
     def to_dict(self):
         return {"enabled": self.enabled, 

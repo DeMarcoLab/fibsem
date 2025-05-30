@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
 from typing import List, Union, Dict, Any, Tuple, Optional
 
 from fibsem.microscope import FibsemMicroscope
@@ -68,19 +68,15 @@ def get_strategy(
 class FibsemMillingStage:
     name: str = "Milling Stage"
     num: int = 0
-    milling: FibsemMillingSettings = FibsemMillingSettings()
-    pattern: BasePattern = None
+    milling: FibsemMillingSettings = field(default_factory=FibsemMillingSettings)
+    pattern: BasePattern = field(default_factory=lambda: get_pattern("Rectangle",
+                                       config={"width": 10e-6, "height": 5e-6, "depth": 1e-6}))
     patterns: List[BasePattern] = None # unused
-    strategy: MillingStrategy = None
-    alignment: MillingAlignment = MillingAlignment()
-    imaging: ImageSettings = ImageSettings() # settings for post-milling acquisition
+    strategy: MillingStrategy = field(default_factory=lambda: get_strategy("Standard"))
+    alignment: MillingAlignment = field(default_factory=MillingAlignment)
+    imaging: ImageSettings = field(default_factory=ImageSettings) # settings for post-milling acquisition
 
     def __post_init__(self):
-        if self.pattern is None:
-            self.pattern = get_pattern("Rectangle", 
-                                       config={"width": 10e-6, "height": 5e-6, "depth": 1e-6})
-        if self.strategy is None:
-            self.strategy = get_strategy("Standard")
         
         if self.imaging.resolution is None:
             self.imaging.resolution = [1536, 1024]  # default resolution for imaging
