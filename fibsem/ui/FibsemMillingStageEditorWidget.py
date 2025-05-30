@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from typing import Dict, List, Tuple
 
 import napari
@@ -22,12 +23,18 @@ from PyQt5.QtWidgets import (
     QSpinBox,
     QVBoxLayout,
     QWidget,
+    QMainWindow,
 )
 
 from fibsem import config as cfg
 from fibsem import conversions, utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling import FibsemMillingStage, get_strategy
+from fibsem.milling import (
+    FibsemMillingStage,
+    get_milling_stages,
+    get_protocol_from_stages,
+    get_strategy,
+)
 from fibsem.milling.patterning.patterns2 import (
     MILLING_PATTERN_NAMES,
     BasePattern,
@@ -326,6 +333,11 @@ PARAMETER_MAPPING = {
 # multi-stages
 # advanced settings display
 
+def pretty_name(milling_stage: FibsemMillingStage) -> str:
+    milling_current = milling_stage.milling.milling_current
+    mc = format_value(val=milling_current, unit="A", precision=1)
+    txt = f"{milling_stage.name} - {milling_stage.pattern.name} ({mc})"
+    return txt
 
 class FibsemMillingStageWidget(QWidget):
     _milling_stage_changed = pyqtSignal(FibsemMillingStage)
@@ -407,11 +419,16 @@ class FibsemMillingStageWidget(QWidget):
         # Add the widgets to the main layout
         self.gridlayout = QGridLayout(self)
         label = QLabel(self)
-        label.setText(f"Milling Stage: {self._milling_stage.name}")
+        label.setText("Milling Stage:")
         label.setObjectName("label-milling-stage-name")
-        self.gridlayout.addWidget(label, 0, 0, 1, 2)  # Add label to the top of the grid layout
+        self.lineEdit_milling_stage_name = QLineEdit(self)
+        self.lineEdit_milling_stage_name.setText(self._milling_stage.name)
+        self.lineEdit_milling_stage_name.setObjectName("lineEdit-name-stage")
+        self.lineEdit_milling_stage_name.setToolTip("The name of the milling stage.")
+        self.lineEdit_milling_stage_name.editingFinished.connect(self._update_setting)
+        self.gridlayout.addWidget(label, 0, 0, 1, 1)
+        self.gridlayout.addWidget(self.lineEdit_milling_stage_name, 0, 1, 1, 1)
         for widget in self._widgets:
-            # widget.setLayout(QGridLayout())
             self.gridlayout.addWidget(widget, self.gridlayout.rowCount(), 0, 1, 2)
 
     def _initialise_widgets(self):
@@ -421,7 +438,6 @@ class FibsemMillingStageWidget(QWidget):
         self._create_controls(self.milling_widget, milling_parames, "milling", GUI_CONFIG["milling"].copy())
 
         # PATTERN
-        # don't emit event on comboBox_selected_pattern change
         self.comboBox_selected_pattern.blockSignals(True)
         self.comboBox_selected_pattern.setCurrentText(self._milling_stage.pattern.name)
         self.comboBox_selected_pattern.blockSignals(False)
@@ -453,6 +469,33 @@ class FibsemMillingStageWidget(QWidget):
         control.toggled.connect(lambda checked: self.acquisition_widget.setVisible(checked))
         self.acquisition_widget.setVisible(control.isChecked())
 
+    def toggle_advanced_settings(self, show: bool):
+        """Toggle the visibility of advanced settings."""
+        ms = self._milling_stage
+        wp = self.parameters
+        for param in ms.pattern.advanced_attributes:
+
+            label, control, _ = wp["pattern"].get(param, (None, None, None))
+            if label:
+                label.setVisible(show)
+            if control:
+                control.setVisible(show)
+        for param in ms.strategy.config.advanced_attributes:
+            label, control, _ = wp["strategy.config"].get(param, (None, None, None))
+            if label:
+                label.setVisible(show)
+            if control:
+                control.setVisible(show)
+        for param in ms.milling.advanced_attributes:
+            label, control, _ = wp["milling"].get(param, (None, None, None))
+            if label:
+                label.setVisible(show)
+            if control:
+                control.setVisible(show)
+        # QUERY: should we also hide imaging, alignment?
+        # consider strategy as advanced, so hide it as well
+        self.strategy_widget.setVisible(show)
+
     def clear_widget(self, widget: QWidget, row_threshold: int = -1):
         """Clear the widget's layout, removing all items below a certain row threshold."""
 
@@ -464,19 +507,17 @@ class FibsemMillingStageWidget(QWidget):
             item = grid_layout.itemAt(i)
             if item is not None:
                 row, col, rowspan, colspan = grid_layout.getItemPosition(i)
-                # print(f"Found widget at row {row}, col {col}")  # Debug info
                 if row > row_threshold:
                     items_to_remove.append(item)
-                    # print(f" {item.widget().objectName()} -> Will remove widget at row {row}, col {col}")
-        
+
         # Remove the items
         for item in items_to_remove:
             grid_layout.removeItem(item)
             if item.widget():
                 item.widget().deleteLater()
-        
+
     def _on_pattern_changed(self, pattern_name: str):
-        # TODO: comvert the comboBox_selected_pattern to use currentData, 
+        # TODO: convert the comboBox_selected_pattern to use currentData, 
         # that way we can pass the pattern object directly (and restore it from the previous state)
         pattern = get_default_milling_pattern(pattern_name)
 
@@ -489,29 +530,33 @@ class FibsemMillingStageWidget(QWidget):
         """Update the pattern widget with the selected pattern's parameters."""
 
         params = {k: getattr(pattern, k) for k in pattern.required_attributes if hasattr(pattern, k)}
-        params["point"] = pattern.point  # Add point as a special case
+        params["point"] = pattern.point  # add point as a special case
 
-        self.clear_widget(self.pattern_widget, row_threshold=0)  # Clear previous controls
         self._create_controls(self.pattern_widget, params, "pattern", GUI_CONFIG["pattern"].copy())
 
     def _on_strategy_changed(self, strategy_name: str):
         """Update the strategy widget with the selected strategy's parameters."""
         strategy = get_strategy(strategy_name, {"config": {}})
 
-        self._milling_stage.strategy = strategy  # Update the milling stage's strategy
-
-        self._update_strategy_widget(strategy)  # Update the strategy widget
+        # update strategy and widget
+        self._milling_stage.strategy = strategy
+        self._update_strategy_widget(strategy)
         self._milling_stage_changed.emit(self._milling_stage)  # Emit signal to notify changes
         
     def _update_strategy_widget(self, strategy: MillingStrategy):
         """Update the strategy widget with the selected strategy's parameters."""
         params = {k: getattr(strategy.config, k) for k in strategy.config.required_attributes}
 
-        self.clear_widget(self.strategy_widget, row_threshold=0)  # Clear previous controls
         self._create_controls(self.strategy_widget, params, "strategy.config", GUI_CONFIG["strategy"].copy())
 
     def _create_controls(self, widget: QWidget, params: Dict[str, any], cls: str, config: Dict[str, any]):
         """Create controls for the given parameters and add them to the widget."""
+
+        # clear previous controls
+        if cls == "pattern":
+            self.clear_widget(self.pattern_widget, row_threshold=0)
+        if cls == "strategy.config":
+            self.clear_widget(self.strategy_widget, row_threshold=0)
 
         self.parameters[cls] = {}
         grid_layout: QGridLayout = widget.layout()
@@ -581,8 +626,6 @@ class FibsemMillingStageWidget(QWidget):
             # set label text
             label = QLabel(label_text)
 
-            # print(name, value, gui_config)
-
             # add combobox controls
             if items:
                 if items == "dynamic":
@@ -598,7 +641,6 @@ class FibsemMillingStageWidget(QWidget):
                         item_str = item.name
                     elif "resolution" in name:
                         item_str = f"{item[0]}x{item[1]}"
-                        # print(f"Adding resolution item: {item_str} for {name}")
                     else:
                         item_str = str(item)
                     control.addItem(item_str, item)
@@ -608,13 +650,12 @@ class FibsemMillingStageWidget(QWidget):
 
                 # find the closest match to the current value (should only be used for numerical values)
                 idx = control.findData(value)
-                print(name, value, idx, items)
                 if idx == -1:
                     # get the closest value
                     closest_value = min(items, key=lambda x: abs(x - value))
                     idx = control.findData(closest_value)
                 if idx == -1:
-                    print(f"Warning: No matching item or nearest found for {name} with value {value}. Using first item.")
+                    logging.debug(f"Warning: No matching item or nearest found for {name} with value {value}. Using first item.")
                     idx = 0
                 control.setCurrentIndex(idx)
 
@@ -643,7 +684,6 @@ class FibsemMillingStageWidget(QWidget):
                     control.setDecimals(decimals)
                 control.setValue(value)
                 control.setKeyboardTracking(False)
-                print("Setting value for control:", name, "to", value)
             else:
                 continue
 
@@ -676,8 +716,6 @@ class FibsemMillingStageWidget(QWidget):
         obj_name = obj.objectName()
         _, cls, name = obj_name.split("-", 2)
 
-        print(f"Updating settings... {obj_name}, {cls}, {name} changed ")
-
         if isinstance(obj, QComboBox):
             value = obj.currentData()
         elif isinstance(obj, QLineEdit):
@@ -691,12 +729,9 @@ class FibsemMillingStageWidget(QWidget):
             if scale is not None:
                 value /= scale
         else:
-            print(f"Unknown control type: {type(obj)}")
             return
 
-        print(f"Setting {cls}.{name} to {value} (type: {type(value)})")
-
-        # Update the milling_stage object
+        # update the milling_stage object
         if hasattr(self._milling_stage, cls):
 
             # special case for pattern point
@@ -705,18 +740,17 @@ class FibsemMillingStageWidget(QWidget):
                     setattr(self._milling_stage.pattern.point, "x", value)
                 elif "y" in name:
                     setattr(self._milling_stage.pattern.point, "y", value)
+            elif cls == "name":
+                setattr(self._milling_stage, "name", value)
             else:
                 setattr(getattr(self._milling_stage, cls), name, value)
-            print(f"Updated {cls}.{name} to {value}")
         elif hasattr(self._milling_stage, "strategy") and cls == "strategy.config":
             # Special case for strategy config
             setattr(self._milling_stage.strategy.config, name, value)
-            print(f"Updated strategy.config.{name} to {value}")
         else:
-            print(f"Warning: {cls} not found in milling_stage object. Cannot update {name}.")
+            logging.debug(f"Warning: {cls} not found in milling_stage object. Cannot update {name}.")
 
-        self._milling_stage_changed.emit(self._milling_stage)  # Emit signal to notify changes 
-        print("-----------------------------------------------------")
+        self._milling_stage_changed.emit(self._milling_stage)  # notify changes
 
     def get_milling_stage(self) -> FibsemMillingStage:
         return self._milling_stage
@@ -744,6 +778,7 @@ class FibsemMillingStageEditorWidget(QWidget):
 
         self.microscope = microscope
         self._milling_stages = milling_stages
+        self._background_milling_stages: List[FibsemMillingStage] = []
         self.is_updating_pattern = False
 
         self.viewer = viewer
@@ -855,31 +890,7 @@ class FibsemMillingStageEditorWidget(QWidget):
         show_advanced = bool(state == Qt.Checked)
 
         for widget in self._widgets:
-
-            ms = widget.get_milling_stage()
-            wp = widget.parameters
-            for param in ms.pattern.advanced_attributes:
-
-                label, control, _ = wp["pattern"].get(param, (None, None, None))
-                if label:
-                    label.setVisible(show_advanced)
-                if control:
-                    control.setVisible(show_advanced)
-            for param in ms.strategy.config.advanced_attributes:
-                label, control, _ = wp["strategy.config"].get(param, (None, None, None))
-                if label:
-                    label.setVisible(show_advanced)
-                if control:
-                    control.setVisible(show_advanced)
-            for param in ms.milling.advanced_attributes:
-                label, control, _ = wp["milling"].get(param, (None, None, None))
-                if label:
-                    label.setVisible(show_advanced)
-                if control:
-                    control.setVisible(show_advanced)
-            # QUERY: should we also hide imaging, alignment?
-            # consider strategy as advanced, so hide it as well
-            widget.strategy_widget.setVisible(show_advanced)
+            widget.toggle_advanced_settings(show_advanced)
 
     def _toggle_pattern_visibility(self, state: int):
         """Toggle the visibility of milling patterns in the viewer."""
@@ -959,6 +970,19 @@ class FibsemMillingStageEditorWidget(QWidget):
         if self._milling_stages:
             self.list_widget_milling_stages.setCurrentRow(0)
     
+    def set_background_milling_stages(self, milling_stages: List[FibsemMillingStage]):
+        """Set the background milling stages to be displayed in the editor."""
+        self._background_milling_stages = copy.deepcopy(milling_stages)
+
+    def _update_list_widget_text(self):
+        """Update the text of the list widget items to reflect the current milling stages."""
+        for i, milling_stage in enumerate(self._milling_stages):
+            if i < self.list_widget_milling_stages.count():
+                item = self.list_widget_milling_stages.item(i)
+                # update the text of the item
+                if item:
+                    item.setText(pretty_name(milling_stage))
+
     def _add_milling_stage(self, milling_stage: FibsemMillingStage = None):
         """Add a new milling stage to the editor."""
         
@@ -984,10 +1008,11 @@ class FibsemMillingStageEditorWidget(QWidget):
                                             milling_stage=milling_stage)
         ms_widget._milling_stage_changed.connect(self.update_milling_stage_display)
         ms_widget._milling_stage_changed.connect(self._on_milling_stage_updated)
+        ms_widget._milling_stage_changed.connect(self._update_list_widget_text)
 
         # create related list widget item
         # TODO: migrate to setData, so we can store the milling stage object directly
-        item = QListWidgetItem(f"{milling_stage.name} - {milling_stage.pattern.name}")
+        item = QListWidgetItem(pretty_name(milling_stage))
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
         self.list_widget_milling_stages.addItem(item)
@@ -1008,6 +1033,9 @@ class FibsemMillingStageEditorWidget(QWidget):
         index = self.list_widget_milling_stages.currentRow()
         for i, widget in enumerate(self._widgets):
             widget.setVisible(i==index)
+        
+        show_adv = self.checkBox_show_advanced_settings.checkState()
+        self._widgets[index].toggle_advanced_settings(show_adv)
 
         # refresh display
         self.update_milling_stage_display()
@@ -1044,7 +1072,7 @@ class FibsemMillingStageEditorWidget(QWidget):
                     if layer in self.viewer.layers:
                         self.viewer.layers.remove(layer)
             except Exception as e:
-                print("Error removing milling pattern layers:", e)
+                logging.debug(f"Error removing milling pattern layers: {e}")
             self.milling_pattern_layers = []
             return
 
@@ -1060,6 +1088,7 @@ class FibsemMillingStageEditorWidget(QWidget):
             milling_stages=milling_stages,
             pixelsize=self.image.metadata.pixel_size.x,
             draw_crosshair=self.checkBox_show_milling_crosshair.isChecked(),
+            background_milling_stages=self._background_milling_stages,
         )
 
     def set_image(self, image: FibsemImage) -> None:
@@ -1169,20 +1198,14 @@ class FibsemMillingStageEditorWidget(QWidget):
         self._milling_stages_updated.emit(milling_stages)
 
 
-import os
-
 from autolamella.structures import AutoLamellaProtocol, Experiment, Lamella
-
-from fibsem.milling import get_milling_stages, get_protocol_from_stages
-
-
 # TODO: move to autolamella
 class AutoLamellaProtocolEditorWidget(QWidget):
     """A widget to edit the AutoLamella protocol."""
     
     def __init__(self, 
-                 viewer: napari.Viewer, 
-                 microscope: FibsemMicroscope, 
+                 viewer: napari.Viewer,
+                 microscope: FibsemMicroscope,
                  protocol: AutoLamellaProtocol,
                  experiment: Experiment = None,
                  parent=None):
@@ -1192,38 +1215,41 @@ class AutoLamellaProtocolEditorWidget(QWidget):
         self.microscope = microscope
         self.experiment = experiment
         self.protocol = protocol
-       
-        
+        self.background_milling_stages: List[FibsemMillingStage] = []
+
         self.setWindowTitle("AutoLamella Protocol Editor")
+        self._create_widgets()
+        self._initialise_widgets()
 
-        # Initialize the main layout
-        self.main_layout = QVBoxLayout(self)
-        
-        # Create the milling stage editor widget
+    def _create_widgets(self):
+        """Create the widgets for the protocol editor."""
         self.milling_stage_editor = FibsemMillingStageEditorWidget(viewer=self.viewer, 
-                                                                   microscope=self.microscope, 
-                                                                   milling_stages=[])
-
-        # Add the milling stage editor to the main layout
-        self.main_layout.addWidget(self.milling_stage_editor)
-
-        # add grid layout # label, combobox
-        self.grid_layout = QGridLayout()
-        self.main_layout.addLayout(self.grid_layout)
+                                                            microscope=self.microscope, 
+                                                            milling_stages=[],
+                                                            parent=self)
+        # lamella, milling controls
         self.label_selected_lamella = QLabel("Lamella")
         self.comboBox_selected_lamella = QComboBox()
         self.label_selected_milling = QLabel("Milling Stage")
         self.comboBox_selected_milling = QComboBox()
-        self.grid_layout.addWidget(self.label_selected_lamella, 0, 0)
-        self.grid_layout.addWidget(self.comboBox_selected_lamella, 0, 1)
-        self.grid_layout.addWidget(self.label_selected_milling, 1, 0)
-        self.grid_layout.addWidget(self.comboBox_selected_milling, 1, 1)
         self.checkbox_sync_positions = QCheckBox("Sync Trench Position for Rough Milling and Polishing")
         self.checkbox_sync_positions.setToolTip("If checked, the trench position will be synchronized for rough milling and polishing stages.")
         self.checkbox_sync_positions.setObjectName("checkbox-sync-positions")
         self.checkbox_sync_positions.setChecked(True)
+        
+        self.grid_layout = QGridLayout()
+        self.grid_layout.addWidget(self.label_selected_lamella, 0, 0)
+        self.grid_layout.addWidget(self.comboBox_selected_lamella, 0, 1)
+        self.grid_layout.addWidget(self.label_selected_milling, 1, 0)
+        self.grid_layout.addWidget(self.comboBox_selected_milling, 1, 1)
         self.grid_layout.addWidget(self.checkbox_sync_positions, 2, 0, 1, 2)
 
+        # main layout
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.addWidget(self.milling_stage_editor)
+        self.main_layout.addLayout(self.grid_layout)
+
+    def _initialise_widgets(self):
         if self.experiment is not None:
             for pos in self.experiment.positions:
                 self.comboBox_selected_lamella.addItem(pos.name, pos)
@@ -1237,19 +1263,17 @@ class AutoLamellaProtocolEditorWidget(QWidget):
         self.milling_stage_editor.scroll_area.setMinimumHeight(550)
 
         if self.experiment is not None:
-            self._on_selected_lamella_changed(None)
+            self._on_selected_lamella_changed()
         else:
             self.label_selected_lamella.setVisible(False)
             self.comboBox_selected_lamella.setVisible(False)
             self.image = FibsemImage.generate_blank_image(hfw=80e-6, random=True)
             self.milling_stage_editor.set_image(self.image)
-            self._on_selected_milling_stage_changed(self.comboBox_selected_milling.currentIndex())
+            self._on_selected_milling_stage_changed()
 
-    def _on_selected_lamella_changed(self, index: int):
+    def _on_selected_lamella_changed(self):
         """Callback when the selected lamella changes."""
         selected_lamella: Lamella = self.comboBox_selected_lamella.currentData()
-       
-        print(selected_lamella.name)
 
         reference_image_path = os.path.join(selected_lamella.path, "ref_PositionReady.tif")
         if os.path.exists(reference_image_path):
@@ -1259,31 +1283,41 @@ class AutoLamellaProtocolEditorWidget(QWidget):
             self.image = FibsemImage.generate_blank_image(hfw=150e-6, random=True)
 
         self.milling_stage_editor.set_image(self.image)
-        self._on_selected_milling_stage_changed(self.comboBox_selected_milling.currentIndex())
+        self._on_selected_milling_stage_changed()
 
-        # LOAD IMAAGES
-        # SAVE PROTOCOL
-        # APPLY PROTOCOL TO OTHER LAMELLAE
-
-    def _on_selected_milling_stage_changed(self, index: int):
+    def _on_selected_milling_stage_changed(self):
         """Callback when the selected milling stage changes."""
         selected_stage_name = self.comboBox_selected_milling.currentText()
         
+        self.background_milling_stages = []
         if self.experiment is not None:
             selected_lamella: Lamella = self.comboBox_selected_lamella.currentData()
             protocol =  selected_lamella.protocol
             milling_stages = get_milling_stages(selected_stage_name, protocol)
+            self._get_background_milling_stages(selected_stage_name, protocol)
         else:
             milling_stages = self.protocol.milling[selected_stage_name]
+            for k, ms in self.protocol.milling.items():
+                if k == selected_stage_name:
+                    continue
+                self.background_milling_stages.extend(ms)
             self.image = FibsemImage.generate_blank_image(hfw=milling_stages[0].milling.hfw, random=True)
             self.milling_stage_editor.set_image(self.image)
 
+        self.milling_stage_editor.set_background_milling_stages(self.background_milling_stages)
         self.milling_stage_editor.set_milling_stages(milling_stages)
+
+    def _get_background_milling_stages(self, stage_name: str, protocol: Dict[str, List]) -> List[FibsemMillingStage]:
+        """Get the background (non-selected) milling stages for a given stage name."""
+        self.background_milling_stages = []
+        other_keys = [k for k in protocol.keys() if k != stage_name]
+        for k in other_keys:
+            self.background_milling_stages.extend(get_milling_stages(k, protocol))
 
     def _on_milling_stages_updated(self, milling_stages: List[FibsemMillingStage]):
         """Callback when the milling stages are updated."""
 
-        pprotocol = get_protocol_from_stages(milling_stages) # List[Dict[str, Any]]
+        pprotocol = get_protocol_from_stages(milling_stages)
 
         selected_stage_name = self.comboBox_selected_milling.currentText()
 
@@ -1317,12 +1351,9 @@ class AutoLamellaProtocolEditorWidget(QWidget):
                         ms["pattern"]["point"] = copy.deepcopy(point.to_dict())
                         logging.info(f"Syncing polishing pattern {ms['name']} point to {point}")
 
-        # QUERY does exp.positions need to be updated?
-        # print(f"NEW: ", pprotocol[0]["pattern"]["point"])
-        # print(f"EXP: ", self.experiment.positions[idx].protocol[selected_stage_name][0]["pattern"]["point"])
 
         # save the experiment
-        self.experiment.save() # MULTI_UPDATES, VERY SLOW
+        self.experiment.save()
 
         # update the main ui??? DO WE NEED TO DO THIS?
         # reference seems to go through?, maybe just refresh ui?
@@ -1332,6 +1363,12 @@ class AutoLamellaProtocolEditorWidget(QWidget):
         if self.parent is not None and not self.parent.WORKFLOW_IS_RUNNING: 
             self.parent.update_experiment_signal.emit(self.experiment)
 
+        # reset the background milling stages, force refresh ui
+        self._get_background_milling_stages(selected_stage_name, selected_lamella.protocol)
+        self.milling_stage_editor.set_background_milling_stages(self.background_milling_stages)
+        self.milling_stage_editor.update_milling_stage_display()
+
+        # TODO: this causes a double update, need to fix this
 
 def show_protocol_editor(viewer: napari.Viewer, 
                          microscope: FibsemMicroscope, 
@@ -1355,24 +1392,6 @@ if __name__ == "__main__":
     microscope, settings = utils.setup_session()
     viewer = napari.Viewer()
 
-    # PROTOCOL_PATH = "/home/patrick/github/autolamella/autolamella/protocol/protocol-waffle.yaml"
-    # protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
-
-    # _milling_stages = []
-    # _milling_stages.extend(protocol.milling["mill_rough"])
-    # _milling_stages.extend(protocol.milling["mill_polishing"])
-    # _milling_stages.extend(protocol.milling["notch"])
-    # _milling_stages.extend(protocol.milling["fiducial"])
-
-    # main_widget = FibsemMillingStageEditorWidget(viewer=viewer, 
-    #                                              microscope=microscope, 
-    #                                              milling_stages=[])
-    # settings.image.hfw = 150e-6
-    # settings.image.beam_type = BeamType.ION
-    # image = microscope.acquire_image(settings.image)
-    # main_widget.set_image(image)
-
-    # main_widget.set_milling_stages(_milling_stages)
 
     BASE_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-05-28-17-22/"
     EXPERIMENT_PATH = os.path.join(BASE_PATH, "experiment.yaml")
@@ -1384,16 +1403,11 @@ if __name__ == "__main__":
                          microscope=microscope, 
                          experiment=exp, 
                          protocol=protocol)
-    # widget = AutoLamellaProtocolEditorWidget(viewer=viewer, 
-    #                                          microscope=microscope, 
-    #                                          protocol=protocol, 
-    #                                          experiment=exp)
+
 
 
 # TODO: re-sizing base image?? scale bar
 # TODO: export protocol to yaml file
-# TODO: item list name should update when pattern changed
-# TODO: allow re-naming of milling stages, update item list
 # TODO: re-fresh lamella list when lamella added/removed
 # TODO: allow 'live' edits of the protocol while workflow is running? SCARY
 # TODO: allow editing the 'master' protocol, so we can change the default milling stages

@@ -98,9 +98,9 @@ patterns:
     passes: 1
     scan_direction: "TopToBottom"
   MicroExpansion:
-    height: 10.0e-6
-    width: 2.0e-6
-    depth: 5.0e-6
+    height: 15.0e-6
+    width: 0.5e-6
+    depth: 1.0e-6
     distance: 10.0e-6
   WaffleNotch: 
     vheight: 2.0e-6

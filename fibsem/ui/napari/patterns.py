@@ -238,6 +238,7 @@ def draw_milling_patterns_in_napari(
     milling_stages: List[FibsemMillingStage],
     pixelsize: float,
     draw_crosshair: bool = True,
+    background_milling_stages: Optional[List[FibsemMillingStage]] = None,
 ) -> List[str]:
     """Draw the milling patterns in napari as a combination of Shapes and Label layers.
     Args:
@@ -246,6 +247,7 @@ def draw_milling_patterns_in_napari(
         translation: translation of the FIB image layer
         milling_stages): list of milling stages
         draw_crosshair: draw crosshair on the image
+        background_milling_stages: optional list of background milling stages to draw
     Returns:
         List[str]: list of milling pattern layers
     """
@@ -254,32 +256,25 @@ def draw_milling_patterns_in_napari(
     image_shape = image_layer.data.shape
     translation = image_layer.translate
 
-    t_1 = time.time()
-
     all_napari_shapes: List[np.ndarray] = []
     all_shape_types: List[np.ndarray] = []
     all_shape_colours: List[str] = []
 
+    all_milling_stages = deepcopy(milling_stages)
+    if background_milling_stages is not None:
+        all_milling_stages.extend(deepcopy(background_milling_stages))
+    n_milling_stages = len(milling_stages)
+
     # convert fibsem patterns to napari shapes
-    for i, stage in enumerate(milling_stages):
-        
+    for i, stage in enumerate(all_milling_stages):
+
         # shapes for this milling stage
         napari_shapes: List[np.ndarray]  = []
         shape_types: List[str] = []
-        t0 = time.time()
-
-        patterns: List[FibsemPatternSettings] = stage.pattern.define()
-        point: Point = stage.pattern.point
-        name: str = stage.name
-        
-        # amnulus shapes
-        is_annulus: bool = False
-        annulus_layer = f"{name}-annulus-layer"
-        drawn_patterns = []
 
         # TODO: QUERY  migrate to using label layers for everything??
         # TODO: re-enable annulus drawing, re-enable bitmaps
-        for pattern_settings in patterns:
+        for pattern_settings in stage.pattern.define():
 
             napari_drawing_fn = NAPARI_DRAWING_FUNCTIONS.get(type(pattern_settings), None)
             if napari_drawing_fn is None:
@@ -293,58 +288,30 @@ def draw_milling_patterns_in_napari(
             napari_shapes.append(shape)
             shape_types.append(stype)
 
-        t1 = time.time()
-
         # draw the patterns as a shape layer
-        is_shape_layer = len(napari_shapes) > 0
+        if napari_shapes:
 
-        if is_shape_layer:
-            
             if draw_crosshair:
-                crosshair_shapes = create_crosshair_shape(centre_point=point, shape=image_shape, pixelsize=pixelsize)
-                crosshair_shape_types = ["rectangle","rectangle"]
+                crosshair_shapes = create_crosshair_shape(centre_point=stage.pattern.point,
+                                                          shape=image_shape,
+                                                          pixelsize=pixelsize)
+                crosshair_shape_types = ["rectangle", "rectangle"]
                 napari_shapes.extend(crosshair_shapes)
                 shape_types.extend(crosshair_shape_types)
 
-            napari_colours = [COLOURS[i % len(COLOURS)]] * len(napari_shapes)
+            is_background = i >= n_milling_stages
+            if is_background:
+                napari_colours = ["black"] * len(napari_shapes)
+            else:
+                napari_colours = [COLOURS[i % len(COLOURS)]] * len(napari_shapes)
 
             # TODO: properties dict for all parameters
             all_napari_shapes.extend(napari_shapes)
             all_shape_types.extend(shape_types)
             all_shape_colours.extend(napari_colours)
 
-            # if "line" in shape_types: # TODO: fix this
-                # viewer.layers[name].edge_width = SHAPES_LAYER_PROPERTIES["line_edge_width"]
-
-        # if is_annulus:
-        #     # draw all the annulus for the stage on the same image
-        #     if annulus_layer in viewer.layers:
-        #         viewer.layers.remove(viewer.layers[annulus_layer])
-
-        #     annulus_image = compose_pattern_image(image.data, drawn_patterns)
-
-        #     
-        #     label_layer = viewer.add_labels(data=annulus_image, 
-        #                         translate=translation, 
-        #                         name=annulus_layer,
-        #                         blending=IMAGE_LAYER_PROPERTIES["blending"],
-        #                         opacity=IMAGE_LAYER_PROPERTIES["opacity"],)
-            
-        #     cmap = IMAGE_LAYER_PROPERTIES["cmap"]
-        #     cmap[1] = COLOURS[i % len(COLOURS)]
-        #     if hasattr(label_layer, "colormap"): # attribute changed in napari 0.5.0+
-        #         label_layer.colormap = cmap
-        #     else:
-        #         label_layer.color = cmap
-        #     active_layers.append(annulus_layer)
-
-        t2 = time.time()
-
-        # TODO: annulus layers are not removed correctly
-        logging.debug(f"_DRAW_SHAPES: CONVERT: {t1-t0}, ADD/UPDATE: {t2-t1}")
-
     name = "Milling Patterns"
-    if len(all_napari_shapes) > 0:
+    if all_napari_shapes:
         if name in viewer.layers:
             viewer.layers[name].data = [] # need to clear data before updating, to account for different shapes.
             viewer.layers[name].data = all_napari_shapes
@@ -365,40 +332,12 @@ def draw_milling_patterns_in_napari(
                 translate=translation,
             )
 
-    t3 = time.time()
-    # remove all un-updated layers (assume they have been deleted)        
-    remove_all_napari_shapes_layers(viewer=viewer, 
-                                    layer_type=NapariShapesLayers, 
-                                    ignore=[name]) # TODO: make this more selective with what to remove?
-    t_2 = time.time()
-    logging.debug(f"_DRAW_SHAPES: REMOVE: {t3-t_2} total time: {t_2-t_1}")
+    # remove all un-updated layers (assume they have been deleted)
+    remove_all_napari_shapes_layers(viewer=viewer,
+                                    layer_type=NapariShapesLayers,
+                                    ignore=[name])
 
     return [name] # list of milling pattern layers
-
-
-def _draw_milling_stages_on_image(image: FibsemImage, milling_stages: List[FibsemMillingStage], show: bool = True):
-
-    viewer = napari.Viewer()
-    image_layer= viewer.add_image(image.data, name='test_image')
-    draw_milling_patterns_in_napari(viewer=viewer, 
-                                    image_layer=image_layer, 
-                                    pixelsize=image.metadata.pixel_size.x, 
-                                    milling_stages=milling_stages)
-    screenshot = viewer.screenshot()
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.imshow(screenshot)
-    viewer.close()
-
-    for i,stage in enumerate(milling_stages):
-    
-        plt.plot(0,0,'-',color=COLOURS[i % len(COLOURS)],label=stage.name)
-
-    ax.axis('off')
-    ax.legend()
-    if show:
-        plt.show()
-    
-    return fig
 
 def convert_point_to_napari(resolution: list, pixel_size: float, centre: Point):
     icy, icx = resolution[1] // 2, resolution[0] // 2
