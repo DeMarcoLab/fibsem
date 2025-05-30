@@ -2583,10 +2583,6 @@ class ThermoMicroscope(FibsemMicroscope):
             # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
             # NB: the current must be set before doing this, otherwise it will be out of range
 
-        # restore default application file
-        self.connection.patterning.set_default_application_file(self._default_application_file)
-
-
         logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict()})
         self._patterns.append(pattern)
         return pattern
