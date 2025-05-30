@@ -9,12 +9,13 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
 
 import numpy as np
 from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
 from psygnal import Signal
+from numpy.typing import NDArray
 
 THERMO_API_AVAILABLE = False
 MINIMUM_AUTOSCRIPT_VERSION_4_7 = parse_version("4.7")
@@ -369,11 +370,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def draw_bitmap_pattern(
-        self,
-        pattern_settings: FibsemBitmapSettings,
-        path: str,
-    ):
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings):
         pass
 
     @abstractmethod
@@ -2324,14 +2321,38 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
         self._patterns.append(pattern)
         return pattern
-    
-    def draw_bitmap_pattern(
-        self,
-        pattern_settings: FibsemBitmapSettings,
-        path: str,
-    ):
 
-        bitmap_pattern = BitmapPatternDefinition.load(path)
+    @staticmethod
+    def _bitmap_to_points(
+        bitmap_image: NDArray[np.uint8],
+    ) -> NDArray[Any]:
+        points_array = np.empty((*bitmap_image.shape[:2], 2), dtype=object)
+        points_array[:, :, 0] = np.interp(bitmap_image[:, :, 2], (0, 255), (0, 1))
+        points_array[:, :, 1] = 1 - bitmap_image[:, :, 1]
+        return points_array
+
+    def draw_bitmap_pattern(self, pattern_settings: FibsemBitmapSettings):
+        # Get bitmap from pattern settings (from file or array)
+        bitmap = pattern_settings.bitmap
+        if isinstance(bitmap, np.ndarray):
+            bitmap_pattern = BitmapPatternDefinition()
+            if bitmap.dtype == np.uint8:
+                logging.debug("Converting bitmap array to points array")
+                points = ThermoMicroscope._bitmap_to_points(bitmap)
+            else:
+                # Assume bitmap is already a point array
+                points = bitmap
+            logging.debug("Creating bitmap pattern from array")
+            bitmap_pattern.points = points
+        elif pattern_settings.path is not None:
+            logging.debug(
+                "Creating bitmap pattern from '%s'", str(pattern_settings.path)
+            )
+            bitmap_pattern = BitmapPatternDefinition.load(pattern_settings.path)
+        else:
+            raise ValueError(
+                "Unable to draw bitmap pattern from FibsemBitmapSettings as bitmap and path are both None"
+            )
 
         pattern = self.connection.patterning.create_bitmap(
             center_x=pattern_settings.centre_x,
@@ -2342,9 +2363,38 @@ class ThermoMicroscope(FibsemMicroscope):
             bitmap_pattern_definition=bitmap_pattern,
         )
 
-        logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict(), "path": path})
+        if not np.isclose(pattern_settings.time, 0.0):
+            logging.debug(f"Setting pattern time to {pattern_settings.time}.")
+            pattern.time = pattern_settings.time
+
+        # set pattern rotation
+        pattern.rotation = pattern_settings.rotation
+
+        # set exclusion
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
+
+        # set scan direction
+        available_scan_directions = self.get_available_values("scan_direction")
+
+        if pattern_settings.scan_direction in available_scan_directions:
+            pattern.scan_direction = pattern_settings.scan_direction
+        else:
+            pattern.scan_direction = "TopToBottom"
+            logging.warning(f"Scan direction {pattern_settings.scan_direction} not supported. Using TopToBottom instead.")
+            logging.warning(f"Supported scan directions are: {available_scan_directions}")
+
+        # set passes
+        if pattern_settings.passes: # not zero
+            pattern.dwell_time = pattern.dwell_time * (pattern.pass_count / pattern_settings.passes)
+
+            # NB: passes, time, dwell time are all interlinked, therefore can only adjust passes indirectly
+            # if we adjust passes directly, it just reduces the total time to compensate, rather than increasing the dwell_time
+            # NB: the current must be set before doing this, otherwise it will be out of range
+
+        logging.debug({"msg": "draw_bitmap_pattern", "pattern_settings": pattern_settings.to_dict()})
         self._patterns.append(pattern)
         return pattern
+
 
     def get_gis(self, port: str = None):
         use_multichem = self.is_available("gis_multichem")
