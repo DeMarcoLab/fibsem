@@ -122,6 +122,7 @@ class FibsemMicroscope(ABC):
     _last_imaging_settings: ImageSettings
     system: SystemSettings
     _patterns: List
+    stage_is_compustage: bool = False
 
     # live acquisition
     sem_acquisition_signal = Signal(FibsemImage)
@@ -995,6 +996,9 @@ class FibsemMicroscope(ABC):
                 t=milling_stage_tilt
             ),
         }
+
+        if self.stage_is_compustage:
+            self.orientations["FIB"].t -= np.radians(180)
 
         if orientation not in self.orientations:
             raise ValueError(f"Orientation {orientation} not supported.")
