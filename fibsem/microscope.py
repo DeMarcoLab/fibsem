@@ -1471,14 +1471,6 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name})
 
         return self.get_beam_shift(beam_type=beam_type)
-
-        logging.info(f"{beam_type.name} shifting by ({dx}, {dy})")
-        if beam_type == BeamType.ELECTRON:
-            self.connection.beams.electron_beam.beam_shift.value += (dx, dy)
-        else:
-            self.connection.beams.ion_beam.beam_shift.value += (dx, dy)
-    
-        logging.debug({"msg": "beam_shift", "dx": dx, "dy": dy, "beam_type": beam_type.name})
     
     def move_stage_absolute(self, position: FibsemStagePosition) -> FibsemStagePosition:
         """
@@ -2106,6 +2098,7 @@ class ThermoMicroscope(FibsemMicroscope):
             if self.get_milling_state() is MillingState.RUNNING:
                 remaining_time -= MILLING_SLEEP_TIME # TODO: investigate if this is a good estimate
             time.sleep(MILLING_SLEEP_TIME)
+            # TODO: refresh the remaining time by getting the milling time from the patterning API as user can change the patterns on xtUI
 
             # update milling progress via signal
             self.milling_progress_signal.emit({"progress": {
