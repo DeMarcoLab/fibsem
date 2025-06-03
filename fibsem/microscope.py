@@ -1485,17 +1485,18 @@ class ThermoMicroscope(FibsemMicroscope):
         """
         _check_stage_movement(self.system, position)
 
-        # get current working distance, to be restored later                   
-        wd = self.get("working_distance", BeamType.ELECTRON)
-        
+        # get current working distance, to be restored later
+        wd = self.get_working_distance(BeamType.ELECTRON)
+
         # convert to autoscript position
         autoscript_position = position.to_autoscript_position(compustage=self.stage_is_compustage)
-        
+
         logging.info(f"Moving stage to {position}.")
         self.stage.absolute_move(autoscript_position, MoveSettings(rotate_compucentric=True)) # TODO: This needs at least an optional safe move to prevent collision?
                    
         # restore working distance to adjust for microscope compenstation
-        self.set("working_distance", wd, BeamType.ELECTRON)
+        if not self.stage_is_compustage:
+            self.set_working_distance(wd, BeamType.ELECTRON)
             
         logging.debug({"msg": "move_stage_absolute", "position": position.to_dict()})
         
@@ -1563,7 +1564,8 @@ class ThermoMicroscope(FibsemMicroscope):
         if static_wd:
             wd = self.system.electron.eucentric_height
         
-        self.set("working_distance", wd, BeamType.ELECTRON)
+        if not self.stage_is_compustage:
+            self.set_working_distance(wd, BeamType.ELECTRON)
 
         # logging
         logging.debug({"msg": "stable_move", "dx": dx, "dy": dy, 
