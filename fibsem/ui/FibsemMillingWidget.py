@@ -931,7 +931,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         milling = self.current_milling_stage.milling
 
         idx = self.comboBox_milling_current.findData(milling.milling_current)
-        if idx == -1:
+        if idx == -1 and not isinstance(self.microscope, TescanMicroscope):
             # get the closest value
             milling_currents = [self.comboBox_milling_current.itemData(i) for i in range(self.comboBox_milling_current.count())]
             closest_value = min(milling_currents,key=lambda x: abs(x - milling.milling_current))

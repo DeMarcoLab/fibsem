@@ -15,6 +15,7 @@ from fibsem import config as cfg
 from fibsem import constants, conversions
 from fibsem.microscope import FibsemMicroscope, ThermoMicroscope
 from fibsem.microscopes.simulator import DemoMicroscope
+from fibsem.microscopes.tescan import TescanMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemStagePosition,
@@ -210,6 +211,9 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def display_stage_position_overlay(self):
         """Display the stage position as text overlay on the image widget"""
+        if isinstance(self.microscope, TescanMicroscope):
+            return  # Tescan systems do not support stage position display yet
+        
         try:
             # NOTE: this crashes for tescan systems?
             pos = self.microscope.get_stage_position()
