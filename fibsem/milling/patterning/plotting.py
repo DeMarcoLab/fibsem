@@ -7,6 +7,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 
+from fibsem.utils import format_value
 from fibsem.milling.base import FibsemMillingStage
 from fibsem.milling.patterning.patterns2 import (
     BasePattern,
@@ -83,6 +84,7 @@ def _draw_rectangle_pattern(
     pattern: BasePattern,
     colour: str = "yellow",
     name: str = "Rectangle",
+    extra: str = ""
 ) -> List[mpatches.Rectangle]:
     """Draw a rectangle pattern on an image.
     Args:
@@ -120,7 +122,10 @@ def _draw_rectangle_pattern(
             alpha=PROPERTIES["opacity"],
         )
         if i == 1:
-            rect.set_label(f"{name}")
+            lbl = f"{name}"
+            if extra:
+                lbl += f" ({extra})"
+            rect.set_label(lbl)
         patches.append(rect)
 
     return patches
@@ -139,6 +144,8 @@ def draw_milling_patterns(
     crosshair: bool = True,
     scalebar: bool = True,
     title: str = "Milling Patterns",
+    show_current: bool = False,
+    show_preset: bool = False,
 ) -> plt.Figure:
     """
     Draw milling patterns on an image.
@@ -160,13 +167,19 @@ def draw_milling_patterns(
         colour = COLOURS[i % len(COLOURS)]
         p = stage.pattern
 
+        extra = ""
+        if show_current:
+            extra = format_value(stage.milling.milling_current, "A")
+        if show_preset:
+            extra = stage.milling.preset
+
         drawing_func = get_drawing_function(p.name)
         if drawing_func is None:
             logging.debug(f"Drawing Pattern {p.name} not currently supported, skipping")
             continue
 
         patches.extend(
-            drawing_func(image, p, colour=colour, name=stage.name)
+            drawing_func(image, p, colour=colour, name=stage.name, extra=extra)
         )
 
     for patch in patches:
