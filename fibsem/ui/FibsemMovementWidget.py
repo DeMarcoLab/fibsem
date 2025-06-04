@@ -13,6 +13,7 @@ from PyQt5 import QtCore, QtWidgets
 import fibsem.utils as utils
 from fibsem import config as cfg
 from fibsem import constants, conversions
+from fibsem.constants import DEGREE_SYMBOL
 from fibsem.microscope import FibsemMicroscope, ThermoMicroscope
 from fibsem.microscopes.simulator import DemoMicroscope
 from fibsem.microscopes.tescan import TescanMicroscope
@@ -37,7 +38,6 @@ from fibsem.ui.utils import (
     open_save_file_dialog,
 )
 
-DEGREE_SYMBOL = "°"
 
 def to_pretty_string(position: FibsemStagePosition) -> str:
     xstr = f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}"
