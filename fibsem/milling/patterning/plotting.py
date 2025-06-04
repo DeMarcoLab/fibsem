@@ -130,11 +130,51 @@ def _draw_rectangle_pattern(
 
     return patches
 
+def draw_polygon_pattern(image: FibsemImage, 
+                         pattern: BasePattern, 
+                         colour: str = "yellow", 
+                         name: str = "Polygon",
+                         extra: str = "") -> List[mpatches.Polygon]:
 
+
+    pixelsize = image.metadata.pixel_size.x
+    patches = []
+    for i, shape in enumerate(pattern.define()):
+        # need to convert to image coordinates?
+        verts = []
+        for v in shape.vertices:
+            # position in metres from image centre
+            pmx, pmy = v[0] / pixelsize, v[1] / pixelsize
+
+            # convert to image coordinates
+            cy, cx = image.data.shape[0] // 2, image.data.shape[1] // 2
+            px = cx + pmx
+            py = cy - pmy
+        
+            verts.append((px, py))
+        verts = np.array(verts)
+        patch = mpatches.Polygon(verts, closed=True, fill=True, 
+                        facecolor=colour, edgecolor='black',
+                        alpha=PROPERTIES["opacity"], 
+                        linewidth=PROPERTIES["line_width"])
+        if i == 0:
+            lbl = f"{name}"
+            if extra:
+                lbl += f" ({extra})"
+            patch.set_label(lbl)
+
+        patches.append(patch)
+
+    return patches
+
+# TODO: the drawing function should be determined on a shape level, not a pattern level
+# as patterns can contain multiple shapes of different types
 def get_drawing_function(name: str) -> Callable:
     
     if name in ["Circle", "Bitmap", "Line", "SerialSection"]:
         return None
+    if name in ["PolygonPattern", "TrapezoidTrench"]:
+        return draw_polygon_pattern
     return _draw_rectangle_pattern
 
 

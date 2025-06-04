@@ -12,6 +12,7 @@ from fibsem.structures import (
     FibsemCircleSettings,
     FibsemLineSettings,
     FibsemPatternSettings,
+    FibsemPolygonSettings,
     FibsemRectangleSettings,
     Point,
 )
@@ -1369,6 +1370,120 @@ class TrapezoidPattern(BasePattern):
         )
 
 
+
+@dataclass
+class TrapezoidTrenchPattern(BasePattern):
+    trench_width: float
+    trench_height: float
+    spacing: float
+    depth: float
+    angle: float = 30  # angle in degrees
+    name: str = "TrapezoidTrench"
+    point: Point = field(default_factory=Point)
+    shapes: List[FibsemPolygonSettings] = None
+    # ref: https://www.researchsquare.com/article/rs-6497420/v1
+    
+    def define(self):
+
+        width = self.trench_width
+        height = self.trench_height
+        spacing = self.spacing
+        angle = -self.angle  # angle in degrees
+        depth = self.depth
+
+        # define trapezoid polygon points
+        p1 = (-width / 2, 0)  # xy
+        p2 = (width / 2, 0)  # xy
+        p3 = (width / 2 - height * np.tan(np.radians(angle)), height)  # xy
+        p4 = (-width / 2 + height * np.tan(np.radians(angle)), height)  # xy
+
+        points = np.array([p1, p2, p3, p4])
+
+        # offset all points in y by spacing / 2
+        points[:, 1] += spacing / 2
+
+        # create mirrored polygon (mirror over y-axis)
+        mirrored_points = points.copy()
+        mirrored_points[:, 1] = -mirrored_points[:, 1] #- spacing /2
+
+        top_trench = FibsemPolygonSettings(vertices=points, depth=depth)
+        bottom_trench = FibsemPolygonSettings(vertices=mirrored_points, depth=depth)
+
+        # apply the verticies offset by the point
+        top_trench.vertices[:, 0] += self.point.x
+        top_trench.vertices[:, 1] -= self.point.y
+        bottom_trench.vertices[:, 0] += self.point.x
+        bottom_trench.vertices[:, 1] -= self.point.y
+
+        self.shapes = [top_trench, bottom_trench]
+        return self.shapes
+
+    def to_dict(self):
+        return {
+            "name": "TrapezoidTrench",
+            "point": self.point.to_dict(),
+            "trench_width": self.trench_width,
+            "trench_height": self.trench_height,
+            "spacing": self.spacing,
+            "depth": self.depth,
+            "angle": self.angle
+        }
+
+    @classmethod
+    def from_dict(cls, ddict):
+        return cls(
+            trench_width=ddict["trench_width"],
+            trench_height=ddict["trench_height"],
+            spacing=ddict["spacing"],
+            depth=ddict["depth"],
+            angle=ddict.get("angle", 30),
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
+
+@dataclass
+class PolygonPattern(BasePattern):
+    vertices: np.ndarray[float]
+    depth: float
+    is_exclusion: bool = False
+    point: Point = field(default_factory=Point)
+    shapes: List[FibsemPolygonSettings] = None
+    name: str = "PolygonPattern"
+
+    def define(self) -> List[FibsemPolygonSettings]:
+        """Define a polygon milling pattern based on the provided vertices."""
+        
+        if self.vertices.ndim != 2 or self.vertices.shape[1] != 2:
+            raise ValueError("Vertices must be a 2D array with shape (n, 2)")
+
+        # Create a polygon milling pattern
+        polygon = FibsemPolygonSettings(vertices=self.vertices, depth=self.depth, is_exclusion=self.is_exclusion)
+
+        # Offset the vertices by the point
+        polygon.vertices[:, 0] += self.point.x
+        polygon.vertices[:, 1] -= self.point.y
+
+        self.shapes = [polygon]
+        return self.shapes
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "point": self.point.to_dict(),
+            "vertices": self.vertices.tolist(),
+            "depth": self.depth,
+            "is_exclusion": self.is_exclusion
+        }
+
+    @classmethod
+    def from_dict(cls, ddict: dict) -> "PolygonPattern":
+        return cls(
+            vertices=np.array(ddict["vertices"]),
+            depth=ddict["depth"],
+            is_exclusion=ddict.get("is_exclusion", False),
+            point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
+        )
+
+
 def create_triangle_patterns(
     width: float, height: float, depth: float, angle: float = 30, point: Point = Point()
 ) -> List[FibsemRectangleSettings]:
@@ -1424,6 +1539,7 @@ MILLING_PATTERNS: Dict[str, BasePattern] = {
     TriForcePattern.name.lower(): TriForcePattern,
     # TrapezoidPattern.name.lower(): TrapezoidPattern,
     # BitmapPattern.name.lower(): BitmapPattern,
+    TrapezoidTrenchPattern.name.lower(): TrapezoidTrenchPattern,
 }
 MILLING_PATTERN_NAMES = [p.name for p in MILLING_PATTERNS.values()]
 DEFAULT_MILLING_PATTERN = RectanglePattern.name

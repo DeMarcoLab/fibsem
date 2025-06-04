@@ -88,6 +88,7 @@ UNSCALED_VALUES = [
     "sem_frame_integration",
     "fib_frame_integration",
     "overtilt",
+    "angle",
 ]
 LINE_KEYS = ["start_x", "start_y", "end_x", "end_y"]
 
