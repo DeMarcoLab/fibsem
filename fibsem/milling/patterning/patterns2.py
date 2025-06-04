@@ -1377,7 +1377,7 @@ class TrapezoidTrenchPattern(BasePattern):
     trench_height: float
     spacing: float
     depth: float
-    angle: float = 30  # angle in degrees
+    angle: float = 60  # angle in degrees
     name: str = "TrapezoidTrench"
     point: Point = field(default_factory=Point)
     shapes: List[FibsemPolygonSettings] = None
@@ -1436,7 +1436,7 @@ class TrapezoidTrenchPattern(BasePattern):
             trench_height=ddict["trench_height"],
             spacing=ddict["spacing"],
             depth=ddict["depth"],
-            angle=ddict.get("angle", 30),
+            angle=ddict.get("angle", 60),
             point=Point.from_dict(ddict.get("point", DEFAULT_POINT_DDICT))
         )
 
