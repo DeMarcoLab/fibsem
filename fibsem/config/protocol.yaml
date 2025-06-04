@@ -137,4 +137,8 @@ patterns:
     overlap: 0.0
     scan_direction: "TopToBottom"
     type: "Trapezoid"
-  
+  TrapezoidTrench:
+    trench_width: 10.0e-6
+    trench_height: 5.0e-6
+    spacing: 5.0e-6
+    depth: 1.0e-6

@@ -104,6 +104,7 @@ from fibsem.structures import (
     FibsemManipulatorPosition,
     FibsemMillingSettings,
     FibsemPatternSettings,
+    FibsemPolygonSettings,
     FibsemRectangle,
     FibsemRectangleSettings,
     FibsemStagePosition,
@@ -2323,7 +2324,22 @@ class ThermoMicroscope(FibsemMicroscope):
         logging.debug({"msg": "draw_circle", "pattern_settings": pattern_settings.to_dict()})
         self._patterns.append(pattern)
         return pattern
-    
+
+    def draw_polygon(self, pattern_settings: FibsemPolygonSettings) -> None:
+        """Draw a polygon pattern on the current imaging view of the microscope."""
+
+        self.connection.patterning.set_default_application_file("Si")
+        pattern = self.connection.patterning.create_polygon(
+            pattern_settings.vertices,
+            depth=pattern_settings.depth
+        )
+        pattern.is_exclusion_zone = pattern_settings.is_exclusion
+        self.connection.patterning.set_default_application_file(self._default_application_file)
+
+        logging.debug({"msg": "draw_polygon", "pattern_settings": pattern_settings.to_dict()})
+        self._patterns.append(pattern)
+        return pattern
+
     def draw_bitmap_pattern(
         self,
         pattern_settings: FibsemBitmapSettings,

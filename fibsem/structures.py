@@ -1045,6 +1045,42 @@ class FibsemBitmapSettings(FibsemPatternSettings):
         return self.width * self.height * self.depth
 
 @dataclass
+class FibsemPolygonSettings(FibsemPatternSettings):
+    vertices: np.ndarray[float] # n[x, y]
+    depth: float
+    is_exclusion: bool = False
+
+    def to_dict(self) -> dict:
+        return {
+            "vertices": self.vertices,
+            "depth": self.depth,
+            "is_exclusion": self.is_exclusion,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "FibsemPolygonSettings":
+        return FibsemPolygonSettings(
+            vertices=data["vertices"],
+            depth=data["depth"],
+            is_exclusion=data.get("is_exclusion", False),
+        )
+
+    @property
+    def volume(self) -> float:
+        # NOTE: this is a VERY rough estimate, assuming a convex polygon
+        # calculate polygon area as rectangle area
+        if len(self.vertices) == 0:
+            return 100e-6
+        xmin = min(v[0] for v in self.vertices)
+        xmax = max(v[0] for v in self.vertices)
+        ymin = min(v[1] for v in self.vertices)
+        ymax = max(v[1] for v in self.vertices)
+        width = xmax - xmin
+        height = ymax - ymin
+        # volume is area * depth
+        return width * height * self.depth
+
+@dataclass
 class FibsemMillingSettings:
     """
     This class is used to store and retrieve settings for FIBSEM milling.

@@ -23,6 +23,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemLineSettings,
     FibsemPatternSettings,
+    FibsemPolygonSettings,
     FibsemRectangle,
     FibsemRectangleSettings,
     Point,
@@ -177,6 +178,23 @@ def create_crosshair_shape(centre_point: Point,
 
     return np.array(crosshair_shapes)
 
+def convert_pattern_to_napari_polygon(pattern_settings: FibsemPolygonSettings, 
+                                      shape: Tuple[int, int], 
+                                      pixelsize: float) -> np.ndarray:
+
+    # image centre
+    icy, icx = get_image_pixel_centre(shape)
+
+    verticies = np.array(pattern_settings.vertices)
+    # convert verticies to pixels
+    verticies = verticies / pixelsize
+    # reverse the order of coordinates for napari
+    verticies = verticies[:, ::-1]
+    # add the image centre
+    verticies += np.array([icy, icx])
+
+    return verticies
+
 
 def convert_bitmap_pattern_to_napari_image(
         pattern_settings: FibsemBitmapSettings, shape: Tuple[int, int], pixelsize: float) -> np.ndarray:
@@ -223,6 +241,7 @@ NAPARI_DRAWING_FUNCTIONS = {
     FibsemCircleSettings: convert_pattern_to_napari_circle,
     FibsemLineSettings: convert_pattern_to_napari_line,
     FibsemBitmapSettings: convert_bitmap_pattern_to_napari_image,
+    FibsemPolygonSettings: convert_pattern_to_napari_polygon,
 }
 
 NAPARI_PATTERN_LAYER_TYPES = {
@@ -230,6 +249,7 @@ NAPARI_PATTERN_LAYER_TYPES = {
     FibsemCircleSettings: "ellipse",
     FibsemLineSettings: "line",
     FibsemBitmapSettings: "image",
+    FibsemPolygonSettings: "polygon",
 }
 
 def draw_milling_patterns_in_napari(

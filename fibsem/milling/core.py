@@ -11,6 +11,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemLineSettings,
     FibsemPatternSettings,
+    FibsemPolygonSettings,
     FibsemRectangleSettings,
     ImageSettings,
     BeamType,
@@ -116,6 +117,9 @@ def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
 
     elif isinstance(pattern, FibsemBitmapSettings):
         microscope.draw_bitmap_pattern(pattern, pattern.path)
+    
+    elif isinstance(pattern, FibsemPolygonSettings):
+        microscope.draw_polygon(pattern)
 
 def convert_to_bitmap_format(path):
     import os
