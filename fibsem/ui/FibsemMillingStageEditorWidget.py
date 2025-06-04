@@ -1382,7 +1382,7 @@ def show_protocol_editor(viewer: napari.Viewer,
                                              protocol=protocol, 
                                              parent=parent)
     viewer.window.add_dock_widget(widget, area='right', name='AutoLamella Protocol Editor')
-    napari.run()
+    napari.run(max_loop_level=2)
     return widget
 
 if __name__ == "__main__":
