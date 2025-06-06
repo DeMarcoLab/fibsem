@@ -1,50 +1,58 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from dataclasses import dataclass, fields, field
-from typing import List, Union, Dict, Any, Tuple, Optional
+from dataclasses import dataclass, fields, field, asdict
+from typing import TYPE_CHECKING
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
 from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
-from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings, CrossSectionPattern
+from fibsem.structures import FibsemMillingSettings, MillingAlignment, ImageSettings, CrossSectionPattern, NumericalDisplayInfo
+
+if TYPE_CHECKING:
+    from typing import List, Dict, Any, Tuple, Optional, Type, TypeVar, ClassVar
+
+    TMillingStrategyConfig = TypeVar(
+        "TMillingStrategyConfig", bound="MillingStrategyConfig"
+    )
+    TMillingStrategy = TypeVar("TMillingStrategy", bound="MillingStrategy")
+
 
 @dataclass
 class MillingStrategyConfig(ABC):
     """Abstract base class for milling strategy configurations"""
-    
-    def to_dict(self):
-        return {}
+    _advanced_attributes: ClassVar[Tuple[str, ...]] = ()
 
-    @staticmethod
-    def from_dict(d: dict) -> "MillingStrategyConfig":
-        return MillingStrategyConfig()
-    
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls: Type[TMillingStrategyConfig], d: Dict[str, Any]
+    ) -> TMillingStrategyConfig:
+        return cls(**d)
+
     @property
-    def required_attributes(self) -> Tuple[str]:
-        return [field.name for field in fields(self)]
-    
-    @property
-    def advanced_attributes(self) -> List[str]:
-        if hasattr(self, "_advanced_attributes"):
-            return self._advanced_attributes
-        return []
+    def required_attributes(self) -> Tuple[str, ...]:
+        return tuple(f.name for f in fields(self))
+
 
 @dataclass
 class MillingStrategy(ABC):
     """Abstract base class for different milling strategies"""
-    name: str = "Milling Strategy"    
+    name: str = "Milling Strategy"
     config = MillingStrategyConfig()
 
     def __init__(self, **kwargs):
         pass
-    
+
     @abstractmethod
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "config": self.config.to_dict()}
-    
-    @staticmethod
+
+    @classmethod
     @abstractmethod
-    def from_dict(d: dict) -> "MillingStrategy":
+    def from_dict(cls: Type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
         pass
 
     @abstractmethod
@@ -81,7 +89,7 @@ class FibsemMillingStage:
         if self.imaging.resolution is None:
             self.imaging.resolution = [1536, 1024]  # default resolution for imaging
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "num": self.num,
@@ -93,7 +101,7 @@ class FibsemMillingStage:
         }
 
     @classmethod
-    def from_dict(cls, data: dict):
+    def from_dict(cls, data: dict) -> "FibsemMillingStage":
         strategy_config = data.get("strategy", {})
         strategy_name = strategy_config.get("name", "Standard")
         pattern_name = data["pattern"]["name"]
