@@ -10,7 +10,7 @@ from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_
 from fibsem.structures import FibsemMillingSettings, MillingAlignment, ImageSettings, CrossSectionPattern, NumericalDisplayInfo
 
 if TYPE_CHECKING:
-    from typing import List, Dict, Any, Tuple, Optional, Type, TypeVar, ClassVar
+    from typing import List, Dict, Any, Tuple, Optional, Type, TypeVar, ClassVar, Generic
 
     TMillingStrategyConfig = TypeVar(
         "TMillingStrategyConfig", bound="MillingStrategyConfig"
@@ -37,23 +37,22 @@ class MillingStrategyConfig(ABC):
         return tuple(f.name for f in fields(self))
 
 
-@dataclass
-class MillingStrategy(ABC):
+class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
     """Abstract base class for different milling strategies"""
     name: str = "Milling Strategy"
-    config = MillingStrategyConfig()
+    config_class: Type[TMillingStrategyConfig]
 
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, config: Optional[TMillingStrategyConfig] = None):
+        self.config: TMillingStrategyConfig = config or self.config_class()
 
     @abstractmethod
     def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "config": self.config.to_dict()}
 
     @classmethod
-    @abstractmethod
-    def from_dict(cls: Type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
-        pass
+    def from_dict(cls: Type[TMillingStrategy], d: dict) -> TMillingStrategy:
+        config=cls.config_class.from_dict(d.get("config", {}))   
+        return cls(config=config)
 
     @abstractmethod
     def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False, parent_ui = None) -> None:
