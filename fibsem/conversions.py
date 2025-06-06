@@ -34,7 +34,7 @@ def image_to_microscope_image_coordinates(
     dy = float(-(coord.y - cy))  # neg = down
     dx = float(coord.x - cx)  # neg = left
 
-    point_m = convert_point_from_pixel_to_metres(Point(dx, dy), pixelsize)
+    point_m = convert_point_from_pixel_to_metres(Point(x=dx, y=dy), pixelsize)
     # point_m = Point(dx, dy)._to_metres(pixel_size=pixelsize)
 
     return point_m
@@ -42,7 +42,7 @@ def image_to_microscope_image_coordinates(
 
 def get_lamella_size_in_pixels(
     img: FibsemImage, protocol: dict, use_trench_height: bool = False
-) -> Tuple[int]:
+) -> Tuple[int, int]:
     """Get the relative size of the lamella in pixels based on the hfw of the image.
 
     Args:
@@ -53,6 +53,9 @@ def get_lamella_size_in_pixels(
     Returns:
         Tuple[int]: A tuple containing the height and width of the lamella in pixels.
     """
+    if img.metadata is None:
+        raise ValueError("Image has no metadata")
+
     # get real size from protocol
     lamella_width = protocol["lamella_width"]
     lamella_height = protocol["lamella_height"]
@@ -89,7 +92,7 @@ def convert_metres_to_pixels(distance: float, pixelsize: float) -> int:
     return int(distance / pixelsize)
 
 
-def convert_pixels_to_metres(pixels: int, pixelsize: float) -> float:
+def convert_pixels_to_metres(pixels: float, pixelsize: float) -> float:
     """
     Convert a distance in pixels to metres based on a given pixel size.
 

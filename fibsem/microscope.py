@@ -330,7 +330,7 @@ class FibsemMicroscope(ABC):
         pass
 
     @abstractmethod
-    def run_milling(self, milling_current: float, asynch: bool) -> None:
+    def run_milling(self, milling_current: float, milling_voltage: float, asynch: bool) -> None:
         pass
 
     @abstractmethod
@@ -1079,7 +1079,7 @@ class ThermoMicroscope(FibsemMicroscope):
         setup_milling(self, mill_settings: FibsemMillingSettings):
             Configure the microscope for milling using the ion beam.
 
-        run_milling(self, milling_current: float, asynch: bool = False):
+        run_milling(self, milling_current: float, milling_voltage: float, asynch: bool = False):
             Run ion beam milling using the specified milling current.
 
         finish_milling(self, imaging_current: float):

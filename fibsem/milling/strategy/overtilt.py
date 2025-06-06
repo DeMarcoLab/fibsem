@@ -1,8 +1,8 @@
 
 import logging
-import os
-from dataclasses import dataclass
-from typing import Tuple, List
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List
 import numpy as np
 
 from fibsem import acquire, alignment
@@ -18,36 +18,14 @@ from fibsem.structures import (BeamType, FibsemImage, FibsemRectangle,
 @dataclass
 class OvertiltTrenchMillingConfig(MillingStrategyConfig):
     overtilt: float = 1
-    resolution: List[int] = None
+    resolution: List[int] = field(default_factory=lambda: [1536, 1024])
 
-    def __post_init__(self):
-        if self.resolution is None:
-            self.resolution = [1536, 1024]
 
-    @staticmethod
-    def from_dict(d: dict) -> "OvertiltTrenchMillingConfig":
-        return OvertiltTrenchMillingConfig(**d)
-
-    def to_dict(self):
-        return {"overtilt": self.overtilt, }
-
-@dataclass
-class OvertiltTrenchMillingStrategy(MillingStrategy):
+class OvertiltTrenchMillingStrategy(MillingStrategy[OvertiltTrenchMillingConfig]):
     """Overtilt milling strategy for trench milling"""
     name: str = "Overtilt"
     fullname: str = "Overtilt Trench Milling"
-
-    def __init__(self, config: OvertiltTrenchMillingConfig = None):
-        self.config = config or OvertiltTrenchMillingConfig()
-
-    def to_dict(self):
-        return {"name": self.name, "config": self.config.to_dict()}
-
-    @staticmethod
-    def from_dict(d: dict) -> "OvertiltTrenchMillingStrategy":
-        config = OvertiltTrenchMillingConfig.from_dict(d["config"])
-        
-        return OvertiltTrenchMillingStrategy(config=config)
+    config_class = OvertiltTrenchMillingConfig
 
     def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False,
         parent_ui = None) -> None:
@@ -72,7 +50,7 @@ class OvertiltTrenchMillingStrategy(MillingStrategy):
                                        resolution=[1536, 1024], 
                                        beam_type=stage.milling.milling_channel)
         image_settings.reduced_area = stage.alignment.rect
-        image_settings.path = os.getcwd()
+        image_settings.path = Path.cwd()
         image_settings.filename = f"ref_{stage.name}_overtilt_alignment"
         ref_image = acquire.acquire_image(microscope, image_settings)
 

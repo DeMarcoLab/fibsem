@@ -15,22 +15,11 @@ class StandardMillingConfig(MillingStrategyConfig):
     pass
 
 
-@dataclass
 class StandardMillingStrategy(MillingStrategy):
     """Basic milling strategy that mills continuously until completion"""
     name: str = "Standard"
     fullname: str = "Standard Milling"
-
-    def __init__(self, config: StandardMillingConfig = None):
-        self.config = config or StandardMillingConfig()
-
-    def to_dict(self):
-        return {"name": self.name, "config": self.config.to_dict()}
-
-    @staticmethod
-    def from_dict(d: dict) -> "StandardMillingStrategy":
-        config=StandardMillingConfig.from_dict(d.get("config", {}))   
-        return StandardMillingStrategy(config=config)
+    config_class = StandardMillingConfig
 
     def run(
         self,
@@ -40,7 +29,7 @@ class StandardMillingStrategy(MillingStrategy):
         parent_ui = None,
     ) -> None:
         logging.info(f"Running {self.name} Milling Strategy for {stage.name}")
-        setup_milling(microscope, milling_stage=stage, ref_image=stage.ref_image)
+        setup_milling(microscope, milling_stage=stage, ref_image=getattr(stage, "ref_image", None))
 
         draw_patterns(microscope, stage.pattern.define())
 

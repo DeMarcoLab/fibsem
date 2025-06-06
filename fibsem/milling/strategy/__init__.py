@@ -13,10 +13,10 @@ BUILTIN_STRATEGIES: typing.Dict[str, type[MillingStrategy]] = {
     StandardMillingStrategy.name: StandardMillingStrategy,
     OvertiltTrenchMillingStrategy.name: OvertiltTrenchMillingStrategy,
 }
-REGISTERED_STRATEGIES: typing.Dict[str, type[MillingStrategy]] = {}
+REGISTERED_STRATEGIES: typing.Dict[str, type[MillingStrategy[typing.Any]]] = {}
 
 
-def get_strategies() -> typing.Dict[str, type[MillingStrategy]]:
+def get_strategies() -> typing.Dict[str, type[MillingStrategy[typing.Any]]]:
     # This order means that builtins > registered > plugins if there are any name clashes
     return {**_get_plugin_strategies(), **REGISTERED_STRATEGIES, **BUILTIN_STRATEGIES}
 

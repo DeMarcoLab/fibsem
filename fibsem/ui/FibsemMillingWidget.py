@@ -495,7 +495,10 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
             # default None
             val = getattr(strategy.config, key, None)
 
-            if isinstance(val, (int, float)) and not isinstance(val, bool):
+            if isinstance(val, bool):
+                control_widget = QtWidgets.QCheckBox()
+                control_widget.setChecked(bool(val))
+            elif isinstance(val, (int, float)):
                 # limits
                 min_val = -1000
 
@@ -510,18 +513,18 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
                 if key in ["overtilt"]:
                     control_widget.setSuffix(" °")
                 control_widget.setValue(val)
-            if isinstance(val, str):
+            elif isinstance(val, str):
                 control_widget = QtWidgets.QLineEdit()
                 control_widget.setText(val)
-            if isinstance(val, bool):
-                control_widget = QtWidgets.QCheckBox()
-                control_widget.setChecked(bool(val))
-            if isinstance(val, (tuple, list)):
+
+            elif isinstance(val, (tuple, list)):
                 # dont handle for now
                 if "resolution" in key:
                     control_widget = QtWidgets.QComboBox()
                     control_widget.addItems(cfg.STANDARD_RESOLUTIONS)
                     control_widget.setCurrentText(f"{val[0]}x{val[1]}") # TODO: check if in list
+            else:
+                raise TypeError(f"{strategy.name} config '{key}' is unsupported type '{type(val)}'")
 
             # TODO: add support for scaling, str, bool, etc.
             # TODO: attached events
@@ -549,14 +552,16 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
             if isinstance(widget, QtWidgets.QDoubleSpinBox):
                 value = scale_value_for_display(key, widget.value(), constants.MICRO_TO_SI) # TODO: support other scales
-            if isinstance(widget, QtWidgets.QLineEdit):
+            elif isinstance(widget, QtWidgets.QLineEdit):
                 value = widget.text()
-            if isinstance(widget, QtWidgets.QCheckBox):
+            elif isinstance(widget, QtWidgets.QCheckBox):
                 value = widget.isChecked()
-            if isinstance(widget, QtWidgets.QComboBox):
+            elif isinstance(widget, QtWidgets.QComboBox):
                 value = widget.currentText()
                 if "resolution" in key:
                     value = tuple(map(int, value.split("x")))
+            else:
+                raise TypeError(f"Unexpected widget type {type(widget)} in milling strategy UI")
             # TODO: add support for scaling, str, bool, etc.
 
             setattr(strategy.config, key, value)

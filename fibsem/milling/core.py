@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import List, Tuple
+from os import PathLike
+from typing import List, Tuple, Optional, Union
 
 from fibsem import config as fcfg
 from fibsem.microscope import FibsemMicroscope
@@ -23,7 +24,7 @@ from fibsem.utils import current_timestamp_v2
 def setup_milling(
     microscope: FibsemMicroscope,
     milling_stage: FibsemMillingStage,
-    ref_image: FibsemImage = None,
+    ref_image: Optional[FibsemImage] = None,
 ):
     """Setup Microscope for FIB Milling.
 
@@ -246,7 +247,7 @@ def acquire_images_after_milling(
     microscope: FibsemMicroscope,
     milling_stage: FibsemMillingStage,
     start_time: float,
-    path: str,
+    path: Optional[Union[str, PathLike]],
 ) -> Tuple[FibsemImage, FibsemImage]:
     """Acquire images after milling for reference.
     Args:
@@ -265,7 +266,7 @@ def acquire_images_after_milling(
 
     # set imaging parameters (filename, path, etc.)
     if milling_stage.imaging.path is None:
-        milling_stage.imaging.path = path
+        milling_stage.imaging.path = str(path)
     milling_stage.imaging.filename = f"ref_milling_{milling_stage.name.replace(' ', '-')}_finished_{str(start_time).replace('.', '_')}"
     
     # from pprint import pprint
