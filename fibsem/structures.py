@@ -1,5 +1,6 @@
 # fibsem structures
 
+from __future__ import annotations
 import json
 import os
 import sys
@@ -8,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Optional, Tuple, Union, Set, Any, Dict
+from typing import List, Optional, Tuple, Union, Set, Any, Dict, TypeVar, TYPE_CHECKING
 
 import numpy as np
 import tifffile as tff
@@ -34,6 +35,10 @@ try:
     THERMO = True
 except ImportError:
     THERMO = False
+
+if TYPE_CHECKING:
+    TFibsemPatternSettings = TypeVar("TFibsemPatternSettings", bound="FibsemPatternSettings")
+
 
 @dataclass
 class Point:
@@ -867,9 +872,10 @@ class FibsemPatternSettings(ABC):
     @abstractmethod
     def to_dict(self) -> dict:
         pass
-    
-    @staticmethod
-    def from_dict(self, data: dict) -> "FibsemPatternSettings":
+
+    @abstractmethod
+    @classmethod
+    def from_dict(cls: type[TFibsemPatternSettings], data: dict) -> TFibsemPatternSettings:
         pass
 
     @property
@@ -912,9 +918,9 @@ class FibsemRectangleSettings(FibsemPatternSettings):
             "is_exclusion": self.is_exclusion,
         }
 
-    @staticmethod
-    def from_dict(data: dict) -> "FibsemRectangleSettings":
-        return FibsemRectangleSettings(
+    @classmethod
+    def from_dict(cls, data: dict) -> "FibsemRectangleSettings":
+        return cls(
             width=data["width"],
             height=data["height"],
             depth=data["depth"],
@@ -949,9 +955,9 @@ class FibsemLineSettings(FibsemPatternSettings):
             "depth": self.depth,
         }
 
-    @staticmethod
-    def from_dict(data: dict) -> "FibsemLineSettings":
-        return FibsemLineSettings(
+    @classmethod
+    def from_dict(cls, data: dict) -> "FibsemLineSettings":
+        return cls(
             start_x=data["start_x"],
             end_x=data["end_x"],
             start_y=data["start_y"],
@@ -988,9 +994,9 @@ class FibsemCircleSettings(FibsemPatternSettings):
             "is_exclusion": self.is_exclusion,
         }
 
-    @staticmethod
-    def from_dict(data: dict) -> "FibsemCircleSettings":
-        return FibsemCircleSettings(
+    @classmethod
+    def from_dict(cls, data: dict) -> "FibsemCircleSettings":
+        return cls(
             radius=data["radius"],
             depth=data["depth"],
             centre_x=data["centre_x"],
@@ -1026,10 +1032,9 @@ class FibsemBitmapSettings(FibsemPatternSettings):
             "centre_y": self.centre_y,
             "path": self.path,
         }
-
-    @staticmethod
-    def from_dict(data: dict) -> "FibsemBitmapSettings":
-        return FibsemBitmapSettings(
+    @classmethod
+    def from_dict(cls, data: dict) -> "FibsemBitmapSettings":
+        return cls(
             width=data["width"],
             height=data["height"],
             depth=data["depth"],
