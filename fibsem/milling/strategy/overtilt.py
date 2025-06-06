@@ -1,6 +1,6 @@
 
 import logging
-import os
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List
 import numpy as np
@@ -50,7 +50,7 @@ class OvertiltTrenchMillingStrategy(MillingStrategy[OvertiltTrenchMillingConfig]
                                        resolution=[1536, 1024], 
                                        beam_type=stage.milling.milling_channel)
         image_settings.reduced_area = stage.alignment.rect
-        image_settings.path = os.getcwd()
+        image_settings.path = Path.cwd()
         image_settings.filename = f"ref_{stage.name}_overtilt_alignment"
         ref_image = acquire.acquire_image(microscope, image_settings)
 
