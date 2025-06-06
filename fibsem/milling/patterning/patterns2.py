@@ -1,7 +1,8 @@
+from __future__ import annotations
 from copy import deepcopy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields, field
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Any, Type, ClassVar, TypeVar, Generic, TYPE_CHECKING
 
 import numpy as np
 
@@ -16,6 +17,10 @@ from fibsem.structures import (
     Point,
 )
 
+if TYPE_CHECKING:
+    from fibsem.structures import TFibsemPatternSettings
+    TPattern = TypeVar("TPattern", bound="BasePattern")
+
 # TODO: define the configuration for each key,
 # e.g. 
 # "width": {"type": "float", "min": 0, "max": 1000, "default": 100, "description": "Width of the rectangle"}
@@ -28,34 +33,43 @@ DEFAULT_POINT_DDICT = {"x": 0.0, "y": 0.0}
 CORE_PATTERN_ATTRIBUTES = ["name", "point", "shapes"]
 
 @dataclass
-class BasePattern(ABC):
-    # name: str = "BasePattern"
-    # point: Point = field(default_factory=Point) 
-    # shapes: List[FibsemPatternSettings] = None
+class BasePattern(ABC, Generic[TFibsemPatternSettings]):
+    name: ClassVar[str]
+    point: Point
+    shapes: List[TFibsemPatternSettings] = field(init=False)
+    
+    _advanced_attributes: ClassVar[Tuple[str, ...]] = field(default_factory=tuple)
     # TODO: investigate TypeError: non-default argument 'width' follows default argument when uncommenting the above lines
 
+    def __post_init__(self):
+        # This is solved by the 'kw_only' flag in 3.10+ (see
+        # https://bugs.python.org/issue43532) but this workaround works in
+        # earlier versions too.
+        if not hasattr(self, "point"):
+            setattr(self, "point", Point())
+        if not hasattr(self, "shapes"):
+            setattr(self, "shapes", [])
+
     @abstractmethod
-    def define(self) -> List[FibsemPatternSettings]:
+    def define(self) -> List[TFibsemPatternSettings]:
         pass
 
     @abstractmethod
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         pass
 
     @classmethod
     @abstractmethod
-    def from_dict(cls, ddict: dict) -> "BasePattern":
+    def from_dict(cls: Type[TPattern], ddict: Dict[str, Any]) -> TPattern:
         pass
 
     @property
-    def required_attributes(self) -> Tuple[str]:
-        return [field.name for field in fields(self) if field.name not in CORE_PATTERN_ATTRIBUTES]
+    def required_attributes(self) -> Tuple[str, ...]:
+        return tuple(field.name for field in fields(self) if field.name not in CORE_PATTERN_ATTRIBUTES)
     
     @property
-    def advanced_attributes(self) -> List[str]:
-        if hasattr(self, "_advanced_attributes"):
-            return self._advanced_attributes
-        return []
+    def advanced_attributes(self) -> Tuple[str, ...]:
+        return self._advanced_attributes
 
     @property
     def volume(self) -> float:
@@ -69,11 +83,10 @@ class BitmapPattern(BasePattern):
     depth: float
     rotation: float = 0
     path: str = ""
-    shapes: List[FibsemPatternSettings] = None
-    point: Point = field(default_factory=Point) 
-    name: str = "Bitmap"
 
-    def define(self) -> List[FibsemPatternSettings]:
+    name: ClassVar[str] = "Bitmap"
+
+    def define(self) -> List[FibsemBitmapSettings]:
 
         shape = FibsemBitmapSettings(
             width=self.width,
@@ -88,7 +101,7 @@ class BitmapPattern(BasePattern):
         self.shapes = [shape]
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -100,7 +113,7 @@ class BitmapPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "BitmapPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "BitmapPattern":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -121,10 +134,9 @@ class RectanglePattern(BasePattern):
     passes: int = 0
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
-    name: str = "Rectangle"
-    _advanced_attributes = ["time", "passes"] # TODO: add for other patterns
+
+    name: ClassVar[str] = "Rectangle"
+    _advanced_attributes: ClassVar[Tuple[str, ...]] = ("time", "passes") # TODO: add for other patterns
 
     def define(self) -> List[FibsemRectangleSettings]:
 
@@ -144,7 +156,7 @@ class RectanglePattern(BasePattern):
         self.shapes = [shape]
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -159,7 +171,7 @@ class RectanglePattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "RectanglePattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "RectanglePattern":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -180,9 +192,8 @@ class LinePattern(BasePattern):
     start_y: float
     end_y: float
     depth: float
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
-    name: str = "Line"
+
+    name: ClassVar[str] = "Line"
 
     def define(self) -> List[FibsemLineSettings]:
         shape = FibsemLineSettings(
@@ -195,7 +206,7 @@ class LinePattern(BasePattern):
         self.shapes = [shape]
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -207,7 +218,7 @@ class LinePattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "LinePattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "LinePattern":
         return cls(
             start_x=ddict["start_x"],
             end_x=ddict["end_x"],
@@ -222,9 +233,8 @@ class CirclePattern(BasePattern):
     radius: float
     depth: float
     thickness: float = 0
-    name: str = "Circle"
-    shapes: List[FibsemPatternSettings] = None
-    point: Point = field(default_factory=Point) 
+
+    name: ClassVar[str] = "Circle"
 
     def define(self) -> List[FibsemCircleSettings]:
         
@@ -238,7 +248,7 @@ class CirclePattern(BasePattern):
         self.shapes = [shape]
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -248,7 +258,7 @@ class CirclePattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "CirclePattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "CirclePattern":
         return cls(
             radius=ddict["radius"],
             depth=ddict["depth"],
@@ -266,10 +276,9 @@ class TrenchPattern(BasePattern):
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
     time: float = 0.0
     fillet: float = 0.0
-    point: Point = field(default_factory=Point) 
-    name: str = "Trench"
-    shapes: List[FibsemPatternSettings] = None
-    _advanced_attributes = ["time", "fillet"]
+
+    name: ClassVar[str] = "Trench"
+    _advanced_attributes: ClassVar[Tuple[str, ...]] = ("time", "fillet")
 
     def define(self) -> List[FibsemRectangleSettings]:
 
@@ -399,7 +408,7 @@ class TrenchPattern(BasePattern):
 
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -414,7 +423,7 @@ class TrenchPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "TrenchPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "TrenchPattern":
         return cls(
             width=ddict["width"],
             depth=ddict["depth"],
@@ -438,9 +447,8 @@ class HorseshoePattern(BasePattern):
     inverted: bool = False
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    shapes: List[FibsemPatternSettings] = None
-    point: Point = field(default_factory=Point) 
-    name: str = "Horseshoe"
+
+    name: ClassVar[str] = "Horseshoe"
     # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
     def define(self) -> List[FibsemRectangleSettings]:
@@ -501,7 +509,7 @@ class HorseshoePattern(BasePattern):
         self.shapes = [lower_pattern, upper_pattern, side_pattern]
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -517,7 +525,7 @@ class HorseshoePattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "HorseshoePattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "HorseshoePattern":
         return cls(
             width=ddict["width"],
             spacing=ddict["spacing"],
@@ -542,8 +550,8 @@ class HorseshoePatternVertical(BasePattern):
     scan_direction: str = "TopToBottom"
     inverted: bool = False
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    point: Point = field(default_factory=Point) 
-    name: str = "HorseshoeVertical"
+
+    name: ClassVar[str] = "HorseshoeVertical"
     # ref: "horseshoe" terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
 
     def define(self) -> List[FibsemRectangleSettings]:
@@ -594,7 +602,7 @@ class HorseshoePatternVertical(BasePattern):
         self.shapes = [left_pattern,right_pattern, upper_pattern]
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -609,7 +617,7 @@ class HorseshoePatternVertical(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "HorseshoePatternVertical":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "HorseshoePatternVertical":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -632,9 +640,8 @@ class SerialSectionPattern(BasePattern):
     side_depth: float = 0
     inverted: bool = False
     use_side_patterns: bool = True
-    name: str = "SerialSection"
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
+
+    name: ClassVar[str] = "SerialSection"
     # ref: "serial-liftout section" https://www.nature.com/articles/s41592-023-02113-5
 
     def define(self) -> List[FibsemRectangleSettings]:
@@ -705,7 +712,7 @@ class SerialSectionPattern(BasePattern):
             
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -720,7 +727,7 @@ class SerialSectionPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "SerialSectionPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "SerialSectionPattern":
         return cls(
             section_thickness=ddict["section_thickness"],
             section_width=ddict["section_width"],
@@ -741,9 +748,8 @@ class FiducialPattern(BasePattern):
     depth: float
     rotation: float = 0
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
-    name: str = "Fiducial"
+
+    name: ClassVar[str] = "Fiducial"
 
     def define(self) -> List[FibsemRectangleSettings]:
         """Draw a fiducial milling pattern (cross shape)"""
@@ -779,7 +785,7 @@ class FiducialPattern(BasePattern):
         self.shapes = [left_pattern, right_pattern]
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -791,7 +797,7 @@ class FiducialPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "FiducialPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "FiducialPattern":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -811,9 +817,8 @@ class UndercutPattern(BasePattern):
     rhs_height: float
     h_offset: float
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    name: str = "Undercut"
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
+
+    name: ClassVar[str] = "Undercut"
 
     def define(self) -> List[FibsemRectangleSettings]:
         
@@ -862,7 +867,7 @@ class UndercutPattern(BasePattern):
         self.shapes = [top_pattern, rhs_pattern]
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -876,7 +881,7 @@ class UndercutPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "UndercutPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "UndercutPattern":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -894,11 +899,10 @@ class MicroExpansionPattern(BasePattern):
     height: float
     depth: float
     distance: float
-    name: str = "MicroExpansion"
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
 
+    name: ClassVar[str] = "MicroExpansion"
     # ref: https://www.nature.com/articles/s41467-022-29501-3
+
     def define(self) -> List[FibsemRectangleSettings]:
         """Draw the microexpansion joints for stress relief of lamella"""
 
@@ -929,7 +933,7 @@ class MicroExpansionPattern(BasePattern):
         self.shapes = [left_pattern_settings, right_pattern_settings]
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -940,7 +944,7 @@ class MicroExpansionPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "MicroExpansionPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "MicroExpansionPattern":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -962,9 +966,8 @@ class ArrayPattern(BasePattern):
     rotation: float = 0
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    name: str = "ArrayPattern"
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
+
+    name: ClassVar[str] = "ArrayPattern"
     # ref: spotweld terminology https://www.researchgate.net/publication/351737991_A_Modular_Platform_for_Streamlining_Automated_Cryo-FIB_Workflows#pf14
     # ref: weld cross-section/ passes: https://www.nature.com/articles/s41592-023-02113-5
 
@@ -1012,7 +1015,7 @@ class ArrayPattern(BasePattern):
 
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -1030,7 +1033,7 @@ class ArrayPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "ArrayPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "ArrayPattern":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -1056,9 +1059,8 @@ class WaffleNotchPattern(BasePattern):
     distance: float
     inverted: bool = False
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    name: str = "WaffleNotch"
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
+
+    name: ClassVar[str] = "WaffleNotch"
     # ref: https://www.nature.com/articles/s41467-022-29501-3
 
     def define(self) -> List[FibsemRectangleSettings]:
@@ -1134,7 +1136,7 @@ class WaffleNotchPattern(BasePattern):
 
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -1149,7 +1151,7 @@ class WaffleNotchPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "WaffleNotchPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "WaffleNotchPattern":
         return cls(
             vheight=ddict["vheight"],
             vwidth=ddict["vwidth"],
@@ -1166,10 +1168,8 @@ class WaffleNotchPattern(BasePattern):
 class CloverPattern(BasePattern):
     radius: float
     depth: float
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
-    name: str = "Clover"
 
+    name: ClassVar[str] = "Clover"
 
     def define(self) -> List[FibsemPatternSettings]:
         
@@ -1212,7 +1212,7 @@ class CloverPattern(BasePattern):
         self.shapes = [top_pattern, right_pattern, left_pattern, stem_pattern]
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -1221,7 +1221,7 @@ class CloverPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "CloverPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "CloverPattern":
         return cls(
             radius=ddict["radius"],
             depth=ddict["depth"],
@@ -1234,12 +1234,10 @@ class TriForcePattern(BasePattern):
     width: float
     height: float
     depth: float
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
-    name: str = "TriForce"
+
+    name: ClassVar[str] = "TriForce"
 
     def define(self) -> List[FibsemPatternSettings]:
-        
         point = self.point
         height = self.height
         width = self.width
@@ -1247,7 +1245,6 @@ class TriForcePattern(BasePattern):
         angle = 30
 
         self.shapes = []
-
         # centre of each triangle
         points = [
             Point(point.x, point.y + height),
@@ -1256,7 +1253,6 @@ class TriForcePattern(BasePattern):
         ]
 
         for point in points:
-
             triangle_shapes =  create_triangle_patterns(width=width, 
                                                         height=height, 
                                                         depth=depth, 
@@ -1266,7 +1262,7 @@ class TriForcePattern(BasePattern):
             
         return self.shapes
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -1276,7 +1272,7 @@ class TriForcePattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "TriForcePattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "TriForcePattern":
         return cls(
             width=ddict["width"],
             height=ddict["height"],
@@ -1293,9 +1289,8 @@ class TrapezoidPattern(BasePattern):
     distance: float
     n_rectangles: int
     overlap: float
-    name: str = "Trapezoid"
-    point: Point = field(default_factory=Point) 
-    shapes: List[FibsemPatternSettings] = None
+
+    name: ClassVar[str] = "Trapezoid"
 
     def define(self) -> List[FibsemPatternSettings]:
         
@@ -1314,7 +1309,7 @@ class TrapezoidPattern(BasePattern):
         # bottom half
         for i in range(n_rectangles):
             width = outer_width - i * width_increments
-            y = point.y + (i * dict["trench_height"] * (1-overlap)) - distance - trench_height
+            y = point.y + (i * self.trench_height * (1-overlap)) - distance - trench_height
             centre = Point(point.x, y)
             pattern = FibsemRectangleSettings(
                 width=width,
@@ -1328,7 +1323,7 @@ class TrapezoidPattern(BasePattern):
         # top half
         for i in range(n_rectangles):
             width = outer_width - i * width_increments
-            y = point.y - (i * dict["trench_height"] * (1-overlap)) + distance + trench_height
+            y = point.y - (i * self.trench_height * (1-overlap)) + distance + trench_height
             centre = Point(point.x, y)
             pattern = FibsemRectangleSettings(
                 width=width,
@@ -1341,7 +1336,7 @@ class TrapezoidPattern(BasePattern):
             self.shapes.append(deepcopy(pattern))
         return self.shapes
     
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "point": self.point.to_dict(),
@@ -1355,7 +1350,7 @@ class TrapezoidPattern(BasePattern):
         }
     
     @classmethod
-    def from_dict(cls, ddict: dict) -> "TrapezoidPattern":
+    def from_dict(cls, ddict: Dict[str, Any]) -> "TrapezoidPattern":
 
         return cls(
             inner_width=ddict["inner_width"],
@@ -1407,7 +1402,7 @@ def create_triangle_patterns(
     return [left_pattern, right_pattern, bottom_pattern]
 
 
-MILLING_PATTERNS: Dict[str, BasePattern] = {
+MILLING_PATTERNS: Dict[str, Type[BasePattern]] = {
     RectanglePattern.name.lower(): RectanglePattern,
     LinePattern.name.lower(): LinePattern,
     CirclePattern.name.lower(): CirclePattern,
@@ -1429,7 +1424,7 @@ MILLING_PATTERN_NAMES = [p.name for p in MILLING_PATTERNS.values()]
 DEFAULT_MILLING_PATTERN = RectanglePattern.name
 
 # legacy mapping
-PROTOCOL_MILL_MAP = {
+PROTOCOL_MILL_MAP: Dict[str, Type[BasePattern]] = {
     "cut": RectanglePattern,
     "fiducial": FiducialPattern,
     "flatten": RectanglePattern,
@@ -1461,7 +1456,9 @@ PROTOCOL_MILL_MAP = {
     "mill_polishing": TrenchPattern,
 }
 
-def get_pattern(name: str, config: dict) -> BasePattern:
+def get_pattern(name: str, config: dict[str, Any]) -> BasePattern:
     cls_pattern = MILLING_PATTERNS.get(name.lower())
+    if cls_pattern is None:
+        raise ValueError(f"Pattern '{name}' is not defined")
     pattern = cls_pattern.from_dict(config)
     return pattern
