@@ -1,7 +1,7 @@
 import logging
 import math
 from dataclasses import dataclass
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Optional
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -131,7 +131,7 @@ def _draw_rectangle_pattern(
     return patches
 
 
-def get_drawing_function(name: str) -> Callable:
+def get_drawing_function(name: str) -> Optional[Callable]:
     
     if name in ["Circle", "Bitmap", "Line", "SerialSection"]:
         return None
@@ -146,7 +146,7 @@ def draw_milling_patterns(
     title: str = "Milling Patterns",
     show_current: bool = False,
     show_preset: bool = False,
-) -> plt.Figure:
+) -> Tuple[plt.figure.Figure, plt.axes.Axes]:
     """
     Draw milling patterns on an image.
     Args:
@@ -157,8 +157,8 @@ def draw_milling_patterns(
     Returns:
         plt.Figure: Figure with patterns drawn.
     """
-    fig: plt.Figure
-    ax: plt.Axes    
+    fig: plt.figure.Figure
+    ax: plt.axes.Axes    
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.imshow(image.data, cmap="gray")
 
