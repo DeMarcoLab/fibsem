@@ -23,7 +23,7 @@ from fibsem.utils import current_timestamp_v2
 def setup_milling(
     microscope: FibsemMicroscope,
     milling_stage: FibsemMillingStage,
-    ref_image: FibsemImage = None,
+    ref_image: Optional[FibsemImage] = None,
 ):
     """Setup Microscope for FIB Milling.
 

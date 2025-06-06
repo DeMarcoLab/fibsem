@@ -485,7 +485,7 @@ def multi_step_alignment_v2(
     microscope: FibsemMicroscope,
     ref_image: FibsemImage,
     beam_type: BeamType,
-    alignment_current: float = None,
+    alignment_current: Optional[float] = None,
     steps: int = 3,
     use_autocontrast: bool = False,
     subsystem: Optional[str] = None,
