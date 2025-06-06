@@ -1439,8 +1439,8 @@ class MicroscopeSettings:
 
 @dataclass
 class FibsemExperiment:
-    id: str = None
-    method: str = None
+    id: str = "Unknown"
+    method: str = "Unknown"
     date: float = datetime.timestamp(datetime.now())
     application: str = "OpenFIBSEM"
     fibsem_version: str = fibsem.__version__
@@ -1472,10 +1472,10 @@ class FibsemExperiment:
 
 @dataclass
 class FibsemUser:
-    name: str = None
-    email: str = None
-    organization: str = None
-    hostname: str = None
+    name: str = "Unknown"
+    email: str = "Unknown"
+    organization: str = "Unknown"
+    hostname: str = "Unknown"
     # TODO: add host_ip_address
 
     def to_dict(self) -> Dict[str, Any]:
