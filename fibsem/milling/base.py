@@ -80,6 +80,14 @@ class FibsemMillingStage:
         
         if self.imaging.resolution is None:
             self.imaging.resolution = [1536, 1024]  # default resolution for imaging
+        if self.imaging.hfw is None:
+            self.imaging.hfw = 150e-6
+        if self.imaging.dwell_time is None:
+            self.imaging.dwell_time = 1e-6
+        if self.imaging.autocontrast is None:
+            self.imaging.autocontrast = False
+        if self.imaging.save is None:
+            self.imaging.save = False
 
     def to_dict(self):
         return {

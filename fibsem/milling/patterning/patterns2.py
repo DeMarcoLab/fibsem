@@ -1,11 +1,12 @@
-from copy import deepcopy
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, fields, field
+from copy import deepcopy
+from dataclasses import dataclass, field, fields
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
-from fibsem import constants
+from fibsem import config as cfg
+from fibsem import constants, utils
 from fibsem.structures import (
     CrossSectionPattern,
     FibsemBitmapSettings,
@@ -1465,3 +1466,10 @@ def get_pattern(name: str, config: dict) -> BasePattern:
     cls_pattern = MILLING_PATTERNS.get(name.lower())
     pattern = cls_pattern.from_dict(config)
     return pattern
+
+# default milling protocol
+DEFAULT_PROTOCOL = utils.load_yaml(cfg.PROTOCOL_PATH)
+
+def get_default_milling_pattern(name: str) -> BasePattern:
+    """Get the default milling pattern."""
+    return get_pattern(name, config = DEFAULT_PROTOCOL["patterns"][name])

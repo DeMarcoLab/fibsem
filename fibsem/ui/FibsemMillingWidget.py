@@ -36,7 +36,7 @@ from fibsem.milling.patterning.patterns2 import (
     BasePattern,
     FiducialPattern,
     LinePattern,
-    get_pattern,
+    get_default_milling_pattern,
 )
 from fibsem.milling.strategy import DEFAULT_STRATEGY_NAME, get_strategy_names
 from fibsem.structures import (
@@ -101,12 +101,7 @@ def scale_value_for_display(key: str, value: Union[float, int], scale: float) ->
         return value * scale    
     return value
 
-# default milling protocol
-DEFAULT_PROTOCOL = utils.load_yaml(cfg.PROTOCOL_PATH)
 
-def get_default_milling_pattern(name: str) -> BasePattern:
-    """Get the default milling pattern."""
-    return get_pattern(name, config = DEFAULT_PROTOCOL["patterns"][name])
 
 # TODO: make these more generic for other units, or use pint
 def _format_beam_current_as_str(val: float):
