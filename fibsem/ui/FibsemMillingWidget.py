@@ -576,13 +576,11 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
     def get_milling_alignment_from_ui(self):
         """Get the drift correction settings from the UI."""
-        milling_alignment = MillingAlignment(
-            enabled=self.checkBox_alignment_enabled.isChecked(),
-            interval_enabled=self.checkBox_alignment_interval_enabled.isChecked(),
-            interval=self.doubleSpinBox_alignment_interval.value(),
-            # rect=self.image_widget.get_alignment_area(), # TODO: get the alignment area from the image widget
-        ) # TODO: maintain existing alignment area...
-
+        milling_alignment = self.current_milling_stage.alignment
+        milling_alignment.enabled=self.checkBox_alignment_enabled.isChecked()
+        milling_alignment.interval_enabled=self.checkBox_alignment_interval_enabled.isChecked()
+        milling_alignment.interval=self.doubleSpinBox_alignment_interval.value()
+        #milling_alignment.rect=self.image_widget.get_alignment_area(), # TODO: get the alignment area from the image widget
         return milling_alignment
 
     def toggle_imaging_visibility(self):
@@ -593,16 +591,16 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
     def get_imaging_settings_from_ui(self):
         """Get the imaging settings from the UI."""
 
-        # imaging settings
+        imaging_settings = self.current_milling_stage.imaging
+
+        # imaging settings (only a partial update)
         resolution = list(map(int, self.comboBox_imaging_resolution.currentText().split("x")))
-        imaging_settings = ImageSettings(
-            resolution=resolution,
-            dwell_time=self.doubleSpinBox_imaging_dwell_time.value() * constants.MICRO_TO_SI,
-            hfw=self.doubleSpinBox_imaging_fov.value() * constants.MICRO_TO_SI,
-            beam_type=BeamType.ELECTRON, # redundant, always both
-            autocontrast=self.checkBox_imaging_use_autocontrast.isChecked(),
-            save = self.checkBox_imaging_save.isChecked(),
-        )
+        imaging_settings.resolution=resolution
+        imaging_settings.dwell_time=self.doubleSpinBox_imaging_dwell_time.value() * constants.MICRO_TO_SI
+        imaging_settings.hfw=self.doubleSpinBox_imaging_fov.value() * constants.MICRO_TO_SI
+        imaging_settings.autocontrast=self.checkBox_imaging_use_autocontrast.isChecked()
+        imaging_settings.save = self.checkBox_imaging_save.isChecked()
+
         return imaging_settings
 
     def set_imaging_settings_ui(self):
