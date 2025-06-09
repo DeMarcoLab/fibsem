@@ -146,7 +146,7 @@ def draw_milling_patterns(
     title: str = "Milling Patterns",
     show_current: bool = False,
     show_preset: bool = False,
-) -> Tuple[plt.figure.Figure, plt.axes.Axes]:
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     Draw milling patterns on an image.
     Args:
@@ -157,8 +157,6 @@ def draw_milling_patterns(
     Returns:
         plt.Figure: Figure with patterns drawn.
     """
-    fig: plt.figure.Figure
-    ax: plt.axes.Axes    
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.imshow(image.data, cmap="gray")
 

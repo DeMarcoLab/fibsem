@@ -1,11 +1,10 @@
 # fibsem structures
 
-from __future__ import annotations
 import json
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -19,7 +18,6 @@ from typing import (
     Dict,
     TypeVar,
     Generator,
-    TYPE_CHECKING,
 )
 
 import numpy as np
@@ -47,8 +45,9 @@ try:
 except ImportError:
     THERMO = False
 
-if TYPE_CHECKING:
-    TFibsemPatternSettings = TypeVar("TFibsemPatternSettings", bound="FibsemPatternSettings")
+TFibsemPatternSettings = TypeVar(
+    "TFibsemPatternSettings", bound="FibsemPatternSettings"
+)
 
 
 @dataclass
@@ -876,18 +875,17 @@ class MicroscopeState:
         return microscope_state
 
 
-
 ########### Base Pattern Settings
 @dataclass
 class FibsemPatternSettings(ABC):
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
-    @abstractmethod
-    def to_dict(self) -> dict:
-        pass
-
-    @abstractmethod
     @classmethod
-    def from_dict(cls: type[TFibsemPatternSettings], data: dict) -> TFibsemPatternSettings:
+    @abstractmethod
+    def from_dict(
+        cls: type[TFibsemPatternSettings], data: Dict[str, Any]
+    ) -> TFibsemPatternSettings:
         pass
 
     @property

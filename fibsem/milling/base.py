@@ -1,21 +1,18 @@
-from __future__ import annotations
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, fields, field, asdict
-from typing import TYPE_CHECKING
+from typing import List, Dict, Any, Tuple, Optional, Type, TypeVar, ClassVar, Generic
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
 from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
-from fibsem.structures import FibsemMillingSettings, MillingAlignment, ImageSettings, CrossSectionPattern, NumericalDisplayInfo
+from fibsem.structures import FibsemMillingSettings, MillingAlignment, ImageSettings, CrossSectionPattern
 
-if TYPE_CHECKING:
-    from typing import List, Dict, Any, Tuple, Optional, Type, TypeVar, ClassVar, Generic
 
-    TMillingStrategyConfig = TypeVar(
-        "TMillingStrategyConfig", bound="MillingStrategyConfig"
-    )
-    TMillingStrategy = TypeVar("TMillingStrategy", bound="MillingStrategy")
+TMillingStrategyConfig = TypeVar(
+    "TMillingStrategyConfig", bound="MillingStrategyConfig"
+)
+TMillingStrategy = TypeVar("TMillingStrategy", bound="MillingStrategy")
 
 
 @dataclass

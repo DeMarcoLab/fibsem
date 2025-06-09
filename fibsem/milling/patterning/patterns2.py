@@ -1,8 +1,7 @@
-from __future__ import annotations
 from copy import deepcopy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields, field
-from typing import Dict, List, Tuple, Any, Type, ClassVar, TypeVar, Generic, TYPE_CHECKING
+from typing import Dict, List, Tuple, Any, Type, ClassVar, TypeVar, Generic
 
 import numpy as np
 
@@ -15,11 +14,10 @@ from fibsem.structures import (
     FibsemPatternSettings,
     FibsemRectangleSettings,
     Point,
+    TFibsemPatternSettings
 )
 
-if TYPE_CHECKING:
-    from fibsem.structures import TFibsemPatternSettings
-    TPattern = TypeVar("TPattern", bound="BasePattern")
+TPattern = TypeVar("TPattern", bound="BasePattern")
 
 # TODO: define the configuration for each key,
 # e.g. 
@@ -37,8 +35,8 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
     name: ClassVar[str]
     point: Point
     shapes: List[TFibsemPatternSettings] = field(init=False)
-    
-    _advanced_attributes: ClassVar[Tuple[str, ...]] = field(default_factory=tuple)
+
+    _advanced_attributes: ClassVar[Tuple[str, ...]] = ()
     # TODO: investigate TypeError: non-default argument 'width' follows default argument when uncommenting the above lines
 
     def __post_init__(self):
