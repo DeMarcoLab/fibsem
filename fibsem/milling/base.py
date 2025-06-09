@@ -42,7 +42,6 @@ class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
     def __init__(self, config: Optional[TMillingStrategyConfig] = None):
         self.config: TMillingStrategyConfig = config or self.config_class()
 
-    @abstractmethod
     def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "config": self.config.to_dict()}
 
