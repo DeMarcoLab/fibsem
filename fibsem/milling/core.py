@@ -1,7 +1,7 @@
+from __future__ import annotations
 import logging
 import time
-from os import PathLike
-from typing import List, Tuple, Optional, Union
+from typing import TYPE_CHECKING
 
 from fibsem import config as fcfg
 from fibsem.microscope import FibsemMicroscope
@@ -9,14 +9,16 @@ from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
     FibsemBitmapSettings,
     FibsemCircleSettings,
-    FibsemImage,
     FibsemLineSettings,
-    FibsemPatternSettings,
     FibsemRectangleSettings,
     ImageSettings,
     BeamType,
 )
 from fibsem.utils import current_timestamp_v2
+
+if TYPE_CHECKING:
+    from os import PathLike
+    from fibsem.structures import FibsemImage, FibsemPatternSettings
 
 ########################### SETUP
 
@@ -24,7 +26,7 @@ from fibsem.utils import current_timestamp_v2
 def setup_milling(
     microscope: FibsemMicroscope,
     milling_stage: FibsemMillingStage,
-    ref_image: Optional[FibsemImage] = None,
+    ref_image: FibsemImage | None = None,
 ):
     """Setup Microscope for FIB Milling.
 
@@ -89,11 +91,11 @@ def finish_milling(
     microscope.finish_milling(imaging_current=imaging_current, imaging_voltage=imaging_voltage)
     logging.info("Finished Ion Beam Milling.")
 
-def draw_patterns(microscope: FibsemMicroscope, patterns: List[FibsemPatternSettings]) -> None:
+def draw_patterns(microscope: FibsemMicroscope, patterns: list[FibsemPatternSettings]) -> None:
     """Draw milling patterns on the microscope from the list of settings
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance
-        patterns (List[FibsemPatternSettings]): List of milling patterns
+        patterns (list[FibsemPatternSettings]): List of milling patterns
     """
     for pattern in patterns:
         draw_pattern(microscope, pattern)
@@ -118,7 +120,7 @@ def draw_pattern(microscope: FibsemMicroscope, pattern: FibsemPatternSettings):
     elif isinstance(pattern, FibsemBitmapSettings):
         microscope.draw_bitmap_pattern(pattern, pattern.path)
 
-def convert_to_bitmap_format(path):
+def convert_to_bitmap_format(path: str | PathLike[str]) -> str:
     import os
 
     from PIL import Image
@@ -145,7 +147,7 @@ def mill_stage(microscope: FibsemMicroscope, stage: FibsemMillingStage, asynch: 
 
 def mill_stages(
     microscope: FibsemMicroscope,
-    stages: List[FibsemMillingStage],
+    stages: list[FibsemMillingStage],
     parent_ui=None,
 ):
     """Run a list of milling stages, with a progress bar and notifications."""
@@ -247,8 +249,8 @@ def acquire_images_after_milling(
     microscope: FibsemMicroscope,
     milling_stage: FibsemMillingStage,
     start_time: float,
-    path: Optional[Union[str, PathLike]],
-) -> Tuple[FibsemImage, FibsemImage]:
+    path: str | PathLike[str] | None,
+) -> tuple[FibsemImage, FibsemImage]:
     """Acquire images after milling for reference.
     Args:
         microscope (FibsemMicroscope): Fibsem microscope instance

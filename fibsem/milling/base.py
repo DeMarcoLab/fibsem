@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, fields, field, asdict
-from typing import List, Dict, Any, Tuple, Optional, Type, TypeVar, ClassVar, Generic
+from typing import Any, Type, TypeVar, ClassVar, Generic
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
@@ -18,19 +20,19 @@ TMillingStrategy = TypeVar("TMillingStrategy", bound="MillingStrategy")
 @dataclass
 class MillingStrategyConfig(ABC):
     """Abstract base class for milling strategy configurations"""
-    _advanced_attributes: ClassVar[Tuple[str, ...]] = ()
+    _advanced_attributes: ClassVar[tuple[str, ...]] = ()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
     def from_dict(
-        cls: Type[TMillingStrategyConfig], d: Dict[str, Any]
+        cls: Type[TMillingStrategyConfig], d: dict[str, Any]
     ) -> TMillingStrategyConfig:
         return cls(**d)
 
     @property
-    def required_attributes(self) -> Tuple[str, ...]:
+    def required_attributes(self) -> tuple[str, ...]:
         return tuple(f.name for f in fields(self))
 
 
@@ -39,14 +41,14 @@ class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
     name: str = "Milling Strategy"
     config_class: Type[TMillingStrategyConfig]
 
-    def __init__(self, config: Optional[TMillingStrategyConfig] = None):
+    def __init__(self, config: TMillingStrategyConfig | None = None):
         self.config: TMillingStrategyConfig = config or self.config_class()
 
     def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "config": self.config.to_dict()}
 
     @classmethod
-    def from_dict(cls: Type[TMillingStrategy], d: dict) -> TMillingStrategy:
+    def from_dict(cls: Type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
         config=cls.config_class.from_dict(d.get("config", {}))   
         return cls(config=config)
 
@@ -56,7 +58,7 @@ class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
 
 
 def get_strategy(
-    name: str = "Standard", config: Optional[Dict[str, Any]] = None
+    name: str = "Standard", config: dict[str, Any] | None = None
 ) -> MillingStrategy:
     from fibsem.milling.strategy import get_strategies, DEFAULT_STRATEGY
 
@@ -74,7 +76,7 @@ class FibsemMillingStage:
     milling: FibsemMillingSettings = field(default_factory=FibsemMillingSettings)
     pattern: BasePattern = field(default_factory=lambda: get_pattern("Rectangle",
                                        config={"width": 10e-6, "height": 5e-6, "depth": 1e-6}))
-    patterns: List[BasePattern] = None # unused
+    patterns: list[BasePattern] | None = None # unused
     strategy: MillingStrategy = field(default_factory=lambda: get_strategy("Standard"))
     alignment: MillingAlignment = field(default_factory=MillingAlignment)
     imaging: ImageSettings = field(default_factory=ImageSettings) # settings for post-milling acquisition
@@ -123,13 +125,13 @@ class FibsemMillingStage:
         self.strategy.run(microscope=microscope, stage=self, asynch=asynch, parent_ui=parent_ui)
 
 
-def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> List[FibsemMillingStage]:
+def get_milling_stages(key: str, protocol: dict[str, list[dict[str, Any]]]) -> list[FibsemMillingStage]:
     """Get the milling stages for specific key from the protocol.
     Args:
         key: the key to get the milling stages for
         protocol: the protocol to get the milling stages from
     Returns:
-        List[FibsemMillingStage]: the milling stages for the given key"""
+        list[FibsemMillingStage]: the milling stages for the given key"""
     if key not in protocol:
         raise ValueError(f"Key {key} not found in protocol. Available keys: {list(protocol.keys())}")
     
@@ -139,12 +141,12 @@ def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> L
         stages.append(stage)
     return stages
 
-def get_protocol_from_stages(stages: List[FibsemMillingStage]) -> List[Dict[str, Any]]:
+def get_protocol_from_stages(stages: list[FibsemMillingStage]) -> list[dict[str, Any]]:
     """Convert a list of milling stages to a protocol dictionary.
     Args:
         stages: the list of milling stages to convert
     Returns:
-        List[Dict[str, Any]]: the protocol dictionary"""
+        list[dict[str, Any]]: the protocol dictionary"""
     if not isinstance(stages, list):
         stages = [stages]
     
@@ -181,7 +183,7 @@ def estimate_milling_time(pattern: BasePattern, milling_current: float) -> float
     time = (volume *1e6**3) / sputter_rate
     return time * 0.75 # QUERY: accuracy of this estimate?
 
-def estimate_total_milling_time(stages: List[FibsemMillingStage]) -> float:
+def estimate_total_milling_time(stages: list[FibsemMillingStage]) -> float:
     """Estimate the total milling time for a list of milling stages"""
     if not isinstance(stages, list):
         stages = [stages]
