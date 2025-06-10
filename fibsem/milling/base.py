@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, fields, field, asdict
-from typing import Any, Type, TypeVar, ClassVar, Generic
+from typing import Any, TypeVar, ClassVar, Generic
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
@@ -27,7 +27,7 @@ class MillingStrategyConfig(ABC):
 
     @classmethod
     def from_dict(
-        cls: Type[TMillingStrategyConfig], d: dict[str, Any]
+        cls: type[TMillingStrategyConfig], d: dict[str, Any]
     ) -> TMillingStrategyConfig:
         return cls(**d)
 
@@ -39,7 +39,7 @@ class MillingStrategyConfig(ABC):
 class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
     """Abstract base class for different milling strategies"""
     name: str = "Milling Strategy"
-    config_class: Type[TMillingStrategyConfig]
+    config_class: type[TMillingStrategyConfig]
 
     def __init__(self, config: TMillingStrategyConfig | None = None):
         self.config: TMillingStrategyConfig = config or self.config_class()
@@ -48,7 +48,7 @@ class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
         return {"name": self.name, "config": self.config.to_dict()}
 
     @classmethod
-    def from_dict(cls: Type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
+    def from_dict(cls: type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
         config=cls.config_class.from_dict(d.get("config", {}))   
         return cls(config=config)
 
