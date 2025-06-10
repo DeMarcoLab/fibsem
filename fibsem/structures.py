@@ -10,13 +10,7 @@ from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import (
-    List,
-    Optional,
-    Tuple,
-    Union,
-    Set,
     Any,
-    Dict,
     Type,
     TypeVar,
     TYPE_CHECKING,
@@ -53,12 +47,13 @@ TFibsemPatternSettings = TypeVar(
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from numpy.typing import NDArray
 
 @dataclass
 class Point:
     x: float = 0.0
     y: float = 0.0
-    name: Optional[str] = None
+    name: str | None = None
 
     def to_dict(self) -> dict:
         return {"x": self.x, "y": self.y}
@@ -165,13 +160,13 @@ class FibsemStagePosition:
         from_autoscript_position(position: StagePosition) -> None: Create a new FibsemStagePosition object from a StagePosition object that is compatible with Autoscript.
     """
 
-    name: str = None
-    x: float = None
-    y: float = None
-    z: float = None
-    r: float = None
-    t: float = None
-    coordinate_system: str = None
+    name: str | None = None
+    x: float | None = None
+    y: float | None = None
+    z: float | None = None
+    r: float | None = None
+    t: float | None = None
+    coordinate_system: str | None = None
 
     def to_dict(self) -> dict:
         position_dict = {}
@@ -207,7 +202,7 @@ class FibsemStagePosition:
 
     if THERMO:
 
-        def to_autoscript_position(self, compustage: bool = False) -> Union[StagePosition, CompustagePosition]:
+        def to_autoscript_position(self, compustage: bool = False) -> StagePosition | CompustagePosition:
             """Converts the stage position to a StagePosition object that is compatible with Autoscript.
             Args:
                 compustage: bool = False: Whether or not the stage is a compustage.
@@ -238,9 +233,10 @@ class FibsemStagePosition:
         
             return stage_position
 
-        @classmethod # TODO: convert this to staticmethod?
-        def from_autoscript_position(cls, position: Union[StagePosition, CompustagePosition]) -> 'FibsemStagePosition':
-            
+        @classmethod  # TODO: convert this to staticmethod?
+        def from_autoscript_position(
+            cls, position: StagePosition | CompustagePosition
+        ) -> "FibsemStagePosition":
             # compustage position
             if isinstance(position, CompustagePosition):
                 return cls(
@@ -491,19 +487,19 @@ class ImageSettings:
             Converts the ImageSettings object to a dictionary of image settings.
     """
 
-    resolution: Optional[list] = None
-    dwell_time: Optional[float] = None
-    hfw: Optional[float] = None
-    autocontrast: Optional[bool] = None
-    beam_type: Optional[BeamType] = None
-    save: Optional[bool] = None
-    filename: Optional[str] = None
-    autogamma: Optional[bool] = None
-    path: Optional[Path] = None
-    reduced_area: Optional[FibsemRectangle] = None
-    line_integration: Optional[int] = None  # (int32) 2 - 255
-    scan_interlacing: Optional[int] = None  # (int32) 2 - 8
-    frame_integration: Optional[int] = None  # (int32) 2 - 512
+    resolution: list | None = None
+    dwell_time: float | None = None
+    hfw: float | None = None
+    autocontrast: bool | None = None
+    beam_type: BeamType | None = None
+    save: bool | None = None
+    filename: str | None = None
+    autogamma: bool | None = None
+    path: str | os.PathLike[str] | None = None
+    reduced_area: FibsemRectangle | None = None
+    line_integration: int | None = None  # (int32) 2 - 255
+    scan_interlacing: int | None = None  # (int32) 2 - 8
+    frame_integration: int | None = None  # (int32) 2 - 512
     drift_correction: bool = False  # (bool) # requires frame_integration > 1
 
     def __post_init__(self):
@@ -643,16 +639,16 @@ class BeamSettings:
     """
 
     beam_type: BeamType
-    working_distance: Optional[float] = None
-    beam_current: Optional[float] = None
-    voltage: Optional[float] = None
-    hfw: Optional[float] = None
-    resolution: Optional[list] = None
-    dwell_time: Optional[float] = None
-    stigmation: Optional[Point] = None
-    shift: Optional[Point] = None
-    scan_rotation: Optional[float] = None
-    preset: Optional[str] = None
+    working_distance: float | None = None
+    beam_current: float | None = None
+    voltage: float | None = None
+    hfw: float | None = None
+    resolution: list | None = None
+    dwell_time: float | None = None
+    stigmation: Point | None = None
+    shift: Point | None = None
+    scan_rotation: float | None = None
+    preset: str | None = None
 
     def __post_init__(self):
         assert (
@@ -743,8 +739,8 @@ class BeamSettings:
 
 @dataclass
 class FibsemDetectorSettings:
-    type: str = None
-    mode: str = None
+    type: str | None = None
+    mode: str | None = None
     brightness: float = 0.5
     contrast: float = 0.5
 
@@ -882,7 +878,7 @@ class MicroscopeState:
 ########### Base Pattern Settings
 @dataclass
 class FibsemPatternSettings(ABC):
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         ddict = asdict(self)
         # Handle any special cases
         if "cross_section" in ddict:
@@ -890,7 +886,7 @@ class FibsemPatternSettings(ABC):
         return ddict
 
     @classmethod
-    def from_dict(cls: Type[TFibsemPatternSettings], data: Dict[str, Any]) -> TFibsemPatternSettings:
+    def from_dict(cls: Type[TFibsemPatternSettings], data: dict[str, Any]) -> TFibsemPatternSettings:
         kwargs = {}
         for f in fields(cls):
             if f.name in data:
@@ -987,7 +983,7 @@ class FibsemBitmapSettings(FibsemPatternSettings):
     rotation: float
     centre_x: float
     centre_y: float
-    path: Optional[Union[str, os.PathLike]] = None
+    path: str | os.PathLike[str] | None = None
 
     @property
     def volume(self) -> float:
@@ -1099,7 +1095,7 @@ class FibsemMillingSettings:
         return milling_settings
 
     @classmethod
-    def get_parameters_for_manufacturer(cls, manufacturer: str) -> Set[str]:
+    def get_parameters_for_manufacturer(cls, manufacturer: str) -> set[str]:
         """Get all parameter names for a specific manufacturer."""
         if manufacturer not in cls._SUPPORTED_MANUFACTURERS:
             raise ValueError(f"Manufacturer must be one of: {', '.join(cls._SUPPORTED_MANUFACTURERS)}")
@@ -1107,7 +1103,7 @@ class FibsemMillingSettings:
         # TODO: ensure this returns in the canonical order
         return cls._PARAMETERS["COMMON"] | cls._PARAMETERS[manufacturer]
 
-    def get_parameters(self, manufacturer: str) -> Dict[str, Any]:
+    def get_parameters(self, manufacturer: str) -> dict[str, Any]:
         """Get parameter values for a specific manufacturer."""
         required_params = self.get_parameters_for_manufacturer(manufacturer)
         return {param: getattr(self, param) for param in required_params}
@@ -1158,7 +1154,7 @@ class BeamSystemSettings:
     eucentric_height: float
     column_tilt: float
     plasma: bool = False
-    plasma_gas: Optional[str] = None
+    plasma_gas: str | None = None
 
     def to_dict(self):
         ddict = {
@@ -1182,7 +1178,7 @@ class BeamSystemSettings:
         return ddict
 
     @classmethod
-    def from_dict(cls, settings: dict) -> 'BeamSystemSettings':
+    def from_dict(cls, settings: dict[str, Any]) -> "BeamSystemSettings":
         return cls(
             beam_type=BeamType[settings["beam_type"]],
             enabled=settings["enabled"],
@@ -1208,7 +1204,7 @@ class ManipulatorSystemSettings:
         }
     
     @staticmethod
-    def from_dict(settings: dict):
+    def from_dict(settings: dict[str, Any]):
         return ManipulatorSystemSettings(
             enabled=settings["enabled"],
             rotation=settings["rotation"],
@@ -1232,7 +1228,7 @@ class GISSystemSettings:
         }
     
     @staticmethod
-    def from_dict(settings: dict):
+    def from_dict(settings: dict[str, Any]):
         return GISSystemSettings(
             enabled=settings["enabled"],
             multichem=settings["multichem"],
@@ -1250,8 +1246,8 @@ class SystemInfo:
     hardware_version: str
     software_version: str
     fibsem_version: str = fibsem.__version__
-    application: Optional[str] = None
-    application_version: Optional[str] = None
+    application: str | None = None
+    application_version: str | None = None
 
     def to_dict(self):
         return {
@@ -1337,7 +1333,7 @@ class MicroscopeSettings:
     system: SystemSettings
     image: ImageSettings
     milling: FibsemMillingSettings
-    protocol: Optional[Dict[str, Any]] = None
+    protocol: dict[str, Any] | None = None
 
     def to_dict(self) -> dict:
         settings_dict = {
@@ -1351,9 +1347,8 @@ class MicroscopeSettings:
 
     @classmethod
     def from_dict(
-        cls, settings: Dict[str, Any], protocol: Optional[Dict[str, Any]] = None
+        cls, settings: dict[str, Any], protocol: dict[str, Any] | None = None
     ) -> "MicroscopeSettings":
-
         if protocol is None:
             protocol = settings.get("protocol")
             if not isinstance(protocol, dict):
@@ -1377,9 +1372,9 @@ class FibsemExperiment:
     date: float = datetime.timestamp(datetime.now())
     application: str = "OpenFIBSEM"
     fibsem_version: str = fibsem.__version__
-    application_version: Optional[str] = None
+    application_version: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts to a dictionary."""
         return {
             "id": self.id,
@@ -1411,7 +1406,7 @@ class FibsemUser:
     hostname: str = "Unknown"
     # TODO: add host_ip_address
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts to a dictionary."""
         return {
             "name": self.name,
@@ -1455,13 +1450,13 @@ class FibsemImageMetadata:
     image_settings: ImageSettings
     pixel_size: Point
     microscope_state: MicroscopeState
-    system: Optional[SystemSettings] = None
+    system: SystemSettings | None = None
     version: str = METADATA_VERSION
     user: FibsemUser = field(default_factory=FibsemUser)
     experiment: FibsemExperiment = field(default_factory=FibsemExperiment)
 
     @property
-    def beam_type(self) -> Optional[BeamType]:
+    def beam_type(self) -> BeamType | None:
         return self.image_settings.beam_type
     
     @property
@@ -1592,7 +1587,7 @@ class FibsemImage:
     Has in built methods to deal with image types of TESCAN and ThermoFisher API
 
     Args:
-        data (np.ndarray): The image data stored in a numpy array.
+        data (NDArray[Any]): The image data stored in a numpy array.
         metadata (FibsemImageMetadata, optional): The metadata associated with the image. Defaults to None.
 
     Methods:
@@ -1612,7 +1607,9 @@ class FibsemImage:
                 path (path): path to save directory and filename
     """
 
-    def __init__(self, data: np.ndarray, metadata: FibsemImageMetadata = None):
+    def __init__(
+        self, data: NDArray[Any], metadata: FibsemImageMetadata | None = None
+    ) -> None:
         if check_data_format(data):
             if data.ndim == 3 and data.shape[2] == 1:
                 data = data[:, :, 0]
@@ -1625,7 +1622,7 @@ class FibsemImage:
             self.metadata = None
 
     @classmethod
-    def load(cls, tiff_path: str) -> "FibsemImage":
+    def load(cls, tiff_path: str | os.PathLike[str]) -> "FibsemImage":
         """Loads a FibsemImage from a tiff file.
 
         Args:
@@ -1648,7 +1645,7 @@ class FibsemImage:
                 # traceback.print_exc()
         return cls(data=data, metadata=metadata)
 
-    def save(self, path: Optional[Union[str, os.PathLike]] = None) -> None:
+    def save(self, path: str | os.PathLike[str] | None = None) -> None:
         """Saves a FibsemImage to a tiff file.
 
         Inputs:
@@ -1678,7 +1675,7 @@ class FibsemImage:
 
     ### EXPERIMENTAL START ####
 
-    def _save_ome_tiff(self, path: Union[str, os.PathLike], filename: str) -> None:
+    def _save_ome_tiff(self, path: str | os.PathLike[str], filename: str) -> None:
         from ome_types import OME
         from ome_types.model import (
             Channel,
@@ -1777,7 +1774,7 @@ class FibsemImage:
             tif.overwrite_description(ome.to_xml())
 
     @classmethod
-    def _load_from_ome_tiff(cls, path: Union[str, os.PathLike]) -> 'FibsemImage':
+    def _load_from_ome_tiff(cls, path: str | os.PathLike[str]) -> "FibsemImage":
         import ome_types
 
         # read ome-xml, extract openfibsem metadata
@@ -1806,7 +1803,7 @@ class FibsemImage:
             cls,
             adorned: AdornedImage,
             image_settings: ImageSettings,
-            state: Optional[MicroscopeState] = None,
+            state: MicroscopeState | None = None,
         ) -> "FibsemImage":
             """Creates FibsemImage from an AdornedImage (microscope output format).
 
@@ -1848,15 +1845,15 @@ class FibsemImage:
 
     @staticmethod
     def generate_blank_image(
-        resolution: List[int] = [1536, 1024],
+        resolution: list[int] = [1536, 1024],
         hfw: float = 100e-6,
-        pixel_size: Optional[Point] = None,
+        pixel_size: Point | None = None,
         random: bool = False,
         dtype: np.dtype = np.uint8,
     ) -> 'FibsemImage':
         """Generate a blank image with a given resolution and field of view.
         Args:
-            resolution: List[int]: Resolution of the image.
+            resolution: list[int]: Resolution of the image.
             hfw: float: Horizontal field width of the image.
             pixel_size: Point: Pixel size of the image.
             random: bool: If True, generate a random (noise) image.
@@ -1898,7 +1895,7 @@ class ReferenceImages:
     def __iter__(
         self,
     ) -> Generator[
-        Tuple[FibsemImage, FibsemImage, FibsemImage, FibsemImage], None, None
+        tuple[FibsemImage, FibsemImage, FibsemImage, FibsemImage], None, None
     ]:
         yield self.low_res_eb, self.high_res_eb, self.low_res_ib, self.high_res_ib
 
@@ -1959,7 +1956,7 @@ class FibsemGasInjectionSettings:
     port: str
     gas: str
     duration: float
-    insert_position: Optional[str] = None  # multichem only
+    insert_position: str | None = None  # multichem only
 
     @staticmethod
     def from_dict(d: dict):
@@ -1979,7 +1976,7 @@ class FibsemGasInjectionSettings:
         }
 
 
-def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->Tuple[FibsemRectangle, bool]:
+def calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length: float) -> tuple[FibsemRectangle, bool]:
     from fibsem import conversions
     pixelsize = image.metadata.pixel_size.x
     
