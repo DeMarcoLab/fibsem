@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from fibsem.milling.patterning.patterns2 import (
-    DEFAULT_POINT_DDICT,
     CirclePattern,
     FibsemCircleSettings,
     FibsemLineSettings,
@@ -159,6 +158,7 @@ def test_circle_pattern():
     radius = 5e-6
     depth = 1e-6
     circle = CirclePattern(
+        Point(),
         radius=radius,
         depth=depth,
     )
@@ -175,9 +175,11 @@ def test_circle_pattern():
     assert ddict["point"]["x"] == 0
     assert ddict["point"]["y"] == 0
 
+    del ddict["point"]  # Check default
     circle2 = CirclePattern.from_dict(ddict)
     assert circle2.radius == radius
     assert circle2.depth == depth
+    assert circle2.point == Point()
 
 
 def test_line_pattern():
@@ -197,6 +199,7 @@ def test_line_pattern():
     end_y = 2e-6
     depth = 1e-6
     line = LinePattern(
+        Point(),
         start_x=start_x,
         start_y=start_y,
         end_x=end_x,
@@ -217,13 +220,17 @@ def test_line_pattern():
     assert ddict["end_x"] == end_x
     assert ddict["end_y"] == end_y
     assert ddict["depth"] == depth
+    assert ddict["point"]["x"] == 0
+    assert ddict["point"]["y"] == 0
 
+    del ddict["point"]  # Check default
     line2 = LinePattern.from_dict(ddict)
     assert line2.start_x == start_x
     assert line2.start_y == start_y
     assert line2.end_x == end_x
     assert line2.end_y == end_y
     assert line2.depth == depth
+    assert line2.point == Point()
 
 
 def test_rectangle_pattern():
@@ -242,6 +249,7 @@ def test_rectangle_pattern():
     rotation = 0
 
     rect = RectanglePattern(
+        Point(),
         width=width,
         height=height,
         depth=depth,
@@ -268,13 +276,13 @@ def test_rectangle_pattern():
     assert ddict["point"]["y"] == 0
 
     # test deserialization
+    del ddict["point"]  # Check default
     rect2 = RectanglePattern.from_dict(ddict)
     assert rect2.width == width
     assert rect2.height == height
     assert rect2.depth == depth
     assert rect2.rotation == rotation
-
-
+    assert rect2.point == Point()
 
 
 class TestTrenchPattern:
@@ -477,6 +485,7 @@ class TestArrayPattern:
     def test_init(self):
         # Test default initialization
         array = ArrayPattern(
+            Point(),
             width=10.0,
             height=20.0,
             depth=30.0,
@@ -719,6 +728,7 @@ class TestFiducialPattern:
     def test_init(self):
         # Test initialization
         fiducial = FiducialPattern(
+            Point(),
             width=10.0,
             height=20.0,
             depth=5.0

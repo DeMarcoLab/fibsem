@@ -10,7 +10,7 @@ from fibsem.structures import FibsemMillingSettings, MillingAlignment, Point
 def test_milling_stage():
 
     milling_settings = FibsemMillingSettings()
-    pattern = RectanglePattern(width=10, height=5, depth=1)
+    pattern = RectanglePattern(Point(), width=10, height=5, depth=1)
     strategy = get_strategy("Standard")
     alignment = MillingAlignment(enabled=True)
 
