@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, fields, asdict
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -16,6 +16,7 @@ from typing import (
     Set,
     Any,
     Dict,
+    Type,
     TypeVar,
     Generator,
 )
@@ -879,14 +880,25 @@ class MicroscopeState:
 @dataclass
 class FibsemPatternSettings(ABC):
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        ddict = asdict(self)
+        # Handle any special cases
+        if "cross_section" in ddict:
+            ddict["cross_section"] = ddict["cross_section"].name
+        return ddict
 
     @classmethod
-    @abstractmethod
-    def from_dict(
-        cls: type[TFibsemPatternSettings], data: Dict[str, Any]
-    ) -> TFibsemPatternSettings:
-        pass
+    def from_dict(cls: Type[TFibsemPatternSettings], data: Dict[str, Any]) -> TFibsemPatternSettings:
+        kwargs = {}
+        for f in fields(cls):
+            if f.name in data:
+                # Handle any special cases
+                if f.name == "cross_section":
+                    value = CrossSectionPattern[data.get("cross_section", "Rectangle")]
+                else:
+                    value = data[f.name]
+                kwargs[f.name] = value
+
+        return cls(**kwargs)
 
     @property
     @abstractmethod
@@ -912,37 +924,6 @@ class FibsemRectangleSettings(FibsemPatternSettings):
     passes: int = 0
     time: float = 0.0
     is_exclusion: bool = False
-
-    def to_dict(self) -> dict:
-        return {
-            "width": self.width,
-            "height": self.height,
-            "depth": self.depth,
-            "rotation": self.rotation,
-            "centre_x": self.centre_x,
-            "centre_y": self.centre_y,
-            "scan_direction": self.scan_direction,
-            "cross_section": self.cross_section.name,
-            "passes": self.passes,
-            "time": self.time,
-            "is_exclusion": self.is_exclusion,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "FibsemRectangleSettings":
-        return cls(
-            width=data["width"],
-            height=data["height"],
-            depth=data["depth"],
-            centre_x=data["centre_x"],
-            centre_y=data["centre_y"],
-            rotation=data.get("rotation", 0),
-            scan_direction=data.get("scan_direction", "TopToBottom"),
-            cross_section=CrossSectionPattern[data.get("cross_section", "Rectangle")],
-            passes=data.get("passes", 0),
-            time=data.get("time", 0.0),
-            is_exclusion=data.get("is_exclusion", False),
-        )
 
     @property
     def volume(self) -> float:
@@ -991,33 +972,6 @@ class FibsemCircleSettings(FibsemPatternSettings):
     rotation: float = 0.0           # annulus -> thickness !=0
     is_exclusion: bool = False
 
-    def to_dict(self) -> dict:
-        return {
-            "radius": self.radius,
-            "depth": self.depth,
-            "centre_x": self.centre_x,
-            "centre_y": self.centre_y,
-            "start_angle": self.start_angle,
-            "end_angle": self.end_angle,
-            "rotation": self.rotation,
-            "thickness": self.thickness,
-            "is_exclusion": self.is_exclusion,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "FibsemCircleSettings":
-        return cls(
-            radius=data["radius"],
-            depth=data["depth"],
-            centre_x=data["centre_x"],
-            centre_y=data["centre_y"],
-            start_angle=data.get("start_angle", 0),
-            end_angle=data.get("end_angle", 360),
-            rotation=data.get("rotation", 0),
-            thickness=data.get("thickness", 0),
-            is_exclusion=data.get("is_exclusion", False),
-        )
-
     @property
     def volume(self) -> float:
         return np.pi * self.radius**2 * self.depth
@@ -1031,28 +985,6 @@ class FibsemBitmapSettings(FibsemPatternSettings):
     centre_x: float
     centre_y: float
     path: Optional[Union[str, os.PathLike]] = None
-
-    def to_dict(self) -> dict:
-        return {
-            "width": self.width,
-            "height": self.height,
-            "depth": self.depth,
-            "rotation": self.rotation,
-            "centre_x": self.centre_x,
-            "centre_y": self.centre_y,
-            "path": self.path,
-        }
-    @classmethod
-    def from_dict(cls, data: dict) -> "FibsemBitmapSettings":
-        return cls(
-            width=data["width"],
-            height=data["height"],
-            depth=data["depth"],
-            rotation=data["rotation"],
-            centre_x=data["centre_x"],
-            centre_y=data["centre_y"],
-            path=data["path"],
-        )
 
     @property
     def volume(self) -> float:
