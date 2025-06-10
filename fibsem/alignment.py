@@ -1,20 +1,21 @@
+from __future__ import annotations
 import logging
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Any, TYPE_CHECKING
 
 import numpy as np
 
 from fibsem import acquire, utils, validation
 from fibsem.imaging import masks
 from fibsem.imaging import utils as image_utils
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (
-    BeamType,
-    FibsemImage,
-    FibsemRectangle,
-    ImageSettings,
-    MicroscopeSettings,
-    ReferenceImages,
-)
+
+from fibsem.structures import BeamType, ImageSettings
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+    from fibsem.microscope import FibsemMicroscope
+    from fibsem.structures import FibsemImage, MicroscopeSettings, ReferenceImages
+
 
 def auto_eucentric_correction(
     microscope: FibsemMicroscope,
@@ -115,7 +116,7 @@ def correct_stage_drift(
     alignment: Tuple[BeamType, BeamType] = (BeamType.ELECTRON, BeamType.ELECTRON),
     rotate: bool = False,
     ref_mask_rad: int = 512,
-    xcorr_limit: Union[Tuple[int, int], None] = None,
+    xcorr_limit: Optional[Union[Tuple[int, int], Tuple[None, None]]] = None,
     constrain_vertical: bool = False,
     use_beam_shift: bool = False,
 ) -> bool:
@@ -197,8 +198,8 @@ def align_using_reference_images(
     microscope: FibsemMicroscope,
     ref_image: FibsemImage,
     new_image: FibsemImage,
-    ref_mask: np.ndarray = None,
-    xcorr_limit: int = None,
+    ref_mask: Optional[NDArray[np.bool_]] = None,
+    xcorr_limit: Optional[int] = None,
     constrain_vertical: bool = False,
     use_beam_shift: bool = False,
 ) -> bool:
@@ -275,8 +276,8 @@ def shift_from_crosscorrelation(
     highpass: int = 6,
     sigma: int = 6,
     use_rect_mask: bool = False,
-    ref_mask: np.ndarray = None,
-    xcorr_limit: int = None,
+    ref_mask: Optional[NDArray[np.bool_]] = None,
+    xcorr_limit: Optional[int] = None,
 ) -> Tuple[float, float, np.ndarray]:
     """Calculates the shift between two images by cross-correlating them and finding the position of maximum correlation.
 
@@ -374,8 +375,8 @@ def shift_from_crosscorrelation(
 
 
 def crosscorrelation_v2(
-    img1: np.ndarray, img2: np.ndarray, bandpass: np.ndarray = None
-) -> np.ndarray:
+    img1: NDArray[Any], img2: NDArray[Any], bandpass: Optional[NDArray[Any]] = None
+) -> NDArray[Any]:
     """
     Cross-correlate two images using Fourier convolution matching.
 
@@ -426,23 +427,21 @@ def crosscorrelation_v2(
 def _save_alignment_data(
     ref_image: FibsemImage,
     new_image: FibsemImage,
-    bandpass: np.ndarray,
-    xcorr: np.ndarray,
-    ref_mask: np.ndarray = None,
-    lowpass: float = None,
-    highpass: float = None,
-    sigma: float = None,
-    xcorr_limit: float = None,
+    bandpass: NDArray[Any],
+    xcorr: NDArray[Any],
+    ref_mask: Optional[NDArray[Any]] = None,
+    lowpass: Optional[float] = None,
+    highpass: Optional[float] = None,
+    sigma: Optional[float] = None,
+    xcorr_limit: Optional[float] = None,
     use_rect_mask: bool = False,
-    dx: float = None,
-    dy: float = None,
-    pixelsize_x: float = None,
-    pixelsize_y: float = None,
-    
-
-):
+    dx: Optional[float] = None,
+    dy: Optional[float] = None,
+    pixelsize_x: Optional[float] = None,
+    pixelsize_y: Optional[float] = None,
+) -> None:
     """Save alignment data to disk."""
-    
+
     import os
 
     import pandas as pd
