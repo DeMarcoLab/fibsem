@@ -1,4 +1,5 @@
 # fibsem structures
+from __future__ import annotations
 
 import json
 import os
@@ -18,7 +19,7 @@ from typing import (
     Dict,
     Type,
     TypeVar,
-    Generator,
+    TYPE_CHECKING,
 )
 
 import numpy as np
@@ -50,6 +51,8 @@ TFibsemPatternSettings = TypeVar(
     "TFibsemPatternSettings", bound="FibsemPatternSettings"
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 @dataclass
 class Point:
