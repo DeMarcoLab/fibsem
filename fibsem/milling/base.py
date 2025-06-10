@@ -175,7 +175,7 @@ def estimate_milling_time(pattern: BasePattern, milling_current: float) -> float
     sputter_rate = sputter_rate * (milling_current / sp_keys[0])
     volume = pattern.volume # m3
 
-    if hasattr(pattern, "cross_section") and pattern.cross_section is CrossSectionPattern.CleaningCrossSection:
+    if getattr(pattern, "cross_section") is CrossSectionPattern.CleaningCrossSection:
         volume *= 0.66 # ccs is approx 2/3 of the volume of a rectangle
 
     time = (volume *1e6**3) / sputter_rate
