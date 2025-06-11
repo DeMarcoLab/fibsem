@@ -1,7 +1,7 @@
 import copy
 import logging
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import napari
 import napari.utils.notifications
@@ -544,7 +544,7 @@ class FibsemMillingStageWidget(QWidget):
         self._update_strategy_widget(strategy)
         self._milling_stage_changed.emit(self._milling_stage)  # Emit signal to notify changes
         
-    def _update_strategy_widget(self, strategy: MillingStrategy):
+    def _update_strategy_widget(self, strategy: MillingStrategy[Any]):
         """Update the strategy widget with the selected strategy's parameters."""
         params = {k: getattr(strategy.config, k) for k in strategy.config.required_attributes}
 
