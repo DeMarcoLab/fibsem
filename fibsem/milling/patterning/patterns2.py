@@ -52,8 +52,7 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
         kwargs = {}
         for f in fields(cls):
             if f.name in ddict:
-                value = ddict[f.name]
-                kwargs[f.name] = value
+                kwargs[f.name] = ddict[f.name]
 
         # Construct objects
         point = kwargs.pop("point", None)
