@@ -879,12 +879,12 @@ class FibsemPatternSettings(ABC):
         kwargs = {}
         for f in fields(cls):
             if f.name in data:
-                # Handle any special cases
-                if f.name == "cross_section":
-                    value = CrossSectionPattern[data.get("cross_section", "Rectangle")]
-                else:
-                    value = data[f.name]
-                kwargs[f.name] = value
+                kwargs[f.name] = data[f.name]
+
+        # Construct objects
+        cross_section = kwargs.pop("cross_section", None)
+        if cross_section is not None:
+            kwargs["cross_section"] = CrossSectionPattern[cross_section]
 
         return cls(**kwargs)
 

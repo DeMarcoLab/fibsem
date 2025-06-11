@@ -727,7 +727,7 @@ class TestFiducialPattern:
         assert fiducial.width == 10.0
         assert fiducial.height == 20.0
         assert fiducial.depth == 5.0
-        assert fiducial.rotation == 0
+        assert fiducial.rotation == 45
         assert fiducial.cross_section == CrossSectionPattern.Rectangle
         assert fiducial.name == "Fiducial"
         assert fiducial.point.x == 0.0

@@ -28,8 +28,8 @@ TPattern = TypeVar("TPattern", bound="BasePattern")
 
 @dataclass
 class BasePattern(ABC, Generic[TFibsemPatternSettings]):
-    name: ClassVar[str]
-    point: Point
+    name: ClassVar[str] = field(init=False)
+    point: Point = field(default_factory=Point)
     shapes: Optional[List[TFibsemPatternSettings]] = field(default=None, init=False)
 
     _advanced_attributes: ClassVar[Tuple[str, ...]] = ()
@@ -52,16 +52,16 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
         kwargs = {}
         for f in fields(cls):
             if f.name in ddict:
-                # Handle any special cases
-                if f.name == "cross_section":
-                    value = CrossSectionPattern[ddict.get("cross_section", "Rectangle")]
-                else:
-                    value = ddict[f.name]
-                kwargs[f.name] = value
+                kwargs[f.name] = ddict[f.name]
 
-        # Set defaults
-        point = kwargs.get("point", {"x": 0.0, "y": 0.0})
-        kwargs["point"] = Point.from_dict(point)
+        # Construct objects
+        point = kwargs.pop("point", None)
+        if point is not None:
+            kwargs["point"] = Point.from_dict(point)
+
+        cross_section = kwargs.pop("cross_section", None)
+        if cross_section is not None:
+            kwargs["cross_section"] = CrossSectionPattern[cross_section]
 
         return cls(**kwargs)
                 
@@ -80,9 +80,9 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
 
 @dataclass
 class BitmapPattern(BasePattern[FibsemBitmapSettings]):
-    width: float
-    height: float
-    depth: float
+    width: float = 10.0e-6
+    height: float = 10.0e-6
+    depth: float = 1.0e-6
     rotation: float = 0
     path: str = ""
 
@@ -106,12 +106,12 @@ class BitmapPattern(BasePattern[FibsemBitmapSettings]):
 
 @dataclass
 class RectanglePattern(BasePattern[FibsemRectangleSettings]):
-    width: float
-    height: float
-    depth: float
+    width: float = 10.0e-6
+    height: float = 5.0e-6
+    depth: float = 1.0e-6
     rotation: float = 0
-    time: float = 0
-    passes: int = 0
+    time: float = 0  # means auto
+    passes: int = 0  # means auto
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
 
@@ -140,11 +140,11 @@ class RectanglePattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class LinePattern(BasePattern[FibsemLineSettings]):
-    start_x: float
-    end_x: float
-    start_y: float
-    end_y: float
-    depth: float
+    start_x: float = -10.0e-6
+    end_x: float = 10.0e-6
+    start_y: float = 0.0
+    end_y: float = 0.0
+    depth: float = 1.0e-6
 
     name: ClassVar[str] = "Line"
 
@@ -162,8 +162,8 @@ class LinePattern(BasePattern[FibsemLineSettings]):
 
 @dataclass
 class CirclePattern(BasePattern[FibsemCircleSettings]):
-    radius: float
-    depth: float
+    radius: float = 5.0e-6
+    depth: float = 1.0e-6
     thickness: float = 0
 
     name: ClassVar[str] = "Circle"
@@ -183,14 +183,14 @@ class CirclePattern(BasePattern[FibsemCircleSettings]):
 
 @dataclass
 class TrenchPattern(BasePattern[Union[FibsemRectangleSettings, FibsemCircleSettings]]):
-    width: float
-    depth: float
-    spacing: float
-    upper_trench_height: float
-    lower_trench_height: float
+    width: float = 10.0e-6
+    depth: float = 2.0e-6
+    spacing: float = 5.0e-6
+    upper_trench_height: float = 5.0e-6
+    lower_trench_height: float = 5.0e-6
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
-    time: float = 0.0
-    fillet: float = 0.0
+    time: float = 0.0  # means auto
+    fillet: float = 0.0  # no fillet radius
 
     name: ClassVar[str] = "Trench"
     _advanced_attributes: ClassVar[Tuple[str, ...]] = ("time", "fillet")
@@ -326,12 +326,12 @@ class TrenchPattern(BasePattern[Union[FibsemRectangleSettings, FibsemCircleSetti
 
 @dataclass
 class HorseshoePattern(BasePattern[FibsemRectangleSettings]):
-    width: float
-    upper_trench_height: float
-    lower_trench_height: float
-    spacing: float
-    depth: float
-    side_width: float
+    width: float = 40.0e-6
+    upper_trench_height: float = 10.0e-6
+    lower_trench_height: float = 10.0e-6
+    spacing: float = 10.0e-6
+    depth: float = 10.0e-6
+    side_width: float = 5.0e-6
     inverted: bool = False
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
@@ -400,11 +400,11 @@ class HorseshoePattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class HorseshoePatternVertical(BasePattern):
-    width: float
-    height: float
-    side_trench_width: float
-    top_trench_height: float
-    depth: float
+    width: float = 2.0e-05
+    height: float = 5.0e-05
+    side_trench_width: float = 5.0e-06
+    top_trench_height: float = 10.0e-6
+    depth: float = 4.0e-6
     scan_direction: str = "TopToBottom"
     inverted: bool = False
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
@@ -463,12 +463,12 @@ class HorseshoePatternVertical(BasePattern):
 
 @dataclass
 class SerialSectionPattern(BasePattern[FibsemLineSettings]):
-    section_thickness: float
-    section_width: float
-    section_depth: float
-    side_width: float
-    side_height: float = 0
-    side_depth: float = 0
+    section_thickness: float = 4.0e-6
+    section_width: float = 50.0e-6
+    section_depth: float = 20.0e-6
+    side_width: float = 10.0e-6
+    side_height: float = 10.0e-6
+    side_depth: float = 40.0e-6
     inverted: bool = False
     use_side_patterns: bool = True
 
@@ -546,10 +546,10 @@ class SerialSectionPattern(BasePattern[FibsemLineSettings]):
 
 @dataclass
 class FiducialPattern(BasePattern[FibsemRectangleSettings]):
-    width: float
-    height: float
-    depth: float
-    rotation: float = 0
+    width: float = 1.0e-6
+    height: float = 10.0e-6
+    depth: float = 5.0e-6
+    rotation: float = 45.0
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
 
     name: ClassVar[str] = "Fiducial"
@@ -591,12 +591,12 @@ class FiducialPattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class UndercutPattern(BasePattern[FibsemRectangleSettings]):
-    width: float
-    height: float
-    depth: float
-    trench_width: float
-    rhs_height: float
-    h_offset: float
+    width: float = 5.0e-6
+    height: float = 10.0e-6
+    depth: float = 10.0e-6
+    trench_width: float = 2.0e-6
+    rhs_height: float = 10.0e-6
+    h_offset: float = 5.0e-6
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
 
     name: ClassVar[str] = "Undercut"
@@ -651,10 +651,10 @@ class UndercutPattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class MicroExpansionPattern(BasePattern[FibsemRectangleSettings]):
-    width: float
-    height: float
-    depth: float
-    distance: float
+    width: float = 0.5e-6
+    height: float = 15.0e-6
+    depth: float = 1.0e-6
+    distance: float = 10.0e-6
 
     name: ClassVar[str] = "MicroExpansion"
     # ref: https://www.nature.com/articles/s41467-022-29501-3
@@ -692,14 +692,14 @@ class MicroExpansionPattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class ArrayPattern(BasePattern[FibsemRectangleSettings]):
-    width: float
-    height: float
-    depth: float
-    n_columns: int
-    n_rows: int
-    pitch_vertical: float
-    pitch_horizontal: float
-    passes: int = 0
+    width: float = 2.0e-6
+    height: float = 2.0e-6
+    depth: float = 5.0e-6
+    n_columns: int = 5
+    n_rows: int = 5
+    pitch_vertical: float = 5.0e-6
+    pitch_horizontal: float = 5.0e-6
+    passes: int = 0  # means auto
     rotation: float = 0
     scan_direction: str = "TopToBottom"
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
@@ -755,12 +755,12 @@ class ArrayPattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class WaffleNotchPattern(BasePattern[FibsemRectangleSettings]):
-    vheight: float
-    vwidth: float
-    hheight: float
-    hwidth: float
-    depth: float
-    distance: float
+    vheight: float = 2.0e-6
+    vwidth: float = 0.5e-6
+    hheight: float = 0.5e-6
+    hwidth: float = 2.0e-6
+    depth: float = 1.0e-6
+    distance: float = 2.0e-6
     inverted: bool = False
     cross_section: CrossSectionPattern = CrossSectionPattern.Rectangle
 
@@ -843,8 +843,8 @@ class WaffleNotchPattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class CloverPattern(BasePattern[Union[FibsemCircleSettings, FibsemRectangleSettings]]):
-    radius: float
-    depth: float
+    radius: float = 10.0e-6
+    depth: float = 5.0e-6
 
     name: ClassVar[str] = "Clover"
 
@@ -892,9 +892,9 @@ class CloverPattern(BasePattern[Union[FibsemCircleSettings, FibsemRectangleSetti
 
 @dataclass
 class TriForcePattern(BasePattern[FibsemRectangleSettings]):
-    width: float
-    height: float
-    depth: float
+    width: float = 1.0e-6
+    height: float = 10.0e-6
+    depth: float = 5.0e-6
 
     name: ClassVar[str] = "TriForce"
 
@@ -928,13 +928,13 @@ class TriForcePattern(BasePattern[FibsemRectangleSettings]):
 
 @dataclass
 class TrapezoidPattern(BasePattern[FibsemRectangleSettings]):
-    inner_width: float
-    outer_width: float
-    trench_height: float
-    depth: float
-    distance: float
-    n_rectangles: int
-    overlap: float
+    inner_width: float = 10.0e-6
+    outer_width: float = 20.0e-6
+    trench_height: float = 5.0e-6
+    depth: float = 1.0e-6
+    distance: float = 1.0e-6
+    n_rectangles: int = 10
+    overlap: float = 0.0
 
     name: ClassVar[str] = "Trapezoid"
 
