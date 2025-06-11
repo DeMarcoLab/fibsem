@@ -56,11 +56,11 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
                 kwargs[f.name] = value
 
         # Construct objects
-        point = kwargs.pop("point")
+        point = kwargs.pop("point", None)
         if point is not None:
             kwargs["point"] = Point.from_dict(point)
 
-        cross_section = kwargs.pop("cross_section")
+        cross_section = kwargs.pop("cross_section", None)
         if cross_section is not None:
             kwargs["cross_section"] = CrossSectionPattern[cross_section]
 
