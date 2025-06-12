@@ -1,18 +1,18 @@
-# OpenFIBSEM
+# fibsemOS
 
 A universal API for FIBSEM Control, Development and Automation
 
 ## Overview
 
-OpenFIBSEM is a Python package for controlling and automating FIB/SEM microscopes. It is designed to be a universal API for FIBSEM control, development and automation. OpenFIBSEM is designed to abstract away the details of the microscope and provide a simple, intuitive interface for controlling the microscope, as well as reuseable modules for common workflows and operations. OpenFIBSEM is designed to be extensible and can be easily adapted to support new microscopes.
+fibsemOS is a Python package for controlling and automating FIB/SEM microscopes. It is designed to be a universal API for FIBSEM control, development and automation. fibsemOS is designed to abstract away the details of the microscope and provide a simple, intuitive interface for controlling the microscope, as well as reuseable modules for common workflows and operations. fibsemOS is designed to be extensible and can be easily adapted to support new microscopes.
 
 We currently support the [TESCAN Automation SDK](https://www.tescan.com/en/products/automation-sdk/) and [ThermoFisher AutoScript](https://www.tescan.com/en/products/autoscript/). Support for other FIBSEM systems is planned.
 
 ## Install
 
-### Install OpenFIBSEM
+### Install fibsemOS
 
-There are several ways to install OpenFIBSEM depending on your application and needs.
+There are several ways to install fibsemOS depending on your application and needs.
 
 #### PyPI (For Users)
 
@@ -56,7 +56,7 @@ pip install --no-index --find-links . fibsem[ui] autolamella
 
 #### Napari Plugin
 
-The OpenFIBSEM tools and user interface are also available as a napari plugin:
+The fibsemOS tools and user interface are also available as a napari plugin:
 
 ```bash
 pip install napari-openfibsem
@@ -116,9 +116,9 @@ For examples of core functionality please see:
 
 Additional example scripts and notebooks are available.
 
-## Projects using OpenFIBSEM
+## Projects using fibsemOS
 
-We are currently working on a number of projects using OpenFIBSEM. If you are using OpenFIBSEM in your research, please let us know!
+We are currently working on a number of projects using fibsemOS. If you are using fibsemOS in your research, please let us know!
 
 - [AutoLamella v2: Automated cryo-lamella preparation](www.github.com/DeMarcoLab/autolamella)
 - [Salami: Volume Electron Microscopy](www.github.com/DeMarcoLab/salami)
@@ -129,7 +129,7 @@ Contributions are welcome! Please open a pull request or issue.
 
 ## Docs
 
-OpenFIBSEM is a large package with many features. For more detailed documentation, please see the [Documentation Website](https://demarcolab.github.io/openfibsem-docs).
+fibsemOS is a large package with many features. For more detailed documentation, please see the [Documentation Website](https://demarcolab.github.io/openfibsem-docs).
 
 ## Citation
 
