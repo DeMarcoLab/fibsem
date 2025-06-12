@@ -16,12 +16,17 @@ def test_align_from_crosscorrelation():
 
     # crop a random square out
     w = h = 150
-    x = random.randint(0, ref_image.data.shape[1] - 2*w)
-    y = random.randint(0, ref_image.data.shape[0] - 2*h)
+    offset_limits = (-50, 50)
+    x = random.randint(
+        0 - offset_limits[0], ref_image.data.shape[1] - offset_limits[1] - 2 * w
+    )
+    y = random.randint(
+        0 - offset_limits[0], ref_image.data.shape[0] - offset_limits[1] - 2 * h
+    )
     ref_image.data[y:y+h, x:x+w]  = 255
 
     # new image should be offset by 250 pixels in x and y
-    offset = random.randint(-50, 50)
+    offset = random.randint(offset_limits[0], offset_limits[1])
     new_image.data[y+offset:y+h+offset, x+offset:x+w+offset] = 255
 
     dx, dy, xcorr = alignment.shift_from_crosscorrelation(
