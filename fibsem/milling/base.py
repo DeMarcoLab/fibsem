@@ -1,51 +1,59 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from dataclasses import dataclass, fields, field
-from typing import List, Union, Dict, Any, Tuple, Optional
+from dataclasses import dataclass, fields, field, asdict
+from typing import List, Union, Dict, Any, Tuple, Optional, Type, TypeVar, ClassVar, Generic
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
-from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
+from fibsem.milling.patterning.patterns2 import BasePattern, get_pattern, DEFAULT_MILLING_PATTERN
 from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings, CrossSectionPattern
+
+
+TMillingStrategyConfig = TypeVar(
+    "TMillingStrategyConfig", bound="MillingStrategyConfig"
+)
+TMillingStrategy = TypeVar("TMillingStrategy", bound="MillingStrategy")
+
 
 @dataclass
 class MillingStrategyConfig(ABC):
     """Abstract base class for milling strategy configurations"""
-    
-    def to_dict(self):
-        return {}
+    _advanced_attributes: ClassVar[Tuple[str, ...]] = ()
 
-    @staticmethod
-    def from_dict(d: dict) -> "MillingStrategyConfig":
-        return MillingStrategyConfig()
-    
-    @property
-    def required_attributes(self) -> Tuple[str]:
-        return [field.name for field in fields(self)]
-    
-    @property
-    def advanced_attributes(self) -> List[str]:
-        if hasattr(self, "_advanced_attributes"):
-            return self._advanced_attributes
-        return []
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
-@dataclass
-class MillingStrategy(ABC):
+    @classmethod
+    def from_dict(
+        cls: Type[TMillingStrategyConfig], d: Dict[str, Any]
+    ) -> TMillingStrategyConfig:
+        return cls(**d)
+
+    @property
+    def required_attributes(self) -> Tuple[str, ...]:
+        return tuple(f.name for f in fields(self))
+
+    @property
+    def advanced_attributes(self) -> Tuple[str, ...]:
+        """Attributes that are considered advanced and may not be required for all strategies."""
+        return self._advanced_attributes
+
+
+class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
     """Abstract base class for different milling strategies"""
-    name: str = "Milling Strategy"    
-    config = MillingStrategyConfig()
+    name: str = "Milling Strategy"
+    config_class: type[TMillingStrategyConfig]
 
-    def __init__(self, **kwargs):
-        pass
-    
-    @abstractmethod
-    def to_dict(self):
+    def __init__(self, config: Optional[TMillingStrategyConfig] = None) -> None:
+        self.config: TMillingStrategyConfig = config or self.config_class()
+
+    def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "config": self.config.to_dict()}
-    
-    @staticmethod
-    @abstractmethod
-    def from_dict(d: dict) -> "MillingStrategy":
-        pass
+
+    @classmethod
+    def from_dict(cls: type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
+        config = cls.config_class.from_dict(d.get("config", {}))
+        return cls(config=config)
 
     @abstractmethod
     def run(self, microscope: FibsemMicroscope, stage: "FibsemMillingStage", asynch: bool = False, parent_ui = None) -> None:
@@ -54,7 +62,7 @@ class MillingStrategy(ABC):
 
 def get_strategy(
     name: str = "Standard", config: Optional[Dict[str, Any]] = None
-) -> MillingStrategy:
+) -> MillingStrategy[Any]:
     from fibsem.milling.strategy import get_strategies, DEFAULT_STRATEGY
 
     if config is None:
@@ -69,10 +77,9 @@ class FibsemMillingStage:
     name: str = "Milling Stage"
     num: int = 0
     milling: FibsemMillingSettings = field(default_factory=FibsemMillingSettings)
-    pattern: BasePattern = field(default_factory=lambda: get_pattern("Rectangle",
-                                       config={"width": 10e-6, "height": 5e-6, "depth": 1e-6}))
+    pattern: BasePattern = field(default_factory=DEFAULT_MILLING_PATTERN)
     patterns: List[BasePattern] = None # unused
-    strategy: MillingStrategy = field(default_factory=lambda: get_strategy("Standard"))
+    strategy: MillingStrategy[Any] = field(default_factory=get_strategy)
     alignment: MillingAlignment = field(default_factory=MillingAlignment)
     imaging: ImageSettings = field(default_factory=ImageSettings) # settings for post-milling acquisition
 

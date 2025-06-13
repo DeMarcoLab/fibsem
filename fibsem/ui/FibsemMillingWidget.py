@@ -36,7 +36,7 @@ from fibsem.milling.patterning.patterns2 import (
     BasePattern,
     FiducialPattern,
     LinePattern,
-    get_default_milling_pattern,
+    get_pattern,
 )
 from fibsem.milling.strategy import DEFAULT_STRATEGY_NAME, get_strategy_names
 from fibsem.structures import (
@@ -356,7 +356,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         num = len(self.milling_stages) + 1
         name = f"Milling Stage {num}"
-        pattern = get_default_milling_pattern(DEFAULT_MILLING_PATTERN)
+        pattern = DEFAULT_MILLING_PATTERN()
         strategy = get_strategy(DEFAULT_STRATEGY_NAME)
         milling_stage = FibsemMillingStage(name=name, 
                                            num=num, 
@@ -658,7 +658,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         pattern_name = self.comboBox_patterns.currentText()
 
         logging.info(f"selected pattern: {pattern_name}")
-        pattern = get_default_milling_pattern(pattern_name)
+        pattern = get_pattern(pattern_name)
         self.current_milling_stage.pattern = pattern
         self.set_pattern_settings_ui()
 
