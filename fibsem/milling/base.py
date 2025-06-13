@@ -52,7 +52,7 @@ class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
 
     @classmethod
     def from_dict(cls: type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
-        config=cls.config_class.from_dict(d.get("config", {}))   
+        config = cls.config_class.from_dict(d.get("config", {}))
         return cls(config=config)
 
     @abstractmethod
