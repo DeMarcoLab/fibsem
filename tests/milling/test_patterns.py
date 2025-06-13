@@ -1,10 +1,11 @@
-from copy import deepcopy
+from __future__ import annotations
+from dataclasses import fields
 
 import numpy as np
 import pytest
 
 from fibsem.milling.patterning.patterns2 import (
-    DEFAULT_POINT_DDICT,
+    BasePattern,
     CirclePattern,
     FibsemCircleSettings,
     FibsemLineSettings,
@@ -21,6 +22,22 @@ from fibsem.milling.patterning.patterns2 import (
 from fibsem.structures import (
     CrossSectionPattern,
     Point,
+)
+
+@pytest.mark.parametrize("pattern", list(MILLING_PATTERNS.values()))
+def test_required_attributes(pattern: type[BasePattern]) -> None:
+    # test that core attributes are not inherited by required attributes for specific patterns
+    p = pattern()
+    assert "point" not in p.required_attributes
+    assert "shapes" not in p.required_attributes
+    assert "name" not in p.required_attributes
+
+    for f in fields(p):
+        if f.name in ["point", "shapes", "name"]:
+            continue
+        # check that all fields are in required attributes
+        assert f.name in p.required_attributes, (
+            f"{f.name} not in required attributes for {p.name}"
 )
 
 
