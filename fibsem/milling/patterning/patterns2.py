@@ -1020,7 +1020,7 @@ def create_triangle_patterns(
     return [left_pattern, right_pattern, bottom_pattern]
 
 
-MILLING_PATTERNS: Dict[str, BasePattern] = {
+MILLING_PATTERNS: Dict[str, Type[BasePattern]] = {
     RectanglePattern.name.lower(): RectanglePattern,
     LinePattern.name.lower(): LinePattern,
     CirclePattern.name.lower(): CirclePattern,
