@@ -13,6 +13,7 @@ from PyQt5 import QtCore, QtWidgets
 import fibsem.utils as utils
 from fibsem import config as cfg
 from fibsem import constants, conversions
+from fibsem.constants import DEGREE_SYMBOL
 from fibsem.microscope import FibsemMicroscope, ThermoMicroscope
 from fibsem.microscopes.simulator import DemoMicroscope
 from fibsem.microscopes.tescan import TescanMicroscope
@@ -37,7 +38,6 @@ from fibsem.ui.utils import (
     open_save_file_dialog,
 )
 
-DEGREE_SYMBOL = "°"
 
 def to_pretty_string(position: FibsemStagePosition) -> str:
     xstr = f"x={position.x*constants.METRE_TO_MILLIMETRE:.3f}"
@@ -218,14 +218,21 @@ class FibsemMovementWidget(FibsemMovementWidgetUI.Ui_Form, QtWidgets.QWidget):
             # NOTE: this crashes for tescan systems?
             pos = self.microscope.get_stage_position()
             orientation = self.microscope.get_stage_orientation()
+            milling_angle = self.microscope.get_current_milling_angle()
         except Exception as e:
             logging.warning(f"Error getting stage position: {e}")
             return
 
         # add text layer, showing the stage position in cyan
-        points = np.array([[self.image_widget.eb_layer.data.shape[0] + 50, 500]]) # TODO: use translation property instead
+        points = np.array([
+            [self.image_widget.eb_layer.data.shape[0] + 50, 500],
+            [self.image_widget.eb_layer.data.shape[0] + 50, self.image_widget.ib_layer.translate[1] + 150]
+            ])
         text = {
-            "string": [to_pretty_string_short(pos) + f" [{orientation}]"],
+            "string": [
+                f"STAGE: {to_pretty_string_short(pos)} [{orientation}]",
+                f"MILLING ANGLE: {milling_angle:.1f} {DEGREE_SYMBOL}"
+                ],
             "color": "cyan",
             "font_size": 20,
         }

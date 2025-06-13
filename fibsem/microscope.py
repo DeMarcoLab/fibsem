@@ -1005,6 +1005,22 @@ class FibsemMicroscope(ABC):
 
         return self.orientations[orientation]
 
+    def get_current_milling_angle(self) -> float:
+        """Get the current milling angle in degrees based on the current stage tilt."""
+
+        from fibsem.transformations import convert_stage_tilt_to_milling_angle
+
+        # NOTE: this is only valid for sem orientation
+        if self.get_stage_orientation() == "FIB":
+            return 90  # stage-tilt + pre-tilt + 90 - column-tilt
+
+        # Calculate the milling angle from the stage tilt
+        milling_angle = convert_stage_tilt_to_milling_angle(
+            stage_tilt=self.get_stage_position().t, 
+            pretilt=np.radians(self.system.stage.shuttle_pre_tilt), 
+            column_tilt=np.radians(self.system.ion.column_tilt)
+        )
+        return np.degrees(milling_angle)
 
 class ThermoMicroscope(FibsemMicroscope):
     """
