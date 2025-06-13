@@ -67,7 +67,7 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
                 
     @property
     def required_attributes(self) -> Tuple[str, ...]:
-        return tuple(f.name for f in fields(self) if f.name not in fields(BasePattern))
+        return tuple(f.name for f in fields(self) if f not in fields(BasePattern))
     
     @property
     def advanced_attributes(self) -> Tuple[str, ...]:
