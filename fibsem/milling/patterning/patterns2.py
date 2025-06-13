@@ -1075,14 +1075,14 @@ PROTOCOL_MILL_MAP = {
     "mill_polishing": TrenchPattern,
 }
 
-def get_pattern(name: str, config: dict) -> BasePattern:
-    cls_pattern = MILLING_PATTERNS.get(name.lower())
+def get_pattern(name: str, config: Optional[Dict[str, Any]] = None) -> BasePattern:
+    if config is None:
+        config = {}
+
+    name = name.lower()
+    if name not in MILLING_PATTERNS:
+        raise NameError("No milling pattern named '%s'")
+
+    cls_pattern = MILLING_PATTERNS[name]
     pattern = cls_pattern.from_dict(config)
     return pattern
-
-# default milling protocol
-DEFAULT_PROTOCOL = utils.load_yaml(cfg.PROTOCOL_PATH)
-
-def get_default_milling_pattern(name: str) -> BasePattern:
-    """Get the default milling pattern."""
-    return get_pattern(name, config = DEFAULT_PROTOCOL["patterns"][name])

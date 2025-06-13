@@ -40,6 +40,7 @@ from fibsem.milling.patterning.patterns2 import (
     BasePattern,
     LinePattern,
     TrenchPattern,
+    get_pattern,
 )
 from fibsem.milling.strategy import (
     MillingStrategy,
@@ -53,7 +54,7 @@ from fibsem.structures import (
     Point,
 )
 from fibsem.ui import stylesheets
-from fibsem.ui.FibsemMillingWidget import WheelBlocker, get_default_milling_pattern
+from fibsem.ui.FibsemMillingWidget import WheelBlocker
 from fibsem.ui.napari.patterns import (
     draw_milling_patterns_in_napari,
     is_pattern_placement_valid,
@@ -519,7 +520,7 @@ class FibsemMillingStageWidget(QWidget):
     def _on_pattern_changed(self, pattern_name: str):
         # TODO: convert the comboBox_selected_pattern to use currentData, 
         # that way we can pass the pattern object directly (and restore it from the previous state)
-        pattern = get_default_milling_pattern(pattern_name)
+        pattern = get_pattern(pattern_name)
 
         self._milling_stage.pattern = pattern  # Update the milling stage's strategy
 
