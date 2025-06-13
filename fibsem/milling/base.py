@@ -5,7 +5,7 @@ from typing import List, Union, Dict, Any, Tuple, Optional, Type, TypeVar, Class
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
-from fibsem.milling.patterning.patterns2 import BasePattern as BasePattern, get_pattern as get_pattern
+from fibsem.milling.patterning.patterns2 import BasePattern, get_pattern, DEFAULT_MILLING_PATTERN
 from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings, CrossSectionPattern
 
 
@@ -77,10 +77,9 @@ class FibsemMillingStage:
     name: str = "Milling Stage"
     num: int = 0
     milling: FibsemMillingSettings = field(default_factory=FibsemMillingSettings)
-    pattern: BasePattern = field(default_factory=lambda: get_pattern("Rectangle",
-                                       config={"width": 10e-6, "height": 5e-6, "depth": 1e-6}))
+    pattern: BasePattern = field(default_factory=DEFAULT_MILLING_PATTERN)
     patterns: List[BasePattern] = None # unused
-    strategy: MillingStrategy[Any] = field(default_factory=lambda: get_strategy("Standard"))
+    strategy: MillingStrategy[Any] = field(default_factory=get_strategy)
     alignment: MillingAlignment = field(default_factory=MillingAlignment)
     imaging: ImageSettings = field(default_factory=ImageSettings) # settings for post-milling acquisition
 
