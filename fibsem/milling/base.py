@@ -33,6 +33,11 @@ class MillingStrategyConfig(ABC):
     def required_attributes(self) -> Tuple[str, ...]:
         return tuple(f.name for f in fields(self))
 
+    @property
+    def advanced_attributes(self) -> Tuple[str, ...]:
+        """Attributes that are considered advanced and may not be required for all strategies."""
+        return self._advanced_attributes
+
 
 class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
     """Abstract base class for different milling strategies"""
