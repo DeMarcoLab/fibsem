@@ -73,8 +73,7 @@ def test_get_strategy():
     assert strategy.name == DEFAULT_STRATEGY.name
 
     # Test with a specific strategy name
-    strategies = get_strategies()
-    strategy_name = list(strategies.keys())[0]
+    strategy_name = "Standard"
     strategy = get_strategy(name=strategy_name)
     assert isinstance(strategy, MillingStrategy)
     assert strategy.name == strategy_name
