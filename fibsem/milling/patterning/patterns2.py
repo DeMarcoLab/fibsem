@@ -5,8 +5,7 @@ from typing import Dict, List, Tuple, Union, Any, Optional, Type, ClassVar, Type
 
 import numpy as np
 
-from fibsem import config as cfg
-from fibsem import constants, utils
+from fibsem import constants
 from fibsem.structures import (
     CrossSectionPattern,
     FibsemBitmapSettings,
