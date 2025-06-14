@@ -60,6 +60,7 @@ from fibsem.ui.napari.patterns import (
 )
 from fibsem.ui.napari.utilities import is_position_inside_layer
 from fibsem.utils import format_value
+from fibsem.ui.utils import open_save_file_dialog
 
 MILLING_SETTINGS_GUI_CONFIG = {
     "patterning_mode": {
@@ -1237,17 +1238,46 @@ class AutoLamellaProtocolEditorWidget(QWidget):
         self.checkbox_sync_positions.setObjectName("checkbox-sync-positions")
         self.checkbox_sync_positions.setChecked(True)
         
+        # export button 
+        self.pushButton_export = QPushButton("Export as Base Protocol")
+        self.pushButton_export.clicked.connect(self.export_base_protocol)
+        
         self.grid_layout = QGridLayout()
         self.grid_layout.addWidget(self.label_selected_lamella, 0, 0)
         self.grid_layout.addWidget(self.comboBox_selected_lamella, 0, 1)
         self.grid_layout.addWidget(self.label_selected_milling, 1, 0)
         self.grid_layout.addWidget(self.comboBox_selected_milling, 1, 1)
         self.grid_layout.addWidget(self.checkbox_sync_positions, 2, 0, 1, 2)
+        self.grid_layout.addWidget(self.pushButton_export, 3,0,1,2)
 
         # main layout
         self.main_layout = QVBoxLayout(self)
         self.main_layout.addWidget(self.milling_stage_editor)
         self.main_layout.addLayout(self.grid_layout)
+
+    def export_base_protocol(self):
+
+        """ Copies the milling pattern parameters for the current lamella protocol selected
+            in the protocol editor and saves them in a less verbose version of the output protocol,
+            similar to the default protocol, which captures only the most essential information. This
+            can then be used as a template for other lamellae or experiments
+        """
+
+        selected_lamella: Lamella = self.comboBox_selected_lamella.currentData()
+        current_milling_dict = copy.deepcopy(selected_lamella.protocol)
+
+        path = open_save_file_dialog(
+                    msg="Export Base protocol",
+                    path=cfg.PROTOCOL_PATH,
+                    _filter="*yaml",
+                    parent=self,
+                )
+        if path == '':
+            return
+
+        self.protocol.save_base_protocol(path,current_milling_dict)
+
+
 
     def _initialise_widgets(self):
         if self.experiment is not None:
