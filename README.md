@@ -1,3 +1,5 @@
+NOTE: This repository is being migrated to a new home at https://github.com/fibsem-os/fibsem-os. This will be kept updated as a mirror for the next few months (until ~September 2025) before being archived. 
+
 # fibsemOS
 
 A universal API for FIBSEM Control, Development and Automation
