@@ -15,22 +15,11 @@ class StandardMillingConfig(MillingStrategyConfig):
     pass
 
 
-@dataclass
-class StandardMillingStrategy(MillingStrategy):
+class StandardMillingStrategy(MillingStrategy[StandardMillingConfig]):
     """Basic milling strategy that mills continuously until completion"""
     name: str = "Standard"
     fullname: str = "Standard Milling"
-
-    def __init__(self, config: StandardMillingConfig = None):
-        self.config = config or StandardMillingConfig()
-
-    def to_dict(self):
-        return {"name": self.name, "config": self.config.to_dict()}
-
-    @staticmethod
-    def from_dict(d: dict) -> "StandardMillingStrategy":
-        config=StandardMillingConfig.from_dict(d.get("config", {}))   
-        return StandardMillingStrategy(config=config)
+    config_class = StandardMillingConfig
 
     def run(
         self,

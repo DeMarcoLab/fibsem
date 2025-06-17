@@ -9,14 +9,14 @@ from fibsem.milling.strategy.overtilt import OvertiltTrenchMillingStrategy
 
 DEFAULT_STRATEGY = StandardMillingStrategy
 DEFAULT_STRATEGY_NAME = DEFAULT_STRATEGY.name
-BUILTIN_STRATEGIES: typing.Dict[str, type[MillingStrategy]] = {
+BUILTIN_STRATEGIES: typing.Dict[str, type[MillingStrategy[typing.Any]]] = {
     StandardMillingStrategy.name: StandardMillingStrategy,
     OvertiltTrenchMillingStrategy.name: OvertiltTrenchMillingStrategy,
 }
-REGISTERED_STRATEGIES: typing.Dict[str, type[MillingStrategy]] = {}
+REGISTERED_STRATEGIES: typing.Dict[str, type[MillingStrategy[typing.Any]]] = {}
 
 
-def get_strategies() -> typing.Dict[str, type[MillingStrategy]]:
+def get_strategies() -> typing.Dict[str, type[MillingStrategy[typing.Any]]]:
     # This order means that builtins > registered > plugins if there are any name clashes
     return {**_get_plugin_strategies(), **REGISTERED_STRATEGIES, **BUILTIN_STRATEGIES}
 
@@ -25,13 +25,13 @@ def get_strategy_names() -> typing.List[str]:
     return list(get_strategies().keys())
 
 
-def register_strategy(strategy_cls: type[MillingStrategy]) -> None:
+def register_strategy(strategy_cls: type[MillingStrategy[typing.Any]]) -> None:
     global REGISTERED_STRATEGIES
     REGISTERED_STRATEGIES[strategy_cls.name] = strategy_cls
 
 
 @cache
-def _get_plugin_strategies() -> typing.Dict[str, type[MillingStrategy]]:
+def _get_plugin_strategies() -> typing.Dict[str, type[MillingStrategy[typing.Any]]]:
     """
     Import new strategies and append them to the list here
 
@@ -45,7 +45,7 @@ def _get_plugin_strategies() -> typing.Dict[str, type[MillingStrategy]]:
     else:
         from importlib.metadata import entry_points
 
-    strategies: typing.Dict[str, type[MillingStrategy]] = {}
+    strategies: typing.Dict[str, type[MillingStrategy[typing.Any]]] = {}
     for strategy_entry_point in entry_points(group="fibsem.strategies"):
         try:
             strategy = strategy_entry_point.load()
