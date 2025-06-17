@@ -832,7 +832,7 @@ class TestFiducialPattern:
         
         fiducial = FiducialPattern.from_dict(test_dict)
         
-        assert fiducial.rotation == 0
+        assert fiducial.rotation == 45
         assert fiducial.cross_section == CrossSectionPattern.Rectangle
         assert fiducial.point.x == 0.0
         assert fiducial.point.y == 0.0
