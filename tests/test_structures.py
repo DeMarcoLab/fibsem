@@ -90,7 +90,7 @@ if THERMO:
         assert autoscript_stage_position.z == stage_position.z
         assert autoscript_stage_position.r == stage_position.r
         assert autoscript_stage_position.t == stage_position.t
-        assert autoscript_stage_position.coordinate_system == "RAW" # TODO: update to CoordinateSystem.Raw
+        assert autoscript_stage_position.coordinate_system == CoordinateSystem.RAW
 
         # test convesion to CompuStagePosition
         autoscript_compustage_position = stage_position.to_autoscript_position(compustage=True)
@@ -99,7 +99,7 @@ if THERMO:
         assert autoscript_compustage_position.y == stage_position.y
         assert autoscript_compustage_position.z == stage_position.z
         assert autoscript_compustage_position.a == stage_position.t
-        assert autoscript_compustage_position.coordinate_system == "RAW" # TODO: update to CoordinateSystem.Raw  
+        assert autoscript_compustage_position.coordinate_system == CoordinateSystem.SPECIMEN
 
 
     def test_from_autoscript_position():
@@ -125,5 +125,4 @@ if THERMO:
         assert stage_position.z == autoscript_compustage_position.z
         assert stage_position.r == 0
         assert stage_position.t == autoscript_compustage_position.a
-        assert stage_position.coordinate_system == "RAW"
-
+        assert stage_position.coordinate_system == "SPECIMEN"

@@ -234,7 +234,7 @@ class FibsemStagePosition:
                     z=position.z,
                     r=0.0,
                     t=position.a,
-                    coordinate_system=CoordinateSystem.SPECIMEN,
+                    coordinate_system=CoordinateSystem.SPECIMEN.upper(),
                 )
 
 
