@@ -6,7 +6,14 @@ from typing import List, Union, Dict, Any, Tuple, Optional, Type, TypeVar, Class
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
 from fibsem.milling.patterning.patterns2 import BasePattern, get_pattern, DEFAULT_MILLING_PATTERN
-from fibsem.structures import FibsemMillingSettings, Point, MillingAlignment, ImageSettings, CrossSectionPattern
+from fibsem.structures import (
+    FibsemMillingSettings,
+    MillingAlignment,
+    ImageSettings,
+    CrossSectionPattern,
+    FibsemImage,
+    FibsemImageMetadata,
+)
 
 
 TMillingStrategyConfig = TypeVar(
@@ -82,6 +89,7 @@ class FibsemMillingStage:
     strategy: MillingStrategy[Any] = field(default_factory=get_strategy)
     alignment: MillingAlignment = field(default_factory=MillingAlignment)
     imaging: ImageSettings = field(default_factory=ImageSettings) # settings for post-milling acquisition
+    reference_image: Optional[FibsemImage] = None
 
     def __post_init__(self):
         
@@ -104,7 +112,7 @@ class FibsemMillingStage:
             "pattern": self.pattern.to_dict(),
             "strategy": self.strategy.to_dict(),
             "alignment": self.alignment.to_dict(),
-            "imaging": self.imaging.to_dict()
+            "imaging": self.imaging.to_dict(),
         }
 
     @classmethod
@@ -123,7 +131,7 @@ class FibsemMillingStage:
             pattern=get_pattern(pattern_name, data["pattern"]),
             strategy=get_strategy(strategy_name, config=strategy_config),
             alignment=MillingAlignment.from_dict(alignment),
-            imaging=ImageSettings.from_dict(imaging)
+            imaging=ImageSettings.from_dict(imaging),
         )
 
     @property
