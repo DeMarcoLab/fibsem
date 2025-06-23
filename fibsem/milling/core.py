@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from typing import List, Tuple
 
-from fibsem import config as fcfg
+from fibsem import acquire, config as fcfg
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
@@ -286,10 +286,11 @@ def get_stage_reference_image(
             resolution=[1536, 1024],
             beam_type=milling_stage.milling.milling_channel,
             reduced_area=milling_stage.alignment.rect,
+            save=True,
             path=path,
             filename=f"ref_{milling_stage.name}_initial_alignment_{current_timestamp_v2()}",
         )
-        return microscope.acquire_image(image_settings)
+        return acquire.acquire_image(microscope, image_settings)
     raise TypeError(f"Invalid ref_image type '{type(ref_image)}'")
 
 
