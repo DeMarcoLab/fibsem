@@ -1,8 +1,9 @@
 import logging
 import time
+from pathlib import Path
 from typing import List, Tuple
 
-from fibsem import config as fcfg
+from fibsem import acquire, config as fcfg
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
@@ -23,7 +24,6 @@ from fibsem.utils import current_timestamp_v2
 def setup_milling(
     microscope: FibsemMicroscope,
     milling_stage: FibsemMillingStage,
-    ref_image: FibsemImage = None,
 ):
     """Setup Microscope for FIB Milling.
 
@@ -33,17 +33,10 @@ def setup_milling(
     """
 
     # acquire reference image for drift correction
-    if milling_stage.alignment.enabled and ref_image is None:
-        image_settings = ImageSettings(
-            hfw=milling_stage.milling.hfw,
-            dwell_time=1e-6,
-            resolution=[1536, 1024],
-            beam_type=milling_stage.milling.milling_channel,
-            reduced_area=milling_stage.alignment.rect,
-            path=fcfg.DATA_CC_PATH, # TODO: set this to the last-path?
-            filename=f"ref_{milling_stage.name}_initial_alignment_{current_timestamp_v2()}"
+    if milling_stage.alignment.enabled:
+        reference_image = get_stage_reference_image(
+            microscope=microscope, milling_stage=milling_stage
         )
-        ref_image = microscope.acquire_image(image_settings)
 
     # set up milling settings
     microscope.setup_milling(mill_settings=milling_stage.milling)
@@ -52,10 +45,14 @@ def setup_milling(
     if milling_stage.alignment.enabled:
         from fibsem import alignment
         logging.info(f"FIB Aligning at Milling Current: {milling_stage.milling.milling_current:.2e}")
-        alignment.multi_step_alignment_v2(microscope=microscope, 
-                                        ref_image=ref_image, 
-                                        beam_type=milling_stage.milling.milling_channel, 
-                                        steps=3, use_autocontrast=True)  # high current -> damaging
+        alignment.multi_step_alignment_v2(
+            microscope=microscope,
+            ref_image=reference_image,
+            beam_type=milling_stage.milling.milling_channel,
+            steps=3,
+            use_autocontrast=True,
+        )  # high current -> damaging
+
 
 # TODO: migrate run milling to take milling_stage argument, rather than current, voltage
 def run_milling(
@@ -165,19 +162,10 @@ def mill_stages(
                     logging.info(ddict)
             microscope.milling_progress_signal.connect(_handle_progress)
 
-
-        # TODO: move into try, only do for stage ===0
-        image_settings = ImageSettings(
-            hfw=stages[0].milling.hfw,
-            dwell_time=1e-6,
-            resolution=[1536, 1024],
-            beam_type=stages[0].milling.milling_channel,
-            reduced_area=stages[0].alignment.rect,
-            path=fcfg.DATA_CC_PATH, # TODO: set this to the last-path?
-            filename=f"ref_{stages[0].name}_initial_alignment_{current_timestamp_v2()}"
+        reference_image = get_stage_reference_image(
+            microscope=microscope, milling_stage=stages[0]
         )
-        ref_image = microscope.acquire_image(image_settings)
-        
+
         initial_beam_shift = microscope.get("shift", beam_type=stages[0].milling.milling_channel)
 
         # TODO: reset beam shift after aligning at milling current
@@ -197,7 +185,7 @@ def mill_stages(
                 parent_ui.milling_progress_signal.emit(msgd)
 
             try:
-                stage.ref_image = ref_image
+                stage.reference_image = reference_image
                 stage.strategy.run(
                     microscope=microscope,
                     stage=stage,
@@ -281,5 +269,30 @@ def acquire_images_after_milling(
 
     return images
 
-# QUERY: should List[FibsemMillingStage] be a class? that has it's own settings? 
+
+def get_stage_reference_image(
+    microscope: FibsemMicroscope, milling_stage: FibsemMillingStage
+) -> FibsemImage:
+    ref_image = milling_stage.reference_image
+    if isinstance(ref_image, FibsemImage):
+        return ref_image
+    elif ref_image is None:
+        path = milling_stage.imaging.path
+        if path is None:
+            path = Path(fcfg.DATA_CC_PATH)
+        image_settings = ImageSettings(
+            hfw=milling_stage.milling.hfw,
+            dwell_time=1e-6,
+            resolution=[1536, 1024],
+            beam_type=milling_stage.milling.milling_channel,
+            reduced_area=milling_stage.alignment.rect,
+            save=True,
+            path=path,
+            filename=f"ref_{milling_stage.name}_initial_alignment_{current_timestamp_v2()}",
+        )
+        return acquire.acquire_image(microscope, image_settings)
+    raise TypeError(f"Invalid ref_image type '{type(ref_image)}'")
+
+
+# QUERY: should List[FibsemMillingStage] be a class? that has it's own settings?
 # E.G. should acquire images be set at that level, rather than at the stage level?

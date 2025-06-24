@@ -29,7 +29,7 @@ class StandardMillingStrategy(MillingStrategy[StandardMillingConfig]):
         parent_ui = None,
     ) -> None:
         logging.info(f"Running {self.name} Milling Strategy for {stage.name}")
-        setup_milling(microscope, milling_stage=stage, ref_image=stage.ref_image)
+        setup_milling(microscope, milling_stage=stage)
 
         draw_patterns(microscope, stage.pattern.define())
 
