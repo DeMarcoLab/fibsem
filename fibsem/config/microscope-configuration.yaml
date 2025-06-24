@@ -60,3 +60,7 @@ milling:
     rate:                       3.4e-09                     # the default milling spuuter rate  (TESCAN)            [um3/s] [USER]
     spot_size:                  5.4e-08                     # the default milling spot size     (TESCAN)            [metres][USER]
     preset:                     "30 keV; 20 nA"             # the default milling preset        (TESCAN)                    [USER]
+sim:
+    sem: null # "/path/to/sem/image/data"                   # the path to the SEM image data for simulation                 [USER]
+    fib: null # "/path/to/fib/image/data"                   # the path to the FIB image data for simulation                 [USER]
+    use_cycle: true                                         # infinitely cycle sem/fib dataset                              [USER]

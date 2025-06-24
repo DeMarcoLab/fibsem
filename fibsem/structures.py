@@ -1257,7 +1257,8 @@ class SystemSettings:
     ion: BeamSystemSettings
     manipulator: ManipulatorSystemSettings
     gis: GISSystemSettings
-    info: SystemInfo    
+    info: SystemInfo
+    sim: Dict[str, Union[str, bool]] = field(default_factory=dict) 
 
     def to_dict(self):
         return {
@@ -1267,6 +1268,7 @@ class SystemSettings:
             "manipulator": self.manipulator.to_dict(),
             "gis": self.gis.to_dict(),
             "info": self.info.to_dict(),
+            "sim": self.sim,
         }
     
     @staticmethod
@@ -1283,6 +1285,7 @@ class SystemSettings:
             manipulator=ManipulatorSystemSettings.from_dict(settings["manipulator"]),
             gis=GISSystemSettings.from_dict(settings["gis"]),
             info=SystemInfo.from_dict(settings["info"]),
+            sim=settings.get("sim", {}),
         )
 
 @dataclass

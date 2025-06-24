@@ -1,11 +1,26 @@
+from __future__ import annotations
+import glob
 import logging
+import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from itertools import cycle
 from typing import Dict, List, Optional, Tuple, Union
+from collections.abc import Iterator
 
 import numpy as np
+from skimage.transform import resize
 
-
+from fibsem.microscope import (
+    FibsemMicroscope,
+    ThermoMicroscope,
+    _check_beam,
+    _check_manipulator,
+    _check_manipulator_movement,
+    _check_sputter,
+    _check_stage,
+    _check_stage_movement,
+)
 from fibsem.structures import (
     ACTIVE_MILLING_STATES,
     BeamSettings,
@@ -33,8 +48,6 @@ from fibsem.structures import (
     Point,
     SystemSettings,
 )
-
-from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, _check_beam, _check_manipulator, _check_stage, _check_sputter, _check_stage_movement, _check_manipulator_movement
 
 ######################## SIMULATOR ########################
 
@@ -136,7 +149,8 @@ class MillingSystem:
 class ImagingSystem:
     active_view: int = BeamType.ELECTRON.value
     active_device: int = BeamType.ELECTRON.value
-    last_image: Dict[BeamType, FibsemImage] = None
+    last_image: Dict[BeamType, Optional[FibsemImage]] = field(default_factory=dict)
+    image_iterators: Dict[BeamType, Iterator[str]] = field(default_factory=dict)  # Image filename iterators
 
 class DemoMicroscope(FibsemMicroscope):
     """Simulator microscope client based on TFS microscopes"""
@@ -215,9 +229,13 @@ class DemoMicroscope(FibsemMicroscope):
         )
         self.stage_is_compustage: bool = False
         self.milling_system = MillingSystem(patterns=[])
-        self.imaging_system = ImagingSystem(last_image={})
-        self.imaging_system.last_image[BeamType.ELECTRON] = None
-        self.imaging_system.last_image[BeamType.ION] = None
+        self.imaging_system = ImagingSystem()
+
+        # setup image iterators
+        try:
+            self._setup_image_iterators()
+        except ValueError as e:
+            logging.error("Failed to set up sim image iterators: %s", str(e))
             
         # user, experiment metadata
         # TODO: remove once db integrated
@@ -285,6 +303,12 @@ class DemoMicroscope(FibsemMicroscope):
             random=True
         )
 
+        # generate the next image from the sequence iterator
+        if self.use_image_sequence:
+            image.data  = self._generate_next_image(beam_type=image_settings.beam_type, 
+                                                    output_shape=image.data.shape, 
+                                                    dtype=image.data.dtype)
+
         # add additional metadata
         image.metadata.image_settings = image_settings
         image.metadata.microscope_state = microscope_state
@@ -311,14 +335,109 @@ class DemoMicroscope(FibsemMicroscope):
 
         return image
 
-    def last_image(self, beam_type: BeamType) -> FibsemImage:
+    def _generate_next_image(
+        self,
+        beam_type: BeamType,
+        output_shape: Tuple[int, int],
+        dtype: np.dtype = np.uint8,
+    ) -> np.ndarray:
+        """Generate the next image in the sequence for the specified beam type, 
+            formatted for the current acquisition settings.
+        Args:
+            beam_type: The type of beam (electron or ion).
+            output_shape: The shape of the output image (height, width).
+            dtype: The data type of the output image.
+        Returns:
+            np.ndarray: The generated image data.
+        """
+        try:
+            # get the next filename from the imaging system
+            image_iterator = self.imaging_system.image_iterators.get(beam_type, None)
+            if image_iterator is None:
+                raise ValueError(f"No image iterator found for beam type {beam_type.name}")
+
+            filename = next(image_iterator)
+            
+            # check if file still exists
+            if not os.path.exists(filename):
+                logging.warning(f"Image file not found: {filename}, falling back to random noise")
+                return np.random.randint(0, 256, output_shape, dtype=dtype)
+            
+            # load and process the image
+            logging.debug(f"Generating image from {filename} for beam type {beam_type.name}")
+            img = FibsemImage.load(filename)
+            
+            # resize the image data to the specified resolution
+            image_data = resize(
+                img.data, 
+                output_shape=output_shape, 
+                anti_aliasing=True, 
+                preserve_range=True
+            )
+            return image_data.astype(dtype)
+        except StopIteration as e:
+            logging.debug(f"Image sequence for {beam_type.name} exhausted, falling back to random noise: {e}")
+            return np.random.randint(0, 256, output_shape, dtype=dtype)
+
+        except (FileNotFoundError, OSError, ValueError) as e:
+            logging.warning(f"Failed to load image for {beam_type.name}: {e}, falling back to random noise")
+            return np.random.randint(0, 256, output_shape, dtype=dtype)
+        except Exception as e:
+            logging.error(f"Unexpected error loading image for {beam_type.name}: {e}, falling back to random noise")
+            return np.random.randint(0, 256, output_shape, dtype=dtype)
+
+    def _setup_image_iterators(self) -> None:
+        """Setup image iterators for simulator image sequences.
+        
+        Initializes image sequence iterators from configured SEM and FIB data paths.
+        Falls back to random noise generation if no simulator configuration is provided.
+        """
+        self.use_image_sequence = False
+        
+        if self.system.sim is None:
+            logging.debug("No simulator configuration found, using random noise generation")
+            return
+            
+        sem_data_path = self.system.sim.get("sem", None)
+        fib_data_path = self.system.sim.get("fib", None)
+        
+        if sem_data_path is None or fib_data_path is None:
+            logging.info("SEM or FIB data path not configured in simulator settings, using random noise generation")
+            return
+
+        if not os.path.exists(sem_data_path) or not os.path.exists(fib_data_path):
+            raise ValueError(f"SEM data path {sem_data_path} or FIB data path {fib_data_path} does not exist.")
+
+        # find all .tif files in the directories
+        self._sem_filenames = sorted(glob.glob(os.path.join(sem_data_path, "*.tif*")))
+        self._fib_filenames = sorted(glob.glob(os.path.join(fib_data_path, "*.tif*")))
+
+        # validate that files were found
+        if len(self._sem_filenames) == 0:
+            raise ValueError(f"No .tif files found in SEM data path: {sem_data_path}")
+        if len(self._fib_filenames) == 0:
+            raise ValueError(f"No .tif files found in FIB data path: {fib_data_path}")
+
+        # create cycling iterators for continuous image sequences
+        use_cycle = self.system.sim.get("use_cycle", False)
+        if use_cycle:
+            self.imaging_system.image_iterators[BeamType.ELECTRON] = cycle(self._sem_filenames)
+            self.imaging_system.image_iterators[BeamType.ION] = cycle(self._fib_filenames)
+        else:
+            self.imaging_system.image_iterators[BeamType.ELECTRON] = iter(self._sem_filenames)
+            self.imaging_system.image_iterators[BeamType.ION] = iter(self._fib_filenames)
+
+        self.use_image_sequence = True
+        logging.info(f"Image iterators initialized: {len(self._sem_filenames)} SEM images, {len(self._fib_filenames)} FIB images")
+
+    def last_image(self, beam_type: BeamType) -> Optional[FibsemImage]:
         """Get the last acquired image of the specified beam type.
         Args:
             beam_type: The type of beam (electron or ion).
         Returns:
             FibsemImage: The last acquired image.
         """
-        image = self.imaging_system.last_image[beam_type]
+        image = self.imaging_system.last_image.get(beam_type)
         logging.debug({"msg": "last_image", "beam_type": beam_type.name, "metadata": image.metadata.to_dict()})
         return image
 
