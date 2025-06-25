@@ -220,6 +220,7 @@ def draw_milling_patterns(
     title: str = "Milling Patterns",
     show_current: bool = False,
     show_preset: bool = False,
+    show_depth: bool = False,
 ) -> plt.Figure:
     """
     Draw milling patterns on an image. Supports patterns composed of multiple shape types.
@@ -231,6 +232,7 @@ def draw_milling_patterns(
         title: str: Title for the plot.
         show_current: bool: Show milling current in legend.
         show_preset: bool: Show preset name in legend.
+        show_depth: bool: Show pattern depth in microns in legend.
     Returns:
         plt.Figure: Figure with patterns drawn.
     """
@@ -244,11 +246,19 @@ def draw_milling_patterns(
         colour = COLOURS[i % len(COLOURS)]
         pattern = stage.pattern
 
-        extra = ""
+        extra_parts = []
         if show_current:
-            extra = format_value(stage.milling.milling_current, "A")
+            extra_parts.append(format_value(stage.milling.milling_current, "A"))
         if show_preset:
-            extra = stage.milling.preset
+            extra_parts.append(stage.milling.preset)
+        if show_depth:
+            # Get depth from pattern
+            depth_m = getattr(pattern, 'depth', None)
+            if depth_m is not None:
+                depth_um = depth_m * 1e6  # Convert from meters to microns
+                extra_parts.append(f"{depth_um:.1f}μm")
+        
+        extra = ", ".join(extra_parts)
 
         # Get all shapes from the pattern
         try:
