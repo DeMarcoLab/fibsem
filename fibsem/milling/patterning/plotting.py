@@ -78,7 +78,117 @@ def _rect_pattern_to_image_pixels(
     return px, py, width, height
 
 
-# TODO: circle patches, line patches
+def _circle_pattern_to_image_pixels(
+    pattern: FibsemCircleSettings, pixel_size: float, image_shape: Tuple[int, int]
+) -> Tuple[int, int, float, float, float, float]:
+    """Convert circle pattern to image pixel coordinates.
+    Args:
+        pattern: FibsemCircleSettings: Circle pattern to convert.
+        pixel_size: float: Pixel size of the image.
+        image_shape: Tuple[int, int]: Shape of the image.
+    Returns:
+        Tuple[int, int, float, float, float, float]: Parameters (center_x, center_y, radius, inner_radius, start_angle, end_angle) in image pixel coordinates.
+    """
+    # get pattern parameters
+    radius = pattern.radius
+    thickness = pattern.thickness
+    mx, my = pattern.centre_x, pattern.centre_y
+    start_angle = pattern.start_angle
+    end_angle = pattern.end_angle
+
+    # position in metres from image centre
+    pmx, pmy = mx / pixel_size, my / pixel_size
+
+    # convert to image coordinates
+    cy, cx = image_shape[0] // 2, image_shape[1] // 2
+    px = cx + pmx
+    py = cy - pmy
+
+    # convert parameters to pixels
+    radius_px = radius / pixel_size
+    inner_radius_px = max(0, (radius - thickness) / pixel_size) if thickness > 0 else 0
+
+    return px, py, radius_px, inner_radius_px, start_angle, end_angle
+
+
+def _draw_circle_pattern(
+    image: FibsemImage,
+    pattern: BasePattern,
+    colour: str = "yellow",
+    name: str = "Circle",
+    extra: str = ""
+) -> List[mpatches.Patch]:
+    """Draw a circle pattern on an image.
+    Args:
+        image: FibsemImage: Image to draw pattern on.
+        pattern: BasePattern: Circle pattern to draw.
+        colour: str: Colour of circle patches.
+        name: str: Name of the circle patches.
+    Returns:
+        List[mpatches.Patch]: List of patches to draw.
+    """
+    # common image properties
+    pixel_size = image.metadata.pixel_size.x  # assume isotropic
+    image_shape = image.data.shape
+
+    patches = []
+    p: FibsemCircleSettings
+    for i, p in enumerate(pattern.define(), 1):
+        if not isinstance(p, FibsemCircleSettings):
+            logging.debug(f"Pattern {p} is not a circle, skipping")
+            continue
+        
+        # convert from microscope image (real-space) to image pixel-space
+        px, py, radius_px, inner_radius_px, start_angle, end_angle = _circle_pattern_to_image_pixels(
+            p, pixel_size, image_shape
+        )
+
+        # create appropriate patch based on pattern type
+        if inner_radius_px > 0:
+            # annulus/ring pattern
+            patch = mpatches.Annulus(
+                (px, py),
+                r=inner_radius_px,
+                width=radius_px - inner_radius_px,
+                angle=math.degrees(p.rotation),
+                linewidth=PROPERTIES["line_width"],
+                edgecolor=colour,
+                facecolor=colour,
+                alpha=PROPERTIES["opacity"],
+            )
+        elif start_angle != 0 or end_angle != 360:
+            # arc/wedge pattern
+            patch = mpatches.Wedge(
+                (px, py),
+                r=radius_px,
+                theta1=start_angle,
+                theta2=end_angle,
+                linewidth=PROPERTIES["line_width"],
+                edgecolor=colour,
+                facecolor=colour,
+                alpha=PROPERTIES["opacity"],
+            )
+        else:
+            # full circle pattern
+            patch = mpatches.Circle(
+                (px, py),
+                radius=radius_px,
+                linewidth=PROPERTIES["line_width"],
+                edgecolor=colour,
+                facecolor=colour,
+                alpha=PROPERTIES["opacity"],
+            )
+        
+        if i == 1:
+            lbl = f"{name}"
+            if extra:
+                lbl += f" ({extra})"
+            patch.set_label(lbl)
+        patches.append(patch)
+
+    return patches
+
+
 def _draw_rectangle_pattern(
     image: FibsemImage,
     pattern: BasePattern,
@@ -133,7 +243,9 @@ def _draw_rectangle_pattern(
 
 def get_drawing_function(name: str) -> Callable:
     
-    if name in ["Circle", "Bitmap", "Line", "SerialSection"]:
+    if name == "Circle":
+        return _draw_circle_pattern
+    if name in ["Bitmap", "Line", "SerialSection"]:
         return None
     return _draw_rectangle_pattern
 
