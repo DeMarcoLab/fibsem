@@ -16,6 +16,7 @@ from fibsem.structures import (
     FibsemCircleSettings,
     FibsemImage,
     FibsemImageMetadata,
+    FibsemLineSettings,
     FibsemRectangleSettings,
     ImageSettings,
     Point,
@@ -111,6 +112,35 @@ def _circle_pattern_to_image_pixels(
     return px, py, radius_px, inner_radius_px, start_angle, end_angle
 
 
+def _line_pattern_to_image_pixels(
+    pattern: FibsemLineSettings, pixel_size: float, image_shape: Tuple[int, int]
+) -> Tuple[int, int, int, int]:
+    """Convert line pattern to image pixel coordinates.
+    Args:
+        pattern: FibsemLineSettings: Line pattern to convert.
+        pixel_size: float: Pixel size of the image.
+        image_shape: Tuple[int, int]: Shape of the image.
+    Returns:
+        Tuple[int, int, int, int]: Parameters (start_x, start_y, end_x, end_y) in image pixel coordinates.
+    """
+    # get pattern parameters
+    start_x, start_y = pattern.start_x, pattern.start_y
+    end_x, end_y = pattern.end_x, pattern.end_y
+
+    # position in metres from image centre
+    start_px, start_py = start_x / pixel_size, start_y / pixel_size
+    end_px, end_py = end_x / pixel_size, end_y / pixel_size
+
+    # convert to image coordinates
+    cy, cx = image_shape[0] // 2, image_shape[1] // 2
+    start_pixel_x = cx + start_px
+    start_pixel_y = cy - start_py
+    end_pixel_x = cx + end_px
+    end_pixel_y = cy - end_py
+
+    return start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y
+
+
 def _draw_circle_pattern(
     image: FibsemImage,
     pattern: BasePattern,
@@ -189,6 +219,59 @@ def _draw_circle_pattern(
     return patches
 
 
+def _draw_line_pattern(
+    image: FibsemImage,
+    pattern: BasePattern,
+    colour: str = "yellow",
+    name: str = "Line",
+    extra: str = ""
+) -> List[mpatches.Patch]:
+    """Draw a line pattern on an image.
+    Args:
+        image: FibsemImage: Image to draw pattern on.
+        pattern: BasePattern: Line pattern to draw.
+        colour: str: Colour of line patches.
+        name: str: Name of the line patches.
+    Returns:
+        List[mpatches.Patch]: List of patches to draw.
+    """
+    # common image properties
+    pixel_size = image.metadata.pixel_size.x  # assume isotropic
+    image_shape = image.data.shape
+
+    patches = []
+    p: FibsemLineSettings
+    for i, p in enumerate(pattern.define(), 1):
+        if not isinstance(p, FibsemLineSettings):
+            logging.debug(f"Pattern {p} is not a line, skipping")
+            continue
+        
+        # convert from microscope image (real-space) to image pixel-space
+        start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y = _line_pattern_to_image_pixels(
+            p, pixel_size, image_shape
+        )
+
+        # create line as a matplotlib Line2D patch
+        line = mpatches.FancyArrowPatch(
+            (start_pixel_x, start_pixel_y),
+            (end_pixel_x, end_pixel_y),
+            linewidth=PROPERTIES["line_width"] * 2,  # Make lines more visible
+            edgecolor=colour,
+            facecolor=colour,
+            alpha=PROPERTIES["opacity"] + 0.2,  # Make lines more opaque
+            arrowstyle='-',  # Simple line without arrow
+        )
+        
+        if i == 1:
+            lbl = f"{name}"
+            if extra:
+                lbl += f" ({extra})"
+            line.set_label(lbl)
+        patches.append(line)
+
+    return patches
+
+
 def _draw_rectangle_pattern(
     image: FibsemImage,
     pattern: BasePattern,
@@ -245,7 +328,9 @@ def get_drawing_function(name: str) -> Callable:
     
     if name == "Circle":
         return _draw_circle_pattern
-    if name in ["Bitmap", "Line", "SerialSection"]:
+    if name in ["Line", "SerialSection"]:
+        return _draw_line_pattern
+    if name in ["Bitmap"]:
         return None
     return _draw_rectangle_pattern
 
