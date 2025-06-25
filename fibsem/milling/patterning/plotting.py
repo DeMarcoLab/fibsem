@@ -9,16 +9,11 @@ import numpy as np
 
 from fibsem.utils import format_value
 from fibsem.milling.base import FibsemMillingStage
-from fibsem.milling.patterning.patterns2 import (
-    BasePattern,
-)
 from fibsem.structures import (
     FibsemCircleSettings,
     FibsemImage,
-    FibsemImageMetadata,
     FibsemLineSettings,
     FibsemRectangleSettings,
-    ImageSettings,
     Point,
 )
 
@@ -78,7 +73,6 @@ def _rect_pattern_to_image_pixels(
 
     return px, py, width, height
 
-
 def _circle_pattern_to_image_pixels(
     pattern: FibsemCircleSettings, pixel_size: float, image_shape: Tuple[int, int]
 ) -> Tuple[int, int, float, float, float, float]:
@@ -111,7 +105,6 @@ def _circle_pattern_to_image_pixels(
 
     return px, py, radius_px, inner_radius_px, start_angle, end_angle
 
-
 def _line_pattern_to_image_pixels(
     pattern: FibsemLineSettings, pixel_size: float, image_shape: Tuple[int, int]
 ) -> Tuple[int, int, int, int]:
@@ -140,200 +133,84 @@ def _line_pattern_to_image_pixels(
 
     return start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y
 
-
-def _draw_circle_pattern(
-    image: FibsemImage,
-    pattern: BasePattern,
-    colour: str = "yellow",
-    name: str = "Circle",
-    extra: str = ""
-) -> List[mpatches.Patch]:
-    """Draw a circle pattern on an image.
-    Args:
-        image: FibsemImage: Image to draw pattern on.
-        pattern: BasePattern: Circle pattern to draw.
-        colour: str: Colour of circle patches.
-        name: str: Name of the circle patches.
-    Returns:
-        List[mpatches.Patch]: List of patches to draw.
-    """
-    # common image properties
-    pixel_size = image.metadata.pixel_size.x  # assume isotropic
+def _create_rectangle_patch(shape: FibsemRectangleSettings, image: FibsemImage, colour: str) -> mpatches.Rectangle:
+    """Create a rectangle patch from a shape."""
+    pixel_size = image.metadata.pixel_size.x
     image_shape = image.data.shape
+    px, py, width, height = _rect_pattern_to_image_pixels(shape, pixel_size, image_shape)
+    
+    return mpatches.Rectangle(
+        (px - width / 2, py - height / 2),
+        width=width,
+        height=height,
+        angle=math.degrees(shape.rotation),
+        rotation_point=PROPERTIES["rotation_point"],
+        linewidth=PROPERTIES["line_width"],
+        edgecolor=colour,
+        facecolor=colour,
+        alpha=PROPERTIES["opacity"],
+    )
 
-    patches = []
-    p: FibsemCircleSettings
-    for i, p in enumerate(pattern.define(), 1):
-        if not isinstance(p, FibsemCircleSettings):
-            logging.debug(f"Pattern {p} is not a circle, skipping")
-            continue
-        
-        # convert from microscope image (real-space) to image pixel-space
-        px, py, radius_px, inner_radius_px, start_angle, end_angle = _circle_pattern_to_image_pixels(
-            p, pixel_size, image_shape
-        )
-
-        # create appropriate patch based on pattern type
-        if inner_radius_px > 0:
-            # annulus/ring pattern
-            patch = mpatches.Annulus(
-                (px, py),
-                r=inner_radius_px,
-                width=radius_px - inner_radius_px,
-                angle=math.degrees(p.rotation),
-                linewidth=PROPERTIES["line_width"],
-                edgecolor=colour,
-                facecolor=colour,
-                alpha=PROPERTIES["opacity"],
-            )
-        elif start_angle != 0 or end_angle != 360:
-            # arc/wedge pattern
-            patch = mpatches.Wedge(
-                (px, py),
-                r=radius_px,
-                theta1=start_angle,
-                theta2=end_angle,
-                linewidth=PROPERTIES["line_width"],
-                edgecolor=colour,
-                facecolor=colour,
-                alpha=PROPERTIES["opacity"],
-            )
-        else:
-            # full circle pattern
-            patch = mpatches.Circle(
-                (px, py),
-                radius=radius_px,
-                linewidth=PROPERTIES["line_width"],
-                edgecolor=colour,
-                facecolor=colour,
-                alpha=PROPERTIES["opacity"],
-            )
-        
-        if i == 1:
-            lbl = f"{name}"
-            if extra:
-                lbl += f" ({extra})"
-            patch.set_label(lbl)
-        patches.append(patch)
-
-    return patches
-
-
-def _draw_line_pattern(
-    image: FibsemImage,
-    pattern: BasePattern,
-    colour: str = "yellow",
-    name: str = "Line",
-    extra: str = ""
-) -> List[mpatches.Patch]:
-    """Draw a line pattern on an image.
-    Args:
-        image: FibsemImage: Image to draw pattern on.
-        pattern: BasePattern: Line pattern to draw.
-        colour: str: Colour of line patches.
-        name: str: Name of the line patches.
-    Returns:
-        List[mpatches.Patch]: List of patches to draw.
-    """
-    # common image properties
-    pixel_size = image.metadata.pixel_size.x  # assume isotropic
+def _create_circle_patch(shape: FibsemCircleSettings, image: FibsemImage, colour: str) -> mpatches.Patch:
+    """Create a circle patch from a shape."""
+    pixel_size = image.metadata.pixel_size.x
     image_shape = image.data.shape
-
-    patches = []
-    p: FibsemLineSettings
-    for i, p in enumerate(pattern.define(), 1):
-        if not isinstance(p, FibsemLineSettings):
-            logging.debug(f"Pattern {p} is not a line, skipping")
-            continue
-        
-        # convert from microscope image (real-space) to image pixel-space
-        start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y = _line_pattern_to_image_pixels(
-            p, pixel_size, image_shape
-        )
-
-        # create line as a matplotlib Line2D patch
-        line = mpatches.FancyArrowPatch(
-            (start_pixel_x, start_pixel_y),
-            (end_pixel_x, end_pixel_y),
-            linewidth=PROPERTIES["line_width"] * 2,  # Make lines more visible
-            edgecolor=colour,
-            facecolor=colour,
-            alpha=PROPERTIES["opacity"] + 0.2,  # Make lines more opaque
-            arrowstyle='-',  # Simple line without arrow
-        )
-        
-        if i == 1:
-            lbl = f"{name}"
-            if extra:
-                lbl += f" ({extra})"
-            line.set_label(lbl)
-        patches.append(line)
-
-    return patches
-
-
-def _draw_rectangle_pattern(
-    image: FibsemImage,
-    pattern: BasePattern,
-    colour: str = "yellow",
-    name: str = "Rectangle",
-    extra: str = ""
-) -> List[mpatches.Rectangle]:
-    """Draw a rectangle pattern on an image.
-    Args:
-        image: FibsemImage: Image to draw pattern on.
-        pattern: BasePattern: Rectangle pattern to draw.
-        colour: str: Colour of rectangle patches.
-        name: str: Name of the rectangle patches.
-    Returns:
-        List[mpatches.Rectangle]: List of patches to draw.
-    """
-    # common image properties
-    pixel_size = image.metadata.pixel_size.x  # assume isotropic
-    image_shape = image.data.shape
-
-    patches = []
-    p: FibsemRectangleSettings
-    for i, p in enumerate(pattern.define(), 1):
-        if not isinstance(p, FibsemRectangleSettings):
-            logging.debug(f"Pattern {p} is not a rectangle, skipping")
-            continue
-        # convert from microscope image (real-space) to image pixel-space
-        px, py, width, height = _rect_pattern_to_image_pixels(
-            p, pixel_size, image_shape
-        )
-
-        rect = mpatches.Rectangle(
-            (px - width / 2, py - height / 2),  # bottom left corner
-            width=width,
-            height=height,
-            angle=math.degrees(p.rotation),
-            rotation_point=PROPERTIES["rotation_point"],
+    px, py, radius_px, inner_radius_px, start_angle, end_angle = _circle_pattern_to_image_pixels(
+        shape, pixel_size, image_shape
+    )
+    
+    if inner_radius_px > 0:
+        # annulus/ring pattern
+        return mpatches.Annulus(
+            (px, py),
+            r=inner_radius_px,
+            width=radius_px - inner_radius_px,
+            angle=math.degrees(shape.rotation),
             linewidth=PROPERTIES["line_width"],
             edgecolor=colour,
             facecolor=colour,
             alpha=PROPERTIES["opacity"],
         )
-        if i == 1:
-            lbl = f"{name}"
-            if extra:
-                lbl += f" ({extra})"
-            rect.set_label(lbl)
-        patches.append(rect)
+    elif start_angle != 0 or end_angle != 360:
+        # arc/wedge pattern
+        return mpatches.Wedge(
+            (px, py),
+            r=radius_px,
+            theta1=start_angle,
+            theta2=end_angle,
+            linewidth=PROPERTIES["line_width"],
+            edgecolor=colour,
+            facecolor=colour,
+            alpha=PROPERTIES["opacity"],
+        )
+    else:
+        # full circle pattern
+        return mpatches.Circle(
+            (px, py),
+            radius=radius_px,
+            linewidth=PROPERTIES["line_width"],
+            edgecolor=colour,
+            facecolor=colour,
+            alpha=PROPERTIES["opacity"],
+        )
 
-    return patches
-
-
-def get_drawing_function(name: str) -> Callable:
+def _create_line_patch(shape: FibsemLineSettings, image: FibsemImage, colour: str) -> mpatches.FancyArrowPatch:
+    """Create a line patch from a shape."""
+    pixel_size = image.metadata.pixel_size.x
+    image_shape = image.data.shape
+    start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y = _line_pattern_to_image_pixels(
+        shape, pixel_size, image_shape
+    )
     
-    if name == "Circle":
-        return _draw_circle_pattern
-    if name in ["Line", "SerialSection"]:
-        return _draw_line_pattern
-    if name in ["Bitmap"]:
-        return None
-    return _draw_rectangle_pattern
-
+    return mpatches.FancyArrowPatch(
+        (start_pixel_x, start_pixel_y),
+        (end_pixel_x, end_pixel_y),
+        linewidth=PROPERTIES["line_width"] * 2,
+        edgecolor=colour,
+        facecolor=colour,
+        alpha=PROPERTIES["opacity"] + 0.2,
+        arrowstyle='-',
+    )
 
 def draw_milling_patterns(
     image: FibsemImage,
@@ -345,12 +222,15 @@ def draw_milling_patterns(
     show_preset: bool = False,
 ) -> plt.Figure:
     """
-    Draw milling patterns on an image.
+    Draw milling patterns on an image. Supports patterns composed of multiple shape types.
     Args:
         image: FibsemImage: Image to draw patterns on.
         milling_stages: List[FibsemMillingStage]: Milling stages to draw.
         crosshair: bool: Draw crosshair at centre of image.
         scalebar: bool: Draw scalebar on image.
+        title: str: Title for the plot.
+        show_current: bool: Show milling current in legend.
+        show_preset: bool: Show preset name in legend.
     Returns:
         plt.Figure: Figure with patterns drawn.
     """
@@ -362,7 +242,7 @@ def draw_milling_patterns(
     patches = []
     for i, stage in enumerate(milling_stages):
         colour = COLOURS[i % len(COLOURS)]
-        p = stage.pattern
+        pattern = stage.pattern
 
         extra = ""
         if show_current:
@@ -370,18 +250,50 @@ def draw_milling_patterns(
         if show_preset:
             extra = stage.milling.preset
 
-        drawing_func = get_drawing_function(p.name)
-        if drawing_func is None:
-            logging.debug(f"Drawing Pattern {p.name} not currently supported, skipping")
+        # Get all shapes from the pattern
+        try:
+            shapes = pattern.define()
+        except Exception as e:
+            logging.debug(f"Failed to define pattern {pattern.name}: {e}")
             continue
 
-        patches.extend(
-            drawing_func(image, p, colour=colour, name=stage.name, extra=extra)
-        )
+        # Process each shape individually
+        stage_patches = []
+        for j, shape in enumerate(shapes):
+            try:
+                # Get the appropriate drawing function based on shape type
+                if isinstance(shape, FibsemRectangleSettings):
+                    patch = _create_rectangle_patch(shape, image, colour)
+                elif isinstance(shape, FibsemCircleSettings):
+                    patch = _create_circle_patch(shape, image, colour)
+                elif isinstance(shape, FibsemLineSettings):
+                    patch = _create_line_patch(shape, image, colour)
+                else:
+                    logging.debug(f"Unsupported shape type {type(shape)}, skipping")
+                    continue
+                
+                # Set label only for the first shape of each stage
+                if j == 0:
+                    lbl = f"{stage.name}"
+                    if extra:
+                        lbl += f" ({extra})"
+                    patch.set_label(lbl)
+                
+                stage_patches.append(patch)
+                
+            except Exception as e:
+                logging.debug(f"Failed to create patch for shape {type(shape)}: {e}")
+                continue
+        
+        patches.extend(stage_patches)
 
     for patch in patches:
         ax.add_patch(patch)
     ax.legend()
+
+    # set axis limits
+    ax.set_xlim(0, image.data.shape[1])
+    ax.set_ylim(image.data.shape[0], 0)
 
     # draw crosshair at centre of image
     if crosshair:
