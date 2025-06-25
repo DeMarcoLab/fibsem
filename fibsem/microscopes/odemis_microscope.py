@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 import numpy as np
 from psygnal import Signal
 
@@ -33,8 +33,6 @@ from fibsem.structures import (
 )
 
 
-
-
 def add_odemis_path():
     """Add the odemis path to the python path"""
 
@@ -60,8 +58,11 @@ def add_odemis_path():
 add_odemis_path()
 
 from odemis import model
-from odemis.acq.stream import FIBStream, SEMStream
 from odemis.util.dataio import open_acquisition
+
+
+if TYPE_CHECKING:
+    from odemis.driver.autoscript_client import SEM as OdemisAutoscriptClient
 
 
 def stage_position_to_odemis_dict(position: FibsemStagePosition) -> dict:
@@ -224,7 +225,7 @@ class OdemisMicroscope(FibsemMicroscope):
     def __init__(self, system_settings: SystemSettings = None):
         self.system: SystemSettings = system_settings
 
-        self.connection: "SEM" = model.getComponent(role="fibsem")
+        self.connection: OdemisAutoscriptClient = model.getComponent(role="fibsem")
 
         # stage
         self.stage: model.Actuator = model.getComponent(role="stage-bare")
@@ -293,24 +294,29 @@ class OdemisMicroscope(FibsemMicroscope):
         else:
             self.move_stage_absolute(stage_position)
 
+    def set_channel(self, channel: BeamType):
+        """Set the active channels for the microscope."""
+        self.connection.set_active_view(channel.value)
+        self.connection.set_active_device(channel.value)
+
     def acquire_chamber_image(self) -> FibsemImage:
         pass
 
     def acquire_image(self, image_settings: ImageSettings) -> FibsemImage:
+        # TODO: migrate to updated api that allows acquiring without setting the imaging settings first
         beam_type = image_settings.beam_type
         channel = beam_type_to_odemis[beam_type]
 
         # reduced area imaging
         if image_settings.reduced_area is not None:
-            scan_mode = "reduced_area"
-            scan_mode_value = image_settings.reduced_area.to_dict()
+            reduced_area = image_settings.reduced_area
+            self.connection.set_reduced_area_scan_mode(channel=channel, 
+                                                       left=reduced_area.left,
+                                                       top=reduced_area.top,
+                                                       width=reduced_area.width,
+                                                       height=reduced_area.height)
         else:
-            scan_mode = "full_frame"
-            scan_mode_value = None
-
-        self.connection.set_scan_mode(
-            mode=scan_mode, channel=channel, value=scan_mode_value
-        )
+            self.connection.set_full_frame_scan_mode(channel=channel)
 
         # set imaging settings
         # TODO: this is a change in behaviour..., restore the previous conditions or use GrabFrameSettings?
@@ -323,7 +329,7 @@ class OdemisMicroscope(FibsemMicroscope):
             # can't set square resolution directly
             frame_settings = {"resolution": f"{resolution[0]}x{resolution[1]}"}
             tmp_resolution = resolution
-            image_settings.resolution = self.get("resolution", beam_type=beam_type)
+            image_settings.resolution = self.get_resolution(beam_type=beam_type)
         self.set_imaging_settings(image_settings)
 
         # acquire image
@@ -331,7 +337,7 @@ class OdemisMicroscope(FibsemMicroscope):
 
         # restore to full frame imaging
         if image_settings.reduced_area is not None:
-            self.connection.set_scan_mode("full_frame", channel=channel, value=None)
+            self.connection.set_full_frame_scan_mode(channel=channel)
 
         # restore the previous resolution
         if tmp_resolution is not None:
@@ -484,6 +490,9 @@ class OdemisMicroscope(FibsemMicroscope):
             return self.system.info.software_version
         if key == "hardware_version":
             return self.system.info.hardware_version
+
+        if key in ["preset"]:
+            return None
 
         logging.warning(f"Unknown key: {key} ({beam_type})")
         return None
@@ -705,6 +714,10 @@ class OdemisMicroscope(FibsemMicroscope):
             self.connection.set_active_device(value.value) # value == BeamType
             return
 
+        # known keys that are not implemented
+        if key in ["preset"]:
+            return
+
         logging.warning(f"Unknown key: {key} ({beam_type})")
 
         return
@@ -727,11 +740,7 @@ class OdemisMicroscope(FibsemMicroscope):
                 "choices"
             ]
         if key == "current":
-            values = self.connection.beam_current_info(
-                beam_type_to_odemis[beam_type]
-            )[
-                "range"
-            ]  # TODO: we need the list of choices, not the range (this should be an list)
+            values = self.connection.beam_current_info(beam_type_to_odemis[beam_type])["choices"]
             # xenon
             # values = [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1e-9, 4e-9, 15e-9, 60e-9]
             # argon
