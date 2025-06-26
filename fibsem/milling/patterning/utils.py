@@ -11,6 +11,7 @@ from fibsem.structures import (
     FibsemLineSettings,
     FibsemRectangleSettings,
     Point,
+    FibsemRectangle,
 )
 
 def create_pattern_mask(stage: FibsemMillingStage, image: FibsemImage, include_exclusions: bool = False) -> np.ndarray:
@@ -204,3 +205,15 @@ def normalized_coords_to_bbox(norm_bbox: Tuple[float, float, float, float], imag
     y_max = max(0, min(y_max, image_height - 1))
     
     return (x_min, y_min, x_max, y_max)
+
+def get_pattern_reduced_area(stage: FibsemMillingStage, image: FibsemImage, expand_percent: int = 20) -> FibsemRectangle:
+    """Get the bounding box of the pattern in the image, expanded by a percentage.
+    Args:
+        stage: FibsemMillingStage to get bounding box for.
+        image: FibsemImage for coordinate conversion.
+        expand_percent: Percentage to expand bounding box by (default 20%).
+    Returns:
+        FibsemRectangle with normalized coordinates (0.0-1.0)."""
+    bbox = get_pattern_bounding_box(stage=stage, image=image, expand_percent=expand_percent)
+    xmin, ymin, xmax, ymax = bbox_to_normalized_coords(bbox, image)
+    return FibsemRectangle(left=xmin, top=ymin, width=xmax-xmin, height=ymax-ymin)
