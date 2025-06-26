@@ -648,7 +648,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
         strategy_name = self.comboBox_strategy_name.currentText()
         logging.info(f"selected strategy: {strategy_name}")
-        strategy = get_strategy(strategy_name, {"config": {"overtilt": 1}}) # TODO: default strategy configs
+        strategy = get_strategy(strategy_name)
         self.current_milling_stage.strategy = strategy
         self.set_milling_strategy_ui()
 
