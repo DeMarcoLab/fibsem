@@ -16,6 +16,11 @@ from fibsem.structures import (
     FibsemRectangleSettings,
     Point,
 )
+from .utils import (
+    create_pattern_mask,
+    get_pattern_bounding_box,
+    get_patterns_bounding_box,
+)
 
 COLOURS = [
     "yellow",
@@ -37,6 +42,14 @@ PROPERTIES = {
     "crosshair_size": 20,
     "crosshair_colour": "yellow",
     "rotation_point": "center",
+}
+
+OVERLAP_PROPERTIES = {
+    "line_width": 0.5,
+    "edge_color": "red",
+    "face_color": "red",
+    "alpha": 0.6,
+    "line_style": "--",
 }
 
 
@@ -212,6 +225,74 @@ def _create_line_patch(shape: FibsemLineSettings, image: FibsemImage, colour: st
         arrowstyle='-',
     )
 
+
+
+def _detect_pattern_overlaps(milling_stages: List[FibsemMillingStage], image: FibsemImage) -> List[mpatches.Patch]:
+    """Detect overlapping regions between patterns and create patches to highlight them.
+    
+    Args:
+        milling_stages: List of milling stages to check for overlaps.
+        image: FibsemImage for coordinate conversion.
+    
+    Returns:
+        List of patches representing overlap regions.
+    """
+    if len(milling_stages) < 2:
+        return []
+    
+    overlap_patches = []
+    
+    # Create masks for each pattern
+    pattern_masks = []
+    for stage in milling_stages:
+        stage_mask = create_pattern_mask(stage, image, include_exclusions=False)
+        pattern_masks.append(stage_mask)
+    
+    # Find overlaps between patterns
+    for i in range(len(pattern_masks)):
+        for j in range(i + 1, len(pattern_masks)):
+            overlap = pattern_masks[i] & pattern_masks[j]
+            if np.any(overlap):
+                # Create contour patches for overlap regions
+                try:
+                    import skimage.measure
+                    contours = skimage.measure.find_contours(overlap.astype(float), 0.5)
+                    
+                    for contour in contours:
+                        if len(contour) > 3:  # Only create patches for significant overlaps
+                            # Swap x,y coordinates for matplotlib (contour gives row,col)
+                            contour_xy = contour[:, [1, 0]]
+                            patch = mpatches.Polygon(
+                                contour_xy,
+                                closed=True,
+                                linewidth=OVERLAP_PROPERTIES["line_width"],
+                                edgecolor=OVERLAP_PROPERTIES["edge_color"],
+                                facecolor=OVERLAP_PROPERTIES["face_color"],
+                                alpha=OVERLAP_PROPERTIES["alpha"],
+                                linestyle=OVERLAP_PROPERTIES["line_style"],
+                            )
+                            overlap_patches.append(patch)
+                except ImportError:
+                    # Fallback: create simple rectangle patches for overlap bounding boxes
+                    overlap_coords = np.where(overlap)
+                    if len(overlap_coords[0]) > 0:
+                        y_min, y_max = overlap_coords[0].min(), overlap_coords[0].max()
+                        x_min, x_max = overlap_coords[1].min(), overlap_coords[1].max()
+                        
+                        patch = mpatches.Rectangle(
+                            (x_min, y_min),
+                            x_max - x_min,
+                            y_max - y_min,
+                            linewidth=OVERLAP_PROPERTIES["line_width"],
+                            edgecolor=OVERLAP_PROPERTIES["edge_color"],
+                            facecolor=OVERLAP_PROPERTIES["face_color"],
+                            alpha=OVERLAP_PROPERTIES["alpha"],
+                            linestyle=OVERLAP_PROPERTIES["line_style"],
+                        )
+                        overlap_patches.append(patch)
+    
+    return overlap_patches
+
 def draw_milling_patterns(
     image: FibsemImage,
     milling_stages: List[FibsemMillingStage],
@@ -221,6 +302,7 @@ def draw_milling_patterns(
     show_current: bool = False,
     show_preset: bool = False,
     show_depth: bool = False,
+    highlight_overlaps: bool = False,
 ) -> plt.Figure:
     """
     Draw milling patterns on an image. Supports patterns composed of multiple shape types.
@@ -233,6 +315,7 @@ def draw_milling_patterns(
         show_current: bool: Show milling current in legend.
         show_preset: bool: Show preset name in legend.
         show_depth: bool: Show pattern depth in microns in legend.
+        highlight_overlaps: bool: Highlight overlapping pattern regions.
     Returns:
         plt.Figure: Figure with patterns drawn.
     """
@@ -299,6 +382,17 @@ def draw_milling_patterns(
 
     for patch in patches:
         ax.add_patch(patch)
+    
+    # Detect and highlight overlaps if requested
+    if highlight_overlaps:
+        overlap_patches = _detect_pattern_overlaps(milling_stages, image)
+        for overlap_patch in overlap_patches:
+            ax.add_patch(overlap_patch)
+        
+        # Add overlap indication to legend
+        if overlap_patches:
+            overlap_patches[0].set_label("Overlaps")
+    
     ax.legend()
 
     # set axis limits
@@ -389,15 +483,14 @@ def draw_annulus_shape(pattern_settings: FibsemCircleSettings, image: FibsemImag
     return DrawnPattern(pattern=annulus_shape, position=pos, is_exclusion=pattern_settings.is_exclusion)
 
 def draw_rectangle_shape(pattern_settings: FibsemRectangleSettings, image: FibsemImage) -> DrawnPattern:
-    """Convert a rectangle pattern to a np array.
+    """Convert a rectangle pattern to a np array with rotation support.
     Args:
         pattern_settings: FibsemRectangleSettings: Rectangle pattern settings.
         image: FibsemImage: Image to draw pattern on.
     Returns:
-        np.ndarray: Rectangle shape in image.
-        Point: Position of the rectangle in the image.
+        DrawnPattern: Rectangle shape in image with rotation applied.
     """
-    # TODO: support rotation for drawing rectangles
+    from scipy.ndimage import rotate
 
     # image parameters (centre, pixel size)
     icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
@@ -413,12 +506,22 @@ def draw_rectangle_shape(pattern_settings: FibsemRectangleSettings, image: Fibse
     # pattern to pixel coords
     w = int(width / pixelsize_x)
     h = int(height / pixelsize_y)
-    cx = int(icx + (centre_x / pixelsize_y))
+    cx = int(icx + (centre_x / pixelsize_x))  # Fix: use pixelsize_x for x coordinate
     cy = int(icy - (centre_y / pixelsize_y))
 
-    #
-    shape = np.ones((h, w))
-    shape[:h, :w] = 1
+    # Create base rectangle shape
+    shape = np.ones((h, w), dtype=float)
+
+    # Apply rotation if specified
+    if not np.isclose(rotation, 0):
+        # Convert radians to degrees for scipy
+        rotation_degrees = np.degrees(rotation)
+        
+        # Rotate the shape, reshape=True to accommodate the rotated rectangle
+        shape = rotate(shape, rotation_degrees, reshape=True, order=1, prefilter=False)
+        
+        # Convert back to binary (rotation may introduce intermediate values)
+        shape = (shape > 0.5).astype(float)
 
     # get pattern centre in image coordinates
     pos = Point(x=cx, y=cy)
@@ -471,3 +574,55 @@ def compose_pattern_image(image: np.ndarray, drawn_patterns: List[DrawnPattern])
         pattern_image = draw_pattern_in_image(pattern_image, dp)
 
     return pattern_image
+
+
+def simple_example(stages: List[FibsemMillingStage], image: FibsemImage) -> plt.Figure:
+    """Simple demonstration of masks and bounding boxes."""
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    
+    # Plot 1: Show masks
+    ax1.imshow(image.data, cmap='gray', alpha=0.7)
+    ax1.set_title("Pattern Masks")
+    
+    for i, stage in enumerate(stages):
+        # Create mask
+        mask = create_pattern_mask(stage, image)
+        
+        # Show mask as colored overlay
+        masked = np.ma.masked_where(~mask, mask)
+        ax1.imshow(masked, alpha=0.6, cmap='gray', vmin=0, vmax=10)
+        
+        print(f"{stage.name}: {np.sum(mask)} pixels")
+    
+    # Plot 2: Show bounding boxes
+    ax2.imshow(image.data, cmap='gray')
+    ax2.set_title("Bounding Boxes")
+    
+    for i, stage in enumerate(stages):
+        # Get bounding box
+        x_min, y_min, x_max, y_max = get_pattern_bounding_box(stage, image)
+        
+        if (x_min, y_min, x_max, y_max) != (0, 0, 0, 0):
+            # Draw bounding box using COLOURS from plotting.py
+            bbox = mpatches.Rectangle(
+                (x_min, y_min), x_max - x_min, y_max - y_min,
+                linewidth=2, edgecolor=COLOURS[i % len(COLOURS)], facecolor='none'
+            )
+            ax2.add_patch(bbox)
+            ax2.text(x_min, y_min-5, stage.name, color=COLOURS[i % len(COLOURS)], fontsize=9)
+    
+    # Add combined bounding box
+    x_min, y_min, x_max, y_max = get_patterns_bounding_box(stages, image)
+    if (x_min, y_min, x_max, y_max) != (0, 0, 0, 0):
+        combined_bbox = mpatches.Rectangle(
+            (x_min, y_min), x_max - x_min, y_max - y_min,
+            linewidth=3, edgecolor='black', facecolor='none', linestyle='--'
+        )
+        ax2.add_patch(combined_bbox)
+        ax2.text(x_min, y_max+10, 'Combined', color='black', fontweight='bold')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    return fig
