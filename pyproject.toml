@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fibsem"
-version = "0.4.1a0"
+version = "0.4.1a1"
 
 description = "a universal api for fibsem control"
 authors = [
