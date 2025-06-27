@@ -4,22 +4,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def run_test_alignment_script():
+def run_beam_shift_alignment_test(scan_rotation: int = 180, hfw: float = 150e-6, beam_type: BeamType = BeamType.ION):
     """ Test script to verify the alignment functionality of the FIBSEM microscope"""
     microscope, settings = utils.setup_session()
     
     # parameters
-    beam_type = BeamType.ION
-    scan_rotation = 180 # deg
+    print(f"Running test alignment with scan rotation: {scan_rotation} degrees, HFW: {hfw}, Beam Type: {beam_type.name}")
 
     # set scan rotation
-    microscope.set("scan_rotation", np.radians(scan_rotation), beam_type=beam_type)
+    microscope.set_scan_rotation(np.radians(scan_rotation), beam_type=beam_type)
 
     # reset beam shifts
     microscope.reset_beam_shifts()
 
     # acquire FIB Image
-    settings.image.hfw = 150e-6
+    settings.image.hfw = hfw
     settings.image.beam_type = beam_type
     settings.image.reduced_area = FibsemRectangle(0.25, 0.25, 0.5, 0.5)
     image1 = acquire.acquire_image(microscope=microscope, settings=settings.image)
@@ -60,7 +59,7 @@ def run_test_alignment_script():
 
 def main():
     """Main function to run the test alignment script."""
-    run_test_alignment_script()
+    run_beam_shift_alignment_test()
 
 if __name__ == "__main__":
     main()
