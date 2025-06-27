@@ -49,16 +49,16 @@ class MillingStrategyConfig(ABC):
 class MillingStrategy(ABC, Generic[TMillingStrategyConfig]):
     """Abstract base class for different milling strategies"""
     name: str = "Milling Strategy"
-    config_class: type[TMillingStrategyConfig]
+    config_class: Type[TMillingStrategyConfig]
 
     def __init__(self, config: Optional[TMillingStrategyConfig] = None) -> None:
         self.config: TMillingStrategyConfig = config or self.config_class()
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         return {"name": self.name, "config": self.config.to_dict()}
 
     @classmethod
-    def from_dict(cls: type[TMillingStrategy], d: dict[str, Any]) -> TMillingStrategy:
+    def from_dict(cls: Type[TMillingStrategy], d: Dict[str, Any]) -> TMillingStrategy:
         config = cls.config_class.from_dict(d.get("config", {}))
         return cls(config=config)
 

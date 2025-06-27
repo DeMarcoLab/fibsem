@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import fields
 
+from typing import Type
 import numpy as np
 import pytest
 
@@ -25,7 +26,7 @@ from fibsem.structures import (
 )
 
 @pytest.mark.parametrize("pattern", list(MILLING_PATTERNS.values()))
-def test_required_attributes(pattern: type[BasePattern]) -> None:
+def test_required_attributes(pattern: Type[BasePattern]) -> None:
     # test that core attributes are not inherited by required attributes for specific patterns
     p = pattern()
     assert "point" not in p.required_attributes
