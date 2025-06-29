@@ -56,7 +56,7 @@ from fibsem.ui.napari.patterns import (
     remove_all_napari_shapes_layers,
 )
 from fibsem.ui.qtdesigner_files import FibsemMillingWidget as FibsemMillingWidgetUI
-from fibsem.utils import format_duration
+from fibsem.utils import format_duration, format_value
 
 # 3D Correlation Widget
 CORRELATION_THREEDCT_AVAILABLE = False
@@ -101,34 +101,6 @@ def scale_value_for_display(key: str, value: Union[float, int], scale: float) ->
         return value * scale    
     return value
 
-
-
-# TODO: make these more generic for other units, or use pint
-def _format_beam_current_as_str(val: float):
-    scale = 1
-    unit = "A"
-    if val < 1e-9:
-        scale = 1e12
-        unit = "pA"
-    elif val < 1e-6:
-        scale = 1e9
-        unit = "nA"
-    elif val < 1e-3:
-        scale = 1e6
-        unit = "uA"
-
-    return f"{math.ceil(val*scale)} {unit}"
-    
-def _parse_beam_current_str(val: str) -> float:
-    scale = 1
-    unit = "A"
-    if "pA" in val:
-        scale = 1e-12
-    elif "nA" in val:
-        scale = 1e-9
-    elif "uA" in val:
-        scale = 1e-6
-    return float(val.split(" ")[0]) * scale
 
 class WheelBlocker(QObject):
     """Event filter that blocks wheel events"""
@@ -206,7 +178,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
 
             self.AVAILABLE_MILLING_CURRENTS = self.microscope.get_available_values("current", BeamType.ION)
             for current in self.AVAILABLE_MILLING_CURRENTS:
-                label = _format_beam_current_as_str(current)
+                label = format_value(current, unit="A", precision=1)
                 self.comboBox_milling_current.addItem(label, current)
             self.comboBox_application_file.currentIndexChanged.connect(self.update_milling_settings_from_ui)
             self.comboBox_milling_current.currentIndexChanged.connect(self.update_milling_settings_from_ui)

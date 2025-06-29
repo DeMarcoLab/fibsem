@@ -13,8 +13,8 @@ from fibsem.imaging.spot import run_spot_burn
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import BeamType, Point
 from fibsem.ui import stylesheets
-from fibsem.ui.FibsemMillingWidget import _format_beam_current_as_str
 from fibsem.ui.qtdesigner_files import FibsemSpotBurnWidget as FibsemSpotBurnWidgetUI
+from fibsem.utils import format_value
 
 SPOT_BURN_POINTS_LAYER_NAME = "spot-burn-points"
 DEFAULT_BEAM_CURRENT = 60e-12  # 60 pA
@@ -43,7 +43,7 @@ class FibsemSpotBurnWidget(FibsemSpotBurnWidgetUI.Ui_Form, QWidget):
 
         beam_currents = self.microscope.get_available_values("current", BeamType.ION)
         for current in beam_currents:
-            label = _format_beam_current_as_str(current)
+            label = format_value(current, unit="A", precision=1)
             self.comboBox_beam_current.addItem(label, current)
 
         # find the current closest to 60pA, set index to that

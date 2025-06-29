@@ -60,9 +60,9 @@ SIMULATOR_APPLICATION_FILES =  ["Si", "Si-multipass", "Si-ccs", "autolamella", "
 SIMULATOR_BEAM_CURRENTS = {
     BeamType.ELECTRON: [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1e-9, 4e-9, 15e-9, 60e-9],
     BeamType.ION: {
-        "Xenon": [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1e-9, 4e-9, 15e-9, 60e-9],
+        "Xenon": [1.0e-12, 3.0e-12, 10e-12, 30e-12, 0.1e-9, 0.3e-9, 1.00005e-9, 4e-9, 15e-9, 60e-9],
         "Argon": [1.0e-12, 6.0e-12, 20e-12, 60e-12, 0.2e-9, 0.74e-9, 2.0e-9, 7.4e-9, 28.0e-9, 120.0e-9],
-        None: [1.0e-12, 3.0e-12, 20e-12, 41e-12, 90e-12, 0.2e-9, 0.4e-9, 1.0e-9, 2.0e-9, 4.0e-9, 15e-9], # None = Gallium
+        None: [1.0e-12, 3.0e-12, 20e-12, 41e-12, 90e-12, 0.2e-9, 0.4e-9, 1.000005e-9, 2.0e-9, 4.0e-9, 15e-9], # None = Gallium
     }}
 
 # hack, do this properly @patrick
@@ -800,7 +800,7 @@ class DemoMicroscope(FibsemMicroscope):
                 plasma_gas = self.get("plasma_gas", beam_type)
                 values = SIMULATOR_BEAM_CURRENTS[beam_type][plasma_gas]
             else:
-                values = SIMULATOR_BEAM_CURRENTS[beam_type]       
+                values = SIMULATOR_BEAM_CURRENTS[beam_type]
 
         if key == "voltage":
             if beam_type is BeamType.ELECTRON:
