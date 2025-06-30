@@ -1308,8 +1308,9 @@ class CorrelationUI(tdct_main.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # remove the line layer if it exists
         if self.line_layer is not None:
-            self.viewer.layers.remove(self.line_layer)
-            self.line_layer = None
+            if self.line_layer in self.viewer.layers:
+                self.viewer.layers.remove(self.line_layer)
+                self.line_layer = None
 
         if not self.checkBox_show_corresponding_points.isChecked():
             return
