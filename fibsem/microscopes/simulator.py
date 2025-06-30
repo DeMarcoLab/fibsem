@@ -140,10 +140,11 @@ class GasInjectionSystem:
 @dataclass
 class MillingSystem:
     state: MillingState = MillingState.IDLE
-    patterns: List[FibsemPatternSettings] = None
+    patterns: List[FibsemPatternSettings] = field(default_factory=list)
     patterning_mode: str = "Serial"
     default_beam_type: BeamType = BeamType.ION
     default_application_file: str = "Si"
+    application_files: List[str] = field(default_factory=lambda: SIMULATOR_APPLICATION_FILES)
 
 @dataclass
 class ImagingSystem:
@@ -714,6 +715,18 @@ class DemoMicroscope(FibsemMicroscope):
         PATTERN_SLEEP_TIME = 5
         return PATTERN_SLEEP_TIME * len(self.milling_system.patterns)
 
+    def set_default_application_file(self, application_file: str, strict: bool = True) -> str:
+        application_file = ThermoMicroscope.get_application_file(self, application_file, strict)
+        self.milling_system.default_application_file = application_file
+        return application_file
+
+    def set_patterning_mode(self, patterning_mode: str) -> None:
+        """Set the patterning mode for milling."""
+        if patterning_mode not in ["Serial", "Parallel"]:
+            raise ValueError(f"Invalid patterning mode: {patterning_mode}. Must be 'Serial' or 'Parallel'.")
+        self.milling_system.patterning_mode = patterning_mode
+        logging.debug({"msg": "set_patterning_mode", "patterning_mode": patterning_mode})
+
     def draw_rectangle(self, pattern_settings: FibsemRectangleSettings) -> None:
         logging.debug({"msg": "draw_rectangle", "pattern_settings": pattern_settings.to_dict()})
         if pattern_settings.time != 0:
@@ -811,7 +824,7 @@ class DemoMicroscope(FibsemMicroscope):
                 # FIB: [500, 1000, 2000, 8000, 1600, 30000]
 
         if key == "application_file":
-            values = SIMULATOR_APPLICATION_FILES
+            values = self.milling_system.application_files
 
         if key == "detector_type":
             values = ["ETD", "TLD", "EDS"]

@@ -2191,6 +2191,57 @@ class ThermoMicroscope(FibsemMicroscope):
 
         return total_time
 
+    def get_application_file(self, application_file: str, strict: bool = True) -> str:
+        """Get a valid application file for the patterning API.
+        The api requires setting a valid application file before creating patterns.
+        Args:
+            application_file (str): The name of the application file to set as default.
+            strict (bool): If True, raises an error if the application file is not available.
+                If False, tries to find the closest match to the application file.
+                Defaults to True.
+        Returns:
+                str: The name of the application file that was set as default.
+        Raises:
+            ValueError: If the application file is not available.
+        """
+
+        # check if the application file is valid
+        application_files = self.get_available_values("application_file")
+        if application_file not in application_files:
+            if strict:
+                raise ValueError(f"Application file {application_file} not available. Available files: {application_files}")
+            from difflib import get_close_matches
+            closest_match = get_close_matches(application_file, application_files, n=1)
+            if not closest_match:
+                raise ValueError(f"Application file {application_file} not available. Available files: {application_files}")
+            application_file = str(closest_match[0])
+
+        return application_file
+
+    def set_default_application_file(self, application_file: str, strict: bool = True) -> str:
+        """Sets the default application file for the patterning API.
+        The api requires setting a valid application file before creating patterns.
+        Args:
+            application_file (str): The name of the application file to set as default.
+        """
+        application_file = self.get_application_file(application_file, strict=strict)
+        self.connection.patterning.set_default_application_file(application_file)
+        logging.debug({"msg": "set_default_application_file", "application_file": self._default_application_file})
+        return application_file
+
+    def set_patterning_mode(self, mode: str):
+        """Sets the patterning mode for the patterning API.
+        The api requires setting a valid patterning mode before creating patterns.
+        Args:
+            mode (str): The patterning mode to set. Can be "Serial" or "Parallel".
+        """
+        if mode not in ["Serial", "Parallel"]:
+            raise ValueError(f"Patterning mode {mode} not supported. Supported modes: Serial, Parallel")
+        
+        self.connection.patterning.mode = mode
+        logging.debug({"msg": "set_patterning_mode", "mode": mode})
+        return mode
+
     def draw_rectangle(
         self,
         pattern_settings: FibsemRectangleSettings,
