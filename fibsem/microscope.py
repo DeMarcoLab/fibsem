@@ -2666,7 +2666,7 @@ class ThermoMicroscope(FibsemMicroscope):
         return values
 
 
-    def _get(self, key: str, beam_type: BeamType = None) -> Union[float, str, list, None]:
+    def _get(self, key: str, beam_type: Optional[BeamType] = None) -> Union[int, float, str, list, Point, FibsemStagePosition, FibsemManipulatorPosition, None]:
         """Get a property of the microscope."""
         # TODO: make the list of get and set keys available to the user
         if beam_type is not None:
@@ -2808,7 +2808,7 @@ class ThermoMicroscope(FibsemMicroscope):
         # logging.warning(f"Unknown key: {key} ({beam_type})")
         return None    
 
-    def _set(self, key: str, value, beam_type: BeamType = None) -> None:
+    def _set(self, key: str, value: Union[str, int, float, BeamType, Point, FibsemRectangle], beam_type: Optional[BeamType] = None) -> None:
         """Set a property of the microscope."""
         # required for setting shift, stigmation
         from autoscript_sdb_microscope_client.structures import Point as ThermoPoint
