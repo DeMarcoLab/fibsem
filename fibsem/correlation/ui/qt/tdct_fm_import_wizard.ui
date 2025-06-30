@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Wizard</class>
+ <widget class="QWizard" name="Wizard">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>357</width>
+    <height>276</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Wizard</string>
+  </property>
+  <widget class="QWizardPage" name="wizardPage_import">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="1" column="1">
+     <widget class="QDoubleSpinBox" name="doubleSpinBox_pixelsize_xy">
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <double>10000.000000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="QLabel" name="label_import_header">
+      <property name="text">
+       <string>Filename and Description</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_zstep_size">
+      <property name="text">
+       <string>Z-Step Size</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QDoubleSpinBox" name="doubleSpinBox_zstep_size">
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <double>10000.000000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_pixelsize_xy">
+      <property name="text">
+       <string>Pixelsize (x,y)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="2">
+     <widget class="QLabel" name="label_import_information">
+      <property name="text">
+       <string>Import information</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage_interpolation">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="4" column="0">
+     <widget class="QComboBox" name="comboBox_interpolation_method"/>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_target_zstep_size">
+      <property name="text">
+       <string>Target Z-Step Size</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" colspan="2">
+     <widget class="QProgressBar" name="progressBar_interpolation">
+      <property name="value">
+       <number>24</number>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QPushButton" name="pushButton_interpolation">
+      <property name="text">
+       <string>Interpolate</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_current_zstep_size">
+      <property name="text">
+       <string>Current Z-Step Size</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_interpolation_header">
+      <property name="text">
+       <string>Interpolation</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0" colspan="2">
+     <widget class="QLabel" name="label_interpolation_information">
+      <property name="text">
+       <string>Interpolation Information</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QDoubleSpinBox" name="doubleSpinBox_current_zstep_size"/>
+    </item>
+    <item row="2" column="1">
+     <widget class="QDoubleSpinBox" name="doubleSpinBox_target_zstep_size"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage_deconvolution">
+   <layout class="QGridLayout" name="gridLayout_5">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_deconv_header">
+      <property name="text">
+       <string>Image Deconvolution: Not Yet Available</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage_export">
+   <layout class="QGridLayout" name="gridLayout_6">
+    <item row="1" column="0" colspan="2">
+     <widget class="QPushButton" name="pushButton_export_image">
+      <property name="text">
+       <string>Export Image</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="QLabel" name="label_export">
+      <property name="text">
+       <string>Export</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -61,12 +61,18 @@ from fibsem.utils import format_duration, format_value
 # 3D Correlation Widget
 CORRELATION_THREEDCT_AVAILABLE = False
 try:
-    from tdct.app import CorrelationUI
-    logging.info("CorrelationUI imported from tdct.app")
+    from fibsem.correlation.app import CorrelationUI
+    logging.info("CorrelationUI imported from fibsem.correlation")
     CORRELATION_THREEDCT_AVAILABLE = True
 except ImportError as e:
-    logging.debug(f"Could not import CorrelationUI from tdct.app: {e}")
-    CorrelationUI = None
+    logging.warning(f"Could not import CorrelationUI from fibsem.correlation: {e}. Trying tdct...")
+    try:
+        from tdct.app import CorrelationUI
+        logging.info("CorrelationUI imported from tdct")
+        CORRELATION_THREEDCT_AVAILABLE = True
+    except ImportError as e:
+        logging.debug(f"Could not import CorrelationUI from tdct.app: {e}. CorrelationUI will not be available.")
+        CorrelationUI = None
 
 UNSCALED_VALUES = [
     "rotation",
@@ -1252,7 +1258,7 @@ class FibsemMillingWidget(FibsemMillingWidgetUI.Ui_Form, QtWidgets.QWidget):
         logging.debug(f"Moved patterns to {point}")
 
         # update the ui element correpsonding to the point, if not fiducial
-        if not isinstance(self.current_milling_stage.pattern, FiducialPattern):
+        if self.current_milling_stage is not None and not isinstance(self.current_milling_stage.pattern, FiducialPattern):
             self.doubleSpinBox_centre_x.setValue(point.x * constants.SI_TO_MICRO)
             self.doubleSpinBox_centre_y.setValue(point.y * constants.SI_TO_MICRO) # THIS TRIGGERS AN UPDATE
 
