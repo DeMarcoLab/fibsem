@@ -6,7 +6,7 @@ import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional, Dict, Any, Sequence
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
@@ -783,7 +783,10 @@ class DetectedFeatures:
         }
         
 def detect_features_v2(
-    img: np.ndarray, mask: np.ndarray, features: Tuple[Feature], filter: bool = True, point: Point = None
+    img: np.ndarray, mask: np.ndarray,
+    features: Sequence[Feature],
+    filter: bool = True,
+    point: Optional[Point] = None
 ) -> List[Feature]:
 
     detection_features = []
@@ -811,10 +814,10 @@ def detect_features_v2(
 def detect_features(
     image: Union[np.ndarray, FibsemImage],
     model: 'SegmentationModel',
-    features: Tuple[Feature],
-    pixelsize: float = None,
+    features: Sequence[Feature],
+    pixelsize: Optional[float] = None,
     filter: bool = True,
-    point: Point = None
+    point: Optional[Point] = None
 ) -> DetectedFeatures:
 
     if isinstance(image, FibsemImage):
@@ -866,8 +869,8 @@ def detect_features(
 def take_image_and_detect_features(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
-    features: Tuple[Feature],
-    point: Point = None,
+    features: Sequence[Feature],
+    point: Optional[Union[Point, FibsemStagePosition]] = None,
     checkpoint: str = cfg.DEFAULT_CHECKPOINT
 ) -> DetectedFeatures:
     
@@ -1034,7 +1037,7 @@ def move_based_on_detection(
     if _move_system == "manipulator":
 
         # account for scan_rotation
-        if np.isclose(microscope.get("scan_rotation", beam_type), np.pi):
+        if np.isclose(microscope.get_scan_rotation(beam_type), np.pi):
             dx *= -1.0
             dy *= -1.0
         
@@ -1125,7 +1128,7 @@ def detect_multi_features(image: np.ndarray, mask: np.ndarray, feature: Feature,
     return features
 
 
-def filter_best_feature(mask: np.ndarray, features: List[Feature], method: str = "closest", point: Point = None):
+def filter_best_feature(mask: np.ndarray, features: List[Feature], method: str = "closest", point: Optional[Point] = None):
     if method == "closest":
         # plot feature closest to point
         if point is None:

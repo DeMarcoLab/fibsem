@@ -110,7 +110,7 @@ def take_reference_images(
 def take_set_of_reference_images(
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
-    hfws: Tuple[float],
+    hfws: Tuple[float, float],
     filename: str = "ref_image",
 ) -> ReferenceImages:
     """

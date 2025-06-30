@@ -159,7 +159,7 @@ def get_milling_stages(key: str, protocol: Dict[str, List[Dict[str, Any]]]) -> L
         stages.append(stage)
     return stages
 
-def get_protocol_from_stages(stages: List[FibsemMillingStage]) -> List[Dict[str, Any]]:
+def get_protocol_from_stages(stages: Union[FibsemMillingStage, List[FibsemMillingStage]]) -> List[Dict[str, Any]]:
     """Convert a list of milling stages to a protocol dictionary.
     Args:
         stages: the list of milling stages to convert
