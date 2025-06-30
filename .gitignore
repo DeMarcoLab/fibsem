@@ -60,3 +60,4 @@ scripts/**/*.jpeg
 scripts/**/*.png
 fibsem/ui/test_qt.py
 scripts/dev-notebook2.ipynb
+scripts/launch-autolamella.sh
