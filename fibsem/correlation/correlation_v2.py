@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import yaml
 
-from tdct.pyto.rigid_3d import Rigid3D # NOTE: this is still a 3DCT dependency, migrate
+from fibsem.correlation.pyto.rigid_3d import Rigid3D # NOTE: this is still a 3DCT dependency, migrate
 
 DEFAULT_OPTIMIZATION_PARAMETERS = {
     'random_rotations': True,
