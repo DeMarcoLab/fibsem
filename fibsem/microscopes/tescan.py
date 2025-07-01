@@ -334,24 +334,65 @@ class TescanMicroscope(FibsemMicroscope):
         self.reset_beam_shifts()
         logging.debug({"msg": "connect_to_microscope", "ip_address": ip_address, "port": port, "system_info": self.system.info.to_dict()})
 
-    def acquire_image(self, image_settings: ImageSettings ) -> FibsemImage:
-        """Acquires an image using the specified image settings."""
+    def acquire_image(self, image_settings: Optional[ImageSettings] = None, beam_type: Optional[BeamType] = None) -> FibsemImage:
+        """
+        Acquire a new image with the specified settings or current settings for the given beam type.
 
-        logging.info(f"acquiring new {image_settings.beam_type.name} image.")
+        Args:
+            image_settings (ImageSettings, optional): The settings for the new image. 
+                Takes precedence if both parameters are provided.
+            beam_type (BeamType, optional): The beam type to use with current settings. 
+                Used only if image_settings is not provided.
+
+        Returns:
+            FibsemImage: A new FibsemImage representing the acquired image.
+            
+        Raises:
+            ValueError: If neither image_settings nor beam_type is provided.
+            
+        Examples:
+            # Acquire with specific settings
+            settings = ImageSettings(beam_type=BeamType.ELECTRON, hfw=1e-6, resolution=(1024, 1024))
+            image = microscope.acquire_image(image_settings=settings)
+            
+            # Acquire with current settings for a specific beam type
+            image = microscope.acquire_image(beam_type=BeamType.ION)
+            
+            # If both provided, image_settings takes precedence
+            image = microscope.acquire_image(image_settings=settings, beam_type=BeamType.ION)  # Uses settings
+        """
+        
+        # Validate parameters - at least one must be provided
+        if image_settings is None and beam_type is None:
+            raise ValueError("Must provide either image_settings (to acquire with specific settings) or beam_type (to acquire with current microscope settings for that beam type).")
+        
+        # Determine which beam type and settings to use (image_settings takes precedence)
+        if image_settings is not None:
+            # Use provided image settings
+            effective_beam_type = image_settings.beam_type
+            effective_image_settings = image_settings
+        else:
+            # Use current settings for the specified beam type
+            effective_beam_type = beam_type
+            effective_image_settings = self.get_imaging_settings(beam_type=beam_type)
+
+        logging.info(f"acquiring new {effective_beam_type.name} image.")
 
         # prepare the beam (turn on, stop scanning)
         beam: Union[Automation.SEM, Automation.FIB]
-        beam = self._prepare_beam(image_settings.beam_type)
-        beam_type = image_settings.beam_type
+        beam = self._prepare_beam(effective_beam_type)
 
         # imaging parameters
-        dwell_time_ns = image_settings.dwell_time * constants.SI_TO_NANO
-        image_width, image_height = image_settings.resolution
+        dwell_time_ns = effective_image_settings.dwell_time * constants.SI_TO_NANO
+        image_width, image_height = effective_image_settings.resolution
 
-        hfw = self.get_field_of_view(beam_type=beam_type)  # update hfw if required
-        if not np.isclose(hfw, image_settings.hfw, atol=1e-6):
-            self.set_field_of_view(image_settings.hfw, image_settings.beam_type)
-        image_roi = image_settings.reduced_area   
+        # Only apply settings if image_settings was provided
+        if image_settings is not None:
+            hfw = self.get_field_of_view(beam_type=effective_beam_type)  # update hfw if required
+            if not np.isclose(hfw, effective_image_settings.hfw, atol=1e-6):
+                self.set_field_of_view(effective_image_settings.hfw, effective_beam_type)
+        
+        image_roi = effective_image_settings.reduced_area   
 
         if image_roi is not None:
             left, top, right, bottom = _to_tescan_image_roi(
@@ -360,7 +401,7 @@ class TescanMicroscope(FibsemMicroscope):
             )
 
             image = beam.Scan.AcquireROI(
-                Detector=self._active_detector[beam_type],
+                Detector=self._active_detector[effective_beam_type],
                 Width=image_width,
                 Height=image_height,
                 Left=left,
@@ -371,7 +412,7 @@ class TescanMicroscope(FibsemMicroscope):
             )
         else:
             image = beam.Scan.AcquireImage(
-                Detector=self._active_detector[beam_type],
+                Detector=self._active_detector[effective_beam_type],
                 Bpp=Bpp.Grayscale_8_bit,
                 Width=image_width,
                 Height=image_height,
@@ -379,21 +420,25 @@ class TescanMicroscope(FibsemMicroscope):
             )
 
         # convert to FibsemImage
-        fibsem_image: FibsemImage = fromTescanImage(image, image_settings)
+        fibsem_image: FibsemImage = fromTescanImage(image, effective_image_settings)
 
         # save the last image for md
-        if image_settings.beam_type == BeamType.ELECTRON:
+        if effective_beam_type == BeamType.ELECTRON:
             self.last_image_eb = fibsem_image
             beam_state = fibsem_image.metadata.microscope_state.electron_beam
-        if image_settings.beam_type == BeamType.ION:
+        if effective_beam_type == BeamType.ION:
             self.last_image_ib = fibsem_image
             beam_state = fibsem_image.metadata.microscope_state.ion_beam
 
         # cache beam metadata parameters
-        self._beam_parameters[beam_type].dwell_time = image_settings.dwell_time
-        self._beam_parameters[beam_type].resolution = image_settings.resolution
-        self._beam_parameters[beam_type].stigmation = beam_state.stigmation
-        self._beam_parameters[beam_type].preset = beam_state.preset
+        self._beam_parameters[effective_beam_type].dwell_time = effective_image_settings.dwell_time
+        self._beam_parameters[effective_beam_type].resolution = effective_image_settings.resolution
+        self._beam_parameters[effective_beam_type].stigmation = beam_state.stigmation
+        self._beam_parameters[effective_beam_type].preset = beam_state.preset
+
+        # Store last imaging settings only if image_settings was provided  
+        if image_settings is not None:
+            self._last_imaging_settings = image_settings
 
         fibsem_image.metadata.user = self.user
         fibsem_image.metadata.experiment = self.experiment 
