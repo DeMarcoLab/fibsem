@@ -14,10 +14,12 @@ from fibsem.milling.patterning.patterns2 import (
     LinePattern,
     RectanglePattern,
     TrenchPattern,
-    MILLING_PATTERNS,
     ArrayPattern,
     CloverPattern,
     FiducialPattern,
+)
+from fibsem.milling.patterning import (
+    MILLING_PATTERNS,
     get_pattern,
 )
 from fibsem.structures import (

@@ -31,11 +31,13 @@ from fibsem.milling import (
     mill_stages,
 )
 from fibsem.milling.patterning.patterns2 import (
-    DEFAULT_MILLING_PATTERN,
-    MILLING_PATTERN_NAMES,
     BasePattern,
     FiducialPattern,
     LinePattern,
+)
+from fibsem.milling.patterning import (
+    DEFAULT_MILLING_PATTERN,
+    MILLING_PATTERN_NAMES,
     get_pattern,
 )
 from fibsem.milling.strategy import DEFAULT_STRATEGY_NAME, get_strategy_names

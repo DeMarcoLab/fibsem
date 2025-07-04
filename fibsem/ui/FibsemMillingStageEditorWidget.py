@@ -36,10 +36,12 @@ from fibsem.milling import (
     get_strategy,
 )
 from fibsem.milling.patterning.patterns2 import (
-    MILLING_PATTERN_NAMES,
     BasePattern,
     LinePattern,
     TrenchPattern,
+)
+from fibsem.milling.patterning import (
+    MILLING_PATTERN_NAMES,
     get_pattern,
 )
 from fibsem.milling.strategy import (

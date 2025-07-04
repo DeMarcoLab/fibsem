@@ -5,14 +5,14 @@ from typing import List, Union, Dict, Any, Tuple, Optional, Type, TypeVar, Class
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling.config import MILLING_SPUTTER_RATE
-from fibsem.milling.patterning.patterns2 import BasePattern, get_pattern, DEFAULT_MILLING_PATTERN
+from fibsem.milling.patterning.patterns2 import BasePattern
+from fibsem.milling.patterning import get_pattern, DEFAULT_MILLING_PATTERN
 from fibsem.structures import (
     FibsemMillingSettings,
     MillingAlignment,
     ImageSettings,
     CrossSectionPattern,
     FibsemImage,
-    FibsemImageMetadata,
 )
 
 
@@ -85,7 +85,7 @@ class FibsemMillingStage:
     num: int = 0
     milling: FibsemMillingSettings = field(default_factory=FibsemMillingSettings)
     pattern: BasePattern = field(default_factory=DEFAULT_MILLING_PATTERN)
-    patterns: List[BasePattern] = None # unused
+    patterns: Optional[List[BasePattern]] = None # unused
     strategy: MillingStrategy[Any] = field(default_factory=get_strategy)
     alignment: MillingAlignment = field(default_factory=MillingAlignment)
     imaging: ImageSettings = field(default_factory=ImageSettings) # settings for post-milling acquisition
@@ -206,3 +206,5 @@ def estimate_total_milling_time(stages: List[FibsemMillingStage]) -> float:
     if not isinstance(stages, list):
         stages = [stages]
     return sum([estimate_milling_time(stage.pattern, stage.milling.milling_current) for stage in stages])
+
+
