@@ -18,9 +18,7 @@ from fibsem.config import METADATA_VERSION, SUPPORTED_COORDINATE_SYSTEMS
 
 try:
     sys.path.append(r"C:\Program Files\Thermo Scientific AutoScript")
-    sys.path.append(
-        r"C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages"
-    )
+    sys.path.append(r"C:\Program Files\Enthought\Python\envs\AutoScript\Lib\site-packages")
     sys.path.append(r"C:\Program Files\Python36\envs\AutoScript")
     sys.path.append(r"C:\Program Files\Python36\envs\AutoScript\Lib\site-packages")
     from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
@@ -30,10 +28,10 @@ try:
         ManipulatorPosition,
         StagePosition,
     )
-
-    THERMO = True
+    THERMO_API_AVAILABLE = True
 except ImportError:
-    THERMO = False
+    THERMO_API_AVAILABLE = False
+    # if Thermo imports fail, we assume we are not using Thermo microscope
 
 TFibsemPatternSettings = TypeVar(
     "TFibsemPatternSettings", bound="FibsemPatternSettings"
@@ -190,61 +188,76 @@ class FibsemStagePosition:
             coordinate_system=data["coordinate_system"],
         )
 
-    if THERMO:
+    def to_autoscript_position(self, compustage: bool = False) -> Union['StagePosition', 'CompustagePosition']:
+        """Converts the stage position to a StagePosition object that is compatible with Autoscript.
+        Args:
+            compustage: bool = False: Whether or not the stage is a compustage.
+        Returns:
+            StagePosition / CompuStagePosition compatible with Autoscript.        
+        Raises:
+            ImportError: If AutoScript libraries are not available.
+        """
+        if not THERMO_API_AVAILABLE:
+            raise ImportError("AutoScript libraries not available. Cannot convert to AutoScript position.")
 
-        def to_autoscript_position(self, compustage: bool = False) -> Union[StagePosition, CompustagePosition]:
-            """Converts the stage position to a StagePosition object that is compatible with Autoscript.
-            Args:
-                compustage: bool = False: Whether or not the stage is a compustage.
-            Returns:
-                StagePosition / CompuStagePosition compatible with Autoscript.        
-            """
+        # reference: SerialFIB Arctis Driver
+        # https://github.com/sklumpe/SerialFIB/blob/main/src/Arctis/ArctisDriver.py
+        if compustage:
+            stage_position = CompustagePosition(
+                x=self.x,
+                y=self.y,
+                z=self.z,
+                a=self.t,
+                coordinate_system=CoordinateSystem.SPECIMEN,
+            )               
 
-            # reference: SerialFIB Arctis Driver
-            # https://github.com/sklumpe/SerialFIB/blob/main/src/Arctis/ArctisDriver.py
-            if compustage:
-                stage_position = CompustagePosition(
-                    x=self.x,
-                    y=self.y,
-                    z=self.z,
-                    a=self.t,
-                    coordinate_system=CoordinateSystem.SPECIMEN,
-                )               
+        else:
+            stage_position = StagePosition(
+                x=self.x,
+                y=self.y, 
+                z=self.z,  
+                r=self.r,
+                t=self.t,
+                coordinate_system=CoordinateSystem.RAW,
+            )
 
-            else:
-                stage_position = StagePosition(
-                    x=self.x,
-                    y=self.y, 
-                    z=self.z,  
-                    r=self.r,
-                    t=self.t,
-                    coordinate_system=CoordinateSystem.RAW,
-                )
+        return stage_position
 
-            return stage_position
+    @classmethod
+    def from_autoscript_position(cls, position: Union['StagePosition', 'CompustagePosition']) -> 'FibsemStagePosition':
+        """Creates FibsemStagePosition from AutoScript position objects.
+        
+        Args:
+            position: AutoScript StagePosition or CompustagePosition object
+            
+        Returns:
+            FibsemStagePosition: Converted position
+            
+        Raises:
+            ImportError: If AutoScript libraries are not available.
+        """
+        if not THERMO_API_AVAILABLE:
+            raise ImportError("AutoScript libraries not available. Cannot convert from AutoScript position.")
 
-        @classmethod # TODO: convert this to staticmethod?
-        def from_autoscript_position(cls, position: Union[StagePosition, CompustagePosition]) -> 'FibsemStagePosition':
-
-            # compustage position
-            if isinstance(position, CompustagePosition):
-                return cls(
-                    x=position.x,
-                    y=position.y,
-                    z=position.z,
-                    r=0.0,
-                    t=position.a,
-                    coordinate_system=CoordinateSystem.SPECIMEN.upper(),
-                )
-
+        # compustage position
+        if isinstance(position, CompustagePosition):
             return cls(
                 x=position.x,
-                y=position.y,  
+                y=position.y,
                 z=position.z,
-                r=position.r,
-                t=position.t,
-                coordinate_system=position.coordinate_system.upper(),
+                r=0.0,
+                t=position.a,
+                coordinate_system=CoordinateSystem.SPECIMEN.upper(),
             )
+
+        return cls(
+            x=position.x,
+            y=position.y,  
+            z=position.z,
+            r=position.r,
+            t=position.t,
+            coordinate_system=position.coordinate_system.upper(),
+        )
 
     def __add__(self, other: "FibsemStagePosition") -> "FibsemStagePosition":
         return FibsemStagePosition(
@@ -344,30 +357,53 @@ class FibsemManipulatorPosition:
             coordinate_system=data["coordinate_system"],
         )
 
-    if THERMO:
+    def to_autoscript_position(self) -> 'ManipulatorPosition':
+        """Converts the manipulator position to AutoScript ManipulatorPosition.
+        
+        Returns:
+            ManipulatorPosition: AutoScript compatible position
+            
+        Raises:
+            ImportError: If AutoScript libraries are not available.
+        """
+        if not THERMO_API_AVAILABLE:
+            raise ImportError("AutoScript libraries not available. Cannot convert to AutoScript position.")
+            
+        if self.coordinate_system == "RAW":
+            coordinate_system = "Raw"
+        elif self.coordinate_system == "STAGE":
+            coordinate_system = "Stage"
+        return ManipulatorPosition(
+            x=self.x,
+            y=self.y,
+            z=self.z,
+            r=None,  # TODO figure this out, do we need it for real micrscope or just simulator ?
+            # r=None,
+            coordinate_system=coordinate_system,
+        )
 
-        def to_autoscript_position(self) -> ManipulatorPosition:
-            if self.coordinate_system == "RAW":
-                coordinate_system = "Raw"
-            elif self.coordinate_system == "STAGE":
-                coordinate_system = "Stage"
-            return ManipulatorPosition(
-                x=self.x,
-                y=self.y,
-                z=self.z,
-                r=None,  # TODO figure this out, do we need it for real micrscope or just simulator ?
-                # r=None,
-                coordinate_system=coordinate_system,
-            )
-
-        @classmethod
-        def from_autoscript_position(cls, position: ManipulatorPosition) -> 'FibsemManipulatorPosition':
-            return cls(
-                x=position.x,
-                y=position.y,
-                z=position.z,
-                coordinate_system=position.coordinate_system.upper(),
-            )
+    @classmethod
+    def from_autoscript_position(cls, position: 'ManipulatorPosition') -> 'FibsemManipulatorPosition':
+        """Creates FibsemManipulatorPosition from AutoScript ManipulatorPosition.
+        
+        Args:
+            position: AutoScript ManipulatorPosition object
+            
+        Returns:
+            FibsemManipulatorPosition: Converted position
+            
+        Raises:
+            ImportError: If AutoScript libraries are not available.
+        """
+        if not THERMO_API_AVAILABLE:
+            raise ImportError("AutoScript libraries not available. Cannot convert from AutoScript position.")
+            
+        return cls(
+            x=position.x,
+            y=position.y,
+            z=position.z,
+            coordinate_system=position.coordinate_system.upper(),
+        )
 
     def __add__(
         self, other: "FibsemManipulatorPosition"
@@ -601,6 +637,40 @@ class ImageSettings:
         image_settings.filename = utils.current_timestamp()
         image_settings.save = True
 
+        return image_settings
+
+    @staticmethod
+    def fromAdornedImage(image: 'AdornedImage', beam_type: BeamType = BeamType.ELECTRON
+    ) -> 'ImageSettings':
+        """Creates ImageSettings from AutoScript AdornedImage.
+        
+        Args:
+            image: AutoScript AdornedImage object
+            beam_type: Beam type for the image settings
+            
+        Returns:
+            ImageSettings: Converted image settings
+            
+        Raises:
+            ImportError: If AutoScript libraries are not available.
+        """
+        if not THERMO_API_AVAILABLE:
+            raise ImportError("AutoScript libraries not available. Cannot convert from AdornedImage.")
+            
+        from fibsem.utils import current_timestamp
+
+        image_settings = ImageSettings(
+            resolution=(image.width, image.height),
+            dwell_time=image.metadata.scan_settings.dwell_time,
+            hfw=image.width * image.metadata.binary_result.pixel_size.x,
+            autocontrast=True,
+            beam_type=beam_type,
+            autogamma=True,
+            save=False,
+            path="path",
+            filename=current_timestamp(),
+            reduced_area=None,
+        )
         return image_settings
 
 
@@ -1484,25 +1554,7 @@ class FibsemImageMetadata:
         )
         return metadata
 
-    if THERMO:
-        # TODO: move to ImageSettings
-        def image_settings_from_adorned(image: AdornedImage, beam_type: BeamType = BeamType.ELECTRON
-        ) -> ImageSettings:
-            from fibsem.utils import current_timestamp
 
-            image_settings = ImageSettings(
-                resolution=(image.width, image.height),
-                dwell_time=image.metadata.scan_settings.dwell_time,
-                hfw=image.width * image.metadata.binary_result.pixel_size.x,
-                autocontrast=True,
-                beam_type=beam_type,
-                autogamma=True,
-                save=False,
-                path="path",
-                filename=current_timestamp(),
-                reduced_area=None,
-            )
-            return image_settings
 
     def compare_image_settings(self, image_settings: ImageSettings) -> bool:
         """Compares image settings to the metadata image settings.
@@ -1764,68 +1816,74 @@ class FibsemImage:
 
     ### EXPERIMENTAL END ####
 
-    if THERMO:
+    @classmethod
+    def fromAdornedImage(
+        cls,
+        adorned: 'AdornedImage',
+        image_settings: Optional[ImageSettings] = None,
+        state: Optional[MicroscopeState] = None,
+        beam_type: BeamType = BeamType.ELECTRON,
+    ) -> "FibsemImage":
+        """Creates FibsemImage from an AdornedImage (microscope output format).
 
-        @classmethod
-        def fromAdornedImage(
-            cls,
-            adorned: AdornedImage,
-            image_settings: Optional[ImageSettings] = None,
-            state: Optional[MicroscopeState] = None,
-            beam_type: BeamType = BeamType.ELECTRON,
-        ) -> "FibsemImage":
-            """Creates FibsemImage from an AdornedImage (microscope output format).
+        Args:
+            adorned (AdornedImage): Adorned Image from microscope
+            image_settings (ImageSettings, optional): Image settings. Defaults to None.
+            state (MicroscopeState, optional): Microscope state. Defaults to None.
+            beam_type (BeamType): Beam type for the image. Defaults to BeamType.ELECTRON.
 
-            Args:
-                adorned (AdornedImage): Adorned Image from microscope
-                metadata (FibsemImageMetadata, optional): metadata extracted from microscope output. Defaults to None.
+        Returns:
+            FibsemImage: instance of FibsemImage from AdornedImage
+            
+        Raises:
+            ImportError: If AutoScript libraries are not available.
+        """
+        if not THERMO_API_AVAILABLE:
+            raise ImportError("AutoScript libraries not available. Cannot convert from AdornedImage.")
+        
+        if state is None:
+            state = MicroscopeState(
+                timestamp=adorned.metadata.acquisition.acquisition_datetime,
+                stage_position=FibsemStagePosition(
+                    adorned.metadata.stage_settings.stage_position.x,
+                    adorned.metadata.stage_settings.stage_position.y,
+                    adorned.metadata.stage_settings.stage_position.z,
+                    adorned.metadata.stage_settings.stage_position.r,
+                    adorned.metadata.stage_settings.stage_position.t,
+                ),
+                electron_beam=BeamSettings(beam_type=BeamType.ELECTRON),
+                ion_beam=BeamSettings(beam_type=BeamType.ION),
+            )
+        else:
+            state.timestamp = adorned.metadata.acquisition.acquisition_datetime
 
-            Returns:
-                FibsemImage: instance of FibsemImage from AdornedImage
-            """
-            if state is None:
-                state = MicroscopeState(
-                    timestamp=adorned.metadata.acquisition.acquisition_datetime,
-                    stage_position=FibsemStagePosition(
-                        adorned.metadata.stage_settings.stage_position.x,
-                        adorned.metadata.stage_settings.stage_position.y,
-                        adorned.metadata.stage_settings.stage_position.z,
-                        adorned.metadata.stage_settings.stage_position.r,
-                        adorned.metadata.stage_settings.stage_position.t,
-                    ),
-                    electron_beam=BeamSettings(beam_type=BeamType.ELECTRON),
-                    ion_beam=BeamSettings(beam_type=BeamType.ION),
-                )
-            else:
-                state.timestamp = adorned.metadata.acquisition.acquisition_datetime
+        if image_settings is None:
+            from fibsem.utils import current_timestamp
 
-            if image_settings is None:
-                from fibsem.utils import current_timestamp
-
-                image_settings = ImageSettings(
-                    resolution=(adorned.width, adorned.height),
-                    dwell_time=adorned.metadata.scan_settings.dwell_time,
-                    hfw=adorned.width * adorned.metadata.binary_result.pixel_size.x,
-                    autocontrast=True,
-                    beam_type=beam_type,
-                    autogamma=True,
-                    save=False,
-                    path="path",
-                    filename=current_timestamp(),
-                    reduced_area=None,
-                )
-
-            pixel_size = Point(
-                adorned.metadata.binary_result.pixel_size.x,
-                adorned.metadata.binary_result.pixel_size.y,
+            image_settings = ImageSettings(
+                resolution=(adorned.width, adorned.height),
+                dwell_time=adorned.metadata.scan_settings.dwell_time,
+                hfw=adorned.width * adorned.metadata.binary_result.pixel_size.x,
+                autocontrast=True,
+                beam_type=beam_type,
+                autogamma=True,
+                save=False,
+                path="path",
+                filename=current_timestamp(),
+                reduced_area=None,
             )
 
-            metadata = FibsemImageMetadata(
-                image_settings=image_settings,
-                pixel_size=pixel_size,
-                microscope_state=state,
-            )
-            return cls(data=adorned.data, metadata=metadata)
+        pixel_size = Point(
+            adorned.metadata.binary_result.pixel_size.x,
+            adorned.metadata.binary_result.pixel_size.y,
+        )
+
+        metadata = FibsemImageMetadata(
+            image_settings=image_settings,
+            pixel_size=pixel_size,
+            microscope_state=state,
+        )
+        return cls(data=adorned.data, metadata=metadata)
 
     @staticmethod
     def generate_blank_image(

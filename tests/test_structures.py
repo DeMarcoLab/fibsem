@@ -1,15 +1,22 @@
+import datetime
+
 import pytest
 
+from fibsem.structures import (
+    THERMO_API_AVAILABLE,
+    BeamSettings,
+    BeamType,
+    FibsemDetectorSettings,
+    FibsemGasInjectionSettings,
+    FibsemImage,
+    FibsemRectangle,
+    FibsemStagePosition,
+    ImageSettings,
+    MicroscopeState,
+)
 
-from fibsem.structures import MicroscopeState, BeamType, ImageSettings, FibsemImage, FibsemRectangle, BeamSettings, FibsemDetectorSettings, FibsemStagePosition, FibsemGasInjectionSettings
 
-from fibsem.structures import MicroscopeState, FibsemStagePosition
-from fibsem.structures import THERMO
-
-import datetime
 # microscope state
-
-
 # electron_beam, electron_detector, ion_beam, ion_detector are now optional
 
 
@@ -73,10 +80,10 @@ def test_gas_injection_settings():
     assert multichem_settings2.duration == multichem_settings.duration
     assert multichem_settings2.insert_position == multichem_settings.insert_position
 
-if THERMO:
-    from fibsem.structures import StagePosition, CompustagePosition
-    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
 
+if THERMO_API_AVAILABLE:
+
+    from fibsem.structures import CompustagePosition, CoordinateSystem, StagePosition
 
     def test_to_autoscript_position():
         
