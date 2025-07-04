@@ -62,3 +62,4 @@ fibsem/ui/test_qt.py
 scripts/dev-notebook2.ipynb
 scripts/launch-autolamella.sh
 fibsem/applications/autolamella/log/*
+CLAUDE.md
