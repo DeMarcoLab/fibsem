@@ -32,7 +32,9 @@ dependencies = [
     "petname>=2.6",
     "pandas>=2.0.0",
     "pyyaml>=6.0",
-    "psygnal"
+    "psygnal",
+    "ome_types",
+    "lxml",
 ]
 
 [project.urls]
