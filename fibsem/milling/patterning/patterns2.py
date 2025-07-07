@@ -34,6 +34,7 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
     shapes: Optional[List[TFibsemPatternSettings]] = field(default=None, init=False)
 
     _advanced_attributes: ClassVar[Tuple[str, ...]] = ()
+    _hidden_attributes: ClassVar[Tuple[str, ...]] = ()
 
     @abstractmethod
     def define(self) -> List[TFibsemPatternSettings]:
@@ -68,7 +69,11 @@ class BasePattern(ABC, Generic[TFibsemPatternSettings]):
                 
     @property
     def required_attributes(self) -> Tuple[str, ...]:
-        return tuple(f.name for f in fields(self) if f not in fields(BasePattern))
+        return tuple(
+            f.name
+            for f in fields(self)
+            if f not in self._hidden_attributes and f not in fields(BasePattern) 
+        )
     
     @property
     def advanced_attributes(self) -> Tuple[str, ...]:
