@@ -14,6 +14,7 @@ from fibsem.structures import (
     FibsemImage,
     FibsemLineSettings,
     FibsemRectangleSettings,
+    FibsemBitmapSettings,
     Point,
 )
 from .utils import (
