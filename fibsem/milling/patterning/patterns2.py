@@ -89,14 +89,14 @@ class BitmapPattern(BasePattern[FibsemBitmapSettings]):
     time: float = 0
     passes: int = 0
     scan_direction: str = "TopToBottom"
+    path: str = ""
     bitmap: Optional[NDArray[Any]] = None
-    path: Optional[Union[str, PathLike]] = None
     _advanced_attributes = ("time",)
 
     name: ClassVar[str] = "Bitmap"
 
     def __post_init__(self):
-        if self.bitmap is None and self.path is None:
+        if self.bitmap is None and not self.path.strip():
             raise AttributeError("BitmapPattern requires bitmap or path must be set")
 
     def define(self) -> List[FibsemBitmapSettings]:
@@ -118,43 +118,40 @@ class BitmapPattern(BasePattern[FibsemBitmapSettings]):
 
 
 @dataclass
-class TrenchBitmapPattern(BasePattern):
+class TrenchBitmapPattern(BasePattern[FibsemBitmapSettings]):
     width: float = 10.0e-6
     depth: float = 10.0e-6
     spacing: float = 1.0e-6
     upper_trench_height: float = 5.0e-6
     lower_trench_height: float = 5.0e-6
     time: float = 0
-    path: Optional[Union[str, PathLike]] = None
-    path_lower: Optional[Union[str, PathLike]] = None
+    path: str = ""
+    path_lower: str = ""  # path will be flipped and used if not given
     bitmap: Optional[NDArray[Any]] = None
     bitmap_lower: Optional[NDArray[Any]] = None
-    _advanced_attributes = ("time",)
+    _advanced_attributes = ("time", "path_lower")
 
     name: ClassVar[str] = "TrenchBitmap"
 
-    def define(
-        self, protocol: dict, point: Point = Point()
-    ) -> list[FibsemBitmapSettings]:
-        point = self.point
-        width = self.width
-        spacing = self.spacing
-        upper_trench_height = self.upper_trench_height
-        lower_trench_height = self.lower_trench_height
-        depth = self.depth
-        time = self.time
-        path = self.path
+    def __post_init__(self):
+        if self.bitmap is None and not self.path.strip():
+            raise AttributeError("BitmapPattern requires bitmap or path must be set")
+
+    def define(self) -> list[FibsemBitmapSettings]:
+        path: Optional[str] = self.path.strip()
+        if not path:
+            path = None
         bitmap = self.bitmap
 
         # calculate the centre of the upper and lower trench
-        centre_lower_y = point.y - (spacing / 2 + lower_trench_height / 2)
-        centre_upper_y = point.y + (spacing / 2 + upper_trench_height / 2)
+        centre_lower_y = self.point.y - (self.spacing / 2 + self.lower_trench_height / 2)
+        centre_upper_y = self.point.y + (self.spacing / 2 + self.upper_trench_height / 2)
 
         flip_lower_y = False
-        bitmap_lower = protocol.get("bitmap_lower")
-        if bitmap_lower is None:
-            path_lower = protocol.get("path_lower")
-            if path_lower is None:
+        if self.bitmap_lower is None:
+            bitmap_lower = None
+            if not self.path_lower.strip():
+                path_lower=None
                 # Fallback on upper bitmap/path
                 flip_lower_y = True
                 path_lower = path
@@ -162,15 +159,15 @@ class TrenchBitmapPattern(BasePattern):
 
         # mill settings
         lower_pattern_settings = FibsemBitmapSettings(
-            width=width,
-            height=lower_trench_height,
-            depth=depth,
+            width=self.width,
+            height=self.lower_trench_height,
+            depth=self.depth,
             # Allows flipping of lower pattern without first loading the bitmap
             rotation=0,
-            centre_x=point.x,
+            centre_x=self.point.x,
             centre_y=centre_lower_y,
             scan_direction="BottomToTop",
-            time=time,
+            time=self.time,
             flip_y=flip_lower_y,
             path=path_lower,
             bitmap=bitmap_lower,
@@ -178,20 +175,19 @@ class TrenchBitmapPattern(BasePattern):
         )
 
         upper_pattern_settings = FibsemBitmapSettings(
-            width=width,
-            height=upper_trench_height,
-            depth=depth,
+            width=self.width,
+            height=self.upper_trench_height,
+            depth=self.depth,
             rotation=0,
-            centre_x=point.x,
+            centre_x=self.point.x,
             centre_y=centre_upper_y,
             scan_direction="TopToBottom",
-            time=time,
+            time=self.time,
             path=path,
             bitmap=bitmap,
         )
 
         self.shapes = [lower_pattern_settings, upper_pattern_settings]
-        self.protocol = protocol
         return self.shapes
 
 
