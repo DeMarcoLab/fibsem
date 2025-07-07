@@ -528,11 +528,72 @@ def draw_rectangle_shape(pattern_settings: FibsemRectangleSettings, image: Fibse
 
     return DrawnPattern(pattern=shape, position=pos, is_exclusion=pattern_settings.is_exclusion)
 
+
+def draw_bitmap_shape(
+    pattern_settings: FibsemBitmapSettings, image: FibsemImage
+) -> DrawnPattern:
+    from PIL import Image
+
+    # image parameters (centre, pixel size)
+    icy, icx = image.data.shape[0] // 2, image.data.shape[1] // 2
+    pixelsize_x, pixelsize_y = image.metadata.pixel_size.x, image.metadata.pixel_size.y
+
+    # pattern parameters
+    width = pattern_settings.width
+    height = pattern_settings.height
+    centre_x = pattern_settings.centre_x
+    centre_y = pattern_settings.centre_y
+    rotation = pattern_settings.rotation
+
+    # pattern to pixel coords
+    w = int(width / pixelsize_x)
+    h = int(height / pixelsize_y)
+    cx = int(icx + (centre_x / pixelsize_x))  # Fix: use pixelsize_x for x coordinate
+    cy = int(icy - (centre_y / pixelsize_y))
+
+    # Bitmap is 3-channel (y, x, c)
+    # Bitmap image (uint8) has dwell time multipliers in channel 2 (0-255)
+    # Bitmap points (object) has dwell time multipliers in channel 0 (0-1)
+
+    if pattern_settings.bitmap is None:
+        if pattern_settings.path is None:
+            raise ValueError('"bitmap" and "path" are both None')
+        # Open from path if bitmap not given
+        bitmap_arr = np.asarray(Image.open(pattern_settings.path))
+    else:
+        bitmap_arr = pattern_settings.bitmap
+
+    if np.issubdtype(bitmap_arr, np.uint8):
+        # Convert to 0-1 multiplier for drawing
+        bitmap_arr = np.interp(bitmap_arr[:, :, 2], (0, 255), (0, 1)).astype(np.float_)
+    else:
+        bitmap_arr  =bitmap_arr[:, :, 0]
+
+    image_bmp = Image.fromarray(bitmap_arr)
+
+    image_resized = image_bmp.resize((w, h))
+
+    if not np.isclose(rotation, 0):
+        image_rotated = image_resized.rotate(-pattern_settings.rotation, expand=True)
+
+    # Create base rectangle shape
+    shape = np.asarray(image_rotated, dtype=np.float_)
+
+    # get pattern centre in image coordinates
+    pos = Point(x=cx, y=cy)
+
+    return DrawnPattern(
+        pattern=shape, position=pos, is_exclusion=pattern_settings.is_exclusion
+    )
+
+
 def draw_pattern_shape(ps, image):
     if isinstance(ps, FibsemCircleSettings):
         return draw_annulus_shape(ps, image)
     elif isinstance(ps, FibsemRectangleSettings):
         return draw_rectangle_shape(ps, image)
+    elif isinstance(ps, FibsemBitmapSettings):
+        return draw_bitmap_shape(ps, image)
     else:
         raise ValueError(f"Unsupported shape type {type(ps)}")
 
