@@ -552,25 +552,7 @@ def draw_bitmap_shape(
     cx = int(icx + (centre_x / pixelsize_x))  # Fix: use pixelsize_x for x coordinate
     cy = int(icy - (centre_y / pixelsize_y))
 
-    # Bitmap is 3-channel (y, x, c)
-    # Bitmap image (uint8) has dwell time multipliers in channel 2 (0-255)
-    # Bitmap points (object) has dwell time multipliers in channel 0 (0-1)
-
-    if pattern_settings.bitmap is None:
-        if pattern_settings.path is None:
-            raise ValueError('"bitmap" and "path" are both None')
-        # Open from path if bitmap not given
-        bitmap_arr = np.asarray(Image.open(pattern_settings.path))
-    else:
-        bitmap_arr = pattern_settings.bitmap
-
-    if np.issubdtype(bitmap_arr, np.uint8):
-        # Convert to 0-1 multiplier for drawing
-        bitmap_arr = np.interp(bitmap_arr[:, :, 2], (0, 255), (0, 1)).astype(np.float_)
-    else:
-        bitmap_arr  =bitmap_arr[:, :, 0]
-
-    image_bmp = Image.fromarray(bitmap_arr)
+    image_bmp = Image.fromarray(pattern_settings.bitmap[:, :, 0])
 
     image_resized = image_bmp.resize((w, h))
 
