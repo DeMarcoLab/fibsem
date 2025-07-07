@@ -1,18 +1,16 @@
 """Utility functions for pattern analysis and coordinate conversion."""
-
+from __future__ import annotations
 import logging
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Any, TYPE_CHECKING
 
-from fibsem.milling.base import FibsemMillingStage
-from fibsem.structures import (
-    FibsemCircleSettings,
-    FibsemImage,
-    FibsemLineSettings,
-    FibsemRectangleSettings,
-    Point,
-    FibsemRectangle,
-)
+from fibsem.structures import FibsemRectangle
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+    from fibsem.milling.base import FibsemMillingStage
+    from fibsem.structures import FibsemImage
+
 
 def create_pattern_mask(stage: FibsemMillingStage, image: FibsemImage, include_exclusions: bool = False) -> np.ndarray:
     """Create a binary mask for a single milling stage pattern.
@@ -80,7 +78,7 @@ def get_pattern_bounding_box(stage: FibsemMillingStage, image: FibsemImage, expa
         mask = create_pattern_mask(stage, image, include_exclusions=False)
         
         # Find coordinates where mask is True
-        coords = np.where(mask)
+        coords = np.nonzero(mask)
         
         if len(coords[0]) == 0:
             # No pattern area found
@@ -217,3 +215,26 @@ def get_pattern_reduced_area(stage: FibsemMillingStage, image: FibsemImage, expa
     bbox = get_pattern_bounding_box(stage=stage, image=image, expand_percent=expand_percent)
     xmin, ymin, xmax, ymax = bbox_to_normalized_coords(bbox, image)
     return FibsemRectangle(left=xmin, top=ymin, width=xmax-xmin, height=ymax-ymin)
+
+
+def bitmap_image_to_points(bitmap_image: NDArray[np.uint8]) -> NDArray[Any]:
+    """Convert from a bitmap image to bitmap points.
+    
+    Bitmap points have the advantage of higher bit depth and more direct scaling.
+
+    - Bitmap image:
+        - 3-channel (RGB) images of type `np.uint8` in the shape (y, x, c)
+        - Channel 0 (R) is not used
+        - Channel 1 (G) is a flag (0 blanks the point, 1 means no flags)
+        - Channel 2 (B) is the dwell time multiplier (255 translates to 1x the pattern value)
+
+    - Bitmap points:
+        - 2-channel numpy arrays of type `object` in the shape (y, x, c)
+        - Channel 0 is the dwell time multiplier (now a float with the range of 0-1)
+        - Channel 1 is a flag (0 means no flags, 1 blanks the point)
+        - There is no Channel 2 (this was channel 0)
+    """
+    points_array = np.empty((*bitmap_image.shape[:2], 2), dtype=object)
+    points_array[:, :, 0] = np.interp(bitmap_image[:, :, 2], (0, 255), (0, 1))
+    points_array[:, :, 1] = 1 - bitmap_image[:, :, 1]
+    return points_array
