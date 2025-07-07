@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, fields, asdict
+from dataclasses import dataclass, field, fields, asdict, InitVar
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -1015,30 +1015,43 @@ class FibsemCircleSettings(FibsemPatternSettings):
     def volume(self) -> float:
         return np.pi * self.radius**2 * self.depth
 
+
 @dataclass
 class FibsemBitmapSettings(FibsemPatternSettings):
     width: float
     height: float
     depth: float
-    rotation: float
     centre_x: float
     centre_y: float
+    rotation: float = 0
     scan_direction: str = "TopToBottom"
     passes: int = 0
     time: float = 0.0
     is_exclusion: bool = False
     flip_y: bool = False
-    bitmap: Optional[NDArray[Any]] = None
-    path: Optional[Union[str, os.PathLike]] = None
+    path: InitVar[Optional[Union[str, os.PathLike]]] = None
+    array: InitVar[Optional[NDArray[Any]]] = None
+    bitmap: NDArray[Any] = field(init=False)
 
-    def __post_init__(self) -> None:
-        if self.bitmap is None and self.path is None:
-            raise AttributeError("FibsemBitmapSettings requires bitmap or path must be set")
+    def __post_init__(self, path: Optional[Union[str, os.PathLike]], array: Optional[NDArray[Any]]) -> None:
+        if array is None:
+            if path is None:
+                raise AttributeError("FibsemBitmapSettings requires array or path to be set")
+            else:
+                from PIL import Image
+                array = np.asarray(Image.open(path), dtype=np.uint8)
+        
+        if array.dtype == np.uint8:
+            # Convert bitmap image to bitmap points - simpler if it's handled here and consistent after
+            from fibsem.milling.patterning.utils import bitmap_image_to_points
+            array = bitmap_image_to_points(array)
+
+        self.bitmap = array
 
     @property
     def volume(self) -> float:
-        # NOTE: this is a VERY rough estimate
-        return self.width * self.height * self.depth
+        return self.width * self.height * self.depth * self.bitmap[:, :, 0].mean()
+
 
 @dataclass
 class FibsemMillingSettings:
